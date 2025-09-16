@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import 'package:notepadclient/core/utils/DeviceUtil.dart';
+import 'package:notepadclient/features/layout/controller/LayoutController.dart';
+import 'package:notepadclient/features/layout/widgets/DesktopSidebar.dart';
+import 'package:notepadclient/features/layout/widgets/LayoutBody.dart';
+import 'package:notepadclient/features/layout/widgets/LayoutHeader.dart';
+import 'package:notepadclient/features/layout/widgets/MobileBottombar.dart';
+import 'package:notepadclient/shared/theme/AppColors.dart';
+import 'package:provider/provider.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
+
+/// 全局布局
+///
+/// 作者: anoxia
+///
+/// 版本: 1.0.0
+///
+/// 创建时间: 2025-09-16  17:37
+class MainLayoutPage extends StatefulWidget {
+  const MainLayoutPage({super.key});
+
+  @override
+  State<MainLayoutPage> createState() => _MainLayoutPageState();
+}
+
+class _MainLayoutPageState extends State<MainLayoutPage>  with WidgetsBindingObserver
+// 只在桌面端 mixin
+// ignore: prefer_mixin
+, WindowListener
+, TrayListener{
+
+
+  @override
+  void initState() {
+    super.initState();
+    if (DeviceUtil.isDesktop) {
+      _initTray();
+      windowManager.addListener(this);
+      trayManager.addListener(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (DeviceUtil.isDesktop) {
+      windowManager.removeListener(this);
+      trayManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  //窗口最大化
+  @override
+  void onWindowMaximize() {
+    super.onWindowMaximize();
+    Provider.of<LayoutController>(context, listen: false).extendedValue = true;
+  }
+
+
+  //窗口恢复
+  @override
+  void onWindowUnmaximize() {
+    super.onWindowUnmaximize();
+    Provider.of<LayoutController>(context, listen: false).extendedValue = false;
+  }
+
+
+  @override
+  void onTrayIconMouseDown() {
+    // 当托盘图标被点击时，显示窗口
+    windowManager.show();
+    windowManager.focus();
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu();
+    // 当托盘图标右键被点击时，弹出菜单
+  }
+
+  @override
+  void onTrayIconRightMouseUp() {
+    // do something
+    // 当托盘图标右键被释放时，可以执行其他操作
+    print("当托盘图标右键被释放时，可以执行其他操作");
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    if (menuItem.key == 'show_window') {
+      windowManager.show();
+      windowManager.focus();
+    } else if (menuItem.key == 'hide_window') {
+      windowManager.hide();
+    } else if (menuItem.key == 'exit_app') {
+      windowManager.close();
+    }
+  }
+
+  Future<void> _initTray() async {
+    await trayManager.setIcon('assets/app_icon.ico');
+    await trayManager.setToolTip("Anoxia");
+
+    List<MenuItem> items = [
+      MenuItem(key: 'show_window', label: '显示窗口'),
+      MenuItem(key: 'hide_window', label: '隐藏窗口'),
+      MenuItem.separator(),
+      MenuItem(key: 'exit_app', label: '退出'),
+    ];
+
+    await trayManager.setContextMenu(Menu(items: items));
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
+
+    return Consumer<LayoutController>(
+      builder: (BuildContext context, LayoutController layout, Widget? child) {
+        return Container(
+          decoration: BoxDecoration(gradient: gradient),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Row(
+              children: [
+                // 侧边栏
+                if(!DeviceUtil.isMobile)
+                DesktopSidebar(),
+
+                // 主内容区域
+                Expanded(child: Scaffold(
+                  appBar: LayoutHeader().getAppbar(),
+                )),
+              ],
+            ),
+            bottomNavigationBar: DeviceUtil.isMobile ? MobileBottomBar() : null,
+          ),
+        );
+      },
+    );
+  }
+}
