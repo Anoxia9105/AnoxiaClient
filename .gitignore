@@ -302,7 +302,7 @@ iOSInjectionProject/
 
 ## Obj-C/Swift specific
 
-## Playgrounds
+## Playgrounds··
 timeline.xctimeline
 playground.xcworkspace
 
@@ -345,5 +345,6 @@ playground.xcworkspace
 
 # Build files
 build/
+.dart_tool
 
 # End of https://www.gitignore.io/api/dart,swift,xcode,android,intellij,cocoapods,objective-c,androidstudio
