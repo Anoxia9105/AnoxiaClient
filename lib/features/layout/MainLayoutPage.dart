@@ -10,13 +10,11 @@ import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-/// 全局布局
+/// 类的简要说明
 ///
-/// 作者: anoxia
-///
-/// 版本: 1.0.0
-///
-/// 创建时间: 2025-09-16  17:37
+/// 用途：描述该类的职责或使用场景
+/// 作者：USER
+/// 创建时间：2025-09-17
 class MainLayoutPage extends StatefulWidget {
   const MainLayoutPage({super.key});
 

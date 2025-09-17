@@ -4,14 +4,15 @@ import 'package:notepadclient/core/di/injector.dart';
 import 'package:notepadclient/features/layout/MainLayoutPage.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
-import 'package:notepadclient/shared/theme/AppTheme.dart';
 import 'package:provider/provider.dart';
 
 import 'Flavor.dart';
-import 'features/auth/presentation/pages/LoginPage.dart';
+
+
 
 class App extends StatelessWidget {
   const App({super.key});
+
 
   @override
   Widget build(BuildContext context) {
