@@ -1,6 +1,9 @@
 {
-  "appTitle": "私のアプリ",
-  "login": "ログイン",
-  "email": "メール",
-  "password": "パスワード"
+  "sidebar_chat": "会話",
+  "sidebar_contact": "友達",
+  "sidebar_documentation": "資料",
+  "sidebar_discover": "発見",
+  "sidebar_my": "私",
+  "sidebar_settings": "設定",
+  "settings_page_title": "設定"
 }

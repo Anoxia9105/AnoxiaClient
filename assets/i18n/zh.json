@@ -1,6 +1,9 @@
 {
-  "appTitle": "我的应用",
-  "login": "登录",
-  "email": "邮箱",
-  "password": "密码"
+  "sidebar_chat": "聊天",
+  "sidebar_contact": "联系人",
+  "sidebar_documentation": "文档",
+  "sidebar_discover": "发现",
+  "sidebar_my": "我的",
+  "sidebar_settings": "设置",
+  "settings_page_title": "设置"
 }

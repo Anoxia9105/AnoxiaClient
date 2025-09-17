@@ -1,6 +1,9 @@
 {
-  "appTitle": "MyApp",
-  "login": "Login",
-  "email": "Email",
-  "password": "Password"
+  "sidebar_chat": "Chat",
+  "sidebar_contact": "People",
+  "sidebar_documentation": "Docs",
+  "sidebar_discover": "Discover",
+  "sidebar_my": "Me",
+  "sidebar_settings": "Settings",
+  "settings_page_title": "Settings"
 }

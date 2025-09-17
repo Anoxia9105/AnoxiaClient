@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:notepadclient/core/di/injector.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/layout/widgets/DesktopSidebar.dart';
 import 'package:notepadclient/features/layout/widgets/LayoutBody.dart';
 import 'package:notepadclient/features/layout/widgets/LayoutHeader.dart';
 import 'package:notepadclient/features/layout/widgets/MobileBottombar.dart';
+import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
+import 'package:notepadclient/features/setting/presentation/pages/SettingPage.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -22,11 +25,7 @@ class MainLayoutPage extends StatefulWidget {
   State<MainLayoutPage> createState() => _MainLayoutPageState();
 }
 
-class _MainLayoutPageState extends State<MainLayoutPage>  with WidgetsBindingObserver
-// 只在桌面端 mixin
-// ignore: prefer_mixin
-, WindowListener
-, TrayListener{
+class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,TrayListener{
 
 
   @override
@@ -110,7 +109,7 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WidgetsBindingObs
     await trayManager.setContextMenu(Menu(items: items));
   }
 
-
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -125,16 +124,17 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WidgetsBindingObs
             body: Row(
               children: [
                 // 侧边栏
-                if(!DeviceUtil.isMobile)
+                if(!DeviceUtil.isMobile && !DeviceUtil.isWeb)
                 DesktopSidebar(),
 
                 // 主内容区域
                 Expanded(child: Scaffold(
                   appBar: LayoutHeader().getAppbar(),
+                  body: SettingPage(),
                 )),
               ],
             ),
-            bottomNavigationBar: DeviceUtil.isMobile ? MobileBottomBar() : null,
+            bottomNavigationBar: DeviceUtil.isMobile || DeviceUtil.isWeb ? MobileBottomBar() : null,
           ),
         );
       },

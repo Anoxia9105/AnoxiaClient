@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
@@ -42,27 +43,27 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
               children: [
                 SidebarButton(
                   index: 0,
-                  name: "聊天",
+                  name: "sidebar_chat".tr(),
                   icon: HugeIcons.strokeRoundedComment01,
                 ),
                 SidebarButton(
                   index: 1,
-                  name: "联系",
+                  name: "sidebar_contact".tr(),
                   icon: HugeIcons.strokeRoundedContact01,
                 ),
                 SidebarButton(
                   index: 2,
-                  name: "文档",
+                  name: "sidebar_documentation".tr(),
                   icon: HugeIcons.strokeRoundedNote01,
                 ),
                 SidebarButton(
                   index: 3,
-                  name: "发现",
+                  name: "sidebar_discover".tr(),
                   icon: HugeIcons.strokeRoundedPathfinderCrop,
                 ),
                 SidebarButton(
                   index: 4,
-                  name: "我的",
+                  name: "sidebar_my".tr(),
                   icon: HugeIcons.strokeRoundedUser,
                 ),
               ],
@@ -70,7 +71,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
           ),
           SidebarButton(
             index: 5,
-            name: "设置",
+            name: "sidebar_settings".tr(),
             icon: HugeIcons.strokeRoundedSettings01,
           ),
         ],
@@ -119,6 +120,7 @@ class SidebarButton extends StatelessWidget {
                 style: TextStyle(
                   color: isActive ? Theme.of(context).primaryColor : null,
                   fontSize: 14,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
             ],

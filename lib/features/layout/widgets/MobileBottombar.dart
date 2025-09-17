@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
@@ -27,34 +28,33 @@ class _MobileBottomBarState extends State<MobileBottomBar> {
       type: BottomNavigationBarType.fixed,
       currentIndex: layoutController.currentIndex,
       selectedItemColor: Theme.of(context).primaryColor,
-      unselectedItemColor: Colors.grey,
       onTap: (index) {
         layoutController.changeIndex(index);
       },
-      items: const [
+      items: [
         BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedComment01, size: 20),
-          label: "聊天",
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedComment01, size: 18),
+          label: "sidebar_chat".tr(),
         ),
         BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedContact01, size: 20),
-          label: "联系",
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedContact01, size: 18),
+          label: "sidebar_contact".tr(),
         ),
         BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedNote01, size: 20),
-          label: "文档",
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedNote01, size: 18),
+          label: "sidebar_documentation".tr(),
         ),
         BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedPathfinderCrop, size: 20),
-          label: "发现",
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedPathfinderCrop, size: 18),
+          label: "sidebar_discover".tr(),
         ),
         BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, size: 20),
-          label: "我的",
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, size: 18),
+          label: "sidebar_my".tr(),
         ),
         BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings01, size: 20),
-          label: "设置",
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings01, size: 18),
+          label: "sidebar_settings".tr(),
         ),
       ],
     );

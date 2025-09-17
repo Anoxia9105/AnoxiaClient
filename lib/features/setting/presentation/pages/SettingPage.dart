@@ -1,12 +1,11 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:notepadclient/core/di/injector.dart';
+import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
+import 'package:notepadclient/features/setting/presentation/widgets/SettingItemCard.dart';
 
-/// 设置页
-///
-/// 作者: anoxia
-///
-/// 版本: 1.0.0
-///
-/// 创建时间: 2025-09-16  15:38
+final SettingsController settingsController = getIt<SettingsController>();
+
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
 
@@ -17,6 +16,26 @@ class SettingPage extends StatefulWidget {
 class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(title: Text("settings_page_title".tr())),
+      body: ListView(
+        children: [
+          SettingItemCard(),
+          DropdownButton<Locale>(
+            value: context.locale,
+            items: const [
+              DropdownMenuItem(value: Locale('en'), child: Text("English")),
+              DropdownMenuItem(value: Locale('zh'), child: Text("中文")),
+              DropdownMenuItem(value: Locale('ja'), child: Text("日本語")),
+            ],
+            onChanged: (locale) {
+              if (locale != null) {
+                context.setLocale(locale);
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 }

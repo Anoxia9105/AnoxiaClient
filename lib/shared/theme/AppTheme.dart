@@ -1,202 +1,252 @@
 import 'package:flutter/material.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
+import 'package:notepadclient/shared/theme/MixinTheme.dart';
 
 /// AppTheme
-/// - 提供若干预定义 ThemeData 实例，便于在应用中统一管理主题。
+/// - 提供一个包含20款精心设计主题的豪华库。
 /// - 使用示例：Theme.of(context) 在需要时配合 Provider/Bloc/SharedPreferences 做动态切换。
-class AppTheme {
+class AppTheme with MixinTheme {
   AppTheme._(); // 私有构造，禁止实例化
 
+  static const List<String> themeNames = [
+    // Light
+    '经典蓝',
+    '企业绿',
+    '初樱',
+    '薄荷',
+    '浅纸白',
+    '暖阳',
+    '薰衣草',
+    // Dark
+    '静谧星空',
+    '霓虹之夜',
+    '林间薄雾',
+    '鎏金岁月',
+    '熔岩之心',
+    '深海',
+    '可可大地',
+    '紫晶星云',
+    '矩阵代码',
+    '落日晚霞',
+    '凛冬冰川',
+    '水墨石墨',
+  ];
+
+  /// 主题列表
   static final List<ThemeData> _themeList = [
-    // light 1 - 经典蓝
-    ThemeData(
+    //==========================================================================
+    // Light Themes (7款)
+    //==========================================================================
+
+    // 0: Light - 经典蓝
+    MixinTheme.buildTheme(
       brightness: Brightness.light,
-      primarySwatch: Colors.indigo,
       primaryColor: Colors.indigo,
-      colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.indigo)
-          .copyWith(secondary: Colors.blueAccent),
-      scaffoldBackgroundColor: Colors.transparent,
-      appBarTheme: const AppBarTheme(
-        elevation: 0,
-        centerTitle: true,
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.blue,
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFE6E6E9), Color(0xFFEAE6DB)],
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.blue,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
-      ),
-      cardTheme: CardTheme(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-        elevation: 2,
-      ),
-      iconTheme: const IconThemeData(size: 20),
-      extensions: <ThemeExtension<dynamic>>[
-        const AppColors(
-          scaffoldGradient: LinearGradient(
-            colors: [Color(0xFFE6E6E9), Color(0xFFEAE6DB)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ],
     ),
-
-    // light 2 - 绿色企业风
-    ThemeData(
+    // 1: Light - 企业绿
+    MixinTheme.buildTheme(
       brightness: Brightness.light,
-      primarySwatch: Colors.green,
-      colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.green)
-          .copyWith(secondary: Colors.greenAccent),
-      scaffoldBackgroundColor: const Color(0xFFF7F9FB),
-      appBarTheme: const AppBarTheme(
-        elevation: 1,
-        centerTitle: true,
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.green,
+      primaryColor: Colors.green.shade700,
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFDEE4EA), Color(0xFFC3CBD6)],
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0)),
-        ),
+    ),
+    // 2: Light - 初樱 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.light,
+      primaryColor: Colors.pink[300],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFF0F5), Color(0xFFFEF9F3)],
       ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: Colors.green),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6.0)),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
-      ),
-      cardTheme: CardTheme(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-        elevation: 1,
-      ),
-      iconTheme: const IconThemeData(size: 20),
     ),
 
-    // dark 1 - 深色（沉稳蓝灰）
-    ThemeData(
-      brightness: Brightness.dark,
-      primarySwatch: Colors.indigo,
-      colorScheme: ColorScheme.dark(primary: Colors.indigo, secondary: Colors.indigoAccent),
-      scaffoldBackgroundColor: const Color(0xFF0F1724),
-      appBarTheme: const AppBarTheme(
-        elevation: 0,
-        centerTitle: true,
-        foregroundColor: Colors.white,
-        backgroundColor: Color(0xFF111827),
+    // 3: Light - 薄荷 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.light,
+      primaryColor: Colors.teal[400],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFF0FFFF), Color(0xFFF5FFFA)],
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.indigo,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: const Color(0xFF1F2937),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
-      ),
-      cardTheme: CardTheme(
-        color: const Color(0xFF111827),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-        elevation: 2,
-      ),
-      iconTheme: const IconThemeData(size: 20),
     ),
 
-    // dark 2 - 高对比深色（用于更强视觉区分）
-    ThemeData(
+    // 4: Light - 纸白 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.light,
+      primaryColor: Colors.blueGrey,
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFFFFF), Color(0xFFF8F9FA)],
+      ),
+    ),
+
+    // 5: Light - 暖阳 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.light,
+      primaryColor: Colors.orange[700],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFFDE7), Color(0xFFFFFFFF)],
+      ),
+    ),
+
+    // 6: Light - 薰衣草 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.light,
+      primaryColor: Colors.deepPurple[300],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFF3E5F5), Color(0xFFFFFFFF)],
+      ),
+    ),
+    //==========================================================================
+    // Dark Themes (13款)
+    //==========================================================================
+
+    // 7: Dark - 静谧星空
+    MixinTheme.buildTheme(
       brightness: Brightness.dark,
-      primarySwatch: Colors.teal,
-      colorScheme: ColorScheme.dark(primary: Colors.teal, secondary: Colors.tealAccent),
-      scaffoldBackgroundColor: const Color(0xFF0B1220),
-      appBarTheme: const AppBarTheme(
-        elevation: 1,
-        centerTitle: true,
-        foregroundColor: Colors.white,
-        backgroundColor: Color(0xFF06202A),
+      primaryColor: Colors.blue[200],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF0D0221), Color(0xFF241744)],
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.teal,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0)),
-        ),
+    ),
+    // 8: Dark - 霓虹之夜
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.pinkAccent[200],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF000428), Color(0xFF004e92)],
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: const Color(0xFF0F1724),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6.0)),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
+    ),
+    // 10: Dark - 林间薄雾
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.greenAccent[100],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF101D21), Color(0xFF092E21)],
       ),
-      cardTheme: CardTheme(
-        color: const Color(0xFF071426),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-        elevation: 1,
+    ),
+    // 11: Dark - 鎏金岁月
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.amber[300],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF3E2723), Color(0xFF000000)],
       ),
-      iconTheme: const IconThemeData(size: 20),
+    ),
+    // 12: Dark - 熔岩之心 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.redAccent[100],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF641E16), Color(0xFF1B0000)],
+      ),
+    ),
+    // 13: Dark - 深海 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.cyan,
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF003942), Color(0xFF011A20)],
+      ),
+    ),
+    // 14: Dark - 可可大地 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: const Color(0xFF8D6E63),
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF2E1E1A), Color(0xFF1A0A06)],
+      ),
+    ),
+
+    // 15: Dark - 紫晶星云 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.purpleAccent[100],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF2C0747), Color(0xFF0F0219)],
+      ),
+    ),
+    // 16: Dark - 矩阵代码 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: const Color(0xFF69F0AE),
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF01180A), Color(0xFF000000)],
+      ),
+    ),
+
+    // 17: Dark - 落日晚霞 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.orange[300],
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF2C1D38), Color(0xFF532432)],
+      ),
+    ),
+
+    // 18: Dark - 凛冬冰川 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Colors.blue,
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF14293D), Color(0xFF030D1A)],
+      ),
+    ),
+
+    // 19: Dark - 水墨石墨 (新增)
+    MixinTheme.buildTheme(
+      brightness: Brightness.dark,
+      primaryColor: Color(0xFF2B2B2B),
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF333333), Color(0xFF555555)],
+      ),
     ),
   ];
 
-  /// 主题数量
-  static int get themeCount => _themeList.length;
-
-  /// 根据 index 获取 ThemeData，index 为 null 或越界时返回默认主题（index 0）
+  /// 根据 index 获取 ThemeData
   static ThemeData getTheme({int? index}) {
-    if (index == null) return _themeList[0];
-    if (index < 0 || index >= _themeList.length) return _themeList[0];
-    return _themeList[index];
-  }
-
-  /// 返回主题名称（便于在 UI 展示）
-  static String getThemeName(int index) {
-    switch (index) {
-      case 0:
-        return 'Light - 蓝色';
-      case 1:
-        return 'Light - 绿色';
-      case 2:
-        return 'Dark - 蓝灰';
-      case 3:
-        return 'Dark - 高对比';
-      default:
-        return 'Default';
+    if (index == null || index < 0 || index >= _themeList.length) {
+      return _themeList[0]; // 越界或为空时返回默认主题
     }
-  }
-
-  /// 在给定的当前 index 下，返回下一个 index（循环）
-  static int nextThemeIndex(int currentIndex) {
-    if (currentIndex < 0 || currentIndex >= _themeList.length) return 0;
-    return (currentIndex + 1) % _themeList.length;
+    return _themeList[index];
   }
 }
