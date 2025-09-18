@@ -57,7 +57,8 @@ mixin MixinTheme {
     final textButtonTheme = TextButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.38);
+          if (states.contains(WidgetState.disabled))
+            return colorWithAlpha(colorScheme.onSurface, 0.38);
           return colorScheme.primary;
         }),
         shape: WidgetStateProperty.all(
@@ -73,11 +74,13 @@ mixin MixinTheme {
     final filledButtonTheme = FilledButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.12);
+          if (states.contains(WidgetState.disabled))
+            return colorWithAlpha(colorScheme.onSurface, 0.12);
           return colorScheme.primary;
         }),
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.38);
+          if (states.contains(WidgetState.disabled))
+            return colorWithAlpha(colorScheme.onSurface, 0.38);
           return colorScheme.onPrimary;
         }),
         elevation: WidgetStateProperty.resolveWith<double?>((states) {
@@ -97,7 +100,8 @@ mixin MixinTheme {
     final elevatedButtonTheme = ElevatedButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.12);
+          if (states.contains(WidgetState.disabled))
+            return colorWithAlpha(colorScheme.onSurface, 0.12);
           return colorScheme.primary;
         }),
         foregroundColor: WidgetStateProperty.all(colorScheme.onPrimary),
@@ -112,7 +116,8 @@ mixin MixinTheme {
     final iconButtonTheme = IconButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.38);
+          if (states.contains(WidgetState.disabled))
+            return colorWithAlpha(colorScheme.onSurface, 0.38);
           return colorScheme.onSurface;
         }),
         shape: WidgetStateProperty.all(
@@ -168,30 +173,35 @@ mixin MixinTheme {
     final checkboxTheme = CheckboxThemeData(
       side: BorderSide(color: colorWithAlpha(colorScheme.onSurface, 0.12)),
       fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.12);
+        if (states.contains(WidgetState.disabled))
+          return colorWithAlpha(colorScheme.onSurface, 0.12);
         if (states.contains(WidgetState.selected)) return colorScheme.primary;
         return colorWithAlpha(colorScheme.onSurface, 0.6);
       }),
       checkColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.38);
+        if (states.contains(WidgetState.disabled))
+          return colorWithAlpha(colorScheme.onSurface, 0.38);
         return colorScheme.onPrimary;
       }),
     );
 
     final radioTheme = RadioThemeData(
       fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.12);
+        if (states.contains(WidgetState.disabled))
+          return colorWithAlpha(colorScheme.onSurface, 0.12);
         return colorScheme.primary;
       }),
     );
 
     final switchTheme = SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.12);
+        if (states.contains(WidgetState.disabled))
+          return colorWithAlpha(colorScheme.onSurface, 0.12);
         return colorScheme.primary;
       }),
       trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))return colorWithAlpha(colorScheme.onSurface, 0.06);
+        if (states.contains(WidgetState.disabled))
+          return colorWithAlpha(colorScheme.onSurface, 0.06);
         return colorWithAlpha(colorScheme.primary, 0.24);
       }),
     );
@@ -264,19 +274,20 @@ mixin MixinTheme {
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
       backgroundColor: Colors.transparent,
-      // 如需 text style 可在这里覆盖
     );
 
+    //底部导航栏
     final bottomNavigationBarTheme = BottomNavigationBarThemeData(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       selectedItemColor: colorScheme.primary,
       unselectedItemColor: colorWithAlpha(colorScheme.onSurface, 0.6),
       selectedLabelStyle: const TextStyle(fontSize: 12),
       unselectedLabelStyle: const TextStyle(fontSize: 12),
-      elevation: 8,
+      elevation: 0,
       type: BottomNavigationBarType.fixed,
     );
 
+    //选项切换
     final tabBarTheme = TabBarTheme(
       labelColor: colorScheme.primary,
       unselectedLabelColor: colorWithAlpha(colorScheme.onSurface, 0.7),
@@ -292,7 +303,7 @@ mixin MixinTheme {
       color: colorScheme.primary,
       linearMinHeight: 3,
     );
-
+    //表格
     final dataTableTheme = DataTableThemeData(
       headingRowColor: WidgetStateProperty.all(
         colorScheme.surfaceContainerHighest,
@@ -307,6 +318,7 @@ mixin MixinTheme {
       ),
     );
 
+    //分割线
     final dividerTheme = DividerThemeData(
       thickness: 1,
       color: colorWithAlpha(colorScheme.onSurface, 0.06),

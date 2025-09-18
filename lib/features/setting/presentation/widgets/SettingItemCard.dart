@@ -1,24 +1,44 @@
 import 'package:flutter/material.dart';
 
 class SettingItemCard extends StatelessWidget {
-  const SettingItemCard({super.key});
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Widget? child;
+  final Widget? trailing;
+
+  const SettingItemCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.child, this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 标题 icon
-            Row(
-              children: [
-                Icon(Icons.settings,color: theme.primaryColor,),
-                const SizedBox(width: 8),
-                Text("Setting Title"),
-              ],
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(icon, color: theme.colorScheme.primary),
+              title: Text(title, style: theme.textTheme.titleMedium),
+              subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
+              trailing: trailing,
             ),
+            if (child != null) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: child,
+              ),
+            ],
           ],
         ),
       ),

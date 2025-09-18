@@ -15,11 +15,12 @@ class FlavorValues {
   /// API 请求的基础地址
   final String baseUrl;
 
+  ///
+  final String wsBaseUrl;
+
   /// 是否开启调试模式（日志、调试工具等）
   final bool debug;
 
-  /// 是否开启埋点/分析（如 Firebase、友盟）
-  final bool enableAnalytics;
 
   /// 构建时间（方便排查问题时确认包版本）
   final String buildDate;
@@ -30,8 +31,8 @@ class FlavorValues {
   FlavorValues({
     this.appName = 'MyApp',
     required this.baseUrl,
+    required this.wsBaseUrl,
     this.debug = false,
-    this.enableAnalytics = false,
     String? buildDate,
     this.appVersion = '1.0.0',
   }) : buildDate = buildDate ?? DateTime.now().toIso8601String();

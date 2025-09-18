@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:notepadclient/core/di/injector.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/layout/widgets/DesktopSidebar.dart';
-import 'package:notepadclient/features/layout/widgets/LayoutBody.dart';
 import 'package:notepadclient/features/layout/widgets/LayoutHeader.dart';
 import 'package:notepadclient/features/layout/widgets/MobileBottombar.dart';
-import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
 import 'package:notepadclient/features/setting/presentation/pages/SettingPage.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-/// 类的简要说明
+/// APP 主布局文件
 ///
-/// 用途：描述该类的职责或使用场景
+/// 用途：布局主入口
 /// 作者：USER
 /// 创建时间：2025-09-17
 class MainLayoutPage extends StatefulWidget {
@@ -25,9 +22,8 @@ class MainLayoutPage extends StatefulWidget {
   State<MainLayoutPage> createState() => _MainLayoutPageState();
 }
 
-class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,TrayListener{
-
-
+class _MainLayoutPageState extends State<MainLayoutPage>
+    with WindowListener, TrayListener {
   @override
   void initState() {
     super.initState();
@@ -54,14 +50,12 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,Tr
     Provider.of<LayoutController>(context, listen: false).extendedValue = true;
   }
 
-
   //窗口恢复
   @override
   void onWindowUnmaximize() {
     super.onWindowUnmaximize();
     Provider.of<LayoutController>(context, listen: false).extendedValue = false;
   }
-
 
   @override
   void onTrayIconMouseDown() {
@@ -80,7 +74,6 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,Tr
   void onTrayIconRightMouseUp() {
     // do something
     // 当托盘图标右键被释放时，可以执行其他操作
-    print("当托盘图标右键被释放时，可以执行其他操作");
   }
 
   @override
@@ -96,8 +89,8 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,Tr
   }
 
   Future<void> _initTray() async {
-    await trayManager.setIcon('assets/app_icon.ico');
-    await trayManager.setToolTip("Anoxia");
+    await trayManager.setIcon('assets/images/app_icon.ico');
+    await trayManager.setToolTip("anoxia");
 
     List<MenuItem> items = [
       MenuItem(key: 'show_window', label: '显示窗口'),
@@ -108,8 +101,6 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,Tr
 
     await trayManager.setContextMenu(Menu(items: items));
   }
-
- 
 
   @override
   Widget build(BuildContext context) {
@@ -124,17 +115,25 @@ class _MainLayoutPageState extends State<MainLayoutPage>  with WindowListener,Tr
             body: Row(
               children: [
                 // 侧边栏
-                if(!DeviceUtil.isMobile && !DeviceUtil.isWeb)
-                DesktopSidebar(),
-
+                if (!DeviceUtil.isMobile && !DeviceUtil.isWeb) DesktopSidebar(),
                 // 主内容区域
-                Expanded(child: Scaffold(
-                  appBar: LayoutHeader().getAppbar(),
-                  body: SettingPage(),
-                )),
+                Expanded(
+                  child: Scaffold(
+                    appBar: LayoutHeader().getAppbar(),
+                    body: PageView(
+                      controller: layout.pageController,
+                      // 禁止滑动
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: layout.options.map((e) => e.page).toList(),
+                    ),
+                  ),
+                ),
               ],
             ),
-            bottomNavigationBar: DeviceUtil.isMobile || DeviceUtil.isWeb ? MobileBottomBar() : null,
+            bottomNavigationBar:
+                DeviceUtil.isMobile || DeviceUtil.isWeb
+                    ? MobileBottomBar()
+                    : null,
           ),
         );
       },

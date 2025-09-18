@@ -5,5 +5,32 @@
   "sidebar_discover": "発見",
   "sidebar_my": "私",
   "sidebar_settings": "設定",
-  "settings_page_title": "設定"
+
+  "settings_page_title": "設定",
+  "settings_page_theme_title": "テーマ設定",
+  "settings_page_theme_subtitle": "アプリのテーマを選択",
+  "settings_page_language_title": "言語設定",
+  "settings_page_language_subtitle": "アプリの言語を選択",
+
+
+"app_light_themes1":"クラシックブルー",
+"app_light_themes2":"コーポレートグリーン",
+"app_light_themes3":"初桜",
+"app_light_themes4":"ミント",
+"app_light_themes5":"ペールペーパーホワイト",
+"app_light_themes6":"暖かい太陽",
+"app_light_themes7":"ラベンダー",
+
+"app_dark_themes8":"静かな星空",
+"app_dark_themes9":"ネオンナイト",
+"app_dark_themes10":"森の霧",
+"app_dark_themes11":"黄金の年",
+"app_dark_themes12":"溶岩の心",
+"app_dark_themes13":"深海",
+"app_dark_themes14":"ココア陸地",
+"app_dark_themes15":"アメジスト星雲",
+"app_dark_themes16":"マトリックスコード",
+"app_dark_themes17":"夕焼けの輝き",
+"app_dark_themes18":"冬の氷河",
+"app_dark_themes19":"インクグラファイト"
 }

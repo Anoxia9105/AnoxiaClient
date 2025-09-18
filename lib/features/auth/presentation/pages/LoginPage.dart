@@ -1,78 +1,86 @@
-
+import 'dart:convert';
+import 'dart:ui';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/utils/Validators.dart';
-import '../../../../core/di/injector.dart';
-import '../../domain/usecases/LoginUseCase.dart';
+import 'package:notepadclient/features/layout/widgets/LayoutHeader.dart';
+import 'package:notepadclient/shared/theme/AppColors.dart';
+import 'package:notepadclient/shared/widgets/AcrylicContainer.dart';
 
-/// TODO 描述
+/// 登录页面（带验证码）
 ///
 /// 作者: anoxia
-///
-/// 版本: 1.0.0
-///
-/// 创建时间: 2025-09-16  10:41
+/// 版本: 1.1.0
+/// 创建时间: 2025-09-16
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
-  final _pwdCtrl = TextEditingController();
-  bool _loading = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _captchaController = TextEditingController();
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
+  String? _captchaBase64; // 验证码图片 Base64
+  bool _loadingCaptcha = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCaptcha();
+  }
+
+  /// 模拟加载验证码（实际应调用后端接口）
+  Future<void> _loadCaptcha() async {
+    setState(() => _loadingCaptcha = true);
     try {
-      final login = getIt<LoginUseCase>();
-      final user = await login(_emailCtrl.text, _pwdCtrl.text);
-      // 登录成功 -> 跳转首页
-      // Navigator.pushReplacement(...);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Welcome ${user.name}')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      // TODO: 替换为你的后端 API 调用
+      // final res = await DioClient().get('/auth/captcha', auth: false);
+      // _captchaBase64 = res.data['image_base64'];
+
+      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络延迟
+      _captchaBase64 = null; // 这里填你的 Base64 数据
     } finally {
-      setState(() => _loading = false);
+      setState(() => _loadingCaptcha = false);
     }
+  }
+
+  void _onLogin() {
+    // TODO: 调用登录 API
+    // email: _emailController.text
+    // password: _passwordController.text
+    // captcha: _captchaController.text
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("appTitle".tr())),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextFormField(
-              decoration: InputDecoration(labelText: "email".tr()),
+    final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
+    return AcrylicContainer(
+      blurSigma: 10,
+      background: TweenAnimationBuilder(
+        tween: ColorTween(begin: Colors.blue, end: Colors.purple),
+        duration: const Duration(seconds: 5),
+        onEnd: () {}, // 可以循环
+        builder: (context, Color? color, _) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color ?? Colors.blue, Colors.black],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-            TextFormField(
-              decoration: InputDecoration(labelText: "password".tr()),
-              obscureText: true,
-            ),
-            ElevatedButton(
-              onPressed: () {},
-              child: Text("login".tr()),
-            ),
+          );
+        },
+      ),
 
-            DropdownButton<Locale>(
-              value: context.locale,
-              items: const [
-                DropdownMenuItem(value: Locale('en'), child: Text("English")),
-                DropdownMenuItem(value: Locale('zh'), child: Text("中文")),
-                DropdownMenuItem(value: Locale('ja'), child: Text("日本語")),
-              ],
-              onChanged: (locale) {
-                if (locale != null) {
-                  context.setLocale(locale);
-                }
-              },
-            ),
-          ],
+      child: Container(
+        // decoration: BoxDecoration(gradient: gradient),
+        child: Scaffold(
+          appBar: LayoutHeader().getAppbar(),
+          body: SafeArea(child: Text("data")),
         ),
       ),
     );

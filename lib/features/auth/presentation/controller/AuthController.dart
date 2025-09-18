@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/entities/User.dart';
 
-class AuthProvider extends ChangeNotifier {
+class AuthController extends ChangeNotifier {
   User? _user;
   bool get isAuthenticated => _user != null;
   User? get user => _user;

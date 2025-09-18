@@ -34,45 +34,23 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
           // Teams 图标位置
           IconButton(
             onPressed: () {},
-            icon: Application.getAppLogo(width: 24, height: 24),
+            icon: Application.getAppLogo(width: 30, height: 30),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: [
-                SidebarButton(
-                  index: 0,
-                  name: "sidebar_chat".tr(),
-                  icon: HugeIcons.strokeRoundedComment01,
-                ),
-                SidebarButton(
-                  index: 1,
-                  name: "sidebar_contact".tr(),
-                  icon: HugeIcons.strokeRoundedContact01,
-                ),
-                SidebarButton(
-                  index: 2,
-                  name: "sidebar_documentation".tr(),
-                  icon: HugeIcons.strokeRoundedNote01,
-                ),
-                SidebarButton(
-                  index: 3,
-                  name: "sidebar_discover".tr(),
-                  icon: HugeIcons.strokeRoundedPathfinderCrop,
-                ),
-                SidebarButton(
-                  index: 4,
-                  name: "sidebar_my".tr(),
-                  icon: HugeIcons.strokeRoundedUser,
-                ),
-              ],
+              children:
+                  layoutController.options.asMap().entries.map((entry) {
+                    int idx = entry.key;
+                    LayoutOptions option = entry.value;
+                    return SidebarButton(
+                      index: idx,
+                      name: option.localizedName,
+                      icon: option.icon,
+                    );
+                  }).toList(),
             ),
-          ),
-          SidebarButton(
-            index: 5,
-            name: "sidebar_settings".tr(),
-            icon: HugeIcons.strokeRoundedSettings01,
           ),
         ],
       ),
@@ -96,7 +74,6 @@ class SidebarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    LayoutController layoutController = getIt<LayoutController>();
     final bool isActive = layoutController.currentIndex == index;
     return Material(
       color: Colors.transparent,

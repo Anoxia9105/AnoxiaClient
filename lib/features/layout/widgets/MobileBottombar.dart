@@ -31,32 +31,14 @@ class _MobileBottomBarState extends State<MobileBottomBar> {
       onTap: (index) {
         layoutController.changeIndex(index);
       },
-      items: [
-        BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedComment01, size: 18),
-          label: "sidebar_chat".tr(),
-        ),
-        BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedContact01, size: 18),
-          label: "sidebar_contact".tr(),
-        ),
-        BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedNote01, size: 18),
-          label: "sidebar_documentation".tr(),
-        ),
-        BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedPathfinderCrop, size: 18),
-          label: "sidebar_discover".tr(),
-        ),
-        BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, size: 18),
-          label: "sidebar_my".tr(),
-        ),
-        BottomNavigationBarItem(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings01, size: 18),
-          label: "sidebar_settings".tr(),
-        ),
-      ],
+      items:
+          layoutController.options.asMap().entries.map((entry) {
+            LayoutOptions option = entry.value;
+            return BottomNavigationBarItem(
+              icon: HugeIcon(icon: option.icon, size: 18),
+              label: option.localizedName.tr(),
+            );
+          }).toList(),
     );
   }
 }

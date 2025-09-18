@@ -81,17 +81,7 @@ class _LayoutBodyState extends State<LayoutBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------- 主题切换（你的原始逻辑保留） ----------
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(AppTheme.themeNames.length, (index) {
-              return TextButton(
-                onPressed: () => settingsController.setThemeMode(index),
-                child: Text(AppTheme.themeNames[index]),
-              );
-            }),
-          ),
+     
 
           const SizedBox(height: 12),
 

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:notepadclient/core/di/injector.dart';
+import 'package:notepadclient/features/auth/presentation/pages/LoginPage.dart';
 import 'package:notepadclient/features/layout/MainLayoutPage.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
@@ -41,8 +42,8 @@ class App extends StatelessWidget {
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
             locale: context.locale,
+            // home: LoginPage(),
             home: MainLayoutPage(),
-            // 这里可以配置路由表、localizationsDelegates 等
           );
         },
       ),
