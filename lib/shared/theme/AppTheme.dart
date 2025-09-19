@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:notepadclient/shared/theme/MixinTheme.dart';
+import 'package:notepadclient/shared/theme/ThemeMixin.dart';
 
-class AppTheme with MixinTheme {
+class AppTheme with ThemeMixin {
   AppTheme._(); // 禁止实例化
 
   /// 主题元数据
@@ -203,7 +203,7 @@ class AppTheme with MixinTheme {
   static final List<ThemeData> _themeList =
       themes
           .map(
-            (t) => MixinTheme.buildTheme(
+            (t) => ThemeMixin.buildTheme(
               brightness: t.brightness,
               primaryColor: t.color,
               gradient: t.gradient,

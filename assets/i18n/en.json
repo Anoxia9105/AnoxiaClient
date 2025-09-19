@@ -7,6 +7,14 @@
   "sidebar_settings": "Settings",
 
 
+  "login_page_title": "Welcome to login",
+  "login_page_name": "Please enter your username",
+  "login_page_password": "Please enter your password",
+  "login_page_captcha": "Please enter your verification code",
+  "login_page_forget": "Forgot your password",
+  "login_page_register": "Register an account",
+  "login_page_login": "Log in",
+
   "settings_page_title": "Settings",
   "settings_page_theme_title": "Theme Settings",
   "settings_page_theme_subtitle": "Select app theme",

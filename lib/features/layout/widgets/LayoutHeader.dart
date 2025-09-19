@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:notepadclient/App.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -22,8 +21,8 @@ class LayoutHeader {
   );
   final LayoutController layoutController = getIt<LayoutController>();
 
-  AppBar getAppbar() {
-    if(DeviceUtil.isDesktop){
+  AppBar getAppbar({Color? color}) {
+    if (DeviceUtil.isDesktop) {
       return AppBar(
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -41,35 +40,38 @@ class LayoutHeader {
             },
             icon: HugeIcon(
               icon: HugeIcons.strokeRoundedSolidLine01,
+              color: color,
               size: 16,
             ),
             style: btnStyle,
           ),
           layoutController.extended
               ? IconButton(
-            tooltip: "还原",
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              windowManager.unmaximize();
-            },
-            style: btnStyle,
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedChangeScreenMode,
-              size: 18,
-            ),
-          )
+                  tooltip: "还原",
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    windowManager.unmaximize();
+                  },
+                  style: btnStyle,
+                  icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedChangeScreenMode,
+                    color: color,
+                    size: 18,
+                  ),
+                )
               : IconButton(
-            tooltip: "最大化",
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              windowManager.maximize();
-            },
-            style: btnStyle,
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedSquare,
-              size: 16,
-            ),
-          ),
+                  tooltip: "最大化",
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    windowManager.maximize();
+                  },
+                  style: btnStyle,
+                  icon: HugeIcon(
+                    color: color,
+                    icon: HugeIcons.strokeRoundedSquare,
+                    size: 16,
+                  ),
+                ),
           IconButton(
             tooltip: "关闭",
             padding: EdgeInsets.zero,
@@ -88,16 +90,17 @@ class LayoutHeader {
                 return null;
               }),
             ),
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedCancel01,
+              size: 18,
+              color: color,
+            ),
           ),
           const SizedBox(width: 8),
         ],
         flexibleSpace: const DragToMoveArea(child: SizedBox.expand()),
       );
     }
-    return AppBar(
-      title: Text("Mobile Header"),
-    );
-
+    return AppBar(title: Text("Mobile Header"));
   }
 }

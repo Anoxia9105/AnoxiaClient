@@ -35,7 +35,7 @@ class DioClient {
           return handler.next(e);
         }
 
-        await _handle401Error(e, handler, refreshToken);
+        return await _handle401Error(e, handler, refreshToken);
       },
     ));
   }
@@ -55,7 +55,9 @@ class DioClient {
       _retryQueue.add(() async {
         final token = await _tokenStorage.readAccessToken();
         err.requestOptions.headers['Authorization'] = 'Bearer $token';
-        final cloneRes = await _dio.fetch(err.requestOptions);
+        final cloneRes = await _dio.fetch(
+          err.requestOptions.copyWith(cancelToken: err.requestOptions.cancelToken),
+        );
         handler.resolve(cloneRes);
       });
       return;
@@ -86,7 +88,9 @@ class DioClient {
 
       // 重试当前请求
       err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-      final cloneRes = await _dio.fetch(err.requestOptions);
+      final cloneRes = await _dio.fetch(
+        err.requestOptions.copyWith(cancelToken: err.requestOptions.cancelToken),
+      );
       handler.resolve(cloneRes);
     } catch (_) {
       await _tokenStorage.clear();

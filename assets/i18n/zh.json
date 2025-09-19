@@ -5,7 +5,16 @@
   "sidebar_discover": "发现",
   "sidebar_my": "我的",
   "sidebar_settings": "设置",
-  
+
+  "login_page_title": "欢迎登录",
+  "login_page_name": "请输入用户名",
+  "login_page_password": "请输入密码",
+  "login_page_captcha": "请输入验证码",
+  "login_page_forget": "忘记密码",
+  "login_page_register": "注册账号",
+  "login_page_login": "登录",
+
+
   "settings_page_title": "设置",
   "settings_page_theme_title": "主题设置",
   "settings_page_theme_subtitle": "选择应用的主题",

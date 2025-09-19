@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:notepadclient/Flavor.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/core/utils/SPUtil.dart';
@@ -7,7 +8,6 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
 import 'core/di/injector.dart' as injector;
-
 
 /// DEV 环境
 ///
@@ -22,26 +22,23 @@ void main() async {
   //语言初始化
   await EasyLocalization.ensureInitialized();
 
-
   // 配置 Flavor
   FlavorConfig.init(
     flavor: Flavor.dev,
     values: FlavorValues(
       appName: 'MyApp Dev',
-      baseUrl: 'http://127.0.0.1:8080',
-      wsBaseUrl: 'ws://127.0.0.1:8081',
-      debug: true,
+      baseUrl: 'http://localhost:8080',
+      wsBaseUrl: 'ws://localhost:8081',
+      debug: false,
     ),
   );
-
 
   //初始化 DI
   await injector.init();
   //初始化 SP
   SPUtil.perInit();
 
-
-  if(DeviceUtil.isDesktop){
+  if (DeviceUtil.isDesktop) {
     ///Windows平台
     await windowManager.ensureInitialized();
 
@@ -62,8 +59,6 @@ void main() async {
     });
   }
 
-
-
   print('''
  _______
 < DEV >
@@ -75,15 +70,22 @@ void main() async {
                 ||     ||
   ''');
 
-  String path=DeviceUtil.isWeb ?'i18n':'assets/i18n';
+  String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
 
-  runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('zh'),Locale('ja'),],
-      path: path,
-      fallbackLocale: Locale('en', 'US'),
-      saveLocale: true,
-      child: App(),
-    ),
+  var app = ScreenUtilInit(
+    designSize: Size(390, 844),
+    minTextAdapt: true,
+    splitScreenMode: true,
+    builder: (context, child) {
+      return EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+        path: path,
+        fallbackLocale: Locale('en', 'US'),
+        saveLocale: true,
+        child: App(),
+      );
+    },
   );
+
+  runApp(app);
 }

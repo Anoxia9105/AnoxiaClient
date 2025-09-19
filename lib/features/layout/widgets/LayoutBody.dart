@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notepadclient/core/di/injector.dart';
-import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
+import 'package:notepadclient/features/setting/controller/SettingsController.dart';
 import 'package:notepadclient/shared/theme/AppTheme.dart';
 
 /// 右侧布局主体 — 常用控件预览面板

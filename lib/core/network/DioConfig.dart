@@ -5,6 +5,7 @@ import 'package:notepadclient/Flavor.dart';
 /// 用于创建带有基础配置的 Dio 实例
 /// 单例模式：全局共享一个 Dio 配置
 class DioConfig {
+  Dio? _dio;
   // 私有构造
   DioConfig._internal();
 
@@ -26,14 +27,9 @@ class DioConfig {
 
   /// 创建 Dio 实例（带日志拦截器）
   Dio createDio() {
-    final dio = Dio(createBaseOptions());
-
-    // 添加日志拦截器（可选）
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-    ));
-
-    return dio;
+    if (_dio != null) return _dio!;
+    _dio = Dio(createBaseOptions());
+    _dio!.interceptors.add(LogInterceptor(requestBody: false, responseBody: false));
+    return _dio!;
   }
 }

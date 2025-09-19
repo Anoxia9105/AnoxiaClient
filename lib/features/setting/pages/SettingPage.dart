@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:notepadclient/core/di/injector.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
-import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
-import 'package:notepadclient/features/setting/presentation/widgets/SettingItemCard.dart';
+import 'package:notepadclient/features/setting/controller/SettingsController.dart';
+import 'package:notepadclient/features/setting/widgets/SettingItemCard.dart';
 import 'package:notepadclient/shared/theme/AppTheme.dart';
 import 'package:notepadclient/shared/widgets/FocusOverlayManager.dart';
 

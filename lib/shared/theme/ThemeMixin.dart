@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
 
-mixin MixinTheme {
+mixin ThemeMixin {
   /// 工具：基于整数 alpha (0.0-1.0 -> 0-255) 返回带透明度的颜色。
   /// 采用 withAlpha(int) 而不是 withOpacity，以规避部分 SDK 的弃用提示。
   static Color colorWithAlpha(Color c, double alpha) {
@@ -230,14 +230,14 @@ mixin MixinTheme {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     );
 
-    final cardTheme = CardTheme(
+    final cardTheme = CardThemeData(
       elevation: 4,
       color: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       margin: const EdgeInsets.all(8),
     );
 
-    final dialogTheme = DialogTheme(
+    final dialogTheme = DialogThemeData(
       backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       titleTextStyle: TextStyle(
@@ -288,7 +288,7 @@ mixin MixinTheme {
     );
 
     //选项切换
-    final tabBarTheme = TabBarTheme(
+    final tabBarTheme = TabBarThemeData(
       labelColor: colorScheme.primary,
       unselectedLabelColor: colorWithAlpha(colorScheme.onSurface, 0.7),
       indicator: UnderlineTabIndicator(
@@ -323,6 +323,11 @@ mixin MixinTheme {
       thickness: 1,
       color: colorWithAlpha(colorScheme.onSurface, 0.06),
       space: 1,
+    );
+
+    final listTileTheme = ListTileThemeData(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
 
     // -------------------------
@@ -364,6 +369,7 @@ mixin MixinTheme {
       progressIndicatorTheme: progressIndicatorTheme,
       dataTableTheme: dataTableTheme,
       dividerTheme: dividerTheme,
+      listTileTheme: listTileTheme,
     );
   }
 }

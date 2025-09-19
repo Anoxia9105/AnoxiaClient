@@ -1,7 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:notepadclient/features/setting/presentation/pages/SettingPage.dart';
+import 'package:notepadclient/features/chat/pages/ChatPage.dart';
+import 'package:notepadclient/features/setting/pages/SettingPage.dart';
 
 /// 布局控制器
 ///
@@ -11,6 +12,14 @@ import 'package:notepadclient/features/setting/presentation/pages/SettingPage.da
 ///
 /// 创建时间: 2025-09-16  18:16
 class LayoutController extends ChangeNotifier {
+
+  bool isLogin=false;
+
+  set login(bool value) {
+    isLogin = value;
+    notifyListeners();
+  }
+
   ///MAX | MIN
   ///最大最小化 图标切换
   bool _extended = false;
@@ -20,10 +29,8 @@ class LayoutController extends ChangeNotifier {
     notifyListeners();
   }
 
-
-  
-
   int currentIndex = 0;
+
   ///用于控制页面的切换
   PageController pageController = PageController();
 
@@ -37,7 +44,7 @@ class LayoutController extends ChangeNotifier {
     LayoutOptions(
       name: "sidebar_chat",
       icon: HugeIcons.strokeRoundedComment01,
-      page: const CupertinoTextField(),
+      page: const ChatPage(),
     ),
     LayoutOptions(
       name: "sidebar_contact",

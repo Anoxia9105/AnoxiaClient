@@ -16,11 +16,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
+  // 配置 Flavor
   FlavorConfig.init(
     flavor: Flavor.stg,
     values: FlavorValues(
-      appName: 'MyApp Dev',
-      baseUrl: 'https://api-dev.example.com',
+      appName: 'MyApp Stg',
+      baseUrl: 'http://127.0.0.1:8080',
+      wsBaseUrl: 'ws://127.0.0.1:8081',
       debug: false,
     ),
   );

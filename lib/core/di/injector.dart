@@ -1,7 +1,11 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:notepadclient/features/auth/controller/AuthController.dart';
+import 'package:notepadclient/features/auth/service/IAuthService.dart';
+import 'package:notepadclient/features/auth/service/impl/AuthServiceImpl.dart';
+import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
-import 'package:notepadclient/features/setting/presentation/controller/SettingsController.dart';
+import 'package:notepadclient/features/setting/controller/SettingsController.dart';
 
 import '../network/DioClient.dart';
 import '../network/DioConfig.dart';
@@ -23,6 +27,13 @@ Future<void> init() async {
 
   getIt.registerSingleton<LayoutController>(LayoutController());
   getIt.registerSingleton<SettingsController>(SettingsController());
+  getIt.registerSingleton<AuthController>(AuthController());
+  getIt.registerSingleton<ChatController>(ChatController());
+
+
+
+
+  getIt.registerFactory<IAuthService>(() => AuthServiceImpl());
 
 
   // Core

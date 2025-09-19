@@ -6,6 +6,16 @@
   "sidebar_my": "私",
   "sidebar_settings": "設定",
 
+
+  "login_page_title": "ログインへようこそ",
+  "login_page_name": "ユーザー名を入力してください",
+  "login_page_password": "パスワードを入力してください",
+  "login_page_captcha": "確認コードを入力してください",
+  "login_page_forget": "パスワードを忘れた場合",
+  "login_page_register": "アカウントを登録する",
+  "login_page_login": "ログイン",
+
+
   "settings_page_title": "設定",
   "settings_page_theme_title": "テーマ設定",
   "settings_page_theme_subtitle": "アプリのテーマを選択",
