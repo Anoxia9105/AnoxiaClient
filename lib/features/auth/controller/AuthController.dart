@@ -6,11 +6,14 @@
 ///
 /// 创建时间: 2025-09-16  10:42
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:notepadclient/core/domain/SysUser.dart';
 import 'package:notepadclient/core/domain/captcha.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
+
 
 import '../../../core/di/injector.dart';
 import '../../../shared/widgets/FocusOverlayManager.dart';
@@ -20,7 +23,7 @@ IAuthService authService = getIt<IAuthService>();
 LayoutController layoutController = getIt<LayoutController>();
 
 class AuthController extends ChangeNotifier {
-  final emailController = TextEditingController();
+  final nameController = TextEditingController();
   final passwordController = TextEditingController();
   final captchaController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -29,6 +32,8 @@ class AuthController extends ChangeNotifier {
   Uint8List? bytes;
   bool obscure = true;
   late Captcha captcha;
+
+  late final SysUser userInfo;
 
   setObscure() {
     obscure = !obscure;
@@ -43,20 +48,40 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  void login(BuildContext context) {
+  Future<void> login(BuildContext context) async {
+    isLogin = true;
     FocusOverlayManager.show(
       context,
       Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [CircularProgressIndicator(),
-            Text("login ...${captcha.code}--${captcha.uuid}--${captcha.msg}")],
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text("登录中，请稍候..."),
+          ],
         ),
       ),
     );
-    Future.delayed(Duration(seconds: 10), () {
+    try {
+      var user = await authService.loginByToken({
+        "username": nameController.text.trim(),
+        "password": passwordController.text.trim(),
+        "code": captchaController.text.trim(),
+        "uuid": ?captcha.uuid,
+      });
+      if (user != null && user.code == HttpStatus.ok) {
+        userInfo = user;
+        layoutController.login = true;
+      }
+    } catch (e, t) {
+      print("登录失败: $e,$t");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("登录失败，请检查信息或稍后重试")));
+    } finally {
       FocusOverlayManager.hide();
-      layoutController.login = true;
-    });
+      isLogin = false;
+    }
   }
 }

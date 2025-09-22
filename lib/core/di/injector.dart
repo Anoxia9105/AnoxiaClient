@@ -1,17 +1,11 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:dio/dio.dart';
 import 'package:notepadclient/features/auth/controller/AuthController.dart';
 import 'package:notepadclient/features/auth/service/IAuthService.dart';
 import 'package:notepadclient/features/auth/service/impl/AuthServiceImpl.dart';
 import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/setting/controller/SettingsController.dart';
-
-import '../network/DioClient.dart';
-import '../network/DioConfig.dart';
-import '../network/TokenStorage.dart';
-import '../storage/SecureStorageService .dart';
-
 
 final GetIt getIt = GetIt.instance;
 
@@ -24,6 +18,8 @@ Future<void> init() async {
 
 // 3. 工厂模式（每次获取都是新对象）
   //sl.registerFactory<LoginCubit>(() => LoginCubit(sl<ApiService>()));
+
+  getIt.registerSingleton<FlutterSecureStorage>(FlutterSecureStorage());
 
   getIt.registerSingleton<LayoutController>(LayoutController());
   getIt.registerSingleton<SettingsController>(SettingsController());

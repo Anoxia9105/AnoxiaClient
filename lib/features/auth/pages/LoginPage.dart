@@ -78,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       TextFormField(
                         style: TextStyle(color: textColor),
-                        controller: auth.emailController,
+                        controller: auth.nameController,
                         keyboardType: TextInputType.text,
                         decoration: InputDecoration(
                           hintStyle: TextStyle(color: textColor),
@@ -159,6 +159,12 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "请输入密码";
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 20.h),
                       Row(
@@ -200,41 +206,47 @@ class _LoginPageState extends State<LoginPage> {
                                 //   borderSide: const BorderSide(color: Colors.blue),
                                 // ),
                               ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "请输入验证码";
+                                }
+                                return null;
+                              },
                             ),
                           ),
                           SizedBox(width: 4.w),
-                          if (auth.bytes == null)
-                            SizedBox(
-                              width: 100,
-                              height: 40,
-                              child: Center(
-                                child: HugeIcon(
-                                  icon: HugeIcons.strokeRoundedImage01,
-                                  color: textColor,
-                                ),
-                              ),
-                            )
-                          else
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click, // 小手光标
-                              child: GestureDetector(
-                                onTap: () {
-                                  auth.loadCaptcha();
-                                },
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                    8.r,
-                                  ), // 圆角半径
-                                  child: Image.memory(
-                                    auth.bytes!,
-                                    width: 100,
-                                    height: 40,
-                                    fit: BoxFit.fill,
-                                    gaplessPlayback: true, // 防止刷新时闪烁
-                                  ),
-                                ),
-                              ),
+
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click, // 小手光标
+                            child: GestureDetector(
+                              onTap: () {
+                                auth.loadCaptcha();
+                              },
+                              child: auth.bytes == null
+                                  ? SizedBox(
+                                      width: 100,
+                                      height: 40,
+                                      child: Center(
+                                        child: HugeIcon(
+                                          icon: HugeIcons.strokeRoundedImage01,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        8.r,
+                                      ), // 圆角半径
+                                      child: Image.memory(
+                                        auth.bytes!,
+                                        width: 100,
+                                        height: 40,
+                                        fit: BoxFit.fill,
+                                        gaplessPlayback: true, // 防止刷新时闪烁
+                                      ),
+                                    ),
                             ),
+                          ),
                         ],
                       ),
                       SizedBox(height: 10.h),
@@ -260,11 +272,13 @@ class _LoginPageState extends State<LoginPage> {
                               EdgeInsets.all(15),
                             ),
                           ),
-                          onPressed: () {
-                            if (auth.formKey.currentState!.validate()) {
-                              auth.login(context);
-                            }
-                          },
+                          onPressed: auth.isLogin
+                              ? null
+                              : () {
+                                  if (auth.formKey.currentState!.validate()) {
+                                    auth.login(context);
+                                  }
+                                },
                           child: Text(
                             "login_page_login".tr(),
                             style: TextStyle(fontSize: 18),

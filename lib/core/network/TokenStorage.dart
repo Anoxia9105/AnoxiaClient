@@ -1,6 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:notepadclient/core/constants/StorageKeys.dart';
 
+import '../di/injector.dart';
+
+
+
 /// TokenStorage
 /// 用于安全存储和读取 AccessToken / RefreshToken
 /// 单例模式：全局唯一实例，方便全局调用
@@ -14,8 +18,7 @@ class TokenStorage {
   // 工厂构造函数，返回同一个实例
   factory TokenStorage() => _instance;
 
-  // Flutter Secure Storage 实例（安全存储）
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage= getIt<FlutterSecureStorage>();
 
   /// 保存 AccessToken
   Future<void> saveAccessToken(String token) =>

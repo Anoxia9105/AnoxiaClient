@@ -51,6 +51,8 @@ dependencies:
   flutter_quill: ^11.1.2
   #win 管理
   window_manager: ^0.4.3
+  #toast
+  bot_toast: ^4.1.3
 
 dev_dependencies:
   flutter_test:

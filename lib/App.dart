@@ -1,3 +1,4 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:notepadclient/core/di/injector.dart';
@@ -39,6 +40,8 @@ class App extends StatelessWidget {
               return MaterialApp(
                 title: values.appName,
                 theme: setting.theme,
+                builder: BotToastInit(),
+                navigatorObservers: [BotToastNavigatorObserver()],
                 debugShowCheckedModeBanner: values.debug,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,

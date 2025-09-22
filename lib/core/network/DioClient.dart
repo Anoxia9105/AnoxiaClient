@@ -1,46 +1,62 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
-import 'DioConfig.dart';
+import 'package:notepadclient/shared/widgets/Toast.dart';
+
 import '../errors/ApiException.dart';
+import 'DioConfig.dart';
 import 'TokenStorage.dart';
 
 class DioClient {
   // 单例
   DioClient._internal()
-      : _dio = DioConfig().createDio(),
-        _tokenStorage = TokenStorage() {
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        // 默认需要鉴权，除非显式 auth=false
-        final needAuth = options.extra['auth'] as bool? ?? true;
-        if (needAuth) {
-          final token = await _tokenStorage.readAccessToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+    : _dio = DioConfig().createDio(),
+      _tokenStorage = TokenStorage() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          // 默认需要鉴权，除非显式 auth=false
+          final needAuth = options.extra['auth'] as bool? ?? true;
+          if (needAuth) {
+            final token = await _tokenStorage.readAccessToken();
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
-        }
-        return handler.next(options);
-      },
-      onError: (e, handler) async {
-        final needAuth = e.requestOptions.extra['auth'] as bool? ?? true;
-        final is401 = e.response?.statusCode == 401;
-        final isRefreshPath = e.requestOptions.path == '/auth/refresh';
+          return handler.next(options);
+        },
+        onResponse: (response, handler) async {
+          final dynamic bizCode = response.data['code'];
+          if(bizCode == HttpStatus.internalServerError){
+            final String? errorMsg = response.data['msg']?.toString();
+            //弹窗
+            Toast.showToast(errorMsg ?? '请求错误 code：500');
+          }
+          return handler.next(response);
+        },
+        onError: (e, handler) async {
+          final needAuth = e.requestOptions.extra['auth'] as bool? ?? true;
+          final is401 = e.response?.statusCode == 401;
+          final isRefreshPath = e.requestOptions.path == '/auth/refresh';
 
-        // 匿名请求或刷新接口本身，不参与自动刷新
-        if (!needAuth || !is401 || isRefreshPath) {
-          return handler.next(e);
-        }
+          // 匿名请求或刷新接口本身，不参与自动刷新
+          if (!needAuth || !is401 || isRefreshPath) {
+            return handler.next(e);
+          }
 
-        final refreshToken = await _tokenStorage.readRefreshToken();
-        if (refreshToken == null) {
-          return handler.next(e);
-        }
+          final refreshToken = await _tokenStorage.readRefreshToken();
+          if (refreshToken == null) {
+            return handler.next(e);
+          }
 
-        return await _handle401Error(e, handler, refreshToken);
-      },
-    ));
+          return await _handle401Error(e, handler, refreshToken);
+        },
+      ),
+    );
   }
 
   static final DioClient _instance = DioClient._internal();
+
   factory DioClient() => _instance;
 
   final Dio _dio;
@@ -49,14 +65,19 @@ class DioClient {
   final List<Future<void> Function()> _retryQueue = [];
 
   Future<void> _handle401Error(
-      DioException err, ErrorInterceptorHandler handler, String refreshToken) async {
+    DioException err,
+    ErrorInterceptorHandler handler,
+    String refreshToken,
+  ) async {
     if (_isRefreshing) {
       // 等待刷新完成后重试该请求
       _retryQueue.add(() async {
         final token = await _tokenStorage.readAccessToken();
         err.requestOptions.headers['Authorization'] = 'Bearer $token';
         final cloneRes = await _dio.fetch(
-          err.requestOptions.copyWith(cancelToken: err.requestOptions.cancelToken),
+          err.requestOptions.copyWith(
+            cancelToken: err.requestOptions.cancelToken,
+          ),
         );
         handler.resolve(cloneRes);
       });
@@ -89,7 +110,9 @@ class DioClient {
       // 重试当前请求
       err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
       final cloneRes = await _dio.fetch(
-        err.requestOptions.copyWith(cancelToken: err.requestOptions.cancelToken),
+        err.requestOptions.copyWith(
+          cancelToken: err.requestOptions.cancelToken,
+        ),
       );
       handler.resolve(cloneRes);
     } catch (_) {
@@ -116,7 +139,10 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Network error', code: e.response?.statusCode);
+      throw ApiException(
+        e.message ?? 'Network error',
+        code: e.response?.statusCode,
+      );
     }
   }
 
@@ -135,7 +161,10 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Network error', code: e.response?.statusCode);
+      throw ApiException(
+        e.message ?? 'Network error',
+        code: e.response?.statusCode,
+      );
     }
   }
 
@@ -154,7 +183,10 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Network error', code: e.response?.statusCode);
+      throw ApiException(
+        e.message ?? 'Network error',
+        code: e.response?.statusCode,
+      );
     }
   }
 
@@ -173,7 +205,10 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Network error', code: e.response?.statusCode);
+      throw ApiException(
+        e.message ?? 'Network error',
+        code: e.response?.statusCode,
+      );
     }
   }
 
