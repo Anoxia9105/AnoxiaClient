@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
-import 'package:notepadclient/features/auth/controller/AuthController.dart';
 import 'package:notepadclient/features/auth/pages/LoginPage.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/layout/widgets/DesktopSidebar.dart';
 import 'package:notepadclient/features/layout/widgets/LayoutHeader.dart';
 import 'package:notepadclient/features/layout/widgets/MobileBottombar.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
+import 'package:notepadclient/shared/widgets/Application.dart';
+import 'package:notepadclient/shared/widgets/FocusOverlayManager.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -34,6 +35,7 @@ class _MainLayoutPageState extends State<MainLayoutPage>
     super.initState();
     if (DeviceUtil.isDesktop) {
       _initTray();
+      Provider.of<LayoutController>(context, listen: false).startListen(context);
       windowManager.addListener(this);
       trayManager.addListener(this);
     }

@@ -25,7 +25,7 @@ class SettingsController extends ChangeNotifier {
   /// - [index]： 主题索引
   void setThemeMode(int index) {
     _theme = AppTheme.getTheme(index: index);
-    SPUtil().setInt("theme", index);
+    SPUtil.instance.set<int>("theme", index);
     themeIndex=index;
     notifyListeners();
   }
@@ -36,7 +36,7 @@ class SettingsController extends ChangeNotifier {
   ///
   /// 日期: 2025/9/16 15:37
   Future<void> loadSettings() async {
-   int? index= SPUtil().get<int>("theme",defValue: 0);
+   int? index= SPUtil.instance.get<int>("theme",defValue: 0);
    themeIndex=index ?? 0;
    _theme = AppTheme.getTheme(index: index);
   }

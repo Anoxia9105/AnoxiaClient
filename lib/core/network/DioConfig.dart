@@ -29,7 +29,7 @@ class DioConfig {
   Dio createDio() {
     if (_dio != null) return _dio!;
     _dio = Dio(createBaseOptions());
-    _dio!.interceptors.add(LogInterceptor(requestBody: false, responseBody: false));
+    _dio!.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
     return _dio!;
   }
 }

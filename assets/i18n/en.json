@@ -1,4 +1,11 @@
 {
+
+  "header_minimize": "Minimize",
+  "header_maximize": "Maximize",
+  "header_reduction": "Reduction",
+  "header_closure": "Close",
+
+
   "sidebar_chat": "Chat",
   "sidebar_contact": "People",
   "sidebar_documentation": "Docs",

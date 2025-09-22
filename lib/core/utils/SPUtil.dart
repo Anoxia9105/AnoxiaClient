@@ -1,85 +1,140 @@
 import 'dart:convert';
-import 'package:notepadclient/core/utils/StringUtil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SPUtil{
-  //创建工厂方法
+/// SPUtil - SharedPreferences 工具（企业风格封装）
+/// 特点：单例、显式初始化、泛型读写、支持对象序列化/反序列化、默认值
+class SPUtil {
   static SPUtil? _instance;
-  factory SPUtil() => _instance ??= SPUtil._initial();
-  SharedPreferences? _preferences;
-  //创建命名构造函数
-  SPUtil._initial() {
-    //为什么在这里需要新写init方法 主要是在命名构造中不能使用async/await
-    init();
-  }
-  //初始化SharedPreferences
-  void init() async {
-    _preferences ??= await SharedPreferences.getInstance();
+  static SharedPreferences? _prefs;
+
+  SPUtil._();
+
+  /// 必须在 app 启动时先调用： await SPUtil.init();
+  static Future<SPUtil> init() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    _instance ??= SPUtil._();
+    return _instance!;
   }
 
-  //到这里还没有完 有时候会遇到使用时提示 SharedPreferences 未初始化,所以还需要提供一个static 的方法
-  static Future<SPUtil?> perInit() async {
-    if (_instance == null) {
-      //静态方法不能访问非静态变量所以需要创建变量再通过方法赋值回去
-      SharedPreferences preferences = await SharedPreferences.getInstance();
-      _instance = SPUtil._pre(preferences);
+  /// 获取单例（已初始化时使用）
+  static SPUtil get instance {
+    if (_prefs == null) {
+      throw Exception('SPUtil 尚未初始化，请先调用 await SPUtil.init()');
     }
-    return _instance;
+    return _instance!;
   }
-  SPUtil._pre(SharedPreferences prefs) {
-    _preferences = prefs;
+
+  /// 是否包含 key
+  bool containsKey(String key) {
+    return _prefs!.containsKey(key);
   }
-  ///设置String类型的
-  void setString(key, value) {
-    _preferences?.setString(key, value);
-  }
-  ///设置setStringList类型的
-  void setStringList(key, value) {
-    _preferences?.setStringList(key, value);
-  }
-  ///设置setBool类型的
-  void setBool(key, value) {
-    _preferences?.setBool(key, value);
-  }
-  ///设置setDouble类型的
-  void setDouble(key, value) {
-    _preferences?.setDouble(key, value);
-  }
-  ///设置setInt类型的
-  void setInt(key, value) {
-    _preferences?.setInt(key, value);
-  }
-  ///存储Json类型的
-  void setJson(key, value) {
-    value = jsonEncode(value);
-    _preferences?.setString(key, value);
-  }
-  ///通过泛型来获取数据
-  T? get<T>(key,{T? defValue}) {
-    var result = _preferences?.get(key);
-    if (result != null) {
-      return result as T;
+
+  /// 通用存储方法
+  /// - 支持基础类型 (String/int/double/bool/List<String>)
+  /// - 支持 Map/List/对象 -> JSON 存储
+  /// - 可选 toEncodable: 用于复杂对象的自定义序列化 (返回可以 jsonEncode 的对象)
+  Future<bool> set<T>(String key, T value, {Object? Function(T value)? toEncodable}) async {
+    if (_prefs == null) throw Exception('SPUtil 尚未初始化');
+
+    if (value is String) return _prefs!.setString(key, value);
+    if (value is int) return _prefs!.setInt(key, value);
+    if (value is double) return _prefs!.setDouble(key, value);
+    if (value is bool) return _prefs!.setBool(key, value);
+    if (value is List<String>) return _prefs!.setStringList(key, value);
+
+    // 其它类型统一用 JSON 存储
+    try {
+      Object? raw;
+      if (toEncodable != null) {
+        raw = toEncodable(value);
+      } else {
+        if (value is Map || value is List) {
+          raw = value;
+        } else {
+          // 尝试调用对象的 toJson()
+          try {
+            final dyn = value as dynamic;
+            raw = dyn.toJson != null ? dyn.toJson() : value.toString();
+          } catch (_) {
+            raw = value.toString();
+          }
+        }
+      }
+      String jsonStr = jsonEncode(raw);
+      return _prefs!.setString(key, jsonStr);
+    } catch (e) {
+      // 兜底：转 string 存储
+      return _prefs!.setString(key, value.toString());
     }
-    return defValue;
   }
-  ///获取JSON
-  Map<String, dynamic>? getJson(key) {
-    String? result = _preferences?.getString(key);
-    if (StringUtil.isNotEmpty(result)) {
-      return jsonDecode(result!);
+
+  /// 通用读取方法
+  /// - defValue: 默认值（key 不存在或反序列化失败时返回）
+  /// - fromJson: 当读取到 JSON（Map 或 List）时，可提供反序列化函数：
+  ///     - 若存的是单个对象 -> fromJson(Map) => T
+  ///     - 若存的是对象数组 -> fromJson(dynamic) => T （函数会被 map 到每个元素）
+  T? get<T>(String key, {T? defValue, T Function(dynamic json)? fromJson}) {
+    if (_prefs == null) throw Exception('SPUtil 尚未初始化');
+
+    if (!_prefs!.containsKey(key)) return defValue;
+
+    final dynamic result = _prefs!.get(key);
+    if (result == null) return defValue;
+
+    // 直接基础类型返回
+    if (T == String || T == dynamic) return result as T;
+    if (T == int) return result as T;
+    if (T == double) return result as T;
+    if (T == bool) return result as T;
+    if (T == List<String>) return result as T;
+
+    // 处理 JSON 字符串（对象 / 数组）
+    if (result is String) {
+      try {
+        final decoded = jsonDecode(result);
+        if (decoded is List) {
+          // List 情况：如果提供了 fromJson 则映射，否则直接返回 List<dynamic>
+          if (fromJson != null) {
+            final list = decoded.map((e) => fromJson(e)).toList();
+            return list as T;
+          } else {
+            return decoded as T;
+          }
+        } else if (decoded is Map) {
+          if (fromJson != null) {
+            return fromJson(decoded);
+          } else {
+            return decoded as T;
+          }
+        } else {
+          // 既不是 Map 也不是 List，可能是基础值
+          return decoded as T;
+        }
+      } catch (e) {
+        // 不是 JSON（普通字符串）
+        return result as T;
+      }
     }
-    return null;
+
+    // 其它情况直接尝试 cast
+    return result as T;
   }
-  ///文中的StringUtil中的isNotEmpty的判断
-  ///  static isNotEmpty(String? str) {
-  /// return str?.isNotEmpty ?? false;
-  /// }
-  ///清除全部
-  void clean() {
-    _preferences?.clear();
+
+  /// 移除 key
+  Future<bool> remove(String key) async {
+    if (_prefs == null) throw Exception('SPUtil 尚未初始化');
+    return _prefs!.remove(key);
   }
-  ///移除某一个
-  void remove(key) {
-    _preferences?.remove(key);
+
+  /// 清空全部
+  Future<bool> clear() async {
+    if (_prefs == null) throw Exception('SPUtil 尚未初始化');
+    return _prefs!.clear();
+  }
+
+  /// 获取所有 key
+  Set<String> getKeys() {
+    if (_prefs == null) throw Exception('SPUtil 尚未初始化');
+    return _prefs!.getKeys();
   }
 }

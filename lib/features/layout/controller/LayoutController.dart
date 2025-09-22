@@ -1,8 +1,12 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/chat/pages/ChatPage.dart';
+import 'package:notepadclient/features/my/pages/MyPage.dart';
 import 'package:notepadclient/features/setting/pages/SettingPage.dart';
+import 'package:notepadclient/shared/widgets/FocusOverlayManager.dart';
 
 /// 布局控制器
 ///
@@ -12,18 +16,29 @@ import 'package:notepadclient/features/setting/pages/SettingPage.dart';
 ///
 /// 创建时间: 2025-09-16  18:16
 class LayoutController extends ChangeNotifier {
-
-  bool isLogin=false;
+  bool isLogin = false;
 
   set login(bool value) {
     isLogin = value;
     notifyListeners();
   }
 
+  void startListen(BuildContext context) {
+    Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> result,
+    ) {
+      if (result.first == ConnectivityResult.none && context.mounted) {
+        FocusOverlayManager.show(context, Text("无网络"));
+      }
+    });
+  }
+
   ///MAX | MIN
   ///最大最小化 图标切换
   bool _extended = false;
+
   bool get extended => _extended;
+
   set extendedValue(bool value) {
     _extended = value;
     notifyListeners();
@@ -64,7 +79,7 @@ class LayoutController extends ChangeNotifier {
     LayoutOptions(
       name: "sidebar_my",
       icon: HugeIcons.strokeRoundedUser,
-      page: const Text("sidebar_my"),
+      page: const MyPage(),
     ),
     LayoutOptions(
       name: "sidebar_settings",
@@ -80,5 +95,6 @@ class LayoutOptions {
   final Widget page;
 
   String get localizedName => name.tr();
+
   LayoutOptions({required this.name, required this.icon, required this.page});
 }

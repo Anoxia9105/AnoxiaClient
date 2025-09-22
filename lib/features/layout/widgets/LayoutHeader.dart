@@ -1,6 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
+import 'package:notepadclient/features/auth/controller/AuthController.dart';
+import 'package:notepadclient/shared/widgets/AvatarWidget.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../core/di/injector.dart';
@@ -20,6 +23,7 @@ class LayoutHeader {
     ),
   );
   final LayoutController layoutController = getIt<LayoutController>();
+  final AuthController authController = getIt<AuthController>();
 
   AppBar getAppbar({Color? color}) {
     if (DeviceUtil.isDesktop) {
@@ -30,10 +34,10 @@ class LayoutHeader {
         // ThemeUtil.isDarkMode(context) ? Colors.transparent : Color(0xFFE6E6E9),
         // title: Text(widget.title, style: TextStyle(fontSize: 14)),
         actions: [
-          // buildUserInfo(),
+          buildUserInfo(),
           SizedBox(width: 10),
           IconButton(
-            tooltip: "最小化",
+            tooltip: "header_minimize".tr(),
             padding: EdgeInsets.zero,
             onPressed: () {
               windowManager.minimize();
@@ -47,7 +51,7 @@ class LayoutHeader {
           ),
           layoutController.extended
               ? IconButton(
-                  tooltip: "还原",
+                  tooltip: "header_reduction".tr(),
                   padding: EdgeInsets.zero,
                   onPressed: () {
                     windowManager.unmaximize();
@@ -60,7 +64,7 @@ class LayoutHeader {
                   ),
                 )
               : IconButton(
-                  tooltip: "最大化",
+                  tooltip: "header_maximize".tr(),
                   padding: EdgeInsets.zero,
                   onPressed: () {
                     windowManager.maximize();
@@ -73,7 +77,7 @@ class LayoutHeader {
                   ),
                 ),
           IconButton(
-            tooltip: "关闭",
+            tooltip: "header_closure".tr(),
             padding: EdgeInsets.zero,
             hoverColor: Colors.red,
             onPressed: () {
@@ -102,5 +106,13 @@ class LayoutHeader {
       );
     }
     return AppBar(title: Text("Mobile Header"));
+  }
+
+  Widget buildUserInfo() {
+    return  AvatarWidget(
+      url: authController.userInfo?.data?.avatar,
+      name: authController.userInfo?.data?.userName,
+      size: 35,
+    );
   }
 }

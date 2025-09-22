@@ -11,4 +11,21 @@ abstract class IAuthService{
   ///参数:
   ///- [loginData] 登录参数
   Future<SysUser?> loginByToken(Map<String,String> loginData);
+
+  /// 获取用户信息
+  ///
+  Future<SysUser?> getUserInfo();
+
+  /// token续期
+  /// 参数：
+  /// -[minutes] 分钟数
+  Future<void> refreshToken(int minutes);
+
+  /// 退出登錄
+  ///
+  Future<void> logout();
+
+  /// 连接服务器
+  ///
+  Future<void> connect(String token);
 }

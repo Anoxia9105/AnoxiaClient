@@ -36,7 +36,7 @@ void main() async {
   //初始化 DI
   await injector.init();
   //初始化 SP
-  SPUtil.perInit();
+  await SPUtil.init();
 
   if (DeviceUtil.isDesktop) {
     ///Windows平台

@@ -31,7 +31,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
       child: Column(
         children: [
           const SizedBox(height: 16),
-          // Teams 图标位置
+          // logo 图标位置
           IconButton(
             onPressed: () {},
             icon: Application.getAppLogo(width: 30, height: 30),

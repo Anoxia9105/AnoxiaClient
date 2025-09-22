@@ -22,21 +22,21 @@ class AvatarWidget extends StatelessWidget {
               width: size,
               height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(),
+              errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
             )
-          : _buildNameOrPlaceholder(),
+          : _buildNameOrPlaceholder(context),
     );
   }
 
   /// 构建名字头像或者兜底图标
-  Widget _buildNameOrPlaceholder() {
+  Widget _buildNameOrPlaceholder(BuildContext context) {
     if (name != null && name!.isNotEmpty) {
       // 显示名字的首字
       final displayText = name!.characters.first.toUpperCase();
       return Container(
         width: size,
         height: size,
-        color: Colors.blueGrey, // 你可以改成随机颜色或者主题色
+        color: Theme.of(context).colorScheme.primary,
         alignment: Alignment.center,
         child: Text(
           displayText,

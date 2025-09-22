@@ -1,13 +1,15 @@
 import 'dart:ui';
-
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 
-class Toast{
+enum ToastType { warning, error, success, info }
 
+class Toast {
+  static const _defaultDuration = Duration(seconds: 3);
+  static const _defaultMargin = EdgeInsets.all(15);
+  static const _defaultIconSize = 15.0;
 
-  ///通知框
-  ///自定义内容
+  /// 通知框 - 自定义内容
   static Function showNotification({
     Color color = Colors.blueGrey,
     VoidCallback? onTap,
@@ -22,170 +24,62 @@ class Toast{
     return BotToast.showNotification(
       onTap: onTap,
       align: alignment,
-      duration: duration ?? const Duration(seconds: 3),
-      margin: margin ?? const EdgeInsets.all(15),
+      duration: duration ?? _defaultDuration,
+      margin: margin ?? _defaultMargin,
       title: title,
       subtitle: subtitle,
       leading: leading,
-      trailing: title,
+      trailing: trailing,
       backgroundColor: color,
     );
   }
 
-  ///显示通知框
-  ///字符串消息
+  /// 通知框 - 直接显示字符串
   static Function showNotificationNow(
       String message, {
         Color color = Colors.black54,
         VoidCallback? onTap,
         Alignment? alignment,
         String? typeMessage,
+        Duration duration = _defaultDuration,
       }) {
-    Color white = Colors.white;
+    const white = Colors.white;
     return BotToast.showNotification(
       onTap: onTap,
       align: alignment,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(15),
-      title: (v) => Text(message, style: TextStyle(color: white, fontSize: 16)),
-      leading: (v) => Icon(Icons.info_outline, color: white),
-      trailing: (v) => Text(typeMessage ?? '', style: TextStyle(color: white)),
+      duration: duration,
+      margin: _defaultMargin,
+      title: (_) => Text(message, style: const TextStyle(color: white, fontSize: 16)),
+      leading: (_) => const Icon(Icons.info_outline, color: white),
+      trailing: (_) => Text(typeMessage ?? '', style: const TextStyle(color: white)),
       backgroundColor: color,
     );
   }
 
-  ///提示框 支持类型
+  /// 提示框
   static void showToast(
       String message, {
-        ToastType? type,
+        ToastType type = ToastType.info,
         Alignment align = Alignment.bottomCenter,
+        Duration duration = const Duration(seconds: 6),
       }) {
-    // BotToast.showText(text: message,contentColor: const Color.fromRGBO(103, 194, 58, 1));
-    Icon icon;
-    Color color;
-    switch (type) {
-      case ToastType.warning:
-        color = const Color.fromRGBO(230, 162, 60, 1);
-        icon = const Icon(Icons.warning_amber, color: Colors.white, size: 15);
-        break;
-      case ToastType.error:
-        color = const Color.fromRGBO(245, 108, 108, 1);
-        icon = const Icon(Icons.error_outline, color: Colors.white, size: 15);
-        break;
-      case ToastType.success:
-        color = const Color.fromRGBO(103, 194, 58, 1);
-        icon = const Icon(
-          Icons.check_circle_outline,
-          color: Colors.white,
-          size: 15,
-        );
-        break;
-      default:
-        color = const Color.fromRGBO(144, 147, 153, 1);
-        icon = const Icon(Icons.info_outline, color: Colors.white, size: 15);
-        break;
-    }
-
-    BotToast.showCustomText(
-      align: align,
-      duration: Duration(seconds: 6),
-      toastBuilder: (void Function() cancelFunc) {
-        return Container(
-          padding: const EdgeInsets.only(
-            left: 14,
-            right: 14,
-            top: 5,
-            bottom: 7,
-          ),
-          margin: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.only(top: 3, right: 3),
-                child: icon,
-              ),
-              Text(
-                message,
-                style: const TextStyle(fontSize: 14, color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    final config = _toastConfig(type);
+    _buildToast(message, config.color, config.icon, align, duration);
   }
 
-  ///根据主题色提示框
+  /// 根据主题色提示框
   static void showToastTheme(
       BuildContext context,
       String message, {
-        ToastType? type,
+        ToastType type = ToastType.info,
         Alignment align = Alignment.bottomCenter,
+        Duration duration = const Duration(seconds: 6),
       }) {
-    // BotToast.showText(text: message,contentColor: const Color.fromRGBO(103, 194, 58, 1));
-    Icon icon;
-    Color color = Theme.of(context).primaryColor;
-    switch (type) {
-      case ToastType.warning:
-        icon = const Icon(Icons.warning_amber, color: Colors.white, size: 15);
-        break;
-      case ToastType.error:
-        icon = const Icon(Icons.error_outline, color: Colors.white, size: 15);
-        break;
-      case ToastType.success:
-        icon = const Icon(
-          Icons.check_circle_outline,
-          color: Colors.white,
-          size: 15,
-        );
-        break;
-      default:
-        icon = const Icon(Icons.info_outline, color: Colors.white, size: 15);
-        break;
-    }
-
-    BotToast.showCustomText(
-      align: align,
-      toastBuilder: (void Function() cancelFunc) {
-        return Container(
-          padding: const EdgeInsets.only(
-            left: 14,
-            right: 14,
-            top: 5,
-            bottom: 7,
-          ),
-          margin: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.only(top: 3, right: 3),
-                child: icon,
-              ),
-              Text(
-                message,
-                style: TextStyle(fontSize: 14, color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    final config = _toastConfig(type, defaultColor: Theme.of(context).primaryColor);
+    _buildToast(message, config.color, config.icon, align, duration);
   }
 
-  ///根据context显示Widget
-  ///一般使用Build组件定位
+  /// 根据 context 显示 Widget
   static Function showWidget(
       BuildContext context, {
         required Widget child,
@@ -195,14 +89,12 @@ class Toast{
     return BotToast.showAttachedWidget(
       targetContext: context,
       preferDirection: direction,
-      attachedBuilder: (void Function() cancelFunc) {
-        return child;
-      },
+      attachedBuilder: (_) => child,
       onClose: onClose,
     );
   }
 
-  ///根据Offset显示Widget
+  /// 根据 Offset 显示 Widget
   static Function showWidgetOffset({
     required Offset target,
     PreferDirection direction = PreferDirection.topLeft,
@@ -212,12 +104,75 @@ class Toast{
     return BotToast.showAttachedWidget(
       target: target,
       preferDirection: direction,
-      attachedBuilder: (void Function() cancelFunc) {
-        return FocusScope(canRequestFocus: false, child: child);
-      },
+      attachedBuilder: (_) => FocusScope(canRequestFocus: false, child: child),
       onClose: onClose,
     );
   }
+
+  /// 内部方法 - 构建 Toast
+  static void _buildToast(
+      String message,
+      Color color,
+      Icon icon,
+      Alignment align,
+      Duration duration,
+      ) {
+    BotToast.showCustomText(
+      align: align,
+      duration: duration,
+      toastBuilder: (_) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          margin: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 3, right: 3),
+                child: icon,
+              ),
+              Text(message, style: const TextStyle(fontSize: 14, color: Colors.white)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 内部方法 - 获取 Toast 配置
+  static _ToastConfig _toastConfig(ToastType type, {Color? defaultColor}) {
+    switch (type) {
+      case ToastType.warning:
+        return _ToastConfig(
+          defaultColor ?? const Color.fromRGBO(230, 162, 60, 1),
+          const Icon(Icons.warning_amber, color: Colors.white, size: _defaultIconSize),
+        );
+      case ToastType.error:
+        return _ToastConfig(
+          defaultColor ?? const Color.fromRGBO(245, 108, 108, 1),
+          const Icon(Icons.error_outline, color: Colors.white, size: _defaultIconSize),
+        );
+      case ToastType.success:
+        return _ToastConfig(
+          defaultColor ?? const Color.fromRGBO(103, 194, 58, 1),
+          const Icon(Icons.check_circle_outline, color: Colors.white, size: _defaultIconSize),
+        );
+      case ToastType.info:
+      default:
+        return _ToastConfig(
+          defaultColor ?? const Color.fromRGBO(144, 147, 153, 1),
+          const Icon(Icons.info_outline, color: Colors.white, size: _defaultIconSize),
+        );
+    }
+  }
 }
 
-enum ToastType { warning, error, success, info }
+class _ToastConfig {
+  final Color color;
+  final Icon icon;
+  _ToastConfig(this.color, this.icon);
+}

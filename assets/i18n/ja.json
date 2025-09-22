@@ -1,4 +1,10 @@
 {
+  "header_minimize": "最小化",
+  "header_maximize": "最大化",
+  "header_reduction": "縮小",
+  "header_closure": "閉じる",
+
+
   "sidebar_chat": "会話",
   "sidebar_contact": "友達",
   "sidebar_documentation": "資料",

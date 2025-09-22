@@ -26,12 +26,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   @override
-  void initState() {
-    super.initState();
-    authController.loadCaptcha();
-  }
-
-  @override
   Widget build(BuildContext context) {
     Color textColor = Colors.grey.shade800;
     double width = DeviceUtil.isDesktop ? 150.w : 300.w;
@@ -54,241 +48,252 @@ class _LoginPageState extends State<LoginPage> {
           child: Scaffold(
             appBar: LayoutHeader().getAppbar(color: Colors.black),
             body: Center(
-              child: SizedBox(
-                width: width,
-                child: Form(
-                  key: auth.formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Application.getAppLogo(width: 30, height: 30),
-                          SizedBox(width: 5.w),
-                          Text(
-                            "login_page_title".tr(),
-                            style: TextStyle(fontSize: 20, color: textColor),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 40.h),
-
-                      TextFormField(
-                        style: TextStyle(color: textColor),
-                        controller: auth.nameController,
-                        keyboardType: TextInputType.text,
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: textColor),
-                          hintText: 'login_page_name'.tr(),
-                          iconColor: textColor,
-                          errorStyle: TextStyle(color: Colors.red),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.red),
-                          ),
-                          fillColor: Colors.transparent,
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                            borderSide: BorderSide(color: Colors.grey.shade400),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.email_outlined,
-                            color: textColor,
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "请输入用户名";
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 20.h),
-
-                      TextFormField(
-                        style: TextStyle(color: textColor, letterSpacing: -1),
-                        controller: auth.passwordController,
-                        keyboardType: TextInputType.number,
-                        // obscuringCharacter: '●',
-                        obscureText: auth.obscure,
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: textColor),
-                          hintText: 'login_page_password'.tr(),
-                          errorStyle: TextStyle(color: Colors.red),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.red),
-                          ),
-                          iconColor: textColor,
-                          fillColor: Colors.transparent,
-                          prefixIcon: Icon(
-                            Icons.lock_outline,
-                            color: textColor,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                            borderSide: BorderSide(color: Colors.grey.shade400),
-                          ),
-                          // focusedBorder: OutlineInputBorder(
-                          //   borderRadius: BorderRadius.circular(8.r),
-                          //   borderSide: const BorderSide(color: Colors.blue),
-                          // ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              color: textColor,
-                              auth.obscure
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+              child: () {
+                if (auth.autoLogin) {
+                  return Application.getAppLogo();
+                }
+                return SizedBox(
+                  width: width,
+                  child: Form(
+                    key: auth.formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Application.getAppLogo(width: 30, height: 30),
+                            SizedBox(width: 5.w),
+                            Text(
+                              "login_page_title".tr(),
+                              style: TextStyle(fontSize: 20, color: textColor),
                             ),
-                            onPressed: () {
-                              auth.setObscure();
-                            },
-                          ),
+                          ],
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "请输入密码";
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 20.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              style: TextStyle(color: textColor),
-                              controller: auth.captchaController,
-                              keyboardType: TextInputType.name,
-                              decoration: InputDecoration(
-                                errorStyle: TextStyle(color: Colors.red),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                                hintStyle: TextStyle(color: textColor),
-                                hintText: 'login_page_captcha'.tr(),
-                                iconColor: textColor,
-                                fillColor: Colors.transparent,
-                                prefixIcon: Icon(
-                                  Icons.code_rounded,
-                                  color: textColor,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade400,
-                                  ),
-                                ),
-                                // focusedBorder: OutlineInputBorder(
-                                //   borderRadius: BorderRadius.circular(8.r),
-                                //   borderSide: const BorderSide(color: Colors.blue),
-                                // ),
+                        SizedBox(height: 40.h),
+
+                        TextFormField(
+                          style: TextStyle(color: textColor),
+                          controller: auth.nameController,
+                          keyboardType: TextInputType.text,
+                          decoration: InputDecoration(
+                            hintStyle: TextStyle(color: textColor),
+                            hintText: 'login_page_name'.tr(),
+                            iconColor: textColor,
+                            errorStyle: TextStyle(color: Colors.red),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                            fillColor: Colors.transparent,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade400,
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "请输入验证码";
-                                }
-                                return null;
+                            ),
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
+                              color: textColor,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "请输入用户名";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20.h),
+
+                        TextFormField(
+                          style: TextStyle(color: textColor, letterSpacing: -1),
+                          controller: auth.passwordController,
+                          keyboardType: TextInputType.number,
+                          // obscuringCharacter: '●',
+                          obscureText: auth.obscure,
+                          decoration: InputDecoration(
+                            hintStyle: TextStyle(color: textColor),
+                            hintText: 'login_page_password'.tr(),
+                            errorStyle: TextStyle(color: Colors.red),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                            iconColor: textColor,
+                            fillColor: Colors.transparent,
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: textColor,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                            // focusedBorder: OutlineInputBorder(
+                            //   borderRadius: BorderRadius.circular(8.r),
+                            //   borderSide: const BorderSide(color: Colors.blue),
+                            // ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                color: textColor,
+                                auth.obscure
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                auth.setObscure();
                               },
                             ),
                           ),
-                          SizedBox(width: 4.w),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "请输入密码";
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20.h),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                style: TextStyle(color: textColor),
+                                controller: auth.captchaController,
+                                keyboardType: TextInputType.name,
+                                decoration: InputDecoration(
+                                  errorStyle: TextStyle(color: Colors.red),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.red),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.red),
+                                  ),
+                                  hintStyle: TextStyle(color: textColor),
+                                  hintText: 'login_page_captcha'.tr(),
+                                  iconColor: textColor,
+                                  fillColor: Colors.transparent,
+                                  prefixIcon: Icon(
+                                    Icons.code_rounded,
+                                    color: textColor,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+                                  // focusedBorder: OutlineInputBorder(
+                                  //   borderRadius: BorderRadius.circular(8.r),
+                                  //   borderSide: const BorderSide(color: Colors.blue),
+                                  // ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "请输入验证码";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
 
-                          MouseRegion(
-                            cursor: SystemMouseCursors.click, // 小手光标
-                            child: GestureDetector(
-                              onTap: () {
-                                auth.loadCaptcha();
-                              },
-                              child: auth.bytes == null
-                                  ? SizedBox(
-                                      width: 100,
-                                      height: 40,
-                                      child: Center(
-                                        child: HugeIcon(
-                                          icon: HugeIcons.strokeRoundedImage01,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                    )
-                                  : ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        8.r,
-                                      ), // 圆角半径
-                                      child: Image.memory(
-                                        auth.bytes!,
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click, // 小手光标
+                              child: GestureDetector(
+                                onTap: () {
+                                  auth.loadCaptcha();
+                                },
+                                child: auth.bytes == null
+                                    ? SizedBox(
                                         width: 100,
                                         height: 40,
-                                        fit: BoxFit.fill,
-                                        gaplessPlayback: true, // 防止刷新时闪烁
+                                        child: Center(
+                                          child: HugeIcon(
+                                            icon:
+                                                HugeIcons.strokeRoundedImage01,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                      )
+                                    : ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                          8.r,
+                                        ), // 圆角半径
+                                        child: Image.memory(
+                                          auth.bytes!,
+                                          width: 100,
+                                          height: 40,
+                                          fit: BoxFit.fill,
+                                          gaplessPlayback: true, // 防止刷新时闪烁
+                                        ),
                                       ),
-                                    ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "login_page_forget".tr(),
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                          Text(
-                            "login_page_register".tr(),
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 20.h),
-                      SizedBox(
-                        width: width,
-                        child: FilledButton(
-                          style: ButtonStyle(
-                            padding: WidgetStateProperty.all(
-                              EdgeInsets.all(15),
+                          ],
+                        ),
+                        SizedBox(height: 10.h),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "login_page_forget".tr(),
+                              style: TextStyle(color: Colors.blue),
                             ),
-                          ),
-                          onPressed: auth.isLogin
-                              ? null
-                              : () {
-                                  if (auth.formKey.currentState!.validate()) {
-                                    auth.login(context);
-                                  }
-                                },
-                          child: Text(
-                            "login_page_login".tr(),
-                            style: TextStyle(fontSize: 18),
+                            Text(
+                              "login_page_register".tr(),
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20.h),
+                        SizedBox(
+                          width: width,
+                          child: FilledButton(
+                            style: ButtonStyle(
+                              padding: WidgetStateProperty.all(
+                                EdgeInsets.all(15),
+                              ),
+                            ),
+                            onPressed: auth.onLogin
+                                ? null
+                                : () {
+                                    if (auth.formKey.currentState!.validate()) {
+                                      auth.login(context);
+                                    }
+                                  },
+                            child: Text(
+                              "login_page_login".tr(),
+                              style: TextStyle(fontSize: 18),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              }(),
             ),
           ),
         );

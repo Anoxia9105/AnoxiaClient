@@ -35,7 +35,7 @@ class NoData extends StatelessWidget {
             HugeIcon(
               icon: iconData ?? HugeIcons.strokeRoundedMailOpen01,
               size: 60,
-              color: Colors.indigo.withValues(alpha: 0.8),
+              color: Theme.of(context).colorScheme.primary,
             ),
             SizedBox(height: 25.h), // 间距
             // 提示标题

@@ -19,8 +19,6 @@ Future<void> init() async {
 // 3. 工厂模式（每次获取都是新对象）
   //sl.registerFactory<LoginCubit>(() => LoginCubit(sl<ApiService>()));
 
-  getIt.registerSingleton<FlutterSecureStorage>(FlutterSecureStorage());
-
   getIt.registerSingleton<LayoutController>(LayoutController());
   getIt.registerSingleton<SettingsController>(SettingsController());
   getIt.registerSingleton<AuthController>(AuthController());

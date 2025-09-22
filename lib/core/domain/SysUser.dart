@@ -1,7 +1,7 @@
 import 'dart:convert';
 /// msg : "操作成功"
 /// code : 200
-/// data : {"createBy":"admin","createTime":"2025-08-26 17:25:52","updateBy":null,"updateTime":null,"remark":"管理员","params":{"@type":"java.util.HashMap"},"userId":1,"userName":"admin","nickName":"管理员","email":"anoxia@163.com","phonenumber":"15888888888","sex":"1","avatar":null,"password":"$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2","status":"0","delFlag":"0","loginIp":"127.0.0.1","loginDate":"2025-09-19T21:37:34.000+08:00","admin":true}
+/// data : {"createBy":"admin","createTime":"2025-08-26 17:25:52","updateBy":null,"updateTime":null,"remark":"管理员","params":{"secret":"GBzC9cana09U1Cp6","timeout":"480"},"userId":1,"userName":"admin","nickName":"管理员","email":"anoxia@163.com","phonenumber":"15888888888","sex":"1","avatar":null,"password":"$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2","status":"0","delFlag":"0","loginIp":"127.0.0.1","loginDate":"2025-09-22T10:01:46.000+08:00","admin":true}
 
 SysUser sysUserFromJson(String str) => SysUser.fromJson(json.decode(str));
 String sysUserToJson(SysUser data) => json.encode(data.toJson());
@@ -51,7 +51,7 @@ SysUser copyWith({  String? msg,
 /// updateBy : null
 /// updateTime : null
 /// remark : "管理员"
-/// params : {"@type":"java.util.HashMap"}
+/// params : {"secret":"GBzC9cana09U1Cp6","timeout":"480"}
 /// userId : 1
 /// userName : "admin"
 /// nickName : "管理员"
@@ -63,7 +63,7 @@ SysUser copyWith({  String? msg,
 /// status : "0"
 /// delFlag : "0"
 /// loginIp : "127.0.0.1"
-/// loginDate : "2025-09-19T21:37:34.000+08:00"
+/// loginDate : "2025-09-22T10:01:46.000+08:00"
 /// admin : true
 
 Data dataFromJson(String str) => Data.fromJson(json.decode(str));
@@ -237,28 +237,37 @@ Data copyWith({  String? createBy,
 
 }
 
-/// @type : "java.util.HashMap"
+/// secret : "GBzC9cana09U1Cp6"
+/// timeout : "480"
 
 Params paramsFromJson(String str) => Params.fromJson(json.decode(str));
 String paramsToJson(Params data) => json.encode(data.toJson());
 class Params {
   Params({
-      String? type,}){
-    _type = type;
+      String? secret, 
+      String? timeout,}){
+    _secret = secret;
+    _timeout = timeout;
 }
 
   Params.fromJson(dynamic json) {
-    _type = json['@type'];
+    _secret = json['secret'];
+    _timeout = json['timeout'];
   }
-  String? _type;
-Params copyWith({  String? type,
-}) => Params(  type: type ?? _type,
+  String? _secret;
+  String? _timeout;
+Params copyWith({  String? secret,
+  String? timeout,
+}) => Params(  secret: secret ?? _secret,
+  timeout: timeout ?? _timeout,
 );
-  String? get type => _type;
+  String? get secret => _secret;
+  String? get timeout => _timeout;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
-    map['@type'] = _type;
+    map['secret'] = _secret;
+    map['timeout'] = _timeout;
     return map;
   }
 
