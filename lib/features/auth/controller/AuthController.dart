@@ -36,8 +36,9 @@ class AuthController extends ChangeNotifier {
 
   //登录按钮限流
   bool onLogin = false;
+
   //自动登录
-  bool autoLogin=false;
+  bool autoLogin = false;
 
   Uint8List? bytes;
   bool obscure = true;
@@ -55,19 +56,23 @@ class AuthController extends ChangeNotifier {
   ///自动登录
   ///
   Future<void> _init() async {
-    autoLogin=true;
-    final token = await SSUtil.instance.read(key: StorageKeys.accessToken);
-    SysUser? user = await authService.getUserInfo();
+    try {
+      autoLogin = true;
+      final token = await SSUtil.instance.read(key: StorageKeys.accessToken);
+      SysUser? user = await authService.getUserInfo();
 
-    if (token != null && token.isNotEmpty && user != null) {
-      // token 有效，直接进入已登录状态
-      layoutController.login = true;
-      userInfo = user;
-      authService.connect(token);
-    } else {
-      layoutController.login = false;
-      autoLogin=false;
-      loadCaptcha();
+      if (token != null && token.isNotEmpty && user != null) {
+        // token 有效，直接进入已登录状态
+        layoutController.login = true;
+        userInfo = user;
+        authService.connect(token);
+      } else {
+        layoutController.login = false;
+        autoLogin = false;
+        loadCaptcha();
+      }
+    } catch (e) {
+      print("登录失败: $e");
     }
   }
 

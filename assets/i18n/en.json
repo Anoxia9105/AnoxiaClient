@@ -21,6 +21,13 @@
   "login_page_forget": "Forgot your password",
   "login_page_register": "Register an account",
   "login_page_login": "Log in",
+  "login_page_username_validator_notnull": "Username cannot be empty",
+  "login_page_username_validator_regex": "Username must be 2-20 characters, consisting of letters, numbers, or underscores, and cannot start with a number",
+  "login_page_password_validator_notnull": "Password cannot be empty",
+  "login_page_password_validator_regex": "Password length must be between 5 and 50 characters",
+  "login_page_captcha_validator_notnull": "Captcha cannot be empty",
+  "login_page_captcha_validator_regex": "Captcha length does not meet the requirements",
+
 
   "settings_page_title": "Settings",
   "settings_page_theme_title": "Theme Settings",

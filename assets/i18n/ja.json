@@ -20,6 +20,12 @@
   "login_page_forget": "パスワードを忘れた場合",
   "login_page_register": "アカウントを登録する",
   "login_page_login": "ログイン",
+  "login_page_username_validator_notnull": "ユーザー名を入力してください",
+  "login_page_username_validator_regex": "ユーザー名は2～20文字で、英字・数字・アンダースコアで構成し、数字で始めることはできません",
+  "login_page_password_validator_notnull": "パスワードを入力してください",
+  "login_page_password_validator_regex": "パスワードは5～50文字で入力してください",
+  "login_page_captcha_validator_notnull": "認証コードを入力してください",
+  "login_page_captcha_validator_regex": "認証コードの長さが要件を満たしていません",
 
 
   "settings_page_title": "設定",

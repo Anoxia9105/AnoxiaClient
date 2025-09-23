@@ -37,7 +37,7 @@ class DioClient {
           return handler.next(response);
         },
         onError: (e, handler) async {
-          Toast.showToast("请求异常：${e.response?.statusCode}",type: ToastType.error);
+          Toast.showToast("服务器异常,请稍后再试",type: ToastType.error);
           return handler.next(e);
         },
       ),

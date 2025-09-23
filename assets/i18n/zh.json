@@ -20,6 +20,14 @@
   "login_page_forget": "忘记密码",
   "login_page_register": "注册账号",
   "login_page_login": "登录",
+  "login_page_username_validator_notnull": "用户名不能为空",
+  "login_page_username_validator_regex": "用户名需2-20位，字母/数字/下划线组成，且不能以数字开头",
+  "login_page_password_validator_notnull": "密码不能为空",
+  "login_page_password_validator_regex": "密码长度需在5-50个字符之间",
+  "login_page_captcha_validator_notnull": "验证码不能为空",
+  "login_page_captcha_validator_regex": "验证码长度不符合要求",
+
+
 
 
   "settings_page_title": "设置",

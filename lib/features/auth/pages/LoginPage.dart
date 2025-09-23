@@ -105,7 +105,11 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return "请输入用户名";
+                              return 'login_page_username_validator_notnull'.tr();
+                            }
+                            final regex = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{1,19}$');
+                            if (!regex.hasMatch(value)) {
+                              return 'login_page_username_validator_regex'.tr();
                             }
                             return null;
                           },
@@ -163,7 +167,10 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return "请输入密码";
+                              return 'login_page_password_validator_notnull'.tr();
+                            }
+                            if (value.length < 5 || value.length > 50) {
+                              return 'login_page_password_validator_regex'.tr();
                             }
                             return null;
                           },
@@ -209,9 +216,13 @@ class _LoginPageState extends State<LoginPage> {
                                   //   borderSide: const BorderSide(color: Colors.blue),
                                   // ),
                                 ),
+                                maxLength: 4,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return "请输入验证码";
+                                    return "login_page_captcha_validator_notnull".tr();
+                                  }
+                                  if (value.length != 4) {
+                                    return 'login_page_captcha_validator_regex'.tr();
                                   }
                                   return null;
                                 },

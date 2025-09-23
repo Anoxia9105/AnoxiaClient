@@ -34,7 +34,7 @@ class LayoutHeader {
         // ThemeUtil.isDarkMode(context) ? Colors.transparent : Color(0xFFE6E6E9),
         // title: Text(widget.title, style: TextStyle(fontSize: 14)),
         actions: [
-          buildUserInfo(),
+          authController.userInfo !=null ?buildUserInfo():SizedBox.shrink(),
           SizedBox(width: 10),
           IconButton(
             tooltip: "header_minimize".tr(),
