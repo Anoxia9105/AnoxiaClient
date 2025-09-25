@@ -12,6 +12,7 @@ import 'package:notepadclient/core/utils/SPUtil.dart';
 import 'package:notepadclient/core/utils/SSUtil.dart';
 import 'package:notepadclient/core/utils/StringUtil.dart';
 import 'package:notepadclient/features/auth/service/IAuthService.dart';
+import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/shared/widgets/Toast.dart';
 
 import '../../../../core/constants/StorageKeys.dart';
@@ -27,48 +28,49 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
   }
 
   @override
-  Future<SysUser?> loginByToken(Map<String, String> loginData) async {
-    final response = await client.post(
-      pathLogin(),
-      data: loginData,
-      auth: false,
-    );
-    String token = response.data["token"] ?? '';
+  Future<SysUser?> login({Map<String, String>? loginData, autoLogin = false}) async {
+    final String? token;
 
-    if (StringUtil.isNotEmpty(token)) {
-      //重新登录设置新的 Token 用于获取用户信息 后续覆盖过期时间
-      SSUtil.instance.write(key: StorageKeys.accessToken, value: token);
-
-      connect(token);
-
-      SysUser? user = await getUserInfo();
-      if (user == null) return null;
-      final timeoutMinutes =
-          int.tryParse(user.data?.params?.timeout ?? '30') ?? 30;
-
-      await SPUtil.instance.set<SysUser>(StorageKeys.sysUser, user);
-      SSUtil.instance.write(
-        key: StorageKeys.accessToken,
-        value: token,
-        expiry: Duration(minutes: timeoutMinutes),
-      );
-
-      await refreshToken(timeoutMinutes);
-      return user;
+    //是自动登录
+    if(autoLogin){
+      token = await SSUtil.instance.read(key: StorageKeys.accessToken);
+    }else{
+      token = await _loginByToken(loginData!);
     }
-    return null;
-  }
 
-  @override
-  Future<void> refreshToken(int minutes) async {
-    final refreshInterval = Duration(minutes: minutes > 1 ? minutes - 1 : 1);
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(refreshInterval, (timer) async {
-      final response = await client.get(pathRefreshToken());
-      if (response.statusCode != HttpStatus.ok) {
-        Toast.showToast("令牌即将过期，稍后请重新登录", type: ToastType.warning);
-      }
-    });
+    if (StringUtil.isNullOrEmpty(token)) return null;
+
+    //重新登录设置新的 Token 用于获取用户信息 后续覆盖过期时间
+    SSUtil.instance.write(key: StorageKeys.accessToken, value: token!);
+
+    SysUser? user = await _getUserInfo();
+    if (user == null) return null;
+    final timeoutMinutes =
+        int.tryParse(user.data?.params?.timeout ?? '30') ?? 30;
+    //存储密钥
+    final secret = user.data?.params?.secret ?? '';
+    SSUtil.instance.write(key: StorageKeys.secret, value: secret);
+
+    //清空密钥 不明文保留缓存中
+    user = user.copyWith(
+      data: user.data?.copyWith(
+        params: user.data?.params?.copyWith(secret: ''),
+      ),
+    );
+
+    //写入本地缓存
+    await SPUtil.instance.set<SysUser>(StorageKeys.sysUser, user);
+    //token存储
+    SSUtil.instance.write(
+      key: StorageKeys.accessToken,
+      value: token,
+      expiry: Duration(minutes: timeoutMinutes),
+    );
+    //刷新token
+    await _refreshToken(timeoutMinutes);
+    //连接服务器
+    await _connect(token);
+    return user;
   }
 
   @override
@@ -82,8 +84,7 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
     }
   }
 
-  @override
-  Future<SysUser?> getUserInfo() async {
+  Future<SysUser?> _getUserInfo() async {
     final response = await client.get(pathGetInfo());
     if (response.statusCode != HttpStatus.ok || response.data == null) {
       return null;
@@ -97,22 +98,60 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
     return user;
   }
 
-  @override
-  Future<void> connect(String token) async {
-    getIt.registerSingleton<IMClient>(
-      IMClient(
-        url: "${FlavorConfig.value.wsBaseUrl}${pathSocket(token)}",
-        heartbeatInterval: const Duration(seconds: 30),
-        // 可自定义 encoder/decoder，如果服务器是 JSON，默认实现已足够
-        // decoder: (raw) => jsonDecode(raw),
-        // encoder: (msg) => jsonEncode(msg),
-        pingMessage: {'type': 'ping'},
-        pongMatcher: (dynamic message) {
-          // 自定义 pong 判定逻辑：返回 true 则视为 pong
-          if (message == 'pong') return true;
-          return false;
-        },
-      ),
+  Future<String?> _loginByToken(Map<String, String> loginData) async {
+    final response = await client.post(
+      pathLogin(),
+      data: loginData,
+      auth: false,
     );
+    return response.data["token"];
+  }
+
+  Future<void> _connect(String token) async {
+    final imClient = IMClient(
+      url: "${FlavorConfig.value.wsBaseUrl}${pathSocket(token)}",
+      logger: (String tag, String message) {
+        print("$tag --> $message");
+      },
+    );
+    //注册到 DI
+    getIt.registerSingleton<IMClient>(imClient);
+    //绑定到 ChatController
+    getIt<ChatController>().bindClient(imClient);
+
+    // // 全局订阅（也可以按 topic 订阅）
+    // final subAll = imClient.subscribeAll((msg) {
+    //   print('收到消息: $msg');
+    // });
+
+    // 建立连接
+    await imClient.connect();
+
+    // // 发送（如果此时未连接，消息会被缓冲并在连接后自动发送）
+    // await imClient.send({'topic': 'auth', 'token': 'your_token'});
+    //
+    // // 按 topic 订阅
+    // final chatSub = imClient.subscribeTopic('chat', (msg) {
+    //   print('聊天消息: $msg');
+    // });
+    //
+    // // 断开连接并禁止自动重连
+    // await imClient.disconnect();
+    //
+    // // 释放资源（不可再用）
+    // await imClient.dispose();
+  }
+
+  Future<void> _refreshToken(int minutes) async {
+    final refreshInterval = Duration(minutes: minutes > 1 ? minutes - 1 : 1);
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(refreshInterval, (timer) async {
+      print("刷新token...");
+      //刷新token
+      final response = await client.get(pathRefreshToken());
+      if (response.statusCode != HttpStatus.ok) {
+        Toast.showToast("令牌即将过期，稍后请重新登录", type: ToastType.warning);
+      }
+    });
   }
 }

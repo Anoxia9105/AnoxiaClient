@@ -32,4 +32,10 @@ class DateUtil {
   static String formatTime(DateTime date) {
     return DateFormat('HH:mm').format(date);
   }
+
+
+  static String formatTimestampToTime(num ts) {
+    DateTime date = DateTime.fromMillisecondsSinceEpoch(ts.toInt());
+    return DateFormat('HH:mm').format(date);
+  }
 }

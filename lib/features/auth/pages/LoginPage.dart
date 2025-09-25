@@ -105,9 +105,12 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'login_page_username_validator_notnull'.tr();
+                              return 'login_page_username_validator_notnull'
+                                  .tr();
                             }
-                            final regex = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{1,19}$');
+                            final regex = RegExp(
+                              r'^[A-Za-z_][A-Za-z0-9_]{1,19}$',
+                            );
                             if (!regex.hasMatch(value)) {
                               return 'login_page_username_validator_regex'.tr();
                             }
@@ -161,13 +164,14 @@ class _LoginPageState extends State<LoginPage> {
                                     : Icons.visibility_off,
                               ),
                               onPressed: () {
-                                auth.setObscure();
+                                auth.toggleObscure;
                               },
                             ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'login_page_password_validator_notnull'.tr();
+                              return 'login_page_password_validator_notnull'
+                                  .tr();
                             }
                             if (value.length < 5 || value.length > 50) {
                               return 'login_page_password_validator_regex'.tr();
@@ -219,10 +223,12 @@ class _LoginPageState extends State<LoginPage> {
                                 maxLength: 4,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return "login_page_captcha_validator_notnull".tr();
+                                    return "login_page_captcha_validator_notnull"
+                                        .tr();
                                   }
                                   if (value.length != 4) {
-                                    return 'login_page_captcha_validator_regex'.tr();
+                                    return 'login_page_captcha_validator_regex'
+                                        .tr();
                                   }
                                   return null;
                                 },

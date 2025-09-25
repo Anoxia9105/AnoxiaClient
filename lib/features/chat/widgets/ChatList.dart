@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/core/di/injector.dart';
+import 'package:notepadclient/core/utils/DateUtil.dart';
 import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/shared/widgets/AvatarWidget.dart';
+import 'package:notepadclient/shared/widgets/NoData.dart';
 import 'package:notepadclient/shared/widgets/VibratingBadge.dart';
 
 final ChatController chatController = getIt<ChatController>();
@@ -20,9 +22,12 @@ class ChatList extends StatefulWidget {
 class _ChatListState extends State<ChatList> {
   @override
   Widget build(BuildContext context) {
+    final data = chatController.roomSummary!.data;
+    final int roomLength = data?.length ?? 0;
+
     return Column(
       children: [
-        Container(
+        SizedBox(
           height: 50.h,
           child: Row(
             children: [
@@ -32,62 +37,72 @@ class _ChatListState extends State<ChatList> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            controller: chatController.scrollChatListController,
-            itemCount: 60,
-            itemBuilder: (context, index) {
-              Color? selectedColor = chatController.selectIndex == index
-                  ? Colors.white
-                  : null;
-              // var room = chatController.getRoom(index);
-              return Padding(
-                padding: EdgeInsets.only(left: 2.w, right: 2.w),
-                child: ListTile(
-                  // visualDensity: VisualDensity.compact,
-                  // dense: true,
-                  key: ValueKey(chatController.isScrolling),
-                  selected: chatController.selectIndex == index,
-                  selectedColor: selectedColor,
-                  selectedTileColor: Theme.of(context).primaryColor,
-                  hoverColor: chatController.isScrolling
-                      ? Colors.transparent
-                      : Theme.of(context).hoverColor,
-                  leading: AvatarWidget(size: 30, url: '', name: 'Zahsns'),
-                  title: Text(
-                    "RoomTest",
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  // subtitle: LastMessagePreview(
-                  //   lastMessage: room.roomLastMessage,
-                  //   currentUser: widget.value.authController.currentUser,
-                  //   getUserById:
-                  //       (String senderId) => widget.value.getUser(senderId),
-                  //   textColor:
-                  //       chatController.selectIndex == index
-                  //           ? Colors.white
-                  //           : Colors.grey.shade700,
-                  // ),
-                  subtitle: LastMessagePreview(textColor: selectedColor),
-                  trailing: Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Column(
-                      children: [
-                        /// 时间
-                        Text('12:12', style: TextStyle(color: selectedColor)),
-                        Expanded(child: SizedBox.shrink()),
+          child: () {
+            if (data == null || roomLength <= 0) {
+              return NoData();
+            }
+            return ListView.builder(
+              controller: chatController.scrollChatListController,
+              itemCount: roomLength,
+              itemBuilder: (context, index) {
+                //房间名称
+                String roomName = data[index].roomName ?? '';
+                //房间头像
+                String? roomAvatar = data[index].roomAvatar ?? '';
+                //最后一条消息时间
+                String lastTimestamp = DateUtil.formatTimestampToTime(data[index].lastMessage?.timestamp ?? 0 );
+                //最后一条消息内容
+                //未读消息数
+                int? messageCount = data[index].unreadCount?.toInt() ?? 0;
 
-                        ///未读消息数量
-                        VibratingBadge(messageCount: 0),
-                      ],
+                //选中背景色
+                Color? selectedColor = chatController.selectIndex == index
+                    ? Colors.white
+                    : null;
+                // var room = chatController.getRoom(index);
+                return Padding(
+                  padding: EdgeInsets.only(left: 2.w, right: 2.w),
+                  child: ListTile(
+                    // visualDensity: VisualDensity.compact,
+                    // dense: true,
+                    key: ValueKey(chatController.isScrolling),
+                    selected: chatController.selectIndex == index,
+                    selectedColor: selectedColor,
+                    selectedTileColor: Theme.of(context).primaryColor,
+                    hoverColor: chatController.isScrolling
+                        ? Colors.transparent
+                        : Theme.of(context).hoverColor,
+                    leading: AvatarWidget(
+                      size: 30,
+                      url: roomAvatar,
+                      name: roomName,
                     ),
+                    title: Text(
+                      roomName,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    subtitle: LastMessagePreview(textColor: selectedColor),
+                    trailing: Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Column(
+                        children: [
+                          /// 时间
+                          Text(lastTimestamp, style: TextStyle(color: selectedColor)),
+                          Expanded(child: SizedBox.shrink()),
+
+                          ///未读消息数量
+                          VibratingBadge(messageCount: messageCount),
+                        ],
+                      ),
+                    ),
+                    onTap: () => chatController.setSelectIndex(index),
                   ),
-                  onTap: () => chatController.setSelectIndex(index),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            );
+          }(),
         ),
       ],
     );

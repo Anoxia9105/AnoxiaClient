@@ -32,11 +32,11 @@ void main() async {
       debug: false,
     ),
   );
-
-  //初始化 DI
-  await injector.init();
   //初始化 SP
   await SPUtil.init();
+  //初始化 DI
+  await injector.init();
+
 
   if (DeviceUtil.isDesktop) {
     ///Windows平台

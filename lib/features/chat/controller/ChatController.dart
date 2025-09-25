@@ -2,8 +2,30 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
+import 'package:notepadclient/core/domain/RoomSummary.dart';
+import 'package:notepadclient/core/domain/SysUser.dart';
+import 'package:notepadclient/core/network/IMClient.dart';
+import 'package:notepadclient/features/auth/controller/AuthController.dart';
+import 'package:notepadclient/features/chat/service/IChatService.dart';
+
+import '../../../core/di/injector.dart';
 
 class ChatController extends ChangeNotifier {
+  ///依赖注入
+  late IMClient _imClient;
+
+  //RoomSummary
+
+  RoomSummary? roomSummary;
+
+  void bindClient(IMClient client) {
+    _imClient = client;
+    // 全局订阅（也可以按 topic 订阅）
+    final subAll = _imClient.subscribeAll((msg) {
+      print('收到消息: $msg');
+    });
+  }
+
   ///ListView 控制器 左侧列表
   final ScrollController scrollChatListController = ScrollController();
 
@@ -12,7 +34,7 @@ class ChatController extends ChangeNotifier {
   }
 
 
-    final FlutterListViewController listViewController = FlutterListViewController();
+  final FlutterListViewController listViewController = FlutterListViewController();
 
   ///是否滚动
   bool _isScrolling = false;
@@ -43,7 +65,7 @@ class ChatController extends ChangeNotifier {
   get selectIndex => _selectedIndex;
 
   ///切换左侧列表索引
-  ///   选择切换 ChatDetail
+  /// 选择切换 ChatDetail
   void setSelectIndex(int index) {
     _selectedIndex = index;
     // setChatRoom = getRoom(index);
