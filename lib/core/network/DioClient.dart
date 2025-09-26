@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:notepadclient/core/constants/StorageKeys.dart';
+import 'package:notepadclient/core/network/TokenManager.dart';
 import 'package:notepadclient/core/utils/SSUtil.dart';
 import 'package:notepadclient/shared/widgets/Toast.dart';
 
@@ -17,13 +18,10 @@ class DioClient {
           // 默认需要鉴权，除非显式 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
-            final token = await SSUtil.instance.read(key: StorageKeys.accessToken);
-            if (token != null) {
+            final token = await TokenManager.instance.getToken();
+            if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
-
-            print("[DioClient] → ${options.method} ${options.uri}");
-            print("[DioClient] → Authorization: Bearer $token");
           }
           return handler.next(options);
         },

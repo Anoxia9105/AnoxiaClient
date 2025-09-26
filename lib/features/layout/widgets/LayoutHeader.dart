@@ -1,12 +1,17 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
+import 'package:notepadclient/core/utils/PageTransitions.dart';
 import 'package:notepadclient/features/auth/controller/AuthController.dart';
 import 'package:notepadclient/shared/widgets/AvatarWidget.dart';
+import 'package:notepadclient/shared/widgets/BubbleDialog.dart';
+import 'package:notepadclient/shared/widgets/Toast.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../core/di/injector.dart';
+import '../../../shared/widgets/Application.dart';
 import '../controller/LayoutController.dart';
 
 /// 桌面端头部组件
@@ -26,7 +31,7 @@ class LayoutHeader {
   final AuthController authController = getIt<AuthController>();
 
   AppBar getAppbar({Color? color}) {
-    if (DeviceUtil.isDesktop) {
+    if (DeviceUtil.isRealDesktop()) {
       return AppBar(
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -34,7 +39,11 @@ class LayoutHeader {
         // ThemeUtil.isDarkMode(context) ? Colors.transparent : Color(0xFFE6E6E9),
         // title: Text(widget.title, style: TextStyle(fontSize: 14)),
         actions: [
-          authController.userInfo !=null ?buildUserInfo():SizedBox.shrink(),
+          if (authController.userInfo != null) ...[
+            buildMoreButton(),
+            SizedBox(width: 10),
+            buildUserInfo(),
+          ],
           SizedBox(width: 10),
           IconButton(
             tooltip: "header_minimize".tr(),
@@ -105,14 +114,118 @@ class LayoutHeader {
         flexibleSpace: const DragToMoveArea(child: SizedBox.expand()),
       );
     }
-    return AppBar(title: Text("Mobile Header"));
+
+    return AppBar(
+      title: Text("Mobile Header"),
+      actions: [
+        if (authController.userInfo != null) ...[
+          buildMoreButton(),
+        ],
+        SizedBox(width: 10),
+      ],
+    );
   }
 
   Widget buildUserInfo() {
-    return  AvatarWidget(
+    return AvatarWidget(
       url: authController.userInfo?.data?.avatar,
       name: authController.userInfo?.data?.userName,
       size: 35,
+    );
+  }
+
+  Widget buildMoreButton() {
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+
+        return Tooltip(
+          message: "header_more_tooltip".tr(),
+          child: IconButton(
+            onPressed: () {
+              Toast.showWidget(
+                context,
+                direction: PreferDirection.topRight,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 200),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: BubbleWidget(
+                      arrowDirection: AxisDirection.up,
+                      arrowOffset: 180,
+                      arrowLength: 6,
+                      arrowRadius: 3,
+                      arrowWidth: 17,
+                      borderRadius: BorderRadius.circular(4),
+                      border: BorderSide(
+                        width: 1,
+                        color: colorScheme.outlineVariant,
+                      ),
+                      backgroundColor: colorScheme.onPrimary,
+                      contentBuilder: (context) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          layoutController.headerMenus.length * 2 - 1,
+                          (index) {
+                            if (index.isEven) {
+                              final menu =
+                                  layoutController.headerMenus[index ~/ 2];
+                              return HeaderMenusOptions(
+                                name: menu.localizedName,
+                                icon: menu.icon,
+                                onTap: () {
+                                  // Application.pageNavigatorKey.currentState?.pushReplacement(
+                                  //   PageTransitions.createRoute(menu.page,type: PageTransitionType.slideFromBottom),
+                                  // );
+
+                                },
+                              );
+                            } else {
+                              return Divider();
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedListSetting, size: 20),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class HeaderMenusOptions extends StatelessWidget {
+  final String name;
+  final IconData icon;
+  final Widget? trailing;
+  final GestureTapCallback? onTap;
+
+  const HeaderMenusOptions({
+    super.key,
+    required this.name,
+    required this.icon,
+    this.trailing = const HugeIcon(
+      icon: HugeIcons.strokeRoundedArrowRight01,
+      size: 18,
+    ),
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      hoverColor: Theme.of(context).colorScheme.primary,
+      leading: HugeIcon(icon: icon, size: 20),
+      title: Text(name.tr()),
+      trailing: trailing,
+      onTap: onTap,
     );
   }
 }

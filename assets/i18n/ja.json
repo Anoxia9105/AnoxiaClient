@@ -3,8 +3,10 @@
   "header_maximize": "最大化",
   "header_reduction": "縮小",
   "header_closure": "閉じる",
+  "header_more_tooltip": "設定その他",
 
-
+  "layout_min_size_error": "申し訳ありませんが、このデバイスはサポートされていません",
+  
   "sidebar_chat": "会話",
   "sidebar_contact": "友達",
   "sidebar_documentation": "資料",

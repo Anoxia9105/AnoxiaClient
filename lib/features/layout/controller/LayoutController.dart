@@ -46,16 +46,12 @@ class LayoutController extends ChangeNotifier {
 
   int currentIndex = 0;
 
-  ///用于控制页面的切换
-  PageController pageController = PageController();
-
   void changeIndex(int index) {
     currentIndex = index;
-    pageController.jumpToPage(index);
     notifyListeners();
   }
 
-  final List<LayoutOptions> options = [
+  final List<LayoutOptions> layoutPages = [
     LayoutOptions(
       name: "sidebar_chat",
       icon: HugeIcons.strokeRoundedComment01,
@@ -85,6 +81,25 @@ class LayoutController extends ChangeNotifier {
       name: "sidebar_settings",
       icon: HugeIcons.strokeRoundedSettings01,
       page: const SettingPage(),
+      show: false,
+    ),
+  ];
+
+  final List<LayoutOptions> headerMenus = [
+    LayoutOptions(
+      name: "sidebar_settings",
+      icon: HugeIcons.strokeRoundedSettings01,
+      page: const SettingPage(),
+    ),
+    LayoutOptions(
+      name: "sidebar_settings",
+      icon: HugeIcons.strokeRoundedSettings01,
+      page: const SettingPage(),
+    ),
+    LayoutOptions(
+      name: "sidebar_settings",
+      icon: HugeIcons.strokeRoundedSettings01,
+      page: const SettingPage(),
     ),
   ];
 }
@@ -93,8 +108,14 @@ class LayoutOptions {
   final String name;
   final IconData icon;
   final Widget page;
+  final bool? show;
 
   String get localizedName => name.tr();
 
-  LayoutOptions({required this.name, required this.icon, required this.page});
+  LayoutOptions({
+    required this.name,
+    required this.icon,
+    required this.page,
+    this.show = true,
+  });
 }

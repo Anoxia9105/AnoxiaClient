@@ -131,7 +131,7 @@ class _SettingPageState extends State<SettingPage> {
               children: [
                 Expanded(flex: 2, child: SizedBox.shrink()),
                 Expanded(
-                  flex: DeviceUtil.isDesktop ? 1 : 2,
+                  flex: DeviceUtil.isDesktop(context) ? 1 : 2,
                   child: Padding(
                     padding: EdgeInsets.only(right: 10),
                     child: DropdownButtonFormField<Locale>(

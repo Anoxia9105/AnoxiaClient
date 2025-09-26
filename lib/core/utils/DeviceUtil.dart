@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -7,48 +5,61 @@ import 'package:flutter/material.dart';
 ///
 /// 作者: anoxia
 ///
-/// 版本: 1.0.0
+/// 版本: 2.0.0
 ///
-/// 创建时间: 2025-09-16  16:22
+/// 创建时间: 2025-09-26
 class DeviceUtil {
-  /// 是否是桌面端
-  static bool get isDesktop {
-    if (kIsWeb) return false;
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-  }
+  /// 断点定义，可以按需调整
+  static const double mobileMaxWidth = 600;   // 手机最大宽度
+  static const double tabletMaxWidth = 1024;  // 平板最大宽度
 
-  /// 是否是移动端
-  static bool get isMobile {
-    if (kIsWeb) return false;
-    return Platform.isAndroid || Platform.isIOS;
-  }
+  /// 是否是 Web
+  static bool get isWeb => kIsWeb;
 
-  //是否是web
-  static bool get isWeb{
-    if (kIsWeb) return true;
-    return false;
-  }
-
-  /// 是否是平板（通过屏幕宽度判断）
-  /// [tabletMinWidth] 默认 600，可根据需求调整
-  static bool isTablet(BuildContext context, {double tabletMinWidth = 600}) {
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    return shortestSide >= tabletMinWidth;
-  }
-
-  /// 获取设备类型
+  /// 根据屏幕宽度判断设备类型
   static DeviceType getDeviceType(BuildContext context) {
-    if (isDesktop) return DeviceType.desktop;
-    if (isTablet(context)) return DeviceType.tablet;
-    return DeviceType.mobile;
+    final width = MediaQuery.of(context).size.width;
+
+    if (width <= mobileMaxWidth) {
+      return DeviceType.mobile;
+    } else if (width <= tabletMaxWidth) {
+      return DeviceType.tablet;
+    } else {
+      return DeviceType.desktop;
+    }
   }
+
+  /// 判断是否是手机
+  static bool isMobile(BuildContext context) =>
+      getDeviceType(context) == DeviceType.mobile;
+
+  /// 判断是否是平板
+  static bool isTablet(BuildContext context) =>
+      getDeviceType(context) == DeviceType.tablet;
+
+  /// 判断是否是桌面
+  static bool isDesktop(BuildContext context) =>
+      getDeviceType(context) == DeviceType.desktop;
+
+
+  ///真实的桌面环境 不是web
+  static bool isRealDesktop() =>!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.macOS);
+
+  ///真实手机环境
+  static bool isRealMobile() =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  ///真实web环境
+  static bool isRealWeb() => kIsWeb;
 }
 
-enum DeviceType{
-  //桌面
+enum DeviceType {
   desktop,
-  //平板
   tablet,
-  //手机
   mobile,
 }

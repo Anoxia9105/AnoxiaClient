@@ -4,6 +4,9 @@
   "header_maximize": "Maximize",
   "header_reduction": "Reduction",
   "header_closure": "Close",
+  "header_more_tooltip": "Settings and more",
+
+  "layout_min_size_error": "Sorry, this device is not supported",
 
 
   "sidebar_chat": "Chat",

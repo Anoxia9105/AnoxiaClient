@@ -1,25 +1,21 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:notepadclient/Flavor.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/core/utils/SPUtil.dart';
-import 'package:window_manager/window_manager.dart';
-
 import 'app.dart';
 import 'core/di/injector.dart' as injector;
 
-/// DEV 环境
-///
-/// 作者: anoxia
-///
-/// 版本: 1.0.0
-///
-/// 创建时间: 2025-09-16  13:16
+// 桌面端才需要 window_manager，所以加上条件导入
+// ignore: avoid_web_libraries_in_flutter
+import 'package:window_manager/window_manager.dart' as desktop;
+
+import 'core/network/TokenManager.dart' show TokenManager;
+
 void main() async {
-  //框架初始化
   WidgetsFlutterBinding.ensureInitialized();
-  //语言初始化
   await EasyLocalization.ensureInitialized();
 
   // 配置 Flavor
@@ -32,30 +28,30 @@ void main() async {
       debug: false,
     ),
   );
-  //初始化 SP
+
   await SPUtil.init();
-  //初始化 DI
   await injector.init();
+  // 预加载并缓存 token，避免后续多处并发读取
+  final token = await TokenManager.instance.getToken();
+  print('启动预加载的 token: $token');
 
+  // 仅桌面端执行 window_manager 初始化
+  if (DeviceUtil.isRealDesktop()) {
+    await desktop.windowManager.ensureInitialized();
 
-  if (DeviceUtil.isDesktop) {
-    ///Windows平台
-    await windowManager.ensureInitialized();
-
-    ///窗体设置
-    WindowOptions windowOptions = WindowOptions(
+    const windowOptions = desktop.WindowOptions(
       size: Size(1200, 800),
       minimumSize: Size(1200, 800),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.hidden,
+      titleBarStyle: desktop.TitleBarStyle.hidden,
     );
 
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-      windowManager.setHasShadow(true);
+    desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await desktop.windowManager.show();
+      await desktop.windowManager.focus();
+      await desktop.windowManager.setHasShadow(true);
     });
   }
 
@@ -73,16 +69,16 @@ void main() async {
   String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
 
   var app = ScreenUtilInit(
-    designSize: Size(390, 844),
+    designSize: const Size(390, 844),
     minTextAdapt: true,
     splitScreenMode: true,
     builder: (context, child) {
       return EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
         path: path,
-        fallbackLocale: Locale('en', 'US'),
+        fallbackLocale: const Locale('en', 'US'),
         saveLocale: true,
-        child: App(),
+        child: const App(),
       );
     },
   );

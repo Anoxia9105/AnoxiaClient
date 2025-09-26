@@ -3,7 +3,9 @@
   "header_maximize": "最大化",
   "header_reduction": "还原",
   "header_closure": "关闭",
+  "header_more_tooltip": "设置及更多",
 
+  "layout_min_size_error": "抱歉，不支持该设备",
 
 
   "sidebar_chat": "聊天",

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:notepadclient/core/constants/StorageKeys.dart';
 import 'package:notepadclient/core/domain/SysUser.dart';
 import 'package:notepadclient/core/domain/captcha.dart';
+import 'package:notepadclient/core/network/TokenManager.dart';
 import 'package:notepadclient/core/utils/SPUtil.dart';
 import 'package:notepadclient/core/utils/SSUtil.dart';
 import 'package:notepadclient/features/chat/controller/ChatController.dart';
@@ -29,6 +30,7 @@ class AuthController extends ChangeNotifier {
   final IChatService _chatService = getIt<IChatService>();
   final LayoutController _layoutController = getIt<LayoutController>();
   final ChatController _chatController = getIt<ChatController>();
+
 
   AuthController() {
     _initAutoLogin();
@@ -150,7 +152,8 @@ class AuthController extends ChangeNotifier {
   Future<void> logout(BuildContext context) async {
     try {
       await _authService.logout();
-      await SSUtil.instance.delete(key: StorageKeys.accessToken);
+      // 通过 TokenManager 写入（含过期）
+      await TokenManager.instance.clearToken();
       await SPUtil.instance.remove(StorageKeys.sysUser);
 
       _layoutController.login = false;

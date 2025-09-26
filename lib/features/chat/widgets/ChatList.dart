@@ -22,7 +22,7 @@ class ChatList extends StatefulWidget {
 class _ChatListState extends State<ChatList> {
   @override
   Widget build(BuildContext context) {
-    final data = chatController.roomSummary!.data;
+    final data = chatController.roomSummary?.data;
     final int roomLength = data?.length ?? 0;
 
     return Column(

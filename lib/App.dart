@@ -7,9 +7,12 @@ import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/features/layout/MainLayoutPage.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/setting/controller/SettingsController.dart';
+import 'package:notepadclient/shared/widgets/Application.dart';
 import 'package:provider/provider.dart';
 
 import 'Flavor.dart';
+
+
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -38,6 +41,7 @@ class App extends StatelessWidget {
             (BuildContext context, SettingsController setting, Widget? child) {
               setting.loadSettings();
               return MaterialApp(
+                navigatorKey: Application.navigatorKey,
                 title: values.appName,
                 theme: setting.theme,
                 builder: BotToastInit(),

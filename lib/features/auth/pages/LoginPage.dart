@@ -28,7 +28,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     Color textColor = Colors.grey.shade800;
-    double width = DeviceUtil.isDesktop ? 150.w : 300.w;
     return Consumer<AuthController>(
       builder: (BuildContext context, AuthController auth, Widget? child) {
         return Container(
@@ -52,6 +51,8 @@ class _LoginPageState extends State<LoginPage> {
                 if (auth.autoLogin) {
                   return Application.getAppLogo();
                 }
+                final w = MediaQuery.of(context).size.width;
+                final width = DeviceUtil.isDesktop(context) ? w * 0.5 : w * 0.7;
                 return SizedBox(
                   width: width,
                   child: Form(

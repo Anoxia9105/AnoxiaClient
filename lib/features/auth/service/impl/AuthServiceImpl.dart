@@ -8,6 +8,7 @@ import 'package:notepadclient/core/domain/SysUser.dart';
 import 'package:notepadclient/core/domain/captcha.dart';
 import 'package:notepadclient/core/network/DioClient.dart';
 import 'package:notepadclient/core/network/IMClient.dart';
+import 'package:notepadclient/core/network/TokenManager.dart';
 import 'package:notepadclient/core/utils/SPUtil.dart';
 import 'package:notepadclient/core/utils/SSUtil.dart';
 import 'package:notepadclient/core/utils/StringUtil.dart';
@@ -33,7 +34,7 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
 
     //是自动登录
     if(autoLogin){
-      token = await SSUtil.instance.read(key: StorageKeys.accessToken);
+      token = await TokenManager.instance.getToken();
     }else{
       token = await _loginByToken(loginData!);
     }
@@ -41,7 +42,7 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
     if (StringUtil.isNullOrEmpty(token)) return null;
 
     //重新登录设置新的 Token 用于获取用户信息 后续覆盖过期时间
-    SSUtil.instance.write(key: StorageKeys.accessToken, value: token!);
+    await TokenManager.instance.setToken(token!);
 
     SysUser? user = await _getUserInfo();
     if (user == null) return null;
@@ -60,12 +61,8 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
 
     //写入本地缓存
     await SPUtil.instance.set<SysUser>(StorageKeys.sysUser, user);
-    //token存储
-    SSUtil.instance.write(
-      key: StorageKeys.accessToken,
-      value: token,
-      expiry: Duration(minutes: timeoutMinutes),
-    );
+    // 通过 TokenManager 写入（含过期）
+    await TokenManager.instance.setToken(token, expiry: Duration(minutes: timeoutMinutes));
     //刷新token
     await _refreshToken(timeoutMinutes);
     //连接服务器

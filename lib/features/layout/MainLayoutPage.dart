@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/features/auth/pages/LoginPage.dart';
@@ -7,14 +8,12 @@ import 'package:notepadclient/features/layout/widgets/LayoutHeader.dart';
 import 'package:notepadclient/features/layout/widgets/MobileBottombar.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
 import 'package:notepadclient/shared/widgets/Application.dart';
-import 'package:notepadclient/shared/widgets/FocusOverlayManager.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../core/di/injector.dart';
-
-
+import '../../App.dart' show navigatorKey;
+import 'ErrorPage.dart';
 
 /// APP 主布局文件
 ///
@@ -33,9 +32,13 @@ class _MainLayoutPageState extends State<MainLayoutPage>
   @override
   void initState() {
     super.initState();
-    if (DeviceUtil.isDesktop) {
+
+    if (DeviceUtil.isRealDesktop()) {
       _initTray();
-      Provider.of<LayoutController>(context, listen: false).startListen(context);
+      Provider.of<LayoutController>(
+        context,
+        listen: false,
+      ).startListen(context);
       windowManager.addListener(this);
       trayManager.addListener(this);
     }
@@ -43,7 +46,7 @@ class _MainLayoutPageState extends State<MainLayoutPage>
 
   @override
   void dispose() {
-    if (DeviceUtil.isDesktop) {
+    if (DeviceUtil.isRealDesktop()) {
       windowManager.removeListener(this);
       trayManager.removeListener(this);
     }
@@ -111,6 +114,35 @@ class _MainLayoutPageState extends State<MainLayoutPage>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    // 超小屏幕 直接兜底 UI
+    if (size.width < 320 || size.height <= 320) {
+      return Scaffold(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: 1,
+              minHeight: 1,
+              maxWidth: size.width, // 限制在可用宽高内
+              maxHeight: size.height,
+            ),
+            child: FittedBox(
+              // 自动缩放，不会溢出
+              fit: BoxFit.scaleDown,
+              child: Application.getAppLogo(
+                child: Text(
+                  "layout_min_size_error".tr(),
+                  overflow: TextOverflow.fade,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
 
     return Consumer<LayoutController>(
@@ -124,27 +156,34 @@ class _MainLayoutPageState extends State<MainLayoutPage>
           child: Scaffold(
             backgroundColor: Colors.transparent,
             body: () {
-             return Row(
+              return Row(
                 children: [
                   // 侧边栏
-                  if (!DeviceUtil.isMobile && !DeviceUtil.isWeb)
-                    DesktopSidebar(),
+                  if (DeviceUtil.isDesktop(context)) DesktopSidebar(),
                   // 主内容区域
                   Expanded(
                     child: Scaffold(
                       appBar: LayoutHeader().getAppbar(),
-                      body: PageView(
-                        controller: layout.pageController,
-                        // 禁止滑动
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: layout.options.map((e) => e.page).toList(),
+                      body: Navigator(
+                        key: Application.pageNavigatorKey,
+                        onGenerateRoute: (RouteSettings settings) {
+                          return MaterialPageRoute(
+                            builder: (_) => layout.layoutPages[layout.currentIndex].page,
+                          );
+                        },
+                        onUnknownRoute: (settings) {
+                          return MaterialPageRoute(
+                            builder: (_) => ErrorPage(routeName: settings.name ?? 'unknown'),
+                            settings: settings,
+                          );
+                        },
                       ),
                     ),
                   ),
                 ],
               );
             }(),
-            bottomNavigationBar: DeviceUtil.isMobile || DeviceUtil.isWeb
+            bottomNavigationBar: DeviceUtil.isMobile(context)
                 ? MobileBottomBar()
                 : null,
           ),
