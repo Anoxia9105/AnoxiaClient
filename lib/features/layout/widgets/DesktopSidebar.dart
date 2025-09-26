@@ -41,10 +41,9 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
             child: ListView(
               padding: EdgeInsets.zero,
               children:
-                  layoutController.layoutPages.asMap().entries.map((entry) {
+                  layoutController.layoutPages.asMap().entries.where((entry) => entry.value.show == true).map((entry) {
                     int idx = entry.key;
                     LayoutOptions option = entry.value;
-
                     return SidebarButton(
                       index: idx,
                       name: option.localizedName,

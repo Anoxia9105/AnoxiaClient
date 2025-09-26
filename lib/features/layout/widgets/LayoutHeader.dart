@@ -175,6 +175,7 @@ class LayoutHeader {
                                 name: menu.localizedName,
                                 icon: menu.icon,
                                 onTap: () {
+                                  layoutController.changeIndex(5);
                                   // Application.pageNavigatorKey.currentState?.pushReplacement(
                                   //   PageTransitions.createRoute(menu.page,type: PageTransitionType.slideFromBottom),
                                   // );
