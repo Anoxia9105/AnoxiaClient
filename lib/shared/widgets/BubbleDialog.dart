@@ -1,19 +1,26 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class _BubbleBorderArrowProperties {
   /// 箭头宽度的一半
   final double halfWidth;
+
   /// 箭头斜边的长度
   final double hypotenuse;
+
   /// 该斜边在主轴上的投影（水平时为X轴）
   final double projectionOnMain;
+
   /// 该斜边在纵轴上的投影（水平时为Y轴）
   final double projectionOnCross;
+
   /// 计算箭头半径在主轴上的投影（水平时为X轴）
   final double arrowProjectionOnMain;
+
   /// 计算箭头半径尖尖的长度
   final double topLen;
+
   _BubbleBorderArrowProperties({
     required this.halfWidth,
     required this.hypotenuse,
@@ -79,10 +86,12 @@ class BubbleShapeBorder extends OutlinedBorder {
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
     return _buildPath(rect);
   }
+
   _BubbleBorderArrowProperties _calculateArrowProperties() {
     final arrowHalfWidth = arrowWidth / 2;
-    final double hypotenuse =
-    sqrt(arrowLength * arrowLength + arrowHalfWidth * arrowHalfWidth);
+    final double hypotenuse = sqrt(
+      arrowLength * arrowLength + arrowHalfWidth * arrowHalfWidth,
+    );
     final double projectionOnMain = arrowHalfWidth * arrowRadius / hypotenuse;
     final double projectionOnCross =
         projectionOnMain * arrowLength / arrowHalfWidth;
@@ -116,10 +125,11 @@ class BubbleShapeBorder extends OutlinedBorder {
       padding = EdgeInsets.only(left: arrowLength);
     }
     final nRect = Rect.fromLTRB(
-        rect.left + padding.left,
-        rect.top + padding.top,
-        rect.right - padding.right,
-        rect.bottom - padding.bottom);
+      rect.left + padding.left,
+      rect.top + padding.top,
+      rect.right - padding.right,
+      rect.bottom - padding.bottom,
+    );
 
     final arrowProp = _calculateArrowProperties();
 
@@ -128,195 +138,298 @@ class BubbleShapeBorder extends OutlinedBorder {
     path.moveTo(startPoint.dx, startPoint.dy);
     // 箭头在上边
     if (arrowDirection == AxisDirection.up) {
-      Offset pointCenter =
-      Offset(nRect.left + (arrowOffset ?? nRect.width / 2), nRect.top);
-      Offset pointStart =
-      Offset(pointCenter.dx - arrowProp.halfWidth, nRect.top);
+      Offset pointCenter = Offset(
+        nRect.left + (arrowOffset ?? nRect.width / 2),
+        nRect.top,
+      );
+      Offset pointStart = Offset(
+        pointCenter.dx - arrowProp.halfWidth,
+        nRect.top,
+      );
       Offset pointArrow = Offset(pointCenter.dx, rect.top);
       Offset pointEnd = Offset(pointCenter.dx + arrowProp.halfWidth, nRect.top);
 
       // 下面计算开始的圆弧
-          {
-        Offset pointStartArcBegin =
-        Offset(pointStart.dx - arrowRadius, pointStart.dy);
+      {
+        Offset pointStartArcBegin = Offset(
+          pointStart.dx - arrowRadius,
+          pointStart.dy,
+        );
         Offset pointStartArcEnd = Offset(
-            pointStart.dx + arrowProp.projectionOnMain,
-            pointStart.dy - arrowProp.projectionOnCross);
+          pointStart.dx + arrowProp.projectionOnMain,
+          pointStart.dy - arrowProp.projectionOnCross,
+        );
         path.lineTo(pointStartArcBegin.dx, pointStartArcBegin.dy);
-        path.quadraticBezierTo(pointStart.dx, pointStart.dy,
-            pointStartArcEnd.dx, pointStartArcEnd.dy);
+        path.quadraticBezierTo(
+          pointStart.dx,
+          pointStart.dy,
+          pointStartArcEnd.dx,
+          pointStartArcEnd.dy,
+        );
       }
       // 计算中间箭头的圆弧
-          {
+      {
         Offset pointArrowArcBegin = Offset(
-            pointArrow.dx - arrowProp.arrowProjectionOnMain,
-            pointArrow.dy + arrowProp.topLen);
+          pointArrow.dx - arrowProp.arrowProjectionOnMain,
+          pointArrow.dy + arrowProp.topLen,
+        );
         Offset pointArrowArcEnd = Offset(
-            pointArrow.dx + arrowProp.arrowProjectionOnMain,
-            pointArrow.dy + arrowProp.topLen);
+          pointArrow.dx + arrowProp.arrowProjectionOnMain,
+          pointArrow.dy + arrowProp.topLen,
+        );
         path.lineTo(pointArrowArcBegin.dx, pointArrowArcBegin.dy);
-        path.quadraticBezierTo(pointArrow.dx, pointArrow.dy,
-            pointArrowArcEnd.dx, pointArrowArcEnd.dy);
+        path.quadraticBezierTo(
+          pointArrow.dx,
+          pointArrow.dy,
+          pointArrowArcEnd.dx,
+          pointArrowArcEnd.dy,
+        );
       }
       // 下面计算结束的圆弧
-          {
+      {
         Offset pointEndArcBegin = Offset(
-            pointEnd.dx - arrowProp.projectionOnMain,
-            pointEnd.dy - arrowProp.projectionOnCross);
+          pointEnd.dx - arrowProp.projectionOnMain,
+          pointEnd.dy - arrowProp.projectionOnCross,
+        );
         Offset pointEndArcEnd = Offset(pointEnd.dx + arrowRadius, pointEnd.dy);
         path.lineTo(pointEndArcBegin.dx, pointEndArcBegin.dy);
         path.quadraticBezierTo(
-            pointEnd.dx, pointEnd.dy, pointEndArcEnd.dx, pointEndArcEnd.dy);
+          pointEnd.dx,
+          pointEnd.dy,
+          pointEndArcEnd.dx,
+          pointEndArcEnd.dy,
+        );
       }
     }
 
     path.lineTo(nRect.right - borderRadius.topRight.x, nRect.top);
     // topRight radius
-    path.arcToPoint(Offset(nRect.right, nRect.top + borderRadius.topRight.y),
-        radius: borderRadius.topRight, rotation: 90);
+    path.arcToPoint(
+      Offset(nRect.right, nRect.top + borderRadius.topRight.y),
+      radius: borderRadius.topRight,
+      rotation: 90,
+    );
 
     // 箭头在右边
     if (arrowDirection == AxisDirection.right) {
-      Offset pointCenter =
-      Offset(nRect.right, nRect.top + (arrowOffset ?? nRect.height / 2));
-      Offset pointStart =
-      Offset(nRect.right, pointCenter.dy - arrowProp.halfWidth);
+      Offset pointCenter = Offset(
+        nRect.right,
+        nRect.top + (arrowOffset ?? nRect.height / 2),
+      );
+      Offset pointStart = Offset(
+        nRect.right,
+        pointCenter.dy - arrowProp.halfWidth,
+      );
       Offset pointArrow = Offset(rect.right, pointCenter.dy);
-      Offset pointEnd =
-      Offset(nRect.right, pointCenter.dy + arrowProp.halfWidth);
+      Offset pointEnd = Offset(
+        nRect.right,
+        pointCenter.dy + arrowProp.halfWidth,
+      );
 
       // 下面计算开始的圆弧
-          {
-        Offset pointStartArcBegin =
-        Offset(pointStart.dx, pointStart.dy - arrowRadius);
+      {
+        Offset pointStartArcBegin = Offset(
+          pointStart.dx,
+          pointStart.dy - arrowRadius,
+        );
         Offset pointStartArcEnd = Offset(
-            pointStart.dx + arrowProp.projectionOnCross,
-            pointStart.dy + arrowProp.projectionOnMain);
+          pointStart.dx + arrowProp.projectionOnCross,
+          pointStart.dy + arrowProp.projectionOnMain,
+        );
         path.lineTo(pointStartArcBegin.dx, pointStartArcBegin.dy);
-        path.quadraticBezierTo(pointStart.dx, pointStart.dy,
-            pointStartArcEnd.dx, pointStartArcEnd.dy);
+        path.quadraticBezierTo(
+          pointStart.dx,
+          pointStart.dy,
+          pointStartArcEnd.dx,
+          pointStartArcEnd.dy,
+        );
       }
       // 计算中间箭头的圆弧
-          {
-        Offset pointArrowArcBegin = Offset(pointArrow.dx - arrowProp.topLen,
-            pointArrow.dy - arrowProp.arrowProjectionOnMain);
-        Offset pointArrowArcEnd = Offset(pointArrow.dx - arrowProp.topLen,
-            pointArrow.dy + arrowProp.arrowProjectionOnMain);
+      {
+        Offset pointArrowArcBegin = Offset(
+          pointArrow.dx - arrowProp.topLen,
+          pointArrow.dy - arrowProp.arrowProjectionOnMain,
+        );
+        Offset pointArrowArcEnd = Offset(
+          pointArrow.dx - arrowProp.topLen,
+          pointArrow.dy + arrowProp.arrowProjectionOnMain,
+        );
         path.lineTo(pointArrowArcBegin.dx, pointArrowArcBegin.dy);
-        path.quadraticBezierTo(pointArrow.dx, pointArrow.dy,
-            pointArrowArcEnd.dx, pointArrowArcEnd.dy);
+        path.quadraticBezierTo(
+          pointArrow.dx,
+          pointArrow.dy,
+          pointArrowArcEnd.dx,
+          pointArrowArcEnd.dy,
+        );
       }
       // 下面计算结束的圆弧
-          {
+      {
         Offset pointEndArcBegin = Offset(
-            pointEnd.dx + arrowProp.projectionOnCross,
-            pointEnd.dy - arrowProp.projectionOnMain);
+          pointEnd.dx + arrowProp.projectionOnCross,
+          pointEnd.dy - arrowProp.projectionOnMain,
+        );
         Offset pointEndArcEnd = Offset(pointEnd.dx, pointEnd.dy + arrowRadius);
         path.lineTo(pointEndArcBegin.dx, pointEndArcBegin.dy);
         path.quadraticBezierTo(
-            pointEnd.dx, pointEnd.dy, pointEndArcEnd.dx, pointEndArcEnd.dy);
+          pointEnd.dx,
+          pointEnd.dy,
+          pointEndArcEnd.dx,
+          pointEndArcEnd.dy,
+        );
       }
     }
 
     path.lineTo(nRect.right, nRect.bottom - borderRadius.bottomRight.y);
     // bottomRight radius
     path.arcToPoint(
-        Offset(nRect.right - borderRadius.bottomRight.x, nRect.bottom),
-        radius: borderRadius.bottomRight,
-        rotation: 90);
+      Offset(nRect.right - borderRadius.bottomRight.x, nRect.bottom),
+      radius: borderRadius.bottomRight,
+      rotation: 90,
+    );
 
     // 箭头在下边
     if (arrowDirection == AxisDirection.down) {
-      Offset pointCenter =
-      Offset(nRect.left + (arrowOffset ?? nRect.width / 2), nRect.bottom);
-      Offset pointStart =
-      Offset(pointCenter.dx + arrowProp.halfWidth, nRect.bottom);
+      Offset pointCenter = Offset(
+        nRect.left + (arrowOffset ?? nRect.width / 2),
+        nRect.bottom,
+      );
+      Offset pointStart = Offset(
+        pointCenter.dx + arrowProp.halfWidth,
+        nRect.bottom,
+      );
       Offset pointArrow = Offset(pointCenter.dx, rect.bottom);
-      Offset pointEnd =
-      Offset(pointCenter.dx - arrowProp.halfWidth, nRect.bottom);
+      Offset pointEnd = Offset(
+        pointCenter.dx - arrowProp.halfWidth,
+        nRect.bottom,
+      );
 
       // 下面计算开始的圆弧
-          {
-        Offset pointStartArcBegin =
-        Offset(pointStart.dx + arrowRadius, pointStart.dy);
+      {
+        Offset pointStartArcBegin = Offset(
+          pointStart.dx + arrowRadius,
+          pointStart.dy,
+        );
         Offset pointStartArcEnd = Offset(
-            pointStart.dx - arrowProp.projectionOnMain,
-            pointStart.dy + arrowProp.projectionOnCross);
+          pointStart.dx - arrowProp.projectionOnMain,
+          pointStart.dy + arrowProp.projectionOnCross,
+        );
         path.lineTo(pointStartArcBegin.dx, pointStartArcBegin.dy);
-        path.quadraticBezierTo(pointStart.dx, pointStart.dy,
-            pointStartArcEnd.dx, pointStartArcEnd.dy);
+        path.quadraticBezierTo(
+          pointStart.dx,
+          pointStart.dy,
+          pointStartArcEnd.dx,
+          pointStartArcEnd.dy,
+        );
       }
       // 计算中间箭头的圆弧
-          {
+      {
         Offset pointArrowArcBegin = Offset(
-            pointArrow.dx + arrowProp.arrowProjectionOnMain,
-            pointArrow.dy - arrowProp.topLen);
+          pointArrow.dx + arrowProp.arrowProjectionOnMain,
+          pointArrow.dy - arrowProp.topLen,
+        );
         Offset pointArrowArcEnd = Offset(
-            pointArrow.dx - arrowProp.arrowProjectionOnMain,
-            pointArrow.dy - arrowProp.topLen);
+          pointArrow.dx - arrowProp.arrowProjectionOnMain,
+          pointArrow.dy - arrowProp.topLen,
+        );
         path.lineTo(pointArrowArcBegin.dx, pointArrowArcBegin.dy);
-        path.quadraticBezierTo(pointArrow.dx, pointArrow.dy,
-            pointArrowArcEnd.dx, pointArrowArcEnd.dy);
+        path.quadraticBezierTo(
+          pointArrow.dx,
+          pointArrow.dy,
+          pointArrowArcEnd.dx,
+          pointArrowArcEnd.dy,
+        );
       }
       // 下面计算结束的圆弧
-          {
+      {
         Offset pointEndArcBegin = Offset(
-            pointEnd.dx + arrowProp.projectionOnMain,
-            pointEnd.dy + arrowProp.projectionOnCross);
+          pointEnd.dx + arrowProp.projectionOnMain,
+          pointEnd.dy + arrowProp.projectionOnCross,
+        );
         Offset pointEndArcEnd = Offset(pointEnd.dx - arrowRadius, pointEnd.dy);
         path.lineTo(pointEndArcBegin.dx, pointEndArcBegin.dy);
         path.quadraticBezierTo(
-            pointEnd.dx, pointEnd.dy, pointEndArcEnd.dx, pointEndArcEnd.dy);
+          pointEnd.dx,
+          pointEnd.dy,
+          pointEndArcEnd.dx,
+          pointEndArcEnd.dy,
+        );
       }
     }
 
     path.lineTo(nRect.left + borderRadius.bottomLeft.x, nRect.bottom);
     // bottomLeft radius
     path.arcToPoint(
-        Offset(nRect.left, nRect.bottom - borderRadius.bottomRight.y),
-        radius: borderRadius.bottomLeft,
-        rotation: 90);
+      Offset(nRect.left, nRect.bottom - borderRadius.bottomRight.y),
+      radius: borderRadius.bottomLeft,
+      rotation: 90,
+    );
 
     // 箭头在左边
     if (arrowDirection == AxisDirection.left) {
-      Offset pointCenter =
-      Offset(nRect.left, nRect.top + (arrowOffset ?? nRect.height / 2));
-      Offset pointStart =
-      Offset(nRect.left, pointCenter.dy + arrowProp.halfWidth);
+      Offset pointCenter = Offset(
+        nRect.left,
+        nRect.top + (arrowOffset ?? nRect.height / 2),
+      );
+      Offset pointStart = Offset(
+        nRect.left,
+        pointCenter.dy + arrowProp.halfWidth,
+      );
       Offset pointArrow = Offset(rect.left, pointCenter.dy);
-      Offset pointEnd =
-      Offset(nRect.left, pointCenter.dy - arrowProp.halfWidth);
+      Offset pointEnd = Offset(
+        nRect.left,
+        pointCenter.dy - arrowProp.halfWidth,
+      );
 
       // 下面计算开始的圆弧
-          {
-        Offset pointStartArcBegin =
-        Offset(pointStart.dx, pointStart.dy + arrowRadius);
+      {
+        Offset pointStartArcBegin = Offset(
+          pointStart.dx,
+          pointStart.dy + arrowRadius,
+        );
         Offset pointStartArcEnd = Offset(
-            pointStart.dx - arrowProp.projectionOnCross,
-            pointStart.dy - arrowProp.projectionOnMain);
+          pointStart.dx - arrowProp.projectionOnCross,
+          pointStart.dy - arrowProp.projectionOnMain,
+        );
         path.lineTo(pointStartArcBegin.dx, pointStartArcBegin.dy);
-        path.quadraticBezierTo(pointStart.dx, pointStart.dy,
-            pointStartArcEnd.dx, pointStartArcEnd.dy);
+        path.quadraticBezierTo(
+          pointStart.dx,
+          pointStart.dy,
+          pointStartArcEnd.dx,
+          pointStartArcEnd.dy,
+        );
       }
       // 计算中间箭头的圆弧
-          {
-        Offset pointArrowArcBegin = Offset(pointArrow.dx + arrowProp.topLen,
-            pointArrow.dy + arrowProp.arrowProjectionOnMain);
-        Offset pointArrowArcEnd = Offset(pointArrow.dx + arrowProp.topLen,
-            pointArrow.dy - arrowProp.arrowProjectionOnMain);
+      {
+        Offset pointArrowArcBegin = Offset(
+          pointArrow.dx + arrowProp.topLen,
+          pointArrow.dy + arrowProp.arrowProjectionOnMain,
+        );
+        Offset pointArrowArcEnd = Offset(
+          pointArrow.dx + arrowProp.topLen,
+          pointArrow.dy - arrowProp.arrowProjectionOnMain,
+        );
         path.lineTo(pointArrowArcBegin.dx, pointArrowArcBegin.dy);
-        path.quadraticBezierTo(pointArrow.dx, pointArrow.dy,
-            pointArrowArcEnd.dx, pointArrowArcEnd.dy);
+        path.quadraticBezierTo(
+          pointArrow.dx,
+          pointArrow.dy,
+          pointArrowArcEnd.dx,
+          pointArrowArcEnd.dy,
+        );
       }
       // 下面计算结束的圆弧
-          {
+      {
         Offset pointEndArcBegin = Offset(
-            pointEnd.dx - arrowProp.projectionOnCross,
-            pointEnd.dy + arrowProp.projectionOnMain);
+          pointEnd.dx - arrowProp.projectionOnCross,
+          pointEnd.dy + arrowProp.projectionOnMain,
+        );
         Offset pointEndArcEnd = Offset(pointEnd.dx, pointEnd.dy - arrowRadius);
         path.lineTo(pointEndArcBegin.dx, pointEndArcBegin.dy);
         path.quadraticBezierTo(
-            pointEnd.dx, pointEnd.dy, pointEndArcEnd.dx, pointEndArcEnd.dy);
+          pointEnd.dx,
+          pointEnd.dy,
+          pointEndArcEnd.dx,
+          pointEndArcEnd.dy,
+        );
       }
     }
 
@@ -391,8 +504,6 @@ class BubbleShapeBorder extends OutlinedBorder {
   );
 }
 
-
-
 /// 气泡组件
 class BubbleWidget extends StatelessWidget {
   final BorderSide border;
@@ -436,6 +547,7 @@ class BubbleWidget extends StatelessWidget {
     } else if (arrowDirection == AxisDirection.right) {
       bubblePadding = EdgeInsets.only(right: arrowLength);
     }
+
     ///这里加name 和 tooltip 使用什么组件合适
     return Container(
       margin: margin,
@@ -448,7 +560,7 @@ class BubbleWidget extends StatelessWidget {
           arrowWidth: arrowWidth,
           arrowRadius: arrowRadius,
           arrowOffset: arrowOffset,
-          fillColor: backgroundColor ?? const Color.fromARGB(255, 65, 65, 65),
+          fillColor: backgroundColor ?? Colors.white,
         ),
         shadows: shadows,
       ),

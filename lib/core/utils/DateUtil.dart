@@ -38,4 +38,17 @@ class DateUtil {
     DateTime date = DateTime.fromMillisecondsSinceEpoch(ts.toInt());
     return DateFormat('HH:mm').format(date);
   }
+
+  /// 将字符串日期转为指定格式
+  /// [dateStr] 输入的日期字符串，例如 "2025-09-28 16:45:00"
+  /// [inputPattern] 输入字符串的格式，例如 "yyyy-MM-dd HH:mm:ss"
+  /// [outputPattern] 输出想要的格式，例如 "yyyy/MM/dd HH:mm"
+  static String formatIsoDate(String isoString, {String pattern = "yyyy-MM-dd HH:mm:ss"}) {
+    try {
+      final dateTime = DateTime.parse(isoString); // 直接解析 ISO 8601
+      return DateFormat(pattern).format(dateTime);
+    } catch (e) {
+      return isoString; // 解析失败时返回原字符串
+    }
+  }
 }

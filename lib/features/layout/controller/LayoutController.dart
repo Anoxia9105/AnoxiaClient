@@ -4,6 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/chat/pages/ChatPage.dart';
+import 'package:notepadclient/features/feedback/pages/FeedBackPage.dart';
+import 'package:notepadclient/features/help/pages/HelpPage.dart';
+import 'package:notepadclient/features/layout/widgets/LayoutBody.dart';
 import 'package:notepadclient/features/my/pages/MyPage.dart';
 import 'package:notepadclient/features/setting/pages/SettingPage.dart';
 import 'package:notepadclient/shared/widgets/FocusOverlayManager.dart';
@@ -47,11 +50,18 @@ class LayoutController extends ChangeNotifier {
   int currentIndex = 0;
 
   void changeIndex(int index) {
+    if (index < 0 || index >= layoutPageList.length) return;
     currentIndex = index;
     notifyListeners();
   }
 
-  final List<LayoutOptions> layoutPages = [
+
+  /// 索引页面列表
+  List<Widget> get indexedStackPages =>
+      layoutPageList.map((e) => e.page).toList();
+
+  ///主页面
+  final List<LayoutOptions> layoutPageList = [
     LayoutOptions(
       name: "sidebar_chat",
       icon: HugeIcons.strokeRoundedComment01,
@@ -77,38 +87,40 @@ class LayoutController extends ChangeNotifier {
       icon: HugeIcons.strokeRoundedUser,
       page: const MyPage(),
     ),
-    LayoutOptions(
-      name: "sidebar_settings",
-      icon: HugeIcons.strokeRoundedSettings01,
-      page: const SettingPage(),
-      show: false,
-    ),
   ];
 
+  ///头部更多按钮
   final List<LayoutOptions> headerMenus = [
     LayoutOptions(
-      name: "sidebar_settings",
+      name: "header_more_btn_settings",
       icon: HugeIcons.strokeRoundedSettings01,
       page: const SettingPage(),
     ),
     LayoutOptions(
-      name: "sidebar_settings",
-      icon: HugeIcons.strokeRoundedSettings01,
-      page: const SettingPage(),
+      name: "header_more_btn_help",
+      icon: HugeIcons.strokeRoundedHelpCircle,
+      page: const HelpPage(),
     ),
     LayoutOptions(
-      name: "sidebar_settings",
-      icon: HugeIcons.strokeRoundedSettings01,
-      page: const SettingPage(),
+      name: "header_more_btn_feedback",
+      icon: HugeIcons.strokeRoundedQuillWrite02,
+      page: const FeedBackPage(),
+    ),
+    LayoutOptions(
+      name: "header_more_btn_feedback",
+      icon: HugeIcons.strokeRoundedWifi01,
+      page: const LayoutBody(),
     ),
   ];
+
 }
 
+///布局页面项
+///
 class LayoutOptions {
   final String name;
   final IconData icon;
   final Widget page;
-  final bool? show;
 
   String get localizedName => name.tr();
 
@@ -116,6 +128,5 @@ class LayoutOptions {
     required this.name,
     required this.icon,
     required this.page,
-    this.show = true,
   });
 }

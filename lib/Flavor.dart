@@ -15,7 +15,7 @@ class FlavorValues {
   /// API 请求的基础地址
   final String baseUrl;
 
-  ///
+  /// ws 请求基础地址
   final String wsBaseUrl;
 
   /// 是否开启调试模式（日志、调试工具等）

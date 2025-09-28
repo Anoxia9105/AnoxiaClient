@@ -7,6 +7,7 @@ import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/features/layout/MainLayoutPage.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/setting/controller/SettingsController.dart';
+import 'package:notepadclient/shared/theme/AppColors.dart';
 import 'package:notepadclient/shared/widgets/Application.dart';
 import 'package:provider/provider.dart';
 
@@ -40,6 +41,8 @@ class App extends StatelessWidget {
         builder:
             (BuildContext context, SettingsController setting, Widget? child) {
               setting.loadSettings();
+
+              final gradient = setting.theme.extension<AppColors>()?.scaffoldGradient;
               return MaterialApp(
                 navigatorKey: Application.navigatorKey,
                 title: values.appName,
@@ -50,7 +53,9 @@ class App extends StatelessWidget {
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
                 locale: context.locale,
-                home: MainLayoutPage(),
+                home: Container(
+                    decoration: BoxDecoration(gradient: gradient),
+                    child: MainLayoutPage()),
               );
             },
       ),

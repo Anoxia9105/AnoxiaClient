@@ -143,50 +143,35 @@ class _MainLayoutPageState extends State<MainLayoutPage>
       );
     }
 
-    final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
-
     return Consumer<LayoutController>(
       builder: (BuildContext context, LayoutController layout, Widget? child) {
         //如果未登录，则跳转到登录页面
         if (!layout.isLogin) {
           return LoginPage();
         }
-        return Container(
-          decoration: BoxDecoration(gradient: gradient),
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: () {
-              return Row(
-                children: [
-                  // 侧边栏
-                  if (DeviceUtil.isDesktop(context)) DesktopSidebar(),
-                  // 主内容区域
-                  Expanded(
-                    child: Scaffold(
-                      appBar: LayoutHeader().getAppbar(),
-                      body: Navigator(
-                        key: Application.pageNavigatorKey,
-                        onGenerateRoute: (RouteSettings settings) {
-                          return MaterialPageRoute(
-                            builder: (_) => layout.layoutPages[layout.currentIndex].page,
-                          );
-                        },
-                        onUnknownRoute: (settings) {
-                          return MaterialPageRoute(
-                            builder: (_) => ErrorPage(routeName: settings.name ?? 'unknown'),
-                            settings: settings,
-                          );
-                        },
-                      ),
-                    ),
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: () {
+            return Row(
+              children: [
+                // 侧边栏 平板或桌面
+                if (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context)) DesktopSidebar(),
+                // 主内容区域
+                Expanded(
+                  child: Scaffold(
+                    appBar: LayoutHeader().getAppbar(),
+                    body: IndexedStack(
+                      index: layout.currentIndex,
+                      children: layout.indexedStackPages,
+                    )
                   ),
-                ],
-              );
-            }(),
-            bottomNavigationBar: DeviceUtil.isMobile(context)
-                ? MobileBottomBar()
-                : null,
-          ),
+                ),
+              ],
+            );
+          }(),
+          bottomNavigationBar: DeviceUtil.isMobile(context)
+              ? MobileBottomBar()
+              : null,
         );
       },
     );

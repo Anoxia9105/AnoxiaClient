@@ -57,6 +57,8 @@ dependencies:
   web_socket_channel: ^3.0.3
   #加密
   cryptography: ^2.7.0
+  #link 链接处理
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -108,6 +110,14 @@ flutter:
     - family: HarmonyOS
       fonts:
         - asset: assets/fonts/HarmonyOS.ttf
+    - family: ZhiyiMaru
+      fonts:
+        - asset: assets/fonts/ZhiyiMaru-Regular.ttf
+        - asset: assets/fonts/ZhiyiMaru-Bold.ttf
+    - family: SourceHanSerifCN
+      fonts:
+        - asset: assets/fonts/SourceHanSerifCN-Regular.otf
+        - asset: assets/fonts/SourceHanSerifCN-Bold.otf
 
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

@@ -4,16 +4,17 @@
   "header_reduction": "还原",
   "header_closure": "关闭",
   "header_more_tooltip": "设置及更多",
+  "header_more_btn_settings": "设置",
+  "header_more_btn_help": "帮助",
+  "header_more_btn_feedback": "反馈",
 
   "layout_min_size_error": "抱歉，不支持该设备",
-
 
   "sidebar_chat": "聊天",
   "sidebar_contact": "联系人",
   "sidebar_documentation": "文档",
   "sidebar_discover": "发现",
   "sidebar_my": "我的",
-  "sidebar_settings": "设置",
 
   "login_page_title": "欢迎登录",
   "login_page_name": "请输入用户名",
@@ -30,14 +31,17 @@
   "login_page_captcha_validator_regex": "验证码长度不符合要求",
 
 
-
-
   "settings_page_title": "设置",
   "settings_page_theme_title": "主题设置",
   "settings_page_theme_subtitle": "选择应用的主题",
   "settings_page_language_title": "语言设置",
   "settings_page_language_subtitle": "选择应用的语言",
-
+  "settings_page_fonts_title": "字体设置",
+  "settings_page_fonts_subtitle": "选择应用的字体",
+  "settings_page_layout_title": "布局方式设置",
+  "settings_page_layout_subtitle": "选择应用的布局方式",
+  "settings_page_about_title": "关于与支持",
+  "settings_page_about_subtitle": "关于该应用程序的信息",
 
 
   "app_light_themes1":"经典蓝",
@@ -59,5 +63,12 @@
   "app_dark_themes16":"矩阵代码",
   "app_dark_themes17":"落日晚霞",
   "app_dark_themes18":"凛冬冰川",
-  "app_dark_themes19":"水墨石墨"
+  "app_dark_themes19":"水墨石墨",
+
+
+
+
+  "help_page_title": "帮助",
+  "feedback_page_title": "反馈"
+
 }

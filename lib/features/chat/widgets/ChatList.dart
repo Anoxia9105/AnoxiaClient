@@ -81,7 +81,7 @@ class _ChatListState extends State<ChatList> {
                       roomName,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: TextStyle(fontSize: 14),
+                      style: TextStyle(fontSize: 16),
                     ),
                     subtitle: LastMessagePreview(textColor: selectedColor),
                     trailing: Padding(
@@ -137,7 +137,7 @@ class LastMessagePreview extends StatelessWidget {
             contentText,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
-            style: TextStyle(fontSize: 11, color: textColor),
+            style: TextStyle(fontSize: 12, color: textColor),
           ),
         ),
       ],
@@ -159,7 +159,7 @@ class LastMessagePreview extends StatelessWidget {
     // final count = msg.attachments.length;
     // final countStr = count > 1 ? "$count个" : "";
     return (
-      "$senderNickname大奖赛的海外渠道帮我去吃不起我才不去我",
+      "$senderNickname 繁体跑啦的海外渠道帮我去吃不起我才不去我",
       HugeIcons.strokeRoundedBubbleChatTranslate,
     );
     // switch (msg.type) {

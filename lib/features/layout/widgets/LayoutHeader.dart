@@ -5,13 +5,13 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/core/utils/PageTransitions.dart';
 import 'package:notepadclient/features/auth/controller/AuthController.dart';
+import 'package:notepadclient/shared/widgets/Application.dart';
 import 'package:notepadclient/shared/widgets/AvatarWidget.dart';
 import 'package:notepadclient/shared/widgets/BubbleDialog.dart';
 import 'package:notepadclient/shared/widgets/Toast.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../core/di/injector.dart';
-import '../../../shared/widgets/Application.dart';
 import '../controller/LayoutController.dart';
 
 /// 桌面端头部组件
@@ -118,9 +118,7 @@ class LayoutHeader {
     return AppBar(
       title: Text("Mobile Header"),
       actions: [
-        if (authController.userInfo != null) ...[
-          buildMoreButton(),
-        ],
+        if (authController.userInfo != null) ...[buildMoreButton()],
         SizedBox(width: 10),
       ],
     );
@@ -144,7 +142,8 @@ class LayoutHeader {
           message: "header_more_tooltip".tr(),
           child: IconButton(
             onPressed: () {
-              Toast.showWidget(
+              Function? close;
+              close = Toast.showWidget(
                 context,
                 direction: PreferDirection.topRight,
                 child: ConstrainedBox(
@@ -163,6 +162,7 @@ class LayoutHeader {
                         color: colorScheme.outlineVariant,
                       ),
                       backgroundColor: colorScheme.onPrimary,
+                      // backgroundColor: Colors.transparent,
                       contentBuilder: (context) => Column(
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(
@@ -175,11 +175,14 @@ class LayoutHeader {
                                 name: menu.localizedName,
                                 icon: menu.icon,
                                 onTap: () {
-                                  layoutController.changeIndex(5);
-                                  // Application.pageNavigatorKey.currentState?.pushReplacement(
-                                  //   PageTransitions.createRoute(menu.page,type: PageTransitionType.slideFromBottom),
+                                  // layoutController.jumpToPage(
+                                  //   "sidebar_settings",
                                   // );
-
+                                  Application.navigatorKey.currentState?.push(
+                                    PageTransitions.createRoute(menu.page
+                                    ),
+                                  );
+                                  close?.call();
                                 },
                               );
                             } else {
@@ -222,9 +225,8 @@ class HeaderMenusOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       dense: true,
-      hoverColor: Theme.of(context).colorScheme.primary,
-      leading: HugeIcon(icon: icon, size: 20),
-      title: Text(name.tr()),
+      leading: HugeIcon(icon: icon, size: 18),
+      title: Text(name),
       trailing: trailing,
       onTap: onTap,
     );

@@ -14,6 +14,7 @@ mixin ThemeMixin {
     required Brightness brightness,
     required Color? primaryColor,
     required LinearGradient gradient,
+    String? fontFamily,
   }) {
     final seed = primaryColor ?? Colors.indigo;
     final colorScheme = ColorScheme.fromSeed(
@@ -57,8 +58,9 @@ mixin ThemeMixin {
     final textButtonTheme = TextButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorWithAlpha(colorScheme.onSurface, 0.38);
+          }
           return colorScheme.primary;
         }),
         shape: WidgetStateProperty.all(
@@ -74,13 +76,15 @@ mixin ThemeMixin {
     final filledButtonTheme = FilledButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorWithAlpha(colorScheme.onSurface, 0.12);
+          }
           return colorScheme.primary;
         }),
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorWithAlpha(colorScheme.onSurface, 0.38);
+          }
           return colorScheme.onPrimary;
         }),
         elevation: WidgetStateProperty.resolveWith<double?>((states) {
@@ -100,8 +104,9 @@ mixin ThemeMixin {
     final elevatedButtonTheme = ElevatedButtonThemeData(
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorWithAlpha(colorScheme.onSurface, 0.12);
+          }
           return colorScheme.primary;
         }),
         foregroundColor: WidgetStateProperty.all(colorScheme.onPrimary),
@@ -116,8 +121,9 @@ mixin ThemeMixin {
     final iconButtonTheme = IconButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorWithAlpha(colorScheme.onSurface, 0.38);
+          }
           return colorScheme.onSurface;
         }),
         shape: WidgetStateProperty.all(
@@ -141,9 +147,8 @@ mixin ThemeMixin {
     final inputDecorationTheme = InputDecorationTheme(
       isDense: true,
       filled: true,
-      fillColor:
-          colorScheme
-              .surfaceContainerHighest, // 表单背景使用 surfaceContainerHighest，适配 M3
+      fillColor: colorScheme.surfaceContainerHighest,
+      // 表单背景使用 surfaceContainerHighest，适配 M3
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -173,35 +178,40 @@ mixin ThemeMixin {
     final checkboxTheme = CheckboxThemeData(
       side: BorderSide(color: colorWithAlpha(colorScheme.onSurface, 0.12)),
       fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))
+        if (states.contains(WidgetState.disabled)) {
           return colorWithAlpha(colorScheme.onSurface, 0.12);
+        }
         if (states.contains(WidgetState.selected)) return colorScheme.primary;
         return colorWithAlpha(colorScheme.onSurface, 0.6);
       }),
       checkColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))
+        if (states.contains(WidgetState.disabled)) {
           return colorWithAlpha(colorScheme.onSurface, 0.38);
+        }
         return colorScheme.onPrimary;
       }),
     );
 
     final radioTheme = RadioThemeData(
       fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))
+        if (states.contains(WidgetState.disabled)) {
           return colorWithAlpha(colorScheme.onSurface, 0.12);
+        }
         return colorScheme.primary;
       }),
     );
 
     final switchTheme = SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))
+        if (states.contains(WidgetState.disabled)) {
           return colorWithAlpha(colorScheme.onSurface, 0.12);
+        }
         return colorScheme.primary;
       }),
       trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(WidgetState.disabled))
+        if (states.contains(WidgetState.disabled)) {
           return colorWithAlpha(colorScheme.onSurface, 0.06);
+        }
         return colorWithAlpha(colorScheme.primary, 0.24);
       }),
     );
@@ -220,15 +230,16 @@ mixin ThemeMixin {
     // -------------------------
     // Chip / Card / Dialog / Tooltip / PopupMenu 主题
     // -------------------------
-    final chipTheme = ChipThemeData.fromDefaults(
-      secondaryColor: colorScheme.primary,
-      labelStyle: TextStyle(color: colorScheme.onSurface),
-      brightness: brightness,
-    ).copyWith(
-      backgroundColor: colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-    );
+    final chipTheme =
+        ChipThemeData.fromDefaults(
+          secondaryColor: colorScheme.primary,
+          labelStyle: TextStyle(color: colorScheme.onSurface),
+          brightness: brightness,
+        ).copyWith(
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        );
 
     final cardTheme = CardThemeData(
       elevation: 4,
@@ -335,7 +346,7 @@ mixin ThemeMixin {
     // -------------------------
     return ThemeData(
       useMaterial3: true,
-      fontFamily: 'HarmonyOS',
+      fontFamily: fontFamily ?? 'HarmonyOS',
       brightness: brightness,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,

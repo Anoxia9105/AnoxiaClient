@@ -32,11 +32,10 @@ class _MobileBottomBarState extends State<MobileBottomBar> {
         layoutController.changeIndex(index);
       },
       items:
-          layoutController.layoutPages.asMap().entries.where((entry) => entry.value.show == false).map((entry) {
-            LayoutOptions option = entry.value;
+          layoutController.layoutPageList.map((entry) {
             return BottomNavigationBarItem(
-              icon: HugeIcon(icon: option.icon, size: 18),
-              label: option.localizedName,
+              icon: HugeIcon(icon: entry.icon, size: 18),
+              label: entry.localizedName,
             );
           }).toList(),
     );

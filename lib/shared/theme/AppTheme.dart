@@ -199,24 +199,16 @@ class AppTheme with ThemeMixin {
     ),
   ];
 
-  /// 生成 ThemeData 列表
-  static final List<ThemeData> _themeList =
-      themes
-          .map(
-            (t) => ThemeMixin.buildTheme(
-              brightness: t.brightness,
-              primaryColor: t.color,
-              gradient: t.gradient,
-            ),
-          )
-          .toList();
-
   /// 根据 index 获取 ThemeData
-  static ThemeData getTheme({int? index}) {
-    if (index == null || index < 0 || index >= _themeList.length) {
-      return _themeList[0];
-    }
-    return _themeList[index];
+  static ThemeData getTheme({int? index,String? overrideFontFamily}) {
+    final idx = (index == null || index < 0 || index >= themes.length) ? 0 : index;
+    final t = themes[idx];
+    return ThemeMixin.buildTheme(
+      brightness: t.brightness,
+      primaryColor: t.color,
+      gradient: t.gradient,
+      fontFamily: overrideFontFamily ?? t.fontFamily,
+    );
   }
 }
 
@@ -226,8 +218,9 @@ class ThemeOption {
   final Color? color;
   final Brightness brightness;
   final LinearGradient gradient;
+  final String? fontFamily;
 
-  const ThemeOption(this.name, this.color, this.brightness, this.gradient);
+  const ThemeOption(this.name, this.color, this.brightness, this.gradient, {this.fontFamily});
 
   String get localizedName => name.tr();
 }

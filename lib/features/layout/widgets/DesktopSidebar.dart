@@ -1,8 +1,8 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/shared/widgets/Application.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/injector.dart';
 
@@ -32,29 +32,39 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
         children: [
           const SizedBox(height: 16),
           // logo 图标位置
-          IconButton(
-            onPressed: () {},
-            icon: Application.getAppLogo(width: 30, height: 30),
+          InkWell(
+            child: Center(child: Application.getAppLogo(width: 30,height: 30)),
+            onTap: ()=>openLink(),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children:
-                  layoutController.layoutPages.asMap().entries.where((entry) => entry.value.show == true).map((entry) {
-                    int idx = entry.key;
-                    LayoutOptions option = entry.value;
-                    return SidebarButton(
-                      index: idx,
-                      name: option.localizedName,
-                      icon: option.icon,
-                    );
-                  }).toList(),
+              children: List.generate(
+                layoutController.layoutPageList.length,
+                (index) {
+                  final page = layoutController.layoutPageList[index];
+                  return SidebarButton(
+                    index: index,
+                    name: page.localizedName,
+                    icon: page.icon,
+                  );
+                },
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> openLink() async {
+    final Uri url = Uri.parse("https://flutter.dev");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      throw "无法打开 $url";
+    }
   }
 }
 
