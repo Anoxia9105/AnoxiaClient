@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/chat/pages/ChatPage.dart';
+import 'package:notepadclient/features/contact/pages/ContactPage.dart';
 import 'package:notepadclient/features/feedback/pages/FeedBackPage.dart';
 import 'package:notepadclient/features/help/pages/HelpPage.dart';
 import 'package:notepadclient/features/layout/widgets/LayoutBody.dart';
@@ -70,7 +71,7 @@ class LayoutController extends ChangeNotifier {
     LayoutOptions(
       name: "sidebar_contact",
       icon: HugeIcons.strokeRoundedContact01,
-      page: const Text("sidebar_contact"),
+      page: const ContactPage(),
     ),
     LayoutOptions(
       name: "sidebar_documentation",

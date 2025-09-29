@@ -13,10 +13,11 @@ import '../../../core/di/injector.dart';
 class ChatController extends ChangeNotifier {
   ///依赖注入
   late IMClient _imClient;
+  final IChatService _chatService=getIt<IChatService>();
+  // final SysUser? _user=getIt<AuthController>().userInfo;
 
   //RoomSummary
-
-  RoomSummary? roomSummary;
+  List<RoomSummary?> roomSummaryList=[];
 
   void bindClient(IMClient client) {
     _imClient = client;
@@ -69,6 +70,11 @@ class ChatController extends ChangeNotifier {
   void setSelectIndex(int index) {
     _selectedIndex = index;
     // setChatRoom = getRoom(index);
+    // String? roomId= roomSummaryList[index]?.roomId;
+    // if(roomId != null && _user !=null && _user.data != null){
+    //  num userId= _user.data?.userId ?? 0;
+    //  _chatService.getRoomMessage(roomId,userId);
+    // }
     notifyListeners();
   }
 }

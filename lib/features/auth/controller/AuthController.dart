@@ -8,7 +8,6 @@ import 'package:notepadclient/core/domain/SysUser.dart';
 import 'package:notepadclient/core/domain/captcha.dart';
 import 'package:notepadclient/core/network/TokenManager.dart';
 import 'package:notepadclient/core/utils/SPUtil.dart';
-import 'package:notepadclient/core/utils/SSUtil.dart';
 import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/features/chat/service/IChatService.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
@@ -136,10 +135,13 @@ class AuthController extends ChangeNotifier {
   Future<void> _loginInit(SysUser? user) async {
     if (user != null && user.code == HttpStatus.ok) {
       userInfo = user;
+      //初始化联系人
+
       //初始化聊天室
-      _chatController.roomSummary = await _chatService.getChatList(
+      _chatController.roomSummaryList = await _chatService.getChatList(
         userInfo?.data?.userId,
       );
+
 
       _layoutController.login = true;
       return;

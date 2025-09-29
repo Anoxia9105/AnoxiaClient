@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/core/di/injector.dart';
+import 'package:notepadclient/core/domain/RoomSummary.dart';
 import 'package:notepadclient/core/utils/DateUtil.dart';
 import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/shared/widgets/AvatarWidget.dart';
@@ -22,8 +23,7 @@ class ChatList extends StatefulWidget {
 class _ChatListState extends State<ChatList> {
   @override
   Widget build(BuildContext context) {
-    final data = chatController.roomSummary?.data;
-    final int roomLength = data?.length ?? 0;
+    final data = chatController.roomSummaryList;
 
     return Column(
       children: [
@@ -38,22 +38,25 @@ class _ChatListState extends State<ChatList> {
         ),
         Expanded(
           child: () {
-            if (data == null || roomLength <= 0) {
+            if (data.isEmpty) {
               return NoData();
             }
             return ListView.builder(
               controller: chatController.scrollChatListController,
-              itemCount: roomLength,
+              itemCount: data.length,
               itemBuilder: (context, index) {
                 //房间名称
-                String roomName = data[index].roomName ?? '';
+                String roomName = data[index]?.roomName ?? '';
                 //房间头像
-                String? roomAvatar = data[index].roomAvatar ?? '';
+                String? roomAvatar = data[index]?.roomAvatar ?? '';
+                //最后一条消息
+                LastMessage? lastMessage = data[index]?.lastMessage;
                 //最后一条消息时间
-                String lastTimestamp = DateUtil.formatTimestampToTime(data[index].lastMessage?.timestamp ?? 0 );
-                //最后一条消息内容
+                String lastTimestamp = DateUtil.formatTimestampToTime(
+                  lastMessage?.timestamp ?? 0,
+                );
                 //未读消息数
-                int? messageCount = data[index].unreadCount?.toInt() ?? 0;
+                int? messageCount = data[index]?.unreadCount?.toInt() ?? 0;
 
                 //选中背景色
                 Color? selectedColor = chatController.selectIndex == index
@@ -83,13 +86,19 @@ class _ChatListState extends State<ChatList> {
                       maxLines: 1,
                       style: TextStyle(fontSize: 16),
                     ),
-                    subtitle: LastMessagePreview(textColor: selectedColor),
+                    subtitle: LastMessagePreview(
+                      textColor: selectedColor,
+                      lastMessage: lastMessage,
+                    ),
                     trailing: Padding(
                       padding: EdgeInsets.all(4),
                       child: Column(
                         children: [
                           /// 时间
-                          Text(lastTimestamp, style: TextStyle(color: selectedColor)),
+                          Text(
+                            lastTimestamp,
+                            style: TextStyle(color: selectedColor),
+                          ),
                           Expanded(child: SizedBox.shrink()),
 
                           ///未读消息数量
@@ -111,15 +120,20 @@ class _ChatListState extends State<ChatList> {
 
 class LastMessagePreview extends StatelessWidget {
   final Color? textColor;
+  final LastMessage? lastMessage;
 
-  const LastMessagePreview({super.key, required this.textColor});
+  const LastMessagePreview({
+    super.key,
+    required this.textColor,
+    this.lastMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // if (lastMessage == null) return const SizedBox.shrink();
+    if (lastMessage == null) return const SizedBox.shrink();
 
     final senderNickname = _getSenderNickname();
-    final (contentText, icon) = _buildPreviewContent(senderNickname);
+    final (contentText, icon) = _buildPreviewContent(senderNickname,lastMessage!);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -154,12 +168,12 @@ class LastMessagePreview extends StatelessWidget {
   }
 
   /// 根据消息类型生成预览内容和图标
-  (String, IconData?) _buildPreviewContent(String senderNickname) {
+  (String, IconData?) _buildPreviewContent(String name,LastMessage lastMessage) {
     // final msg = lastMessage!;
     // final count = msg.attachments.length;
     // final countStr = count > 1 ? "$count个" : "";
     return (
-      "$senderNickname 繁体跑啦的海外渠道帮我去吃不起我才不去我",
+      "$name${lastMessage.content?.text ?? ''}",
       HugeIcons.strokeRoundedBubbleChatTranslate,
     );
     // switch (msg.type) {

@@ -19,12 +19,11 @@ import 'package:notepadclient/shared/widgets/Toast.dart';
 import '../../../../core/constants/StorageKeys.dart';
 
 class AuthServiceImpl extends ApiBase implements IAuthService {
-  final DioClient client = DioClient();
   Timer? _refreshTimer;
 
   @override
   Future<Captcha> getCaptchaImage() async {
-    final response = await client.get(pathCaptchaImage(), auth: false);
+    final response = await get(pathCaptchaImage(), auth: false);
     return Captcha.fromJson(response.data);
   }
 
@@ -75,17 +74,19 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
     _refreshTimer?.cancel(); // 停掉续期任务
     _refreshTimer = null;
 
-    final response = await client.get(pathLogout());
+    final response = await get(pathLogout());
     if (response.statusCode != HttpStatus.ok) {
       Toast.showToast("退出登录失败了！", type: ToastType.error);
     }
   }
 
   Future<SysUser?> _getUserInfo() async {
-    final response = await client.get(pathGetInfo());
+    final response = await get(pathGetInfo());
     if (response.statusCode != HttpStatus.ok || response.data == null) {
       return null;
     }
+    print("======================");
+    print(response.data);
 
     if (response.data["code"] != HttpStatus.ok) {
       return null;
@@ -96,7 +97,7 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
   }
 
   Future<String?> _loginByToken(Map<String, String> loginData) async {
-    final response = await client.post(
+    final response = await post(
       pathLogin(),
       data: loginData,
       auth: false,
@@ -145,7 +146,7 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
     _refreshTimer = Timer.periodic(refreshInterval, (timer) async {
       print("刷新token...");
       //刷新token
-      final response = await client.get(pathRefreshToken());
+      final response = await get(pathRefreshToken());
       if (response.statusCode != HttpStatus.ok) {
         Toast.showToast("令牌即将过期，稍后请重新登录", type: ToastType.warning);
       }

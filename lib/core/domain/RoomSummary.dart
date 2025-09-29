@@ -1,62 +1,10 @@
 import 'dart:convert';
-/// msg : "操作成功"
-/// code : 200
-/// data : [{"roomId":"testroom2","roomName":"testGroup1","roomAvatar":"","roomDescription":"测试用群聊","roomStatus":0,"roomType":0,"joinTime":1756799546000,"lastActiveTime":null,"roleId":2,"roleName":"member","permissionsJson":"[\"SEND_MESSAGE\", \"READ_MESSAGE\"]","lastMessage":{"messageId":"368601b5617f4b5c9078ec15e38ceb71","roomId":"testroom2","senderId":1,"messageType":0,"messageStatus":0,"timestamp":1758770002766,"content":{"messageId":null,"text":"你好","type":0,"extra":{}},"system":null,"attachment":null,"readUserIds":null},"unreadCount":13},{"roomId":"testroom1","roomName":"testSingle1","roomAvatar":"","roomDescription":"测试用私聊","roomStatus":0,"roomType":0,"joinTime":1756799365000,"lastActiveTime":null,"roleId":1,"roleName":"member","permissionsJson":"[\"SEND_MESSAGE\", \"READ_MESSAGE\"]","lastMessage":{"messageId":"ef9580a9-928c-44d8-8cfa-9b82bc50218d","roomId":"testroom1","senderId":3,"messageType":0,"messageStatus":0,"timestamp":1757920701471,"content":{"messageId":null,"text":"测试消息 97 来自用户 3","type":0,"extra":{}},"system":null,"attachment":null,"readUserIds":null},"unreadCount":12}]
-
-RoomSummary roomSummaryFromJson(String str) => RoomSummary.fromJson(json.decode(str));
-String roomSummaryToJson(RoomSummary data) => json.encode(data.toJson());
-class RoomSummary {
-  RoomSummary({
-      String? msg, 
-      num? code, 
-      List<Data>? data,}){
-    _msg = msg;
-    _code = code;
-    _data = data;
-}
-
-  RoomSummary.fromJson(dynamic json) {
-    _msg = json['msg'];
-    _code = json['code'];
-    if (json['data'] != null) {
-      _data = [];
-      json['data'].forEach((v) {
-        _data?.add(Data.fromJson(v));
-      });
-    }
-  }
-  String? _msg;
-  num? _code;
-  List<Data>? _data;
-RoomSummary copyWith({  String? msg,
-  num? code,
-  List<Data>? data,
-}) => RoomSummary(  msg: msg ?? _msg,
-  code: code ?? _code,
-  data: data ?? _data,
-);
-  String? get msg => _msg;
-  num? get code => _code;
-  List<Data>? get data => _data;
-
-  Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{};
-    map['msg'] = _msg;
-    map['code'] = _code;
-    if (_data != null) {
-      map['data'] = _data?.map((v) => v.toJson()).toList();
-    }
-    return map;
-  }
-
-}
-
 /// roomId : "testroom2"
 /// roomName : "testGroup1"
 /// roomAvatar : ""
 /// roomDescription : "测试用群聊"
 /// roomStatus : 0
-/// roomType : 0
+/// roomType : 1
 /// joinTime : 1756799546000
 /// lastActiveTime : null
 /// roleId : 2
@@ -65,10 +13,10 @@ RoomSummary copyWith({  String? msg,
 /// lastMessage : {"messageId":"368601b5617f4b5c9078ec15e38ceb71","roomId":"testroom2","senderId":1,"messageType":0,"messageStatus":0,"timestamp":1758770002766,"content":{"messageId":null,"text":"你好","type":0,"extra":{}},"system":null,"attachment":null,"readUserIds":null}
 /// unreadCount : 13
 
-Data dataFromJson(String str) => Data.fromJson(json.decode(str));
-String dataToJson(Data data) => json.encode(data.toJson());
-class Data {
-  Data({
+RoomSummary roomSummaryFromJson(String str) => RoomSummary.fromJson(json.decode(str));
+String roomSummaryToJson(RoomSummary data) => json.encode(data.toJson());
+class RoomSummary {
+  RoomSummary({
       String? roomId, 
       String? roomName, 
       String? roomAvatar, 
@@ -97,7 +45,7 @@ class Data {
     _unreadCount = unreadCount;
 }
 
-  Data.fromJson(dynamic json) {
+  RoomSummary.fromJson(dynamic json) {
     _roomId = json['roomId'];
     _roomName = json['roomName'];
     _roomAvatar = json['roomAvatar'];
@@ -125,7 +73,7 @@ class Data {
   String? _permissionsJson;
   LastMessage? _lastMessage;
   num? _unreadCount;
-Data copyWith({  String? roomId,
+RoomSummary copyWith({  String? roomId,
   String? roomName,
   String? roomAvatar,
   String? roomDescription,
@@ -138,7 +86,7 @@ Data copyWith({  String? roomId,
   String? permissionsJson,
   LastMessage? lastMessage,
   num? unreadCount,
-}) => Data(  roomId: roomId ?? _roomId,
+}) => RoomSummary(  roomId: roomId ?? _roomId,
   roomName: roomName ?? _roomName,
   roomAvatar: roomAvatar ?? _roomAvatar,
   roomDescription: roomDescription ?? _roomDescription,

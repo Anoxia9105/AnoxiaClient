@@ -4,20 +4,39 @@ import 'package:notepadclient/core/constants/ApiBase.dart';
 import 'package:notepadclient/core/domain/RoomSummary.dart';
 import 'package:notepadclient/features/chat/service/IChatService.dart';
 
-import '../../../../core/network/DioClient.dart';
 
 class ChatServiceImpl extends ApiBase implements IChatService {
-  final DioClient client = DioClient();
 
   @override
-  Future<RoomSummary?> getChatList(num? userId) async {
-    final response = await client.get(
+  Future<List<RoomSummary?>> getChatList(num? userId) async {
+    final response = await get(
       pathRoomList(),
       queryParameters: {"userId": userId},
     );
-    if (response.statusCode != HttpStatus.ok || response.data["code"] != HttpStatus.ok || response.data == null) {
-      return null;
+
+    // 先判空
+    final data = response.data;
+    if (response.statusCode != HttpStatus.ok || data == null) {
+      return [];
     }
-    return RoomSummary.fromJson(response.data);
+
+    // 业务 code 校验
+    if (data["code"] != HttpStatus.ok || data["data"] == null) {
+      return [];
+    }
+
+    // 转换为对象列表
+    final list = data["data"] as List;
+    return list.map((e) => RoomSummary.fromJson(e)).toList();
+  }
+
+  @override
+  Future<void> getRoomMessage(String roomId,num userId) async {
+    final response = await  get(pathRoomMessage(),queryParameters: {
+      "roomId": roomId,
+      "userId":userId
+    });
+    print("================================");
+    print(response);
   }
 }

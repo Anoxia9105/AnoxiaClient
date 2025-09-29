@@ -59,7 +59,7 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   }
 
   Future<void> openLink() async {
-    final Uri url = Uri.parse("https://flutter.dev");
+    final Uri url = Uri.parse("https://anoxia.cn");
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {

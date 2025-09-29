@@ -178,7 +178,7 @@ class IMClient {
   }
 
   /// 订阅所有消息
-  StreamSubscription<dynamic> subscribeAll(void Function(dynamic msg) onData) {
+  StreamSubscription<dynamic> subscribeAll(void Function(IMEvent msg) onData) {
     return inboundStream.listen((msg) {
       try {
         onData(msg);
@@ -220,10 +220,12 @@ class IMClient {
       // 监听入站数据
       _channel!.stream.listen(
         // 处理原始消息（解码、pong 匹配、派发）
-        (dynamic raw) =>
-            (raw) => !_inboundController.isClosed
-            ? _inboundController.add(IMEvent(IMEventType.message, data: raw))
-            : null,
+        (dynamic raw){
+          print("SOCKET::::::::::$raw");
+          if(!_inboundController.isClosed){
+            _inboundController.add(IMEvent(IMEventType.message, data: raw));
+          }
+        },
         onError: (error) => _onSocketError(error),
         onDone: () => _onSocketDone(),
         cancelOnError: true,
