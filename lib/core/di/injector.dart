@@ -6,6 +6,7 @@ import 'package:notepadclient/features/auth/service/impl/AuthServiceImpl.dart';
 import 'package:notepadclient/features/chat/controller/ChatController.dart';
 import 'package:notepadclient/features/chat/service/IChatService.dart';
 import 'package:notepadclient/features/chat/service/impl/ChatServiceImpl.dart';
+import 'package:notepadclient/features/contact/controller/ContactController.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
 import 'package:notepadclient/features/setting/controller/SettingsController.dart';
 
@@ -31,6 +32,7 @@ Future<void> init() async {
   getIt.registerSingleton<LayoutController>(LayoutController());
   getIt.registerSingleton<ChatController>(ChatController());
   getIt.registerSingleton<AuthController>(AuthController());
+  getIt.registerSingleton<ContactController>(ContactController());
   getIt.registerSingleton<SettingsController>(SettingsController());
 
 

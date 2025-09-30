@@ -12,6 +12,7 @@ import 'package:notepadclient/shared/widgets/Application.dart';
 import 'package:provider/provider.dart';
 
 import 'Flavor.dart';
+import 'features/contact/controller/ContactController.dart';
 
 
 
@@ -35,6 +36,9 @@ class App extends StatelessWidget {
         ),
         ChangeNotifierProvider<ChatController>(
           create: (ctx) => getIt<ChatController>(),
+        ),
+        ChangeNotifierProvider<ContactController>(
+          create: (ctx) => getIt<ContactController>(),
         ),
       ],
       child: Consumer<SettingsController>(

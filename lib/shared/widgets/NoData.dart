@@ -18,7 +18,7 @@ class NoData extends StatelessWidget {
     this.iconData,
   }) : assert(
          !(onPressed != null && (buttonText == null || buttonText == "")),
-         '当 onCreateNewChat 不为 null 时，buttonText 不能为空',
+         '当 onPressed 不为 null 时，buttonText 不能为空',
        );
 
   @override
@@ -47,38 +47,28 @@ class NoData extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 15.h), // 间距
-            // 引导文本
-            Text(
-              subTitle ?? '请稍后再试！',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.4, // 行高
-              ),
-            ),
-            SizedBox(height: 40.h), // 间距
+           if(subTitle != null)
+           ...[
+             SizedBox(height: 10), // 间距
+             // 引导文本
+             Text(
+               subTitle ?? '',
+               textAlign: TextAlign.center,
+               style: TextStyle(
+                 fontSize: 15,
+                 height: 1.4, // 行高
+               ),
+             ),
+            ],
+            SizedBox(height: 20.h), // 间距
             // 如果有创建新聊天的功能，可以添加一个按钮
             if (onPressed != null)
-              FilledButton(
+              OutlinedButton(
                 onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo, // 按钮背景色
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 30.w,
-                    vertical: 12.h,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25.r), // 圆角按钮
-                  ),
-                  elevation: 3, // 增加一点阴影
-                ),
                 child: Text(
                   buttonText ?? '',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

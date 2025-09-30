@@ -161,8 +161,9 @@ class LayoutHeader {
                         width: 1,
                         color: colorScheme.outlineVariant,
                       ),
-                      backgroundColor: colorScheme.onPrimary,
-                      // backgroundColor: Colors.transparent,
+                      backgroundColor: colorScheme.onPrimary.withValues(
+                        alpha: 0.9,
+                      ),
                       contentBuilder: (context) => Column(
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(
@@ -179,8 +180,7 @@ class LayoutHeader {
                                   //   "sidebar_settings",
                                   // );
                                   Application.navigatorKey.currentState?.push(
-                                    PageTransitions.createRoute(menu.page
-                                    ),
+                                    PageTransitions.createRoute(menu.page),
                                   );
                                   close?.call();
                                 },
@@ -228,6 +228,7 @@ class HeaderMenusOptions extends StatelessWidget {
       leading: HugeIcon(icon: icon, size: 18),
       title: Text(name),
       trailing: trailing,
+      hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
       onTap: onTap,
     );
   }
