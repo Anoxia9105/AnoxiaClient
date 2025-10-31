@@ -34,8 +34,8 @@ Future<void> init() async {
   //控制器
   getIt.registerSingleton<LayoutController>(LayoutController());
   getIt.registerSingleton<ChatController>(ChatController());
-  getIt.registerSingleton<AuthController>(AuthController());
   getIt.registerSingleton<ContactController>(ContactController());
+  getIt.registerSingleton<AuthController>(AuthController());
   getIt.registerSingleton<SettingsController>(SettingsController());
 
 

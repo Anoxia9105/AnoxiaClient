@@ -148,7 +148,7 @@ mixin ThemeMixin {
       isDense: true,
       filled: true,
       // fillColor: colorScheme.surfaceContainerHighest,
-      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha:  0.1),
+      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
       // 表单背景使用 surfaceContainerHighest，适配 M3
       // contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
@@ -244,10 +244,16 @@ mixin ThemeMixin {
 
     final cardTheme = CardThemeData(
       elevation: 4,
-      // color: Colors.transparent,
+      color: brightness == Brightness.light
+          ? Colors.white
+          : null,
       shape: RoundedRectangleBorder(
-          // side: BorderSide(width: 1, color: colorWithAlpha(colorScheme.onSurface, 0.2)),
-          borderRadius: BorderRadius.circular(8)),
+        // side: BorderSide(
+        //   width: 1,
+        //   color: colorWithAlpha(colorScheme.onSurface, 0.2),
+        // ),
+        borderRadius: BorderRadius.circular(4),
+      ),
       margin: const EdgeInsets.all(8),
     );
 

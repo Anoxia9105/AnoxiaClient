@@ -3,6 +3,13 @@ import 'package:notepadclient/features/contact/controller/ContactController.dart
 import 'package:notepadclient/shared/widgets/Application.dart';
 import 'package:provider/provider.dart';
 
+
+///右侧详细页面切换
+///
+/// 作者: anoxia
+///
+/// 日期: 2025/10/31 上午10:15
+///
 class ContactDetail extends StatefulWidget {
   const ContactDetail({super.key});
 

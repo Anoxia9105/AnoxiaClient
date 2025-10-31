@@ -1,10 +1,14 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/features/layout/controller/LayoutController.dart';
-import 'package:notepadclient/shared/widgets/Application.dart';
+import 'package:notepadclient/shared/widgets/BubbleDialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/injector.dart';
+import '../../../shared/widgets/AvatarWidget.dart';
+import '../../../shared/widgets/Toast.dart';
+import '../../auth/controller/AuthController.dart';
 
 /// 桌面环境导航栏
 ///
@@ -26,31 +30,80 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = getIt<AuthController>();
     return SizedBox(
       width: 70,
       child: Column(
         children: [
           const SizedBox(height: 16),
+
           // logo 图标位置
-          InkWell(
-            child: Center(child: Application.getAppLogo(width: 30,height: 30)),
-            onTap: ()=>openLink(),
+          Builder(
+            builder: (context) {
+              return InkWell(
+                child: AvatarWidget(
+                  url: authController.userInfo?.data?.avatar,
+                  name: authController.userInfo?.data?.userName,
+                  size: 35,
+                ),
+                onTap: (){
+                  Function? close;
+                  close = Toast.showWidget(
+                    context,
+                    direction: PreferDirection.rightTop,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 300),
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: BubbleWidget(
+                          arrowDirection: AxisDirection.left,
+                          arrowOffset: 20,
+                          arrowLength: 6,
+                          arrowRadius: 3,
+                          arrowWidth: 17,
+                          borderRadius: BorderRadius.circular(4),
+                          border: BorderSide(
+                            width: 1,
+                            color:  Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          backgroundColor:  Theme.of(context).colorScheme.onPrimary,
+                          contentBuilder: (context) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(
+                              layoutController.headerMenus.length * 2 - 1,
+                                  (index) {
+                                if (index.isEven) {
+                                  final menu =
+                                  layoutController.headerMenus[index ~/ 2];
+                                  return Text("data");
+                                } else {
+                                  return Divider();
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            }
           ),
           const SizedBox(height: 8),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: List.generate(
-                layoutController.layoutPageList.length,
-                (index) {
-                  final page = layoutController.layoutPageList[index];
-                  return SidebarButton(
-                    index: index,
-                    name: page.localizedName,
-                    icon: page.icon,
-                  );
-                },
-              ),
+              children: List.generate(layoutController.layoutPageList.length, (
+                index,
+              ) {
+                final page = layoutController.layoutPageList[index];
+                return SidebarButton(
+                  index: index,
+                  name: page.localizedName,
+                  icon: page.icon,
+                );
+              }),
             ),
           ),
         ],

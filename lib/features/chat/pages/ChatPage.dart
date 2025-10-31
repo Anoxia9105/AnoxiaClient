@@ -27,17 +27,14 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           SizedBox(width: 100.w, height: double.infinity, child: ChatList()),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(2),
-              child: layoutType == LayoutType.card
-                  ? Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: ChatDetail(),
-                      ),
-                    )
-                  : ChatDetail(),
-            ),
+            child: layoutType == LayoutType.card
+                ? Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: ChatDetail(),
+                    ),
+                  )
+                : ChatDetail(),
           ),
         ],
       ),

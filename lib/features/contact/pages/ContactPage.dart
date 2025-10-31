@@ -5,9 +5,16 @@ import 'package:notepadclient/features/contact/widgets/ContactLeft.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/enums/LayoutType.dart';
+import '../../../shared/theme/AppColors.dart';
 import '../../setting/controller/SettingsController.dart';
 import '../widgets/ContactDetail.dart';
 
+/// 联系人主页面
+///
+/// 作者: anoxia
+///
+/// 日期: 2025/10/30 下午1:51
+///
 class ContactPage extends StatefulWidget {
   const ContactPage({super.key});
 
@@ -28,17 +35,14 @@ class _ContactPageState extends State<ContactPage> {
         children: [
           SizedBox(width: 100.w, height: double.infinity, child: ContactLeft()),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(2),
-              child: layoutType == LayoutType.card
-                  ? Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: ContactDetail(),
-                      ),
-                    )
-                  : ContactDetail(),
-            ),
+            child: layoutType == LayoutType.card
+                ? Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: ContactDetail(),
+                    ),
+                  )
+                : ContactDetail(),
           ),
         ],
       ),

@@ -5,26 +5,31 @@ class AvatarWidget extends StatelessWidget {
   final String? url;
   final String? name;
   final double size;
+  final double borderRadius; // 新增圆角参数
 
   const AvatarWidget({
     super.key,
     this.url,
     this.name,
     this.size = 40,
+    this.borderRadius = 4,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
-      child: url != null && url!.isNotEmpty
-          ? Image.network(
-              url!,
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
-            )
-          : _buildNameOrPlaceholder(context),
+    final avatar = url != null && url!.isNotEmpty
+        ? Image.network(
+            url!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
+          )
+        : _buildNameOrPlaceholder(context);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: avatar,
     );
   }
 

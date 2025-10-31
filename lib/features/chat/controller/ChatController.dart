@@ -17,7 +17,7 @@ class ChatController extends ChangeNotifier {
   // final SysUser? _user=getIt<AuthController>().userInfo;
 
   //RoomSummary
-  List<RoomSummary?> roomSummaryList=[];
+  List<RoomSummary> roomSummaryList=[];
 
   void bindClient(IMClient client) {
     _imClient = client;

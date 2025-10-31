@@ -28,7 +28,6 @@ class LayoutHeader {
     ),
   );
   final LayoutController layoutController = getIt<LayoutController>();
-  final AuthController authController = getIt<AuthController>();
 
   AppBar getAppbar({Color? color}) {
     if (DeviceUtil.isRealDesktop()) {
@@ -39,11 +38,7 @@ class LayoutHeader {
         // ThemeUtil.isDarkMode(context) ? Colors.transparent : Color(0xFFE6E6E9),
         // title: Text(widget.title, style: TextStyle(fontSize: 14)),
         actions: [
-          if (authController.userInfo != null) ...[
-            buildMoreButton(),
-            SizedBox(width: 10),
-            buildUserInfo(),
-          ],
+          buildMoreButton(),
           SizedBox(width: 10),
           IconButton(
             tooltip: "header_minimize".tr(),
@@ -117,18 +112,6 @@ class LayoutHeader {
 
     return AppBar(
       title: Text("Mobile Header"),
-      actions: [
-        if (authController.userInfo != null) ...[buildMoreButton()],
-        SizedBox(width: 10),
-      ],
-    );
-  }
-
-  Widget buildUserInfo() {
-    return AvatarWidget(
-      url: authController.userInfo?.data?.avatar,
-      name: authController.userInfo?.data?.userName,
-      size: 35,
     );
   }
 

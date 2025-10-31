@@ -5,7 +5,7 @@ abstract class IChatService {
   ///
   /// 参数:
   /// - [userId] 用户ID
-  Future<List<RoomSummary?>> getChatList(num? userId);
+  Future<List<RoomSummary>> getChatList(num? userId);
 
   /// 获取聊天消息 带分页
   ///

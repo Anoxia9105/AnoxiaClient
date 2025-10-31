@@ -6,7 +6,6 @@ import 'package:notepadclient/core/constants/ApiBase.dart';
 import 'package:notepadclient/core/di/injector.dart';
 import 'package:notepadclient/core/domain/SysUser.dart';
 import 'package:notepadclient/core/domain/captcha.dart';
-import 'package:notepadclient/core/network/DioClient.dart';
 import 'package:notepadclient/core/network/IMClient.dart';
 import 'package:notepadclient/core/network/TokenManager.dart';
 import 'package:notepadclient/core/utils/SPUtil.dart';
@@ -28,13 +27,16 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
   }
 
   @override
-  Future<SysUser?> login({Map<String, String>? loginData, autoLogin = false}) async {
+  Future<SysUser?> login({
+    Map<String, String>? loginData,
+    autoLogin = false,
+  }) async {
     final String? token;
 
     //是自动登录
-    if(autoLogin){
+    if (autoLogin) {
       token = await TokenManager.instance.getToken();
-    }else{
+    } else {
       token = await _loginByToken(loginData!);
     }
 
@@ -61,7 +63,10 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
     //写入本地缓存
     await SPUtil.instance.set<SysUser>(StorageKeys.sysUser, user);
     // 通过 TokenManager 写入（含过期）
-    await TokenManager.instance.setToken(token, expiry: Duration(minutes: timeoutMinutes));
+    await TokenManager.instance.setToken(
+      token,
+      expiry: Duration(minutes: timeoutMinutes),
+    );
     //刷新token
     await _refreshToken(timeoutMinutes);
     //连接服务器
@@ -97,11 +102,7 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
   }
 
   Future<String?> _loginByToken(Map<String, String> loginData) async {
-    final response = await post(
-      pathLogin(),
-      data: loginData,
-      auth: false,
-    );
+    final response = await post(pathLogin(), data: loginData, auth: false);
     return response.data["token"];
   }
 
@@ -112,10 +113,12 @@ class AuthServiceImpl extends ApiBase implements IAuthService {
         print("$tag --> $message");
       },
     );
-    //注册到 DI
-    getIt.registerSingleton<IMClient>(imClient);
-    //绑定到 ChatController
-    getIt<ChatController>().bindClient(imClient);
+    if (!getIt.isRegistered<IMClient>()) {
+      //注册到 DI
+      getIt.registerSingleton<IMClient>(imClient);
+      //绑定到 ChatController
+      getIt<ChatController>().bindClient(imClient);
+    }
 
     // // 全局订阅（也可以按 topic 订阅）
     // final subAll = imClient.subscribeAll((msg) {

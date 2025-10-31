@@ -5,6 +5,12 @@ import 'package:notepadclient/features/contact/controller/ContactController.dart
 import 'package:notepadclient/shared/widgets/NoData.dart';
 import 'package:provider/provider.dart';
 
+/// 联系人左侧导航栏
+///
+/// 作者: anoxia
+///
+/// 日期: 2025/10/30 下午1:54
+///
 class ContactLeft extends StatefulWidget {
   const ContactLeft({super.key});
 
@@ -13,99 +19,43 @@ class ContactLeft extends StatefulWidget {
 }
 
 class _ContactLeftState extends State<ContactLeft> {
-  // final List<AlphabetListViewItemGroup> tech = [
-  //   AlphabetListViewItemGroup(
-  //     tag: 'A',
-  //     children: const [Text('Apple'), Text('Amazon'), Text('Alibaba')],
-  //   ),
-  //   AlphabetListViewItemGroup(
-  //     tag: 'I',
-  //     children: const [Text('Intel'), Text('IBM')],
-  //   ),
-  // ];
-  /// 日语五十音顺 + '#'（非日语字符）
-  static const List<String> japaneseAlphabet = [
-    'あ', // a行
-    'い',
-    'う',
-    'え',
-    'お',
-    'か', // ka行
-    'き',
-    'く',
-    'け',
-    'こ',
-    'さ', // sa行
-    'し',
-    'す',
-    'せ',
-    'そ',
-    'た', // ta行
-    'ち',
-    'つ',
-    'て',
-    'と',
-    'な', // na行
-    'に',
-    'ぬ',
-    'ね',
-    'の',
-    'は', // ha行
-    'ひ',
-    'ふ',
-    'へ',
-    'ほ',
-    'ま', // ma行
-    'み',
-    'む',
-    'め',
-    'も',
-    'や', // ya行
-    'ゆ',
-    'よ',
-    'ら', // ra行
-    'り',
-    'る',
-    'れ',
-    'ろ',
-    'わ', // wa行
-    'を',
-    'ん', // n
-    '#', // 非日语或特殊字符
-  ];
-
   @override
   Widget build(BuildContext context) {
     final contact = context.read<ContactController>();
+
+    List<AlphabetListViewItemGroup> tech = contact.buildContactGroups();
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          //头部检索框 & 添加好友
           buildHeader(),
-          ...List.generate(contact.detailPageList.length, (index){
+          ...List.generate(contact.detailPageList.length, (index) {
             final item = contact.detailPageList[index];
-            if(!item.show){
+            if (!item.show) {
               return const SizedBox.shrink();
             }
-            return  ListTile(
-              dense: true,
-              leading: HugeIcon(
-                icon: item.icon,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text(item.name),
-              onTap: () {
-                contact.selectedIndex=index;
-              },
-              // trailing: VibratingBadge(messageCount: 2),
-              trailing: HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
-                size: 18,
+            // 列表项
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: ListTile(
+                dense: true,
+                leading: HugeIcon(icon: item.icon),
+                title: Text(item.name),
+                onTap: () {
+                  contact.selectedIndex = index;
+                },
+                // trailing: VibratingBadge(messageCount: 2),
+                trailing: HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 18,
+                ),
+                selected: contact.selectedIndex == index,
               ),
             );
           }),
-          contact.tech.isEmpty
+          tech.isEmpty
               ? Expanded(
                   child: NoData(
                     iconData: HugeIcons.strokeRoundedContact,
@@ -116,9 +66,10 @@ class _ContactLeftState extends State<ContactLeft> {
                 )
               : Expanded(
                   child: AlphabetListView(
-                    items: contact.tech,
+                    items: tech,
                     options: AlphabetListViewOptions(
                       listOptions: ListOptions(
+                        //标题
                         listHeaderBuilder: (context, tag) {
                           return Container(
                             padding: EdgeInsets.symmetric(
@@ -132,20 +83,21 @@ class _ContactLeftState extends State<ContactLeft> {
                           );
                         },
                       ),
+                      //右侧索引
                       scrollbarOptions: ScrollbarOptions(
-                        symbols: DefaultScrollbarSymbols.alphabet,
-                        // backgroundColor: Colors.yellow,
+                        symbols: DefaultScrollbarSymbols.alphabet
                       ),
+                      //索引弹出框
                       overlayOptions: OverlayOptions(
                         overlayBuilder: (context, symbol) {
                           return Container(
                             decoration: BoxDecoration(
                               borderRadius: const BorderRadius.all(
-                                Radius.circular(10),
+                                Radius.circular(4),
                               ),
                               color: Theme.of(
                                 context,
-                              ).colorScheme.secondary.withValues(alpha: 0.8),
+                              ).colorScheme.secondary.withValues(alpha: 0.5),
                             ),
                             height: 40,
                             width: 40,
