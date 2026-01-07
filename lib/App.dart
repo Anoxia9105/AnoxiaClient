@@ -1,68 +1,32 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:notepadclient/core/di/injector.dart';
-import 'package:notepadclient/features/auth/controller/AuthController.dart';
-import 'package:notepadclient/features/chat/controller/ChatController.dart';
-import 'package:notepadclient/features/layout/MainLayoutPage.dart';
-import 'package:notepadclient/features/layout/controller/LayoutController.dart';
-import 'package:notepadclient/features/setting/controller/SettingsController.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:notepadclient/framework/provider/theme/theme_controller.dart';
 import 'package:notepadclient/shared/theme/AppColors.dart';
 import 'package:notepadclient/shared/widgets/Application.dart';
-import 'package:provider/provider.dart';
 
-import 'Flavor.dart';
-import 'features/contact/controller/ContactController.dart';
+import 'framework/provider/router/router.dart';
 
 
 
-class App extends StatelessWidget {
+class App extends ConsumerWidget {
   const App({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    FlavorValues values = FlavorConfig.value;
-
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<LayoutController>(
-          create: (ctx) => getIt<LayoutController>(),
-        ),
-        ChangeNotifierProvider<AuthController>(
-          create: (ctx) => getIt<AuthController>(),
-        ),
-        ChangeNotifierProvider<SettingsController>(
-          create: (ctx) => getIt<SettingsController>(),
-        ),
-        ChangeNotifierProvider<ChatController>(
-          create: (ctx) => getIt<ChatController>(),
-        ),
-        ChangeNotifierProvider<ContactController>(
-          create: (ctx) => getIt<ContactController>(),
-        ),
-      ],
-      child: Consumer<SettingsController>(
-        builder:
-            (BuildContext context, SettingsController setting, Widget? child) {
-              setting.loadSettings();
-
-              final gradient = setting.theme.extension<AppColors>()?.scaffoldGradient;
-              return MaterialApp(
-                navigatorKey: Application.navigatorKey,
-                title: values.appName,
-                theme: setting.theme,
-                builder: BotToastInit(),
-                navigatorObservers: [BotToastNavigatorObserver()],
-                debugShowCheckedModeBanner: values.debug,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                home: Container(
-                    decoration: BoxDecoration(gradient: gradient),
-                    child: MainLayoutPage()),
-              );
-            },
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+    final theme = ref.watch(appThemeProvider);
+    return MaterialApp.router(
+      title: 'Fluent UI Demo',
+      routerConfig: router,
+      theme: theme,
+      builder: BotToastInit(),
+      // navigatorObservers: [BotToastNavigatorObserver()],
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
     );
   }
 }

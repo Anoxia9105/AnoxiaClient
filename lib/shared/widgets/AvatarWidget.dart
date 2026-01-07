@@ -5,7 +5,7 @@ class AvatarWidget extends StatelessWidget {
   final String? url;
   final String? name;
   final double size;
-  final double borderRadius; // 新增圆角参数
+  final double borderRadius;
 
   const AvatarWidget({
     super.key,
@@ -17,26 +17,34 @@ class AvatarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatar = url != null && url!.isNotEmpty
-        ? Image.network(
-            url!,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
-          )
-        : _buildNameOrPlaceholder(context);
+    final hasUrl = url != null && url!.isNotEmpty;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
-      child: avatar,
+      child: hasUrl
+          ? Image.network(
+        url!,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+
+        /// 加载中显示默认图标
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return _buildPlaceholder(context);
+        },
+
+        /// 加载失败显示兜底图标或首字母
+        errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
+      )
+          : _buildNameOrPlaceholder(context),
     );
   }
 
-  /// 构建名字头像或者兜底图标
+  /// 有名字 → 显示首字母
+  /// 无名字 → 显示默认图标
   Widget _buildNameOrPlaceholder(BuildContext context) {
     if (name != null && name!.isNotEmpty) {
-      // 显示名字的首字
       final displayText = name!.characters.first.toUpperCase();
       return Container(
         width: size,
@@ -54,7 +62,11 @@ class AvatarWidget extends StatelessWidget {
       );
     }
 
-    // 没有名字时兜底显示图标
+    return _buildPlaceholder(context);
+  }
+
+  /// 默认占位图标（加载中 & 无头像）
+  Widget _buildPlaceholder(BuildContext context) {
     return Container(
       width: size,
       height: size,

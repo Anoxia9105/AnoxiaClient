@@ -32,8 +32,8 @@ class AppTheme with ThemeMixin {
       Colors.pink,
       Brightness.light,
       const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
         colors: [Color(0xFFFFF0F5), Color(0xFFFEF9F3)],
       ),
     ),
@@ -192,8 +192,8 @@ class AppTheme with ThemeMixin {
       const Color(0xFF2B2B2B),
       Brightness.dark,
       const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+        begin: Alignment.topLeft,
+        end: Alignment.topRight,
         colors: [Color(0xFF555555), Color(0xFF333333)],
       ),
     ),

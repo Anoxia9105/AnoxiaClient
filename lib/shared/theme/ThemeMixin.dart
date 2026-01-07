@@ -244,9 +244,7 @@ mixin ThemeMixin {
 
     final cardTheme = CardThemeData(
       elevation: 4,
-      color: brightness == Brightness.light
-          ? Colors.white
-          : null,
+      color: brightness == Brightness.light ? Colors.white : null,
       shape: RoundedRectangleBorder(
         // side: BorderSide(
         //   width: 1,
@@ -258,8 +256,8 @@ mixin ThemeMixin {
     );
 
     final dialogTheme = DialogThemeData(
-      backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: brightness == Brightness.light ? Colors.white : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       titleTextStyle: TextStyle(
         color: colorScheme.onSurface,
         fontSize: 18,
