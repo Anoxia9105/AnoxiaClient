@@ -24,7 +24,7 @@ class AppColors extends ThemeExtension<AppColors> {
   AppColors lerp(ThemeExtension<AppColors>? other, double t) {
     if (other is! AppColors) return this;
     return AppColors(
-      scaffoldGradient: Gradient.lerp(scaffoldGradient, other.scaffoldGradient, t),
+      scaffoldGradient: Gradient.lerp(scaffoldGradient, other.scaffoldGradient, t) ?? scaffoldGradient, // 兜底防止返回空
     );
   }
 }

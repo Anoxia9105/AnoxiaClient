@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
 
+import '../../common/constants/API.dart';
+
 /// DioConfig
 /// 用于创建带有基础配置的 Dio 实例
 /// 单例模式：全局共享一个 Dio 配置
 class DioConfig {
   Dio? _dio;
+
   // 私有构造
   DioConfig._internal();
 
@@ -17,10 +20,19 @@ class DioConfig {
   /// 创建基础配置
   BaseOptions createBaseOptions() {
     return BaseOptions(
-      baseUrl: "http://127.0.0.1:8080",
-      connectTimeout: Duration(seconds: 30),
-      receiveTimeout: Duration(seconds: 60),
+      baseUrl: API.httpBaseUrl,
+      // 1. 连接超时：指从客户端发起连接到建立 TCP 连接的时间
+      connectTimeout: const Duration(seconds: 3),
+
+      // 2. 接收超时：指两次响应数据包之间的时间间隔（不是整个请求完成的时间）
+      receiveTimeout: const Duration(seconds: 8),
+
+      // 3. 发送超时：指将数据发送到服务器的时间（通常用于文件上传）
+      sendTimeout: const Duration(seconds: 10),
       headers: {'Accept': 'application/json'},
+      responseType: ResponseType.json,
+      // 强制期望返回 JSON
+      validateStatus: (status) => status != null && status < 500,
     );
   }
 
@@ -28,7 +40,18 @@ class DioConfig {
   Dio createDio() {
     if (_dio != null) return _dio!;
     _dio = Dio(createBaseOptions());
-    _dio!.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+    _dio!.interceptors.add(
+      InterceptorsWrapper(
+        onError: (e, handler) {
+          String message = "网络连接异常";
+          if (e.type == DioExceptionType.connectionTimeout) message = "服务器连接超时";
+          if (e.type == DioExceptionType.connectionError) message = "无法连接到服务器";
+
+          // 可以在这里统一处理一些非业务错
+          return handler.next(e);
+        },
+      ),
+    );
     return _dio!;
   }
 }

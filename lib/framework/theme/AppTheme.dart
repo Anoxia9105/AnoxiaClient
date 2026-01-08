@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:notepadclient/shared/theme/ThemeMixin.dart';
+
+import 'ThemeMixin.dart';
 
 class AppTheme with ThemeMixin {
   AppTheme._(); // 禁止实例化
@@ -12,14 +13,14 @@ class AppTheme with ThemeMixin {
       Colors.indigo,
       Brightness.light,
       const LinearGradient(
-        begin: Alignment.topCenter,
+        begin: Alignment.topLeft,
         end: Alignment.bottomCenter,
         colors: [Color(0xFFE6E6E9), Color(0xFFEAE6DB)],
       ),
     ),
     ThemeOption(
       'app_light_themes2',
-      Colors.green,
+      Colors.lightGreen,
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topCenter,
@@ -89,112 +90,35 @@ class AppTheme with ThemeMixin {
     ),
     ThemeOption(
       'app_dark_themes9',
-      Colors.pinkAccent,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF000428), Color(0xFF004e92)],
+      Colors.purple,
+      Brightness.light,
+       LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+              Colors.blue.shade200,
+              Colors.purple.shade200,
+        ],
       ),
     ),
     ThemeOption(
       'app_dark_themes10',
-      Colors.greenAccent,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF101D21), Color(0xFF092E21)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes11',
-      Colors.amber,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF3E2723), Color(0xFF000000)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes12',
-      Colors.redAccent,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF641E16), Color(0xFF1B0000)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes13',
-      Colors.cyan,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF003942), Color(0xFF011A20)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes14',
-      const Color(0xFF8D6E63),
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF2E1E1A), Color(0xFF1A0A06)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes15',
-      Colors.purpleAccent,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF2C0747), Color(0xFF0F0219)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes16',
-      const Color(0xFF69F0AE),
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF01180A), Color(0xFF000000)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes17',
-      Colors.orange,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF2C1D38), Color(0xFF532432)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes18',
-      Colors.blue,
-      Brightness.dark,
-      const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF14293D), Color(0xFF030D1A)],
-      ),
-    ),
-    ThemeOption(
-      'app_dark_themes19',
       const Color(0xFF2B2B2B),
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.topRight,
         colors: [Color(0xFF555555), Color(0xFF333333)],
+      ),
+    ),
+    ThemeOption(
+      '测试1',
+      const Color(0xFF2B2B2B),
+      Brightness.light,
+      const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.topRight,
+        colors: [Color(0xFFC9D6FF), Color(0xFFE2E2E2)],
       ),
     ),
   ];

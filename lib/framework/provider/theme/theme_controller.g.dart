@@ -40,7 +40,7 @@ final class ThemeIndexProvider extends $NotifierProvider<ThemeIndex, int> {
   }
 }
 
-String _$themeIndexHash() => r'17c6d862409a8e7df5e354ba63fb5b12da27dff2';
+String _$themeIndexHash() => r'57ebe4c465fe7f7bce721e330b2b09345606eba9';
 
 abstract class _$ThemeIndex extends $Notifier<int> {
   int build();

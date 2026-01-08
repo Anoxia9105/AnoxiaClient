@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../pages/ThemeTestPage.dart';
 import '../../../pages/chat/ChatPage.dart';
 
 part 'layout_controller.g.dart';
@@ -33,7 +34,7 @@ class LayoutController extends _$LayoutController {
     LayoutOptions(
       name: "sidebar_my",
       icon: HugeIcons.strokeRoundedUser,
-      page: const Text("My page"),
+      page: const ThemeTestPage(),
     ),
   ];
 

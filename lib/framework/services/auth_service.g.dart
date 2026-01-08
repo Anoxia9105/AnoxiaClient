@@ -87,7 +87,7 @@ final class CaptchaProvider
   }
 }
 
-String _$captchaHash() => r'4ec8881cb3a52a028878831e79a1116f6b1f2c1a';
+String _$captchaHash() => r'ffb1d61db9617a5859966abb7a1ffde32ec589b4';
 
 @ProviderFor(userInfo)
 const userInfoProvider = UserInfoProvider._();
@@ -121,4 +121,4 @@ final class UserInfoProvider
   }
 }
 
-String _$userInfoHash() => r'44a718321a523c622c2a96819bc260c3cf3c01b4';
+String _$userInfoHash() => r'cf99026421d615cf8631fc7d623338705db31ff2';

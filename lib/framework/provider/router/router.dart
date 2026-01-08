@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:notepadclient/pages/LoginPage.dart';
 import 'package:notepadclient/pages/MainLayoutPage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../pages/SplashPage.dart';
 import '../../logs/talker.dart';
 import '../auth/auth_state_provider.dart';
 
@@ -22,6 +23,10 @@ GoRouter router(Ref ref) {
     debugLogDiagnostics: true,
     routes: $appRoutes,
     redirect: (context, state) {
+      log.info("==========================================================$status");
+      // 初始状态不重定向，等待认证结果
+      if (status == AuthStatus.initial) return SplashRoute().location;
+
       final isLoggedIn = status == AuthStatus.authenticated;
       final isLoginPage = state.matchedLocation == InitLoginRoute().location;
 
@@ -48,9 +53,7 @@ class InitLoginRoute extends GoRouteData with $InitLoginRoute {
   const InitLoginRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const LoginPage();
-  }
+  Widget build(BuildContext context, GoRouterState state) => const LoginPage();
 }
 
 @TypedGoRoute<HomeRoute>(path: '/')
@@ -58,7 +61,14 @@ class HomeRoute extends GoRouteData with $HomeRoute {
   const HomeRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const MainLayoutPage();
-  }
+  Widget build(BuildContext context, GoRouterState state) => const MainLayoutPage();
+}
+
+
+
+@TypedGoRoute<SplashRoute>(path: '/splash')
+class SplashRoute extends GoRouteData with $SplashRoute{
+  const SplashRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const SplashPage();
 }

@@ -12,22 +12,30 @@ part 'auth_service.g.dart';
 AuthService authService(Ref ref) {
   return AuthService();
 }
+
 //获取验证码
 @riverpod
 Future<CaptchaModel> captcha(Ref ref) async {
-  final repo = ref.read(authServiceProvider);
+  final repo = ref.watch(authServiceProvider);
   return repo.getCaptcha();
 }
-//获取用户信息
+
+// 获取用户信息 (核心：保持活跃，并处理异常)
 @Riverpod(keepAlive: true)
 Future<UserInfo> userInfo(Ref ref) async {
-  final repo = ref.read(authServiceProvider);
-  return repo.getUserInfo();
+  final repo = ref.watch(authServiceProvider);
+  try {
+    return await repo.getUserInfo();
+  } catch (e) {
+    rethrow; // 抛出错误让 AuthState 监听到
+  }
 }
 
 class AuthService {
+  final _client = DioClient();
+
   Future<CaptchaModel> getCaptcha() async {
-    final res = await DioClient().get("/captchaImage", auth: false);
+    final res = await _client.get("/captchaImage", auth: false);
     return CaptchaModel(uuid: res.data["uuid"], imgBase64: res.data["img"]);
   }
 
@@ -36,13 +44,13 @@ class AuthService {
     return UserInfo.fromJson(res.data["data"]);
   }
 
-  Future<bool> login(
+  Future<String> login(
     String username,
     String password,
     String code,
     String uuid,
   ) async {
-    final res = await DioClient().post(
+    final res = await _client.post(
       "/login",
       data: {
         "username": username,
@@ -52,15 +60,12 @@ class AuthService {
       },
       auth: false,
     );
-    final token = res.data["token"];
+    String token = res.data["token"];
     await TokenManager.instance.setToken(token);
-    return true;
+    return token;
   }
 
   Future<void> logout() async {
     await TokenManager.instance.clearToken();
   }
 }
-
-
-

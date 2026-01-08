@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../common/utils/SPUtil.dart';
-import '../../../shared/theme/AppTheme.dart';
+import '../../theme/AppTheme.dart';
 
 part 'theme_controller.g.dart';
 

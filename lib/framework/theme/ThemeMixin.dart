@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:notepadclient/shared/theme/AppColors.dart';
+
+import 'AppColors.dart';
 
 mixin ThemeMixin {
   /// 工具：基于整数 alpha (0.0-1.0 -> 0-255) 返回带透明度的颜色。
@@ -316,11 +317,18 @@ mixin ThemeMixin {
       unselectedLabelStyle: const TextStyle(fontSize: 14),
     );
 
+    // 加载状态配置
     final progressIndicatorTheme = ProgressIndicatorThemeData(
-      circularTrackColor: colorWithAlpha(colorScheme.onSurface, 0.06),
-      color: colorScheme.primary,
-      linearMinHeight: 3,
+      color: colorScheme.primary, // Windows 经典蓝色
+      linearTrackColor: colorScheme.onPrimary, // 轨道颜色（主要用于线性进度条，圆形的通常透明）
+      circularTrackColor: Colors.transparent,
+      strokeWidth: 4.0, // 圆环的粗细
+      refreshBackgroundColor: colorScheme.primary, // 下拉刷新时的背景色
+      strokeCap: StrokeCap.round,
+      borderRadius: BorderRadius.circular(4),
+      constraints: BoxConstraints.tight(Size(25, 25)),
     );
+
     //表格
     final dataTableTheme = DataTableThemeData(
       headingRowColor: WidgetStateProperty.all(

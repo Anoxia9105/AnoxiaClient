@@ -1,19 +1,18 @@
+import 'dart:ui';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:notepadclient/pages/desktop/DesktopAppBar.dart';
 import 'package:notepadclient/shared/widgets/Application.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../common/utils/DeviceUtil.dart';
-import '../framework/provider/auth/auth_controller.dart';
+import '../framework/provider/auth/auth_state_provider.dart';
 import '../framework/provider/layout/layout_controller.dart';
-import '../framework/services/auth_service.dart';
+import '../framework/theme/AppColors.dart';
 import '../gen/assets.gen.dart';
-import '../shared/theme/AppColors.dart';
-import '../shared/widgets/AvatarWidget.dart';
 import 'desktop/DesktopSidebar.dart';
 
 class MainLayoutPage extends ConsumerStatefulWidget {
@@ -99,12 +98,16 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage>
 
   @override
   Widget build(BuildContext context) {
+    print("🛠️ MainLayoutPage 开始构建: ${DateTime.now().millisecond}ms");
     //获取主题渐变色
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
+    // 如果没有渐变，则给一个主题相关的底色
+    final baseColor = Theme.of(context).scaffoldBackgroundColor;
 
     final layout = ref.watch(layoutControllerProvider);
-    final size = MediaQuery.of(context).size;
 
+    //最小尺寸检测
+    final size = MediaQuery.of(context).size;
     if (size.width < 320 || size.height <= 320) {
       return Scaffold(
         body: Center(
@@ -124,19 +127,10 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage>
     //外层Scaffold
     return Scaffold(
       //默认背景色是白色，防止闪屏时看到黑色背景
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: BoxDecoration(
-          // gradient: LinearGradient(
-          //   begin: Alignment.topCenter,
-          //   end: Alignment.bottomCenter,
-          //   colors: [
-          //     Colors.blue.shade200,
-          //     Colors.purple.shade200,
-          //   ],
-          // ),
-          gradient: gradient
-        ),
+      backgroundColor: baseColor,
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(gradient: gradient),
         child: Row(
           children: [
             //如果是桌面或平板，显示侧边栏
@@ -147,7 +141,10 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage>
             Expanded(
               child: Scaffold(
                 backgroundColor: Colors.transparent,
-                appBar: getAppbar(extended: layout.extendedValue,bakColor: Colors.transparent),
+                appBar: getAppbar(
+                  extended: layout.extendedValue,
+                  bakColor: Colors.transparent,
+                ),
                 body: IndexedStack(
                   index: layout.currentIndex,
                   children: layout.indexedStackPages,
@@ -166,9 +163,17 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage>
   }
 
   //获取应用栏
-  PreferredSizeWidget getAppbar({required bool extended, Color? iconColor,Color? bakColor}) {
+  PreferredSizeWidget getAppbar({
+    required bool extended,
+    Color? iconColor,
+    Color? bakColor,
+  }) {
     if (DeviceUtil.isRealDesktop()) {
-      return DesktopAppBar(extended: extended, iconColor: iconColor,backgroundColor: bakColor,);
+      return DesktopAppBar(
+        extended: extended,
+        iconColor: iconColor,
+        backgroundColor: bakColor,
+      );
     }
 
     return AppBar(title: Text("Mobile Header"));

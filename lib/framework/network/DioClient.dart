@@ -35,6 +35,9 @@ class DioClient {
               await TokenManager.instance.clearToken();
               globalContainer.read(authStateProvider.notifier).logout();
               log.info("鉴权失败，已清除 token 并跳转登录页");
+              return handler.reject(
+                DioException(requestOptions: response.requestOptions, error: "登录过期"),
+              );
             }
             if (bizCode != HttpStatus.ok) {
               final String? errorMsg = response.data['msg']?.toString();

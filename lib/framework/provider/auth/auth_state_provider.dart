@@ -4,6 +4,7 @@ part 'auth_state_provider.g.dart';
 
 /// 登录状态枚举
 enum AuthStatus {
+  initial, //初始化/检查中
   authenticated,
   unauthenticated,
 }
@@ -14,7 +15,7 @@ class AuthState extends _$AuthState {
 
   @override
   AuthStatus build() {
-    return AuthStatus.unauthenticated;
+    return AuthStatus.initial;
   }
 
   void login() {

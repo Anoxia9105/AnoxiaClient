@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../framework/provider/layout/layout_controller.dart';
+import '../../framework/provider/ws/ws_controller.dart';
+import '../../framework/provider/ws/ws_state.dart';
 import '../../framework/services/auth_service.dart';
 import '../../shared/widgets/AvatarWidget.dart';
 import '../../shared/widgets/BubbleDialog.dart';
@@ -17,7 +19,7 @@ class DesktopSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(userInfoProvider);
-
+    final status = ref.watch(wsControllerProvider.select((s) => s.status));
     return SizedBox(
       width: 60,
       child: Column(
@@ -32,6 +34,9 @@ class DesktopSidebar extends ConsumerWidget {
                     url: u.avatar,
                     name: u.nickName,
                     size: 35,
+                    status: status == WsStatus.connected
+                        ? AvatarStatus.online
+                        : AvatarStatus.offline,
                   ),
                   onTap: () {
                     Function? close;
@@ -74,7 +79,7 @@ class DesktopSidebar extends ConsumerWidget {
                     );
                   },
                 ),
-                loading: () => CircularProgressIndicator(),
+                loading: () => Text("登录中..."),
                 error: (e, st) => Text("加载失败"),
               );
             },
@@ -112,7 +117,7 @@ class SidebarButton extends ConsumerWidget {
     required this.index,
     required this.name,
     required this.icon,
-    this.padding=const EdgeInsets.all(8.0)
+    this.padding = const EdgeInsets.all(8.0),
   });
 
   @override

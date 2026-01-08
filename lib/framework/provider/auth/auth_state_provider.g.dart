@@ -43,7 +43,7 @@ final class AuthStateProvider extends $NotifierProvider<AuthState, AuthStatus> {
   }
 }
 
-String _$authStateHash() => r'b7a7ff553f3fe2afc00c38037718d1de3363449d';
+String _$authStateHash() => r'c218317e195f2ebb864b3aabe13c7b6904c1bd87';
 
 /// Riverpod 状态管理
 

@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+enum AvatarStatus {
+  none,
+  online,
+  offline,
+  busy,
+}
+
 class AvatarWidget extends StatelessWidget {
   final String? url;
   final String? name;
   final double size;
   final double borderRadius;
+
+  /// 状态（右下角）
+  final AvatarStatus status;
+
+  /// 自定义状态 Widget（优先级高于 status）
+  final Widget? statusWidget;
 
   const AvatarWidget({
     super.key,
@@ -13,31 +26,79 @@ class AvatarWidget extends StatelessWidget {
     this.name,
     this.size = 40,
     this.borderRadius = 4,
+    this.status = AvatarStatus.none,
+    this.statusWidget,
   });
 
   @override
   Widget build(BuildContext context) {
     final hasUrl = url != null && url!.isNotEmpty;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: hasUrl
-          ? Image.network(
-        url!,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        /// 头像主体
+        ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: hasUrl
+              ? Image.network(
+            url!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
 
-        /// 加载中显示默认图标
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _buildPlaceholder(context);
-        },
+            /// 加载中显示默认图标
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return _buildPlaceholder(context);
+            },
 
-        /// 加载失败显示兜底图标或首字母
-        errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
-      )
-          : _buildNameOrPlaceholder(context),
+            /// 加载失败显示兜底图标或首字母
+            errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
+          )
+              : _buildNameOrPlaceholder(context),
+        ),
+
+        /// 右下角状态角标
+        if (status != AvatarStatus.none || statusWidget != null)
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: _buildStatusIndicator(context),
+          ),
+      ],
+    );
+  }
+
+  /// 状态角标
+  Widget _buildStatusIndicator(BuildContext context) {
+    if (statusWidget != null) return statusWidget!;
+
+    final double dotSize = size * 0.38;
+
+    Color color;
+    switch (status) {
+      case AvatarStatus.online:
+        color = Colors.green;
+        break;
+      case AvatarStatus.offline:
+        color = Colors.grey;
+        break;
+      default:
+        color = Colors.transparent;
+    }
+
+    return Container(
+      width: dotSize,
+      height: dotSize,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white,
+          width: dotSize * 0.18,
+        ),
+      ),
     );
   }
 

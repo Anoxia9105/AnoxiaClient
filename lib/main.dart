@@ -11,7 +11,9 @@ import 'common/utils/DeviceUtil.dart';
 import 'common/utils/SPUtil.dart';
 import 'framework/logs/talker.dart';
 import 'framework/network/TokenManager.dart';
-import 'framework/provider/auth/auth_controller.dart';
+import 'framework/protocol/PacketType.dart';
+import 'framework/protocol/message/RoomMessage.dart';
+import 'framework/protocol/register/PacketRegistry.dart';
 
 late final ProviderContainer globalContainer;
 
@@ -79,19 +81,25 @@ void main() async {
   // 创建 Riverpod 容器并添加 Talker 观察者
   globalContainer = ProviderContainer(
     observers: [
-      TalkerRiverpodObserver(
-        talker: log,
-        settings: const TalkerRiverpodLoggerSettings(
-          printProviderDisposed: true,
-        ),
-      ),
+      //provider 观察者，记录 provider 生命周期和状态变化
+      // TalkerRiverpodObserver(
+      //   talker: log,
+      //   settings: const TalkerRiverpodLoggerSettings(
+      //     printProviderDisposed: true,
+      //   ),
+      // ),
     ],
   );
 
-  try {
-    await globalContainer.read(authControllerProvider.notifier).autoLogin();
-  } catch (e, st) {
-    log.error("自动登录失败", e, st);
-  }
+  //注册数据包解析器
+  setupPacketRegistry();
+
   runApp(UncontrolledProviderScope(container: globalContainer, child: app));
+}
+
+void setupPacketRegistry() {
+  PacketRegistry.register(
+    PacketType.message,
+    (data) => RoomMessage.fromJson(data),
+  );
 }
