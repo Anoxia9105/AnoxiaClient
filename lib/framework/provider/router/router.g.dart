@@ -6,7 +6,12 @@ part of 'router.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$initLoginRoute, $homeRoute, $splashRoute];
+List<RouteBase> get $appRoutes => [
+  $initLoginRoute,
+  $homeRoute,
+  $splashRoute,
+  $errorRoute,
+];
 
 RouteBase get $initLoginRoute =>
     GoRouteData.$route(path: '/login', factory: $InitLoginRoute._fromState);
@@ -78,6 +83,35 @@ mixin $SplashRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
+RouteBase get $errorRoute =>
+    GoRouteData.$route(path: '/error', factory: $ErrorRoute._fromState);
+
+mixin $ErrorRoute on GoRouteData {
+  static ErrorRoute _fromState(GoRouterState state) =>
+      ErrorRoute(message: state.uri.queryParameters['message']);
+
+  ErrorRoute get _self => this as ErrorRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/error',
+    queryParams: {if (_self.message != null) 'message': _self.message},
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
@@ -124,4 +158,4 @@ final class RouterProvider
   }
 }
 
-String _$routerHash() => r'51e5671ab12868490119b35adc17cea65eacd50f';
+String _$routerHash() => r'8c7ce9055ce0dc4bd9f5ded228368e87e41468a9';

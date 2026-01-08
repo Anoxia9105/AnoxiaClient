@@ -4,6 +4,7 @@ import 'package:notepadclient/framework/services/auth_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../common/constants/API.dart';
+import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 
 part 'auth_controller.g.dart';
@@ -22,11 +23,14 @@ class AuthController extends _$AuthController {
       return;
     }
     try {
-      await ref.read(userInfoProvider.future).timeout(const Duration(seconds: 5));
+      await ref.read(authServiceProvider).getUserInfo();
+      await _initializeData();
       ref.read(authStateProvider.notifier).login();
     } catch (e) {
+      log.error("自动登录失败：$e");
       // await TokenManager.instance.clearToken();
-      ref.read(authStateProvider.notifier).logout();
+      final state = ref.read(authStateProvider.notifier);
+      state.setError("自动登录失败");
     }
   }
 
@@ -40,7 +44,7 @@ class AuthController extends _$AuthController {
     String token = await repo.login(username, password, code, uuid);
     if (token.isNotEmpty) {
       // 刷新用户信息
-      ref.invalidate(userInfoProvider);
+      await ref.read(authServiceProvider).getUserInfo();
       ref.read(authStateProvider.notifier).login();
     }
   }
@@ -49,5 +53,22 @@ class AuthController extends _$AuthController {
     final repo = ref.read(authServiceProvider);
     await repo.logout();
     ref.read(authStateProvider.notifier).logout();
+  }
+
+  /// 登录成功后的统一初始化逻辑
+  Future<void> _initializeData() async {
+    log.info("开始登录后数据预加载...");
+
+    // 💡 1. 启动 WebSocket (虽然 WsController 监听了 AuthState，但这里可以显式确保)
+    // 💡 2. 加载联系人列表 (存入对应的 Provider)
+    // 💡 3. 加载房间列表 (获取最新的对话列表)
+    // 💡 4. 加载系统配置/表情包等
+
+    await Future.wait([
+      // ref.read(contactListProvider.future), // 假设你有一个联系人 Provider
+      // ref.read(roomListProvider.future),    // 加载房间列表
+    ]);
+
+    log.info("所有基础数据加载完成");
   }
 }

@@ -21,8 +21,8 @@ class _AppState extends ConsumerState<App> {
   void initState() {
     super.initState();
     // 明确在组件挂载后只点一次火
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authControllerProvider.notifier).autoLogin();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(authControllerProvider.notifier).autoLogin();
     });
   }
 

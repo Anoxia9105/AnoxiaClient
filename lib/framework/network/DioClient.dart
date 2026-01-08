@@ -16,6 +16,7 @@ class DioClient {
       InterceptorsWrapper(
         // 请求拦截器：添加鉴权 token
         onRequest: (options, handler) async {
+          log.info('Dio request -> ${options.method} ${options.uri}');
           // 默认需要鉴权，除非显式 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
@@ -36,7 +37,10 @@ class DioClient {
               globalContainer.read(authStateProvider.notifier).logout();
               log.info("鉴权失败，已清除 token 并跳转登录页");
               return handler.reject(
-                DioException(requestOptions: response.requestOptions, error: "登录过期"),
+                DioException(
+                  requestOptions: response.requestOptions,
+                  error: "登录过期",
+                ),
               );
             }
             if (bizCode != HttpStatus.ok) {
@@ -48,7 +52,15 @@ class DioClient {
           return handler.next(response);
         },
         onError: (e, handler) async {
-          log.error("服务器异常,请稍后再试", e);
+          final uri = e.requestOptions.uri;
+          log.error(
+            'Dio onError -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
+          );
+          String message = "网络连接异常";
+          if (e.type == DioExceptionType.connectionTimeout) message = "服务器连接超时";
+          if (e.type == DioExceptionType.receiveTimeout) message = "接收超时";
+          if (e.type == DioExceptionType.sendTimeout) message = "发送超时";
+          if (e.type == DioExceptionType.connectionError) message = "无法连接到服务器";
           return handler.next(e);
         },
       ),

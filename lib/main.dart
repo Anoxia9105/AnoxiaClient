@@ -81,13 +81,13 @@ void main() async {
   // 创建 Riverpod 容器并添加 Talker 观察者
   globalContainer = ProviderContainer(
     observers: [
-      //provider 观察者，记录 provider 生命周期和状态变化
-      // TalkerRiverpodObserver(
-      //   talker: log,
-      //   settings: const TalkerRiverpodLoggerSettings(
-      //     printProviderDisposed: true,
-      //   ),
-      // ),
+      // provider 观察者，记录 provider 生命周期和状态变化
+      TalkerRiverpodObserver(
+        talker: log,
+        settings: const TalkerRiverpodLoggerSettings(
+          printProviderDisposed: true,
+        ),
+      ),
     ],
   );
 

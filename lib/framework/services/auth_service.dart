@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/CaptchaModel.dart';
 import '../domain/UserInfo.dart';
+import '../logs/talker.dart';
 import '../network/DioClient.dart';
 import '../network/TokenManager.dart';
 
@@ -13,22 +14,16 @@ AuthService authService(Ref ref) {
   return AuthService();
 }
 
-//获取验证码
 @riverpod
 Future<CaptchaModel> captcha(Ref ref) async {
-  final repo = ref.watch(authServiceProvider);
+  final repo = ref.read(authServiceProvider);
   return repo.getCaptcha();
 }
 
-// 获取用户信息 (核心：保持活跃，并处理异常)
 @Riverpod(keepAlive: true)
 Future<UserInfo> userInfo(Ref ref) async {
-  final repo = ref.watch(authServiceProvider);
-  try {
-    return await repo.getUserInfo();
-  } catch (e) {
-    rethrow; // 抛出错误让 AuthState 监听到
-  }
+  final authService = ref.read(authServiceProvider);
+  return authService.getUserInfo();
 }
 
 class AuthService {
@@ -40,7 +35,9 @@ class AuthService {
   }
 
   Future<UserInfo> getUserInfo() async {
+    log.info('getUserInfo start');
     final res = await DioClient().get("/getInfo");
+    log.info('getUserInfo response: ${res.data}');
     return UserInfo.fromJson(res.data["data"]);
   }
 
