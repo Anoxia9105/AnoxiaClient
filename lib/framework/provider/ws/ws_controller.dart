@@ -30,9 +30,9 @@ class WsController extends _$WsController {
   @override
   WsState build() {
     //监听认证状态
-    final authState = ref.watch(authStateProvider);
+    final auth = ref.watch(authStateProvider);
     //使用 Future.microtask 确保在 build 完成后再执行初始化
-    if (authState == AuthStatus.authenticated) {
+    if (auth.status == AuthStatus.authenticated) {
       Future.microtask(() => _initConnection());
     } else {
       _disposeAll();

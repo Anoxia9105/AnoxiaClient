@@ -4,6 +4,7 @@ import 'package:notepadclient/framework/services/auth_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../common/constants/API.dart';
+import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 
@@ -23,14 +24,24 @@ class AuthController extends _$AuthController {
       return;
     }
     try {
-      await ref.read(authServiceProvider).getUserInfo();
-      await _initializeData();
-      ref.read(authStateProvider.notifier).login();
+      log.info("开始请求用户信息...");
+
+      // await ref.read(authServiceProvider).getUserInfo();
+      // 💡 不要直接 await .future，而是读取状态
+      final user = await ref
+          .read(userInfoProvider.future)
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              throw Exception('请求超时');
+            },
+          );
+      // }
     } catch (e) {
       log.error("自动登录失败：$e");
       // await TokenManager.instance.clearToken();
-      final state = ref.read(authStateProvider.notifier);
-      state.setError("自动登录失败");
+      ref.read(authStateProvider.notifier).setError("自动登录失败");
+      // state.setError("自动登录失败");
     }
   }
 
@@ -68,7 +79,7 @@ class AuthController extends _$AuthController {
       // ref.read(contactListProvider.future), // 假设你有一个联系人 Provider
       // ref.read(roomListProvider.future),    // 加载房间列表
     ]);
-
+    ref.read(authStateProvider.notifier).login();
     log.info("所有基础数据加载完成");
   }
 }

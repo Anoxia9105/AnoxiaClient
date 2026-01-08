@@ -23,7 +23,7 @@ Future<CaptchaModel> captcha(Ref ref) async {
 @Riverpod(keepAlive: true)
 Future<UserInfo> userInfo(Ref ref) async {
   final authService = ref.read(authServiceProvider);
-  return authService.getUserInfo();
+  return await authService.getUserInfo();
 }
 
 class AuthService {
@@ -35,9 +35,7 @@ class AuthService {
   }
 
   Future<UserInfo> getUserInfo() async {
-    log.info('getUserInfo start');
     final res = await DioClient().get("/getInfo");
-    log.info('getUserInfo response: ${res.data}');
     return UserInfo.fromJson(res.data["data"]);
   }
 
