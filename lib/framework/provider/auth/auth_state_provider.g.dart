@@ -8,15 +8,12 @@ part of 'auth_state_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Riverpod 状态管理
 
 @ProviderFor(AuthState)
 const authStateProvider = AuthStateProvider._();
 
-/// Riverpod 状态管理
 final class AuthStateProvider
     extends $NotifierProvider<AuthState, AuthStateData> {
-  /// Riverpod 状态管理
   const AuthStateProvider._()
     : super(
         from: null,
@@ -44,9 +41,7 @@ final class AuthStateProvider
   }
 }
 
-String _$authStateHash() => r'374260f12614dc9d27d5c5c828e201112fda97b4';
-
-/// Riverpod 状态管理
+String _$authStateHash() => r'200203cf2bb105a4f6d17afe5774c2dcd006a6bc';
 
 abstract class _$AuthState extends $Notifier<AuthStateData> {
   AuthStateData build();

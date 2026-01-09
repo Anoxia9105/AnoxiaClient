@@ -31,11 +31,8 @@ class WsController extends _$WsController {
   WsState build() {
     //监听认证状态
     final auth = ref.watch(authStateProvider);
-    //使用 Future.microtask 确保在 build 完成后再执行初始化
     if (auth.status == AuthStatus.authenticated) {
       Future.microtask(() => _initConnection());
-    } else {
-      _disposeAll();
     }
 
     // 自动清理资源
@@ -65,7 +62,6 @@ class WsController extends _$WsController {
   Future<void> connect(String token) async {
     // 已连接则不重复连接
     if (state.status == WsStatus.connected) return;
-
     // 更新状态为连接中
     state = WsState(status: WsStatus.connecting);
 
@@ -103,6 +99,11 @@ class WsController extends _$WsController {
 
   /// 内部处理：收到消息
   void _handleIncomingMessage(dynamic message) {
+    if (_messageController.isClosed) {
+      log.warning("WS 已关闭，丢弃消息帧");
+      return;
+    }
+
     log.info("WS收到消息: $message");
     if (message == 'pong') return; // 拦截心跳响应
 
@@ -179,10 +180,11 @@ class WsController extends _$WsController {
   }
 
   void _disposeAll() {
+    log.info("WS 连接资源清理中...");
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();
-    _messageController.close();
+    // _messageController.close();
   }
 }
 

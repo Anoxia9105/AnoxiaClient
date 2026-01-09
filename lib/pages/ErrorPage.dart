@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:notepadclient/pages/AppScaffold.dart';
 
+import '../common/utils/DeviceUtil.dart';
+import '../common/widgets/desktop/DesktopAppBar.dart';
 import '../framework/theme/AppColors.dart';
 
 class ErrorPage extends StatelessWidget {
@@ -9,21 +12,15 @@ class ErrorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: gradient,
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error, color: Colors.red, size: 64),
-              Text(message ?? "发生未知错误"), // 💡 显示错误信息
-              // ... 重试按钮 ...
-            ],
-          ),
+    return AppScaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error, size: 64),
+            Text(message ?? "发生未知错误"), // 💡 显示错误信息
+            // ... 重试按钮 ...
+          ],
         ),
       ),
     );

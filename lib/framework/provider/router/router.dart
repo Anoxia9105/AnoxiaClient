@@ -8,6 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../pages/SplashPage.dart';
 import '../../logs/talker.dart';
 import '../auth/auth_state_provider.dart';
+import '../core/app_initializer.dart';
 
 part 'router.g.dart';
 
@@ -15,45 +16,63 @@ final _routerKey = GlobalKey<NavigatorState>(debugLabel: 'routerKey');
 
 @riverpod
 GoRouter router(Ref ref) {
-  //登录状态
   final auth = ref.watch(authStateProvider);
-  final router = GoRouter(
+  final initialization = ref.watch(appInitializerProvider);
+
+  return GoRouter(
     observers: [BotToastNavigatorObserver()],
     navigatorKey: _routerKey,
-    initialLocation: const HomeRoute().location,
+    initialLocation: const SplashRoute().location, // 直接从 Splash 开始
     debugLogDiagnostics: true,
     routes: $appRoutes,
     redirect: (context, state) {
-      log.info(
-        "==========================================================${auth.status}",
-      );
-      // 初始状态不重定向，等待认证结果
-      if (auth.status == AuthStatus.initial) return SplashRoute().location;
+      final currentLocation = state.matchedLocation;
+      log.info("[Router] 当前路径: $currentLocation, 认证状态: ${auth.status}, 初始化状态: $initialization");
 
-      // 认证出错，重定向到错误页
-      if (auth.status == AuthStatus.error) {
-        return ErrorRoute(message: auth.errorMessage).location;
+      // 如果已经在错误页，不重定向
+      if (currentLocation == ErrorRoute().location) {
+        return null;
       }
 
-      final isLoggedIn = auth.status == AuthStatus.authenticated;
-      final isLoginPage = state.matchedLocation == InitLoginRoute().location;
+      // 如果已经在登录页，不重定向
+      if (currentLocation == InitLoginRoute().location) {
+        return null;
+      }
 
-      // 如果未登录且不在登录页，重定向到登录页
-      if (!isLoggedIn && !isLoginPage) {
-        log.info("用户未登录，重定向到登录页");
-        return InitLoginRoute().location;
+      // 根据认证状态进行路由保护
+      switch (auth.status) {
+        case AuthStatus.initial:
+        case AuthStatus.checking:
+        // 初始或检查中 -> 停留在 Splash 页
+          if (currentLocation != SplashRoute().location) {
+            return SplashRoute().location;
+          }
+          return null;
+
+        case AuthStatus.authenticated:
+        // 已认证 -> 如果不在首页，跳转到首页
+          if (currentLocation == SplashRoute().location ||
+              currentLocation == InitLoginRoute().location) {
+            return HomeRoute().location;
+          }
+          return null;
+
+        case AuthStatus.unauthenticated:
+        // 未认证 -> 跳转到登录页
+          if (currentLocation != InitLoginRoute().location) {
+            return InitLoginRoute().location;
+          }
+          return null;
+
+        case AuthStatus.error:
+        // 错误 -> 跳转到错误页
+          if (currentLocation != ErrorRoute().location) {
+            return ErrorRoute(message: auth.errorMessage).location;
+          }
+          return null;
       }
-      // 如果已登录且在登录页，重定向到首页
-      if (isLoggedIn && isLoginPage) {
-        log.info("用户已登录，重定向到首页");
-        return "/";
-      }
-      return null;
     },
   );
-  ref.onDispose(router.dispose);
-
-  return router;
 }
 
 @TypedGoRoute<InitLoginRoute>(path: '/login')
@@ -87,5 +106,6 @@ class ErrorRoute extends GoRouteData with $ErrorRoute {
   const ErrorRoute({this.message});
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => ErrorPage(message: message);
+  Widget build(BuildContext context, GoRouterState state) =>
+      ErrorPage(message: message);
 }

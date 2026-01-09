@@ -1,43 +1,37 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
-class DesktopAppBar extends StatefulWidget implements PreferredSizeWidget {
-  final bool extended;
-  final Color? iconColor;
-  final Color? backgroundColor;
+import '../../../framework/provider/layout/layout_controller.dart';
+import '../../../gen/assets.gen.dart';
 
-  const DesktopAppBar({
-    super.key,
-    required this.extended,
-    this.iconColor,
-    this.backgroundColor,
-  });
+class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  // 是否隐藏应用栏Logo
+  final bool hideAppBarLogo;
 
-  @override
-  State<DesktopAppBar> createState() => _DesktopAppBarState();
+  const DesktopAppBar({super.key, this.hideAppBarLogo = false});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-}
-
-class _DesktopAppBarState extends State<DesktopAppBar> {
-  //公用式样
-  final btnStyle = ButtonStyle(
-    shape: WidgetStateProperty.all(
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-    ),
-  );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final extended = ref.watch(
+      layoutControllerProvider.select((r) => r.extendedValue),
+    );
     return AppBar(
       elevation: 0,
-      // surfaceTintColor: Colors.transparent,
-      backgroundColor: widget.backgroundColor,
-      // ThemeUtil.isDarkMode(context) ? Colors.transparent : Color(0xFFE6E6E9),
-      // title: Text(widget.title, style: TextStyle(fontSize: 14)),
+      leading: hideAppBarLogo
+          ? SizedBox.shrink()
+          : Center(
+              child: Assets.images.appIconPng.image(
+                width: 24,
+                height: 24,
+                // fit: BoxFit.cover
+              ),
+            ),
       actions: [
         // buildMoreButton(),
         SizedBox(width: 10),
@@ -50,13 +44,12 @@ class _DesktopAppBarState extends State<DesktopAppBar> {
           },
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedSolidLine01,
-            color: widget.iconColor,
-            size: 16,
+            // color: widget.iconColor,
+            size: 18,
           ),
-          style: btnStyle,
         ),
         //正常/最大化
-        changeScreenMode(widget.extended),
+        changeScreenMode(extended),
         IconButton(
           tooltip: "header_closure".tr(),
           padding: EdgeInsets.zero,
@@ -79,7 +72,7 @@ class _DesktopAppBarState extends State<DesktopAppBar> {
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedCancel01,
             size: 18,
-            color: widget.iconColor,
+            // color: widget.iconColor,
           ),
         ),
         const SizedBox(width: 8),
@@ -96,10 +89,9 @@ class _DesktopAppBarState extends State<DesktopAppBar> {
         onPressed: () {
           windowManager.unmaximize();
         },
-        style: btnStyle,
         icon: HugeIcon(
           icon: HugeIcons.strokeRoundedChangeScreenMode,
-          color: widget.iconColor,
+          // color: widget.iconColor,
           size: 18,
         ),
       );
@@ -110,9 +102,8 @@ class _DesktopAppBarState extends State<DesktopAppBar> {
       onPressed: () {
         windowManager.maximize();
       },
-      style: btnStyle,
       icon: HugeIcon(
-        color: widget.iconColor,
+        // color: widget.iconColor,
         icon: HugeIcons.strokeRoundedSquare,
         size: 16,
       ),

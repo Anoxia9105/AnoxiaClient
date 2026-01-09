@@ -88,37 +88,3 @@ final class CaptchaProvider
 }
 
 String _$captchaHash() => r'4ec8881cb3a52a028878831e79a1116f6b1f2c1a';
-
-@ProviderFor(userInfo)
-const userInfoProvider = UserInfoProvider._();
-
-final class UserInfoProvider
-    extends
-        $FunctionalProvider<AsyncValue<UserInfo>, UserInfo, FutureOr<UserInfo>>
-    with $FutureModifier<UserInfo>, $FutureProvider<UserInfo> {
-  const UserInfoProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'userInfoProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$userInfoHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<UserInfo> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<UserInfo> create(Ref ref) {
-    return userInfo(ref);
-  }
-}
-
-String _$userInfoHash() => r'b55855cf9e34abd2cd3c4c76896e6ca5ae7426a8';

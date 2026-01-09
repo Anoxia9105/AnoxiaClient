@@ -6,7 +6,7 @@ import 'package:notepadclient/core/utils/DeviceUtil.dart';
 import 'package:notepadclient/core/utils/PageTransitions.dart';
 import 'package:notepadclient/features/auth/controller/AuthController.dart.dart';
 import 'package:notepadclient/shared/widgets/Application.dart';
-import 'package:notepadclient/shared/widgets/AvatarWidget.dart';
+import 'package:notepadclient/common/widgets/AvatarWidget.dart';
 import 'package:notepadclient/shared/widgets/BubbleDialog.dart';
 import 'package:notepadclient/shared/widgets/Toast.dart';
 import 'package:window_manager/window_manager.dart';

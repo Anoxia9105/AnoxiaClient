@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:notepadclient/shared/widgets/AcrylicContainer.dart';
+import 'package:notepadclient/common/widgets/AcrylicContainer.dart';
 
 class FocusOverlayManager {
   static OverlayEntry? _entry;

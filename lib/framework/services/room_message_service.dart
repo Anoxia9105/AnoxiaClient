@@ -24,7 +24,10 @@ class ChatMessages extends _$ChatMessages {
         });
 
     // 4. 💡 关键：当这个 Provider 销毁时，必须取消订阅，防止内存泄漏
-    ref.onDispose(() => subscription.cancel());
+    ref.onDispose(() {
+      log.info("聊天消息服务销毁，取消订阅");
+      subscription.cancel();
+    });
 
     return {}; // 初始为空
   }

@@ -20,11 +20,7 @@ Future<CaptchaModel> captcha(Ref ref) async {
   return repo.getCaptcha();
 }
 
-@Riverpod(keepAlive: true)
-Future<UserInfo> userInfo(Ref ref) async {
-  final authService = ref.read(authServiceProvider);
-  return await authService.getUserInfo();
-}
+
 
 class AuthService {
   final _client = DioClient();
@@ -35,7 +31,7 @@ class AuthService {
   }
 
   Future<UserInfo> getUserInfo() async {
-    final res = await DioClient().get("/getInfo");
+    final res = await _client.get("/getInfo");
     return UserInfo.fromJson(res.data["data"]);
   }
 

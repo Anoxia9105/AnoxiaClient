@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:notepadclient/framework/protocol/message/HighMessage.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:talker_riverpod_logger/talker_riverpod_logger_observer.dart';
@@ -101,5 +102,9 @@ void setupPacketRegistry() {
   PacketRegistry.register(
     PacketType.message,
     (data) => RoomMessage.fromJson(data),
+  );
+  PacketRegistry.register(
+    PacketType.highFrequency,
+        (data) => HighMessage.fromJson(data),
   );
 }

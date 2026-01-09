@@ -54,7 +54,7 @@ class DioClient {
         onError: (e, handler) async {
           final uri = e.requestOptions.uri;
           log.error(
-            'Dio onError -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
+            '【onError拦截器】Dio 发生错误 -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
           );
           String message = "网络连接异常";
           if (e.type == DioExceptionType.connectionTimeout) message = "服务器连接超时";
@@ -89,7 +89,6 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      log.error("请求错误", e);
       rethrow;
     }
   }
@@ -109,7 +108,6 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      log.error("请求错误", e);
       rethrow;
     }
   }
@@ -129,7 +127,6 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      log.error("请求错误", e);
       rethrow;
     }
   }
@@ -149,7 +146,6 @@ class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      log.error("请求错误", e);
       rethrow;
     }
   }
