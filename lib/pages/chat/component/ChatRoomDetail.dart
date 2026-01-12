@@ -3,20 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notepadclient/framework/protocol/message/RoomMessage.dart';
 import 'package:notepadclient/framework/provider/ws/ws_controller.dart';
 
-import '../../framework/protocol/message/HighMessage.dart';
-import '../../framework/services/high_message_service.dart';
-import '../../framework/services/room_message_service.dart';
+import '../../../framework/protocol/message/HighMessage.dart';
+import '../../../framework/services/high_message_service.dart';
+import '../../../framework/services/room_message_service.dart';
 
-class ChatRoomPage extends ConsumerStatefulWidget {
+class ChatRoomDetail extends ConsumerStatefulWidget {
   final String roomId;
 
-  const ChatRoomPage({super.key, required this.roomId});
+  const ChatRoomDetail({super.key, required this.roomId});
 
   @override
-  ConsumerState<ChatRoomPage> createState() => _ChatRoomPageState();
+  ConsumerState<ChatRoomDetail> createState() => _ChatRoomDetailState();
 }
 
-class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
+class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 

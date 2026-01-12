@@ -16,7 +16,16 @@ import 'framework/protocol/PacketType.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
-late final ProviderContainer globalContainer;
+// 创建 Riverpod 容器并添加 Talker 观察者
+final ProviderContainer globalContainer = ProviderContainer(
+  observers: [
+    // provider 观察者，记录 provider 生命周期和状态变化
+    TalkerRiverpodObserver(
+      talker: log,
+      settings: const TalkerRiverpodLoggerSettings(printProviderDisposed: true),
+    ),
+  ],
+);
 
 void main() async {
   // 确保 Flutter 绑定已初始化
@@ -79,19 +88,6 @@ void main() async {
     });
   }
 
-  // 创建 Riverpod 容器并添加 Talker 观察者
-  globalContainer = ProviderContainer(
-    observers: [
-      // provider 观察者，记录 provider 生命周期和状态变化
-      TalkerRiverpodObserver(
-        talker: log,
-        settings: const TalkerRiverpodLoggerSettings(
-          printProviderDisposed: true,
-        ),
-      ),
-    ],
-  );
-
   //注册数据包解析器
   setupPacketRegistry();
 
@@ -105,6 +101,6 @@ void setupPacketRegistry() {
   );
   PacketRegistry.register(
     PacketType.highFrequency,
-        (data) => HighMessage.fromJson(data),
+    (data) => HighMessage.fromJson(data),
   );
 }

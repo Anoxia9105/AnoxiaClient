@@ -1,9 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notepadclient/framework/network/TokenManager.dart';
-import 'package:notepadclient/framework/provider/auth/auth_state_provider.dart';
+import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
 import 'package:notepadclient/main.dart';
 
 import '../logs/talker.dart';
@@ -33,15 +32,15 @@ class DioClient {
 
             if (bizCode == 401) {
               // 鉴权失败，跳转登录
-              await TokenManager.instance.clearToken();
-              globalContainer.read(authStateProvider.notifier).logout();
+              globalContainer.read(authControllerProvider.notifier).logout();
               log.info("鉴权失败，已清除 token 并跳转登录页");
-              return handler.reject(
-                DioException(
-                  requestOptions: response.requestOptions,
-                  error: "登录过期",
-                ),
-              );
+              // return handler.reject(
+              //   DioException(
+              //     requestOptions: response.requestOptions,
+              //     error: "登录过期",
+              //   ),
+              // );
+              return;
             }
             if (bizCode != HttpStatus.ok) {
               final String? errorMsg = response.data['msg']?.toString();

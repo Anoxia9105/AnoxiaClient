@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:notepadclient/framework/provider/router/router.dart';
-import 'package:notepadclient/pages/ErrorPage.dart';
-import 'package:notepadclient/pages/chat/ChatRoomPage.dart';
+import 'package:notepadclient/pages/chat/component/ChatRoomDetail.dart';
+import 'package:notepadclient/pages/chat/component/ChatRoomList.dart';
 
 import '../../framework/provider/theme/theme_controller.dart';
 import '../../framework/services/room_message_service.dart';
@@ -15,11 +16,22 @@ class ChatPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // final allMessages = ref.watch(chatMessagesProvider);
     final count = ref.watch(chatMessagesProvider.notifier).totalMessageCount;
+
+    return Row(
+      children: [
+        SizedBox(width: 80.w, child: ChatRoomList()),
+        Expanded(child: ChatRoomDetail(roomId: "testroom1")),
+      ],
+    );
+
     return Column(
       children: [
-        FilledButton(onPressed: (){
-          ErrorRoute().go(context);
-        }, child: Text("data")),
+        FilledButton(
+          onPressed: () {
+            ErrorRoute().go(context);
+          },
+          child: Text("data"),
+        ),
         DropdownButton<int>(
           value: ref.watch(themeIndexProvider),
           items: List.generate(AppTheme.themes.length, (i) {
@@ -35,7 +47,7 @@ class ChatPage extends ConsumerWidget {
           },
         ),
         Text("$count"),
-        Expanded(child: ChatRoomPage(roomId: "testroom1")),
+        Expanded(child: ChatRoomDetail(roomId: "testroom1")),
       ],
     );
   }

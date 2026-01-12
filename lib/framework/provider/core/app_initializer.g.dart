@@ -13,7 +13,7 @@ part of 'app_initializer.dart';
 const appInitializerProvider = AppInitializerProvider._();
 
 final class AppInitializerProvider
-    extends $AsyncNotifierProvider<AppInitializer, void> {
+    extends $AsyncNotifierProvider<AppInitializer, bool> {
   const AppInitializerProvider._()
     : super(
         from: null,
@@ -33,23 +33,23 @@ final class AppInitializerProvider
   AppInitializer create() => AppInitializer();
 }
 
-String _$appInitializerHash() => r'8f7a5a2629f7273f68c410eea76e786b93115977';
+String _$appInitializerHash() => r'322ecf68c4f02a0d2a39c86a05feb2fd7e59e758';
 
-abstract class _$AppInitializer extends $AsyncNotifier<void> {
-  FutureOr<void> build();
+abstract class _$AppInitializer extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    build();
-    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final created = build();
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<void>, void>,
-              AsyncValue<void>,
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
               Object?,
               Object?
             >;
-    element.handleValue(ref, null);
+    element.handleValue(ref, created);
   }
 }

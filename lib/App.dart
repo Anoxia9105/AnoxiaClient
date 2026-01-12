@@ -31,9 +31,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
-
-      ref.read(layoutControllerProvider.notifier).startListen();
-
       windowManager.addListener(this);
       trayManager.addListener(this);
     }
@@ -50,12 +47,12 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
   @override
   void onWindowMaximize() {
-    ref.read(layoutControllerProvider.notifier).setExtended(true);
+    ref.read(layoutControllerProvider.notifier).toggleExtended();
   }
 
   @override
   void onWindowUnmaximize() {
-    ref.read(layoutControllerProvider.notifier).setExtended(false);
+    ref.read(layoutControllerProvider.notifier).toggleExtended();
   }
 
   @override

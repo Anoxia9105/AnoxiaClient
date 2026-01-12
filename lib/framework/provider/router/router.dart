@@ -1,78 +1,83 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:notepadclient/framework/domain/UserInfo.dart';
+import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
 import 'package:notepadclient/pages/ErrorPage.dart';
 import 'package:notepadclient/pages/LoginPage.dart';
 import 'package:notepadclient/pages/MainLayoutPage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../pages/SplashPage.dart';
 import '../../logs/talker.dart';
-import '../auth/auth_state_provider.dart';
 import '../core/app_initializer.dart';
 
 part 'router.g.dart';
 
 final _routerKey = GlobalKey<NavigatorState>(debugLabel: 'routerKey');
 
+// 定义一个简单的代理类
+class RouterRefreshNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
 @riverpod
 GoRouter router(Ref ref) {
-  final auth = ref.watch(authStateProvider);
-  final initialization = ref.watch(appInitializerProvider);
+  final refreshNotifier = RouterRefreshNotifier();
 
-  return GoRouter(
+  // 监听两个核心状态的变化
+  ref.listen(appInitializerProvider, (_, __) => refreshNotifier.notify());
+  ref.listen(authControllerProvider, (_, __) => refreshNotifier.notify());
+  ref.onDispose(refreshNotifier.dispose);
+
+  final router = GoRouter(
     observers: [BotToastNavigatorObserver()],
     navigatorKey: _routerKey,
-    initialLocation: const SplashRoute().location, // 直接从 Splash 开始
+    refreshListenable: refreshNotifier,
+    initialLocation: const SplashRoute().location,
     debugLogDiagnostics: true,
     routes: $appRoutes,
     redirect: (context, state) {
-      final currentLocation = state.matchedLocation;
-      log.info("[Router] 当前路径: $currentLocation, 认证状态: ${auth.status}, 初始化状态: $initialization");
+      final initStatus = ref.read(appInitializerProvider);
+      final authStatus = ref.read(authControllerProvider);
 
-      // 如果已经在错误页，不重定向
-      if (currentLocation == ErrorRoute().location) {
-        return null;
+      final location = state.matchedLocation;
+      final isSplash = location == const SplashRoute().location;
+      final isLogin = location == const InitLoginRoute().location;
+
+      // 如果初始化出错，可以跳到 Error 页
+      if (initStatus.hasError && location != const ErrorRoute().location) {
+        return ErrorRoute(message: initStatus.error.toString()).location;
       }
 
-      // 如果已经在登录页，不重定向
-      if (currentLocation == InitLoginRoute().location) {
-        return null;
+      if (!initStatus.hasValue) {
+        return isSplash ? null : const SplashRoute().location;
       }
 
-      // 根据认证状态进行路由保护
-      switch (auth.status) {
-        case AuthStatus.initial:
-        case AuthStatus.checking:
-        // 初始或检查中 -> 停留在 Splash 页
-          if (currentLocation != SplashRoute().location) {
-            return SplashRoute().location;
-          }
+      switch (authStatus) {
+        case AsyncError():
+          return const InitLoginRoute().location;
+        case AsyncLoading():
           return null;
+        case AsyncData(value: null):
+          if (isSplash) return const InitLoginRoute().location;
+          if (isLogin) return null;
 
-        case AuthStatus.authenticated:
-        // 已认证 -> 如果不在首页，跳转到首页
-          if (currentLocation == SplashRoute().location ||
-              currentLocation == InitLoginRoute().location) {
-            return HomeRoute().location;
-          }
-          return null;
+          return const SplashRoute().location;
+        case AsyncData(value: UserInfo _):
+          if (isSplash) return const HomeRoute().location;
+          if (isLogin) return const HomeRoute().location;
 
-        case AuthStatus.unauthenticated:
-        // 未认证 -> 跳转到登录页
-          if (currentLocation != InitLoginRoute().location) {
-            return InitLoginRoute().location;
-          }
-          return null;
-
-        case AuthStatus.error:
-        // 错误 -> 跳转到错误页
-          if (currentLocation != ErrorRoute().location) {
-            return ErrorRoute(message: auth.errorMessage).location;
-          }
           return null;
       }
     },
   );
+
+  ref.onDispose(() {
+    log.info("[Router] 路由服务销毁");
+    router.dispose();
+  });
+
+  return router;
 }
 
 @TypedGoRoute<InitLoginRoute>(path: '/login')

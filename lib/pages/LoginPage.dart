@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
-import 'package:notepadclient/framework/services/auth_service.dart';
 import 'package:notepadclient/pages/AppScaffold.dart';
 
+import '../framework/provider/core/app_initializer.dart';
+import '../framework/provider/router/router.dart';
 import '../framework/theme/AppColors.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -21,7 +23,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final captchaAsync = ref.watch(captchaProvider);
+    final loginMutation = ref.watch(AuthController.loginMutation);
 
     return AppScaffold(
       body: Center(
@@ -63,53 +65,72 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   const SizedBox(width: 10),
 
                   // 验证码图片
-                  captchaAsync.when(
-                    data: (captcha) {
-                      return InkWell(
-                        onTap: () => ref.invalidate(captchaProvider),
-                        child: Image.memory(
-                          base64Decode(captcha.imgBase64),
+                  ref
+                      .watch(getCaptchaProvider)
+                      .when(
+                        data: (captcha) {
+                          return InkWell(
+                            onTap: () => ref.invalidate(getCaptchaProvider),
+                            child: Image.memory(
+                              base64Decode(captcha.imgBase64),
+                              width: 100,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        },
+                        loading: () => SizedBox(
                           width: 100,
                           height: 40,
-                          fit: BoxFit.cover,
+                          child: Center(child: CircularProgressIndicator()),
                         ),
-                      );
-                    },
-                    loading: () => SizedBox(
-                      width: 100,
-                      height: 40,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    error: (e, st) => IconButton(
-                      icon: Icon(Icons.refresh),
-                      onPressed: () => ref.invalidate(captchaProvider),
-                    ),
-                  ),
+                        error: (e, st) => IconButton(
+                          icon: Icon(Icons.refresh),
+                          onPressed: () => ref.invalidate(getCaptchaProvider),
+                        ),
+                      ),
                 ],
               ),
 
               const SizedBox(height: 20),
-
-              FilledButton(
-                onPressed: () async {
-                  final captcha = ref.read(captchaProvider).value;
-                  if (captcha == null) return;
-
-                  await ref
-                      .read(authControllerProvider.notifier)
-                      .login(
-                        usernameCtrl.text.trim(),
-                        passwordCtrl.text.trim(),
-                        codeCtrl.text.trim(),
-                        captcha.uuid,
-                      );
+              FilledButton.icon(
+                onPressed: switch (loginMutation) {
+                  MutationPending() => null,
+                  _ => login,
                 },
-                child: Text("登录"),
+                icon: const Icon(Icons.door_front_door),
+                label: switch (loginMutation) {
+                  MutationPending() => const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                  ),
+                  _ => const Text('Login'),
+                },
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> login() async {
+    final captcha = ref.read(getCaptchaProvider).value;
+    if (captcha == null) return;
+    await AuthController.loginMutation.run(ref, (ref) {
+      return ref
+          .get(authControllerProvider.notifier)
+          .login(
+            usernameCtrl.text.trim(),
+            passwordCtrl.text.trim(),
+            codeCtrl.text.trim(),
+            captcha.uuid,
+          );
+    });
+
+    await ref.read(appInitializerProvider.notifier).performFullReset();
+
+    if (!mounted) return;
+    const HomeRoute().go(context);
   }
 }

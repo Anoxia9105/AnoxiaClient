@@ -1,41 +1,19 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../pages/ThemeTestPage.dart';
-import '../../../pages/chat/ChatPage.dart';
 
 part 'layout_controller.g.dart';
 
 @riverpod
 class LayoutController extends _$LayoutController {
-  late final List<LayoutOptions> _layoutPageList = [
-    LayoutOptions(
-      name: "sidebar_chat",
-      icon: HugeIcons.strokeRoundedComment01,
-      page: const ChatPage(),
-    ),
-    LayoutOptions(
-      name: "sidebar_contact",
-      icon: HugeIcons.strokeRoundedContact01,
-      page: const Text("Contact"),
-    ),
-    LayoutOptions(
-      name: "sidebar_documentation",
-      icon: HugeIcons.strokeRoundedNote01,
-      page: const Text("sidebar_documentation"),
-    ),
-    LayoutOptions(
-      name: "sidebar_discover",
-      icon: HugeIcons.strokeRoundedPathfinderCrop,
-      page: const Text("sidebar_discover"),
-    ),
-    LayoutOptions(
-      name: "sidebar_my",
-      icon: HugeIcons.strokeRoundedUser,
-      page: const ThemeTestPage(),
-    ),
+// 静态配置：作为控制器的私有常量
+  static const _menuItems = [
+    SidebarItem(name: "sidebar_chat", icon: HugeIcons.strokeRoundedComment01),
+    SidebarItem(name: "sidebar_contact", icon: HugeIcons.strokeRoundedContact01),
+    SidebarItem(name: "sidebar_documentation", icon: HugeIcons.strokeRoundedNote01),
+    SidebarItem(name: "sidebar_discover", icon: HugeIcons.strokeRoundedPathfinderCrop),
+    SidebarItem(name: "sidebar_my", icon: HugeIcons.strokeRoundedUser),
   ];
 
   @override
@@ -43,63 +21,45 @@ class LayoutController extends _$LayoutController {
     return LayoutState(
       currentIndex: 0,
       extendedValue: false,
-      indexedStackPages: _layoutPageList.map((e) => e.page).toList(),
-      options: _layoutPageList,
+      items: _menuItems,
     );
   }
 
   void setIndex(int index) {
-    state = state.copyWith(currentIndex: index);
+    if (state.currentIndex != index) {
+      state = state.copyWith(currentIndex: index);
+    }
   }
 
-  void setExtended(bool value) {
-    state = state.copyWith(extendedValue: value);
-  }
-
-  void startListen() {
-    // 你原来的逻辑写这里
+  void toggleExtended() {
+    state = state.copyWith(extendedValue: !state.extendedValue);
   }
 }
 
 class LayoutState {
-  //当前索引
   final int currentIndex;
-
-  //win 最大化/正常
   final bool extendedValue;
-
-  // 页面列表
-  final List<Widget> indexedStackPages;
-
-  final List<LayoutOptions> options;
+  final List<SidebarItem> items; // 只存名字索引
 
   LayoutState({
     required this.currentIndex,
     required this.extendedValue,
-    required this.indexedStackPages,
-    required this.options,
+    required this.items,
   });
 
-  LayoutState copyWith({
-    int? currentIndex,
-    bool? extendedValue,
-    List<Widget>? indexedStackPages,
-    List<LayoutOptions>? options,
-  }) {
+  LayoutState copyWith({int? currentIndex, bool? extendedValue}) {
     return LayoutState(
       currentIndex: currentIndex ?? this.currentIndex,
       extendedValue: extendedValue ?? this.extendedValue,
-      indexedStackPages: indexedStackPages ?? this.indexedStackPages,
-      options: options ?? this.options,
+      items: items,
     );
   }
 }
 
-//布局页面项
-class LayoutOptions {
+
+class SidebarItem {
   final String name;
   final IconData icon;
-  final Widget page;
 
-  LayoutOptions({required this.name, required this.icon, required this.page});
+  const SidebarItem({required this.name, required this.icon});
 }

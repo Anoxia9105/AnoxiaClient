@@ -43,7 +43,7 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'105da53258f7398cd42cb5d9106b65dc73f5caf0';
+String _$chatMessagesHash() => r'8106ff207018dd7200cc495d0371755762a64d65';
 
 abstract class _$ChatMessages
     extends $Notifier<Map<String, List<RoomMessage>>> {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';
@@ -9,189 +10,193 @@ import '../../protocol/IPacket.dart';
 import '../../protocol/PacketFrame.dart';
 import '../../protocol/PacketType.dart';
 import '../../protocol/register/PacketRegistry.dart';
-import '../auth/auth_state_provider.dart';
-import 'ws_state.dart'; // 导入上面的状态
+import 'ws_state.dart';
 
-part 'ws_controller.g.dart'; // 生成文件的名字
+part 'ws_controller.g.dart';
 
-// 使用 keepAlive: true 确保切换页面时连接不会断开
 @Riverpod(keepAlive: true)
 class WsController extends _$WsController {
   WebSocketChannel? _channel;
   Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
-
-  //记录重试次数
   int _reconnectAttempts = 0;
 
-  // 用于分发消息的 StreamController
-  final _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
+  // 使用延迟初始化，确保每次 build 时或是需要时它是新鲜的
+  late StreamController<PacketFrame<IPacket>> _messageController;
 
   @override
   WsState build() {
-    //监听认证状态
-    final auth = ref.watch(authStateProvider);
-    if (auth.status == AuthStatus.authenticated) {
+    log.info("🌐 WsController 构建中...");
+
+    // 初始化消息流控制器
+    _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
+
+    // 监听认证状态逻辑优化
+    ref.listen(authControllerProvider, (previous, next) {
+      next.when(
+        data: (user) {
+          if (user != null) {
+            log.info("[WsController] 检测到用户登录，准备连接...");
+            _initConnection();
+          } else {
+            log.info("[WsController] 检测到用户退出，断开连接...");
+            _disposeAll(closeStream: false); // 登出不断流，只断开网络
+          }
+        },
+        error: (err, _) => _disposeAll(closeStream: false),
+        loading: () => {},
+      );
+    });
+
+    // 初始启动检查：如果 build 时已经有用户了，直接触发连接
+    final currentUser = ref.read(authControllerProvider).value;
+    if (currentUser != null) {
       Future.microtask(() => _initConnection());
     }
 
-    // 自动清理资源
     ref.onDispose(() {
-      _disposeAll();
+      _disposeAll(closeStream: true);
     });
+
     return WsState(status: WsStatus.disconnected);
   }
 
-  /// 内部引导连接的方法（处理异步获取 Token）
+  /// 暴露给外部的消息流
+  Stream<PacketFrame<IPacket>> get messageStream => _messageController.stream;
+
   void _initConnection() async {
-    // 加上保护，避免同时启动多个连接
-    if (state.status == WsStatus.connecting ||
-        state.status == WsStatus.connected)
-      return;
+    // 保护：如果已经在连接或已连接，跳过
+    if (state.status == WsStatus.connecting || state.status == WsStatus.connected) return;
 
     final token = await TokenManager.instance.getToken();
     if (token != null && token.isNotEmpty) {
-      connect(token);
+      await connect(token);
+    } else {
+      log.warning("[WsController] 初始化失败：未找到 Token");
     }
   }
 
-  /// 暴露给外部的消息流
-  Stream<dynamic> get messageStream => _messageController.stream;
-
-  /// 连接方法
   Future<void> connect(String token) async {
-    // 已连接则不重复连接
     if (state.status == WsStatus.connected) return;
-    // 更新状态为连接中
+
     state = WsState(status: WsStatus.connecting);
 
-    // 建立连接
     try {
-      String url = API.wsBaseUrl + token;
+      final url = "${API.wsBaseUrl}$token";
+      log.info("[WsController] 正在尝试建立 WebSocket 连接: $url");
+
       _channel = WebSocketChannel.connect(Uri.parse(url));
-      //等待真正的握手成功
-      await _channel!.ready;
+      await _channel!.ready; // 确保握手成功
 
       _channel!.stream.listen(
-        (message) => _handleIncomingMessage(message),
+            (message) => _handleIncomingMessage(message),
         onError: (err) => _handleError(err),
         onDone: () => _handleDone(),
         cancelOnError: true,
       );
 
-      //连接成功，重置重试次数
       _reconnectAttempts = 0;
       state = WsState(status: WsStatus.connected);
-      log.info("ws连接成功【重置重试次数】,$_reconnectAttempts");
-      //启动心跳机制
+      log.info("✅ WebSocket 连接成功");
+
       _startHeartbeat();
-    } catch (e) {
+    } catch (e, st) {
+      log.error("❌ WebSocket 连接失败", e, st);
       _handleError(e);
     }
   }
 
-  /// 发送消息
   void sendMessage(dynamic msg) {
-    log.info("ws发送消息: $msg");
-    if (state.status != WsStatus.connected) return;
-    _channel?.sink.add(msg is Map ? jsonEncode(msg) : msg);
-  }
-
-  /// 内部处理：收到消息
-  void _handleIncomingMessage(dynamic message) {
-    if (_messageController.isClosed) {
-      log.warning("WS 已关闭，丢弃消息帧");
+    if (state.status != WsStatus.connected) {
+      log.warning("尝试在未连接状态发送消息");
       return;
     }
 
-    log.info("WS收到消息: $message");
-    if (message == 'pong') return; // 拦截心跳响应
-
     try {
-      // 2. 将原始字符串解析为 Map
-      final Map<String, dynamic> jsonMap = jsonDecode(message as String);
-
-      // 3. 提取 topic 并识别 PacketType (利用之前写的 from 方法，兼容数字/字符串)
-      final topic = PacketType.from(jsonMap['topic']);
-      final rawData = jsonMap['data'] as Map<String, dynamic>?;
-
-      if (rawData == null) {
-        log.warning("收到空数据包: $topic");
-        return;
-      }
-
-      // 4. 💡 核心步骤：通过注册表解析具体的 IPacket 子类
-      final packetData = PacketRegistry.parse(topic, rawData);
-
-      if (packetData != null) {
-        // 5. 封装成 Frame 放入流中
-        final frame = PacketFrame(topic: topic, data: packetData);
-        _messageController.add(frame);
-
-        log.info("WS 解析并分发成功: ${topic.name}");
-      } else {
-        log.warning("未注册的协议主题或解析失败: $topic");
-      }
-    } catch (e, stack) {
-      log.error("WS 消息处理异常: $e", stack);
+      final data = msg is Map ? jsonEncode(msg) : msg;
+      _channel?.sink.add(data);
+    } catch (e) {
+      log.error("发送消息失败", e);
     }
   }
 
-  /// 内部处理：心跳机制
+  void _handleIncomingMessage(dynamic message) {
+    if (message == 'pong') return;
+
+    try {
+      final Map<String, dynamic> jsonMap = jsonDecode(message as String);
+      final topic = PacketType.from(jsonMap['topic']);
+      final rawData = jsonMap['data'] as Map<String, dynamic>?;
+
+      if (rawData == null) return;
+
+      final packetData = PacketRegistry.parse(topic, rawData);
+      if (packetData != null) {
+        final frame = PacketFrame(topic: topic, data: packetData);
+        if (!_messageController.isClosed) {
+          _messageController.add(frame);
+        }
+      }
+    } catch (e) {
+      log.error("WS 消息解析异常", e);
+    }
+  }
+
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      sendMessage('ping');
+      if (state.status == WsStatus.connected) {
+        sendMessage('ping');
+      } else {
+        timer.cancel();
+      }
     });
   }
 
-  /// 内部处理：错误与重连
   void _handleError(dynamic err) {
     state = WsState(status: WsStatus.error, error: err.toString());
     _retryConnection();
   }
 
-  /// 内部处理：连接关闭与重连
   void _handleDone() {
+    log.info("WebSocket 连接由服务端关闭或网络中断");
     state = WsState(status: WsStatus.disconnected);
     _retryConnection();
   }
 
-  // 内部处理：重连逻辑
   void _retryConnection() {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
-    // 指数退避算法计算延迟：2, 4, 8, 16, 最后固定在 30s
+
+    // 如果是因为用户退出导致的断开，不需要重连
+    final user = ref.read(authControllerProvider).value;
+    if (user == null) return;
+
     int delaySeconds = (1 << _reconnectAttempts).clamp(2, 30);
-    log.warning("连接已断开，将在 $delaySeconds 秒后进行第 $_reconnectAttempts 次重连尝试...");
+    log.warning("将在 $delaySeconds 秒后进行第 $_reconnectAttempts 次重连...");
 
-    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () async {
-      final token = await TokenManager.instance.getToken();
-
+    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;
-      if (token != null) {
-        log.info("开始执行重连...");
-        connect(token);
-      } else {
-        log.error("重连失败：找不到 Token");
-        // 如果没有 token，可能需要跳转到登录页或重新获取
-      }
+      _initConnection();
     });
   }
 
-  void _disposeAll() {
-    log.info("WS 连接资源清理中...");
+  void _disposeAll({bool closeStream = false}) {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();
-    // _messageController.close();
+    _channel = null;
+    if (closeStream) {
+      _messageController.close();
+    }
+    state = WsState(status: WsStatus.disconnected);
   }
 }
 
-//消息事件总线 所有消息都会通过这个流分发出去
+// 消息事件总线
 @riverpod
 Stream<PacketFrame<IPacket>> wsMessageStream(Ref ref) {
-  final controller = ref.watch(wsControllerProvider.notifier);
-  // 这里我们直接强转，因为 _messageController 内部就是这个类型
-  return controller.messageStream.cast<PacketFrame<IPacket>>();
+  // 关键：使用 watch 确保控制器存在
+  final wsController = ref.watch(wsControllerProvider.notifier);
+  return wsController.messageStream;
 }

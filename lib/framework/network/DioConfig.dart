@@ -22,13 +22,13 @@ class DioConfig {
     return BaseOptions(
       baseUrl: API.httpBaseUrl,
       // 1. 连接超时：指从客户端发起连接到建立 TCP 连接的时间
-      connectTimeout: const Duration(seconds: 3),
+      connectTimeout: const Duration(seconds: 20),
 
       // 2. 接收超时：指两次响应数据包之间的时间间隔（不是整个请求完成的时间）
-      receiveTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 30),
 
       // 3. 发送超时：指将数据发送到服务器的时间（通常用于文件上传）
-      sendTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(seconds: 60),
       headers: {'Accept': 'application/json'},
       responseType: ResponseType.json,
       // 强制期望返回 JSON

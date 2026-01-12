@@ -13,14 +13,14 @@ part of 'auth_controller.dart';
 const authControllerProvider = AuthControllerProvider._();
 
 final class AuthControllerProvider
-    extends $NotifierProvider<AuthController, void> {
+    extends $AsyncNotifierProvider<AuthController, UserInfo?> {
   const AuthControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'authControllerProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -31,33 +31,69 @@ final class AuthControllerProvider
   @$internal
   @override
   AuthController create() => AuthController();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(void value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<void>(value),
-    );
-  }
 }
 
-String _$authControllerHash() => r'5dd062333462369986f43d1daa5531d0b0d6829d';
+String _$authControllerHash() => r'376b532922f482916e500d6838927bf77a203aab';
 
-abstract class _$AuthController extends $Notifier<void> {
-  void build();
+abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
+  FutureOr<UserInfo?> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    build();
-    final ref = this.ref as $Ref<void, void>;
+    final created = build();
+    final ref = this.ref as $Ref<AsyncValue<UserInfo?>, UserInfo?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<void, void>,
-              void,
+              AnyNotifier<AsyncValue<UserInfo?>, UserInfo?>,
+              AsyncValue<UserInfo?>,
               Object?,
               Object?
             >;
-    element.handleValue(ref, null);
+    element.handleValue(ref, created);
   }
 }
+
+/// 获取验证码
+
+@ProviderFor(getCaptcha)
+const getCaptchaProvider = GetCaptchaProvider._();
+
+/// 获取验证码
+
+final class GetCaptchaProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CaptchaModel>,
+          CaptchaModel,
+          FutureOr<CaptchaModel>
+        >
+    with $FutureModifier<CaptchaModel>, $FutureProvider<CaptchaModel> {
+  /// 获取验证码
+  const GetCaptchaProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'getCaptchaProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$getCaptchaHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<CaptchaModel> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CaptchaModel> create(Ref ref) {
+    return getCaptcha(ref);
+  }
+}
+
+String _$getCaptchaHash() => r'97d4ceb26b41b94b922637db017c94f50a4d05fb';

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:notepadclient/framework/provider/auth/auth_state_provider.dart';
+import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
 
 import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/ws/ws_controller.dart';
@@ -19,8 +19,11 @@ class DesktopSidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
-    final u = ref.watch(authStateProvider.select((s) => s.user));
+    final user = ref.watch(authControllerProvider);
+
+
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
+
     return SizedBox(
       width: 60,
       child: Column(
@@ -30,8 +33,8 @@ class DesktopSidebar extends ConsumerWidget {
             builder: (context) {
               return InkWell(
                 child: AvatarWidget(
-                  url: u?.avatar,
-                  name: u?.nickName,
+                  url: user.value?.avatar,
+                  name: user.value?.nickName,
                   size: 35,
                   status: status == WsStatus.connected
                       ? AvatarStatus.online
@@ -77,13 +80,13 @@ class DesktopSidebar extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: List.generate(layout.options.length, (index) {
-                final page = layout.options[index];
+              children: List.generate(layout.items.length, (index) {
+                final item = layout.items[index];
                 return SidebarButton(
                   padding: EdgeInsets.all(10),
                   index: index,
-                  name: page.name.tr(),
-                  icon: page.icon,
+                  name: item.name.tr(),
+                  icon: item.icon,
                 );
               }),
             ),

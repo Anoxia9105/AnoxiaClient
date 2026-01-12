@@ -1,19 +1,12 @@
-import 'dart:ui';
-
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notepadclient/pages/AppScaffold.dart';
-import 'package:tray_manager/tray_manager.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../common/utils/DeviceUtil.dart';
-import '../common/widgets/desktop/DesktopAppBar.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
-import '../framework/provider/auth/auth_state_provider.dart';
 import '../framework/provider/layout/layout_controller.dart';
-import '../framework/theme/AppColors.dart';
-import '../gen/assets.gen.dart';
+import 'ThemeTestPage.dart';
+import 'chat/ChatPage.dart';
 
 class MainLayoutPage extends ConsumerWidget {
   const MainLayoutPage({super.key});
@@ -55,7 +48,16 @@ class MainLayoutPage extends ConsumerWidget {
             child: Scaffold(
               body: IndexedStack(
                 index: layout.currentIndex,
-                children: layout.indexedStackPages,
+                children: [
+                  ChatPage(),
+                  Text("ContactPage"),
+                  // ContactPage(), // 建议把这些页面都定义成 const 提高性能
+                  Text("DocPage"),
+                  // DocPage(),
+                  Text("DiscoverPage"),
+                  // DiscoverPage(),
+                  ThemeTestPage(),
+                ],
               ),
             ),
           ),

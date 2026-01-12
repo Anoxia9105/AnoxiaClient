@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import '../../logs/talker.dart';
 import '../auth/auth_controller.dart';
 
@@ -7,85 +6,57 @@ part 'app_initializer.g.dart';
 
 @Riverpod(keepAlive: true)
 class AppInitializer extends _$AppInitializer {
-  /// 标记初始化是否已完成
-  bool _initialized = false;
-
   @override
-  FutureOr<void> build() {
-    log.info("🔄 AppInitializer.build() 被调用，_initialized: $_initialized");
-    // 如果已经初始化过，直接返回
-    if (_initialized) {
-      log.info("✅ 应用已初始化，跳过重复初始化");
-      return null;
-    }
-    log.info("⏳ 开始异步初始化...");
-    // 执行异步初始化
-    return _initialize();
-  }
+  Future<bool> build() async {
+    log.info("🔄 AppInitializer 开始初始化序列...");
 
-  /// 初始化应用
-  Future<void> _initialize() async {
     try {
-      log.info("🚀 应用开始初始化...");
-      await Future.delayed(const Duration(seconds: 5));
-      // 1. 基础服务初始化
+      // 1. 基础服务 (例如: SharedPreferences, Database, Firebase)
       await _initializeServices();
 
-      // 2. 自动登录检查
-      await _checkAutoLogin();
+      // 2. 等待 AuthController 完成它的 build() 逻辑
+      // 这一步非常关键：它确保了当 AppInitializer 完成时，
+      // authControllerProvider 已经完成了 token 校验和用户信息获取
+      log.info("🔐 等待认证模块就绪...");
+      final user = await ref.watch(authControllerProvider.future);
 
-      // 3. 预加载数据（可选）
+      if (user == null) {
+        log.info("👤 用户未登录");
+        return false;
+      }
+      // 3. 业务预加载 (此时已经知道了用户是否登录)
       await _preloadData();
 
-      _initialized = true;
-      log.info("✅ 应用初始化完成");
+      log.info("✅ 应用全局初始化序列成功完成");
     } catch (e, stack) {
-      log.error("❌ 应用初始化失败", e, stack);
+      log.error("❌ 应用初始化崩溃", e, stack);
+      // 抛出异常后，state 会变为 AsyncError，Router 会捕获并跳转错误页
       rethrow;
+    }
+
+    return true;
+  }
+
+  Future<void> _initializeServices() async {
+    log.info("🛠️ 正在挂载基础服务...");
+    // 这里放真正的异步初始化代码，比如：
+    // await LocalStorage.init();
+    await Future.delayed(const Duration(seconds: 3)); // 模拟耗时操作
+  }
+
+  Future<void> _preloadData() async {
+    log.info("📦 正在执行业务预加载...");
+    // 可以在这里根据登录状态决定加载什么
+    final user = ref.read(authControllerProvider).value;
+    if (user != null) {
+      log.info("👤 用户已登录，开始拉取个人化配置...");
+      await Future.delayed(const Duration(seconds: 3));
     }
   }
 
-  /// 初始化基础服务
-  Future<void> _initializeServices() async {
-    log.info("🛠️ 初始化基础服务...");
-
-    // 这里可以初始化各种服务，如：
-    // - 数据库
-    // - 本地存储
-    // - 通知服务
-    // - 其他第三方服务
-
-    await Future.delayed(const Duration(milliseconds: 100)); // 模拟初始化时间
-    log.info("✅ 基础服务初始化完成");
-  }
-
-  /// 检查自动登录
-  Future<void> _checkAutoLogin() async {
-    log.info("🔐 检查自动登录...");
-
-    // 注意：这里使用 notifier 调用 autoLogin 方法
-    // 而不是直接读取，因为我们需要执行异步操作 内部处理异常
-    await ref.read(authControllerProvider.notifier).autoLogin();
-    log.info("✅ 自动登录检查完成");
-  }
-
-  /// 预加载数据
-  Future<void> _preloadData() async {
-    log.info("📦 预加载数据...");
-
-    // 这里可以预加载一些数据，如：
-    // - 配置信息
-    // - 用户偏好设置
-    // - 缓存的资源
-
-    await Future.delayed(const Duration(milliseconds: 50)); // 模拟加载时间
-    log.info("✅ 数据预加载完成");
-  }
-
-  /// 手动重新初始化（用于特殊场景，如清除缓存后）
-  Future<void> reinitialize() async {
-    _initialized = false;
-    state = const AsyncValue.data(null);
-    await future; // 等待重新初始化完成
+  /// 手动重置初始化状态 (通常用于注销后的深度清理)
+  Future<void> performFullReset() async {
+    ref.invalidateSelf();
+    await future;
   }
 }
