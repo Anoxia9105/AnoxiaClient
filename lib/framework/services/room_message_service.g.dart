@@ -8,12 +8,18 @@ part of 'room_message_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 存储每个房间的消息列表
+/// key = roomId, value = List<ChatMessage>
 
 @ProviderFor(ChatMessages)
 const chatMessagesProvider = ChatMessagesProvider._();
 
+/// 存储每个房间的消息列表
+/// key = roomId, value = List<ChatMessage>
 final class ChatMessagesProvider
-    extends $NotifierProvider<ChatMessages, Map<String, List<RoomMessage>>> {
+    extends $NotifierProvider<ChatMessages, Map<String, List<ChatMessage>>> {
+  /// 存储每个房间的消息列表
+  /// key = roomId, value = List<ChatMessage>
   const ChatMessagesProvider._()
     : super(
         from: null,
@@ -33,21 +39,24 @@ final class ChatMessagesProvider
   ChatMessages create() => ChatMessages();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Map<String, List<RoomMessage>> value) {
+  Override overrideWithValue(Map<String, List<ChatMessage>> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<Map<String, List<RoomMessage>>>(
+      providerOverride: $SyncValueProvider<Map<String, List<ChatMessage>>>(
         value,
       ),
     );
   }
 }
 
-String _$chatMessagesHash() => r'8106ff207018dd7200cc495d0371755762a64d65';
+String _$chatMessagesHash() => r'e63903c495e29f58f1d301b0e8c138c9865832b5';
+
+/// 存储每个房间的消息列表
+/// key = roomId, value = List<ChatMessage>
 
 abstract class _$ChatMessages
-    extends $Notifier<Map<String, List<RoomMessage>>> {
-  Map<String, List<RoomMessage>> build();
+    extends $Notifier<Map<String, List<ChatMessage>>> {
+  Map<String, List<ChatMessage>> build();
   @$mustCallSuper
   @override
   void runBuild() {
@@ -55,17 +64,17 @@ abstract class _$ChatMessages
     final ref =
         this.ref
             as $Ref<
-              Map<String, List<RoomMessage>>,
-              Map<String, List<RoomMessage>>
+              Map<String, List<ChatMessage>>,
+              Map<String, List<ChatMessage>>
             >;
     final element =
         ref.element
             as $ClassProviderElement<
               AnyNotifier<
-                Map<String, List<RoomMessage>>,
-                Map<String, List<RoomMessage>>
+                Map<String, List<ChatMessage>>,
+                Map<String, List<ChatMessage>>
               >,
-              Map<String, List<RoomMessage>>,
+              Map<String, List<ChatMessage>>,
               Object?,
               Object?
             >;

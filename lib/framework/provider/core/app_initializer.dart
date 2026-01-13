@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';
+import '../../services/room_list_service.dart';
 import '../auth/auth_controller.dart';
 
 part 'app_initializer.g.dart';
@@ -41,7 +42,6 @@ class AppInitializer extends _$AppInitializer {
     log.info("🛠️ 正在挂载基础服务...");
     // 这里放真正的异步初始化代码，比如：
     // await LocalStorage.init();
-    await Future.delayed(const Duration(seconds: 3)); // 模拟耗时操作
   }
 
   Future<void> _preloadData() async {
@@ -49,8 +49,10 @@ class AppInitializer extends _$AppInitializer {
     // 可以在这里根据登录状态决定加载什么
     final user = ref.read(authControllerProvider).value;
     if (user != null) {
-      log.info("👤 用户已登录，开始拉取个人化配置...");
-      await Future.delayed(const Duration(seconds: 3));
+      log.info("👤 用户已登录，开始加载核心业务数据...");
+
+      log.info("💬 正在预加载聊天会话列表...");
+      await ref.read(roomListServiceProvider.future);
     }
   }
 

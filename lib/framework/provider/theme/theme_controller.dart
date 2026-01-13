@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../common/utils/SPUtil.dart';
 import '../../theme/AppTheme.dart';
+import 'font_controller.dart';
 
 part 'theme_controller.g.dart';
 
@@ -23,5 +24,10 @@ class ThemeIndex extends _$ThemeIndex {
 @riverpod
 ThemeData appTheme(Ref ref) {
   final index = ref.watch(themeIndexProvider);
-  return AppTheme.getTheme(index: index);
+  final fontFamily = ref.watch(fontControllerProvider);
+  ThemeData baseTheme=AppTheme.getTheme(index: index);
+  return baseTheme.copyWith(
+    textTheme: baseTheme.textTheme.apply(fontFamily: fontFamily),
+    primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: fontFamily),
+  );
 }

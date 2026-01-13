@@ -80,16 +80,23 @@ class HighMessageService extends _$HighMessageService {
 
   void _manageTypingTimer(HighMessage msg) {
     final roomId = msg.roomId ?? "system";
-    // 使用房间+用户作为定时器唯一标识
     final timerKey = "${roomId}_${msg.senderId}";
-    
+
+    // 1. 无论收到什么，先取消旧的定时器
     _typingTimers[timerKey]?.cancel();
+    _typingTimers.remove(timerKey);
 
     if (msg.content == "true") {
-      _typingTimers[timerKey] = Timer(const Duration(seconds: 3), () {
-        _clearSingleStatus(roomId,HighMessageType.TYPING_STATUS);
-        _typingTimers.remove(timerKey);
+      log.info("用户 ${msg.senderId} 正在输入...");
+      // 2. 只有是 true 时，才开启 3 秒自灭（防止对方程序崩溃没发 false）
+      _typingTimers[timerKey] = Timer(const Duration(seconds: 5), () {
+        log.info("输入状态超时自动清理");
+        _clearSingleStatus(roomId, HighMessageType.TYPING_STATUS);
       });
+    } else {
+      log.info("用户 ${msg.senderId} 停止输入，立即清理");
+      // 3. 如果收到 "false"，立刻清理状态
+      _clearSingleStatus(roomId, HighMessageType.TYPING_STATUS);
     }
   }
 

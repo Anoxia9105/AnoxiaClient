@@ -1,0 +1,129 @@
+import 'package:notepadclient/framework/network/DioClient.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../domain/ChatMessage.dart';
+import '../domain/ChatRoomVO.dart';
+
+part 'room_list_service.g.dart';
+
+@Riverpod(keepAlive: true)
+class RoomListService extends _$RoomListService {
+  @override
+  FutureOr<List<ChatRoomVO>> build() async {
+    return await fetchRoomList();
+  }
+
+  Future<List<ChatRoomVO>> fetchRoomList() async {
+    try {
+      final res = await DioClient().get("/chat/getRoomList");
+
+      final data = res.data["data"];
+      if (data is List) {
+        return data
+            .map((e) {
+              try {
+                return ChatRoomVO.fromJson(e);
+              } catch (e) {
+                // 单条解析失败，记录日志并返回空，防止整个页面崩溃
+                print("ChatRoomVO 解析异常: $e");
+                return null;
+              }
+            })
+            .whereType<ChatRoomVO>()
+            .toList(); // 过滤掉解析失败的空值
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 改进的刷新：支持静默刷新，不闪烁
+  Future<void> refresh({bool silent = false}) async {
+    if (!silent) state = const AsyncValue.loading();
+    final newState = await AsyncValue.guard(() => fetchRoomList());
+    state = newState;
+  }
+
+  /// 实时更新：增加是否计算未读数的逻辑
+  void updateRoomPosition(
+    ChatMessage newMessage, {
+    bool isCurrentRoom = false,
+  }) {
+    state.whenData((rooms) {
+      final List<ChatRoomVO> updatedList = List.from(rooms);
+      final index = updatedList.indexWhere(
+        (r) => r.roomId == newMessage.roomId,
+      );
+
+      if (index != -1) {
+        final oldRoom = updatedList.removeAt(index);
+
+        // 如果是当前房间，未读数不增加；否则 +1
+        final int newUnread = isCurrentRoom
+            ? (oldRoom.unreadCount ?? 0)
+            : (oldRoom.unreadCount ?? 0) + 1;
+
+        final newRoom = oldRoom.copyWith(
+          lastMessage: newMessage,
+          unreadCount: newUnread,
+        );
+
+        updatedList.insert(0, newRoom);
+        state = AsyncValue.data(updatedList);
+      } else {
+        // 如果列表中没有这个房间（比如新开启的私聊），建议直接触发一次 fetchRoomList
+        refresh(silent: true);
+      }
+    });
+  }
+
+
+  // 在 RoomListService 类中添加
+  void markAsRead(String roomId) {
+    state.whenData((rooms) {
+      final index = rooms.indexWhere((r) => r.roomId == roomId);
+      if (index != -1 && (rooms[index].unreadCount ?? 0) > 0) {
+        final List<ChatRoomVO> updatedList = List.from(rooms);
+
+        // 更新该房间的未读数为 0
+        updatedList[index] = updatedList[index].copyWith(unreadCount: 0);
+
+        // 这里的 seq 通常取自 lastMessage.seq
+        final int? lastSeq = updatedList[index].lastMessage?.seq;
+        if (lastSeq != null) {
+          _reportReadSeq(roomId, lastSeq); // 触发上报
+        }
+
+        state = AsyncValue.data(updatedList);
+      }
+    });
+  }
+
+// TODO: 实现上报最新 seq 的接口调用
+  Future<void> _reportReadSeq(String roomId, int seq) async {
+    try {
+      print("🚀 上报已读状态: 房间 $roomId, Seq $seq");
+      // await DioClient().post("/chat/readReport", data: {"roomId": roomId, "seq": seq});
+    } catch (e) {
+      print("上报已读失败: $e");
+    }
+  }
+}
+
+
+
+//当前选中房间
+@riverpod
+class ActiveRoomId extends _$ActiveRoomId {
+  @override
+  String? build() => null; // 初始没有选中的房间
+
+  void setActive(String roomId) {
+    if (state == roomId) return;
+    state = roomId;
+
+    // 🌟 核心联动：选中时立即清空未读数并上报 seq
+    ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
+  }
+}

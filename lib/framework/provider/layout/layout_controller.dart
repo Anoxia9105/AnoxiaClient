@@ -11,9 +11,10 @@ class LayoutController extends _$LayoutController {
   static const _menuItems = [
     SidebarItem(name: "sidebar_chat", icon: HugeIcons.strokeRoundedComment01),
     SidebarItem(name: "sidebar_contact", icon: HugeIcons.strokeRoundedContact01),
-    SidebarItem(name: "sidebar_documentation", icon: HugeIcons.strokeRoundedNote01),
+    SidebarItem(name: "sidebar_documentation", icon: HugeIcons.strokeRoundedChatGpt),
     SidebarItem(name: "sidebar_discover", icon: HugeIcons.strokeRoundedPathfinderCrop),
     SidebarItem(name: "sidebar_my", icon: HugeIcons.strokeRoundedUser),
+    SidebarItem(name: "sidebar_setting", icon: HugeIcons.strokeRoundedSettings01),
   ];
 
   @override

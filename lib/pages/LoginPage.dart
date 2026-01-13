@@ -128,9 +128,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
     });
 
+    // 登录成功后，重置初始化状态，重新加载应用数据
     await ref.read(appInitializerProvider.notifier).performFullReset();
-
-    if (!mounted) return;
-    const HomeRoute().go(context);
   }
 }

@@ -20,12 +20,10 @@ class DesktopSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
-
-
+    final locale = context.locale;
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
-
     return SizedBox(
-      width: 60,
+      width: 70,
       child: Column(
         children: [
           // 用户信息位置
@@ -57,7 +55,9 @@ class DesktopSidebar extends ConsumerWidget {
                           width: 1,
                           color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        backgroundColor:Theme.of(context).colorScheme.surfaceContainer,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainer,
                         contentBuilder: (context) => Column(
                           mainAxisSize: MainAxisSize.min,
                           children: List.generate(6, (index) {
@@ -80,7 +80,7 @@ class DesktopSidebar extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: List.generate(layout.items.length, (index) {
+              children: List.generate(layout.items.length - 1, (index) {
                 final item = layout.items[index];
                 return SidebarButton(
                   padding: EdgeInsets.all(10),
@@ -90,6 +90,13 @@ class DesktopSidebar extends ConsumerWidget {
                 );
               }),
             ),
+          ),
+
+          SidebarButton(
+            padding: EdgeInsets.all(10),
+            index: layout.items.length - 1,
+            name: layout.items[layout.items.length - 1].name.tr(),
+            icon: layout.items[layout.items.length - 1].icon,
           ),
         ],
       ),
@@ -116,31 +123,34 @@ class SidebarButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
     final bool isActive = layout.currentIndex == index;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          ref.read(layoutControllerProvider.notifier).setIndex(index);
-        },
-        child: Padding(
-          padding: padding,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              HugeIcon(
-                icon: icon,
-                color: isActive ? Theme.of(context).primaryColor : null,
-                size: 18,
-              ),
-              Text(
-                name,
-                style: TextStyle(
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            ref.read(layoutControllerProvider.notifier).setIndex(index);
+          },
+          child: Padding(
+            padding: padding,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                HugeIcon(
+                  icon: icon,
                   color: isActive ? Theme.of(context).primaryColor : null,
-                  fontSize: 14,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  size: 18,
                 ),
-              ),
-            ],
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: isActive ? Theme.of(context).primaryColor : null,
+                    fontSize: 12,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

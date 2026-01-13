@@ -51,7 +51,7 @@ final class HighMessageServiceProvider
 }
 
 String _$highMessageServiceHash() =>
-    r'f3d10842b1eb91c43db71d9df6f9d23ebd624abe';
+    r'b03573276f9611b1b2fa72b1450b7823e214faed';
 
 abstract class _$HighMessageService
     extends $Notifier<Map<String, Map<HighMessageType, HighMessage>>> {

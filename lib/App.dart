@@ -125,6 +125,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       }
     });
 
+    final locale = context.locale;
     return MaterialApp.router(
       title: '记事本客户端',
       routerConfig: ref.watch(routerProvider),
@@ -133,7 +134,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       debugShowCheckedModeBanner: false,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
-      locale: context.locale,
+      locale: locale,
     );
   }
 
@@ -141,7 +142,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     // 这里可以使用 BotToast 或者 Navigator 跳转到专门的通话接听页
     BotToast.showWidget(
       key: UniqueKey(),
-      toastBuilder: (cancel) => Text("识别到电话邀请：${invite.senderId}")
+      toastBuilder: (cancel) => Text("识别到电话邀请：${invite.senderId}"),
     );
   }
 

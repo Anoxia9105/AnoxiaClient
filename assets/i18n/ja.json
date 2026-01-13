@@ -13,10 +13,10 @@
 
   "sidebar_chat": "会話",
   "sidebar_contact": "友達",
-  "sidebar_documentation": "資料",
+  "sidebar_documentation": "AI",
   "sidebar_discover": "発見",
   "sidebar_my": "私",
-
+  "sidebar_setting": "設定",
 
   "login_page_title": "ログインへようこそ",
   "login_page_name": "ユーザー名を入力してください",

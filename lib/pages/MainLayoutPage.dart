@@ -1,11 +1,14 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notepadclient/pages/AppScaffold.dart';
+import 'package:notepadclient/pages/setting/SettingsPage.dart';
 
 import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
 import 'ThemeTestPage.dart';
+import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
 
 class MainLayoutPage extends ConsumerWidget {
@@ -31,7 +34,7 @@ class MainLayoutPage extends ConsumerWidget {
           //     ),
           //   ),
           // ),
-          child: Text("data"),
+          child: Text("不支持过小设备"),
         ),
       );
     }
@@ -47,16 +50,18 @@ class MainLayoutPage extends ConsumerWidget {
           Expanded(
             child: Scaffold(
               body: IndexedStack(
+                key: ValueKey(context.locale.languageCode),
                 index: layout.currentIndex,
                 children: [
                   ChatPage(),
                   Text("ContactPage"),
                   // ContactPage(), // 建议把这些页面都定义成 const 提高性能
-                  Text("DocPage"),
+                  AIChatPage(),
                   // DocPage(),
-                  Text("DiscoverPage"),
+                  AIChatPage(),
                   // DiscoverPage(),
                   ThemeTestPage(),
+                  SettingsPage(),
                 ],
               ),
             ),

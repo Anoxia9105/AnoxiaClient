@@ -7,15 +7,13 @@
   "header_more_btn_settings": "设置",
   "header_more_btn_help": "帮助",
   "header_more_btn_feedback": "反馈",
-
   "layout_min_size_error": "抱歉，不支持该设备",
-
   "sidebar_chat": "聊天",
   "sidebar_contact": "人员",
-  "sidebar_documentation": "文档",
+  "sidebar_documentation": "AI",
   "sidebar_discover": "发现",
   "sidebar_my": "我的",
-
+  "sidebar_setting": "设置",
   "login_page_title": "欢迎登录",
   "login_page_name": "请输入用户名",
   "login_page_password": "请输入密码",
@@ -29,8 +27,6 @@
   "login_page_password_validator_regex": "密码长度需在5-50个字符之间",
   "login_page_captcha_validator_notnull": "验证码不能为空",
   "login_page_captcha_validator_regex": "验证码长度不符合要求",
-
-
   "settings_page_title": "设置",
   "settings_page_theme_title": "主题设置",
   "settings_page_theme_subtitle": "选择应用的主题",
@@ -42,24 +38,16 @@
   "settings_page_layout_subtitle": "选择应用的布局方式",
   "settings_page_about_title": "关于与支持",
   "settings_page_about_subtitle": "关于该应用程序的信息",
-
-
-  "app_light_themes1":"经典蓝",
-  "app_light_themes2":"企业绿",
-  "app_light_themes3":"初樱",
-  "app_light_themes4":"薄荷",
-  "app_light_themes5":"浅纸白",
-  "app_light_themes6":"暖阳",
-  "app_light_themes7":"薰衣草",
-
-  "app_dark_themes8":"静谧星空",
-  "app_dark_themes9":"pink",
-  "app_dark_themes10":"水墨石墨",
-
-
-
-
+  "app_light_themes1": "经典蓝",
+  "app_light_themes2": "淡光绿",
+  "app_light_themes3": "初樱",
+  "app_light_themes4": "薄荷",
+  "app_light_themes5": "浅纸白",
+  "app_light_themes6": "暖阳",
+  "app_light_themes7": "薰衣草",
+  "app_dark_themes8": "静谧星空",
+  "app_dark_themes9": "赛博朋克",
+  "app_dark_themes10": "水墨石墨",
   "help_page_title": "帮助",
   "feedback_page_title": "反馈"
-
 }

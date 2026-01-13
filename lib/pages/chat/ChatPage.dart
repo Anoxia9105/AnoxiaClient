@@ -5,7 +5,9 @@ import 'package:notepadclient/framework/provider/router/router.dart';
 import 'package:notepadclient/pages/chat/component/ChatRoomDetail.dart';
 import 'package:notepadclient/pages/chat/component/ChatRoomList.dart';
 
+import '../../common/widgets/Welcome.dart';
 import '../../framework/provider/theme/theme_controller.dart';
+import '../../framework/services/room_list_service.dart';
 import '../../framework/services/room_message_service.dart';
 import '../../framework/theme/AppTheme.dart';
 
@@ -16,11 +18,15 @@ class ChatPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // final allMessages = ref.watch(chatMessagesProvider);
     final count = ref.watch(chatMessagesProvider.notifier).totalMessageCount;
-
+    final activeId = ref.watch(activeRoomIdProvider);
     return Row(
       children: [
         SizedBox(width: 80.w, child: ChatRoomList()),
-        Expanded(child: ChatRoomDetail(roomId: "testroom1")),
+        Expanded(
+          child: activeId == null
+              ? Center(child: Welcome())
+              : Card(child: ChatRoomDetail()),
+        ),
       ],
     );
 
@@ -47,7 +53,7 @@ class ChatPage extends ConsumerWidget {
           },
         ),
         Text("$count"),
-        Expanded(child: ChatRoomDetail(roomId: "testroom1")),
+        Expanded(child: ChatRoomDetail()),
       ],
     );
   }

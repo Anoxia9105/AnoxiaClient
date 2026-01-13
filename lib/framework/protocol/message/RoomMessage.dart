@@ -2,71 +2,152 @@ import '../IPacket.dart';
 import 'Attachment.dart';
 import 'MessageEunm.dart';
 import 'MessagePayload.dart';
-import 'RoomMessageData.dart';
+import 'package:flutter/foundation.dart';
 
-class RoomMessage extends RoomMessageData implements IPacket {
-  final String? roomId;
+@immutable
+class RoomMessage implements IPacket {
+  // Room 信息
+  final String roomId;
   final int? targetId;
-  final MessageType? type;
+  final MessageType type;
   final MessagePayload? payload;
   final List<Attachment> attachments;
   final Map<String, dynamic> extra;
 
-  RoomMessage({
+  // RoomMessageData 字段
+  final String messageId;
+  final int senderId;
+  final MessageState state;
+  final DeliveryStatus status;
+  final int timestamp;
+  final int seq;
+
+  const RoomMessage({
+    required this.roomId,
+    this.targetId,
+    required this.type,
+    this.payload,
+    this.attachments = const [],
+    this.extra = const {},
+    required this.messageId,
+    required this.senderId,
+    required this.state,
+    required this.status,
+    required this.timestamp,
+    required this.seq,
+  });
+
+  /// JSON -> RoomMessage
+  factory RoomMessage.fromJson(Map<String, dynamic> json) {
+    return RoomMessage(
+      roomId: json['roomId'].toString(),
+      targetId: json['targetId'] != null
+          ? int.tryParse(json['targetId'].toString())
+          : null,
+      type: MessageType.fromCode(json['type']),
+      payload: json['payload'] != null
+          ? MessagePayload.fromJson(json['payload'])
+          : null,
+      attachments:
+          (json['attachments'] as List<dynamic>?)
+              ?.map((e) => Attachment.fromJson(e))
+              .toList() ??
+          const [],
+      extra: (json['extra'] as Map<String, dynamic>?) ?? const {},
+      messageId: json['messageId'].toString(),
+      senderId: json['senderId'] != null
+          ? int.parse(json['senderId'].toString())
+          : 0,
+      state: MessageState.from(json['state']),
+      status: DeliveryStatus.from(json['status']),
+      timestamp: json['timestamp'] != null
+          ? int.parse(json['timestamp'].toString())
+          : 0,
+      seq: json['seq'] != null ? int.parse(json['seq'].toString()) : 0,
+    );
+  }
+
+  /// RoomMessage -> JSON
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'roomId': roomId,
+      'targetId': targetId,
+      'type': type.code,
+      'payload': payload?.toJson(),
+      'attachments': attachments.map((e) => e.toJson()).toList(),
+      'extra': extra,
+      'messageId': messageId,
+      'senderId': senderId,
+      'state': state.toJson(),
+      'status': status.toJson(),
+      'timestamp': timestamp,
+      'seq': seq,
+    };
+  }
+
+  /// 拷贝更新（不可变对象修改字段用）
+  RoomMessage copyWith({
+    String? roomId,
+    int? targetId,
+    MessageType? type,
+    MessagePayload? payload,
+    List<Attachment>? attachments,
+    Map<String, dynamic>? extra,
     String? messageId,
     int? senderId,
     MessageState? state,
     DeliveryStatus? status,
     int? timestamp,
-    this.roomId,
-    this.targetId,
-    this.type,
-    this.payload,
-    this.attachments = const [],
-    this.extra = const {},
-  }) : super(
-    messageId: messageId,
-    senderId: senderId,
-    state: state,
-    status: status,
-    timestamp: timestamp,
-  );
-
-  factory RoomMessage.fromJson(Map<String, dynamic> json) {
+    int? seq,
+  }) {
     return RoomMessage(
-      // 父类字段
-      messageId: json['messageId'],
-      senderId: json['senderId'],
-      state: json['state'] != null ? MessageState.values[json['state']] : null,
-      status: json['status'] != null ? DeliveryStatus.values[json['status']] : null,
-      timestamp: json['timestamp'],
-      // 子类字段
-      roomId: json['roomId'],
-      targetId: json['targetId'],
-      type: json['type'] != null ? MessageType.fromCode(json['type']) : null,
-      payload: json['payload'] != null ? MessagePayload.fromJson(json['payload']) : null,
-      attachments: (json['attachments'] as List?)?.map((e) => Attachment.fromJson(e)).toList() ?? [],
-      extra: json['extra'] ?? {},
+      roomId: roomId ?? this.roomId,
+      targetId: targetId ?? this.targetId,
+      type: type ?? this.type,
+      payload: payload ?? this.payload,
+      attachments: attachments ?? this.attachments,
+      extra: extra ?? this.extra,
+      messageId: messageId ?? this.messageId,
+      senderId: senderId ?? this.senderId,
+      state: state ?? this.state,
+      status: status ?? this.status,
+      timestamp: timestamp ?? this.timestamp,
+      seq: seq ?? this.seq,
     );
   }
 
   @override
-  Map<String, dynamic> toJson() => {
-    'messageId': messageId,
-    'senderId': senderId,
-    'state': state?.index,
-    'status': status?.index,
-    'timestamp': timestamp,
-    'roomId': roomId,
-    'targetId': targetId,
-    'type': type?.code, // 注意：MessageType 序列化为 code
-    'payload': payload?.toJson(),
-    'attachments': attachments.map((e) => e.toJson()).toList(),
-    'extra': extra,
-  };
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RoomMessage &&
+        other.roomId == roomId &&
+        other.targetId == targetId &&
+        other.type == type &&
+        other.payload == payload &&
+        listEquals(other.attachments, attachments) &&
+        mapEquals(other.extra, extra) &&
+        other.messageId == messageId &&
+        other.senderId == senderId &&
+        other.state == state &&
+        other.status == status &&
+        other.timestamp == timestamp &&
+        other.seq == seq;
+  }
 
   @override
-  String toString() {
-    return 'RoomMessage{roomId: $roomId, targetId: $targetId, type: $type, payload: $payload, attachments: $attachments, extra: $extra}';
+  int get hashCode {
+    return roomId.hashCode ^
+        targetId.hashCode ^
+        type.hashCode ^
+        payload.hashCode ^
+        attachments.hashCode ^
+        extra.hashCode ^
+        messageId.hashCode ^
+        senderId.hashCode ^
+        state.hashCode ^
+        status.hashCode ^
+        timestamp.hashCode ^
+        seq.hashCode;
   }
 }

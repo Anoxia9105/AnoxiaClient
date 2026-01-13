@@ -41,7 +41,7 @@ final class LayoutControllerProvider
   }
 }
 
-String _$layoutControllerHash() => r'122089ccd64a6a61dad0081d3c4aba4cb7ac0aa4';
+String _$layoutControllerHash() => r'8d559725f3c56f758b1dcef46e7af7a238a035ea';
 
 abstract class _$LayoutController extends $Notifier<LayoutState> {
   LayoutState build();
