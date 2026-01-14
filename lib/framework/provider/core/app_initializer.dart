@@ -19,12 +19,13 @@ class AppInitializer extends _$AppInitializer {
       // 这一步非常关键：它确保了当 AppInitializer 完成时，
       // authControllerProvider 已经完成了 token 校验和用户信息获取
       log.info("🔐 等待认证模块就绪...");
-      final user = await ref.watch(authControllerProvider.future);
+      final user = await ref.read(authControllerProvider.future);
 
       if (user == null) {
         log.info("👤 用户未登录");
         return false;
       }
+
       // 3. 业务预加载 (此时已经知道了用户是否登录)
       await _preloadData();
 

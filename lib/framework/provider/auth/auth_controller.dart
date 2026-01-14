@@ -5,6 +5,8 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
+import '../../services/room_list_service.dart';
+import '../../services/room_message_service.dart';
 import '../core/app_initializer.dart';
 
 part 'auth_controller.g.dart';
@@ -55,9 +57,22 @@ class AuthController extends _$AuthController {
   }
 
   Future<void> logout() async {
-    state = const AsyncLoading();
-    await TokenManager.instance.clearToken();
-    state = const AsyncData(null);
+    try {
+      // . 清除本地存储的 Token
+      await TokenManager.instance.clearToken();
+
+      // . 【关键步骤】：重置所有业务 Provider
+      // invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
+      ref.invalidate(roomListServiceProvider);
+      ref.invalidate(activeRoomIdProvider);
+
+      state = const AsyncData(null);
+      log.info("[AuthController] 登出成功，业务缓存已清理");
+    } catch (e, st) {
+      log.error("[AuthController] 登出异常", e, st);
+      // 即使出错，通常也强制设为 null 确保用户能回到登录页
+      state = const AsyncData(null);
+    }
   }
 
   // 内部辅助方法

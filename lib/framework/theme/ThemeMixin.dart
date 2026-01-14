@@ -244,20 +244,20 @@ mixin ThemeMixin {
         );
 
     final cardTheme = CardThemeData(
-      elevation: 4,
-      color: brightness == Brightness.light ? Colors.white : null,
+      elevation: 0,
+      // color: brightness == Brightness.light ? Colors.white : null,
       shape: RoundedRectangleBorder(
-        // side: BorderSide(
-        //   width: 1,
-        //   color: colorWithAlpha(colorScheme.onSurface, 0.2),
-        // ),
-        borderRadius: BorderRadius.circular(4),
+        side: BorderSide(
+          width: 1,
+          color: colorWithAlpha(colorScheme.onSurface, 0.1),
+        ),
+        borderRadius: BorderRadius.circular(8),
       ),
       margin: const EdgeInsets.all(8),
     );
 
     final dialogTheme = DialogThemeData(
-      backgroundColor: brightness == Brightness.light ? Colors.white : null,
+      // backgroundColor: brightness == Brightness.light ? Colors.white : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       titleTextStyle: TextStyle(
         color: colorScheme.onSurface,

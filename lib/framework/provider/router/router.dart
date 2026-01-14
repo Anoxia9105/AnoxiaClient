@@ -59,10 +59,8 @@ GoRouter router(Ref ref) {
         case AsyncLoading():
           return null;
         case AsyncData(value: null):
-          if (isSplash) return const InitLoginRoute().location;
           if (isLogin) return null;
-
-          return const SplashRoute().location;
+          return const InitLoginRoute().location;
         case AsyncData(value: UserInfo _):
           if (isSplash) return const HomeRoute().location;
           if (isLogin) return const HomeRoute().location;

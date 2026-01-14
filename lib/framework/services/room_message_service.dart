@@ -1,3 +1,5 @@
+import 'package:notepadclient/framework/network/DioClient.dart';
+import 'package:notepadclient/framework/services/room_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/ChatMessage.dart';
@@ -12,6 +14,11 @@ part 'room_message_service.g.dart';
 /// key = roomId, value = List<ChatMessage>
 @riverpod
 class ChatMessages extends _$ChatMessages {
+
+  // 定义一个内部变量记录已同步的房间
+  final Set<String> _syncedRoomIds = {};
+
+
   @override
   Map<String, List<ChatMessage>> build() {
     // 1️⃣ 获取 WebSocket 消息流
@@ -49,25 +56,96 @@ class ChatMessages extends _$ChatMessages {
     );
 
     _addMessage(chatMessage);
+
+    // 2. 【新增逻辑】同步更新房间列表的 VO 状态
+    // 获取当前是否正在这个房间里，如果是，未读数不增加
+    final activeId = ref.read(activeRoomIdProvider);
+    final isCurrentRoom = activeId == chatMessage.roomId;
+
+    ref.read(roomListServiceProvider.notifier).updateRoomPosition(
+      chatMessage,
+      isCurrentRoom: isCurrentRoom,
+    );
   }
 
-  /// 添加消息到对应房间
-  void _addMessage(ChatMessage msg) {
-    final roomId = msg.roomId ?? "system";
+  /// 核心：加载或同步房间消息
+  Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
+    // 获取当前内存中的消息
+    final currentList = state[roomId] ?? [];
+    int localMaxSeq = currentList.isEmpty ? 0 : (currentList.last.seq ?? 0);
 
-    // 获取当前房间旧消息
-    final currentRoomMessages = state[roomId] ?? [];
-
-    const int maxMessagePerRoom = 100; // 房间内最大消息数
-    List<ChatMessage> newList = [...currentRoomMessages, msg];
-
-    // 超过阈值则裁剪最旧消息
-    if (newList.length > maxMessagePerRoom) {
-      newList = newList.sublist(newList.length - maxMessagePerRoom);
-      log.info("房间 $roomId 超过内存阈值，执行自动清理");
+    // ---  拦截逻辑 ---
+    // 如果已经同步过，且本地消息已经是最新的（或者服务端没给新 seq），直接返回
+    if (_syncedRoomIds.contains(roomId)) {
+      if (serverLastSeq == null || localMaxSeq >= serverLastSeq) {
+        // 只有当服务端明确给出了更大的 seq 时才继续往下跑拉取逻辑
+        return;
+      }
     }
 
-    // 更新状态，必须创建新 Map 才能触发 UI 刷新
+    log.info("房间 $roomId 开始同步历史数据 (Local Max Seq: $localMaxSeq)...");
+
+    try {
+      final res = await DioClient().get(
+        "/chat/history",
+        queryParameters: {
+          "roomId": roomId,
+          "lastSeq": null,
+          "pageSize": 50,
+          "direction": 0,
+        },
+      );
+
+      final data = res.data["data"];
+
+      // --- 修复点 2: 无论数据是否为空，只要请求成功就标记为已同步 ---
+      _syncedRoomIds.add(roomId);
+
+      if (data is! List) return;
+
+      final List<ChatMessage> history = data
+          .map((e) => ChatMessage.fromJson(e))
+          .toList();
+
+      // 3. 合并与去重
+      final Map<int, ChatMessage> mergeMap = {
+        for (var m in currentList) if (m.seq != null) m.seq!: m,
+        for (var m in history) if (m.seq != null) m.seq!: m,
+      };
+
+      // 4. 排序
+      final sortedList = mergeMap.values.toList()
+        ..sort((a, b) => a.seq!.compareTo(b.seq!));
+
+      // 5. 更新状态
+      state = {...state, roomId: sortedList};
+      log.info("房间 $roomId 同步完成，当前消息数: ${sortedList.length}");
+    } catch (e) {
+      log.error("同步房间 $roomId 失败: $e");
+      // 注意：如果失败了，不需要 add 到 _syncedRoomIds，这样下次切换还能重试
+    }
+  }
+
+  ///添加消息到房间
+  void _addMessage(ChatMessage msg) {
+    final roomId = msg.roomId ?? "system";
+    final currentRoomMessages = state[roomId] ?? [];
+
+    // 检查 seq 是否已经存在，防止 WS 消息与 API 拉取的历史记录重复
+    if (currentRoomMessages.any((m) => m.seq == msg.seq)) {
+      return; // 已经有了，直接丢弃
+    }
+
+    List<ChatMessage> newList = [...currentRoomMessages, msg];
+
+    // 始终保持 seq 升序排列
+    newList.sort((a, b) => a.seq!.compareTo(b.seq!));
+
+    // 超过阈值裁剪（保持内存轻量）
+    if (newList.length > 100) {
+      newList = newList.sublist(newList.length - 100);
+    }
+
     state = {...state, roomId: newList};
   }
 

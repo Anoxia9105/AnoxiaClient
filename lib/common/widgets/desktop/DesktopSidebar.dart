@@ -58,15 +58,44 @@ class DesktopSidebar extends ConsumerWidget {
                         backgroundColor: Theme.of(
                           context,
                         ).colorScheme.surfaceContainer,
-                        contentBuilder: (context) => Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(6, (index) {
-                            if (index.isEven) {
-                              return Text("data");
-                            } else {
-                              return Divider();
-                            }
-                          }),
+                        contentBuilder: (context) => Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                user.value?.nickName ?? 'Unknown',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                user.value?.email ?? 'No Email',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8),
+                              FilledButton(
+                                onPressed: () {
+                                  ref
+                                      .read(authControllerProvider.notifier)
+                                      .logout();
+                                  close?.call();
+                                },
+                                child: Text("退出登录"),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

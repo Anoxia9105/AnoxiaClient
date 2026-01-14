@@ -1,19 +1,20 @@
+import 'dart:convert';
 import '../protocol/message/Attachment.dart';
 import '../protocol/message/MessageEunm.dart';
 import '../protocol/message/MessagePayload.dart';
 
 class ChatMessage {
-  final String? messageId; // 消息ID
-  final String? roomId; // 聊天室ID
-  final int? senderId; // 发送者用户ID
-  final MessageType? messageType; // 消息类型
-  final String content; // 消息预览内容  【----】
-  final MessagePayload? payload; // 富文本/详情
-  final List<Attachment> attachments; // 附件列表
-  final Map<String, dynamic> extra; // 扩展字段
-  final MessageState? messageStatus; // 消息状态
-  final int? timestamp; // 发送时间戳
-  final int? seq; // 序列号 (用于插值计算)
+  final String? messageId;
+  final String? roomId;
+  final int? senderId;
+  final MessageType? messageType;
+  final String content;
+  final MessagePayload? payload;
+  final List<Attachment> attachments;
+  final Map<String, dynamic> extra;
+  final MessageState? messageStatus;
+  final int? timestamp;
+  final int? seq;
 
   ChatMessage({
     this.messageId,
@@ -30,18 +31,56 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    // 1. 预处理 payload (可能是 String 也可能是 Map)
+    dynamic rawPayload = json['payload'];
+    if (rawPayload is String && rawPayload.isNotEmpty) {
+      try {
+        rawPayload = jsonDecode(rawPayload);
+      } catch (_) {
+        rawPayload = null;
+      }
+    }
+
+    // 2. 预处理 attachments (可能是 String 也可能是 List)
+    dynamic rawAttachments = json['attachments'];
+    if (rawAttachments is String && rawAttachments.isNotEmpty) {
+      try {
+        rawAttachments = jsonDecode(rawAttachments);
+      } catch (_) {
+        rawAttachments = null;
+      }
+    }
+
+    // 3. 预处理 extra (可能是 String 也可能是 Map)
+    dynamic rawExtra = json['extra'];
+    if (rawExtra is String && rawExtra.isNotEmpty) {
+      try {
+        rawExtra = jsonDecode(rawExtra);
+      } catch (_) {
+        rawExtra = null;
+      }
+    }
+
     return ChatMessage(
       messageId: json['messageId']?.toString(),
       roomId: json['roomId']?.toString(),
       senderId: json['senderId'] != null ? int.tryParse(json['senderId'].toString()) : null,
       messageType: MessageType.fromCode(json["messageType"] ?? 5),
       content: json['content']?.toString() ?? '',
-      payload: json['payload'] != null ? MessagePayload.fromJson(json['payload']) : null,
-      attachments: (json['attachments'] as List<dynamic>?)
-          ?.map((e) => Attachment.fromJson(e))
-          .toList() ??
-          [],
-      extra: (json['extra'] as Map<String, dynamic>?) ?? {},
+
+      // 使用处理后的 rawPayload
+      payload: rawPayload != null && rawPayload is Map<String, dynamic>
+          ? MessagePayload.fromJson(rawPayload)
+          : null,
+
+      // 使用处理后的 rawAttachments
+      attachments: (rawAttachments is List)
+          ? rawAttachments.map((e) => Attachment.fromJson(e)).toList()
+          : [],
+
+      // 使用处理后的 rawExtra
+      extra: (rawExtra is Map<String, dynamic>) ? rawExtra : {},
+
       messageStatus: MessageState.from(json['messageStatus']),
       timestamp: json['timestamp'] != null ? int.tryParse(json['timestamp'].toString()) : null,
       seq: json['seq'] != null ? int.tryParse(json['seq'].toString()) : null,

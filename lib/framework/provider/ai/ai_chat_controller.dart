@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_client_sse/constants/sse_request_type_enum.dart';
-import 'package:flutter_client_sse/flutter_client_sse.dart';
+import 'package:notepadclient/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../common/constants/API.dart';
@@ -12,106 +11,62 @@ part 'ai_chat_controller.g.dart';
 
 @riverpod
 class AiChatController extends _$AiChatController {
-  StreamSubscription? _subscription;
-
+  bool _loading = false;
   @override
   List<AiChatMessage> build() {
-    // ✅ Provider 销毁时，彻底关闭 SSE
-    ref.onDispose(() {
-      _closeSSE();
-    });
     return [];
   }
-
+  bool get isLoading => _loading;
   Future<void> askGemini(String prompt) async {
-    if (prompt.trim().isEmpty) return;
+    if (prompt.trim().isEmpty || _loading) return;
 
-    // 正在生成中，禁止再次发送
-    if (state.isNotEmpty && state.last.isStreaming) return;
+    _loading = true;
+    /// 1️⃣ 先把用户消息插入列表（即时反馈）
+    state = [
+      ...state,
+      AiChatMessage(content: prompt, isAi: false),
+    ];
 
-    _closeSSE();
+    /// 2️⃣ 插入一个“占位 AI 消息”（用于 loading）
+    final aiIndex = state.length;
+    state = [
+      ...state,
+      AiChatMessage(content: '...', isAi: true),
+    ];
 
-    final userMsg = AiChatMessage(content: prompt, isAi: false);
+    try {
 
-    final aiMsg = AiChatMessage(content: "", isAi: true, isStreaming: true);
+      final resp = await DioClient().post("/chat/gemini",data: {
+        'prompt': prompt,
+      });
 
-    state = [...state, userMsg, aiMsg];
+      if (resp.data['code'] != 200) {
+        throw Exception(resp.data['msg'] ?? 'AI 请求失败');
+      }
 
-    final token = await TokenManager.instance.getToken();
-    final url =
-        "${API.httpBaseUrl}/chat/gemini?prompt=${Uri.encodeComponent(prompt)}";
+      final String aiText = resp.data['data']['text'] ?? '';
 
-    _subscription =
-        SSEClient.subscribeToSSE(
-          method: SSERequestType.GET,
-          url: url,
-          header: {
-            "Accept": "text/event-stream",
-            "Authorization": "Bearer $token",
-            "Cache-Control": "no-cache",
-          },
-        ).listen(
-          (event) {
-            final data = event.data;
-            if (data == null) return;
-
-            if (data.trim() == "[DONE]") {
-              _finishStreaming();
-              _closeSSE();
-              return;
-            }
-
-            final last = state.last;
-            if (!last.isStreaming) return;
-
-            state = [
-              ...state.sublist(0, state.length - 1),
-              last.copyWith(content: last.content + data),
-            ];
-          },
-          onDone: () {
-            _finishStreaming();
-            _closeSSE();
-          },
-          onError: (e) {
-            print("错误=====================》》》》》》");
-            final lastMsg = state.last;
-            if (lastMsg.isAi) {
-              state = [
-                ...state.sublist(0, state.length - 1),
-                lastMsg.copyWith(
-                  content: "哎呀，Gemini 累了（请求过快），请稍后再试一次吧！",
-                  isStreaming: false,
-                ),
-              ];
-            }
-            stopGenerating();
-          },
-          cancelOnError: true,
-        );
-  }
-
-  /// 用户主动点击“停止”
-  void stopGenerating() {
-    _finishStreaming();
-    _closeSSE();
-  }
-
-  void _finishStreaming() {
-    if (state.isEmpty) return;
-    final last = state.last;
-
-    if (last.isAi && last.isStreaming) {
+      /// 3️⃣ 更新 AI 消息内容
       state = [
-        ...state.sublist(0, state.length - 1),
-        last.copyWith(isStreaming: false),
+        for (int i = 0; i < state.length; i++)
+          if (i == aiIndex)
+            state[i].copyWith(content: aiText)
+          else
+            state[i],
       ];
+
+    } catch (e) {
+      /// 4️⃣ 失败兜底（业务友好）
+      state = [
+        for (int i = 0; i < state.length; i++)
+          if (i == aiIndex)
+            state[i].copyWith(content: '⚠️ AI 服务暂不可用')
+          else
+            state[i],
+      ];
+    }finally {
+      _loading = false;
     }
   }
 
-  void _closeSSE() {
-    _subscription?.cancel();
-    _subscription = null;
-    SSEClient.unsubscribeFromSSE();
-  }
 }

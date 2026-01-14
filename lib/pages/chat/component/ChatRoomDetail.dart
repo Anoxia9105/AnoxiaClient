@@ -36,25 +36,3 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 }
-//
-// {
-// "topic":"HIGH_FREQUENCY",
-// "data":{
-// "targetId": "1",
-// "roomId": "testroom1",
-// "type": "TYPING_STATUS",
-// "content": "true"
-// }
-// }
-
-//
-// {
-// "topic":"MESSAGE",
-// "data":{
-// "messageId": "msg-111111111",
-// "roomId": "testroom1",
-// "targetId": "1",
-// "type": "TEXT",
-// "payload": { "content": "你好啊" }
-// }
-// }

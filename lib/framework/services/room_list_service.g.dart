@@ -87,7 +87,7 @@ final class ActiveRoomIdProvider
   }
 }
 
-String _$activeRoomIdHash() => r'03906bfaeb413b87584ace402cfd40b2d6f38779';
+String _$activeRoomIdHash() => r'726ee368f00507323304d63dd8ec246dc530a5e5';
 
 abstract class _$ActiveRoomId extends $Notifier<String?> {
   String? build();
@@ -107,3 +107,44 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(activeRoom)
+const activeRoomProvider = ActiveRoomProvider._();
+
+final class ActiveRoomProvider
+    extends $FunctionalProvider<ChatRoomVO?, ChatRoomVO?, ChatRoomVO?>
+    with $Provider<ChatRoomVO?> {
+  const ActiveRoomProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activeRoomProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeRoomHash();
+
+  @$internal
+  @override
+  $ProviderElement<ChatRoomVO?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ChatRoomVO? create(Ref ref) {
+    return activeRoom(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ChatRoomVO? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ChatRoomVO?>(value),
+    );
+  }
+}
+
+String _$activeRoomHash() => r'23c67a4e85422a44601478eadf684861ea22c7f0';

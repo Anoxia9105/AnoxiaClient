@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../framework/domain/AiChatMessage.dart';
 import '../../framework/provider/ai/ai_chat_controller.dart';
 
-
 class AIChatPage extends ConsumerWidget {
   AIChatPage({super.key});
 
@@ -13,8 +12,8 @@ class AIChatPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messages = ref.watch(aiChatControllerProvider);
-    final isGenerating =
-        messages.isNotEmpty && messages.last.isStreaming;
+    final notifier = ref.read(aiChatControllerProvider.notifier);
+    final isGenerating = notifier.isLoading;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Gemini Chat")),
@@ -44,11 +43,7 @@ class AIChatPage extends ConsumerWidget {
           color: msg.isAi ? Colors.grey[200] : Colors.blue[100],
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(
-          msg.content.isEmpty && msg.isStreaming
-              ? "AI 正在思考..."
-              : msg.content,
-        ),
+        child: Text(msg.content),
       ),
     );
   }
@@ -62,23 +57,23 @@ class AIChatPage extends ConsumerWidget {
             child: TextField(
               controller: _controller,
               enabled: !isGenerating,
-              decoration:
-              const InputDecoration(hintText: "问问 Gemini..."),
+              decoration: const InputDecoration(
+                hintText: "问问 Gemini...",
+              ),
             ),
           ),
           IconButton(
             icon: Icon(
-              isGenerating ? Icons.stop_circle : Icons.send,
+              isGenerating ? Icons.hourglass_top : Icons.send,
             ),
-            color: isGenerating ? Colors.red : Colors.blue,
-            onPressed: () {
-              final notifier =
-              ref.read(aiChatControllerProvider.notifier);
-
-              if (isGenerating) {
-                notifier.stopGenerating();
-              } else if (_controller.text.isNotEmpty) {
-                notifier.askGemini(_controller.text);
+            color: isGenerating ? Colors.grey : Colors.blue,
+            onPressed: isGenerating
+                ? null
+                : () {
+              if (_controller.text.isNotEmpty) {
+                ref
+                    .read(aiChatControllerProvider.notifier)
+                    .askGemini(_controller.text);
                 _controller.clear();
               }
             },

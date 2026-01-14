@@ -1,4 +1,5 @@
 import 'package:notepadclient/framework/network/DioClient.dart';
+import 'package:notepadclient/framework/services/room_message_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/ChatMessage.dart';
@@ -123,7 +124,31 @@ class ActiveRoomId extends _$ActiveRoomId {
     if (state == roomId) return;
     state = roomId;
 
-    // 🌟 核心联动：选中时立即清空未读数并上报 seq
+    // 1. 标记已读
     ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
+
+    // 2. 获取该房间的最新的 seq（可以从 RoomListVO 中拿到）
+    final rooms = ref.read(roomListServiceProvider).value ?? [];
+    final room = rooms.firstWhere((r) => r.roomId == roomId);
+
+    // 3. 告诉消息服务：去把这个房间的消息同步到最新
+    ref.read(chatMessagesProvider.notifier).syncRoomMessages(roomId, room.lastMessage?.seq);
   }
+}
+
+
+@riverpod
+ChatRoomVO? activeRoom(Ref ref) {
+  // 1. 监听当前选中的 ID
+  final activeId = ref.watch(activeRoomIdProvider);
+  if (activeId == null) return null;
+
+  // 2. 监听 房间列表 的数据变化
+  final roomListAsync = ref.watch(roomListServiceProvider);
+
+  // 3. 自动关联：当列表更新时，这里也会自动返回最新的房间对象
+  return roomListAsync.maybeWhen(
+    data: (rooms) => rooms.firstWhere((r) => r.roomId == activeId),
+    orElse: () => null,
+  );
 }

@@ -25,7 +25,7 @@ class ChatPage extends ConsumerWidget {
         Expanded(
           child: activeId == null
               ? Center(child: Welcome())
-              : Card(child: ChatRoomDetail()),
+              : ChatRoomDetail(),
         ),
       ],
     );

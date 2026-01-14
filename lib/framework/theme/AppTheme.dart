@@ -111,16 +111,16 @@ class AppTheme with ThemeMixin {
         colors: [Color(0xFF555555), Color(0xFF333333)],
       ),
     ),
-    ThemeOption(
-      '测试1',
-      const Color(0xFF2B2B2B),
-      Brightness.light,
-      const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.topRight,
-        colors: [Color(0xFFC9D6FF), Color(0xFFE2E2E2)],
-      ),
-    ),
+    // ThemeOption(
+    //   '测试1',
+    //   const Color(0xFF2B2B2B),
+    //   Brightness.light,
+    //   const LinearGradient(
+    //     begin: Alignment.topLeft,
+    //     end: Alignment.topRight,
+    //     colors: [Color(0xFFC9D6FF), Color(0xFFE2E2E2)],
+    //   ),
+    // ),
   ];
 
   /// 根据 index 获取 ThemeData

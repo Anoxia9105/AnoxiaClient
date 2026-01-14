@@ -7,6 +7,7 @@ import 'package:notepadclient/pages/setting/SettingsPage.dart';
 import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
+import 'NotCodePage.dart';
 import 'ThemeTestPage.dart';
 import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
@@ -54,13 +55,10 @@ class MainLayoutPage extends ConsumerWidget {
                 index: layout.currentIndex,
                 children: [
                   ChatPage(),
-                  Text("ContactPage"),
-                  // ContactPage(), // 建议把这些页面都定义成 const 提高性能
+                  NotCodePage(),
                   AIChatPage(),
-                  // DocPage(),
-                  AIChatPage(),
-                  // DiscoverPage(),
-                  ThemeTestPage(),
+                  NotCodePage(),
+                  NotCodePage(),
                   SettingsPage(),
                 ],
               ),
