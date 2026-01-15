@@ -2,19 +2,30 @@ import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-
 part 'layout_controller.g.dart';
 
 @riverpod
 class LayoutController extends _$LayoutController {
-// 静态配置：作为控制器的私有常量
+  // 静态配置：作为控制器的私有常量
   static const _menuItems = [
     SidebarItem(name: "sidebar_chat", icon: HugeIcons.strokeRoundedComment01),
-    SidebarItem(name: "sidebar_contact", icon: HugeIcons.strokeRoundedContact01),
-    SidebarItem(name: "sidebar_documentation", icon: HugeIcons.strokeRoundedChatGpt),
-    SidebarItem(name: "sidebar_discover", icon: HugeIcons.strokeRoundedPathfinderCrop),
+    SidebarItem(
+      name: "sidebar_contact",
+      icon: HugeIcons.strokeRoundedContact01,
+    ),
+    SidebarItem(
+      name: "sidebar_documentation",
+      icon: HugeIcons.strokeRoundedChatGpt,
+    ),
+    SidebarItem(
+      name: "sidebar_discover",
+      icon: HugeIcons.strokeRoundedPathfinderCrop,
+    ),
     SidebarItem(name: "sidebar_my", icon: HugeIcons.strokeRoundedUser),
-    SidebarItem(name: "sidebar_setting", icon: HugeIcons.strokeRoundedSettings01),
+    SidebarItem(
+      name: "sidebar_setting",
+      icon: HugeIcons.strokeRoundedSettings01,
+    ),
   ];
 
   @override
@@ -57,10 +68,9 @@ class LayoutState {
   }
 }
 
-
 class SidebarItem {
   final String name;
-  final IconData icon;
+  final List<List<dynamic>> icon;
 
   const SidebarItem({required this.name, required this.icon});
 }

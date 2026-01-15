@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 class SettingItemCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final Widget? child;
   final Widget? trailing;
 

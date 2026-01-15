@@ -137,7 +137,7 @@ class DesktopSidebar extends ConsumerWidget {
 class SidebarButton extends ConsumerWidget {
   final int index;
   final String name;
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final EdgeInsetsGeometry padding;
 
   const SidebarButton({

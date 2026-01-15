@@ -6,7 +6,7 @@ class NoData extends StatelessWidget {
   final String? title;
   final String? subTitle;
   final String? buttonText;
-  final IconData? iconData;
+  final List<List<dynamic>>? iconData;
   final VoidCallback? onPressed;
 
   const NoData({
