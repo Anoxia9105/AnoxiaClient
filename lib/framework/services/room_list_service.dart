@@ -1,4 +1,5 @@
 import 'package:notepadclient/framework/network/DioClient.dart';
+import 'package:notepadclient/framework/services/room_member_service.dart';
 import 'package:notepadclient/framework/services/room_message_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -16,7 +17,7 @@ class RoomListService extends _$RoomListService {
 
   Future<List<ChatRoomVO>> fetchRoomList() async {
     try {
-      final res = await DioClient().get("/chat/getRoomList");
+      final res = await DioClient().get("/chat/rooms");
 
       final data = res.data["data"];
       if (data is List) {
@@ -79,7 +80,6 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-
   // 在 RoomListService 类中添加
   void markAsRead(String roomId) {
     state.whenData((rooms) {
@@ -101,7 +101,7 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-// TODO: 实现上报最新 seq 的接口调用
+  // TODO: 实现上报最新 seq 的接口调用
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
       print("🚀 上报已读状态: 房间 $roomId, Seq $seq");
@@ -112,8 +112,6 @@ class RoomListService extends _$RoomListService {
   }
 }
 
-
-
 //当前选中房间
 @riverpod
 class ActiveRoomId extends _$ActiveRoomId {
@@ -123,19 +121,8 @@ class ActiveRoomId extends _$ActiveRoomId {
   void setActive(String roomId) {
     if (state == roomId) return;
     state = roomId;
-
-    // 1. 标记已读
-    ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
-
-    // 2. 获取该房间的最新的 seq（可以从 RoomListVO 中拿到）
-    final rooms = ref.read(roomListServiceProvider).value ?? [];
-    final room = rooms.firstWhere((r) => r.roomId == roomId);
-
-    // 3. 告诉消息服务：去把这个房间的消息同步到最新
-    ref.read(chatMessagesProvider.notifier).syncRoomMessages(roomId, room.lastMessage?.seq);
   }
 }
-
 
 @riverpod
 ChatRoomVO? activeRoom(Ref ref) {
@@ -151,4 +138,25 @@ ChatRoomVO? activeRoom(Ref ref) {
     data: (rooms) => rooms.firstWhere((r) => r.roomId == activeId),
     orElse: () => null,
   );
+}
+
+
+@riverpod
+Future<void> roomEntryTask(Ref ref, String roomId) async {
+  // 1. 确保房间列表已经存在
+  final roomListAsync = ref.read(roomListServiceProvider);
+  final rooms = roomListAsync.value ?? [];
+
+  // 使用 findFirst 的安全版本
+  final room = rooms.firstWhere(
+        (r) => r.roomId == roomId,
+    orElse: () => throw Exception("尚未加载房间信息"),
+  );
+
+  await Future.wait([
+    ref.read(chatMessagesProvider.notifier).syncRoomMessages(roomId, room.lastMessage?.seq),
+    ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId),
+  ]);
+
+  ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
 }

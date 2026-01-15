@@ -129,19 +129,17 @@ class ChatMessages extends _$ChatMessages {
   ///添加消息到房间
   void _addMessage(ChatMessage msg) {
     final roomId = msg.roomId ?? "system";
-    final currentRoomMessages = state[roomId] ?? [];
+    final currentList = state[roomId] ?? [];
 
-    // 检查 seq 是否已经存在，防止 WS 消息与 API 拉取的历史记录重复
-    if (currentRoomMessages.any((m) => m.seq == msg.seq)) {
-      return; // 已经有了，直接丢弃
+    if (currentList.any((m) => m.seq == msg.seq)) return;
+
+    List<ChatMessage> newList = [...currentList, msg];
+
+    // 优化：只有当新消息 seq 小于最后一条时（乱序到达），才需要排序
+    if (currentList.isNotEmpty && (msg.seq ?? 0) < (currentList.last.seq ?? 0)) {
+      newList.sort((a, b) => (a.seq ?? 0).compareTo(b.seq ?? 0));
     }
 
-    List<ChatMessage> newList = [...currentRoomMessages, msg];
-
-    // 始终保持 seq 升序排列
-    newList.sort((a, b) => a.seq!.compareTo(b.seq!));
-
-    // 超过阈值裁剪（保持内存轻量）
     if (newList.length > 100) {
       newList = newList.sublist(newList.length - 100);
     }

@@ -36,9 +36,6 @@ class ChatRoomList extends ConsumerWidget {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceVariant.withOpacity(0.5),
                   ),
                 ),
               ),

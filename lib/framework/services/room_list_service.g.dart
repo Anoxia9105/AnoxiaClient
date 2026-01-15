@@ -33,7 +33,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'85655fbafed31c7de5e5032d4ee7e93c415e1cf0';
+String _$roomListServiceHash() => r'58fd63c76171d4d451b0d35f7a9601e5433ce0f8';
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();
@@ -148,3 +148,72 @@ final class ActiveRoomProvider
 }
 
 String _$activeRoomHash() => r'23c67a4e85422a44601478eadf684861ea22c7f0';
+
+@ProviderFor(roomEntryTask)
+const roomEntryTaskProvider = RoomEntryTaskFamily._();
+
+final class RoomEntryTaskProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  const RoomEntryTaskProvider._({
+    required RoomEntryTaskFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'roomEntryTaskProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$roomEntryTaskHash();
+
+  @override
+  String toString() {
+    return r'roomEntryTaskProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    final argument = this.argument as String;
+    return roomEntryTask(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RoomEntryTaskProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$roomEntryTaskHash() => r'57f2f72e683f90530be5a6488ac7046122fcac86';
+
+final class RoomEntryTaskFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<void>, String> {
+  const RoomEntryTaskFamily._()
+    : super(
+        retry: null,
+        name: r'roomEntryTaskProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  RoomEntryTaskProvider call(String roomId) =>
+      RoomEntryTaskProvider._(argument: roomId, from: this);
+
+  @override
+  String toString() => r'roomEntryTaskProvider';
+}

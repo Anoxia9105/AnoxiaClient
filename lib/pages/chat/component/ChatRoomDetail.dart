@@ -18,18 +18,28 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   @override
   Widget build(BuildContext context) {
     final activeId = ref.watch(activeRoomIdProvider);
+    final entryTask = ref.watch(roomEntryTaskProvider(activeId ?? ''));
+
     final messages = ref.watch(
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
 
     return Scaffold(
       appBar: ChatAppBar(),
-      body: ListView.builder(
-        reverse: true,
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final msg = messages[messages.length - 1 - index];
-          return ChatMessageBubble(message: msg);
+      body: entryTask.when(
+        data: (_) {
+          return ListView.builder(
+            reverse: true,
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final msg = messages[messages.length - 1 - index];
+              return ChatMessageBubble(message: msg);
+            },
+          );
+        },
+        error: (err, _) => Center(child: Text("初始化失败: $err")),
+        loading: () {
+          return Center(child: CircularProgressIndicator());
         },
       ),
       bottomNavigationBar: ChatInputField(),
