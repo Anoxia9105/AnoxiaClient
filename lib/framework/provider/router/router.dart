@@ -1,11 +1,11 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:notepadclient/framework/domain/UserInfo.dart';
-import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
-import 'package:notepadclient/pages/ErrorPage.dart';
-import 'package:notepadclient/pages/LoginPage.dart';
-import 'package:notepadclient/pages/MainLayoutPage.dart';
+import 'package:anoxia/framework/domain/UserInfo.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/pages/ErrorPage.dart';
+import 'package:anoxia/pages/LoginPage.dart';
+import 'package:anoxia/pages/MainLayoutPage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../pages/SplashPage.dart';
 import '../../logs/talker.dart';

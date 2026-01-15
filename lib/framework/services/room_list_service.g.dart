@@ -87,7 +87,7 @@ final class ActiveRoomIdProvider
   }
 }
 
-String _$activeRoomIdHash() => r'726ee368f00507323304d63dd8ec246dc530a5e5';
+String _$activeRoomIdHash() => r'9a7068394b2d3d9b7db1507e6de20cb704f91179';
 
 abstract class _$ActiveRoomId extends $Notifier<String?> {
   String? build();
@@ -198,7 +198,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'57f2f72e683f90530be5a6488ac7046122fcac86';
+String _$roomEntryTaskHash() => r'09ad97b9caff9a0a0b592986b833b18387775a38';
 
 final class RoomEntryTaskFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<void>, String> {

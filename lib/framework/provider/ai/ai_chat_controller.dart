@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:notepadclient/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../common/constants/API.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:notepadclient/common/widgets/AvatarWidget.dart';
-import 'package:notepadclient/framework/domain/ChatMessage.dart';
-import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 
 import '../../../../common/utils/DateUtil.dart';
 import '../../../../common/widgets/BubbleDialog.dart';

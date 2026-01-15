@@ -1,6 +1,6 @@
-import 'package:notepadclient/framework/network/DioClient.dart';
-import 'package:notepadclient/framework/services/room_member_service.dart';
-import 'package:notepadclient/framework/services/room_message_service.dart';
+import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/services/room_member_service.dart';
+import 'package:anoxia/framework/services/room_message_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/ChatMessage.dart';

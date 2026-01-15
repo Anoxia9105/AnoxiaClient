@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';

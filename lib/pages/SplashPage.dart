@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:notepadclient/pages/AppScaffold.dart';
-import '../common/utils/DeviceUtil.dart';
-import '../common/widgets/desktop/DesktopAppBar.dart';
-import '../framework/theme/AppColors.dart';
+import 'package:anoxia/pages/AppScaffold.dart';
 import '../gen/assets.gen.dart';
 
 class SplashPage extends StatefulWidget {

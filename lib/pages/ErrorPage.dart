@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:notepadclient/pages/AppScaffold.dart';
+import 'package:anoxia/pages/AppScaffold.dart';
 
 import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/desktop/DesktopAppBar.dart';

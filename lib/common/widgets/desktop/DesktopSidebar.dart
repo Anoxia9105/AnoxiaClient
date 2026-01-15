@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 
 import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/ws/ws_controller.dart';

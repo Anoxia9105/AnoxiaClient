@@ -1,4 +1,4 @@
-import 'package:notepadclient/common/utils/SPUtil.dart';
+import 'package:anoxia/common/utils/SPUtil.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'font_controller.g.dart';

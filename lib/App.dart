@@ -2,10 +2,10 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notepadclient/framework/protocol/message/HighMessage.dart';
-import 'package:notepadclient/framework/provider/theme/theme_controller.dart';
-import 'package:notepadclient/framework/services/high_message_service.dart';
-import 'package:notepadclient/pages/SplashPage.dart';
+import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
+import 'package:anoxia/framework/services/high_message_service.dart';
+import 'package:anoxia/pages/SplashPage.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 

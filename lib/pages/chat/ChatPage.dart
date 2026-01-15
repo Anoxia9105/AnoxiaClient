@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:notepadclient/framework/provider/router/router.dart';
-import 'package:notepadclient/pages/chat/component/ChatRoomDetail.dart';
-import 'package:notepadclient/pages/chat/component/ChatRoomList.dart';
+import 'package:anoxia/framework/provider/router/router.dart';
+import 'package:anoxia/pages/chat/component/ChatRoomDetail.dart';
+import 'package:anoxia/pages/chat/component/ChatRoomList.dart';
 
 import '../../common/widgets/Welcome.dart';
 import '../../framework/provider/theme/theme_controller.dart';

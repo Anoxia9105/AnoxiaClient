@@ -1,4 +1,4 @@
-import 'package:notepadclient/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/CaptchaModel.dart';

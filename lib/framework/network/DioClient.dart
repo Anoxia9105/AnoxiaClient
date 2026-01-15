@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:notepadclient/framework/network/TokenManager.dart';
-import 'package:notepadclient/framework/provider/auth/auth_controller.dart';
-import 'package:notepadclient/main.dart';
+import 'package:anoxia/framework/network/TokenManager.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/main.dart';
 
 import '../logs/talker.dart';
 import 'DioConfig.dart';

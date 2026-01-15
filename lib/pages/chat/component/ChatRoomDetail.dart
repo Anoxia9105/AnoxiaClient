@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notepadclient/pages/chat/component/widget/ChatAppBar.dart';
-import 'package:notepadclient/pages/chat/component/widget/ChatInputField.dart';
-import 'package:notepadclient/pages/chat/component/widget/ChatMessageBubble.dart';
+import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
+import 'package:anoxia/pages/chat/component/widget/ChatInputField.dart';
+import 'package:anoxia/pages/chat/component/widget/ChatMessageBubble.dart';
 
 import '../../../framework/services/room_list_service.dart';
 import '../../../framework/services/room_message_service.dart';

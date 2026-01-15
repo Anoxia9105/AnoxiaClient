@@ -1,14 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notepadclient/pages/AppScaffold.dart';
-import 'package:notepadclient/pages/setting/SettingsPage.dart';
+import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/pages/setting/SettingsPage.dart';
 
 import '../common/utils/DeviceUtil.dart';
+import '../common/widgets/app/MobileBottomBar.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
 import 'NotCodePage.dart';
-import 'ThemeTestPage.dart';
 import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
 
@@ -69,8 +69,7 @@ class MainLayoutPage extends ConsumerWidget {
 
       //如果是移动设备，显示底部导航栏
       bottomNavigationBar:
-          // DeviceUtil.isMobile(context) ? const MobileBottomBar() : null,
-          DeviceUtil.isMobile(context) ? const Text("Android") : null,
+          DeviceUtil.isMobile(context) ? MobileBottomBar() : null,
     );
   }
 }

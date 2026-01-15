@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:notepadclient/framework/provider/theme/theme_controller.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 
 import '../../common/utils/DeviceUtil.dart';
 import '../../framework/provider/theme/font_controller.dart';
