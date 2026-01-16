@@ -1,6 +1,7 @@
 import 'package:alphabet_list_view/alphabet_list_view.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/domain/ChatContactVO.dart';
+import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/framework/services/contact_list_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,7 +29,7 @@ class ContactList extends ConsumerWidget {
             ),
             title: Text("新的朋友", style: TextStyle(fontWeight: FontWeight.bold)),
             onTap: () {
-              print("点击了新的朋友");
+              ref.read(contactSelectionProvider.notifier).selectNewFriends();
             },
           ),
           ListTile(
@@ -62,7 +63,7 @@ class ContactList extends ConsumerWidget {
                     .map(
                       (e) => AlphabetListViewItemGroup(
                         tag: e.key,
-                        children: e.value.map((vo) => _buildTile(vo)).toList(),
+                        children: e.value.map((vo) => _buildTile(ref, vo)).toList(),
                       ),
                     )
                     .toList();
@@ -128,7 +129,7 @@ class ContactList extends ConsumerWidget {
     );
   }
 
-  Widget _buildTile(ChatContactVO contact) {
+  Widget _buildTile(WidgetRef ref,ChatContactVO contact) {
     return ListTile(
       key: ValueKey(contact.contactId),
       dense: true,
@@ -141,7 +142,7 @@ class ContactList extends ConsumerWidget {
             : AvatarStatus.offline,
       ),
       onTap: () {
-        print('点击了联系人: ${contact.nickName}');
+         ref.read(contactSelectionProvider.notifier).selectContact(contact);
       },
     );
   }
