@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-enum AvatarStatus {
-  none,
-  online,
-  offline,
-  busy,
-}
+enum AvatarStatus { none, online, offline, busy }
 
 class AvatarWidget extends StatelessWidget {
   final String? url;
@@ -42,20 +37,21 @@ class AvatarWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadius),
           child: hasUrl
               ? Image.network(
-            url!,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
+                  url!,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
 
-            /// 加载中显示默认图标
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return _buildPlaceholder(context);
-            },
+                  /// 加载中显示默认图标
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return _buildPlaceholder(context);
+                  },
 
-            /// 加载失败显示兜底图标或首字母
-            errorBuilder: (_, __, ___) => _buildNameOrPlaceholder(context),
-          )
+                  /// 加载失败显示兜底图标或首字母
+                  errorBuilder: (_, __, ___) =>
+                      _buildNameOrPlaceholder(context),
+                )
               : _buildNameOrPlaceholder(context),
         ),
 
@@ -88,15 +84,19 @@ class AvatarWidget extends StatelessWidget {
         color = Colors.transparent;
     }
 
-    return Container(
-      width: dotSize,
-      height: dotSize,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white,
-          width: dotSize * 0.18,
+    return Tooltip(
+      message: status == AvatarStatus.online
+          ? '在线'
+          : status == AvatarStatus.offline
+          ? '离线'
+          : '',
+      child: Container(
+        width: dotSize,
+        height: dotSize,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: dotSize * 0.18),
         ),
       ),
     );

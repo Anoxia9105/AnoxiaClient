@@ -104,3 +104,30 @@ void setupPacketRegistry() {
     (data) => HighMessage.fromJson(data),
   );
 }
+
+
+
+
+
+// {
+// "topic":"HIGH_FREQUENCY",
+// "data":{
+//   "targetId": "1",
+//   "roomId": "testroom1",
+//   "type": "TYPING_STATUS",
+//   "content": "true"
+// }
+// }
+
+// {
+// "topic":"MESSAGE",
+// "data":{
+//   "messageId": "msg-202512221416001",
+//   "roomId": "testroom1",
+//   "targetId": "1",
+//   "type": "TEXT",
+//   "payload": {
+//     "content": "SINGLE 你好"
+//   }
+// }
+// }

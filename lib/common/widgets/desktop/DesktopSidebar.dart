@@ -169,6 +169,7 @@ class SidebarButton extends ConsumerWidget {
                   icon: icon,
                   color: isActive ? Theme.of(context).primaryColor : null,
                   size: 18,
+                  strokeWidth: 1.5,
                 ),
                 Text(
                   name,

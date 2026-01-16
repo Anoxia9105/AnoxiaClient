@@ -61,10 +61,10 @@ dependencies:
 #  flutter_client_sse: ^2.0.3
 #  #link 链接处理
 #  url_launcher: ^6.3.2
-#  #字母分组排序列表
-#  alphabet_list_view: ^1.2.0
-#  #汉字转拼音
-#  lpinyin: ^2.0.2
+ #字母分组排序列表
+  alphabet_list_view: ^1.2.0
+ #汉字转拼音
+  lpinyin: ^2.0.3
 
 dev_dependencies:
   flutter_test:

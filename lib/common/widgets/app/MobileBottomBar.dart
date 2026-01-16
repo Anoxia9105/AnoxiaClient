@@ -21,7 +21,7 @@ class MobileBottomBar extends ConsumerWidget {
       },
       items: layout.items.map((item) {
         return BottomNavigationBarItem(
-          icon: HugeIcon(icon: item.icon, size: 18),
+          icon: HugeIcon(icon: item.icon, size: 18,strokeWidth: 1.5),
           label: item.name.tr(),
         );
       }).toList(),

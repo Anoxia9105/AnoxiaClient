@@ -5,6 +5,7 @@ import '../common/widgets/desktop/DesktopAppBar.dart';
 import '../framework/theme/AppColors.dart';
 
 class AppScaffold extends StatelessWidget {
+  final String? title;
   final Widget body;
   final Widget? bottomNavigationBar;
 
@@ -16,6 +17,7 @@ class AppScaffold extends StatelessWidget {
     required this.body,
     this.bottomNavigationBar,
     this.hideAppBarLogo = false,
+    this.title,
   });
 
   @override
@@ -37,6 +39,6 @@ class AppScaffold extends StatelessWidget {
     if (DeviceUtil.isRealDesktop()) {
       return DesktopAppBar(hideAppBarLogo: hideAppBarLogo);
     }
-    return AppBar(title: Text("Mobile Header"));
+    return AppBar(title: Text(title ?? ''));
   }
 }

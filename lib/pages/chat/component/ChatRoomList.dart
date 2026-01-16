@@ -101,7 +101,7 @@ class _RoomItem extends ConsumerWidget {
       visualDensity: VisualDensity.compact,
       dense: true,
       onTap: () {
-
+        // TODO 跳转详细
         ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
       },
       selected: isSelected,

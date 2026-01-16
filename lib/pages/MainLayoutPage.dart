@@ -1,8 +1,9 @@
+import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/pages/contact/ContactPage.dart';
+import 'package:anoxia/pages/setting/SettingsPage.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:anoxia/pages/AppScaffold.dart';
-import 'package:anoxia/pages/setting/SettingsPage.dart';
 
 import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/app/MobileBottomBar.dart';
@@ -42,6 +43,7 @@ class MainLayoutPage extends ConsumerWidget {
 
     //外层Scaffold
     return AppScaffold(
+      title: layout.items[layout.currentIndex].name,
       body: Row(
         children: [
           //如果是桌面或平板，显示侧边栏
@@ -55,7 +57,7 @@ class MainLayoutPage extends ConsumerWidget {
                 index: layout.currentIndex,
                 children: [
                   ChatPage(),
-                  NotCodePage(),
+                  ContactPage(),
                   AIChatPage(),
                   NotCodePage(),
                   NotCodePage(),
@@ -68,8 +70,9 @@ class MainLayoutPage extends ConsumerWidget {
       ),
 
       //如果是移动设备，显示底部导航栏
-      bottomNavigationBar:
-          DeviceUtil.isMobile(context) ? MobileBottomBar() : null,
+      bottomNavigationBar: DeviceUtil.isMobile(context)
+          ? MobileBottomBar()
+          : null,
     );
   }
 }
