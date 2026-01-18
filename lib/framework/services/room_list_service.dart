@@ -160,3 +160,17 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
 
   ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
 }
+
+
+
+@riverpod
+List<ChatRoomVO> groupRoomList(Ref ref) {
+  final roomListAsync = ref.watch(roomListServiceProvider);
+
+  return roomListAsync.maybeWhen(
+    data: (rooms) => rooms
+        .where((r) => r.roomType == '1') // GROUP
+        .toList(),
+    orElse: () => const [],
+  );
+}

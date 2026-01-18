@@ -12,6 +12,9 @@ class AvatarWidget extends StatelessWidget {
   /// 状态（右下角）
   final AvatarStatus status;
 
+  final bool showBadge; // 是否显示红点/角标
+  final String? badgeText; // 角标显示的文字（如未读数）
+
   /// 自定义状态 Widget（优先级高于 status）
   final Widget? statusWidget;
 
@@ -23,6 +26,8 @@ class AvatarWidget extends StatelessWidget {
     this.borderRadius = 4,
     this.status = AvatarStatus.none,
     this.statusWidget,
+    this.showBadge = false,
+    this.badgeText,
   });
 
   @override
@@ -62,10 +67,45 @@ class AvatarWidget extends StatelessWidget {
             bottom: -2,
             child: _buildStatusIndicator(context),
           ),
+
+        /// 右上角：小红点/未读数
+        if (showBadge)
+          Positioned(
+            right: -size * 0.1,
+            top: -size * 0.1,
+            child: _buildRedBadge(context),
+          ),
       ],
     );
   }
-
+  /// 构建右上角红点
+  Widget _buildRedBadge(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: size * 0.1),
+      constraints: BoxConstraints(
+        minWidth: size * 0.35,
+        minHeight: size * 0.35,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        shape: badgeText == null ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: badgeText == null ? null : BorderRadius.circular(size * 0.2),
+        border: Border.all(color: Colors.white, width: size * 0.05),
+      ),
+      child: badgeText != null
+          ? Center(
+        child: Text(
+          badgeText!,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: size * 0.25,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      )
+          : null,
+    );
+  }
   /// 状态角标
   Widget _buildStatusIndicator(BuildContext context) {
     if (statusWidget != null) return statusWidget!;

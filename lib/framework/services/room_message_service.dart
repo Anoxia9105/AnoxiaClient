@@ -3,10 +3,10 @@ import 'package:anoxia/framework/services/room_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/ChatMessage.dart';
-import '../protocol/message/RoomMessage.dart';
-import '../protocol/PacketType.dart';
-import '../provider/ws/ws_controller.dart';
 import '../logs/talker.dart';
+import '../protocol/PacketType.dart';
+import '../protocol/message/RoomMessage.dart';
+import '../provider/ws/ws_controller.dart';
 
 part 'room_message_service.g.dart';
 
@@ -15,9 +15,13 @@ part 'room_message_service.g.dart';
 @riverpod
 class ChatMessages extends _$ChatMessages {
 
+  //跟后端同步 分页大小
+  final int _pageSize=50;
+
+  bool _isFetchingHistory = false;
+
   // 定义一个内部变量记录已同步的房间
   final Set<String> _syncedRoomIds = {};
-
 
   @override
   Map<String, List<ChatMessage>> build() {
@@ -62,10 +66,9 @@ class ChatMessages extends _$ChatMessages {
     final activeId = ref.read(activeRoomIdProvider);
     final isCurrentRoom = activeId == chatMessage.roomId;
 
-    ref.read(roomListServiceProvider.notifier).updateRoomPosition(
-      chatMessage,
-      isCurrentRoom: isCurrentRoom,
-    );
+    ref
+        .read(roomListServiceProvider.notifier)
+        .updateRoomPosition(chatMessage, isCurrentRoom: isCurrentRoom);
   }
 
   /// 核心：加载或同步房间消息
@@ -91,7 +94,7 @@ class ChatMessages extends _$ChatMessages {
         queryParameters: {
           "roomId": roomId,
           "lastSeq": null,
-          "pageSize": 50,
+          "pageSize": _pageSize,
           "direction": 0,
         },
       );
@@ -103,14 +106,23 @@ class ChatMessages extends _$ChatMessages {
 
       if (data is! List) return;
 
+
       final List<ChatMessage> history = data
           .map((e) => ChatMessage.fromJson(e))
           .toList();
 
+      // 如果第一次拿到的数据就少于一页，说明根本没有历史消息了
+      if (history.length < _pageSize) {
+        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+      } else {
+        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, true);
+      }
       // 3. 合并与去重
       final Map<int, ChatMessage> mergeMap = {
-        for (var m in currentList) if (m.seq != null) m.seq!: m,
-        for (var m in history) if (m.seq != null) m.seq!: m,
+        for (var m in currentList)
+          if (m.seq != null) m.seq!: m,
+        for (var m in history)
+          if (m.seq != null) m.seq!: m,
       };
 
       // 4. 排序
@@ -126,24 +138,96 @@ class ChatMessages extends _$ChatMessages {
     }
   }
 
+  Future<void> loadMoreHistory(String roomId) async {
+    if (_isFetchingHistory) return;
+
+    // 💡 先检查一下是否还有更多，如果没有，直接返回
+    final hasMore = ref.read(chatHasMoreProvider)[roomId] ?? true;
+    if (!hasMore) return;
+
+    final currentList = state[roomId] ?? [];
+    if (currentList.isEmpty) return;
+
+    // 1. 找到当前本地最早的一条消息的 seq
+    // 你的列表是按 seq 从小到大排的，所以第一条就是最早的
+    final int? oldestSeq = currentList.first.seq;
+    if (oldestSeq == null || oldestSeq <= 1) {
+      log.info("已经到头了 不请求了");
+      return;
+    } // 已经到头了
+
+    _isFetchingHistory = true;
+    log.info("开始拉取房间 $roomId 的历史消息，起始 seq: $oldestSeq");
+
+    try {
+      final res = await DioClient().get(
+        "/chat/history",
+        queryParameters: {
+          "roomId": roomId,
+          "lastSeq": oldestSeq, // 告诉服务器从哪条开始往前找
+          "pageSize": _pageSize, // 分页大小
+          "direction": 0, // 0 通常代表向旧的消息方向（向上）拉取
+        },
+      );
+      final data = res.data["data"];
+      if (data is! List || data.isEmpty) {
+        log.info("没有更多历史消息了");
+        return;
+      }
+      //模拟加载
+      await Future.delayed(Duration(seconds: 4));
+
+      final List<ChatMessage> history = data
+          .map((e) => ChatMessage.fromJson(e))
+          .toList();
+
+      if (history.length < _pageSize) {
+        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+      } else {
+        // 也可以显式设为 true，防止之前被误设为 false
+        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, true);
+      }
+
+      if (history.isNotEmpty) {
+        // 2. 合并数据并去重
+        final Map<int, ChatMessage> mergeMap = {
+          for (var m in history)
+            if (m.seq != null) m.seq!: m,
+          for (var m in currentList)
+            if (m.seq != null) m.seq!: m,
+        };
+
+        // 3. 排序（保持 seq 从小到大）
+        final sortedList = mergeMap.values.toList()
+          ..sort((a, b) => a.seq!.compareTo(b.seq!));
+
+        // 4. 更新状态
+        state = {...state, roomId: sortedList};
+        log.info("历史消息加载成功，新增 ${history.length} 条");
+      }
+    } catch (e) {
+      log.error("加载历史消息失败: $e");
+    } finally {
+      _isFetchingHistory = false;
+    }
+  }
+
   ///添加消息到房间
   void _addMessage(ChatMessage msg) {
     final roomId = msg.roomId ?? "system";
     final currentList = state[roomId] ?? [];
 
+    //去重检查
     if (currentList.any((m) => m.seq == msg.seq)) return;
 
+    //插入新消息
     List<ChatMessage> newList = [...currentList, msg];
 
-    // 优化：只有当新消息 seq 小于最后一条时（乱序到达），才需要排序
-    if (currentList.isNotEmpty && (msg.seq ?? 0) < (currentList.last.seq ?? 0)) {
+    // 只有当新消息 seq 小于最后一条时（乱序到达），才需要排序
+    if (currentList.isNotEmpty &&
+        (msg.seq ?? 0) < (currentList.last.seq ?? 0)) {
       newList.sort((a, b) => (a.seq ?? 0).compareTo(b.seq ?? 0));
     }
-
-    if (newList.length > 100) {
-      newList = newList.sublist(newList.length - 100);
-    }
-
     state = {...state, roomId: newList};
   }
 
@@ -155,5 +239,20 @@ class ChatMessages extends _$ChatMessages {
   /// 获取总消息数量，用于调试或内存监控
   int get totalMessageCount {
     return state.values.fold(0, (sum, list) => sum + list.length);
+  }
+}
+
+// 存储每个房间的“加载更多”状态
+// key: roomId, value: 是否还有更多
+@riverpod
+class ChatHasMore extends _$ChatHasMore {
+  @override
+  Map<String, bool> build() {
+    return {}; // 默认不确定，或者可以在 syncRoomMessages 时初始化
+  }
+
+  // 设置某个房间的状态
+  void setHasMore(String roomId, bool hasMore) {
+    state = {...state, roomId: hasMore};
   }
 }

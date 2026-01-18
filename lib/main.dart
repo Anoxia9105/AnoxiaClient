@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -98,6 +99,10 @@ void setupPacketRegistry() {
   PacketRegistry.register(
     PacketType.message,
     (data) => RoomMessage.fromJson(data),
+  );
+  PacketRegistry.register(
+    PacketType.event,
+        (data) => EventMessage.fromJson(data),
   );
   PacketRegistry.register(
     PacketType.highFrequency,

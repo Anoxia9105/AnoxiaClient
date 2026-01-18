@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';
 import '../../services/room_list_service.dart';
+import '../../services/system_event_service.dart';
 import '../auth/auth_controller.dart';
 
 part 'app_initializer.g.dart';
@@ -54,6 +55,8 @@ class AppInitializer extends _$AppInitializer {
 
       log.info("💬 正在预加载聊天会话列表...");
       await ref.read(roomListServiceProvider.future);
+      //触发系统事件
+      ref.read(systemEventServiceProvider);
     }
   }
 

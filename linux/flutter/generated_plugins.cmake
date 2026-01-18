@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_secure_storage_linux
   flutter_webrtc
+  livekit_client
   screen_retriever_linux
   tray_manager
   url_launcher_linux

@@ -8,7 +8,8 @@ import '../../../../framework/services/high_message_service.dart';
 import '../../../../framework/services/room_list_service.dart';
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  const ChatAppBar({super.key});
+  final VoidCallback onTap;
+  const ChatAppBar({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,7 +70,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedVideo02, size: 20),
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: onTap,
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedMore02, size: 20),
         ),
       ],

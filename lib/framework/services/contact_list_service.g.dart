@@ -13,7 +13,8 @@ part of 'contact_list_service.dart';
 const contactListServiceProvider = ContactListServiceProvider._();
 
 final class ContactListServiceProvider
-    extends $AsyncNotifierProvider<ContactListService, List<ChatContactVO>> {
+    extends
+        $AsyncNotifierProvider<ContactListService, Map<int, ChatContactVO>> {
   const ContactListServiceProvider._()
     : super(
         from: null,
@@ -34,22 +35,29 @@ final class ContactListServiceProvider
 }
 
 String _$contactListServiceHash() =>
-    r'0de15bd85e721fe35de0354cdedb145080996550';
+    r'd561e245e7ae9744a6854b19cbbe9f1285baa6b2';
 
 abstract class _$ContactListService
-    extends $AsyncNotifier<List<ChatContactVO>> {
-  FutureOr<List<ChatContactVO>> build();
+    extends $AsyncNotifier<Map<int, ChatContactVO>> {
+  FutureOr<Map<int, ChatContactVO>> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
     final ref =
-        this.ref as $Ref<AsyncValue<List<ChatContactVO>>, List<ChatContactVO>>;
+        this.ref
+            as $Ref<
+              AsyncValue<Map<int, ChatContactVO>>,
+              Map<int, ChatContactVO>
+            >;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<ChatContactVO>>, List<ChatContactVO>>,
-              AsyncValue<List<ChatContactVO>>,
+              AnyNotifier<
+                AsyncValue<Map<int, ChatContactVO>>,
+                Map<int, ChatContactVO>
+              >,
+              AsyncValue<Map<int, ChatContactVO>>,
               Object?,
               Object?
             >;
@@ -97,4 +105,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'6c596adb226661aa64008e2a7453492085ed33e7';
+    r'a9b7bebfdd2d925e0d3b76b470097d1cdaaef30e';

@@ -12,7 +12,7 @@ class ChatRoomMemberVO {
   final String? nickName;
   final String? avatar;
   final String? sex; // 0男 1女 2未知
-  final String? phonenumber;
+  final String? phoneNumber;
   final String? status; // 0正常 1停用
   final DateTime? loginDate;
 
@@ -29,7 +29,7 @@ class ChatRoomMemberVO {
     this.nickName,
     this.avatar,
     this.sex,
-    this.phonenumber,
+    this.phoneNumber,
     this.status,
     this.loginDate,
     this.onlineStatus,
@@ -48,7 +48,7 @@ class ChatRoomMemberVO {
       nickName: json['nickName'],
       avatar: json['avatar'],
       sex: json['sex']?.toString(),
-      phonenumber: json['phonenumber'],
+      phoneNumber: json['phoneNumber'],
       status: json['status']?.toString(),
       loginDate: _parseDate(json['loginDate']),
       onlineStatus: json['onlineStatus'] ?? false,
@@ -95,7 +95,7 @@ class ChatRoomMemberVO {
       nickName: nickName,
       avatar: avatar,
       sex: sex,
-      phonenumber: phonenumber,
+      phoneNumber: phoneNumber,
       status: status,
       loginDate: loginDate,
       onlineStatus: onlineStatus ?? this.onlineStatus,

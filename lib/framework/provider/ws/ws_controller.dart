@@ -121,6 +121,7 @@ class WsController extends _$WsController {
   }
 
   void _handleIncomingMessage(dynamic message) {
+    log.info("【WS收到消息】,${message.toString()}");
     if (message == 'pong') return;
 
     try {

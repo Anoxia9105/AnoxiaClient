@@ -50,22 +50,25 @@ class RoomMemberService extends _$RoomMemberService {
     }
   }
 
-  /// 实时更新：更新单个成员的在线状态 (通常由 WebSocket 触发)
-  void updateMemberOnlineStatus(String roomId, int userId, bool isOnline) {
-    final roomMembers = state[roomId];
-    if (roomMembers == null) return;
+  /// 全局更新：当某个用户上下线时，更新所有包含该用户的房间
+  void updateGlobalUserStatus(int userId, bool isOnline) {
+    final newState = <String, List<ChatRoomMemberVO>>{};
+    bool changed = false;
 
-    final index = roomMembers.indexWhere((m) => m.userId == userId);
-    if (index != -1) {
-      // 局部更新列表中的某一项
-      final List<ChatRoomMemberVO> newList = List.from(roomMembers);
-      newList[index] = newList[index].copyWith(onlineStatus: isOnline);
+    state.forEach((roomId, members) {
+      final index = members.indexWhere((m) => m.userId == userId);
+      if (index != -1) {
+        final newList = List<ChatRoomMemberVO>.from(members);
+        newList[index] = newList[index].copyWith(onlineStatus: isOnline);
+        newState[roomId] = newList;
+        changed = true;
+      } else {
+        newState[roomId] = members;
+      }
+    });
 
-      state = {
-        ...state,
-        roomId: newList,
-      };
-      log.info("👤 成员 $userId 在房间 $roomId 状态更新为: ${isOnline ? '在线' : '离线'}");
+    if (changed) {
+      state = newState; // 只有发生变化时才触发 Riverpod UI 刷新
     }
   }
 

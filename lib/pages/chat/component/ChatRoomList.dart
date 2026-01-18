@@ -1,11 +1,12 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../../../common/utils/DateUtil.dart';
 import '../../../common/widgets/AvatarWidget.dart';
 import '../../../common/widgets/VibratingBadge.dart';
 import '../../../framework/domain/ChatRoomVO.dart';
+import '../../../framework/services/contact_list_service.dart';
 import '../../../framework/services/room_list_service.dart';
 
 class ChatRoomList extends ConsumerWidget {
@@ -93,10 +94,22 @@ class _RoomItem extends ConsumerWidget {
   const _RoomItem({required this.room});
 
   @override
-  Widget build(BuildContext context,WidgetRef ref) {
-
+  Widget build(BuildContext context, WidgetRef ref) {
     final activeId = ref.watch(activeRoomIdProvider);
     final isSelected = activeId == room.roomId;
+    final isSingle = room.roomType == "0";
+
+    // 如果是单聊 (roomType == "0")，我们去联系人服务里找对方的在线状态
+    bool isOnline = false;
+    if (isSingle && room.peerId != null) {
+      isOnline = ref.watch(
+        contactListServiceProvider.select((asyncMap) {
+          final contact = asyncMap.value?[room.peerId];
+          return contact?.onlineStatus ?? false;
+        }),
+      );
+    }
+
     return ListTile(
       visualDensity: VisualDensity.compact,
       dense: true,
@@ -105,10 +118,18 @@ class _RoomItem extends ConsumerWidget {
         ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
       },
       selected: isSelected,
-      selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+      selectedTileColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.3),
 
       // 左侧头像
-      leading: AvatarWidget(url: room.roomAvatar, name: room.roomName),
+      leading: AvatarWidget(
+        url: room.roomAvatar,
+        name: room.roomName,
+        status: isSingle
+            ? (isOnline ? AvatarStatus.online : AvatarStatus.offline)
+            : AvatarStatus.none,
+      ),
       // 中间名称和最后消息
       title: Text(
         room.roomName ?? "未知会话",

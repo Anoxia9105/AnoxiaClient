@@ -45,4 +45,19 @@ class ChatContactVO {
       'onlineStatus': onlineStatus,
     };
   }
+
+  ChatContactVO copyWith({
+    bool? onlineStatus,
+    String? remark,
+    String? avatar,
+  }) {
+    return ChatContactVO(
+      contactId: contactId,
+      remark: remark ?? this.remark,
+      nickName: nickName,
+      avatar: avatar ?? this.avatar,
+      sex: sex,
+      onlineStatus: onlineStatus ?? this.onlineStatus,
+    );
+  }
 }

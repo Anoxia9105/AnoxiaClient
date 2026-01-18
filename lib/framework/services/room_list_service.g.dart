@@ -217,3 +217,49 @@ final class RoomEntryTaskFamily extends $Family
   @override
   String toString() => r'roomEntryTaskProvider';
 }
+
+@ProviderFor(groupRoomList)
+const groupRoomListProvider = GroupRoomListProvider._();
+
+final class GroupRoomListProvider
+    extends
+        $FunctionalProvider<
+          List<ChatRoomVO>,
+          List<ChatRoomVO>,
+          List<ChatRoomVO>
+        >
+    with $Provider<List<ChatRoomVO>> {
+  const GroupRoomListProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'groupRoomListProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$groupRoomListHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<ChatRoomVO>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<ChatRoomVO> create(Ref ref) {
+    return groupRoomList(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<ChatRoomVO> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<ChatRoomVO>>(value),
+    );
+  }
+}
+
+String _$groupRoomListHash() => r'5e76dcf71c0b1897781c422801af27e08c713150';
