@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:anoxia/main.dart';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:livekit_client/livekit_client.dart';
+
 import 'RoomPage.dart'; // 确保这里引入了你刚才写的 RoomPage
+
+const _channel = WindowMethodChannel('example_video_player_window');
 
 class NotCodePage extends StatefulWidget {
   const NotCodePage({super.key});
@@ -18,22 +25,60 @@ class _NotCodePageState extends State<NotCodePage> {
   final String _url = "ws://8.137.14.21:7880";
 
   @override
+  void initState() {
+    super.initState();
+    _channel.setMethodCallHandler((call) async {
+      print('主窗口收到方法调用: ${call.method} ${call.arguments}');
+      return '主窗口返回';
+    });
+  }
+
+  @override
   void dispose() {
     // 记得销毁控制器
+
     _tokenController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold( // 加上 Scaffold 避免键盘弹出时的布局问题
-      appBar: AppBar(title: const Text("LiveKit 连接测试")),
+    return Scaffold(
+      // 加上 Scaffold 避免键盘弹出时的布局问题
+      appBar: AppBar(title: const Text("连接测试")),
       body: Padding(
         padding: const EdgeInsets.all(24.0), // 加点边距，好看一点
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            IconButton(
+              onPressed: () async {
+                // Create a new window
+                final controller = await WindowController.create(
+                  WindowConfiguration(
+                    hiddenAtLaunch: true,
+                    arguments: jsonEncode({
+                      'room': "testroom",
+                      'userinfo': {'id': 1, 'name': "abc"},
+                    }),
+                  ),
+                );
+
+                await controller.center();
+
+                // Show the window (if hidden at launch)
+                await controller.show();
+              },
+              icon: Icon(Icons.add),
+            ),
+            IconButton(
+              onPressed: () async {
+                final result = await _channel.invokeMethod('play');
+                print('main结果: $result');
+              },
+              icon: Icon(Icons.send),
+            ),
             const HugeIcon(
               icon: HugeIcons.strokeRoundedDocumentCode,
               color: Colors.blueAccent,
@@ -69,9 +114,9 @@ class _NotCodePageState extends State<NotCodePage> {
                 final token = _tokenController.text.trim();
 
                 if (token.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Token 不能为空！')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Token 不能为空！')));
                   return;
                 }
 
@@ -79,7 +124,10 @@ class _NotCodePageState extends State<NotCodePage> {
                 try {
                   // 显示加载提示（可选优化）
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('正在连接服务器...'), duration: Duration(seconds: 1)),
+                    const SnackBar(
+                      content: Text('正在连接服务器...'),
+                      duration: Duration(seconds: 1),
+                    ),
                   );
 
                   final roomOptions = RoomOptions(
@@ -87,20 +135,30 @@ class _NotCodePageState extends State<NotCodePage> {
                     dynacast: true,
                   );
 
-                  final room = Room();
+                  final room = Room(roomOptions: roomOptions);
 
                   // 使用输入的 URL 和 Token
                   await room.prepareConnection(_url, token);
-                  await room.connect(_url, token, roomOptions: roomOptions);
+                  await room.connect(_url, token);
 
-                  // 开启设备
+                  // 2. 默认关闭摄像头 (显式调用 false，确保状态一致)
                   try {
-                    await room.localParticipant?.setCameraEnabled(true);
-                  } catch (error) {
-                    print('摄像头开启失败 (模拟器正常现象): $error');
+                    await room.localParticipant?.setCameraEnabled(false);
+                  } catch (e) {
+                    debugPrint('关闭摄像头操作失败: $e');
                   }
-                  await room.localParticipant?.setMicrophoneEnabled(true);
 
+                  // 3. 仅开启麦克风
+                  try {
+                    await room.localParticipant?.setMicrophoneEnabled(true);
+                  } catch (e) {
+                    // 如果用户拒绝了麦克风权限，这里会捕获异常
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('麦克风开启失败，请检查权限: $e')),
+                      );
+                    }
+                  }
                   // 跳转页面
                   if (context.mounted) {
                     Navigator.push(
@@ -114,7 +172,10 @@ class _NotCodePageState extends State<NotCodePage> {
                   // 错误处理
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('连接失败: $e'), backgroundColor: Colors.red),
+                      SnackBar(
+                        content: Text('连接失败: $e'),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                   }
                   print(e);

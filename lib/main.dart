@@ -1,12 +1,14 @@
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
+import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/pages/SubWindowPage.dart';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:anoxia/framework/protocol/message/HighMessage.dart';
-import 'package:window_manager/window_manager.dart' as desktop;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:talker_riverpod_logger/talker_riverpod_logger_observer.dart';
-import 'package:talker_riverpod_logger/talker_riverpod_logger_settings.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
 import 'common/utils/DeviceUtil.dart';
@@ -28,71 +30,29 @@ final ProviderContainer globalContainer = ProviderContainer(
   // ],
 );
 
-void main() async {
+Future<void> main(List<String> args) async {
+  log.info("程序启动参数：$args");
   // 确保 Flutter 绑定已初始化
   WidgetsFlutterBinding.ensureInitialized();
-  // 初始化多语言支持
+  // 1. 获取窗口控制器
+  final windowController = await WindowController.fromCurrentEngine();
+  //注册扩展
+  // await windowController.doCustomInitialize();
+
+  final bool isSubWindow =
+      windowController.arguments.toString().isNotEmpty &&
+      windowController.arguments != "{}";
+
+  // 3. 公共初始化 (SP, 语言, 解析器)
   await EasyLocalization.ensureInitialized();
-  // 初始化本地存储
   await SPUtil.init();
-
-  // 预加载并缓存 token，避免后续多处并发读取
-  final token = await TokenManager.instance.getToken();
-  print('启动预加载的 token: $token');
-
-  log.info('''
- _______
-< DEV >
- -------
-        \\   ^__^
-         \\  (oo)\\_______
-            (__)\\       )\\/\\
-                ||----w |
-                ||     ||
-  ''');
-
-  String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
-
-  // 使用 ScreenUtilInit 进行屏幕适配
-  var app = ScreenUtilInit(
-    designSize: const Size(375, 812), // iPhone 13 设计稿尺寸
-    minTextAdapt: true, // 文本自适应优化
-    splitScreenMode: true, // 支持分屏模式
-    builder: (context, child) {
-      return EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
-        path: path,
-        fallbackLocale: const Locale('en', 'US'),
-        saveLocale: true,
-        child: const App(),
-      );
-    },
-  );
-
-  // 仅桌面端执行 window_manager 初始化
-  if (DeviceUtil.isRealDesktop()) {
-    await desktop.windowManager.ensureInitialized();
-
-    final windowOptions = desktop.WindowOptions(
-      size: const Size(1200, 800),
-      minimumSize: const Size(1200, 800),
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: desktop.TitleBarStyle.hidden,
-    );
-
-    desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await desktop.windowManager.show();
-      await desktop.windowManager.focus();
-      await desktop.windowManager.setHasShadow(true);
-    });
-  }
-
-  //注册数据包解析器
   setupPacketRegistry();
 
-  runApp(UncontrolledProviderScope(container: globalContainer, child: app));
+  if (isSubWindow) {
+    runSubApp(windowController);
+  } else {
+    runMainApp();
+  }
 }
 
 void setupPacketRegistry() {
@@ -102,7 +62,7 @@ void setupPacketRegistry() {
   );
   PacketRegistry.register(
     PacketType.event,
-        (data) => EventMessage.fromJson(data),
+    (data) => EventMessage.fromJson(data),
   );
   PacketRegistry.register(
     PacketType.highFrequency,
@@ -110,10 +70,105 @@ void setupPacketRegistry() {
   );
 }
 
+void runMainApp() async {
+  // 预加载 Token (主窗口逻辑)
+  final token = await TokenManager.instance.getToken();
+  log.info('主窗口启动，Token: $token');
 
+  log.info('''
+ _______
+< 主窗口启动 >
+ -------
+        \\   ^__^
+         \\  (oo)\\_______
+            (__)\\       )\\/\\
+                ||----w |
+                ||     ||
+  ''');
+  await setupDesktopWindow(size: const Size(1200, 800), isMainWindow: true);
 
+  runApp(
+    UncontrolledProviderScope(
+      container: globalContainer,
+      child: _buildAppWrapper(const App()), // 使用主 App 界面
+    ),
+  );
+}
 
+void runSubApp(WindowController controller) async {
+  // 预加载 Token (主窗口逻辑)
+  final token = await TokenManager.instance.getToken();
+  log.info('子窗口启动，Token: $token');
 
+  log.info('''
+ _______
+< 子窗口启动 >
+ -------
+        \\   ^__^
+         \\  (oo)\\_______
+            (__)\\       )\\/\\
+                ||----w |
+                ||     ||
+  ''');
+
+  await setupDesktopWindow(size: const Size(800, 600), isMainWindow: false);
+
+  runApp(
+    UncontrolledProviderScope(
+      container: globalContainer,
+      child: _buildAppWrapper(SubWindowPage(controller: controller)),
+    ),
+  );
+}
+
+// ================= 公共 UI 包装器 =================
+// 确保所有窗口都有多语言和屏幕适配能力
+Widget _buildAppWrapper(Widget home) {
+  String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
+  return ScreenUtilInit(
+    designSize: const Size(375, 812),
+    minTextAdapt: true,
+    splitScreenMode: true,
+    builder: (context, child) {
+      return EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+        path: path,
+        fallbackLocale: const Locale('en', 'US'),
+        saveLocale: true,
+        child: home,
+      );
+    },
+  );
+}
+
+// 抽取一个通用的窗口初始化函数
+Future<void> setupDesktopWindow({
+  required Size size,
+  required bool isMainWindow,
+}) async {
+  if (!DeviceUtil.isRealDesktop()) return;
+
+  await desktop.windowManager.ensureInitialized();
+
+  desktop.WindowOptions windowOptions = desktop.WindowOptions(
+    size: size,
+    minimumSize: const Size(800, 600),
+    center: true,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    // 主窗口通常隐藏标题栏，子窗口根据需求决定
+    titleBarStyle: desktop.TitleBarStyle.hidden,
+  );
+
+  await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await desktop.windowManager.show();
+    await desktop.windowManager.focus();
+    // 只有主窗口我们才设置防止关闭（点击关闭按钮变为隐藏）
+    if (isMainWindow) {
+      await desktop.windowManager.setPreventClose(true);
+    }
+  });
+}
 // {
 // "topic":"HIGH_FREQUENCY",
 // "data":{
@@ -136,3 +191,36 @@ void setupPacketRegistry() {
 //   }
 // }
 // }
+
+extension WindowControllerExtension on WindowController {
+  Future<void> doCustomInitialize() async {
+    print("挂载。。。。");
+    try {
+      return await setWindowMethodHandler((call) async {
+        switch (call.method) {
+          case 'window_center':
+            return await desktop.windowManager.center();
+          case 'window_close':
+            return await desktop.windowManager.close();
+          default:
+            throw MissingPluginException('Not implemented: ${call.method}');
+        }
+      });
+    } catch (e) {
+      Toast.showToast("异常：$e");
+    }
+  }
+
+  Future<void> center() async {
+    try {
+      print("调用了窗口居中");
+      return invokeMethod('window_center');
+    } catch (e) {
+      Toast.showToast("异常：$e");
+    }
+  }
+
+  Future<void> close() async{
+    return invokeMethod('window_close');
+  }
+}

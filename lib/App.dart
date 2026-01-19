@@ -5,14 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/services/high_message_service.dart';
-import 'package:anoxia/pages/SplashPage.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'common/utils/DeviceUtil.dart';
 import 'framework/logs/talker.dart';
-import 'framework/provider/auth/auth_controller.dart';
-import 'framework/provider/core/app_initializer.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/router/router.dart';
 import 'gen/assets.gen.dart';

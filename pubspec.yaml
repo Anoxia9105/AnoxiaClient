@@ -58,7 +58,12 @@ dependencies:
   #富文本
   flutter_quill: ^11.5.0
   #win 管理
-  window_manager: ^0.5.1
+#  window_manager: ^0.5.1
+  window_manager:
+    git:
+      url: https://github.com/boyan01/window_manager.git
+      path: packages/window_manager
+      ref: 6fae92d21b4c80ce1b8f71c1190d7970cf722bd4
   #toast
   bot_toast: ^4.1.3
   #流传输
@@ -69,6 +74,8 @@ dependencies:
   alphabet_list_view: ^1.2.0
   #汉字转拼音
   lpinyin: ^2.0.3
+  # 多窗口
+  desktop_multi_window: ^0.3.0
 
 dev_dependencies:
   flutter_test:
