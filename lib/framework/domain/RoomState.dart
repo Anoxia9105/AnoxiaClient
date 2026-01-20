@@ -6,26 +6,31 @@ class RoomState {
   final String token;
 
   // --- 连接状态 ---
-  final ConnectionState connectionState; // 当前房间的连接状态（如：连接中、已连接、断开等）
+  final ConnectionState connectionState; // 当前房间的连接状态
+  final String? connectionError; // 连接错误信息
 
   // --- 开关控制状态 ---
-  final bool micEnabled; // 本地麦克风是否已开启（静音控制）
+  final bool micEnabled; // 本地麦克风是否已开启
   final bool cameraEnabled; // 本地摄像头是否已开启
   final bool screenSharing; // 当前是否正在进行屏幕共享
-  final bool speakerOn; // 扬声器是否开启（声音播放路径切换）
+  final bool speakerOn; // 扬声器是否开启
+
+  // --- 轨道状态 ---
+  final LocalVideoTrack? screenShareTrack; // 屏幕共享轨道（单独记录，避免误关摄像头）
+  final bool isReconnecting; // 是否正在重连
 
   // --- 可用设备列表 ---
-  final List<MediaDevice> audioInputs; // 系统检测到的所有音频输入设备（麦克风）
-  final List<MediaDevice> audioOutputs; // 系统检测到的所有音频输出设备（扬声器/耳机）
-  final List<MediaDevice> videoInputs; // 系统检测到的所有视频输入设备（摄像头）
+  final List<MediaDevice> audioInputs; // 音频输入设备（麦克风）
+  final List<MediaDevice> audioOutputs; // 音频输出设备（扬声器/耳机）
+  final List<MediaDevice> videoInputs; // 视频输入设备（摄像头）
 
   // --- 当前选中的设备 ---
-  final MediaDevice? currentAudioInput; // 当前正在使用的麦克风
-  final MediaDevice? currentAudioOutput; // 当前正在使用的扬声器
-  final MediaDevice? currentVideoInput; // 当前正在使用的摄像头
+  final MediaDevice? currentAudioInput; // 当前麦克风
+  final MediaDevice? currentAudioOutput; // 当前扬声器
+  final MediaDevice? currentVideoInput; // 当前摄像头
 
   // --- 参与者列表 ---
-  final List<RemoteParticipant> remoteParticipants; // 房间内除自己以外的其他所有参与者
+  final List<RemoteParticipant> remoteParticipants; // 远程参与者
 
   /// 构造函数：初始化所有必要字段
   const RoomState({
@@ -40,20 +45,26 @@ class RoomState {
     required this.audioOutputs,
     required this.videoInputs,
     required this.remoteParticipants,
+    this.connectionError,
+    this.screenShareTrack,
+    this.isReconnecting = false,
     this.currentAudioInput,
     this.currentAudioOutput,
     this.currentVideoInput,
   });
 
-  /// 状态克隆方法：由于属性是 final 的，通过此方法局部更新状态并返回新实例
+  /// 状态克隆方法：局部更新状态并返回新实例
   RoomState copyWith({
     String? token,
     Room? room,
     ConnectionState? connectionState,
+    String? connectionError,
     bool? micEnabled,
     bool? cameraEnabled,
     bool? screenSharing,
     bool? speakerOn,
+    bool? isReconnecting,
+    LocalVideoTrack? screenShareTrack,
     List<MediaDevice>? audioInputs,
     List<MediaDevice>? audioOutputs,
     List<MediaDevice>? videoInputs,
@@ -66,10 +77,13 @@ class RoomState {
       token: token ?? this.token,
       room: room ?? this.room,
       connectionState: connectionState ?? this.connectionState,
+      connectionError: connectionError ?? this.connectionError,
       micEnabled: micEnabled ?? this.micEnabled,
       cameraEnabled: cameraEnabled ?? this.cameraEnabled,
       screenSharing: screenSharing ?? this.screenSharing,
       speakerOn: speakerOn ?? this.speakerOn,
+      isReconnecting: isReconnecting ?? this.isReconnecting,
+      screenShareTrack: screenShareTrack ?? this.screenShareTrack,
       audioInputs: audioInputs ?? this.audioInputs,
       audioOutputs: audioOutputs ?? this.audioOutputs,
       videoInputs: videoInputs ?? this.videoInputs,
@@ -82,6 +96,6 @@ class RoomState {
 
   @override
   String toString() {
-    return 'RoomState{connectionState: $connectionState, micEnabled: $micEnabled, cameraEnabled: $cameraEnabled, screenSharing: $screenSharing, speakerOn: $speakerOn, audioInputs: $audioInputs, audioOutputs: $audioOutputs, videoInputs: $videoInputs, currentAudioInput: $currentAudioInput, currentAudioOutput: $currentAudioOutput, currentVideoInput: $currentVideoInput, remoteParticipants: $remoteParticipants}';
+    return 'RoomState{connectionState: $connectionState, micEnabled: $micEnabled, cameraEnabled: $cameraEnabled, screenSharing: $screenSharing, speakerOn: $speakerOn, isReconnecting: $isReconnecting}';
   }
 }

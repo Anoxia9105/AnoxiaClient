@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/pages/sub_window/CallWindowPage.dart';
@@ -18,10 +20,10 @@ import 'framework/protocol/PacketType.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
-// 创建 Riverpod 容器并添加 Talker 观察者
+// 创建全局 Riverpod 容器（所有窗口共享）
 final ProviderContainer globalContainer = ProviderContainer(
+  // 可按需开启观察者
   // observers: [
-  //   // provider 观察者，记录 provider 生命周期和状态变化
   //   TalkerRiverpodObserver(
   //     talker: log,
   //     settings: const TalkerRiverpodLoggerSettings(printProviderDisposed: true),
@@ -29,27 +31,38 @@ final ProviderContainer globalContainer = ProviderContainer(
   // ],
 );
 
+/// 应用入口（修正异步时序 + 异常处理）
 Future<void> main(List<String> args) async {
   log.info("程序启动参数：$args");
-  // 确保 Flutter 绑定已初始化
-  WidgetsFlutterBinding.ensureInitialized();
-  if (DeviceUtil.isRealDesktop()) {
-    // 1. 获取窗口控制器
-    final windowController = await WindowController.fromCurrentEngine();
-    //注册扩展
-    await windowController.doCustomInitialize();
-    final bool isSubWindow =
-        windowController.arguments.toString().isNotEmpty &&
-        windowController.arguments != "{}";
-    if (isSubWindow) {
-      runSubApp(windowController);
+  try {
+    // 1. 优先初始化 Flutter 核心绑定（必须最先执行）
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // 2. 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
+    await Future.wait([
+      EasyLocalization.ensureInitialized(), // 多语言初始化
+      SPUtil.init(), // 本地存储初始化
+    ]);
+
+    // 3. 注册协议解析器（全局生效）
+    _registerPacketParsers();
+
+    // 4. 桌面端窗口初始化（区分主/子窗口）
+    if (DeviceUtil.isRealDesktop()) {
+      await _handleDesktopWindows(args);
+    } else {
+      // 非桌面端直接启动主窗口
+      await runMainApp();
     }
+  } catch (e, stack) {
+    log.error("应用启动失败", e, stack);
+    // 启动失败兜底（显示错误页面）
+    runApp(_buildErrorPage("应用启动失败：$e"));
   }
+}
 
-  await EasyLocalization.ensureInitialized();
-
-  await SPUtil.init();
-  //解析器注册
+/// 注册协议解析器（抽取为独立函数，便于维护）
+void _registerPacketParsers() {
   PacketRegistry.register(
     PacketType.message,
     (data) => RoomMessage.fromJson(data),
@@ -62,15 +75,55 @@ Future<void> main(List<String> args) async {
     PacketType.highFrequency,
     (data) => HighMessage.fromJson(data),
   );
-  runMainApp();
+  log.info("协议解析器注册完成");
 }
 
-void runMainApp() async {
-  // 预加载 Token (主窗口逻辑)
-  final token = await TokenManager.instance.getToken();
-  log.info('主窗口启动，Token: $token');
+/// 处理桌面端窗口逻辑（主/子窗口区分）
+Future<void> _handleDesktopWindows(List<String> args) async {
+  try {
+    // 获取当前窗口控制器（带异常处理）
+    final windowController = await WindowController.fromCurrentEngine();
+    await windowController.doCustomInitialize();
 
-  log.info('''
+    // 严谨判断是否为子窗口（解析 JSON 而非 toString）
+    final bool isSubWindow = _isSubWindow(windowController.arguments);
+
+    if (isSubWindow) {
+      // 子窗口：继承全局容器，共享状态
+      await runSubApp(windowController);
+    } else {
+      // 主窗口：初始化全局状态（如 Token）并启动
+      await runMainApp();
+    }
+  } catch (e, stack) {
+    log.error("桌面窗口初始化失败", e, stack);
+    runApp(_buildErrorPage("窗口初始化失败：$e"));
+  }
+}
+
+/// 严谨判断是否为子窗口（避免 toString 误判）
+bool _isSubWindow(dynamic arguments) {
+  if (arguments == null) return false;
+  try {
+    // 尝试解析为 JSON，判断是否有子窗口标识
+    final argsMap = arguments is Map
+        ? arguments
+        : jsonDecode(arguments.toString());
+    return argsMap.isNotEmpty;
+  } catch (e) {
+    log.warning("解析窗口参数失败，默认判定为主窗口", e);
+    return false;
+  }
+}
+
+/// 启动主窗口（修正异步逻辑 + 窗口配置）
+Future<void> runMainApp() async {
+  try {
+    // 预加载全局 Token（主窗口核心逻辑）
+    final token = await TokenManager.instance.getToken();
+    log.info('主窗口启动，Token: ${token?.substring(0, 20)}...'); // 脱敏打印
+
+    log.info('''
  _______
 < 主窗口启动 >
  -------
@@ -79,22 +132,35 @@ void runMainApp() async {
             (__)\\       )\\/\\
                 ||----w |
                 ||     ||
-  ''');
-  if (DeviceUtil.isRealDesktop()) {
-    await setupDesktopWindow(size: const Size(1200, 800));
+    ''');
+
+    // 桌面端主窗口配置（标题栏隐藏 + 更大尺寸）
+    if (DeviceUtil.isRealDesktop()) {
+      await setupDesktopWindow(
+        size: const Size(1200, 800),
+        minimumSize: const Size(800, 600),
+        hideTitleBar: true, // 主窗口隐藏标题栏
+      );
+    }
+
+    // 启动主窗口（使用全局容器）
+    runApp(
+      UncontrolledProviderScope(
+        container: globalContainer,
+        child: _buildAppWrapper(const App()),
+      ),
+    );
+  } catch (e, stack) {
+    log.error("主窗口启动失败", e, stack);
+    runApp(_buildErrorPage("主窗口启动失败：$e"));
   }
-  runApp(
-    UncontrolledProviderScope(
-      container: globalContainer,
-      child: _buildAppWrapper(const App()), // 使用主 App 界面
-    ),
-  );
 }
 
-void runSubApp(WindowController controller) async {
-  log.info('子窗口启动');
-
-  log.info('''
+/// 启动子窗口（继承全局容器 + 适配子窗口配置）
+Future<void> runSubApp(WindowController controller) async {
+  try {
+    log.info('子窗口启动，参数：${controller.arguments}');
+    log.info('''
  _______
 < 子窗口启动 >
  -------
@@ -103,19 +169,57 @@ void runSubApp(WindowController controller) async {
             (__)\\       )\\/\\
                 ||----w |
                 ||     ||
-  ''');
+    ''');
 
-  await setupDesktopWindow(size: const Size(800, 600));
+    // 子窗口配置（保留标题栏 + 较小尺寸）
+    if (DeviceUtil.isRealDesktop()) {
+      await setupDesktopWindow(
+        size: const Size(800, 600),
+        minimumSize: const Size(600, 400),
+        hideTitleBar: false, // 子窗口显示标题栏
+      );
+    }
 
-  runApp(
-    ProviderScope(
-      child: _buildAppWrapper(CallWindowPage(controller: controller)),
-    ),
-  );
+    // 启动子窗口（继承全局容器，共享状态）
+    runApp(
+      UncontrolledProviderScope(
+        container: globalContainer,
+        child: _buildAppWrapper(CallWindowPage(controller: controller)),
+      ),
+    );
+  } catch (e, stack) {
+    log.error("子窗口启动失败", e, stack);
+    runApp(_buildErrorPage("子窗口启动失败：$e"));
+  }
 }
 
-// ================= 公共 UI 包装器 =================
-// 确保所有窗口都有多语言和屏幕适配能力
+/// 通用窗口初始化（可配置标题栏/尺寸）
+Future<void> setupDesktopWindow({
+  required Size size,
+  required Size minimumSize,
+  required bool hideTitleBar,
+}) async {
+  await desktop.windowManager.ensureInitialized();
+
+  final desktop.WindowOptions windowOptions = desktop.WindowOptions(
+    size: size,
+    minimumSize: minimumSize,
+    center: true,
+    backgroundColor: Colors.white,
+    // 取消透明背景，避免跨平台显示异常
+    skipTaskbar: false,
+    titleBarStyle: hideTitleBar
+        ? desktop.TitleBarStyle.hidden
+        : desktop.TitleBarStyle.normal,
+  );
+
+  await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await desktop.windowManager.show();
+    await desktop.windowManager.focus();
+  });
+}
+
+/// 公共 UI 包装器（多语言 + 屏幕适配）
 Widget _buildAppWrapper(Widget home) {
   String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
   return EasyLocalization(
@@ -127,51 +231,32 @@ Widget _buildAppWrapper(Widget home) {
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (context, child) => home,
+      builder: (context, child) => MaterialApp(
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        home: home,
+        debugShowCheckedModeBanner: false,
+      ),
     ),
   );
 }
 
-// 抽取一个通用的窗口初始化函数
-Future<void> setupDesktopWindow({required Size size}) async {
-  if (!DeviceUtil.isRealDesktop()) return;
-
-  await desktop.windowManager.ensureInitialized();
-
-  desktop.WindowOptions windowOptions = desktop.WindowOptions(
-    size: size,
-    minimumSize: const Size(800, 600),
-    center: true,
-    backgroundColor: Colors.transparent,
-    skipTaskbar: false,
-    // 主窗口通常隐藏标题栏，子窗口根据需求决定
-    titleBarStyle: desktop.TitleBarStyle.hidden,
+/// 启动失败兜底页面
+Widget _buildErrorPage(String message) {
+  return MaterialApp(
+    home: Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            message,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ),
   );
-
-  await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await desktop.windowManager.show();
-    await desktop.windowManager.focus();
-  });
 }
-// {
-// "topic":"HIGH_FREQUENCY",
-// "data":{
-//   "targetId": "1",
-//   "roomId": "testroom1",
-//   "type": "TYPING_STATUS",
-//   "content": "true"
-// }
-// }
-
-// {
-// "topic":"MESSAGE",
-// "data":{
-//   "messageId": "msg-202512221416001",
-//   "roomId": "testroom1",
-//   "targetId": "1",
-//   "type": "TEXT",
-//   "payload": {
-//     "content": "SINGLE 你好"
-//   }
-// }
-// }
