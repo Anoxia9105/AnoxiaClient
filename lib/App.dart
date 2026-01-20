@@ -1,10 +1,10 @@
+import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
+import 'package:anoxia/framework/services/high_message_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:anoxia/framework/protocol/message/HighMessage.dart';
-import 'package:anoxia/framework/provider/theme/theme_controller.dart';
-import 'package:anoxia/framework/services/high_message_service.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -25,9 +25,9 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   @override
   void initState() {
     super.initState();
-
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
+      windowManager.setPreventClose(true);
       windowManager.addListener(this);
       trayManager.addListener(this);
     }
@@ -71,6 +71,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     } else if (menuItem.key == 'hide_window') {
       windowManager.hide();
     } else if (menuItem.key == 'exit_app') {
+      windowManager.setPreventClose(false);
       windowManager.close();
     }
   }

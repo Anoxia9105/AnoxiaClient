@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:anoxia/main.dart';
+import 'package:anoxia/framework/extensions/window_controller.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -60,15 +60,16 @@ class _NotCodePageState extends State<NotCodePage> {
                     hiddenAtLaunch: true,
                     arguments: jsonEncode({
                       'room': "testroom",
+                      'themeIndex': 4,
                       'userinfo': {'id': 1, 'name': "abc"},
                     }),
                   ),
                 );
 
-                await controller.center();
-
                 // Show the window (if hidden at launch)
-                await controller.show();
+                Future.delayed(Duration(seconds: 1), () async {
+                  await controller.show();
+                });
               },
               icon: Icon(Icons.add),
             ),
@@ -76,6 +77,10 @@ class _NotCodePageState extends State<NotCodePage> {
               onPressed: () async {
                 final result = await _channel.invokeMethod('play');
                 print('main结果: $result');
+                final controllers = WindowController.getAll();
+                for (var controller in await controllers) {
+                  await controller.center();
+                }
               },
               icon: Icon(Icons.send),
             ),
@@ -160,14 +165,14 @@ class _NotCodePageState extends State<NotCodePage> {
                     }
                   }
                   // 跳转页面
-                  if (context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RoomPage(room: room),
-                      ),
-                    );
-                  }
+                  // if (context.mounted) {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (context) => RoomPage(room: room),
+                  //     ),
+                  //   );
+                  // }
                 } catch (e) {
                   // 错误处理
                   if (context.mounted) {

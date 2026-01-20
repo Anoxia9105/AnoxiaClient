@@ -1,9 +1,9 @@
+import 'package:anoxia/framework/provider/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 
 import '../../common/utils/DeviceUtil.dart';
 import '../../framework/provider/theme/font_controller.dart';
@@ -16,6 +16,7 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeIndex = ref.watch(themeIndexProvider);
+    final callWin = ref.read(callWindowControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text("settings_page_title".tr())),
@@ -39,9 +40,14 @@ class SettingsPage extends ConsumerWidget {
                     return SizedBox(
                       width: itemWidth,
                       child: InkWell(
-                        onTap: () => ref
-                            .read(themeIndexProvider.notifier)
-                            .setTheme(index),
+                        onTap: () {
+                          ref.read(themeIndexProvider.notifier).setTheme(index);
+                          if (callWin != null) {
+                            ref
+                                .read(callWindowControllerProvider.notifier)
+                                .updateSettings(themeIndex: index);
+                          }
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -117,7 +123,7 @@ class SettingsPage extends ConsumerWidget {
                   flex: DeviceUtil.isDesktop(context) ? 1 : 2,
                   child: Padding(
                     padding: EdgeInsets.only(right: 10),
-                    child: DropdownButtonFormField<Locale>(
+                    child: DropdownButtonFormField<String>(
                       dropdownColor: Theme.of(context).colorScheme.surface,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
@@ -126,24 +132,20 @@ class SettingsPage extends ConsumerWidget {
                         // fontFamily: setting.fontFamily,
                       ),
                       icon: Icon(Icons.expand_more),
-                      value: context.locale,
+                      initialValue: context.locale.languageCode,
                       items: const [
-                        DropdownMenuItem(
-                          value: Locale('en'),
-                          child: Text("English"),
-                        ),
-                        DropdownMenuItem(
-                          value: Locale('zh'),
-                          child: Text("中文"),
-                        ),
-                        DropdownMenuItem(
-                          value: Locale('ja'),
-                          child: Text("日本語"),
-                        ),
+                        DropdownMenuItem(value: 'en', child: Text("English")),
+                        DropdownMenuItem(value: 'zh', child: Text("中文")),
+                        DropdownMenuItem(value: 'ja', child: Text("日本語")),
                       ],
                       onChanged: (locale) {
                         if (locale != null) {
-                          context.setLocale(locale);
+                          context.setLocale(Locale(locale));
+                          if (callWin != null) {
+                            ref
+                                .read(callWindowControllerProvider.notifier)
+                                .updateSettings(localeCode: locale);
+                          }
                         }
                       },
                     ),
@@ -195,7 +197,9 @@ class SettingsPage extends ConsumerWidget {
                       ],
                       onChanged: (font) {
                         if (font != null) {
-                          ref.read(fontControllerProvider.notifier).setFont(font);
+                          ref
+                              .read(fontControllerProvider.notifier)
+                              .setFont(font);
                         }
                       },
                     ),

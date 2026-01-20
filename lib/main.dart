@@ -1,11 +1,9 @@
-import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
-import 'package:anoxia/pages/SubWindowPage.dart';
+import 'package:anoxia/pages/sub_window/CallWindowPage.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
@@ -13,6 +11,7 @@ import 'package:window_manager/window_manager.dart' as desktop;
 import 'app.dart';
 import 'common/utils/DeviceUtil.dart';
 import 'common/utils/SPUtil.dart';
+import 'framework/extensions/window_controller.dart';
 import 'framework/logs/talker.dart';
 import 'framework/network/TokenManager.dart';
 import 'framework/protocol/PacketType.dart';
@@ -34,28 +33,23 @@ Future<void> main(List<String> args) async {
   log.info("程序启动参数：$args");
   // 确保 Flutter 绑定已初始化
   WidgetsFlutterBinding.ensureInitialized();
-  // 1. 获取窗口控制器
-  final windowController = await WindowController.fromCurrentEngine();
-  //注册扩展
-  // await windowController.doCustomInitialize();
-
-  final bool isSubWindow =
-      windowController.arguments.toString().isNotEmpty &&
-      windowController.arguments != "{}";
-
-  // 3. 公共初始化 (SP, 语言, 解析器)
-  await EasyLocalization.ensureInitialized();
-  await SPUtil.init();
-  setupPacketRegistry();
-
-  if (isSubWindow) {
-    runSubApp(windowController);
-  } else {
-    runMainApp();
+  if (DeviceUtil.isRealDesktop()) {
+    // 1. 获取窗口控制器
+    final windowController = await WindowController.fromCurrentEngine();
+    //注册扩展
+    await windowController.doCustomInitialize();
+    final bool isSubWindow =
+        windowController.arguments.toString().isNotEmpty &&
+        windowController.arguments != "{}";
+    if (isSubWindow) {
+      runSubApp(windowController);
+    }
   }
-}
 
-void setupPacketRegistry() {
+  await EasyLocalization.ensureInitialized();
+
+  await SPUtil.init();
+  //解析器注册
   PacketRegistry.register(
     PacketType.message,
     (data) => RoomMessage.fromJson(data),
@@ -68,6 +62,7 @@ void setupPacketRegistry() {
     PacketType.highFrequency,
     (data) => HighMessage.fromJson(data),
   );
+  runMainApp();
 }
 
 void runMainApp() async {
@@ -85,8 +80,9 @@ void runMainApp() async {
                 ||----w |
                 ||     ||
   ''');
-  await setupDesktopWindow(size: const Size(1200, 800), isMainWindow: true);
-
+  if (DeviceUtil.isRealDesktop()) {
+    await setupDesktopWindow(size: const Size(1200, 800));
+  }
   runApp(
     UncontrolledProviderScope(
       container: globalContainer,
@@ -96,9 +92,7 @@ void runMainApp() async {
 }
 
 void runSubApp(WindowController controller) async {
-  // 预加载 Token (主窗口逻辑)
-  final token = await TokenManager.instance.getToken();
-  log.info('子窗口启动，Token: $token');
+  log.info('子窗口启动');
 
   log.info('''
  _______
@@ -111,12 +105,11 @@ void runSubApp(WindowController controller) async {
                 ||     ||
   ''');
 
-  await setupDesktopWindow(size: const Size(800, 600), isMainWindow: false);
+  await setupDesktopWindow(size: const Size(800, 600));
 
   runApp(
-    UncontrolledProviderScope(
-      container: globalContainer,
-      child: _buildAppWrapper(SubWindowPage(controller: controller)),
+    ProviderScope(
+      child: _buildAppWrapper(CallWindowPage(controller: controller)),
     ),
   );
 }
@@ -125,27 +118,22 @@ void runSubApp(WindowController controller) async {
 // 确保所有窗口都有多语言和屏幕适配能力
 Widget _buildAppWrapper(Widget home) {
   String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
-  return ScreenUtilInit(
-    designSize: const Size(375, 812),
-    minTextAdapt: true,
-    splitScreenMode: true,
-    builder: (context, child) {
-      return EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
-        path: path,
-        fallbackLocale: const Locale('en', 'US'),
-        saveLocale: true,
-        child: home,
-      );
-    },
+  return EasyLocalization(
+    supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+    path: path,
+    fallbackLocale: const Locale('en', 'US'),
+    saveLocale: true,
+    child: ScreenUtilInit(
+      designSize: const Size(375, 812),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) => home,
+    ),
   );
 }
 
 // 抽取一个通用的窗口初始化函数
-Future<void> setupDesktopWindow({
-  required Size size,
-  required bool isMainWindow,
-}) async {
+Future<void> setupDesktopWindow({required Size size}) async {
   if (!DeviceUtil.isRealDesktop()) return;
 
   await desktop.windowManager.ensureInitialized();
@@ -163,10 +151,6 @@ Future<void> setupDesktopWindow({
   await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
     await desktop.windowManager.show();
     await desktop.windowManager.focus();
-    // 只有主窗口我们才设置防止关闭（点击关闭按钮变为隐藏）
-    if (isMainWindow) {
-      await desktop.windowManager.setPreventClose(true);
-    }
   });
 }
 // {
@@ -191,36 +175,3 @@ Future<void> setupDesktopWindow({
 //   }
 // }
 // }
-
-extension WindowControllerExtension on WindowController {
-  Future<void> doCustomInitialize() async {
-    print("挂载。。。。");
-    try {
-      return await setWindowMethodHandler((call) async {
-        switch (call.method) {
-          case 'window_center':
-            return await desktop.windowManager.center();
-          case 'window_close':
-            return await desktop.windowManager.close();
-          default:
-            throw MissingPluginException('Not implemented: ${call.method}');
-        }
-      });
-    } catch (e) {
-      Toast.showToast("异常：$e");
-    }
-  }
-
-  Future<void> center() async {
-    try {
-      print("调用了窗口居中");
-      return invokeMethod('window_center');
-    } catch (e) {
-      Toast.showToast("异常：$e");
-    }
-  }
-
-  Future<void> close() async{
-    return invokeMethod('window_close');
-  }
-}

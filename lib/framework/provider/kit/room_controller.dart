@@ -1,126 +1,148 @@
 import 'dart:async';
 
+import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/framework/logs/talker.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../domain/RoomState.dart';
+import '../../network/DioClient.dart';
 
 part 'room_controller.g.dart';
 
 @riverpod
 class RoomController extends _$RoomController {
-  late final Room _room;
   final List<CancelListenFunc> _roomEventCancels = [];
   StreamSubscription? _deviceSub;
 
   @override
-  RoomState build(Room room) {
-    _room = room;
+  Future<RoomState> build(String token) async {
+    final room = Room(
+      roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
+    );
 
-    // 1. 自动清理资源
-    ref.onDispose(_dispose);
+    // 1. 注册销毁回调（最先注册，确保万无一失）
+    ref.onDispose(() async {
+      _dispose(); // 清理监听
+      await room.disconnect();
+      await room.dispose();
+    });
 
-    // 2. 绑定事件监听
-    _bindRoomEvents();
+    // 2. 异步连接
+    await room.prepareConnection(API.wsRoomBaseUrl, token);
+    await room.connect(API.wsRoomBaseUrl, token);
+
+    // 3. 绑定监听
+    _bindRoomEvents(room);
     _bindDeviceEvents();
 
-    // 3. 异步初始化硬件列表
-    Future.microtask(() => _loadInitialDevices());
-
-    // 4. 返回当前房间的真实快照作为初始状态
-    // 这样 UI 一进来就是正确的，不需要等待第一个事件触发
-    return RoomState.initial().copyWith(
-      connectionState: _room.connectionState,
-      remoteParticipants: _room.remoteParticipants.values.toList(),
-      micEnabled: _room.localParticipant?.isMicrophoneEnabled() ?? true,
-      cameraEnabled: _room.localParticipant?.isCameraEnabled() ?? false,
-      speakerOn: true, // 默认开启扬声器
-    );
-  }
-
-  // ================= 事件绑定 =================
-
-  void _bindRoomEvents() {
-    final cancel = _room.events.listen((event) {
-      if (event is RoomConnectedEvent || event is RoomDisconnectedEvent) {
-        state = state.copyWith(connectionState: _room.connectionState);
-      } else if (event is ParticipantConnectedEvent ||
-          event is ParticipantDisconnectedEvent) {
-        state = state.copyWith(
-          remoteParticipants: _room.remoteParticipants.values.toList(),
-        );
-      }
-      // 当有轨道发布/取消发布时，也可以触发 UI 刷新
-      if (event is TrackPublishedEvent || event is TrackUnpublishedEvent) {
-        state = state.copyWith(
-          remoteParticipants: _room.remoteParticipants.values.toList(),
-        );
-      }
-    });
-    _roomEventCancels.add(cancel);
-  }
-
-  void _bindDeviceEvents() {
-    _deviceSub = Hardware.instance.onDeviceChange.stream.listen(
-      (_) => _loadInitialDevices(),
-    );
-  }
-
-  // ================= 核心功能 API =================
-
-  /// 加载并同步所有硬件设备
-  Future<void> _loadInitialDevices() async {
+    // 4. 获取初始硬件设备
     final devices = await Hardware.instance.enumerateDevices();
-    state = state.copyWith(
+
+    return RoomState(
+      room: room,
+      token: token,
+      connectionState: room.connectionState,
+      micEnabled: room.localParticipant?.isMicrophoneEnabled() ?? false,
+      cameraEnabled: room.localParticipant?.isCameraEnabled() ?? false,
+      screenSharing: false,
+      speakerOn: true,
       audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
       audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
       videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
       currentAudioInput: Hardware.instance.selectedAudioInput,
       currentAudioOutput: Hardware.instance.selectedAudioOutput,
       currentVideoInput: Hardware.instance.selectedVideoInput,
+      remoteParticipants: room.remoteParticipants.values.toList(),
     );
   }
 
-  /// 切换麦克风开关
+  // ================= 事件绑定 =================
+
+  void _bindRoomEvents(Room room) {
+    final cancel = room.events.listen((event) {
+      // 关键：在事件回调内部获取最新状态
+      final currentState = state.value;
+      if (currentState == null) return;
+
+      if (event is RoomConnectedEvent || event is RoomDisconnectedEvent) {
+        log.info("房间状态发生变化：$event");
+        state = AsyncData(currentState.copyWith(connectionState: room.connectionState));
+      } else if (event is ParticipantConnectedEvent || event is ParticipantDisconnectedEvent) {
+        log.info("参与者发生变化：$event");
+        state = AsyncData(currentState.copyWith(
+          remoteParticipants: room.remoteParticipants.values.toList(),
+        ));
+      } else if (event is TrackPublishedEvent || event is TrackUnpublishedEvent) {
+        log.info("轨道发生变化：$event");
+        state = AsyncData(currentState.copyWith(
+          remoteParticipants: room.remoteParticipants.values.toList(),
+        ));
+      }
+    });
+    _roomEventCancels.add(cancel);
+  }
+
+  void _bindDeviceEvents() {
+    _deviceSub = Hardware.instance.onDeviceChange.stream.listen((_) => _loadInitialDevices());
+  }
+
+  // ================= 核心功能 API =================
+
+  Future<void> _loadInitialDevices() async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final devices = await Hardware.instance.enumerateDevices();
+    state = AsyncData(currentState.copyWith(
+      audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
+      audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
+      videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
+      currentAudioInput: Hardware.instance.selectedAudioInput,
+      currentAudioOutput: Hardware.instance.selectedAudioOutput,
+      currentVideoInput: Hardware.instance.selectedVideoInput,
+    ));
+  }
+
   Future<void> toggleMic() async {
-    final next = !state.micEnabled;
-    await _room.localParticipant?.setMicrophoneEnabled(next);
-    state = state.copyWith(micEnabled: next);
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final next = !currentState.micEnabled;
+    await currentState.room.localParticipant?.setMicrophoneEnabled(next);
+    state = AsyncData(currentState.copyWith(micEnabled: next));
   }
 
-  /// 切换摄像头开关
   Future<void> toggleCamera() async {
-    final next = !state.cameraEnabled;
-    await _room.localParticipant?.setCameraEnabled(next);
-    state = state.copyWith(cameraEnabled: next);
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final next = !currentState.cameraEnabled;
+    await currentState.room.localParticipant?.setCameraEnabled(next);
+    state = AsyncData(currentState.copyWith(cameraEnabled: next));
   }
 
-  /// 切换屏幕共享
   Future<void> toggleScreenShare(BuildContext context) async {
-    final next = !state.screenSharing;
+    final currentState = state.value;
+    if (currentState == null) return;
 
+    final next = !currentState.screenSharing;
     try {
       if (next) {
         String? sourceId;
-
-        // 1. 如果是桌面端，必须弹出你源码里的那个对话框
         if (lkPlatformIsDesktop()) {
           final source = await showDialog<rtc.DesktopCapturerSource?>(
             context: context,
             builder: (context) => ScreenSelectDialog(),
           );
-
-          // 如果用户取消了选择，直接返回，不开启共享
           if (source == null) return;
           sourceId = source.id;
         }
 
         if (!context.mounted) return;
-        print(
-          "准备创建轨道，使用 SourceID: '${sourceId}' (类型: ${sourceId.runtimeType})",
-        );
         final options = ScreenShareCaptureOptions(
           sourceId: sourceId,
           captureScreenAudio: true,
@@ -128,70 +150,61 @@ class RoomController extends _$RoomController {
           params: VideoParametersPresets.screenShareH1080FPS30,
         );
         var track = await LocalVideoTrack.createScreenShareTrack(options);
-        print("轨道创建成功，准备发布...$track");
-        await _room.localParticipant?.publishVideoTrack(track);
-        print("_room发布成功");
+        await currentState.room.localParticipant?.publishVideoTrack(track);
       } else {
-        final screenTracks = _room.localParticipant?.videoTrackPublications
-            .where((p) => p.source == TrackSource.screenShareVideo)
-            .toList();
-
-        if (screenTracks != null) {
-          for (var t in screenTracks) {
-            // await _room.localParticipant?.unpublishAllTracks(notify: true,stopOnUnpublish: true);
-            await t
-                .mute(); // 或者 await _room.localParticipant.unpublishTrack(t.track!.sid!);
-            if (t.track != null) {
-              await _room.localParticipant?.unpublishAllTracks();
-            }
-          }
-        }
+        await currentState.room.localParticipant?.unpublishAllTracks();
       }
-
-      // 3. 更新状态
-      state = state.copyWith(screenSharing: next);
+      state = AsyncData(currentState.copyWith(screenSharing: next));
     } catch (e) {
-      print("屏幕共享操作失败: $e");
-      // 发生错误（如权限拒绝）时，重置 UI 状态
-      state = state.copyWith(screenSharing: false);
+      log.error("屏幕共享操作失败: $e");
+      state = AsyncData(currentState.copyWith(screenSharing: false));
     }
   }
 
-  /// 切换扬声器/听筒 (Native 平台支持)
   Future<void> toggleSpeaker() async {
-    final next = !state.speakerOn;
-    await _room.setSpeakerOn(next);
-    state = state.copyWith(speakerOn: next);
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final next = !currentState.speakerOn;
+    await currentState.room.setSpeakerOn(next);
+    state = AsyncData(currentState.copyWith(speakerOn: next));
   }
 
-  /// 切换具体的输入设备（如换一个摄像头或麦克风）
   Future<void> switchAudioInput(MediaDevice device) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
     await Hardware.instance.selectAudioInput(device);
-    state = state.copyWith(currentAudioInput: device);
+    state = AsyncData(currentState.copyWith(currentAudioInput: device));
   }
 
   Future<void> switchVideoInput(MediaDevice device) async {
-    await _room.setVideoInputDevice(device);
-    state = state.copyWith(currentVideoInput: device);
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    await currentState.room.setVideoInputDevice(device);
+    state = AsyncData(currentState.copyWith(currentVideoInput: device));
   }
 
   Future<void> leave() async {
-    try {
-      // 在 LiveKit 中，断开连接使用 disconnect()
-      await _room.disconnect();
-      print("已成功离开房间");
-    } catch (e) {
-      print("离开房间时出错: $e");
-    }
+    state.value?.room.disconnect();
   }
-
-  // ================= 资源释放 =================
 
   void _dispose() {
     for (var cancel in _roomEventCancels) {
       cancel();
     }
     _deviceSub?.cancel();
-    // 注意：Room 对象通常在 NotCodePage 处 disconnect，这里负责清理 Provider 内部监听
   }
+}
+
+@riverpod
+Future<String> roomToken(Ref ref, String roomId) async {
+  final res = await DioClient().get(
+    "/call/room",
+    queryParameters: {"roomId": roomId},
+    options: Options(responseType: ResponseType.plain),
+  );
+
+  return res.data.toString();
 }

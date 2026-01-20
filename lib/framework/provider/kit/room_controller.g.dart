@@ -13,10 +13,10 @@ part of 'room_controller.dart';
 const roomControllerProvider = RoomControllerFamily._();
 
 final class RoomControllerProvider
-    extends $NotifierProvider<RoomController, RoomState> {
+    extends $AsyncNotifierProvider<RoomController, RoomState> {
   const RoomControllerProvider._({
     required RoomControllerFamily super.from,
-    required Room super.argument,
+    required String super.argument,
   }) : super(
          retry: null,
          name: r'roomControllerProvider',
@@ -39,14 +39,6 @@ final class RoomControllerProvider
   @override
   RoomController create() => RoomController();
 
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(RoomState value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<RoomState>(value),
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     return other is RoomControllerProvider && other.argument == argument;
@@ -58,16 +50,16 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'085641249eb7cd62c252e5f78c77b07bcf2c9a41';
+String _$roomControllerHash() => r'8f6bc76473e1c35dd408bd8bcc5dee4c73282377';
 
 final class RoomControllerFamily extends $Family
     with
         $ClassFamilyOverride<
           RoomController,
+          AsyncValue<RoomState>,
           RoomState,
-          RoomState,
-          RoomState,
-          Room
+          FutureOr<RoomState>,
+          String
         > {
   const RoomControllerFamily._()
     : super(
@@ -78,31 +70,100 @@ final class RoomControllerFamily extends $Family
         isAutoDispose: true,
       );
 
-  RoomControllerProvider call(Room room) =>
-      RoomControllerProvider._(argument: room, from: this);
+  RoomControllerProvider call(String token) =>
+      RoomControllerProvider._(argument: token, from: this);
 
   @override
   String toString() => r'roomControllerProvider';
 }
 
-abstract class _$RoomController extends $Notifier<RoomState> {
-  late final _$args = ref.$arg as Room;
-  Room get room => _$args;
+abstract class _$RoomController extends $AsyncNotifier<RoomState> {
+  late final _$args = ref.$arg as String;
+  String get token => _$args;
 
-  RoomState build(Room room);
+  FutureOr<RoomState> build(String token);
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build(_$args);
-    final ref = this.ref as $Ref<RoomState, RoomState>;
+    final ref = this.ref as $Ref<AsyncValue<RoomState>, RoomState>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<RoomState, RoomState>,
-              RoomState,
+              AnyNotifier<AsyncValue<RoomState>, RoomState>,
+              AsyncValue<RoomState>,
               Object?,
               Object?
             >;
     element.handleValue(ref, created);
   }
+}
+
+@ProviderFor(roomToken)
+const roomTokenProvider = RoomTokenFamily._();
+
+final class RoomTokenProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  const RoomTokenProvider._({
+    required RoomTokenFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'roomTokenProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$roomTokenHash();
+
+  @override
+  String toString() {
+    return r'roomTokenProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    final argument = this.argument as String;
+    return roomToken(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RoomTokenProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$roomTokenHash() => r'7489ed39fa57044703b07a72755f943ce5627398';
+
+final class RoomTokenFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<String>, String> {
+  const RoomTokenFamily._()
+    : super(
+        retry: null,
+        name: r'roomTokenProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  RoomTokenProvider call(String roomId) =>
+      RoomTokenProvider._(argument: roomId, from: this);
+
+  @override
+  String toString() => r'roomTokenProvider';
 }

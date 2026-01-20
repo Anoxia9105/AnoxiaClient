@@ -11,6 +11,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   // 是否隐藏应用栏Logo
   final bool hideAppBarLogo;
 
+
   const DesktopAppBar({super.key, this.hideAppBarLogo = false});
 
   @override
@@ -55,7 +56,6 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           padding: EdgeInsets.zero,
           hoverColor: Colors.red,
           onPressed: () {
-            //隐藏窗口 不退出程序
             windowManager.hide();
           },
           style: ButtonStyle(

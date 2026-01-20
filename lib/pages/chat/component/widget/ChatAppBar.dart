@@ -1,14 +1,17 @@
+import 'package:anoxia/framework/provider/call/call_window_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../framework/domain/ChatRoomVO.dart';
 import '../../../../framework/protocol/message/HighMessage.dart';
+import '../../../../framework/provider/theme/theme_controller.dart';
 import '../../../../framework/services/high_message_service.dart';
 import '../../../../framework/services/room_list_service.dart';
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final VoidCallback onTap;
+
   const ChatAppBar({super.key, required this.onTap});
 
   @override
@@ -22,6 +25,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
     );
 
+    final currentRoom = roomListAsync.value?.firstWhere(
+      (r) => r.roomId == activeId,
+      orElse: () => ChatRoomVO(),
+    );
+
     return AppBar(
       actionsPadding: EdgeInsets.all(4),
       shape: Border(
@@ -32,15 +40,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       title: roomListAsync.when(
         data: (rooms) {
-          final currentRoom = rooms.firstWhere(
-            (r) => r.roomId == activeId,
-            orElse: () => ChatRoomVO(),
-          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                currentRoom.roomName ?? '对话详情',
+                currentRoom?.roomName ?? '对话详情',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -62,7 +66,15 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            ref
+                .read(callWindowControllerProvider.notifier)
+                .openCallWindow(
+                  title: currentRoom?.roomName ?? '',
+                  themeIndex: ref.read(themeIndexProvider),
+                  roomId: currentRoom?.roomId ?? ''
+                );
+          },
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedCall02, size: 20),
         ),
         IconButton(
