@@ -2,7 +2,6 @@ import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:livekit_client/livekit_client.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../framework/provider/kit/room_controller.dart';
