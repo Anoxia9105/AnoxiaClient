@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../framework/provider/kit/room_controller.dart';
+import '../../../framework/provider/kit/room_controller.dart';
 
 class CommandBar extends ConsumerWidget {
   final RoomState state;
@@ -33,13 +33,15 @@ class CommandBar extends ConsumerWidget {
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 2,
             offset: const Offset(0, 1),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -56,36 +58,40 @@ class CommandBar extends ConsumerWidget {
                 // 麦克风控制
                 _buildActionButton(
                   onPressed: () => notifier.toggleMic(),
-                  icon: state.micEnabled ? HugeIcons.strokeRoundedMic01 : HugeIcons.strokeRoundedMicOff01,
+                  icon: state.micEnabled
+                      ? HugeIcons.strokeRoundedMic01
+                      : HugeIcons.strokeRoundedMicOff01,
                   label: state.micEnabled ? "静音" : "取消静音",
-                  color: state.micEnabled ? null : Colors.red,
                 ),
                 SizedBox(width: 16),
 
                 // 摄像头控制
                 _buildActionButton(
                   onPressed: () => notifier.toggleCamera(),
-                  icon: state.cameraEnabled ? HugeIcons.strokeRoundedVideo01 : HugeIcons.strokeRoundedVideoOff,
+                  icon: state.cameraEnabled
+                      ? HugeIcons.strokeRoundedVideo01
+                      : HugeIcons.strokeRoundedVideoOff,
                   label: "摄像头",
-                  color: state.cameraEnabled ? Colors.green : null,
                 ),
                 SizedBox(width: 16),
 
                 // 扬声器控制
                 _buildActionButton(
                   onPressed: () => notifier.toggleSpeaker(),
-                  icon: state.speakerOn ? HugeIcons.strokeRoundedVolumeUp : HugeIcons.strokeRoundedVolumeOff,
+                  icon: state.speakerOn
+                      ? HugeIcons.strokeRoundedVolumeUp
+                      : HugeIcons.strokeRoundedVolumeOff,
                   label: state.speakerOn ? "扬声器" : "听筒",
-                  color: state.speakerOn ? Colors.blue : null,
                 ),
                 SizedBox(width: 16),
 
                 // 屏幕共享
                 _buildActionButton(
                   onPressed: () => notifier.toggleScreenShare(context),
-                  icon: state.screenSharing ? HugeIcons.strokeRoundedComputerRemove : HugeIcons.strokeRoundedComputerScreenShare,
+                  icon: state.screenSharing
+                      ? HugeIcons.strokeRoundedComputerRemove
+                      : HugeIcons.strokeRoundedComputerScreenShare,
                   label: "共享",
-                  color: state.screenSharing ? Colors.purple : null,
                 ),
               ],
             ),
@@ -109,9 +115,13 @@ class CommandBar extends ConsumerWidget {
   }
 
   /// 设备选择下拉菜单
-  Widget _buildDeviceMenu(BuildContext context, WidgetRef ref, RoomController notifier) {
+  Widget _buildDeviceMenu(
+    BuildContext context,
+    WidgetRef ref,
+    RoomController notifier,
+  ) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.devices_rounded),
+      icon: HugeIcon(icon: HugeIcons.strokeRoundedBoundingBox),
       tooltip: "设备选择",
       itemBuilder: (context) {
         return [
@@ -119,20 +129,27 @@ class CommandBar extends ConsumerWidget {
           if (state.audioInputs.isNotEmpty)
             PopupMenuItem(
               enabled: false,
-              child: Text("麦克风", style: TextStyle(color: Theme.of(context).hintColor)),
+              child: Text(
+                "麦克风",
+                style: TextStyle(color: Theme.of(context).hintColor),
+              ),
             ),
-          ...state.audioInputs.map((device) => PopupMenuItem(
-            value: "mic_${device.deviceId}",
-            child: Row(
-              children: [
-                if (state.currentAudioInput?.deviceId == device.deviceId)
-                  const Icon(Icons.check, size: 16),
-                const SizedBox(width: 8),
-                Expanded(child: Text(device.label, overflow: TextOverflow.ellipsis)),
-              ],
+          ...state.audioInputs.map(
+            (device) => PopupMenuItem(
+              value: "mic_${device.deviceId}",
+              child: Row(
+                children: [
+                  if (state.currentAudioInput?.deviceId == device.deviceId)
+                    const Icon(Icons.check, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(device.label, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+              onTap: () => notifier.switchAudioInput(device),
             ),
-            onTap: () => notifier.switchAudioInput(device),
-          )),
+          ),
 
           const PopupMenuDivider(),
 
@@ -140,20 +157,27 @@ class CommandBar extends ConsumerWidget {
           if (state.videoInputs.isNotEmpty)
             PopupMenuItem(
               enabled: false,
-              child: Text("摄像头", style: TextStyle(color: Theme.of(context).hintColor)),
+              child: Text(
+                "摄像头",
+                style: TextStyle(color: Theme.of(context).hintColor),
+              ),
             ),
-          ...state.videoInputs.map((device) => PopupMenuItem(
-            value: "cam_${device.deviceId}",
-            child: Row(
-              children: [
-                if (state.currentVideoInput?.deviceId == device.deviceId)
-                  const Icon(Icons.check, size: 16),
-                const SizedBox(width: 8),
-                Expanded(child: Text(device.label, overflow: TextOverflow.ellipsis)),
-              ],
+          ...state.videoInputs.map(
+            (device) => PopupMenuItem(
+              value: "cam_${device.deviceId}",
+              child: Row(
+                children: [
+                  if (state.currentVideoInput?.deviceId == device.deviceId)
+                    const Icon(Icons.check, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(device.label, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+              onTap: () => notifier.switchVideoInput(device),
             ),
-            onTap: () => notifier.switchVideoInput(device),
-          )),
+          ),
 
           const PopupMenuDivider(),
 
@@ -161,20 +185,27 @@ class CommandBar extends ConsumerWidget {
           if (state.audioOutputs.isNotEmpty)
             PopupMenuItem(
               enabled: false,
-              child: Text("扬声器", style: TextStyle(color: Theme.of(context).hintColor)),
+              child: Text(
+                "扬声器",
+                style: TextStyle(color: Theme.of(context).hintColor),
+              ),
             ),
-          ...state.audioOutputs.map((device) => PopupMenuItem(
-            value: "speaker_${device.deviceId}",
-            child: Row(
-              children: [
-                if (state.currentAudioOutput?.deviceId == device.deviceId)
-                  const Icon(Icons.check, size: 16),
-                const SizedBox(width: 8),
-                Expanded(child: Text(device.label, overflow: TextOverflow.ellipsis)),
-              ],
+          ...state.audioOutputs.map(
+            (device) => PopupMenuItem(
+              value: "speaker_${device.deviceId}",
+              child: Row(
+                children: [
+                  if (state.currentAudioOutput?.deviceId == device.deviceId)
+                    const Icon(Icons.check, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(device.label, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+              onTap: () => notifier.switchAudioOutput(device),
             ),
-            onTap: () => notifier.switchAudioOutput(device),
-          )),
+          ),
         ];
       },
     );
@@ -185,56 +216,41 @@ class CommandBar extends ConsumerWidget {
     required VoidCallback onPressed,
     required List<List<dynamic>> icon,
     required String label,
-    Color? color,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
+          tooltip: label,
           onPressed: onPressed,
-          icon: HugeIcon(
-            icon: icon,
-            size: 24,
-            color: color ?? Colors.white,
-          ),
+          icon: HugeIcon(icon: icon, size: 20),
           iconSize: 24,
           padding: EdgeInsets.all(8),
           constraints: BoxConstraints(minWidth: 40, minHeight: 40),
         ),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: color ?? Colors.white,
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 10)),
       ],
     );
   }
 
   /// 构建挂断按钮
   Widget _buildHangupButton(BuildContext context, RoomController notifier) {
-    return SizedBox(
-      height: 40,
-      child: TextButton.icon(
-        style: TextButton.styleFrom(
-          backgroundColor: Colors.redAccent,
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: "挂断",
+          onPressed: () async {
+            await notifier.leave();
+            if (context.mounted) {
+              await windowManager.close();
+            }
+          },
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedCallRinging03, size: 24,color: Colors.redAccent,strokeWidth: 2),
+          iconSize: 24,
         ),
-        onPressed: () async {
-          await notifier.leave();
-          if (context.mounted) {
-            await windowManager.close();
-          }
-        },
-        icon: Icon(Icons.call_end, size: 18),
-        label: Text("挂断", style: TextStyle(fontSize: 14)),
-      ),
+        Text("挂断", style: TextStyle(fontSize: 10)),
+      ],
     );
   }
 }

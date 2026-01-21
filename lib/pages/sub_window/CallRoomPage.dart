@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/logs/talker.dart';
-import 'package:anoxia/pages/sub_window/CommandBar.dart';
+import 'package:anoxia/pages/sub_window/component/CommandBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -27,31 +27,63 @@ class CallRoomPage extends ConsumerWidget {
           // 主内容
           roomAsync.when(
             loading: () => _buildLoadingState(),
-            error: (err, stack) => _buildErrorState(err.toString(),ref),
+            error: (err, stack) => _buildErrorState(err.toString(), ref),
             data: (roomState) => _buildRoomContent(roomState),
           ),
 
           // 重连状态浮层
           if (roomAsync.value?.isReconnecting ?? false)
             Positioned(
-              top: 100.h,
-              left: 0,
-              right: 0,
+              top: 80.h,
+              left: 24.w,
+              right: 24.w,
               child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 24.w),
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(strokeWidth: 2),
-                    SizedBox(width: 8.w),
-                    Text(
-                      "连接已断开，正在重连...",
-                      style: TextStyle(color: Colors.white, fontSize: 14.sp),
+                    SizedBox(
+                      width: 20.w,
+                      height: 20.h,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "连接已断开",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            "正在自动重连...",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -64,44 +96,132 @@ class CallRoomPage extends ConsumerWidget {
 
   /// 加载状态
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text("正在连接通话房间...", style: TextStyle(fontSize: 14)),
+          Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+            ),
+          ),
+          SizedBox(height: 24.h),
+          Text(
+            "正在连接通话房间...",
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            "请稍候",
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+          ),
         ],
       ),
     );
   }
 
   /// 错误状态
-  Widget _buildErrorState(String error,WidgetRef ref) {
+  Widget _buildErrorState(String error, WidgetRef ref) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            SizedBox(height: 16.h),
-            Text(
-              "连接失败",
-              style: TextStyle(fontSize: 18.sp, color: Colors.red),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              "错误信息: $error",
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16.h),
-            ElevatedButton(
-              onPressed: () =>  ref.invalidate(roomControllerProvider(token)),
-              child: const Text("重新尝试"),
-            ),
-          ],
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Container(
+          padding: EdgeInsets.all(32.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.error_outline,
+                  color: Colors.red.shade600,
+                  size: 48.sp,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                "连接失败",
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  error,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey[700],
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () =>
+                      ref.invalidate(roomControllerProvider(token)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    "重新尝试",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -127,13 +247,43 @@ class CallRoomPage extends ConsumerWidget {
 
     // 空状态
     if (participants.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.video_call_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text("暂无通话参与者", style: TextStyle(fontSize: 16, color: Colors.grey)),
+            Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.video_call_outlined,
+                size: 64.sp,
+                color: Colors.grey[400],
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Text(
+              "暂无通话参与者",
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              "等待其他人加入...",
+              style: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
+            ),
           ],
         ),
       );
@@ -160,7 +310,8 @@ class CallRoomPage extends ConsumerWidget {
           mainAxisSpacing: 8.h,
           childAspectRatio: 16 / 9,
         ),
-        itemBuilder: (context, index) => _buildParticipantItem(context, participants[index]),
+        itemBuilder: (context, index) =>
+            _buildParticipantItem(context, participants[index]),
       ),
     );
   }
@@ -179,133 +330,124 @@ class CallRoomPage extends ConsumerWidget {
 
     final avatarUrl = userData['avatar'] ?? "";
     final nickName = userData['nickName'] ?? participant.identity;
-    final isLocal = participant is LocalParticipant;
 
     // 判断音频状态（是否静音）
     final isMuted = participant is LocalParticipant
         ? !participant.isMicrophoneEnabled()
         : participant.audioTrackPublications.isEmpty ||
-        participant.audioTrackPublications.first.track == null ||
-        !participant.audioTrackPublications.first.subscribed;
+              participant.audioTrackPublications.first.track == null ||
+              !participant.audioTrackPublications.first.subscribed;
 
     // 获取视频轨道（优先屏幕共享轨道）
     VideoTrack? videoTrack;
-    if (participant is LocalParticipant && participant.videoTrackPublications.length > 1) {
+    if (participant.videoTrackPublications.length > 1) {
       // 本地参与者有多个视频轨道时，优先显示屏幕共享
-      videoTrack = participant.videoTrackPublications
-          .where((t) => t.track?.source == TrackSource.screenShareVideo)
-          .firstOrNull?.track as VideoTrack?;
+      final screenTrack =
+          participant.videoTrackPublications
+                  .where((t) => t.track?.source == TrackSource.screenShareVideo)
+                  .firstOrNull
+                  ?.track
+              as VideoTrack?;
+      // 检查屏幕共享轨道是否有效且未被静音
+      if (screenTrack != null && !screenTrack.muted) {
+        videoTrack = screenTrack;
+      }
     }
 
     // 没有屏幕共享轨道则用普通视频轨道
-    videoTrack ??= participant.videoTrackPublications
-        .where((track) => track.track != null && track.subscribed)
-        .firstOrNull?.track as VideoTrack?;
+    if (videoTrack == null) {
+      final cameraTrack =
+          participant.videoTrackPublications
+                  .where(
+                    (track) =>
+                        track.track != null &&
+                        track.subscribed &&
+                        track.track!.source != TrackSource.screenShareVideo,
+                  )
+                  .firstOrNull
+                  ?.track
+              as VideoTrack?;
+      // 检查摄像头轨道是否有效且未被静音
+      if (cameraTrack != null && !cameraTrack.muted) {
+        videoTrack = cameraTrack;
+      }
+    }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8.r),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(width: 1.w, color: Colors.grey.withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(8.r),
-          color: Colors.grey[100],
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 视频渲染/占位图
-            _buildVideoContent(videoTrack, avatarUrl, nickName),
+    return Container(
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.r)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.r),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              width: 1,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.1),
+            ),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 视频渲染/占位图
+              _buildVideoContent(videoTrack, avatarUrl, nickName),
 
-            // 参与者信息栏
-            Positioned(
-              bottom: 8.h,
-              left: 8.w,
-              right: 8.w,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-                child: Row(
-                  children: [
-                    // 本地/远程标识
-                    if (isLocal)
-                      Container(
-                        margin: EdgeInsets.only(right: 4.w),
-                        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(2.r),
+              // 参与者信息栏
+              Positioned(
+                bottom: 12,
+                left: 12,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isMuted) ...[
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedMicOff01,
+                          size: 16,
                         ),
-                        child: Text(
-                          "我",
-                          style: TextStyle(fontSize: 8.sp, color: Colors.white),
-                        ),
-                      ),
-
-                    // 昵称
-                    Expanded(
-                      child: Text(
+                        SizedBox(width: 4),
+                      ],
+                      if (!isMuted) ...[
+                        HugeIcon(icon: HugeIcons.strokeRoundedMic01, size: 16),
+                        SizedBox(width: 4),
+                      ],
+                      Text(
                         nickName,
                         style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-
-                    // 静音状态
-                    if (isMuted)
-                      Icon(Icons.mic_off, size: 14.sp, color: Colors.red),
-                  ],
-                ),
-              ),
-            ),
-
-            // 视频状态提示
-            if (videoTrack == null)
-              Positioned(
-                top: 8.h,
-                right: 8.h,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                  child: Text(
-                    "视频关闭",
-                    style: TextStyle(fontSize: 10.sp, color: Colors.white),
+                    ],
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// 视频内容/占位图
-  Widget _buildVideoContent(VideoTrack? videoTrack, String avatarUrl, String nickName) {
+  Widget _buildVideoContent(
+    VideoTrack? videoTrack,
+    String avatarUrl,
+    String nickName,
+  ) {
     if (videoTrack != null) {
-      return VideoTrackRenderer(
-        videoTrack,
-        fit: VideoViewFit.cover,
-      );
+      return VideoTrackRenderer(videoTrack, fit: VideoViewFit.cover);
     } else {
-      return Container(
-        color: Colors.grey[200],
-        child: Center(
-          child: AvatarWidget(
-            size: 64.w,
-            url: avatarUrl,
-            name: nickName,
-          ),
-        ),
+      return Center(
+        child: AvatarWidget(size: 48.w, url: avatarUrl, name: nickName),
       );
     }
   }

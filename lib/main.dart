@@ -138,8 +138,7 @@ Future<void> runMainApp() async {
     if (DeviceUtil.isRealDesktop()) {
       await setupDesktopWindow(
         size: const Size(1200, 800),
-        minimumSize: const Size(800, 600),
-        hideTitleBar: true, // 主窗口隐藏标题栏
+        minimumSize: const Size(800, 600)
       );
     }
 
@@ -176,7 +175,6 @@ Future<void> runSubApp(WindowController controller) async {
       await setupDesktopWindow(
         size: const Size(800, 600),
         minimumSize: const Size(600, 400),
-        hideTitleBar: false, // 子窗口显示标题栏
       );
     }
 
@@ -197,7 +195,6 @@ Future<void> runSubApp(WindowController controller) async {
 Future<void> setupDesktopWindow({
   required Size size,
   required Size minimumSize,
-  required bool hideTitleBar,
 }) async {
   await desktop.windowManager.ensureInitialized();
 
@@ -208,9 +205,7 @@ Future<void> setupDesktopWindow({
     backgroundColor: Colors.white,
     // 取消透明背景，避免跨平台显示异常
     skipTaskbar: false,
-    titleBarStyle: hideTitleBar
-        ? desktop.TitleBarStyle.hidden
-        : desktop.TitleBarStyle.normal,
+    titleBarStyle: desktop.TitleBarStyle.hidden
   );
 
   await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {

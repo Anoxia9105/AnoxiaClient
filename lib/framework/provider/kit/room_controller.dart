@@ -9,49 +9,11 @@ import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../pages/sub_window/component/WindowScreenSelectDialog.dart';
 import '../../domain/RoomState.dart';
 import '../../network/DioClient.dart';
 
 part 'room_controller.g.dart';
-
-// 屏幕选择弹窗（补充缺失的组件）
-class ScreenSelectDialog extends StatelessWidget {
-  const ScreenSelectDialog({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      child: SizedBox(
-        width: 400,
-        height: 500,
-        child: FutureBuilder<List<rtc.DesktopCapturerSource>>(
-          future: rtc.desktopCapturer.getSources(
-            types: [rtc.SourceType.Screen, rtc.SourceType.Window],
-          ),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final sources = snapshot.data!;
-            return ListView.builder(
-              itemCount: sources.length,
-              itemBuilder: (context, index) {
-                final source = sources[index];
-                return ListTile(
-                  leading: source.thumbnail != null
-                      ? Image.memory(source.thumbnail!, width: 40, height: 30)
-                      : const Icon(Icons.desktop_windows),
-                  title: Text(source.name),
-                  onTap: () => Navigator.pop(context, source),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
 
 @riverpod
 class RoomController extends _$RoomController {
@@ -64,14 +26,14 @@ class RoomController extends _$RoomController {
   static const int _maxReconnectAttempts = 5;
   int _reconnectAttempts = 0;
 
+  // 操作防抖
+  bool _isToggling = false;
+
   @override
   Future<RoomState> build(String token) async {
     // 初始化房间实例
     final room = Room(
-      roomOptions: const RoomOptions(
-        adaptiveStream: true,
-        dynacast: true,
-      ),
+      roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
     );
 
     // 注册销毁回调（最高优先级）
@@ -127,10 +89,12 @@ class RoomController extends _$RoomController {
   Future<void> _connectRoom(Room room, String token) async {
     await Future.wait([
       room.prepareConnection(API.wsRoomBaseUrl, token),
-      room.connect(API.wsRoomBaseUrl, token).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw TimeoutException("连接房间超时"),
-      ),
+      room
+          .connect(API.wsRoomBaseUrl, token)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw TimeoutException("连接房间超时"),
+          ),
     ]);
     log.info("房间连接成功: ${room.name}");
   }
@@ -166,37 +130,50 @@ class RoomController extends _$RoomController {
   /// 绑定房间事件
   void _bindRoomEvents(Room room) {
     // 连接状态变化
-    _roomEventCancels.add(room.events.listen((event) {
-      final currentState = state.value;
-      if (currentState == null) return;
+    _roomEventCancels.add(
+      room.events.listen((event) {
+        final currentState = state.value;
+        if (currentState == null) return;
 
-      if (event is RoomConnectedEvent || event is RoomDisconnectedEvent) {
-        log.info("房间状态变化: ${room.connectionState}");
-        state = AsyncData(currentState.copyWith(
-          connectionState: room.connectionState,
-          isReconnecting: false,
-          connectionError: null,
-        ));
-        _reconnectAttempts = 0; // 重置重连次数
-      } else if (event is ParticipantConnectedEvent || event is ParticipantDisconnectedEvent) {
-        log.info("参与者变化: $event");
-        state = AsyncData(currentState.copyWith(
-          remoteParticipants: room.remoteParticipants.values.toList(),
-        ));
-      } else if (event is TrackPublishedEvent || event is TrackUnpublishedEvent) {
-        log.info("轨道状态变化: ${event}");
-        state = AsyncData(currentState.copyWith(
-          remoteParticipants: room.remoteParticipants.values.toList(),
-        ));
-      } else if (event is RoomDisconnectedEvent) {
-        log.error("房间解散: ${event}");
-        state = AsyncData(currentState.copyWith(
-          connectionError: "房间链接失败",
-          isReconnecting: true,
-        ));
-        _startReconnect(room); // 触发重连
-      }
-    }));
+        if (event is RoomConnectedEvent) {
+          log.info("房间已连接");
+          state = AsyncData(
+            currentState.copyWith(
+              connectionState: room.connectionState,
+              isReconnecting: false,
+              connectionError: null,
+            ),
+          );
+          _reconnectAttempts = 0; // 重置重连次数
+        } else if (event is RoomDisconnectedEvent) {
+          log.error("房间已断开: ${event.reason}");
+          state = AsyncData(
+            currentState.copyWith(
+              connectionState: room.connectionState,
+              connectionError: "连接已断开",
+              isReconnecting: true,
+            ),
+          );
+          _startReconnect(room); // 触发重连
+        } else if (event is ParticipantConnectedEvent ||
+            event is ParticipantDisconnectedEvent) {
+          log.info("参与者变化: $event");
+          state = AsyncData(
+            currentState.copyWith(
+              remoteParticipants: room.remoteParticipants.values.toList(),
+            ),
+          );
+        } else if (event is TrackPublishedEvent ||
+            event is TrackUnpublishedEvent) {
+          log.info("轨道状态变化: $event");
+          state = AsyncData(
+            currentState.copyWith(
+              remoteParticipants: room.remoteParticipants.values.toList(),
+            ),
+          );
+        }
+      }),
+    );
   }
 
   /// 绑定设备事件
@@ -206,17 +183,18 @@ class RoomController extends _$RoomController {
     });
   }
 
-
   /// 启动重连逻辑
   void _startReconnect(Room room) {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       log.error("重连次数达到上限，停止重连");
       final currentState = state.value;
       if (currentState != null) {
-        state = AsyncData(currentState.copyWith(
-          isReconnecting: false,
-          connectionError: "重连失败，请手动重新连接",
-        ));
+        state = AsyncData(
+          currentState.copyWith(
+            isReconnecting: false,
+            connectionError: "重连失败，请手动重新连接",
+          ),
+        );
       }
       return;
     }
@@ -224,7 +202,7 @@ class RoomController extends _$RoomController {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(
       Duration(seconds: pow(2, _reconnectAttempts).toInt()), // 指数退避
-          () async {
+      () async {
         _reconnectAttempts++;
         log.info("开始第 $_reconnectAttempts 次重连");
         final currentState = state.value;
@@ -248,14 +226,16 @@ class RoomController extends _$RoomController {
     if (currentState == null) return;
 
     final devices = await _getInitialDevices();
-    state = AsyncData(currentState.copyWith(
-      audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
-      audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
-      videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
-      currentAudioInput: Hardware.instance.selectedAudioInput,
-      currentAudioOutput: Hardware.instance.selectedAudioOutput,
-      currentVideoInput: Hardware.instance.selectedVideoInput,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
+        audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
+        videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
+        currentAudioInput: Hardware.instance.selectedAudioInput,
+        currentAudioOutput: Hardware.instance.selectedAudioOutput,
+        currentVideoInput: Hardware.instance.selectedVideoInput,
+      ),
+    );
   }
 
   /// 清理资源
@@ -284,40 +264,53 @@ class RoomController extends _$RoomController {
 
   /// 切换麦克风
   Future<void> toggleMic() async {
-    final currentState = state.value;
-    if (currentState == null) return;
+    if (_isToggling) return;
+    _isToggling = true;
 
     try {
+      final currentState = state.value;
+      if (currentState == null) return;
+
       final next = !currentState.micEnabled;
       await currentState.room.localParticipant?.setMicrophoneEnabled(next);
       state = AsyncData(currentState.copyWith(micEnabled: next));
       log.info("麦克风${next ? "开启" : "关闭"}");
     } catch (e) {
       log.error("切换麦克风失败: $e");
+    } finally {
+      _isToggling = false;
     }
   }
 
   /// 切换摄像头
   Future<void> toggleCamera() async {
-    final currentState = state.value;
-    if (currentState == null) return;
+    if (_isToggling) return;
+    _isToggling = true;
 
     try {
+      final currentState = state.value;
+      if (currentState == null) return;
+
       final next = !currentState.cameraEnabled;
       await currentState.room.localParticipant?.setCameraEnabled(next);
       state = AsyncData(currentState.copyWith(cameraEnabled: next));
       log.info("摄像头${next ? "开启" : "关闭"}");
     } catch (e) {
       log.error("切换摄像头失败: $e");
+    } finally {
+      _isToggling = false;
     }
   }
 
   /// 切换屏幕共享（精细化管理轨道，不影响摄像头）
   Future<void> toggleScreenShare(BuildContext context) async {
-    final currentState = state.value;
-    if (currentState == null || !context.mounted) return;
+    if (_isToggling) return;
+    _isToggling = true;
 
     try {
+      final currentState = state.value;
+      if (currentState == null || !context.mounted) return;
+
       final next = !currentState.screenSharing;
       final localParticipant = currentState.room.localParticipant;
       if (localParticipant == null) return;
@@ -328,7 +321,7 @@ class RoomController extends _$RoomController {
         if (lkPlatformIsDesktop()) {
           final source = await showDialog<rtc.DesktopCapturerSource?>(
             context: context,
-            builder: (context) => const ScreenSelectDialog(),
+            builder: (context) => WindowScreenSelectDialog(),
           );
           if (source == null) return;
           sourceId = source.id;
@@ -341,39 +334,44 @@ class RoomController extends _$RoomController {
           params: VideoParametersPresets.screenShareH1080FPS30,
         );
 
-        final screenTrack = await LocalVideoTrack.createScreenShareTrack(options);
+        final screenTrack = await LocalVideoTrack.createScreenShareTrack(
+          options,
+        );
         await localParticipant.publishVideoTrack(screenTrack);
 
         // 更新状态（保存屏幕共享轨道引用）
-        state = AsyncData(currentState.copyWith(
-          screenSharing: true,
-          screenShareTrack: screenTrack,
-        ));
+        state = AsyncData(
+          currentState.copyWith(
+            screenSharing: true,
+            screenShareTrack: screenTrack,
+          ),
+        );
         log.info("屏幕共享已开启");
       } else {
-        // 关闭屏幕共享（只关闭屏幕轨道，保留摄像头）
+        // 关闭屏幕共享（只关闭屏幕轨道，保留摄像头和麦克风）
         if (currentState.screenShareTrack != null) {
-          await localParticipant.unpublishAllTracks();
-          currentState.screenShareTrack!.stop();
-          currentState.screenShareTrack!.dispose();
+          // 停止并释放屏幕共享轨道，SDK会自动取消发布
+          await currentState.screenShareTrack!.stop();
+          await currentState.screenShareTrack!.dispose();
         }
 
         // 更新状态
-        state = AsyncData(currentState.copyWith(
-          screenSharing: false,
-          screenShareTrack: null,
-        ));
+        state = AsyncData(
+          currentState.copyWith(screenSharing: false, screenShareTrack: null),
+        );
         log.info("屏幕共享已关闭");
       }
     } catch (e) {
       log.error("切换屏幕共享失败: $e");
       // 恢复状态
-      if (context.mounted) {
-        state = AsyncData(currentState.copyWith(
-          screenSharing: false,
-          screenShareTrack: null,
-        ));
+      final currentState = state.value;
+      if (context.mounted && currentState != null) {
+        state = AsyncData(
+          currentState.copyWith(screenSharing: false, screenShareTrack: null),
+        );
       }
+    } finally {
+      _isToggling = false;
     }
   }
 
@@ -401,8 +399,11 @@ class RoomController extends _$RoomController {
       await Hardware.instance.selectAudioInput(device);
       // 重启音频轨道以应用新设备
       final localParticipant = currentState.room.localParticipant;
-      if (localParticipant != null && localParticipant.audioTrackPublications.isNotEmpty) {
-        final audioTrack = localParticipant.audioTrackPublications.first.track as LocalAudioTrack;
+      if (localParticipant != null &&
+          localParticipant.audioTrackPublications.isNotEmpty) {
+        final audioTrack =
+            localParticipant.audioTrackPublications.first.track
+                as LocalAudioTrack;
         await audioTrack.restartTrack();
       }
 
