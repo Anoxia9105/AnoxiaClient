@@ -111,7 +111,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
             fit: StackFit.expand,
             children: [
               if (track != null)
-                VideoTrackRenderer(track, fit: VideoViewFit.cover)
+                VideoTrackRenderer(track, fit: VideoViewFit.contain)
               else
                 Center(
                   child: Column(
@@ -122,8 +122,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     ],
                   ),
                 ),
-
-              //  信息层 (昵称 + 麦克风图标)
               Positioned(
                 left: 8,
                 bottom: 8,

@@ -4,7 +4,6 @@ import 'package:anoxia/pages/chat/component/widget/ChatMessageBubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../framework/services/room_list_service.dart';
 import '../../../framework/services/room_message_service.dart';
@@ -17,7 +16,6 @@ class ChatRoomDetail extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final FlutterListViewController _listViewController =
       FlutterListViewController();
   bool _showScrollDownButton = false;
@@ -85,84 +83,80 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
 
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: ChatAppBar(
-        onTap: () {
-          _scaffoldKey.currentState?.openEndDrawer();
-        },
-      ),
-      endDrawer: Padding(
-        padding: const EdgeInsets.only(top: 50),
-        child: Drawer(
-          width: 80.w,
-          child: const Center(child: Text("成员列表")),
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          border: Border.all(
+            width: 1,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+          ),
         ),
-      ),
-      body: entryTask.when(
-        data: (_) {
-          return FlutterListView(
-            controller: _listViewController,
-            reverse: true,
-            delegate: FlutterListViewDelegate(
-              (context, index) {
-                // 💡 如果有更多数据，且到了最后一个索引，显示加载圈
-                if (hasMore && index == messages.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
+        child: Scaffold(
+          appBar: ChatAppBar(),
+          drawerScrimColor: Colors.transparent,
+          body: entryTask.when(
+            data: (_) {
+              return FlutterListView(
+                controller: _listViewController,
+                reverse: true,
+                delegate: FlutterListViewDelegate(
+                  (context, index) {
+                    if (hasMore && index == messages.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
 
-                final msg = messages[messages.length - 1 - index];
+                    final msg = messages[messages.length - 1 - index];
 
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-                  child: ChatMessageBubble(
-                    key: ValueKey(msg.messageId),
-                    message: msg,
-                  ),
-                );
+                    return Padding(
+                      padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+                      child: ChatMessageBubble(
+                        key: ValueKey(msg.messageId),
+                        message: msg,
+                      ),
+                    );
+                  },
+                  childCount: messages.length + (hasMore ? 1 : 0),
+                  // 💡 建议开启 keepPosition: true
+                  // 这能保证在分页加载旧消息时，滚动位置不会跳动
+                  keepPosition: true,
+
+                  // 💡 性能优化：给一个大概的预估高度
+                  preferItemHeight: 60,
+                ),
+              );
+            },
+            error: (err, _) => Center(child: Text("初始化失败: $err")),
+            loading: () {
+              return Center(child: CircularProgressIndicator());
+            },
+          ),
+          floatingActionButton: _showScrollDownButton
+              ? FloatingActionButton.small(
+                  // 使用小号按钮更精致
+                  backgroundColor: Theme.of(
+                    context,
+                  ).primaryColor.withValues(alpha: 0.8),
+                  onPressed: () {
+                    _scrollToBottom(animated: true);
+                  },
+                  child: const Icon(Icons.arrow_downward, color: Colors.white),
+                )
+              : null,
+          bottomNavigationBar: Padding(
+            padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+            child: ChatInputField(
+              onSend: () {
+                _scrollToBottom(animated: true);
               },
-              childCount: messages.length + (hasMore ? 1 : 0),
-              // 💡 建议开启 keepPosition: true
-              // 这能保证在分页加载旧消息时，滚动位置不会跳动
-              keepPosition: true,
-
-              // 💡 性能优化：给一个大概的预估高度
-              preferItemHeight: 60,
             ),
-          );
-        },
-        error: (err, _) => Center(child: Text("初始化失败: $err")),
-        loading: () {
-          return Center(child: CircularProgressIndicator());
-        },
-      ),
-      floatingActionButton: _showScrollDownButton
-          ? FloatingActionButton.small(
-              // 使用小号按钮更精致
-              backgroundColor: Theme.of(
-                context,
-              ).primaryColor.withValues(alpha: 0.8),
-              onPressed: () {
-                _listViewController.sliverController.animateToIndex(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              child: const Icon(Icons.arrow_downward, color: Colors.white),
-            )
-          : null,
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-        child: ChatInputField(
-          onSend: () {
-            _scrollToBottom(animated: true);
-          },
+          ),
         ),
       ),
     );
@@ -170,18 +164,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   /// 滚动到底部（即 index 0）
   void _scrollToBottom({bool animated = true}) {
-    // 1. 安全检查：确保控制器已关联到 Widget
     if (!_listViewController.hasClients) return;
 
     if (animated) {
-      // 💡 使用 sliverController 提供的动画接口
       _listViewController.sliverController.animateToIndex(
         0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } else {
-      // 💡 瞬移到底部
       _listViewController.sliverController.jumpToIndex(0);
     }
   }

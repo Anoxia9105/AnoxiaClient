@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -41,20 +42,19 @@ class AvatarWidget extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
           child: hasUrl
-              ? Image.network(
-                  url!,
+              ? CachedNetworkImage(
+                  imageUrl: url!,
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
 
                   /// 加载中显示默认图标
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
+                  placeholder: (context, url) {
                     return _buildPlaceholder(context);
                   },
 
                   /// 加载失败显示兜底图标或首字母
-                  errorBuilder: (_, __, ___) =>
+                  errorWidget: (context, url, error) =>
                       _buildNameOrPlaceholder(context),
                 )
               : _buildNameOrPlaceholder(context),
@@ -78,6 +78,7 @@ class AvatarWidget extends StatelessWidget {
       ],
     );
   }
+
   /// 构建右上角红点
   Widget _buildRedBadge(BuildContext context) {
     return Container(
@@ -89,23 +90,26 @@ class AvatarWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.red,
         shape: badgeText == null ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: badgeText == null ? null : BorderRadius.circular(size * 0.2),
+        borderRadius: badgeText == null
+            ? null
+            : BorderRadius.circular(size * 0.2),
         border: Border.all(color: Colors.white, width: size * 0.05),
       ),
       child: badgeText != null
           ? Center(
-        child: Text(
-          badgeText!,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: size * 0.25,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      )
+              child: Text(
+                badgeText!,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: size * 0.25,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
           : null,
     );
   }
+
   /// 状态角标
   Widget _buildStatusIndicator(BuildContext context) {
     if (statusWidget != null) return statusWidget!;

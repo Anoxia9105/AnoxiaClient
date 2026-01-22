@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/ChatQuillToolbar.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/QuillStyleConfig.dart';
+import 'package:anoxia/pages/chat/component/widget/quill/builder/QuillImageBuild.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -150,7 +152,16 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
             controller: _controller,
             onSend: () => _handleSend(),
             onEmojiPressed: () => print("点击表情"),
-            onImagePressed: () => print("选择图片"),
+            onImagePressed: () => QuillEmbedUtil.insertEmber(
+              controller: _controller,
+              type: BlockEmbed.imageType,
+              data: {
+                "url":'https://pic4.zhimg.com/v2-29d4e1070c864ac3a78d885f0b9cc2bf_r.jpg'
+                // "url":'https://www.keaitupian.cn/cjpic/frombd/2/253/2990600787/3256164520.jpg'
+                // "url":'https://cdn.pixabay.com/photo/2018/04/05/14/09/sunflowers-3292932_1280.jpg'
+                // "url":'https://th.bing.com/th/id/R.92dbeb2fe76391bcd5baed283e9172c1?rik=7KBwJuZuvYAFtw&riu=http%3a%2f%2fpic.imeitou.com%2fuploads%2fallimg%2f220909%2f3-220Z9140Q8.jpg&ehk=SoHVW4z21u3FroHenrXC9WjnXEdRQj5yE0zllpl9AJs%3d&risl=&pid=ImgRaw&r=0'
+              },
+            ),
             onFilePressed: () => print("选择文件"),
           ),
           ConstrainedBox(
@@ -162,6 +173,8 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
               focusNode: _focusNode,
               controller: _controller,
               config: QuillEditorConfig(
+                enableSelectionToolbar: false,
+                //禁用搜索
                 textSelectionThemeData: TextSelectionThemeData(
                   //光标颜色
                   cursorColor: colorScheme.primary,
@@ -175,15 +188,12 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
                 autoFocus: true,
                 padding: const EdgeInsets.all(8),
                 embedBuilders: [
-                  // ImageBuilder(),
+                  QuillImageBuild(),
                   // AtBuilder(),
                   // FileBuilder(controller: value.controller),
                 ],
 
-                /// 快捷键配置
                 onKeyPressed: (event, node) {
-                  // 💡 有些版本只带一个 event 参数
-                  // 检查是否按下回车键且没有按住 Shift
                   if (event is KeyDownEvent &&
                       event.logicalKey == LogicalKeyboardKey.enter &&
                       !HardwareKeyboard.instance.isShiftPressed) {

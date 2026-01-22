@@ -20,7 +20,7 @@ class ChatPage extends ConsumerWidget {
     final activeId = ref.watch(activeRoomIdProvider);
     return Row(
       children: [
-        SizedBox(width: 80.w, child: ChatRoomList()),
+        SizedBox(width: 90.w, child: ChatRoomList()),
         Expanded(
           child: activeId == null ? Center(child: Welcome()) : ChatRoomDetail(),
         ),
