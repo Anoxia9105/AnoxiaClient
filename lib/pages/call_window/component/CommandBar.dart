@@ -19,10 +19,6 @@ class CommandBar extends ConsumerWidget {
     Widget reconnectButton = const SizedBox.shrink();
     if (state.isReconnecting) {
       reconnectButton = TextButton.icon(
-        style: TextButton.styleFrom(
-          backgroundColor: Colors.orange,
-          foregroundColor: Colors.white,
-        ),
         onPressed: () => notifier.reconnect(),
         icon: const Icon(Icons.refresh, size: 16),
         label: const Text("重新连接"),
@@ -32,17 +28,14 @@ class CommandBar extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 2,
-            offset: const Offset(0, 1),
+          bottom: BorderSide(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: Row(
         children: [
@@ -246,7 +239,12 @@ class CommandBar extends ConsumerWidget {
               await windowManager.close();
             }
           },
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedCallRinging03, size: 24,color: Colors.redAccent,strokeWidth: 2),
+          icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedCallRinging03,
+            size: 24,
+            color: Colors.redAccent,
+            strokeWidth: 2,
+          ),
           iconSize: 24,
         ),
         Text("挂断", style: TextStyle(fontSize: 10)),

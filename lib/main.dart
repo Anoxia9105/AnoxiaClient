@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
-import 'package:anoxia/pages/sub_window/CallWindowPage.dart';
+import 'package:anoxia/pages/call_window/CallWindowPage.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -138,7 +138,7 @@ Future<void> runMainApp() async {
     if (DeviceUtil.isRealDesktop()) {
       await setupDesktopWindow(
         size: const Size(1200, 800),
-        minimumSize: const Size(800, 600)
+        minimumSize: const Size(800, 600),
       );
     }
 
@@ -205,7 +205,7 @@ Future<void> setupDesktopWindow({
     backgroundColor: Colors.white,
     // 取消透明背景，避免跨平台显示异常
     skipTaskbar: false,
-    titleBarStyle: desktop.TitleBarStyle.hidden
+    titleBarStyle: desktop.TitleBarStyle.hidden,
   );
 
   await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {

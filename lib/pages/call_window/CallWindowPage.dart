@@ -12,7 +12,7 @@ import '../../framework/logs/talker.dart';
 import '../../framework/provider/call/Channel.dart';
 import '../../framework/theme/AppColors.dart';
 import '../../framework/theme/AppTheme.dart';
-import 'CallDesktopAppBar.dart';
+import 'component/deesktop/CallDesktopAppBar.dart';
 import 'CallRoomPage.dart';
 
 class CallWindowPage extends ConsumerStatefulWidget {

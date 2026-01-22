@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../gen/assets.gen.dart';
+import '../../../../gen/assets.gen.dart';
 
 class CallDesktopAppbar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
