@@ -1,7 +1,18 @@
+import 'dart:developer';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
+import 'package:anoxia/framework/provider/chat/chat_upload_provider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:image_compression_flutter/image_compression_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../../common/widgets/Toast.dart';
 import 'ColorsBox.dart';
@@ -9,7 +20,6 @@ import 'ColorsBox.dart';
 class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final VoidCallback onSend;
-  final VoidCallback? onImagePressed;
   final VoidCallback? onFilePressed;
   final VoidCallback? onEmojiPressed;
 
@@ -17,7 +27,6 @@ class ChatQuillToolbar extends ConsumerWidget {
     super.key,
     required this.controller,
     required this.onSend,
-    this.onImagePressed,
     this.onFilePressed,
     this.onEmojiPressed,
   });
@@ -26,11 +35,13 @@ class ChatQuillToolbar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final iconColor = colorScheme.onSurfaceVariant;
+
+    final isUploading = ref.watch(isUploadingProvider);
+
     return Padding(
-      padding: const EdgeInsets.only(left: 4,right: 4,top: 4),
+      padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
       child: Row(
         children: [
-          // 💡 左侧富文本编辑按钮组，使用 Expanded + SingleChildScrollView 防止溢出
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -137,7 +148,9 @@ class ChatQuillToolbar extends ConsumerWidget {
                           onCancel = Toast.showWidget(
                             context,
                             child: ColorsBox.buildColorsWidget((hex) {
-                              controller.formatSelection(BackgroundAttribute(hex));
+                              controller.formatSelection(
+                                BackgroundAttribute(hex),
+                              );
                               onCancel?.call();
                             }, context),
                           );
@@ -175,28 +188,31 @@ class ChatQuillToolbar extends ConsumerWidget {
                 "表情",
                 onEmojiPressed,
                 iconColor,
+                enabled: !isUploading,
               ),
               _buildCustomBtn(
                 HugeIcons.strokeRoundedImage02,
                 "图片",
-                onImagePressed,
+                () => _handleImageButtonPress(ref, context),
                 iconColor,
+                enabled: !isUploading,
               ),
               _buildCustomBtn(
                 HugeIcons.strokeRoundedFiles02,
                 "文件",
                 onFilePressed,
                 iconColor,
+                enabled: !isUploading,
               ),
               // 发送按钮通常用主题色突出
               IconButton(
                 tooltip: "发送",
                 visualDensity: VisualDensity.compact,
-                onPressed: onSend,
+                onPressed: isUploading ? null : onSend,
                 icon: HugeIcon(
                   icon: HugeIcons.strokeRoundedSent,
                   size: 20,
-                  color: colorScheme.primary,
+                  color: isUploading ? Colors.grey : colorScheme.primary,
                   strokeWidth: 2.5,
                 ),
               ),
@@ -239,13 +255,19 @@ class ChatQuillToolbar extends ConsumerWidget {
     List<List<dynamic>> icon,
     String tooltip,
     VoidCallback? action,
-    Color color,
-  ) {
+    Color color, {
+    bool enabled = true,
+  }) {
     return IconButton(
       tooltip: tooltip,
       visualDensity: VisualDensity.compact,
-      onPressed: action,
-      icon: HugeIcon(icon: icon, size: 18, color: color,strokeWidth: 2,),
+      onPressed: enabled ? action : null,
+      icon: HugeIcon(
+        icon: icon,
+        size: 18,
+        color: enabled ? color : Colors.grey.withValues(alpha: 0.5),
+        strokeWidth: 2,
+      ),
     );
   }
 
@@ -259,5 +281,93 @@ class ChatQuillToolbar extends ConsumerWidget {
     for (final attribute in attributes) {
       controller.formatSelection(Attribute.clone(attribute, null));
     }
+  }
+
+  Future<void> _handleImageButtonPress(
+    WidgetRef ref,
+    BuildContext context,
+  ) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.image,
+      );
+      if (result == null) return;
+      // 先标记上传中
+      ref.read(isUploadingProvider.notifier).start();
+      final List<PendingImage> pendingImages = [];
+
+      // 1️⃣ 插入占位 Embed 并准备 PendingImage
+      for (final filePath in result.paths) {
+        if (filePath == null) continue;
+
+        final uuid = const Uuid().v4();
+
+        // 插入本地占位
+        QuillEmbedUtil.insertEmbed(
+          controller: controller,
+          type: BlockEmbed.imageType,
+          data: {"id": uuid, "url": filePath, "local": true},
+        );
+
+        pendingImages.add(PendingImage(id: uuid, file: File(filePath)));
+      }
+
+      // 2️⃣ 压缩所有文件（按原列表顺序）
+      for (int i = 0; i < pendingImages.length; i++) {
+        final originFile = pendingImages[i].file;
+        try {
+          final param = ImageFileConfiguration(
+            input: ImageFile(
+              filePath: originFile.path,
+              rawBytes: await originFile.readAsBytes(),
+            ),
+            config: Configuration(
+              outputType: ImageOutputType.webpThenJpg,
+              useJpgPngNativeCompressor: false,
+              quality: 50,
+            ),
+          );
+
+          final output = await compressor.compress(param);
+          final tempFile = await _writeToTempFile(output.rawBytes, "webp");
+
+          // 替换压缩文件
+          pendingImages[i] = PendingImage(
+            id: pendingImages[i].id,
+            file: tempFile,
+          );
+        } catch (_) {
+          // 保留原文件
+        }
+      }
+
+      // 上传（返回 uuid -> url）
+      final Map<String, String> resultMap = await ref
+          .read(chatUploadControllerProvider.notifier)
+          .uploadImages(pendingImages); // 注意：返回 Map<id,url>
+
+      // 精准替换 Embed
+      resultMap.forEach((id, url) {
+        QuillEmbedUtil.replaceEmbedById(
+          controller: controller,
+          embedType: BlockEmbed.imageType,
+          id: id,
+          newData: {"id": id, "url": url, "local": false},
+        );
+      });
+    } catch (e) {
+      debugPrint("选择或上传图片失败: $e");
+    }
+  }
+
+  Future<File> _writeToTempFile(Uint8List bytes, String ext) async {
+    final dir = await getTemporaryDirectory();
+    print("写入临时文件：${dir.path}");
+    final file = File(
+      p.join(dir.path, '${DateTime.now().millisecondsSinceEpoch}.$ext'),
+    );
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
   }
 }

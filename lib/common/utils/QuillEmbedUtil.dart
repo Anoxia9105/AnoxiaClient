@@ -1,24 +1,53 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 class QuillEmbedUtil {
-  static void insertEmber({
+  static void insertEmbed({
     required QuillController controller,
     required String type,
-    required Map<String, String> data,
+    required Map<String, dynamic> data,
   }) {
     final offset = controller.selection.baseOffset;
     if (offset < 0) return;
-    final embed = BlockEmbed(type, jsonEncode(data));
+
     controller.replaceText(
       offset,
       0,
-      embed,
+      BlockEmbed(type, jsonEncode(data)),
       TextSelection.collapsed(offset: offset + 1),
     );
   }
+
+  /// 🔥 按 uuid 精准替换 Embed
+  static void replaceEmbedById({
+    required QuillController controller,
+    required String embedType,
+    required String id,
+    required Map<String, dynamic> newData,
+  }) {
+    final doc = controller.document;
+    int offset = 0;
+
+    for (final node in doc.root.children) {
+      if (node is Embed && node.value.type == embedType) {
+        final data = jsonDecode(node.value.data);
+        if (data is Map && data["id"] == id) {
+          controller.replaceText(
+            offset,
+            1,
+            BlockEmbed(embedType, jsonEncode(newData)),
+            null,
+          );
+          return;
+        }
+      }
+      offset += node.length;
+    }
+  }
+
   ///
   /// @ 删除用户输入@符号
   void deleteEmbedAtCursor(QuillController controller) {
@@ -31,6 +60,7 @@ class QuillEmbedUtil {
       TextSelection.collapsed(offset: offset),
     );
   }
+
   // void setupAtMentionListener() {
   //   _controller.document.changes.listen((event) {
   //     final selection = _controller.selection;

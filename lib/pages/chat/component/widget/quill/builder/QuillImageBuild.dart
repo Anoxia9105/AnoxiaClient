@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -9,17 +10,32 @@ class QuillImageBuild implements EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
     final dynamic rawData = jsonDecode(embedContext.node.value.data);
-    log.info(rawData);
     Map<String, dynamic> dataMap = rawData.cast<String, dynamic>();
     if (dataMap.isEmpty) {
       return SizedBox.shrink();
+    }
+
+    if (dataMap["local"] == true) {
+      return Container(
+        constraints: const BoxConstraints(maxWidth: 200, maxHeight: 300),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(File(dataMap["url"])),
+        ),
+      );
     }
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 200, maxHeight: 300),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        // 可选：加个淡边框，防止白底图片在白底聊天框看不清边界
         border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
       ),
       child: ClipRRect(

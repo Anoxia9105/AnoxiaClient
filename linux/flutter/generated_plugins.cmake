@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_multi_window
   flutter_secure_storage_linux
   flutter_webrtc
+  image_compression_flutter
   livekit_client
   screen_retriever_linux
   tray_manager

@@ -90,7 +90,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           borderRadius: BorderRadius.all(Radius.circular(12)),
           border: Border.all(
             width: 1,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
         ),
         child: Scaffold(
@@ -143,18 +145,14 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                   backgroundColor: Theme.of(
                     context,
                   ).primaryColor.withValues(alpha: 0.8),
-                  onPressed: () {
-                    _scrollToBottom(animated: true);
-                  },
+                  onPressed: () => _scrollToBottom(animated: true),
                   child: const Icon(Icons.arrow_downward, color: Colors.white),
                 )
               : null,
           bottomNavigationBar: Padding(
             padding: EdgeInsets.symmetric(horizontal: bodyPadding),
             child: ChatInputField(
-              onSend: () {
-                _scrollToBottom(animated: true);
-              },
+              bottomSheet: () => _scrollToBottom(animated: true),
             ),
           ),
         ),

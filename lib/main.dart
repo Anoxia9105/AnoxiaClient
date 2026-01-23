@@ -111,7 +111,6 @@ bool _isSubWindow(dynamic arguments) {
         : jsonDecode(arguments.toString());
     return argsMap.isNotEmpty;
   } catch (e) {
-    log.warning("解析窗口参数失败，默认判定为主窗口", e);
     return false;
   }
 }

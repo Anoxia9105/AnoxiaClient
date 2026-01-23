@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -66,7 +67,9 @@ class WsController extends _$WsController {
 
   void _initConnection() async {
     // 保护：如果已经在连接或已连接，跳过
-    if (state.status == WsStatus.connecting || state.status == WsStatus.connected) return;
+    if (state.status == WsStatus.connecting ||
+        state.status == WsStatus.connected)
+      return;
 
     final token = await TokenManager.instance.getToken();
     if (token != null && token.isNotEmpty) {
@@ -89,7 +92,7 @@ class WsController extends _$WsController {
       await _channel!.ready; // 确保握手成功
 
       _channel!.stream.listen(
-            (message) => _handleIncomingMessage(message),
+        (message) => _handleIncomingMessage(message),
         onError: (err) => _handleError(err),
         onDone: () => _handleDone(),
         cancelOnError: true,
@@ -162,6 +165,7 @@ class WsController extends _$WsController {
   void _handleDone() {
     log.info("WebSocket 连接由服务端关闭或网络中断");
     state = WsState(status: WsStatus.disconnected);
+    Toast.showNotificationNow("连接由服务端关闭或网络中断");
     _retryConnection();
   }
 

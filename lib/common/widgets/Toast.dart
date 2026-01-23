@@ -36,56 +36,61 @@ class Toast {
 
   /// 通知框 - 直接显示字符串
   static Function showNotificationNow(
-      String message, {
-        Color color = Colors.black54,
-        VoidCallback? onTap,
-        Alignment? alignment,
-        String? typeMessage,
-        Duration duration = _defaultDuration,
-      }) {
+    String message, {
+    Color color = Colors.black54,
+    VoidCallback? onTap,
+    Alignment? alignment,
+    String? typeMessage,
+    Duration duration = _defaultDuration,
+  }) {
     const white = Colors.white;
     return BotToast.showNotification(
       onTap: onTap,
       align: alignment,
       duration: duration,
       margin: _defaultMargin,
-      title: (_) => Text(message, style: const TextStyle(color: white, fontSize: 16)),
+      title: (_) =>
+          Text(message, style: const TextStyle(color: white, fontSize: 16)),
       leading: (_) => const Icon(Icons.info_outline, color: white),
-      trailing: (_) => Text(typeMessage ?? '', style: const TextStyle(color: white)),
+      trailing: (_) =>
+          Text(typeMessage ?? '', style: const TextStyle(color: white)),
       backgroundColor: color,
     );
   }
 
   /// 提示框
   static void showToast(
-      String message, {
-        ToastType type = ToastType.info,
-        Alignment align = Alignment.bottomCenter,
-        Duration duration = const Duration(seconds: 6),
-      }) {
+    String message, {
+    ToastType type = ToastType.info,
+    Alignment align = Alignment.bottomCenter,
+    Duration duration = const Duration(seconds: 3),
+  }) {
     final config = _toastConfig(type);
     _buildToast(message, config.color, config.icon, align, duration);
   }
 
   /// 根据主题色提示框
   static void showToastTheme(
-      BuildContext context,
-      String message, {
-        ToastType type = ToastType.info,
-        Alignment align = Alignment.bottomCenter,
-        Duration duration = const Duration(seconds: 6),
-      }) {
-    final config = _toastConfig(type, defaultColor: Theme.of(context).primaryColor);
+    BuildContext context,
+    String message, {
+    ToastType type = ToastType.info,
+    Alignment align = Alignment.bottomCenter,
+    Duration duration = const Duration(seconds: 6),
+  }) {
+    final config = _toastConfig(
+      type,
+      defaultColor: Theme.of(context).primaryColor,
+    );
     _buildToast(message, config.color, config.icon, align, duration);
   }
 
   /// 根据 context 显示 Widget
   static Function showWidget(
-      BuildContext context, {
-        required Widget child,
-        PreferDirection direction = PreferDirection.topLeft,
-        VoidCallback? onClose,
-      }) {
+    BuildContext context, {
+    required Widget child,
+    PreferDirection direction = PreferDirection.topLeft,
+    VoidCallback? onClose,
+  }) {
     return BotToast.showAttachedWidget(
       targetContext: context,
       preferDirection: direction,
@@ -111,12 +116,12 @@ class Toast {
 
   /// 内部方法 - 构建 Toast
   static void _buildToast(
-      String message,
-      Color color,
-      Icon icon,
-      Alignment align,
-      Duration duration,
-      ) {
+    String message,
+    Color color,
+    Icon icon,
+    Alignment align,
+    Duration duration,
+  ) {
     BotToast.showCustomText(
       align: align,
       duration: duration,
@@ -135,7 +140,10 @@ class Toast {
                 padding: const EdgeInsets.only(top: 3, right: 3),
                 child: icon,
               ),
-              Text(message, style: const TextStyle(fontSize: 14, color: Colors.white)),
+              Text(
+                message,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              ),
             ],
           ),
         );
@@ -149,23 +157,39 @@ class Toast {
       case ToastType.warning:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(230, 162, 60, 1),
-          const Icon(Icons.warning_amber, color: Colors.white, size: _defaultIconSize),
+          const Icon(
+            Icons.warning_amber,
+            color: Colors.white,
+            size: _defaultIconSize,
+          ),
         );
       case ToastType.error:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(245, 108, 108, 1),
-          const Icon(Icons.error_outline, color: Colors.white, size: _defaultIconSize),
+          const Icon(
+            Icons.error_outline,
+            color: Colors.white,
+            size: _defaultIconSize,
+          ),
         );
       case ToastType.success:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(103, 194, 58, 1),
-          const Icon(Icons.check_circle_outline, color: Colors.white, size: _defaultIconSize),
+          const Icon(
+            Icons.check_circle_outline,
+            color: Colors.white,
+            size: _defaultIconSize,
+          ),
         );
       case ToastType.info:
       default:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(144, 147, 153, 1),
-          const Icon(Icons.info_outline, color: Colors.white, size: _defaultIconSize),
+          const Icon(
+            Icons.info_outline,
+            color: Colors.white,
+            size: _defaultIconSize,
+          ),
         );
     }
   }

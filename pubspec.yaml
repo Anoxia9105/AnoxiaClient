@@ -43,13 +43,8 @@ dependencies:
   #图标
   hugeicons: ^1.1.5
   #列表滚动
-  #  scrollable_positioned_list: ^0.3.8  没有用上
   flutter_list_view: ^1.1.29
-  #文件类型推断
-  mime: ^2.0.0
   #rtc
-  #  flutter_webrtc: ^0.14.2
-  #  flutter_webrtc: ^1.2.1
   livekit_client: ^2.6.1
   #socket
   web_socket_channel: ^3.0.3
@@ -76,6 +71,12 @@ dependencies:
   lpinyin: ^2.0.3
   # 多窗口
   desktop_multi_window: ^0.3.0
+  #文件选择
+  file_picker: ^10.3.8
+  #图片压缩
+  image_compression_flutter: ^1.0.4
+  #uuid
+  uuid: ^4.5.2
 
 dev_dependencies:
   flutter_test:

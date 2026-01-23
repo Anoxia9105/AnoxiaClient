@@ -50,7 +50,7 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'8f6bc76473e1c35dd408bd8bcc5dee4c73282377';
+String _$roomControllerHash() => r'92db4ad7d80a56a5162c1e75641887ba51952904';
 
 final class RoomControllerFamily extends $Family
     with
@@ -148,7 +148,7 @@ final class RoomTokenProvider
   }
 }
 
-String _$roomTokenHash() => r'7489ed39fa57044703b07a72755f943ce5627398';
+String _$roomTokenHash() => r'cf4e41ab6f959ee0c9efb8c187caa0fccc97022d';
 
 final class RoomTokenFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String>, String> {

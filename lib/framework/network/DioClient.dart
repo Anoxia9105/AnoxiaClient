@@ -72,7 +72,6 @@ class DioClient {
 
   final Dio _dio;
 
-  // 统一封装：新增 auth 参数，默认 true；匿名传 false
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -142,6 +141,77 @@ class DioClient {
         path,
         data: data,
         options: _mergeOptions(options, auth: auth),
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 上传文件（支持单文件）
+  Future<Response> uploadFile(
+    String path, {
+    required File file,
+    String fileField = "file",
+    Map<String, dynamic>? data,
+    bool auth = true,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final fileName = file.path.split('/').last;
+
+      final formData = FormData.fromMap({
+        fileField: await MultipartFile.fromFile(file.path, filename: fileName),
+        if (data != null) ...data,
+      });
+
+      return await _dio.post(
+        path,
+        data: formData,
+        options: _mergeOptions(
+          options?.copyWith(contentType: 'multipart/form-data'),
+          auth: auth,
+        ),
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 多文件上传（支持 files: List<File>）
+  Future<Response> uploadFiles(
+    String path, {
+    required List<File> files,
+    String fileField = "files",
+    Map<String, dynamic>? data,
+    bool auth = true,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final List<MultipartFile> multipartFiles = [];
+
+      for (final file in files) {
+        final fileName = file.path.split('/').last;
+        multipartFiles.add(
+          await MultipartFile.fromFile(file.path, filename: fileName),
+        );
+      }
+
+      final formData = FormData.fromMap({
+        fileField: multipartFiles,
+        if (data != null) ...data,
+      });
+
+      return await _dio.post(
+        path,
+        data: formData,
+        options: _mergeOptions(
+          options?.copyWith(contentType: 'multipart/form-data'),
+          auth: auth,
+        ),
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
