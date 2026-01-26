@@ -41,7 +41,7 @@ final class WsControllerProvider
   }
 }
 
-String _$wsControllerHash() => r'9babc4b027a4c60c0d68af005f5f9cc945157db1';
+String _$wsControllerHash() => r'0cc8954204018c3f9398f3b504518fc42060c538';
 
 abstract class _$WsController extends $Notifier<WsState> {
   WsState build();

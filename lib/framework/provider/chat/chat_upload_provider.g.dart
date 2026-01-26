@@ -99,7 +99,7 @@ final class ChatUploadControllerProvider
 }
 
 String _$chatUploadControllerHash() =>
-    r'ce009a532a7e21115c85f05345ddfe79f2837b2c';
+    r'78aa9b486cfa8c980d6513a9f07af17ed3a58abe';
 
 abstract class _$ChatUploadController extends $Notifier<void> {
   void build();

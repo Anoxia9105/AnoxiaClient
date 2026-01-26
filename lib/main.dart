@@ -8,15 +8,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
+import 'common/constants/API.dart';
 import 'common/utils/DeviceUtil.dart';
 import 'common/utils/SPUtil.dart';
 import 'framework/extensions/window_controller.dart';
 import 'framework/logs/talker.dart';
+import 'framework/network/DioClient.dart';
 import 'framework/network/TokenManager.dart';
+import 'framework/provider/core/AppUpdateInfo.dart';
 import 'framework/protocol/PacketType.dart';
+import 'package:pub_semver/pub_semver.dart';
+import 'pages/update/UpdatePage.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
@@ -31,23 +37,52 @@ final ProviderContainer globalContainer = ProviderContainer(
   // ],
 );
 
-/// 应用入口（修正异步时序 + 异常处理）
+/// 应用入口
 Future<void> main(List<String> args) async {
   log.info("程序启动参数：$args");
   try {
-    // 1. 优先初始化 Flutter 核心绑定（必须最先执行）
+    //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
 
-    // 2. 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+    String appName = packageInfo.appName;
+    String packageName = packageInfo.packageName;
+    String version = packageInfo.version;
+    String buildNumber = packageInfo.buildNumber;
+
+    log.info("=======================================================");
+    log.info(appName);
+    log.info(packageName);
+    log.info(version);
+    log.info(buildNumber);
+    log.info("=======================================================");
+
+    // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
     await Future.wait([
       EasyLocalization.ensureInitialized(), // 多语言初始化
       SPUtil.init(), // 本地存储初始化
     ]);
 
-    // 3. 注册协议解析器（全局生效）
+    // 检查更新
+    if (!DeviceUtil.isWeb) {
+      final updateInfo = await _checkUpdate();
+      if (updateInfo != null && updateInfo.forceUpdate) {
+        log.info("检测到强制更新，进入更新页面");
+        runApp(_buildAppWrapper(UpdatePage(updateInfo: updateInfo)));
+        return;
+      }
+      // 如果是非强制更新，我们可以在主页面初始化完成后再弹窗提醒
+      // 这里可以全局存一份 updateInfo
+      if (updateInfo != null) {
+        globalUpdateInfo = updateInfo;
+      }
+    }
+
+    // 注册协议解析器（全局生效）
     _registerPacketParsers();
 
-    // 4. 桌面端窗口初始化（区分主/子窗口）
+    // 桌面端窗口初始化（区分主/子窗口）
     if (DeviceUtil.isRealDesktop()) {
       await _handleDesktopWindows(args);
     } else {
@@ -253,4 +288,24 @@ Widget _buildErrorPage(String message) {
       ),
     ),
   );
+}
+
+AppUpdateInfo? globalUpdateInfo;
+
+Future<AppUpdateInfo?> _checkUpdate() async {
+  try {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final currentVersion = Version.parse(packageInfo.version);
+
+    final response = await DioClient().get(API.updateUrl);
+    final remoteData = AppUpdateInfo.fromJson(response.data);
+    final latestVersion = Version.parse(remoteData.latestVersion);
+
+    if (latestVersion > currentVersion) {
+      return remoteData;
+    }
+  } catch (e) {
+    log.error("检查更新失败: $e");
+  }
+  return null;
 }

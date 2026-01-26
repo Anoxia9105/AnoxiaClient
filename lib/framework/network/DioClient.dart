@@ -219,6 +219,37 @@ class DioClient {
     }
   }
 
+  Future<Response> download(
+    String urlPath,
+    savePath, {
+    ProgressCallback? onReceiveProgress,
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+    bool deleteOnError = true,
+    String lengthHeader = Headers.contentLengthHeader,
+    dynamic data,
+    Options? options,
+  }) async {
+    try {
+      return await _dio.download(
+        urlPath,
+        savePath,
+        onReceiveProgress: onReceiveProgress,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+        deleteOnError: deleteOnError,
+        lengthHeader: lengthHeader,
+        data: data,
+        options: _mergeOptions(
+          options,
+          auth: false,
+        ), // Updates usually don't need auth
+      );
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }
+
   Options _mergeOptions(Options? options, {required bool auth}) {
     final extra = Map<String, dynamic>.from(options?.extra ?? {});
     extra['auth'] = auth;
