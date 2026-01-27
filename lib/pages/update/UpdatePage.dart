@@ -1,24 +1,28 @@
 import 'dart:io';
-
-import 'package:anoxia/framework/network/DioClient.dart';
-import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
-import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_file_plus/open_file_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:window_manager/window_manager.dart';
 
+import '../../common/utils/DeviceUtil.dart';
+import '../../framework/network/DioClient.dart';
+import '../../framework/provider/core/AppUpdateInfo.dart';
+import '../../framework/provider/layout/layout_controller.dart';
 import '../../framework/logs/talker.dart';
+import '../AppScaffold.dart';
 
-class UpdatePage extends StatefulWidget {
+class UpdatePage extends ConsumerStatefulWidget {
   final AppUpdateInfo updateInfo;
 
   const UpdatePage({super.key, required this.updateInfo});
 
   @override
-  State<UpdatePage> createState() => _UpdatePageState();
+  ConsumerState<UpdatePage> createState() => _UpdatePageState();
 }
 
-class _UpdatePageState extends State<UpdatePage> {
+class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
   double _progress = 0;
   bool _isDownloading = false;
   bool _hasStarted = false;
@@ -27,6 +31,27 @@ class _UpdatePageState extends State<UpdatePage> {
   @override
   void initState() {
     super.initState();
+    if (DeviceUtil.isRealDesktop()) {
+      windowManager.addListener(this);
+    }
+  }
+
+  @override
+  void onWindowMaximize() {
+    ref.read(layoutControllerProvider.notifier).toggleExtended();
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    ref.read(layoutControllerProvider.notifier).toggleExtended();
+  }
+
+  @override
+  void dispose() {
+    if (DeviceUtil.isRealDesktop()) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
   }
 
   Future<void> _startDownload() async {
@@ -41,7 +66,7 @@ class _UpdatePageState extends State<UpdatePage> {
       final fileName = widget.updateInfo.downloadUrl.split('/').last;
       final savePath = "${tempDir.path}/$fileName";
 
-      log.info("Downloading update to $savePath");
+      log.info("🚀 准备下载更新文件至: $savePath");
 
       final response = await DioClient().download(
         widget.updateInfo.downloadUrl,
@@ -56,24 +81,28 @@ class _UpdatePageState extends State<UpdatePage> {
       );
 
       if (response.statusCode != 200) {
-        throw Exception("服务器返回错误: ${response.statusCode}");
+        throw Exception("服务器响应异常: ${response.statusCode}");
       }
 
-      log.info("Download completed. Opening file...");
+      log.info("📦 下载完成，正在唤起安装程序...");
+
       final result = await OpenFile.open(savePath);
-      log.info("Open file result: ${result.type} ${result.message}");
 
       if (result.type == ResultType.done) {
-        log.info("✅ 安装程序已启动，正在关闭当前应用...");
+        log.info("✅ 安装程序已启动，执行安全退出序列...");
 
-        // 给系统一点点时间反应，然后退出
-        await Future.delayed(const Duration(milliseconds: 1000));
-        exit(0); // 彻底退出进程
-      } else if (result.type != ResultType.noAppToOpen) {
-        throw Exception("无法打开安装程序: ${result.message}");
+        if (DeviceUtil.isRealDesktop()) {
+          await windowManager.hide();
+          windowManager.removeListener(this);
+        }
+
+        await Future.delayed(const Duration(milliseconds: 500));
+        exit(0);
+      } else {
+        throw Exception("无法启动安装包: ${result.message}");
       }
     } catch (e) {
-      log.error("Download failed: $e");
+      log.error("❌ 更新失败: $e");
       setState(() {
         _isDownloading = false;
         _error = _formatError(e);
@@ -82,73 +111,137 @@ class _UpdatePageState extends State<UpdatePage> {
   }
 
   String _formatError(dynamic e) {
-    String errorStr = e.toString();
-    if (errorStr.contains("404")) {
-      return "更新文件不存在 (404)，请联系管理员。";
-    } else if (errorStr.contains("SocketException")) {
-      return "网络连接失败，请检查网络设置。";
-    } else if (errorStr.contains("Timeout")) {
-      return "连接超时，请重试。";
-    }
-    return "下载失败: $e";
+    String s = e.toString();
+    if (s.contains("404")) return "远程更新文件不存在 (404)";
+    if (s.contains("SocketException")) return "网络连接失败，请检查联网状态";
+    return "下载过程出错: $e";
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.system_update, size: 80, color: Colors.blue),
-              const SizedBox(height: 24),
-              Text(
-                "发现新版本 v${widget.updateInfo.latestVersion}",
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  widget.updateInfo.releaseNotes,
-                  textAlign: TextAlign.left,
-                ),
-              ),
-              const SizedBox(height: 32),
-              if (_isDownloading) ...[
-                LinearProgressIndicator(value: _progress),
-                const SizedBox(height: 16),
-                Text("正在下载: ${(_progress * 100).toStringAsFixed(1)}%"),
-              ] else ...[
-                if (_error != null) ...[
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ref.watch(appThemeProvider),
+      home: AppScaffold(
+        body: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 标题
+                Text(
+                  "发现新版本",
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 16),
-                ],
-                SizedBox(
+                ),
+                const SizedBox(height: 8),
+
+                // 版本号
+                Text(
+                  "v${widget.updateInfo.latestVersion}",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 更新说明
+                Text(
+                  "更新说明",
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _startDownload,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer.withValues(
+                      alpha: 0.3,
                     ),
-                    child: Text(_hasStarted ? "立即重试" : "开始更新"),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      widget.updateInfo.releaseNotes.isEmpty
+                          ? "性能优化与稳定性提升"
+                          : widget.updateInfo.releaseNotes,
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // 下载进度或按钮
+                if (_isDownloading) ...[
+                  LinearProgressIndicator(
+                    value: _progress,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "${(_progress * 100).toInt()}% - ${_progress >= 1 ? '准备安装...' : '下载中...'}",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ] else ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _startDownload,
+                      child: Text(_hasStarted ? "重试下载" : "立即升级"),
+                    ),
+                  ),
+                ],
+
+                // 错误信息
+                if (_error != null && !_isDownloading) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: colorScheme.onErrorContainer,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: TextStyle(
+                              color: colorScheme.onErrorContainer,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

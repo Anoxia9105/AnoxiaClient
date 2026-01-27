@@ -21,33 +21,6 @@ class QuillEmbedUtil {
     );
   }
 
-  /// 🔥 按 uuid 精准替换 Embed
-  static void replaceEmbedById({
-    required QuillController controller,
-    required String embedType,
-    required String id,
-    required Map<String, dynamic> newData,
-  }) {
-    final doc = controller.document;
-    int offset = 0;
-
-    for (final node in doc.root.children) {
-      if (node is Embed && node.value.type == embedType) {
-        final data = jsonDecode(node.value.data);
-        if (data is Map && data["id"] == id) {
-          controller.replaceText(
-            offset,
-            1,
-            BlockEmbed(embedType, jsonEncode(newData)),
-            null,
-          );
-          return;
-        }
-      }
-      offset += node.length;
-    }
-  }
-
   ///
   /// @ 删除用户输入@符号
   void deleteEmbedAtCursor(QuillController controller) {

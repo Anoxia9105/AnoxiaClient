@@ -1,11 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 @immutable
 class Attachment {
-  final String url;   // 文件URL
-  final String name;  // 文件名
-  final int size;     // 文件大小（字节）
-  final String type;  // 文件类型（mime / 自定义）
+  final String url; // 文件URL
+  final String name; // 文件名
+  final int size; // 文件大小（字节）
+  final String type; // 文件类型（mime / 自定义）
 
   const Attachment({
     required this.url,
@@ -26,21 +28,11 @@ class Attachment {
 
   /// Dart -> JSON
   Map<String, dynamic> toJson() {
-    return {
-      'url': url,
-      'name': name,
-      'size': size,
-      'type': type,
-    };
+    return {'url': url, 'name': name, 'size': size, 'type': type};
   }
 
   /// 不可变对象的“修改方式”
-  Attachment copyWith({
-    String? url,
-    String? name,
-    int? size,
-    String? type,
-  }) {
+  Attachment copyWith({String? url, String? name, int? size, String? type}) {
     return Attachment(
       url: url ?? this.url,
       name: name ?? this.name,

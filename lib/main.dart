@@ -69,13 +69,8 @@ Future<void> main(List<String> args) async {
       final updateInfo = await _checkUpdate();
       if (updateInfo != null && updateInfo.forceUpdate) {
         log.info("检测到强制更新，进入更新页面");
-        runApp(_buildAppWrapper(UpdatePage(updateInfo: updateInfo)));
+        await runUpdateApp(updateInfo);
         return;
-      }
-      // 如果是非强制更新，我们可以在主页面初始化完成后再弹窗提醒
-      // 这里可以全局存一份 updateInfo
-      if (updateInfo != null) {
-        globalUpdateInfo = updateInfo;
       }
     }
 
@@ -225,6 +220,38 @@ Future<void> runSubApp(WindowController controller) async {
   }
 }
 
+/// 启动更新窗口
+Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
+  try {
+    log.info('''
+ _______
+< 更新启动 >
+ -------
+        \\   ^__^
+         \\  (oo)\\_______
+            (__)\\       )\\/\\
+                ||----w |
+                ||     ||
+    ''');
+    if (DeviceUtil.isRealDesktop()) {
+      await setupDesktopWindow(
+        size: const Size(800, 600),
+        minimumSize: const Size(800, 600),
+      );
+    }
+
+    runApp(
+      UncontrolledProviderScope(
+        container: globalContainer,
+        child: _buildAppWrapper(UpdatePage(updateInfo: updateInfo)),
+      ),
+    );
+  } catch (e, stack) {
+    log.error("更新窗口启动失败", e, stack);
+    runApp(_buildErrorPage("更新窗口启动失败：$e"));
+  }
+}
+
 /// 通用窗口初始化（可配置标题栏/尺寸）
 Future<void> setupDesktopWindow({
   required Size size,
@@ -289,8 +316,6 @@ Widget _buildErrorPage(String message) {
     ),
   );
 }
-
-AppUpdateInfo? globalUpdateInfo;
 
 Future<AppUpdateInfo?> _checkUpdate() async {
   try {

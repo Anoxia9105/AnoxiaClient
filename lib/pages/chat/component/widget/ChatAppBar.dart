@@ -35,6 +35,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         data: (rooms) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
                 currentRoom?.roomName ?? '对话详情',

@@ -68,7 +68,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     super.dispose();
   }
 
-  final bodyPadding = 60.00;
+  final bodyPadding = 20.00;
 
   @override
   Widget build(BuildContext context) {
@@ -85,75 +85,65 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
     return Padding(
       padding: const EdgeInsets.all(4.0),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-          border: Border.all(
-            width: 1,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-        ),
-        child: Scaffold(
-          appBar: ChatAppBar(),
-          drawerScrimColor: Colors.transparent,
-          body: entryTask.when(
-            data: (_) {
-              return FlutterListView(
-                controller: _listViewController,
-                reverse: true,
-                delegate: FlutterListViewDelegate(
-                  (context, index) {
-                    if (hasMore && index == messages.length) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
-
-                    final msg = messages[messages.length - 1 - index];
-
-                    return Padding(
-                      padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-                      child: ChatMessageBubble(
-                        key: ValueKey(msg.messageId),
-                        message: msg,
+      child: Scaffold(
+        appBar: ChatAppBar(),
+        drawerScrimColor: Colors.transparent,
+        body: entryTask.when(
+          data: (_) {
+            return FlutterListView(
+              controller: _listViewController,
+              reverse: true,
+              delegate: FlutterListViewDelegate(
+                (context, index) {
+                  //如果还有更多消息，且当前是最后一个消息
+                  if (hasMore && index == messages.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
                       ),
                     );
-                  },
-                  childCount: messages.length + (hasMore ? 1 : 0),
-                  // 💡 建议开启 keepPosition: true
-                  // 这能保证在分页加载旧消息时，滚动位置不会跳动
-                  keepPosition: true,
+                  }
 
-                  // 💡 性能优化：给一个大概的预估高度
-                  preferItemHeight: 60,
-                ),
-              );
-            },
-            error: (err, _) => Center(child: Text("初始化失败: $err")),
-            loading: () {
-              return Center(child: CircularProgressIndicator());
-            },
-          ),
-          floatingActionButton: _showScrollDownButton
-              ? FloatingActionButton.small(
-                  // 使用小号按钮更精致
-                  backgroundColor: Theme.of(
-                    context,
-                  ).primaryColor.withValues(alpha: 0.8),
-                  onPressed: () => _scrollToBottom(animated: true),
-                  child: const Icon(Icons.arrow_downward, color: Colors.white),
-                )
-              : null,
-          bottomNavigationBar: Padding(
-            padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-            child: ChatInputField(
-              bottomSheet: () => _scrollToBottom(animated: true),
-            ),
+                  final msg = messages[messages.length - 1 - index];
+
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+                    child: ChatMessageBubble(
+                      key: ValueKey(msg.messageId),
+                      message: msg,
+                    ),
+                  );
+                },
+                childCount: messages.length + (hasMore ? 1 : 0),
+                // 开启 keepPosition: true
+                // 这能保证在分页加载旧消息时，滚动位置不会跳动
+                keepPosition: true,
+
+                // 性能优化：给一个大概的预估高度
+                preferItemHeight: 60,
+              ),
+            );
+          },
+          error: (err, _) => Center(child: Text("初始化失败: $err")),
+          loading: () {
+            return Center(child: CircularProgressIndicator());
+          },
+        ),
+        floatingActionButton: _showScrollDownButton
+            ? FloatingActionButton.small(
+                // 使用小号按钮更精致
+                backgroundColor: Theme.of(
+                  context,
+                ).primaryColor.withValues(alpha: 0.8),
+                onPressed: () => _scrollToBottom(animated: true),
+                child: const Icon(Icons.arrow_downward, color: Colors.white),
+              )
+            : null,
+        bottomNavigationBar: Padding(
+          padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+          child: ChatInputField(
+            bottomSheet: () => _scrollToBottom(animated: true),
           ),
         ),
       ),

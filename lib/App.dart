@@ -13,8 +13,6 @@ import 'framework/logs/talker.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/router/router.dart';
 import 'gen/assets.gen.dart';
-import 'main.dart';
-import 'pages/update/UpdatePage.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -33,41 +31,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       windowManager.addListener(this);
       trayManager.addListener(this);
     }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (globalUpdateInfo != null) {
-        _showUpdateDialog(globalUpdateInfo!);
-        globalUpdateInfo = null;
-      }
-    });
-  }
-
-  void _showUpdateDialog(dynamic info) {
-    BotToast.showWidget(
-      toastBuilder: (cancel) {
-        return AlertDialog(
-          title: Text("发现新版本 v${info.latestVersion}"),
-          content: Text(info.releaseNotes),
-          actions: [
-            TextButton(
-              onPressed: () => BotToast.cleanAll(),
-              child: const Text("稍后再说"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                BotToast.cleanAll();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (c) => UpdatePage(updateInfo: info),
-                  ),
-                );
-              },
-              child: const Text("立即更新"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -167,8 +130,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       theme: ref.watch(appThemeProvider),
       builder: BotToastInit(),
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
       locale: locale,
     );
   }

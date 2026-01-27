@@ -1,0 +1,160 @@
+import 'dart:convert';
+import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart'; // 确保导入
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart'; // 确保导入 isUploadingProvider
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // 必须导入
+import 'dart:math' as math;
+
+class QuillFileBuild implements EmbedBuilder {
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) {
+    final data = embedContext.node.value.data;
+    final Map<String, dynamic> dataMap = data is String
+        ? jsonDecode(data)
+        : data;
+    Attachment attachment = Attachment.fromJson(dataMap);
+
+    return Consumer(
+      builder: (context, ref, child) {
+        // 1. 监听文件上传映射表和全局上传状态
+        final uploadState = ref.watch(chatFileUploadControllerProvider);
+        final isUploading = ref.watch(isUploadingProvider);
+
+        final bool isSuccess = uploadState.containsKey(attachment.id);
+        final bool isFailed = !isSuccess && !isUploading; // 停止上传了但没拿到 URL 即为失败
+
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          constraints: const BoxConstraints(maxWidth: 260),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            // 失败时边框变红
+            border: Border.all(
+              color: isFailed
+                  ? Colors.redAccent
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            // 裁剪进度条
+            borderRadius: BorderRadius.circular(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      // 根据状态切换图标：失败显示错误图标，成功/上传显示类型图标
+                      _buildFileIcon(
+                        isFailed ? 'error' : (attachment.type ?? ''),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              attachment.name ?? '未知文件',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: isFailed ? Colors.redAccent : null,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isFailed
+                                  ? "上传失败，请删除重试"
+                                  : _formatFileSize(attachment.size ?? 0),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isFailed ? Colors.redAccent : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 2. 进度条逻辑
+                if (!isSuccess && isUploading)
+                  const LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: Colors.transparent,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFileIcon(String ext) {
+    IconData iconData;
+    Color color;
+
+    switch (ext.toLowerCase()) {
+      case 'error':
+        iconData = Icons.error_outline;
+        color = Colors.redAccent;
+        break;
+      case 'pdf':
+        iconData = Icons.picture_as_pdf;
+        color = Colors.redAccent;
+        break;
+      case 'doc':
+      case 'docx':
+        iconData = Icons.description;
+        color = Colors.blue;
+        break;
+      case 'zip':
+      case 'rar':
+        iconData = Icons.folder_zip;
+        color = Colors.orange;
+        break;
+      default:
+        iconData = Icons.insert_drive_file;
+        color = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(iconData, color: color, size: 28),
+    );
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes <= 0) return "0 B";
+    const suffixes = ["B", "KB", "MB", "GB", "TB"];
+    var i = (math.log(bytes) / math.log(1024)).floor();
+    return "${(bytes / math.pow(1024, i)).toStringAsFixed(1)} ${suffixes[i]}";
+  }
+
+  @override
+  WidgetSpan buildWidgetSpan(Widget widget) {
+    return WidgetSpan(child: widget, alignment: PlaceholderAlignment.bottom);
+  }
+
+  @override
+  String get key => "file";
+
+  @override
+  bool get expanded => false;
+
+  @override
+  String toPlainText(Embed node) => '[文件]';
+}

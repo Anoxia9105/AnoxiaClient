@@ -20,7 +20,7 @@ final class ChatInputControllerProvider
   }) : super(
          retry: null,
          name: r'chatInputControllerProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -59,7 +59,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'2daf7d42c99fa5d1c9dd86e3e18a0481425253c4';
+    r'62f1d1b77531ed01fba7f237b8ce7f448ecd75ce';
 
 final class ChatInputControllerFamily extends $Family
     with
@@ -76,7 +76,7 @@ final class ChatInputControllerFamily extends $Family
         name: r'chatInputControllerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   ChatInputControllerProvider call(String roomId) =>
@@ -108,12 +108,17 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
   }
 }
 
+/// 聊天输入框焦点
+
 @ProviderFor(chatFocusNode)
 const chatFocusNodeProvider = ChatFocusNodeFamily._();
+
+/// 聊天输入框焦点
 
 final class ChatFocusNodeProvider
     extends $FunctionalProvider<FocusNode, FocusNode, FocusNode>
     with $Provider<FocusNode> {
+  /// 聊天输入框焦点
   const ChatFocusNodeProvider._({
     required ChatFocusNodeFamily super.from,
     required String super.argument,
@@ -167,6 +172,8 @@ final class ChatFocusNodeProvider
 
 String _$chatFocusNodeHash() => r'4660d1fd2f3c46541ef6c2a8488481cd922b89dc';
 
+/// 聊天输入框焦点
+
 final class ChatFocusNodeFamily extends $Family
     with $FunctionalFamilyOverride<FocusNode, String> {
   const ChatFocusNodeFamily._()
@@ -178,9 +185,69 @@ final class ChatFocusNodeFamily extends $Family
         isAutoDispose: true,
       );
 
+  /// 聊天输入框焦点
+
   ChatFocusNodeProvider call(String roomId) =>
       ChatFocusNodeProvider._(argument: roomId, from: this);
 
   @override
   String toString() => r'chatFocusNodeProvider';
+}
+
+/// 上传状态（UI 用）
+
+@ProviderFor(IsUploading)
+const isUploadingProvider = IsUploadingProvider._();
+
+/// 上传状态（UI 用）
+final class IsUploadingProvider extends $NotifierProvider<IsUploading, bool> {
+  /// 上传状态（UI 用）
+  const IsUploadingProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'isUploadingProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$isUploadingHash();
+
+  @$internal
+  @override
+  IsUploading create() => IsUploading();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$isUploadingHash() => r'b5cff5477f9aac35ce4b59ad446866bdb5f32d7c';
+
+/// 上传状态（UI 用）
+
+abstract class _$IsUploading extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
 }

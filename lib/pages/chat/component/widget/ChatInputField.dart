@@ -1,7 +1,11 @@
-import 'package:anoxia/framework/provider/chat/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/ChatQuillToolbar.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/QuillStyleConfig.dart';
-import 'package:anoxia/pages/chat/component/widget/quill/builder/QuillImageBuild.dart';
+import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileBuild.dart';
+import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillImageBuild.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -31,9 +35,10 @@ class ChatInputField extends ConsumerWidget {
           color: colorScheme.onSurface.withValues(alpha: 0.1),
         ),
       ),
-      margin: EdgeInsets.only(bottom: 20),
+      margin: EdgeInsets.only(bottom: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ChatQuillToolbar(
             controller: controller,
@@ -44,10 +49,15 @@ class ChatInputField extends ConsumerWidget {
               bottomSheet();
             },
             onEmojiPressed: () => print("点击表情"),
-            onFilePressed: () => print("选择文件"),
+            onImagePressed: () => ref
+                .read(chatImageUploadControllerProvider.notifier)
+                .selectImages(controller),
+            onFilePressed: () => ref
+                .read(chatFileUploadControllerProvider.notifier)
+                .selectFiles(controller),
           ),
           ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: 200, minHeight: 40),
+            constraints: BoxConstraints(maxHeight: 200, minHeight: 50),
             child: QuillEditor.basic(
               focusNode: focusNode,
               controller: controller,
@@ -68,8 +78,8 @@ class ChatInputField extends ConsumerWidget {
                 padding: const EdgeInsets.all(8),
                 embedBuilders: [
                   QuillImageBuild(),
+                  QuillFileBuild(),
                   // AtBuilder(),
-                  // FileBuilder(controller: value.controller),
                 ],
 
                 onKeyPressed: (event, node) {

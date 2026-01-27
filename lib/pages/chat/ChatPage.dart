@@ -21,6 +21,7 @@ class ChatPage extends ConsumerWidget {
     return Row(
       children: [
         SizedBox(width: 90.w, child: ChatRoomList()),
+        VerticalDivider(),
         Expanded(
           child: activeId == null ? Center(child: Welcome()) : ChatRoomDetail(),
         ),
