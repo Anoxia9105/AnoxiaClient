@@ -9,12 +9,18 @@ import '../../../framework/domain/ChatRoomVO.dart';
 import '../../../framework/services/contact_list_service.dart';
 import '../../../framework/services/room_list_service.dart';
 
-class ChatRoomList extends ConsumerWidget {
+class ChatRoomList extends ConsumerStatefulWidget {
   const ChatRoomList({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. 监听房间列表状态
+  ConsumerState createState() => _ChatRoomListState();
+}
+
+class _ChatRoomListState extends ConsumerState<ChatRoomList> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
     final roomListAsync = ref.watch(roomListServiceProvider);
 
     return Scaffold(
@@ -24,11 +30,26 @@ class ChatRoomList extends ConsumerWidget {
           children: [
             Expanded(
               child: SizedBox(
-                height: 40,
                 child: TextField(
+                  onChanged: (val) =>
+                      ref.read(roomSearchQueryProvider.notifier).update(val),
+                  maxLength: 20,
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
+                    counterText: '',
                     prefixIcon: const Icon(Icons.search, size: 20),
+                    // 当有文字时显示清除按钮
+                    suffixIcon: ref.watch(roomSearchQueryProvider).isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.cancel, size: 16),
+                            onPressed: () {
+                              _searchController.clear();
+                              ref
+                                  .read(roomSearchQueryProvider.notifier)
+                                  .update("");
+                            },
+                          )
+                        : null,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                     hintText: '搜索会话...',
@@ -51,7 +72,7 @@ class ChatRoomList extends ConsumerWidget {
       ),
       // 2. 使用 AsyncValue 的 when 模式处理不同状态
       body: roomListAsync.when(
-        data: (rooms) => _buildRoomList(context, ref, rooms),
+        data: (rooms) => _buildRoomList(context, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('加载失败')),
       ),
@@ -61,12 +82,23 @@ class ChatRoomList extends ConsumerWidget {
   // 构建列表主体
   Widget _buildRoomList(
     BuildContext context,
-    WidgetRef ref,
-    List<ChatRoomVO> rooms,
+    WidgetRef ref
   ) {
-    if (rooms.isEmpty) {
-      return const Center(
-        child: Text("暂无消息会话", style: TextStyle(color: Colors.grey)),
+    final filteredRooms = ref.watch(filteredRoomListProvider);
+    final query = ref.watch(roomSearchQueryProvider);
+    if (filteredRooms.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 48, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text(
+              query.isEmpty ? "暂无消息会话" : "未找到相关会话",
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
       );
     }
 
@@ -76,10 +108,9 @@ class ChatRoomList extends ConsumerWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 2.w),
         child: ListView.builder(
-          itemCount: rooms.length,
+          itemCount: filteredRooms.length,
           itemBuilder: (context, index) {
-            final room = rooms[index];
-            return _RoomItem(room: room);
+            return _RoomItem(room: filteredRooms[index]);
           },
         ),
       ),

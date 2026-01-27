@@ -43,6 +43,7 @@ class AvatarWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadius),
           child: hasUrl
               ? CachedNetworkImage(
+                  filterQuality: FilterQuality.high,
                   imageUrl: url!,
                   width: size,
                   height: size,

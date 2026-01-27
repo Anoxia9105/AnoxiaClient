@@ -35,7 +35,7 @@ class ChatInputField extends ConsumerWidget {
           color: colorScheme.onSurface.withValues(alpha: 0.1),
         ),
       ),
-      margin: EdgeInsets.only(bottom: 10),
+      // margin: EdgeInsets.only(bottom: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

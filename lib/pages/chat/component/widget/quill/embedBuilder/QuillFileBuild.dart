@@ -1,11 +1,13 @@
 import 'dart:convert';
+
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
-import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart'; // 确保导入
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart'; // 确保导入 isUploadingProvider
+import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart'; // 确保导入
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // 必须导入
-import 'dart:math' as math;
+
+import '../../../../../../common/utils/fileUtil.dart';
 
 class QuillFileBuild implements EmbedBuilder {
   @override
@@ -51,7 +53,7 @@ class QuillFileBuild implements EmbedBuilder {
                   child: Row(
                     children: [
                       // 根据状态切换图标：失败显示错误图标，成功/上传显示类型图标
-                      _buildFileIcon(
+                      FileUtil.buildFileIcon(
                         isFailed ? 'error' : (attachment.type ?? ''),
                       ),
                       const SizedBox(width: 12),
@@ -73,7 +75,7 @@ class QuillFileBuild implements EmbedBuilder {
                             Text(
                               isFailed
                                   ? "上传失败，请删除重试"
-                                  : _formatFileSize(attachment.size ?? 0),
+                                  : FileUtil.formatFileSize(attachment.size ?? 0),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isFailed ? Colors.redAccent : null,
@@ -97,51 +99,6 @@ class QuillFileBuild implements EmbedBuilder {
         );
       },
     );
-  }
-
-  Widget _buildFileIcon(String ext) {
-    IconData iconData;
-    Color color;
-
-    switch (ext.toLowerCase()) {
-      case 'error':
-        iconData = Icons.error_outline;
-        color = Colors.redAccent;
-        break;
-      case 'pdf':
-        iconData = Icons.picture_as_pdf;
-        color = Colors.redAccent;
-        break;
-      case 'doc':
-      case 'docx':
-        iconData = Icons.description;
-        color = Colors.blue;
-        break;
-      case 'zip':
-      case 'rar':
-        iconData = Icons.folder_zip;
-        color = Colors.orange;
-        break;
-      default:
-        iconData = Icons.insert_drive_file;
-        color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(iconData, color: color, size: 28),
-    );
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes <= 0) return "0 B";
-    const suffixes = ["B", "KB", "MB", "GB", "TB"];
-    var i = (math.log(bytes) / math.log(1024)).floor();
-    return "${(bytes / math.pow(1024, i)).toStringAsFixed(1)} ${suffixes[i]}";
   }
 
   @override

@@ -174,3 +174,34 @@ List<ChatRoomVO> groupRoomList(Ref ref) {
     orElse: () => const [],
   );
 }
+
+@riverpod
+class RoomSearchQuery extends _$RoomSearchQuery {
+  @override
+  String build() => "";
+
+  void update(String query) => state = query;
+}
+
+// 2. 核心：根据关键词过滤房间列表
+@riverpod
+List<ChatRoomVO> filteredRoomList(Ref ref) {
+  // 监听原始列表
+  final roomListAsync = ref.watch(roomListServiceProvider);
+  // 监听搜索词
+  final query = ref.watch(roomSearchQueryProvider).trim().toLowerCase();
+
+  return roomListAsync.maybeWhen(
+    data: (rooms) {
+      if (query.isEmpty) return rooms;
+
+      // 搜索规则：匹配房间名 或 最后一条消息内容
+      return rooms.where((room) {
+        final nameMatch = (room.roomName ?? "").toLowerCase().contains(query);
+        final msgMatch = (room.lastMessage?.content ?? "").toLowerCase().contains(query);
+        return nameMatch || msgMatch;
+      }).toList();
+    },
+    orElse: () => const [],
+  );
+}

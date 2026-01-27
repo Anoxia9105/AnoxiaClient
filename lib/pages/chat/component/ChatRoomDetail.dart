@@ -68,7 +68,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     super.dispose();
   }
 
-  final bodyPadding = 20.00;
+  final bodyPadding = 50.00;
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +82,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final messages = ref.watch(
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
-
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: Scaffold(
@@ -140,12 +139,77 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                 child: const Icon(Icons.arrow_downward, color: Colors.white),
               )
             : null,
-        bottomNavigationBar: Padding(
-          padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-          child: ChatInputField(
-            bottomSheet: () => _scrollToBottom(animated: true),
-          ),
-        ),
+
+        bottomNavigationBar: entryTask.isLoading
+            ? SizedBox.shrink()
+            : Padding(
+                padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ChatInputField(
+                      bottomSheet: () => _scrollToBottom(animated: true),
+                    ),
+                    SizedBox(height: 28),
+                    /* Container(
+                      height: 28, // 桌面端状态栏通常很窄
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: Colors.greenAccent,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "已连接到 http://8.137.14.21:7880",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const Spacer(),
+                          // 中间：快捷键提示（淡淡的显示）
+                          Text(
+                            "Enter 发送 / Shift+Enter 换行",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          const Spacer(),
+                          // 右侧：延迟和版本
+                          // Icon(Icons.speed, size: 14, color: Colors.grey[400]),
+                          // const SizedBox(width: 4),
+                          // Text(
+                          //   "42ms",
+                          //   style: TextStyle(
+                          //     fontSize: 11,
+                          //     color: Colors.grey[600],
+                          //   ),
+                          // ),
+                          // const SizedBox(width: 12),
+                          Text(
+                            "v1.0.2-alpha",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),*/
+                  ],
+                ),
+              ),
       ),
     );
   }

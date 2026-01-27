@@ -263,3 +263,102 @@ final class GroupRoomListProvider
 }
 
 String _$groupRoomListHash() => r'5e76dcf71c0b1897781c422801af27e08c713150';
+
+@ProviderFor(RoomSearchQuery)
+const roomSearchQueryProvider = RoomSearchQueryProvider._();
+
+final class RoomSearchQueryProvider
+    extends $NotifierProvider<RoomSearchQuery, String> {
+  const RoomSearchQueryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'roomSearchQueryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$roomSearchQueryHash();
+
+  @$internal
+  @override
+  RoomSearchQuery create() => RoomSearchQuery();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$roomSearchQueryHash() => r'71a63adfba4648949d69a3486f1852e4e2acfb36';
+
+abstract class _$RoomSearchQuery extends $Notifier<String> {
+  String build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<String, String>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String, String>,
+              String,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
+@ProviderFor(filteredRoomList)
+const filteredRoomListProvider = FilteredRoomListProvider._();
+
+final class FilteredRoomListProvider
+    extends
+        $FunctionalProvider<
+          List<ChatRoomVO>,
+          List<ChatRoomVO>,
+          List<ChatRoomVO>
+        >
+    with $Provider<List<ChatRoomVO>> {
+  const FilteredRoomListProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'filteredRoomListProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$filteredRoomListHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<ChatRoomVO>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<ChatRoomVO> create(Ref ref) {
+    return filteredRoomList(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<ChatRoomVO> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<ChatRoomVO>>(value),
+    );
+  }
+}
+
+String _$filteredRoomListHash() => r'631b1bd63b8bd90c6ea639950a9d46da8f09b624';

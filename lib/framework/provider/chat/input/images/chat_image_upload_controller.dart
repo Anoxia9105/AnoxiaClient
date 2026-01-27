@@ -3,18 +3,17 @@ import 'dart:io';
 
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/common/utils/fileUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:image_compression_flutter/image_compression_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as p;
 
 part 'chat_image_upload_controller.g.dart';
 
@@ -31,7 +30,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
   /// 选择并插入预览，后台启动上传
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
