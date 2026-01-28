@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
+import '../quill/embedBuilder/QuillMentionBuild.dart';
 import 'MessageRenderStrategy.dart';
 
 class QuillMessageStrategy extends MessageRenderStrategy {
@@ -16,14 +17,18 @@ class QuillMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
-    // 💡 不再在 Strategy 里持有控制器，而是交给具体的 Widget 处理
-    return _QuillInternalRenderer(message: message);
+    return _QuillInternalRenderer(message: message, textColor: textColor);
   }
 }
 
 class _QuillInternalRenderer extends StatefulWidget {
   final ChatMessage message;
-  const _QuillInternalRenderer({required this.message});
+  final Color textColor;
+
+  const _QuillInternalRenderer({
+    required this.message,
+    required this.textColor,
+  });
 
   @override
   State<_QuillInternalRenderer> createState() => _QuillInternalRendererState();
@@ -39,7 +44,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     _initController();
   }
 
-  // 💡 关键：当列表项复用时，如果 message 变了，需要更新内容
   @override
   void didUpdateWidget(covariant _QuillInternalRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -81,11 +85,17 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         config: QuillEditorConfig(
           showCursor: false,
           autoFocus: false,
-          expands: false, // 关键：不自动扩展高度
-          scrollable: false, // 关键：禁止内部滚动，让气泡随内容大小变化
+          expands: false,
+          // 关键：不自动扩展高度
+          scrollable: false,
+          // 关键：禁止内部滚动，让气泡随内容大小变化
           padding: EdgeInsets.zero,
-          customStyles: QuillStyleConfig.get(context),
-          embedBuilders: [QuillImageBuild(), QuillFileBuild()],
+          customStyles: QuillStyleConfig.get(context, color: widget.textColor),
+          embedBuilders: [
+            QuillImageBuild(),
+            QuillFileBuild(),
+            QuillMentionBuild(),
+          ],
         ),
       ),
     );

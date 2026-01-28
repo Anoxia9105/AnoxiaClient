@@ -5,8 +5,8 @@ import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
-import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -137,14 +137,14 @@ class ChatInputController extends _$ChatInputController {
   /// 发送消息
   void sendMessage() {
     final room = ref.read(activeRoomProvider);
-    if (room == null || state.document.length <= 1) return;
+    if (room == null || state.document.isEmpty()) return;
 
     final uploadState = {
       ...ref.read(chatImageUploadControllerProvider),
       ...ref.read(chatFileUploadControllerProvider),
     };
     final processor = DeltaProcessor(state.document.toDelta(), uploadState);
-
+    final mentionIds = processor.mentionedUserIds;
     // 拦截：正在上传中
     if (ref.read(isUploadingProvider)) {
       return;
@@ -169,18 +169,31 @@ class ChatInputController extends _$ChatInputController {
         attachments: processor.files,
       );
     }
-    // 发送文字 (包含富文本样式)
-    if (processor.plainText.isNotEmpty) {
-      final isRich = processor.hasAttributes;
-      _doSend(
-        type: isRich ? "QUILL" : "TEXT",
-        payload: isRich
-            ? {
-                "content": processor.plainText.characters.take(100).toString(),
-                "quillDelta": jsonEncode(processor.textOnlyDelta.toJson()),
-              }
-            : {"content": processor.plainText},
-      );
+    // 发送文字 (包含富文本样式) (Mention 不会计入 plainText 长度，所以要单独判)
+    if (processor.plainText.isNotEmpty ||
+        processor.mentionedUserIds.isNotEmpty) {
+      final cleanDelta = processor.filteredDelta;
+      // 再次检查清理后的 Delta 是否有效（避免只发了一个换行符）
+      if (cleanDelta.length == 0 ||
+          (cleanDelta.length == 1 &&
+              cleanDelta.first.data == '\n' &&
+              processor.mentionedUserIds.isEmpty)) {
+        // 如果清理完图片后只剩空换行，且没有 @，则不发送
+      } else {
+        final isRich = processor.hasAttributes || mentionIds.isNotEmpty;
+        _doSend(
+          type: isRich ? "QUILL" : "TEXT",
+          payload: isRich
+              ? {
+                  "content": processor.plainText.characters
+                      .take(100)
+                      .toString(),
+                  "quillDelta": jsonEncode(cleanDelta.toJson()),
+                  "mentions": mentionIds,
+                }
+              : {"content": processor.plainText},
+        );
+      }
     }
     // 4. 清空输入
     clearInput();
@@ -235,6 +248,7 @@ class IsUploading extends _$IsUploading {
   }
 
   void start() => state = true;
+
   void stop() => state = false;
 }
 

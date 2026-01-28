@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
@@ -26,7 +25,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
   /// 选择文件并插入编辑器
   Future<void> selectFiles(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.any, // 允许所有类型
     );

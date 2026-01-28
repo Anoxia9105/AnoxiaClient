@@ -21,6 +21,7 @@ class ChatMessageBubble extends ConsumerWidget {
     //TODO 系统消息 直接渲染
 
     final user = ref.watch(authControllerProvider.select((v) => v.value));
+    final currentUserId = user?.userId;
     final isCurrentUser = message.senderId == user?.userId;
 
     final senderInfo = ref.watch(
@@ -41,6 +42,15 @@ class ChatMessageBubble extends ConsumerWidget {
         ? colorScheme.onPrimary
         : colorScheme.onSurfaceVariant;
 
+    final mentionList = message.payload?.mentions;
+    bool isMentionedMe = false;
+    if (mentionList != null &&
+        !isCurrentUser &&
+        currentUserId != null &&
+        mentionList.contains(currentUserId)) {
+      isMentionedMe = true;
+    }
+
     /// quill text 需要气泡框
     final bool needsBubble =
         message.messageType == MessageType.quill ||
@@ -50,7 +60,6 @@ class ChatMessageBubble extends ConsumerWidget {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Column(
-        // 💡 整个消息体（含名称时间）的对齐
         crossAxisAlignment: isCurrentUser
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
@@ -62,7 +71,8 @@ class ChatMessageBubble extends ConsumerWidget {
           // --- 2. 头像与消息体层 ---
           Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, // 💡 确保头像和气泡顶部对齐
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             textDirection: isCurrentUser
                 ? TextDirection.rtl
                 : TextDirection.ltr,
@@ -104,6 +114,7 @@ class ChatMessageBubble extends ConsumerWidget {
                                   vertical: 8,
                                   horizontal: 8,
                                 ),
+                                border: BorderSide(width: 1,color: colorScheme.surface.withValues(alpha: 0.5)),
                                 borderRadius: BorderRadius.circular(4),
                                 // 稍微圆润一点更精美
                                 backgroundColor: bubbleBgColor,
@@ -127,7 +138,15 @@ class ChatMessageBubble extends ConsumerWidget {
                 ),
               ),
               // 占位，防止气泡贴边
-              SizedBox(width: 40),
+              SizedBox(width: 20),
+              if(isMentionedMe)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2, left: 4),
+                  child: Text(
+                    "@你",
+                    style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold),
+                  ),
+                ),
             ],
           ),
         ],

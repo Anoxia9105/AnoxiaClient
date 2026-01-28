@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 class QuillStyleConfig {
-  static DefaultStyles get(BuildContext context) {
+  static DefaultStyles get(BuildContext context, {Color? color}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final String? fontFamily = theme.textTheme.bodyLarge?.fontFamily;
@@ -10,7 +10,7 @@ class QuillStyleConfig {
     final baseTextStyle = TextStyle(
       fontFamily: fontFamily,
       fontSize: 14,
-      color: colorScheme.onSurface,
+      color: color ?? colorScheme.onSurface,
     );
 
     return DefaultStyles(
@@ -28,7 +28,10 @@ class QuillStyleConfig {
         const VerticalSpacing(0, 0),
         null,
       ),
-      link: baseTextStyle.copyWith(color: Colors.blue, decoration: TextDecoration.underline),
+      link: baseTextStyle.copyWith(
+        color: Colors.blue,
+        decoration: TextDecoration.underline,
+      ),
     );
   }
 }

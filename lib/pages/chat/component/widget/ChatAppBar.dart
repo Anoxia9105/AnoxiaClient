@@ -6,15 +6,14 @@ import 'package:anoxia/framework/provider/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../framework/domain/ChatRoomVO.dart';
 import '../../../../framework/protocol/message/HighMessage.dart';
-import '../../../../framework/provider/theme/theme_controller.dart';
 import '../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
+import '../../../../framework/provider/theme/theme_controller.dart';
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const ChatAppBar({super.key});
@@ -145,6 +144,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                   url: m.avatar,
                                   name: m.nickName,
                                   size: 30,
+                                  status: m.onlineStatus ?? false
+                                      ? AvatarStatus.online
+                                      : AvatarStatus.offline,
                                 ),
                                 title: Text(m.nickName ?? '未知用户'),
                               );
