@@ -39,12 +39,18 @@ class ChatRoomMemberVO {
   factory ChatRoomMemberVO.fromJson(Map<String, dynamic> json) {
     return ChatRoomMemberVO(
       roomId: json['roomId']?.toString(),
-      userId: json['userId'] is int ? json['userId'] : int.tryParse(json['userId']?.toString() ?? ''),
-      roleId: json['roleId'] is int ? json['roleId'] : int.tryParse(json['roleId']?.toString() ?? ''),
+      userId: json['userId'] is int
+          ? json['userId']
+          : int.tryParse(json['userId']?.toString() ?? ''),
+      roleId: json['roleId'] is int
+          ? json['roleId']
+          : int.tryParse(json['roleId']?.toString() ?? ''),
       // 处理后端 pattern = "yyyy-MM-dd HH:mm:ss" 的字符串
       joinTime: _parseDate(json['joinTime']),
       lastActiveTime: _parseDate(json['lastActiveTime']),
-      lastReadSeq: json['lastReadSeq'] is int ? json['lastReadSeq'] : int.tryParse(json['lastReadSeq']?.toString() ?? ''),
+      lastReadSeq: json['lastReadSeq'] is int
+          ? json['lastReadSeq']
+          : int.tryParse(json['lastReadSeq']?.toString() ?? ''),
       nickName: json['nickName'],
       avatar: json['avatar'],
       sex: json['sex']?.toString(),
@@ -72,7 +78,9 @@ class ChatRoomMemberVO {
       'roomId': roomId,
       'userId': userId,
       'roleId': roleId,
-      'joinTime': joinTime != null ? DateFormat("yyyy-MM-dd HH:mm:ss").format(joinTime!) : null,
+      'joinTime': joinTime != null
+          ? DateFormat("yyyy-MM-dd HH:mm:ss").format(joinTime!)
+          : null,
       'nickName': nickName,
       'avatar': avatar,
       'onlineStatus': onlineStatus,
@@ -82,6 +90,7 @@ class ChatRoomMemberVO {
   /// 拷贝方法，用于 Riverpod 局部更新状态
   ChatRoomMemberVO copyWith({
     bool? onlineStatus,
+    String? nickName,
     int? lastReadSeq,
     DateTime? lastActiveTime,
   }) {

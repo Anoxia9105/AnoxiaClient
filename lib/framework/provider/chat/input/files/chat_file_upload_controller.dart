@@ -26,7 +26,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
   /// 选择文件并插入编辑器
   Future<void> selectFiles(QuillController controller) async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.any, // 允许所有类型
     );

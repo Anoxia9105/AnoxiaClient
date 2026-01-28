@@ -1,12 +1,12 @@
 import 'package:anoxia/framework/network/DioClient.dart';
-import 'package:anoxia/framework/services/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../domain/ChatMessage.dart';
-import '../logs/talker.dart';
-import '../protocol/PacketType.dart';
-import '../protocol/message/RoomMessage.dart';
-import '../provider/ws/ws_controller.dart';
+import '../../../domain/ChatMessage.dart';
+import '../../../logs/talker.dart';
+import '../../../protocol/PacketType.dart';
+import '../../../protocol/message/RoomMessage.dart';
+import '../../ws/ws_controller.dart';
 
 part 'room_message_service.g.dart';
 
@@ -14,9 +14,8 @@ part 'room_message_service.g.dart';
 /// key = roomId, value = List<ChatMessage>
 @riverpod
 class ChatMessages extends _$ChatMessages {
-
   //跟后端同步 分页大小
-  final int _pageSize=50;
+  final int _pageSize = 50;
 
   bool _isFetchingHistory = false;
 
@@ -105,7 +104,6 @@ class ChatMessages extends _$ChatMessages {
       _syncedRoomIds.add(roomId);
 
       if (data is! List) return;
-
 
       final List<ChatMessage> history = data
           .map((e) => ChatMessage.fromJson(e))

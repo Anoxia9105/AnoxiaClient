@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';
-import '../../services/room_list_service.dart';
-import '../../services/system_event_service.dart';
+import '../chat/room/room_list_service.dart';
+import '../chat/message/system_event_service.dart';
 import '../auth/auth_controller.dart';
 
 part 'app_initializer.g.dart';

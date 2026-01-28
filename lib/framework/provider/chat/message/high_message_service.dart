@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../logs/talker.dart';
-import '../protocol/PacketType.dart';
-import '../protocol/message/HighMessage.dart';
-import '../provider/ws/ws_controller.dart';
+import '../../../logs/talker.dart';
+import '../../../protocol/PacketType.dart';
+import '../../../protocol/message/HighMessage.dart';
+import '../../ws/ws_controller.dart';
 
 part 'high_message_service.g.dart';
 
@@ -49,7 +49,7 @@ class HighMessageService extends _$HighMessageService {
       case HighMessageType.TYPING_STATUS:
         _manageTypingTimer(msg);
         break;
-        
+
       case HighMessageType.CALL_INVITE:
         // 收到邀请，通常需要配合声音、震动或弹出全屏接听界面
         _handleCallInvite(msg);
@@ -71,7 +71,7 @@ class HighMessageService extends _$HighMessageService {
         // 消息撤回：处理完逻辑后，由于它是瞬时指令，建议从状态中移除
         _clearSingleStatus(roomId, HighMessageType.MSG_REVOKE);
         break;
-        
+
       default:
         // CALL_CANDIDATE, CALL_MEDIA_CHANGE 等通常由 RTC 引擎监听 State 变化
         break;
@@ -125,16 +125,16 @@ class HighMessageService extends _$HighMessageService {
   /// 清理通话上下文：当通话结束/取消时，把房间里所有跟通话有关的状态一次性抹除
   void _clearCallContext(String roomId) {
     if (!state.containsKey(roomId)) return;
-    
+
     final roomMap = Map<HighMessageType, HighMessage>.from(state[roomId]!);
     // 移除所有通话相关 Key
     const callTypes = [
       HighMessageType.CALL_INVITE,
       HighMessageType.CALL_ACCEPT,
       HighMessageType.CALL_CANDIDATE,
-      HighMessageType.CALL_MEDIA_CHANGE
+      HighMessageType.CALL_MEDIA_CHANGE,
     ];
-    
+
     for (var t in callTypes) {
       roomMap.remove(t);
     }
@@ -151,9 +151,14 @@ class HighMessageService extends _$HighMessageService {
   }
 
   /// 统一的状态更新逻辑，包含自动回收空房间 Map
-  void _updateRoomState(String roomId, Map<HighMessageType, HighMessage> roomMap) {
+  void _updateRoomState(
+    String roomId,
+    Map<HighMessageType, HighMessage> roomMap,
+  ) {
     if (roomMap.isEmpty) {
-      final newState = Map<String, Map<HighMessageType, HighMessage>>.from(state);
+      final newState = Map<String, Map<HighMessageType, HighMessage>>.from(
+        state,
+      );
       newState.remove(roomId);
       state = newState;
     } else {

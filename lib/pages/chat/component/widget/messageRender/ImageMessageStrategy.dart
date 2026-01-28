@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:cached_network_image/cached_network_image.dart'; // 别忘了引入
 import 'package:flutter/material.dart';
 
@@ -23,18 +24,30 @@ class ImageMessageStrategy extends MessageRenderStrategy {
     // 单张图片显示
     if (imageList.length == 1) {
       const double displayWidth = 200.0;
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: CachedNetworkImage(
-          imageUrl: imageList[0].url!,
-          width: displayWidth,
-          fit: BoxFit.contain,
-          // 关键：设置内存缓存大小为 容器宽度 * DPR
-          memCacheWidth: (displayWidth * dpr).round(),
-          placeholder: (context, url) => _buildPlaceholder(displayWidth, 150),
-          errorWidget: (context, url, error) =>
-              const Icon(Icons.broken_image, size: 50),
-          filterQuality: FilterQuality.medium, // 权衡性能与清晰度
+      final attachment = imageList[0];
+      final heroTag = "image-${attachment.url}";
+
+      return GestureDetector(
+        onTap: () => ImageMessageDetailRoute(
+          attachment: attachment,
+          heroTag: heroTag,
+        ).push(context),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Hero(
+            tag: heroTag,
+            child: CachedNetworkImage(
+              imageUrl: attachment.url!,
+              width: displayWidth,
+              fit: BoxFit.contain,
+              memCacheWidth: (displayWidth * dpr).round(),
+              placeholder: (context, url) =>
+                  _buildPlaceholder(displayWidth, 150),
+              errorWidget: (context, url, error) =>
+                  const Icon(Icons.broken_image, size: 50),
+              filterQuality: FilterQuality.medium,
+            ),
+          ),
         ),
       );
     }
@@ -45,21 +58,32 @@ class ImageMessageStrategy extends MessageRenderStrategy {
       runSpacing: 4,
       children: imageList.map((attachment) {
         const double gridSize = 100.0;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: CachedNetworkImage(
-            imageUrl: attachment.url!,
-            width: gridSize,
-            height: gridSize,
-            fit: BoxFit.cover,
-            // 关键：多图时限制内存占用，但保持 DPR 缩放
-            memCacheWidth: (gridSize * dpr).round(),
-            memCacheHeight: (gridSize * dpr).round(),
-            placeholder: (context, url) =>
-                _buildPlaceholder(gridSize, gridSize),
-            errorWidget: (context, url, error) =>
-                const Icon(Icons.broken_image, size: 30),
-            filterQuality: FilterQuality.medium,
+        final heroTag =
+            "image-${attachment.url}-${message.messageId}"; // 多图带上消息ID防止Tag冲突
+        return GestureDetector(
+          onTap: () => ImageMessageDetailRoute(
+            attachment: attachment,
+            heroTag: heroTag,
+          ).push(context),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Hero(
+              tag: heroTag,
+              child: CachedNetworkImage(
+                imageUrl: attachment.url!,
+                width: gridSize,
+                height: gridSize,
+                fit: BoxFit.cover,
+                // 关键：多图时限制内存占用，但保持 DPR 缩放
+                memCacheWidth: (gridSize * dpr).round(),
+                memCacheHeight: (gridSize * dpr).round(),
+                placeholder: (context, url) =>
+                    _buildPlaceholder(gridSize, gridSize),
+                errorWidget: (context, url, error) =>
+                    const Icon(Icons.broken_image, size: 30),
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
           ),
         );
       }).toList(),

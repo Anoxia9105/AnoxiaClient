@@ -2,7 +2,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../framework/services/room_list_service.dart';
+import '../../framework/provider/chat/room/room_list_service.dart';
 
 class GroupRoomListPage extends ConsumerWidget {
   const GroupRoomListPage({super.key});
@@ -12,9 +12,7 @@ class GroupRoomListPage extends ConsumerWidget {
     final groups = ref.watch(groupRoomListProvider);
 
     if (groups.isEmpty) {
-      return const Center(
-        child: Text("暂无群聊"),
-      );
+      return const Center(child: Text("暂无群聊"));
     }
 
     return ListView.builder(
@@ -22,7 +20,7 @@ class GroupRoomListPage extends ConsumerWidget {
       itemBuilder: (context, index) {
         final room = groups[index];
         return ListTile(
-          leading: AvatarWidget(url: room.roomAvatar,name: room.roomName),
+          leading: AvatarWidget(url: room.roomAvatar, name: room.roomName),
           title: Text(room.roomName ?? '未命名群聊'),
           subtitle: Text(
             room.lastMessage?.content ?? '暂无消息',
@@ -31,12 +29,12 @@ class GroupRoomListPage extends ConsumerWidget {
           ),
           trailing: (room.unreadCount ?? 0) > 0
               ? CircleAvatar(
-            radius: 10,
-            child: Text(
-              room.unreadCount.toString(),
-              style: const TextStyle(fontSize: 12),
-            ),
-          )
+                  radius: 10,
+                  child: Text(
+                    room.unreadCount.toString(),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                )
               : null,
         );
       },

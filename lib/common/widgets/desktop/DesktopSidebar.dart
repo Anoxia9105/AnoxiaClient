@@ -20,7 +20,6 @@ class DesktopSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
-    final locale = context.locale;
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
     return SizedBox(
       width: 70,
@@ -38,69 +37,7 @@ class DesktopSidebar extends ConsumerWidget {
                       ? AvatarStatus.online
                       : AvatarStatus.offline,
                 ),
-                onTap: () {
-                  Function? close;
-                  close = Toast.showWidget(
-                    context,
-                    direction: PreferDirection.rightTop,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 90.w),
-                      child: BubbleWidget(
-                        arrowDirection: AxisDirection.left,
-                        arrowOffset: 20,
-                        arrowLength: 6,
-                        arrowRadius: 3,
-                        arrowWidth: 17,
-                        border: BorderSide(
-                          width: 1,
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainer,
-                        contentBuilder: (context) => Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                user.value?.nickName ?? 'Unknown',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                user.value?.email ?? 'No Email',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 8),
-                              FilledButton(
-                                onPressed: () {
-                                  ref
-                                      .read(authControllerProvider.notifier)
-                                      .logout();
-                                  close?.call();
-                                },
-                                child: Text("退出登录"),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                onTap: () => _showUserDetail(context, ref, user.value, status),
               );
             },
           ),
@@ -128,6 +65,105 @@ class DesktopSidebar extends ConsumerWidget {
             icon: layout.items[layout.items.length - 1].icon,
           ),
         ],
+      ),
+    );
+  }
+
+  void _showUserDetail(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic user,
+    WsStatus status,
+  ) {
+    Function? close;
+    close = Toast.showWidget(
+      context,
+      direction: PreferDirection.rightTop,
+      child: Material(
+        color: Colors.transparent,
+        child: BubbleWidget(
+          arrowDirection: AxisDirection.left,
+          arrowOffset: 25,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          border: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+          contentBuilder: (context) => Container(
+            constraints: BoxConstraints(maxWidth: 220, maxHeight: 600),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    AvatarWidget(
+                      url: user?.avatar,
+                      name: user?.nickName,
+                      size: 50,
+                      status: status == WsStatus.connected
+                          ? AvatarStatus.online
+                          : AvatarStatus.offline,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.nickName ?? 'Unknown',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            user?.email ?? 'No Email',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      ref.read(authControllerProvider.notifier).logout();
+                      close?.call();
+                    },
+                    label: Text("个人详情"),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedUser),
+                  ),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      ref.read(authControllerProvider.notifier).logout();
+                      close?.call();
+                    },
+                    label: Text("退出登录", style: TextStyle(color: Colors.red)),
+                    icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedLogout01,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

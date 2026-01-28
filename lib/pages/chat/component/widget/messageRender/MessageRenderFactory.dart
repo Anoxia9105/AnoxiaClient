@@ -1,3 +1,4 @@
+import 'package:anoxia/pages/chat/component/widget/messageRender/QuillMessageStrategy.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
@@ -12,6 +13,7 @@ class MessageRenderFactory {
     MessageType.text: TextMessageStrategy(),
     MessageType.image: ImageMessageStrategy(),
     MessageType.file: FileMessageStrategy(),
+    MessageType.quill: QuillMessageStrategy(),
     // 'VOICE': VoiceMessageStrategy(),
   };
 
@@ -23,7 +25,11 @@ class MessageRenderFactory {
 // 兜底策略，处理未知类型
 class _DefaultMessageStrategy extends MessageRenderStrategy {
   @override
-  Widget buildContent(BuildContext context, ChatMessage message,Color textColor) {
+  Widget buildContent(
+    BuildContext context,
+    ChatMessage message,
+    Color textColor,
+  ) {
     return Text(
       "[消息解析错误]",
       style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),

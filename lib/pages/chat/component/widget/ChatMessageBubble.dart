@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/utils/DateUtil.dart';
 import '../../../../common/widgets/BubbleDialog.dart';
 import '../../../../framework/domain/ChatRoomMemberVO.dart';
-import '../../../../framework/services/room_member_service.dart';
+import '../../../../framework/provider/chat/room/room_member_service.dart';
 import 'messageRender/MessageRenderFactory.dart';
 
 class ChatMessageBubble extends ConsumerWidget {

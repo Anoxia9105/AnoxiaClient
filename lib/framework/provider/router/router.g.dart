@@ -11,6 +11,7 @@ List<RouteBase> get $appRoutes => [
   $homeRoute,
   $splashRoute,
   $errorRoute,
+  $imageMessageDetailRoute,
 ];
 
 RouteBase get $initLoginRoute =>
@@ -96,6 +97,45 @@ mixin $ErrorRoute on GoRouteData {
   String get location => GoRouteData.$location(
     '/error',
     queryParams: {if (_self.message != null) 'message': _self.message},
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $imageMessageDetailRoute => GoRouteData.$route(
+  path: '/imageView',
+  factory: $ImageMessageDetailRoute._fromState,
+);
+
+mixin $ImageMessageDetailRoute on GoRouteData {
+  static ImageMessageDetailRoute _fromState(GoRouterState state) =>
+      ImageMessageDetailRoute(
+        attachment: (String json0) {
+          return Attachment.fromJson(jsonDecode(json0) as Map<String, dynamic>);
+        }(state.uri.queryParameters['attachment']!),
+        heroTag: state.uri.queryParameters['hero-tag']!,
+      );
+
+  ImageMessageDetailRoute get _self => this as ImageMessageDetailRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/imageView',
+    queryParams: {
+      'attachment': jsonEncode(_self.attachment.toJson()),
+      'hero-tag': _self.heroTag,
+    },
   );
 
   @override

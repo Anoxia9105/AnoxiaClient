@@ -1,13 +1,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/ChatRoomMemberVO.dart';
-import '../network/DioClient.dart';
-import '../logs/talker.dart';
+import '../../../domain/ChatRoomMemberVO.dart';
+import '../../../network/DioClient.dart';
+import '../../../logs/talker.dart';
 
 part 'room_member_service.g.dart';
 
 @Riverpod(keepAlive: true)
 class RoomMemberService extends _$RoomMemberService {
-
   // 记录已经同步过成员列表的房间 ID，避免重复请求
   final Set<String> _syncedRoomIds = {};
 
@@ -25,9 +24,10 @@ class RoomMemberService extends _$RoomMemberService {
     log.info("🚀 正在拉取房间 $roomId 的成员列表...");
 
     try {
-      final res = await DioClient().get("/chat/members", queryParameters: {
-        'roomId': roomId,
-      });
+      final res = await DioClient().get(
+        "/chat/members",
+        queryParameters: {'roomId': roomId},
+      );
 
       final data = res.data["data"];
       if (data is List) {
@@ -36,10 +36,7 @@ class RoomMemberService extends _$RoomMemberService {
             .toList();
 
         // 更新状态：保持旧的 Map，只替换/增加当前房间的成员
-        state = {
-          ...state,
-          roomId: members,
-        };
+        state = {...state, roomId: members};
 
         _syncedRoomIds.add(roomId);
         log.info("✅ 房间 $roomId 成员同步完成，共 ${members.length} 人");

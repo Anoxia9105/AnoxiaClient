@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../common/widgets/Welcome.dart';
-import '../../framework/services/room_list_service.dart';
+import '../../framework/provider/chat/room/room_list_service.dart';
 
 class ChatPage extends ConsumerWidget {
   const ChatPage({super.key});

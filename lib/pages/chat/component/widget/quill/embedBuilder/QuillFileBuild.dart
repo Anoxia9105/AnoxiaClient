@@ -25,7 +25,7 @@ class QuillFileBuild implements EmbedBuilder {
         final isUploading = ref.watch(isUploadingProvider);
 
         final bool isSuccess = uploadState.containsKey(attachment.id);
-        final bool isFailed = !isSuccess && !isUploading; // 停止上传了但没拿到 URL 即为失败
+        final bool isFailed = !isSuccess && !isUploading;
 
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -75,7 +75,9 @@ class QuillFileBuild implements EmbedBuilder {
                             Text(
                               isFailed
                                   ? "上传失败，请删除重试"
-                                  : FileUtil.formatFileSize(attachment.size ?? 0),
+                                  : FileUtil.formatFileSize(
+                                      attachment.size ?? 0,
+                                    ),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isFailed ? Colors.redAccent : null,

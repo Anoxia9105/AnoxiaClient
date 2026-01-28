@@ -1,11 +1,11 @@
 import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
-import 'package:anoxia/framework/services/room_member_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../protocol/PacketType.dart';
-import '../protocol/message/EventMessage.dart';
-import 'contact_list_service.dart';
+import '../../../protocol/PacketType.dart';
+import '../../../protocol/message/EventMessage.dart';
 
 part 'system_event_service.g.dart';
 

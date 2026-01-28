@@ -1,10 +1,10 @@
 import 'package:anoxia/framework/network/DioClient.dart';
-import 'package:anoxia/framework/services/room_member_service.dart';
-import 'package:anoxia/framework/services/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../domain/ChatMessage.dart';
-import '../domain/ChatRoomVO.dart';
+import '../../../domain/ChatMessage.dart';
+import '../../../domain/ChatRoomVO.dart';
 
 part 'room_list_service.g.dart';
 
@@ -140,7 +140,6 @@ ChatRoomVO? activeRoom(Ref ref) {
   );
 }
 
-
 @riverpod
 Future<void> roomEntryTask(Ref ref, String roomId) async {
   // 1. 确保房间列表已经存在
@@ -149,19 +148,19 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
 
   // 使用 findFirst 的安全版本
   final room = rooms.firstWhere(
-        (r) => r.roomId == roomId,
+    (r) => r.roomId == roomId,
     orElse: () => throw Exception("尚未加载房间信息"),
   );
 
   await Future.wait([
-    ref.read(chatMessagesProvider.notifier).syncRoomMessages(roomId, room.lastMessage?.seq),
+    ref
+        .read(chatMessagesProvider.notifier)
+        .syncRoomMessages(roomId, room.lastMessage?.seq),
     ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId),
   ]);
 
   ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
 }
-
-
 
 @riverpod
 List<ChatRoomVO> groupRoomList(Ref ref) {
@@ -198,7 +197,9 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
       // 搜索规则：匹配房间名 或 最后一条消息内容
       return rooms.where((room) {
         final nameMatch = (room.roomName ?? "").toLowerCase().contains(query);
-        final msgMatch = (room.lastMessage?.content ?? "").toLowerCase().contains(query);
+        final msgMatch = (room.lastMessage?.content ?? "")
+            .toLowerCase()
+            .contains(query);
         return nameMatch || msgMatch;
       }).toList();
     },

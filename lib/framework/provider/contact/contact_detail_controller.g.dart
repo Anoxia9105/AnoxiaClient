@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'contact_detail_service.dart';
+part of 'contact_detail_controller.dart';
 
 // **************************************************************************
 // RiverpodGenerator

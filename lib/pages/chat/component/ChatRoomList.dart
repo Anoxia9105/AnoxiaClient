@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,8 +7,7 @@ import '../../../common/utils/DateUtil.dart';
 import '../../../common/widgets/AvatarWidget.dart';
 import '../../../common/widgets/VibratingBadge.dart';
 import '../../../framework/domain/ChatRoomVO.dart';
-import '../../../framework/services/contact_list_service.dart';
-import '../../../framework/services/room_list_service.dart';
+import '../../../framework/provider/chat/room/room_list_service.dart';
 
 class ChatRoomList extends ConsumerStatefulWidget {
   const ChatRoomList({super.key});
@@ -80,10 +80,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   }
 
   // 构建列表主体
-  Widget _buildRoomList(
-    BuildContext context,
-    WidgetRef ref
-  ) {
+  Widget _buildRoomList(BuildContext context, WidgetRef ref) {
     final filteredRooms = ref.watch(filteredRoomListProvider);
     final query = ref.watch(roomSearchQueryProvider);
     if (filteredRooms.isEmpty) {

@@ -54,6 +54,8 @@ dependencies:
   flutter_quill: ^11.5.0
   #图片缓存
   cached_network_image: ^3.4.1
+  #图片查看
+  photo_view: ^0.15.0
   window_manager:
     git:
       url: https://github.com/boyan01/window_manager.git

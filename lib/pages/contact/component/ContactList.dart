@@ -2,13 +2,12 @@ import 'package:alphabet_list_view/alphabet_list_view.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/framework/domain/ChatContactVO.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
-import 'package:anoxia/framework/services/contact_list_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-
-import '../../../framework/services/contact_requests_service.dart';
 
 class ContactList extends ConsumerWidget {
   const ContactList({super.key});

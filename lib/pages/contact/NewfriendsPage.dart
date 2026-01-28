@@ -1,5 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/framework/services/contact_requests_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -23,17 +23,16 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
             itemBuilder: (context, index) {
               final request = req[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// 1. 左侧头像
-                    AvatarWidget(
-                      url: request.avatar,
-                      name: request.nickName,
-                    ),
+                    AvatarWidget(url: request.avatar, name: request.nickName),
                     const SizedBox(width: 12), // 间隔
-
                     /// 2. 中间内容区
                     Expanded(
                       child: Column(
@@ -42,7 +41,10 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
                         children: [
                           Text(
                             request.nickName ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           // 备注文本
@@ -56,7 +58,10 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
                           // 时间
                           Text(
                             request.createdAt.toString(),
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),

@@ -6,9 +6,7 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
-import '../../services/room_list_service.dart';
-import '../../services/room_message_service.dart';
-import '../core/app_initializer.dart';
+import '../chat/room/room_list_service.dart';
 
 part 'auth_controller.g.dart';
 

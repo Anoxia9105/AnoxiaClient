@@ -59,7 +59,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'57b990247f144cc50fd0518c381292ca6f5f642e';
+    r'cf395ef1d3ba9f1a34d71734705359190d0ef182';
 
 final class ChatInputControllerFamily extends $Family
     with
@@ -245,6 +245,59 @@ abstract class _$IsUploading extends $Notifier<bool> {
             as $ClassProviderElement<
               AnyNotifier<bool, bool>,
               bool,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
+@ProviderFor(MentionState)
+const mentionStateProvider = MentionStateProvider._();
+
+final class MentionStateProvider
+    extends $NotifierProvider<MentionState, MentionStateData> {
+  const MentionStateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'mentionStateProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$mentionStateHash();
+
+  @$internal
+  @override
+  MentionState create() => MentionState();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MentionStateData value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MentionStateData>(value),
+    );
+  }
+}
+
+String _$mentionStateHash() => r'4979a8c55c48aba2ee915f321b876beb71cd8461';
+
+abstract class _$MentionState extends $Notifier<MentionStateData> {
+  MentionStateData build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<MentionStateData, MentionStateData>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<MentionStateData, MentionStateData>,
+              MentionStateData,
               Object?,
               Object?
             >;

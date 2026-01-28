@@ -1,6 +1,4 @@
-import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
-import 'package:anoxia/framework/services/high_message_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +7,6 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'common/utils/DeviceUtil.dart';
-import 'framework/logs/talker.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/router/router.dart';
 import 'gen/assets.gen.dart';
@@ -94,35 +91,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
   @override
   Widget build(BuildContext context) {
-    // 💡 监听高优消息 Service
-    ref.listen(highMessageServiceProvider, (prev, next) {
-      // 1. 遍历 next 中的所有房间状态
-      for (var roomId in next.keys) {
-        final roomStatus = next[roomId]!;
-
-        // --- 场景 A: 通话邀请 ---
-        if (roomStatus.containsKey(HighMessageType.CALL_INVITE)) {
-          final inviteMsg = roomStatus[HighMessageType.CALL_INVITE]!;
-          // 检查 prev 中是否已经存在这个邀请，防止由于其他类型消息更新导致的重复触发
-          final alreadyInvited =
-              prev?[roomId]?.containsKey(HighMessageType.CALL_INVITE) ?? false;
-
-          if (!alreadyInvited) {
-            log.info("检测到新通话邀请，准备弹出接听界面: ${inviteMsg.senderId}");
-            _showIncomingCallDialog(inviteMsg);
-          }
-        }
-
-        // --- 场景 B: 系统踢人 ---
-        if (roomStatus.containsKey(HighMessageType.SYSTEM_KICK)) {
-          final kickMsg = roomStatus[HighMessageType.SYSTEM_KICK]!;
-          _handleGlobalKick(
-            kickMsg.content ?? "Your account has been logged in elsewhere.",
-          );
-        }
-      }
-    });
-
     final locale = context.locale;
     return MaterialApp.router(
       title: '记事本客户端',
@@ -132,20 +100,5 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       debugShowCheckedModeBanner: false,
       locale: locale,
     );
-  }
-
-  void _showIncomingCallDialog(HighMessage invite) {
-    // 这里可以使用 BotToast 或者 Navigator 跳转到专门的通话接听页
-    BotToast.showWidget(
-      key: UniqueKey(),
-      toastBuilder: (cancel) => Text("识别到电话邀请：${invite.senderId}"),
-    );
-  }
-
-  void _handleGlobalKick(String reason) {
-    // 1. 弹窗提示
-    BotToast.showSimpleNotification(title: "下线通知", subTitle: reason);
-    // 2. 登出逻辑
-    // ref.read(authControllerProvider.notifier).logout();
   }
 }

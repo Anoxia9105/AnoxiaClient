@@ -2,11 +2,13 @@ import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatInputField.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatMessageBubble.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
-import '../../../framework/services/room_list_service.dart';
-import '../../../framework/services/room_message_service.dart';
+import '../../../framework/provider/chat/room/room_list_service.dart';
+import '../../../framework/provider/chat/message/room_message_service.dart';
 
 class ChatRoomDetail extends ConsumerStatefulWidget {
   const ChatRoomDetail({super.key});
@@ -82,135 +84,134 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final messages = ref.watch(
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: Scaffold(
-        appBar: ChatAppBar(),
-        drawerScrimColor: Colors.transparent,
-        body: entryTask.when(
-          data: (_) {
-            return FlutterListView(
-              controller: _listViewController,
-              reverse: true,
-              delegate: FlutterListViewDelegate(
-                (context, index) {
-                  //如果还有更多消息，且当前是最后一个消息
-                  if (hasMore && index == messages.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
 
-                  final msg = messages[messages.length - 1 - index];
-
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-                    child: ChatMessageBubble(
-                      key: ValueKey(msg.messageId),
-                      message: msg,
+    return Scaffold(
+      appBar: ChatAppBar(),
+      drawerScrimColor: Colors.transparent,
+      body: entryTask.when(
+        data: (_) {
+          return FlutterListView(
+            controller: _listViewController,
+            reverse: true,
+            delegate: FlutterListViewDelegate(
+              (context, index) {
+                //如果还有更多消息，且当前是最后一个消息
+                if (hasMore && index == messages.length) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
                     ),
                   );
-                },
-                childCount: messages.length + (hasMore ? 1 : 0),
-                // 开启 keepPosition: true
-                // 这能保证在分页加载旧消息时，滚动位置不会跳动
-                keepPosition: true,
+                }
 
-                // 性能优化：给一个大概的预估高度
-                preferItemHeight: 60,
+                final msg = messages[messages.length - 1 - index];
+
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+                  child: ChatMessageBubble(
+                    key: ValueKey(msg.messageId),
+                    message: msg,
+                  ),
+                );
+              },
+              childCount: messages.length + (hasMore ? 1 : 0),
+              // 开启 keepPosition: true
+              // 这能保证在分页加载旧消息时，滚动位置不会跳动
+              keepPosition: true,
+
+              // 性能优化：给一个大概的预估高度
+              preferItemHeight: 60,
+            ),
+          );
+        },
+        error: (err, _) => Center(child: Text("初始化失败: $err")),
+        loading: () {
+          return Center(child: CircularProgressIndicator());
+        },
+      ),
+      floatingActionButton: _showScrollDownButton
+          ? FloatingActionButton.small(
+              elevation: 1,
+              onPressed: () => _scrollToBottom(animated: true),
+              child: const HugeIcon(
+                icon: HugeIcons.strokeRoundedCircleArrowDown02,
+                size: 20,
+                strokeWidth: 2,
               ),
-            );
-          },
-          error: (err, _) => Center(child: Text("初始化失败: $err")),
-          loading: () {
-            return Center(child: CircularProgressIndicator());
-          },
-        ),
-        floatingActionButton: _showScrollDownButton
-            ? FloatingActionButton.small(
-                // 使用小号按钮更精致
-                backgroundColor: Theme.of(
-                  context,
-                ).primaryColor.withValues(alpha: 0.8),
-                onPressed: () => _scrollToBottom(animated: true),
-                child: const Icon(Icons.arrow_downward, color: Colors.white),
-              )
-            : null,
+            )
+          : null,
 
-        bottomNavigationBar: entryTask.isLoading
-            ? SizedBox.shrink()
-            : Padding(
-                padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ChatInputField(
-                      bottomSheet: () => _scrollToBottom(animated: true),
-                    ),
-                    SizedBox(height: 28),
-                    /* Container(
-                      height: 28, // 桌面端状态栏通常很窄
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: Colors.grey.withValues(alpha: 0.1),
-                          ),
+      bottomNavigationBar: entryTask.isLoading
+          ? SizedBox.shrink()
+          : Padding(
+              padding: EdgeInsets.symmetric(horizontal: bodyPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ChatInputField(
+                    bottomSheet: () => _scrollToBottom(animated: true),
+                  ),
+                  SizedBox(height: 28),
+                  /* Container(
+                    height: 28, // 桌面端状态栏通常很窄
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.1),
                         ),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            size: 8,
-                            color: Colors.greenAccent,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: Colors.greenAccent,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "已连接到 http://8.137.14.21:7880",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "已连接到 http://8.137.14.21:7880",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
+                        ),
+                        const Spacer(),
+                        // 中间：快捷键提示（淡淡的显示）
+                        Text(
+                          "Enter 发送 / Shift+Enter 换行",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
                           ),
-                          const Spacer(),
-                          // 中间：快捷键提示（淡淡的显示）
-                          Text(
-                            "Enter 发送 / Shift+Enter 换行",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[400],
-                            ),
+                        ),
+                        const Spacer(),
+                        // 右侧：延迟和版本
+                        // Icon(Icons.speed, size: 14, color: Colors.grey[400]),
+                        // const SizedBox(width: 4),
+                        // Text(
+                        //   "42ms",
+                        //   style: TextStyle(
+                        //     fontSize: 11,
+                        //     color: Colors.grey[600],
+                        //   ),
+                        // ),
+                        // const SizedBox(width: 12),
+                        Text(
+                          "v1.0.2-alpha",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
                           ),
-                          const Spacer(),
-                          // 右侧：延迟和版本
-                          // Icon(Icons.speed, size: 14, color: Colors.grey[400]),
-                          // const SizedBox(width: 4),
-                          // Text(
-                          //   "42ms",
-                          //   style: TextStyle(
-                          //     fontSize: 11,
-                          //     color: Colors.grey[600],
-                          //   ),
-                          // ),
-                          // const SizedBox(width: 12),
-                          Text(
-                            "v1.0.2-alpha",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),*/
-                  ],
-                ),
+                        ),
+                      ],
+                    ),
+                  ),*/
+                ],
               ),
-      ),
+            ),
     );
   }
 

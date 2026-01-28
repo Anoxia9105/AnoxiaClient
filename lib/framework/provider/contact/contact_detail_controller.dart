@@ -1,11 +1,10 @@
+import 'package:anoxia/framework/domain/ChatContactDetailVO.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../domain/ChatContactDetailVO.dart';
-import '../domain/UserInfo.dart';
-import '../logs/talker.dart';
+import '../../logs/talker.dart';
 
-part 'contact_detail_service.g.dart';
+part 'contact_detail_controller.g.dart';
 
 @Riverpod(keepAlive: true)
 Future<ChatContactDetailVO> contactDetailData(Ref ref, int userId) async {

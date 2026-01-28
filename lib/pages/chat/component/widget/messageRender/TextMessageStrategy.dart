@@ -5,11 +5,15 @@ import 'MessageRenderStrategy.dart';
 
 class TextMessageStrategy extends MessageRenderStrategy {
   @override
-  Widget buildContent(BuildContext context, ChatMessage message,Color textColor) {
+  Widget buildContent(
+    BuildContext context,
+    ChatMessage message,
+    Color textColor,
+  ) {
     return SelectionArea(
-      child: Text(
+      child: SelectableText(
         message.payload?.content ?? '',
-        style: TextStyle(color: textColor,fontSize: 15, height: 1.4),
+        style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
       ),
     );
   }

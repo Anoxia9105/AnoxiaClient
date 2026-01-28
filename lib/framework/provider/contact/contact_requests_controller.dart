@@ -2,9 +2,9 @@ import 'package:anoxia/framework/domain/ChatContactRequestVO.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'contact_list_service.dart';
+import 'contact_list_controller.dart';
 
-part 'contact_requests_service.g.dart';
+part 'contact_requests_controller.g.dart';
 
 @riverpod
 class ContactRequestsService extends _$ContactRequestsService {

@@ -1,3 +1,9 @@
+import 'dart:convert';
+
+import 'dart:convert';
+
+import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/pages/chat/component/widget/messageRender/detail/ImageViewer.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -111,4 +117,19 @@ class ErrorRoute extends GoRouteData with $ErrorRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       ErrorPage(message: message);
+}
+
+@TypedGoRoute<ImageMessageDetailRoute>(path: '/imageView')
+class ImageMessageDetailRoute extends GoRouteData
+    with $ImageMessageDetailRoute {
+  final Attachment attachment;
+  final String heroTag;
+  const ImageMessageDetailRoute({
+    required this.attachment,
+    required this.heroTag,
+  });
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      ImageViewer(attachment: attachment, heroTag: heroTag);
 }
