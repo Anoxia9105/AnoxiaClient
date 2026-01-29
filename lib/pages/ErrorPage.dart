@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:anoxia/pages/AppScaffold.dart';
 
-import '../common/utils/DeviceUtil.dart';
-import '../common/widgets/desktop/DesktopAppBar.dart';
-import '../framework/theme/AppColors.dart';
-
 class ErrorPage extends StatelessWidget {
   final String? message;
 

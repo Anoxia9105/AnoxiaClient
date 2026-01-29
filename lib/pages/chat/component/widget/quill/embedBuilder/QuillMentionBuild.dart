@@ -14,7 +14,6 @@ class QuillMentionBuild implements EmbedBuilder {
         ? jsonDecode(data)
         : data as Map<String, dynamic>;
 
-    final String userId = dataMap['userId'] ?? '';
     final String userName = dataMap['userName'] ?? '未知用户';
 
     return Container(

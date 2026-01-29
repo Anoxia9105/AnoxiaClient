@@ -9,10 +9,8 @@ import 'package:anoxia/pages/call_window/room_layout/LayoutRoomWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:livekit_client/livekit_client.dart';
 
-import '../../framework/domain/RoomState.dart';
 import '../../framework/provider/kit/room_controller.dart';
 
 class CallRoomPage extends ConsumerWidget {

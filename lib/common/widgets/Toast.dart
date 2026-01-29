@@ -182,7 +182,6 @@ class Toast {
           ),
         );
       case ToastType.info:
-      default:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(144, 147, 153, 1),
           const Icon(

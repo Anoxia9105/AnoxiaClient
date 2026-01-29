@@ -59,7 +59,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'cf395ef1d3ba9f1a34d71734705359190d0ef182';
+    r'01c46acc8b6cb72d43109fcfe10dba9167e2f2ad';
 
 final class ChatInputControllerFamily extends $Family
     with

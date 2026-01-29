@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../common/constants/API.dart';
 import '../../domain/AiChatMessage.dart';
-import '../../network/TokenManager.dart';
 
 part 'ai_chat_controller.g.dart';
 
@@ -16,29 +14,25 @@ class AiChatController extends _$AiChatController {
   List<AiChatMessage> build() {
     return [];
   }
+
   bool get isLoading => _loading;
   Future<void> askGemini(String prompt) async {
     if (prompt.trim().isEmpty || _loading) return;
 
     _loading = true;
+
     /// 1️⃣ 先把用户消息插入列表（即时反馈）
-    state = [
-      ...state,
-      AiChatMessage(content: prompt, isAi: false),
-    ];
+    state = [...state, AiChatMessage(content: prompt, isAi: false)];
 
     /// 2️⃣ 插入一个“占位 AI 消息”（用于 loading）
     final aiIndex = state.length;
-    state = [
-      ...state,
-      AiChatMessage(content: '...', isAi: true),
-    ];
+    state = [...state, AiChatMessage(content: '...', isAi: true)];
 
     try {
-
-      final resp = await DioClient().post("/chat/gemini",data: {
-        'prompt': prompt,
-      });
+      final resp = await DioClient().post(
+        "/chat/gemini",
+        data: {'prompt': prompt},
+      );
 
       if (resp.data['code'] != 200) {
         throw Exception(resp.data['msg'] ?? 'AI 请求失败');
@@ -49,12 +43,8 @@ class AiChatController extends _$AiChatController {
       /// 3️⃣ 更新 AI 消息内容
       state = [
         for (int i = 0; i < state.length; i++)
-          if (i == aiIndex)
-            state[i].copyWith(content: aiText)
-          else
-            state[i],
+          if (i == aiIndex) state[i].copyWith(content: aiText) else state[i],
       ];
-
     } catch (e) {
       /// 4️⃣ 失败兜底（业务友好）
       state = [
@@ -64,9 +54,8 @@ class AiChatController extends _$AiChatController {
           else
             state[i],
       ];
-    }finally {
+    } finally {
       _loading = false;
     }
   }
-
 }

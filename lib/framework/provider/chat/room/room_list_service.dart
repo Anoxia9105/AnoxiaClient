@@ -47,7 +47,7 @@ class RoomListService extends _$RoomListService {
     state = newState;
   }
 
-  /// 实时更新：增加是否计算未读数的逻辑
+  /// 实时更新：计算未读数的逻辑
   void updateRoomPosition(
     ChatMessage newMessage, {
     bool isCurrentRoom = false,
@@ -80,7 +80,6 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-  // 在 RoomListService 类中添加
   void markAsRead(String roomId) {
     state.whenData((rooms) {
       final index = rooms.indexWhere((r) => r.roomId == roomId);
@@ -101,13 +100,59 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-  // TODO: 实现上报最新 seq 的接口调用
+  // 上报最新 seq 的接口调用
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
       print("🚀 上报已读状态: 房间 $roomId, Seq $seq");
-      // await DioClient().post("/chat/readReport", data: {"roomId": roomId, "seq": seq});
+      await DioClient().get(
+        "/chat/readReport",
+        queryParameters: {"roomId": roomId, "seq": seq},
+      );
     } catch (e) {
       print("上报已读失败: $e");
+    }
+  }
+
+  Future<String?> getOrCreateRoom(int targetUserId) async {
+    final rooms = state.value ?? [];
+
+    // 1. 尝试从本地列表中寻找已存在的私聊房间
+    // 使用 cast().firstWhereOrNull 需要导入 collection 库，或者用 try-catch 包装
+    ChatRoomVO? existingRoom;
+    try {
+      existingRoom = rooms.firstWhere(
+        (r) => r.roomType == 0 && r.peerId == targetUserId,
+      );
+    } catch (_) {
+      existingRoom = null;
+    }
+
+    // 2. 如果本地找到了，直接返回 roomId
+    if (existingRoom != null && existingRoom.roomId != null) {
+      print("✅ 找到现有房间: ${existingRoom.roomId}");
+      return existingRoom.roomId;
+    }
+
+    // 3. 本地没找到，请求后端创建/获取
+    try {
+      print("🚀 正在请求后端创建私聊房间，目标用户: $targetUserId");
+      final res = await DioClient().get(
+        "/chat/createPrivate",
+        queryParameters: {"targetId": targetUserId},
+      );
+
+      if (res.data["data"] == null) {
+        return null;
+      }
+      final newRoom = ChatRoomVO.fromJson(res.data["data"]);
+
+      // 4. 静默刷新房间列表，确保 UI 侧边栏能同步看到新房间
+      await refresh(silent: true);
+
+      return newRoom.roomId;
+    } catch (e) {
+      print("❌ 获取/创建房间接口调用失败: $e");
+      return null;
     }
   }
 }
@@ -168,7 +213,7 @@ List<ChatRoomVO> groupRoomList(Ref ref) {
 
   return roomListAsync.maybeWhen(
     data: (rooms) => rooms
-        .where((r) => r.roomType == '1') // GROUP
+        .where((r) => r.roomType == 1) // GROUP
         .toList(),
     orElse: () => const [],
   );
@@ -205,4 +250,19 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
     },
     orElse: () => const [],
   );
+}
+
+@riverpod
+int totalUnreadCount(Ref ref) {
+  //  监听房间列表的状态变化
+  final roomList = ref.watch(roomListServiceProvider);
+
+  if (roomList.value != null) {
+    //  累加所有房间的未读数
+    return roomList.value!.fold(
+      0,
+      (sum, room) => sum + (room.unreadCount ?? 0),
+    );
+  }
+  return 0;
 }

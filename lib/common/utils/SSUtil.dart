@@ -2,7 +2,6 @@
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:synchronized/synchronized.dart';
 
 class SSUtil {
   SSUtil._internal();

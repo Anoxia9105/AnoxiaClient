@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/call_window/CallWindowPage.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -258,7 +259,7 @@ Future<void> setupDesktopWindow({
   required Size minimumSize,
 }) async {
   await desktop.windowManager.ensureInitialized();
-
+  desktop.windowManager.setIcon(Assets.images.appIconIco);
   final desktop.WindowOptions windowOptions = desktop.WindowOptions(
     size: size,
     minimumSize: minimumSize,

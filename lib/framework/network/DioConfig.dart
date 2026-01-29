@@ -43,12 +43,10 @@ class DioConfig {
     _dio!.interceptors.add(
       InterceptorsWrapper(
         onError: (e, handler) {
-          String message = "网络连接异常";
-          if (e.type == DioExceptionType.connectionTimeout) message = "服务器连接超时";
-          if (e.type == DioExceptionType.connectionError) message = "无法连接到服务器";
-
-          // 可以在这里统一处理一些非业务错
-          return handler.next(e);
+          if (e.type == DioExceptionType.connectionTimeout)
+            if (e.type == DioExceptionType.connectionError)
+              // 可以在这里统一处理一些非业务错
+              return handler.next(e);
         },
       ),
     );

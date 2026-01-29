@@ -6,8 +6,6 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/pages/AppScaffold.dart';
 
 import '../framework/provider/core/app_initializer.dart';
-import '../framework/provider/router/router.dart';
-import '../framework/theme/AppColors.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

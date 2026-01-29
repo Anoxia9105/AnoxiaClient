@@ -180,12 +180,6 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  // 抽离出来的搜索方法
-  void _handleSearch() {
-    print("开启搜索逻辑...");
-    // 这里写你点击搜索按钮后要执行的代码
-  }
-
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

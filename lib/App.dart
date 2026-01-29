@@ -1,3 +1,5 @@
+import 'package:anoxia/framework/extensions/TaskbarBadgeUpdater.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -91,6 +93,11 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(totalUnreadCountProvider, (previous, next) {
+      if (previous != next) {
+        TaskbarBadgeUpdater.updateBadge(next);
+      }
+    });
     final locale = context.locale;
     return MaterialApp.router(
       title: '记事本客户端',

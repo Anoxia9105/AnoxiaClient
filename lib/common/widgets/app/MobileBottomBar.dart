@@ -11,7 +11,6 @@ class MobileBottomBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
-    final locale = context.locale;
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: layout.currentIndex,
@@ -21,7 +20,7 @@ class MobileBottomBar extends ConsumerWidget {
       },
       items: layout.items.map((item) {
         return BottomNavigationBarItem(
-          icon: HugeIcon(icon: item.icon, size: 18,strokeWidth: 1.5),
+          icon: HugeIcon(icon: item.icon, size: 18, strokeWidth: 1.5),
           label: item.name.tr(),
         );
       }).toList(),

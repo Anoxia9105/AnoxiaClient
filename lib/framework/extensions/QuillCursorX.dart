@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
+import '../logs/talker.dart';
+
 extension QuillEditorX on GlobalKey<QuillEditorState> {
   /// 安全获取当前光标在屏幕上的全局坐标
   Offset? getCaretClientPosition() {
@@ -20,9 +22,10 @@ extension QuillEditorX on GlobalKey<QuillEditorState> {
       final caretRect = renderEditor.getLocalRectForCaret(
         TextPosition(offset: selection.baseOffset),
       );
-      return renderEditor.localToGlobal(caretRect.bottomLeft);
+      final offset = renderEditor.localToGlobal(caretRect.topRight);
+      return offset;
     } catch (e) {
-      debugPrint("获取光标坐标失败: $e");
+      log.error("获取光标坐标失败: $e");
       return null;
     }
   }

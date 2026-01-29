@@ -1,7 +1,11 @@
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../common/utils/DateUtil.dart';
 import '../../../common/widgets/AvatarWidget.dart';
@@ -63,9 +67,13 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
               ),
             ),
             const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: () {},
+            Builder(
+              builder: (context) {
+                return IconButton(
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedLayerAdd),
+                  onPressed: () => _showAddRoomDetail(context),
+                );
+              },
             ),
           ],
         ),
@@ -75,6 +83,58 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         data: (rooms) => _buildRoomList(context, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('加载失败')),
+      ),
+    );
+  }
+
+  void _showAddRoomDetail(BuildContext context) {
+    Function? close;
+    close = Toast.showWidget(
+      context,
+      direction: PreferDirection.bottomLeft,
+      child: Material(
+        color: Colors.transparent,
+        child: BubbleWidget(
+          arrowDirection: AxisDirection.up,
+          arrowOffset: 25,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          border: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+          contentBuilder: (context) => Container(
+            constraints: BoxConstraints(maxWidth: 220, maxHeight: 600),
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      close?.call();
+                    },
+                    label: Text("创建聊天室"),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedUser),
+                  ),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      close?.call();
+                    },
+                    label: Text("退出登录", style: TextStyle(color: Colors.red)),
+                    icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedLogout01,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -125,9 +185,9 @@ class _RoomItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeId = ref.watch(activeRoomIdProvider);
     final isSelected = activeId == room.roomId;
-    final isSingle = room.roomType == "0";
+    final isSingle = room.roomType == 0;
 
-    // 如果是单聊 (roomType == "0")，我们去联系人服务里找对方的在线状态
+    // 如果是单聊 (roomType == 0)，我们去联系人服务里找对方的在线状态
     bool isOnline = false;
     if (isSingle && room.peerId != null) {
       isOnline = ref.watch(
@@ -142,7 +202,6 @@ class _RoomItem extends ConsumerWidget {
       visualDensity: VisualDensity.compact,
       dense: true,
       onTap: () {
-        // TODO 跳转详细
         ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
       },
       selected: isSelected,

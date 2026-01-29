@@ -87,7 +87,8 @@ dependencies:
   open_file_plus: ^3.4.1+1
   # 版本比较
   pub_semver: ^2.2.0
-
+  # 任务栏设置
+  windows_taskbar: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -114,6 +115,7 @@ flutter:
   assets:
     - assets/i18n/
     - assets/images/
+    - assets/images/badge/
   #     - images/a_dot_burr.jpeg
   #     - images/a_dot_ham.jpeg
 

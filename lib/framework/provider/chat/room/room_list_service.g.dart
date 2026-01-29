@@ -33,7 +33,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'58fd63c76171d4d451b0d35f7a9601e5433ce0f8';
+String _$roomListServiceHash() => r'072fd4bbf86ae1c4d7b7d146935a30f64bf9eb50';
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();
@@ -362,3 +362,43 @@ final class FilteredRoomListProvider
 }
 
 String _$filteredRoomListHash() => r'631b1bd63b8bd90c6ea639950a9d46da8f09b624';
+
+@ProviderFor(totalUnreadCount)
+const totalUnreadCountProvider = TotalUnreadCountProvider._();
+
+final class TotalUnreadCountProvider extends $FunctionalProvider<int, int, int>
+    with $Provider<int> {
+  const TotalUnreadCountProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'totalUnreadCountProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$totalUnreadCountHash();
+
+  @$internal
+  @override
+  $ProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  int create(Ref ref) {
+    return totalUnreadCount(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int>(value),
+    );
+  }
+}
+
+String _$totalUnreadCountHash() => r'eeb1e180ff6a80acbb6d12b8cdd2fc16ed988099';

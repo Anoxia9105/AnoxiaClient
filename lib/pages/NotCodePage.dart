@@ -1,14 +1,5 @@
-import 'dart:convert';
-
-import 'package:anoxia/framework/extensions/window_controller.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:livekit_client/livekit_client.dart';
-
-import 'RoomPage.dart';
-
-const _channel = WindowMethodChannel('example_video_player_window');
+import 'package:windows_taskbar/windows_taskbar.dart';
 
 class NotCodePage extends StatefulWidget {
   const NotCodePage({super.key});
@@ -27,8 +18,40 @@ class _NotCodePageState extends State<NotCodePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.date_range, size: 64, color: Colors.blueAccent),
-            Text("暂无数据", style: TextStyle(fontSize: 16)),
+            // Icon(Icons.date_range, size: 64, color: Colors.blueAccent),
+            // Text("暂无数据", style: TextStyle(fontSize: 16)),
+            FilledButton(
+              onPressed: () async {
+                // WindowsTaskbar.setProgress(69, 100);
+                WindowsTaskbar.setProgressMode(
+                  TaskbarProgressMode.indeterminate,
+                );
+              },
+              child: Text("设置进度"),
+            ),
+
+            FilledButton(
+              onPressed: () async {
+                WindowsTaskbar.setFlashTaskbarAppIcon(
+                  mode: TaskbarFlashMode.all | TaskbarFlashMode.timernofg,
+                  timeout: const Duration(milliseconds: 500),
+                );
+              },
+              child: Text("刷入Windows任务栏应用图标"),
+            ),
+            FilledButton(
+              onPressed: () async {
+                WindowsTaskbar.resetFlashTaskbarAppIcon();
+              },
+              child: Text("停止闪烁Windows任务栏应用图标"),
+            ),
+
+            FilledButton(
+              onPressed: () async {
+                WindowsTaskbar.resetOverlayIcon();
+              },
+              child: Text("移除覆盖图标（徽章）"),
+            ),
           ],
         ),
       ),

@@ -85,3 +85,57 @@ final class ContactDetailDataFamily extends $Family
   @override
   String toString() => r'contactDetailDataProvider';
 }
+
+@ProviderFor(ContactChatLoading)
+const contactChatLoadingProvider = ContactChatLoadingProvider._();
+
+final class ContactChatLoadingProvider
+    extends $NotifierProvider<ContactChatLoading, bool> {
+  const ContactChatLoadingProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'contactChatLoadingProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$contactChatLoadingHash();
+
+  @$internal
+  @override
+  ContactChatLoading create() => ContactChatLoading();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$contactChatLoadingHash() =>
+    r'5c569831999b4543ad3278ab1d999cbcf9aa99c4';
+
+abstract class _$ContactChatLoading extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

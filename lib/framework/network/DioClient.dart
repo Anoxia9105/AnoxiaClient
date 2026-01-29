@@ -27,6 +27,7 @@ class DioClient {
           return handler.next(options);
         },
         onResponse: (response, handler) async {
+          log.info(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
 
@@ -55,12 +56,11 @@ class DioClient {
           log.error(
             '【onError拦截器】Dio 发生错误 -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
           );
-          String message = "网络连接异常";
-          if (e.type == DioExceptionType.connectionTimeout) message = "服务器连接超时";
-          if (e.type == DioExceptionType.receiveTimeout) message = "接收超时";
-          if (e.type == DioExceptionType.sendTimeout) message = "发送超时";
-          if (e.type == DioExceptionType.connectionError) message = "无法连接到服务器";
-          return handler.next(e);
+          if (e.type == DioExceptionType.connectionTimeout)
+            if (e.type == DioExceptionType.receiveTimeout)
+              if (e.type == DioExceptionType.sendTimeout)
+                if (e.type == DioExceptionType.connectionError)
+                  return handler.next(e);
         },
       ),
     );

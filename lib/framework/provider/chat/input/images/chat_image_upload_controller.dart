@@ -22,15 +22,12 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   @override
   Map<String, String> build() {
     // imageId -> serverUrl
-    ref.onDispose(() {
-      log.info("image 上传控制器销毁了！！");
-    });
     return {};
   }
 
   /// 选择并插入预览，后台启动上传
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );

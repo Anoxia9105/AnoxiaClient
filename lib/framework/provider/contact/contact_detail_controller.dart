@@ -17,3 +17,12 @@ Future<ChatContactDetailVO> contactDetailData(Ref ref, int userId) async {
   log.info(response);
   return ChatContactDetailVO.fromJson(response.data["data"]);
 }
+
+// 发消息按钮 - 创建聊天室
+@riverpod
+class ContactChatLoading extends _$ContactChatLoading {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}

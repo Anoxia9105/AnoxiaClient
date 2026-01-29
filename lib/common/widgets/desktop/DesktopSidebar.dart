@@ -1,8 +1,9 @@
+import 'package:anoxia/common/widgets/VibratingBadge.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 
@@ -188,6 +189,8 @@ class SidebarButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
     final bool isActive = layout.currentIndex == index;
+
+    final unreadCount = ref.watch(totalUnreadCountProvider);
     return SizedBox(
       width: double.infinity,
       child: Material(
@@ -201,17 +204,30 @@ class SidebarButton extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                HugeIcon(
-                  icon: icon,
-                  color: isActive ? Theme.of(context).primaryColor : null,
-                  size: 18,
-                  strokeWidth: 1.5,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    HugeIcon(
+                      icon: icon,
+                      color: isActive ? Theme.of(context).primaryColor : null,
+                      size: 18,
+                      strokeWidth: 1.5,
+                    ),
+
+                    if (index == 0 && unreadCount > 0)
+                      Positioned(
+                        right: -10,
+                        top: -5,
+                        child: VibratingBadge(messageCount: unreadCount),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 2),
                 Text(
                   name,
                   style: TextStyle(
                     color: isActive ? Theme.of(context).primaryColor : null,
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),

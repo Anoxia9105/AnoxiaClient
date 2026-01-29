@@ -1,7 +1,9 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -42,7 +44,7 @@ class ContactDetail extends ConsumerWidget {
         ],
       ),
       body: detailAsync.when(
-        data: (detail) => _buildDetailContent(context, detail, isOnline),
+        data: (detail) => _buildDetailContent(context, detail, isOnline, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text("加载失败: $err")),
       ),
@@ -53,9 +55,12 @@ class ContactDetail extends ConsumerWidget {
     BuildContext context,
     ChatContactDetailVO detail,
     bool isOnline,
+    WidgetRef ref,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // 监听加载状态
+    final isCreating = ref.watch(contactChatLoadingProvider);
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -107,16 +112,46 @@ class ContactDetail extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // 这里处理发消息逻辑
-                    },
+                  child: FilledButton.icon(
+                    onPressed: isCreating
+                        ? null
+                        : () async {
+                            final targetId = detail.userId; // 对方的用户ID
+                            if (targetId == null) return;
+
+                            //开启加载
+                            ref
+                                .read(contactChatLoadingProvider.notifier)
+                                .set(true);
+
+                            try {
+                              final roomId = await ref
+                                  .read(roomListServiceProvider.notifier)
+                                  .getOrCreateRoom(detail.userId!);
+
+                              if (roomId != null) {
+                                ref
+                                    .read(activeRoomIdProvider.notifier)
+                                    .setActive(roomId);
+                                ref
+                                    .read(layoutControllerProvider.notifier)
+                                    .setIndex(0);
+                              }
+                            } finally {
+                              // 关闭加载
+                              ref
+                                  .read(contactChatLoadingProvider.notifier)
+                                  .set(false);
+                            }
+                          },
                     icon: HugeIcon(
                       icon: HugeIcons.strokeRoundedChatting01,
                       size: 20,
                       color: Colors.white,
                     ),
-                    label: const Text("发消息"),
+                    label: isCreating
+                        ? CircularProgressIndicator()
+                        : Text("发消息"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,

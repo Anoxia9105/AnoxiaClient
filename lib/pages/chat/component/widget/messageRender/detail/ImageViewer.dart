@@ -1,4 +1,3 @@
-import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
