@@ -11,7 +11,6 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   // 是否隐藏应用栏Logo
   final bool hideAppBarLogo;
 
-
   const DesktopAppBar({super.key, this.hideAppBarLogo = false});
 
   @override
@@ -71,7 +70,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedCancel01,
-            size: 18,
+            size: 20,
             // color: widget.iconColor,
           ),
         ),

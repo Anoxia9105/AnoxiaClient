@@ -22,6 +22,7 @@ class DesktopSidebar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
+    final local= context.locale;
     return SizedBox(
       width: 70,
       child: Column(

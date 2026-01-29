@@ -93,11 +93,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(totalUnreadCountProvider, (previous, next) {
-      if (previous != next) {
-        TaskbarBadgeUpdater.updateBadge(next);
-      }
-    });
     final locale = context.locale;
     return MaterialApp.router(
       title: '记事本客户端',

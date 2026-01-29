@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../common/widgets/Welcome.dart';
+import '../../framework/extensions/TaskbarBadgeUpdater.dart';
 import '../../framework/provider/chat/room/room_list_service.dart';
 
 class ChatPage extends ConsumerWidget {
@@ -13,6 +14,11 @@ class ChatPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(totalUnreadCountProvider, (previous, next) {
+      if (previous != next) {
+        TaskbarBadgeUpdater.updateBadge(next);
+      }
+    });
     if (DeviceUtil.isRealMobile()) {
       return ChatRoomList();
     }

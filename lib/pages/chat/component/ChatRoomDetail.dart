@@ -6,8 +6,8 @@ import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/chat/message/room_message_service.dart';
+import '../../../framework/provider/chat/room/room_list_service.dart';
 
 class ChatRoomDetail extends ConsumerStatefulWidget {
   const ChatRoomDetail({super.key});
@@ -83,6 +83,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final messages = ref.watch(
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
+
+    //当房间 ID 改变时，重置滚动按钮状态
+    ref.listen<String?>(activeRoomIdProvider, (previous, next) {
+      if (previous != next) {
+        setState(() {
+          _showScrollDownButton = false;
+        });
+      }
+    });
 
     return Scaffold(
       appBar: ChatAppBar(),
@@ -217,7 +226,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   /// 滚动到底部（即 index 0）
   void _scrollToBottom({bool animated = true}) {
     if (!_listViewController.hasClients) return;
-
+    final activeId = ref.read(activeRoomIdProvider);
+    final messageCount = ref.read(chatMessagesProvider)[activeId]?.length ?? 0;
+    // 如果没消息，滚个寂寞，直接返回
+    if (messageCount == 0) return;
     if (animated) {
       _listViewController.sliverController.animateToIndex(
         0,
