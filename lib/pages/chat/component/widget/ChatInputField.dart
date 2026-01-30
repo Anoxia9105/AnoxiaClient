@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -13,6 +14,8 @@ import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileB
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillImageBuild.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillMentionBuild.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -47,7 +50,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
       if (next.isShowing) {
         // 延迟一帧确保 UI 已渲染，坐标计算才准
         WidgetsBinding.instance.addPostFrameCallback(
-              (_) => _showMentionList(next),
+          (_) => _showMentionList(next),
         );
       } else {
         _closeMentionList();
@@ -80,11 +83,11 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
         .where((m) => m.userId != currentUser?.userId)
         .map(
           (m) => MentionUser(
-        id: m.userId.toString(),
-        name: m.nickName ?? '未知用户',
-        avatar: m.avatar,
-      ),
-    )
+            id: m.userId.toString(),
+            name: m.nickName ?? '未知用户',
+            avatar: m.avatar,
+          ),
+        )
         .toList();
 
     // 弹出悬浮列表
@@ -126,7 +129,6 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
       ),
     );
 
-    // 在 mention 后插入一个空格，方便继续输入
     controller.document.insert(atPosition, ' ');
 
     // 设置光标位置到空格后面
@@ -139,7 +141,6 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
     // 关闭提及列表
     ref.read(mentionStateProvider.notifier).hide();
     ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
-    // _closeMentionList();
   }
 
   // --- UI 构建 ---
@@ -168,8 +169,6 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
     return ChatQuillToolbar(
       controller: controller,
       onSend: () => _handleSend(roomId),
-      onEmojiPressed: () => {},
-      // 实现你的表情逻辑
       onImagePressed: () => ref
           .read(chatImageUploadControllerProvider.notifier)
           .selectImages(controller),
@@ -180,10 +179,10 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   }
 
   Widget _buildEditor(
-      QuillController controller,
-      FocusNode focusNode,
-      String roomId,
-      ) {
+    QuillController controller,
+    FocusNode focusNode,
+    String roomId,
+  ) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 200, minHeight: 50),
       child: QuillEditor.basic(

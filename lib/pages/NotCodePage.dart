@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/extensions/TaskbarBadgeUpdater.dart';
 import 'package:flutter/material.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
@@ -9,6 +10,7 @@ class NotCodePage extends StatefulWidget {
 }
 
 class _NotCodePageState extends State<NotCodePage> {
+  int count = 1;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,6 +53,13 @@ class _NotCodePageState extends State<NotCodePage> {
                 WindowsTaskbar.resetOverlayIcon();
               },
               child: Text("移除覆盖图标（徽章）"),
+            ),
+
+            FilledButton(
+              onPressed: () async {
+                TaskbarBadgeUpdater.updateBadge(count++);
+              },
+              child: Text("+++"),
             ),
           ],
         ),

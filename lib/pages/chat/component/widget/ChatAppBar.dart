@@ -77,6 +77,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
+          tooltip: "开始会议",
           onPressed: () {
             ref
                 .read(callWindowControllerProvider.notifier)
@@ -93,84 +94,97 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           child: VerticalDivider(indent: 4, endIndent: 4),
         ),
         IconButton(
+          tooltip: "聊天中查找",
           onPressed: () {},
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
         ),
+        if (currentRoom != null && currentRoom.roomType == 1)
+          IconButton(
+            tooltip: "添加人员",
+            onPressed: () {},
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedAddTeam,
+              size: 20,
+            ),
+          ),
         Builder(
           builder: (context) {
-            return InkWell(
-              onTap: () => Toast.showWidget(
-                context,
-                child: Material(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    constraints: BoxConstraints(maxHeight: 400),
-                    width: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant,
+            return Tooltip(
+              message: "人员列表",
+              child: InkWell(
+                onTap: () => Toast.showWidget(
+                  context,
+                  child: Material(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      constraints: BoxConstraints(maxHeight: 400),
+                      width: 200,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            child: Text(
+                              "人员列表 (${member.length})",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          child: Text(
-                            "人员列表 (${member.length})",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          const Divider(height: 1),
+                          Flexible(
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              shrinkWrap: true,
+                              physics: const ClampingScrollPhysics(),
+                              itemCount: member.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1, indent: 56),
+                              itemBuilder: (context, index) {
+                                final m = member[index];
+                                return ListTile(
+                                  dense: true,
+                                  leading: AvatarWidget(
+                                    url: m.avatar,
+                                    name: m.nickName,
+                                    size: 30,
+                                    status: m.onlineStatus ?? false
+                                        ? AvatarStatus.online
+                                        : AvatarStatus.offline,
+                                  ),
+                                  title: Text(m.nickName ?? '未知用户'),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        const Divider(height: 1),
-                        Flexible(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            shrinkWrap: true,
-                            physics: const ClampingScrollPhysics(),
-                            itemCount: member.length,
-                            separatorBuilder: (context, index) =>
-                                const Divider(height: 1, indent: 56),
-                            itemBuilder: (context, index) {
-                              final m = member[index];
-                              return ListTile(
-                                dense: true,
-                                leading: AvatarWidget(
-                                  url: m.avatar,
-                                  name: m.nickName,
-                                  size: 30,
-                                  status: m.onlineStatus ?? false
-                                      ? AvatarStatus.online
-                                      : AvatarStatus.offline,
-                                ),
-                                title: Text(m.nickName ?? '未知用户'),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
+                  direction: PreferDirection.bottomCenter,
                 ),
-                direction: PreferDirection.bottomCenter,
-              ),
-              borderRadius: BorderRadius.circular(8),
-              child: Ink(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const HugeIcon(
-                      icon: HugeIcons.strokeRoundedUserMultiple02,
-                      size: 20,
-                    ),
-                    Text("${member.length}"),
-                  ],
+                borderRadius: BorderRadius.circular(8),
+                child: Ink(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const HugeIcon(
+                        icon: HugeIcons.strokeRoundedUserMultiple02,
+                        size: 20,
+                      ),
+                      Text("${member.length}"),
+                    ],
+                  ),
                 ),
               ),
             );

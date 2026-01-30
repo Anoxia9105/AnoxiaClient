@@ -89,6 +89,10 @@ dependencies:
   pub_semver: ^2.2.0
   # 任务栏设置
   windows_taskbar: ^1.1.2
+  #处理图片格式
+  image: ^4.7.2
+  #emoje
+  emoji_picker_flutter: ^4.4.0
 
 dev_dependencies:
   flutter_test:

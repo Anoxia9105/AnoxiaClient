@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_multi_window
+  emoji_picker_flutter
   flutter_secure_storage_linux
   flutter_webrtc
   image_compression_flutter

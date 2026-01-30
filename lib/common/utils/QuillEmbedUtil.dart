@@ -19,4 +19,19 @@ class QuillEmbedUtil {
       TextSelection.collapsed(offset: offset + 1),
     );
   }
+
+  /// 插入文本
+  static void insertTextAtCursor({
+    required QuillController controller,
+    required String text,
+  }) {
+    final offset = controller.selection.baseOffset;
+    if (offset < 0) return;
+    controller.replaceText(
+      offset,
+      0,
+      text,
+      TextSelection.collapsed(offset: offset + text.length),
+    );
+  }
 }

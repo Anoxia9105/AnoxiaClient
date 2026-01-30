@@ -1,8 +1,14 @@
+import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/pages/chat/component/widget/ChatEmojiWidget.dart';
+import 'package:bot_toast/bot_toast.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../common/widgets/Toast.dart';
@@ -13,7 +19,6 @@ class ChatQuillToolbar extends ConsumerWidget {
   final VoidCallback onSend;
   final VoidCallback? onImagePressed;
   final VoidCallback? onFilePressed;
-  final VoidCallback? onEmojiPressed;
 
   const ChatQuillToolbar({
     super.key,
@@ -21,7 +26,6 @@ class ChatQuillToolbar extends ConsumerWidget {
     required this.onSend,
     this.onImagePressed,
     this.onFilePressed,
-    this.onEmojiPressed,
   });
 
   @override
@@ -171,17 +175,59 @@ class ChatQuillToolbar extends ConsumerWidget {
               ),
             ),
           ),
-
-          // 💡 右侧功能按钮组（表情、图片、文件、发送）
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildCustomBtn(
-                HugeIcons.strokeRoundedRelieved02,
-                "表情",
-                onEmojiPressed,
-                iconColor,
-                enabled: !isUploading,
+              Builder(
+                builder: (context) {
+                  return _buildCustomBtn(
+                    HugeIcons.strokeRoundedRelieved02,
+                    "表情",
+                    () {
+                      Function? close;
+                      close = Toast.showWidget(
+                        context,
+                        direction: PreferDirection.topLeft,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: BubbleWidget(
+                            arrowDirection: AxisDirection.down,
+                            arrowOffset: 115.w,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+                            border: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                              width: 0.5,
+                            ),
+                            contentBuilder: (context) => Container(
+                              constraints: BoxConstraints(
+                                maxWidth: 120.w,
+                                maxHeight: 500.h,
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: ChatEmojiWidget(
+                                closeSelected: () {
+                                  close?.call();
+                                },
+                                onEmojiSelected: (emoji) {
+                                  QuillEmbedUtil.insertTextAtCursor(
+                                    text: emoji,
+                                    controller: controller,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    iconColor,
+                    enabled: !isUploading,
+                  );
+                },
               ),
               _buildCustomBtn(
                 HugeIcons.strokeRoundedImage02,
