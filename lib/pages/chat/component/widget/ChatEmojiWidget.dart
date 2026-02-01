@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 class ChatEmojiWidget extends StatelessWidget {
   final VoidCallback? closeSelected;
   final Function(String) onEmojiSelected;
+
   const ChatEmojiWidget({
     super.key,
     this.closeSelected,
@@ -24,11 +26,12 @@ class ChatEmojiWidget extends StatelessWidget {
         print("Emoji selected: ${emoji.emoji}");
       },
       config: Config(
+        locale: context.locale,
         height: 500.h,
         checkPlatformCompatibility: true,
         emojiViewConfig: EmojiViewConfig(
           columns: 8,
-          emojiSizeMax: 20,
+          emojiSizeMax: 24,
           backgroundColor: Colors.transparent,
           gridPadding: EdgeInsets.all(4),
         ),
@@ -37,7 +40,11 @@ class ChatEmojiWidget extends StatelessWidget {
           middle: EmojiPickerItem.searchBar,
           bottom: EmojiPickerItem.emojiView,
         ),
-        skinToneConfig: const SkinToneConfig(),
+        skinToneConfig:  SkinToneConfig(
+          dialogBackgroundColor: Theme.of(context).brightness == Brightness.light
+              ? Colors.white
+              : Colors.black87,
+        ),
         categoryViewConfig: CategoryViewConfig(
           backgroundColor: Colors.transparent,
           indicatorColor: primaryColor,

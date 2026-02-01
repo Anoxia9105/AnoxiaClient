@@ -169,7 +169,7 @@ class ChatInputController extends _$ChatInputController {
         attachments: processor.files,
       );
     }
-    // 发送文字 (包含富文本样式) (Mention 不会计入 plainText 长度，所以要单独判)
+    // 发送文字/Emoji (包含富文本样式)
     if (processor.plainText.isNotEmpty ||
         processor.mentionedUserIds.isNotEmpty) {
       final cleanDelta = processor.filteredDelta;
@@ -179,6 +179,17 @@ class ChatInputController extends _$ChatInputController {
               cleanDelta.first.data == '\n' &&
               processor.mentionedUserIds.isEmpty)) {
         // 如果清理完图片后只剩空换行，且没有 @，则不发送
+        return;
+      }
+
+      if (processor.isSingleEmoji) {
+        _doSend(
+          type: "TEXT",
+          payload: {
+            "content": processor.plainText, // emoji内容
+            "emojiCode": processor.plainText.characters.first,
+          },
+        );
       } else {
         final isRich = processor.hasAttributes || mentionIds.isNotEmpty;
         _doSend(

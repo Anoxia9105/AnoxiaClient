@@ -284,7 +284,7 @@ class ChatQuillToolbar extends ConsumerWidget {
       icon: HugeIcon(
         icon: icon,
         size: 16,
-        color: isSelected ? Colors.blue : color,
+        color: color
       ),
     );
   }

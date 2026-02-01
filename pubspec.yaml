@@ -93,7 +93,6 @@ dependencies:
   image: ^4.7.2
   #emoje
   emoji_picker_flutter: ^4.4.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

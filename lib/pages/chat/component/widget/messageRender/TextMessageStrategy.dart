@@ -10,6 +10,10 @@ class TextMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
+    if (message.payload?.emojiCode != null &&
+        message.payload?.content != null) {
+      return Text(message.payload?.content ?? '',style: TextStyle(fontSize: 48));
+    }
     return SelectionArea(
       child: SelectableText(
         message.payload?.content ?? '',

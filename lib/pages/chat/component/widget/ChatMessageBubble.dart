@@ -54,7 +54,8 @@ class ChatMessageBubble extends ConsumerWidget {
     /// quill text 需要气泡框
     final bool needsBubble =
         message.messageType == MessageType.quill ||
-        message.messageType == MessageType.text;
+        message.messageType == MessageType.text &&
+            message.payload?.emojiCode == null;
 
     final strategy = MessageRenderFactory.getStrategy(message.messageType);
     return Container(
@@ -114,7 +115,12 @@ class ChatMessageBubble extends ConsumerWidget {
                                   vertical: 8,
                                   horizontal: 8,
                                 ),
-                                border: BorderSide(width: 1,color: colorScheme.surface.withValues(alpha: 0.5)),
+                                border: BorderSide(
+                                  width: 1,
+                                  color: colorScheme.surface.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(4),
                                 // 稍微圆润一点更精美
                                 backgroundColor: bubbleBgColor,
@@ -139,12 +145,16 @@ class ChatMessageBubble extends ConsumerWidget {
               ),
               // 占位，防止气泡贴边
               SizedBox(width: 20),
-              if(isMentionedMe)
+              if (isMentionedMe)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 2, left: 4),
                   child: Text(
                     "@你",
-                    style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
             ],
