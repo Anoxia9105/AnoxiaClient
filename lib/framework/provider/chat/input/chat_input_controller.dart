@@ -12,6 +12,7 @@ import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_co
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -19,6 +20,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../logs/talker.dart';
+import '../room/room_member_service.dart';
 
 part 'chat_input_controller.g.dart';
 
@@ -124,7 +126,32 @@ class ChatInputController extends _$ChatInputController {
   void _sendTypingStatus(bool isTyping) {
     if (!ref.mounted) return;
     final room = ref.read(activeRoomProvider);
-    if (room == null) return;
+    //房间或者接收者是空的不发送  （群聊不发）
+    if (room == null || room.peerId == null) return;
+
+    //用户在线发送 TYPING_STATUS 不在线不发送
+    final roomMembers = ref
+        .read(roomMemberServiceProvider.notifier)
+        .getMembersByRoom(room.roomId!);
+
+    // 4.1 成员列表为空（未同步），不发送
+    if (roomMembers.isEmpty) {
+      log.debug("房间${room.roomId}成员列表未同步，暂不发送typing状态");
+      return;
+    }
+
+    // 根据peerId查找对方成员
+    final peerMember = roomMembers.firstWhereOrNull(
+      (member) => member.userId == room.peerId,
+    );
+
+    if (peerMember == null)  return;
+
+    // 找不到对方成员 或 对方离线，不发送
+    if (peerMember.onlineStatus != true) {
+      log.debug("对方(${room.peerId})离线/未找到，不发送typing状态（isTyping: $isTyping）");
+      return;
+    }
 
     final msg = {
       "topic": "HIGH_FREQUENCY",

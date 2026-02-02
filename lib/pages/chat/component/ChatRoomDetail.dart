@@ -103,7 +103,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             reverse: true,
             delegate: FlutterListViewDelegate(
               (context, index) {
-                print("message hasMore：$hasMore");
                 //如果还有更多消息，且当前是最后一个消息
                 if (messages.isNotEmpty &&
                     hasMore &&
@@ -235,8 +234,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (!_listViewController.hasClients) return;
     final activeId = ref.read(activeRoomIdProvider);
     final messageCount = ref.read(chatMessagesProvider)[activeId]?.length ?? 0;
+    print(messageCount);
     // 如果没消息，滚个寂寞，直接返回
-    if (messageCount == 0) return;
+    if (messageCount == 0 || messageCount < 10) return;
     if (animated) {
       _listViewController.sliverController.animateToIndex(
         0,

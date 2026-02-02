@@ -13,10 +13,4 @@ class FontFamily {
 
   /// Font family: HarmonyOS
   static const String harmonyOS = 'HarmonyOS';
-
-  /// Font family: SourceHanSerifCN
-  static const String sourceHanSerifCN = 'SourceHanSerifCN';
-
-  /// Font family: ZhiyiMaru
-  static const String zhiyiMaru = 'ZhiyiMaru';
 }

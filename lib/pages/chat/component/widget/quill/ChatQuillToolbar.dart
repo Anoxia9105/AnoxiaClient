@@ -81,24 +81,24 @@ class ChatQuillToolbar extends ConsumerWidget {
                     ),
                   ),
 
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextAlignLeft,
-                    Attribute.leftAlignment,
-                    "左对齐",
-                    iconColor,
-                  ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextAlignCenter,
-                    Attribute.centerAlignment,
-                    "居中",
-                    iconColor,
-                  ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextAlignRight,
-                    Attribute.rightAlignment,
-                    "右对齐",
-                    iconColor,
-                  ),
+                  // _buildActionButton(
+                  //   HugeIcons.strokeRoundedTextAlignLeft,
+                  //   Attribute.leftAlignment,
+                  //   "左对齐",
+                  //   iconColor,
+                  // ),
+                  // _buildActionButton(
+                  //   HugeIcons.strokeRoundedTextAlignCenter,
+                  //   Attribute.centerAlignment,
+                  //   "居中",
+                  //   iconColor,
+                  // ),
+                  // _buildActionButton(
+                  //   HugeIcons.strokeRoundedTextAlignRight,
+                  //   Attribute.rightAlignment,
+                  //   "右对齐",
+                  //   iconColor,
+                  // ),
                   _buildActionButton(
                     HugeIcons.strokeRoundedQuoteDown,
                     Attribute.blockQuote,

@@ -173,14 +173,12 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     // 使用 RefreshIndicator 实现下拉刷新
     return RefreshIndicator(
       onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 2.w),
-        child: ListView.builder(
-          itemCount: filteredRooms.length,
-          itemBuilder: (context, index) {
-            return _RoomItem(room: filteredRooms[index]);
-          },
-        ),
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        itemCount: filteredRooms.length,
+        itemBuilder: (context, index) {
+          return _RoomItem(room: filteredRooms[index]);
+        },
       ),
     );
   }

@@ -23,7 +23,7 @@ class ContactListService extends _$ContactListService {
     return {for (var item in list) item.contactId!: item};
   }
 
-  /// 局部更新在线状态 - 现在速度极快！
+  /// 局部更新在线状态
   void updateOnlineStatus(int userId, bool isOnline) {
     final currentAsync = state;
     if (currentAsync is AsyncData<Map<int, ChatContactVO>>) {
