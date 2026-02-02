@@ -40,11 +40,8 @@ class $AssetsImagesGen {
   /// Directory path: assets/images/badge
   $AssetsImagesBadgeGen get badge => const $AssetsImagesBadgeGen();
 
-  /// File path: assets/images/png.png
-  AssetGenImage get png => const AssetGenImage('assets/images/png.png');
-
   /// List of all assets
-  List<dynamic> get values => [appIconIco, appIconPng, png];
+  List<dynamic> get values => [appIconIco, appIconPng];
 }
 
 class $AssetsImagesBadgeGen {
@@ -52,6 +49,12 @@ class $AssetsImagesBadgeGen {
 
   /// File path: assets/images/badge/badge_1.ico
   String get badge1 => 'assets/images/badge/badge_1.ico';
+
+  /// File path: assets/images/badge/badge_1_16.ico
+  String get badge116 => 'assets/images/badge/badge_1_16.ico';
+
+  /// File path: assets/images/badge/badge_1back.ico
+  String get badge1back => 'assets/images/badge/badge_1back.ico';
 
   /// File path: assets/images/badge/badge_2.ico
   String get badge2 => 'assets/images/badge/badge_2.ico';
@@ -83,6 +86,8 @@ class $AssetsImagesBadgeGen {
   /// List of all assets
   List<String> get values => [
     badge1,
+    badge116,
+    badge1back,
     badge2,
     badge3,
     badge4,

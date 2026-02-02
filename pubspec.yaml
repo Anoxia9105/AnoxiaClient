@@ -93,6 +93,8 @@ dependencies:
   image: ^4.7.2
   #emoje
   emoji_picker_flutter: ^4.4.0
+  #通知
+  flutter_local_notifications: ^20.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -149,14 +151,6 @@ flutter:
     - family: HarmonyOS
       fonts:
         - asset: assets/fonts/HarmonyOS.ttf
-    - family: ZhiyiMaru
-      fonts:
-        - asset: assets/fonts/ZhiyiMaru-Regular.ttf
-        - asset: assets/fonts/ZhiyiMaru-Bold.ttf
-    - family: SourceHanSerifCN
-      fonts:
-        - asset: assets/fonts/SourceHanSerifCN-Regular.otf
-        - asset: assets/fonts/SourceHanSerifCN-Bold.otf
 
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

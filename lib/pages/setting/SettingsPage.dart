@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../common/utils/DeviceUtil.dart';
-import '../../framework/provider/theme/font_controller.dart';
 import '../../framework/theme/AppTheme.dart';
 import 'SettingItemCard.dart';
 
@@ -155,59 +154,6 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
-          // 字体设置
-          SettingItemCard(
-            title: "settings_page_fonts_title".tr(),
-            subtitle: "settings_page_fonts_subtitle".tr(),
-            icon: HugeIcons.strokeRoundedTextFont,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(flex: 2, child: SizedBox.shrink()),
-
-                SizedBox(width: 10),
-                Expanded(
-                  flex: DeviceUtil.isDesktop(context) ? 1 : 2,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 10),
-                    child: DropdownButtonFormField<String>(
-                      value: ref.watch(fontControllerProvider),
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        // fontFamily: setting.fontFamily,
-                      ),
-                      icon: Icon(Icons.expand_more),
-                      // initialValue: setting.fontFamily,
-                      items: const [
-                        DropdownMenuItem(
-                          value: "HarmonyOS",
-                          child: Text("鸿蒙黑体"),
-                        ),
-                        DropdownMenuItem(
-                          value: "ZhiyiMaru",
-                          child: Text("致圆黑体"),
-                        ),
-                        DropdownMenuItem(
-                          value: "SourceHanSerifCN",
-                          child: Text("宋体"),
-                        ),
-                      ],
-                      onChanged: (font) {
-                        if (font != null) {
-                          ref
-                              .read(fontControllerProvider.notifier)
-                              .setFont(font);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           //关于与支持
           SettingItemCard(
             title: "settings_page_about_title".tr(),

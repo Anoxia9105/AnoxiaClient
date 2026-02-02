@@ -6,7 +6,14 @@ class MessagePayload {
   final String? markdown;
   final String? emojiCode;
 
-  MessagePayload({this.content, this.quillDelta, this.replyTo, this.mentions, this.markdown, this.emojiCode});
+  MessagePayload({
+    this.content,
+    this.quillDelta,
+    this.replyTo,
+    this.mentions,
+    this.markdown,
+    this.emojiCode,
+  });
 
   factory MessagePayload.fromJson(Map<String, dynamic> json) => MessagePayload(
     content: json['content'],
@@ -30,6 +37,4 @@ class MessagePayload {
   String toString() {
     return 'MessagePayload{content: $content, quillDelta: $quillDelta, replyTo: $replyTo, mentions: $mentions, markdown: $markdown, emojiCode: $emojiCode}';
   }
-
-
 }

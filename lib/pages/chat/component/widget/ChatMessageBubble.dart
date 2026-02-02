@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/utils/DateUtil.dart';
 import '../../../../common/widgets/BubbleDialog.dart';
 import '../../../../framework/domain/ChatRoomMemberVO.dart';
+import '../../../../framework/logs/talker.dart';
 import '../../../../framework/provider/chat/room/room_member_service.dart';
 import 'messageRender/MessageRenderFactory.dart';
 
@@ -84,8 +85,6 @@ class ChatMessageBubble extends ConsumerWidget {
                 name: isCurrentUser ? user?.nickName : senderInfo.nickName,
                 size: 36, // 适当缩小头像，让比例更协调
               ),
-
-              SizedBox(width: 8),
 
               // 消息气泡
               Flexible(
@@ -176,7 +175,7 @@ class ChatMessageBubble extends ConsumerWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 44), // 💡 避开头像的宽度，对齐气泡起始位
+      padding: EdgeInsets.symmetric(horizontal: 44), // 避开头像的宽度，对齐气泡起始位
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -198,10 +197,29 @@ class ChatMessageBubble extends ConsumerWidget {
   }
 
   Widget _buildStatusIndicator(ChatMessage message) {
-    return Icon(
-      Icons.done_all, // 使用双钩代表送达/已读
-      size: 12,
-      color: Colors.blue.withOpacity(0.8),
-    );
+    switch (message.deliveryStatus) {
+      case DeliveryStatus.sending:
+        return const SizedBox(
+          width: 10,
+          height: 10,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation(Colors.grey),
+          ),
+        );
+      case DeliveryStatus.failed:
+        return GestureDetector(
+          onTap: () {
+            log.info("点击了重发消息: ${message.clientMsgId}");
+          },
+          child: const Icon(Icons.error, size: 16, color: Colors.red),
+        );
+      case DeliveryStatus.sent:
+        return Icon(
+          Icons.check,
+          size: 12,
+          color: Colors.blue.withValues(alpha: 0.8),
+        );
+    }
   }
 }

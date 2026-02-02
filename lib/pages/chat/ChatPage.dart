@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/pages/chat/component/ChatRoomDetail.dart';
 import 'package:anoxia/pages/chat/component/ChatRoomList.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class ChatPage extends ConsumerWidget {
         TaskbarBadgeUpdater.updateBadge(next);
       }
     });
+
     if (DeviceUtil.isRealMobile()) {
       return ChatRoomList();
     }

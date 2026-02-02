@@ -56,8 +56,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
       // 2. 阈值判断：如果滑到了倒数第 5 条消息
       // currentMessages.length - 1 是最顶端
-      if (maxVisibleIndex >= currentMessages.length - 5) {
-        // 💡 触发加载
+      if (currentMessages.length >= 10 &&
+          maxVisibleIndex >= currentMessages.length - 5) {
         ref.read(chatMessagesProvider.notifier).loadMoreHistory(activeId);
       }
     };
@@ -103,14 +103,21 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             reverse: true,
             delegate: FlutterListViewDelegate(
               (context, index) {
+                print("message hasMore：$hasMore");
                 //如果还有更多消息，且当前是最后一个消息
-                if (hasMore && index == messages.length) {
+                if (messages.isNotEmpty &&
+                    hasMore &&
+                    index == messages.length) {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
                       child: CircularProgressIndicator(),
                     ),
                   );
+                }
+
+                if (index < 0 || index >= messages.length) {
+                  return const SizedBox.shrink();
                 }
 
                 final msg = messages[messages.length - 1 - index];

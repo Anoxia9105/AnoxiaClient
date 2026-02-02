@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 class RoomMessage implements IPacket {
   // Room 信息
   final String roomId;
+  final String? clientMsgId;
   final int? targetId;
   final MessageType type;
   final MessagePayload? payload;
@@ -24,6 +25,7 @@ class RoomMessage implements IPacket {
 
   const RoomMessage({
     required this.roomId,
+    this.clientMsgId,
     this.targetId,
     required this.type,
     this.payload,
@@ -41,6 +43,7 @@ class RoomMessage implements IPacket {
   factory RoomMessage.fromJson(Map<String, dynamic> json) {
     return RoomMessage(
       roomId: json['roomId'].toString(),
+      clientMsgId: json['clientMsgId']?.toString(),
       targetId: json['targetId'] != null
           ? int.tryParse(json['targetId'].toString())
           : null,
@@ -72,6 +75,7 @@ class RoomMessage implements IPacket {
   Map<String, dynamic> toJson() {
     return {
       'roomId': roomId,
+      'clientMsgId': clientMsgId,
       'targetId': targetId,
       'type': type.code,
       'payload': payload?.toJson(),
@@ -89,6 +93,7 @@ class RoomMessage implements IPacket {
   /// 拷贝更新（不可变对象修改字段用）
   RoomMessage copyWith({
     String? roomId,
+    String? clientMsgId,
     int? targetId,
     MessageType? type,
     MessagePayload? payload,
@@ -103,6 +108,7 @@ class RoomMessage implements IPacket {
   }) {
     return RoomMessage(
       roomId: roomId ?? this.roomId,
+      clientMsgId: clientMsgId ?? this.clientMsgId,
       targetId: targetId ?? this.targetId,
       type: type ?? this.type,
       payload: payload ?? this.payload,
@@ -122,6 +128,7 @@ class RoomMessage implements IPacket {
     if (identical(this, other)) return true;
     return other is RoomMessage &&
         other.roomId == roomId &&
+        other.clientMsgId == clientMsgId &&
         other.targetId == targetId &&
         other.type == type &&
         other.payload == payload &&
@@ -138,6 +145,7 @@ class RoomMessage implements IPacket {
   @override
   int get hashCode {
     return roomId.hashCode ^
+        clientMsgId.hashCode ^
         targetId.hashCode ^
         type.hashCode ^
         payload.hashCode ^

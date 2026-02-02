@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -48,10 +49,8 @@ class RoomListService extends _$RoomListService {
   }
 
   /// 实时更新：计算未读数的逻辑
-  void updateRoomPosition(
-    ChatMessage newMessage, {
-    bool isCurrentRoom = false,
-  }) {
+  void updateRoomPosition(ChatMessage newMessage, ChatRoomVO? activeRoom) {
+    final isCurrentRoom = activeRoom?.roomId == newMessage.roomId;
     state.whenData((rooms) {
       final List<ChatRoomVO> updatedList = List.from(rooms);
       final index = updatedList.indexWhere(
@@ -61,10 +60,16 @@ class RoomListService extends _$RoomListService {
       if (index != -1) {
         final oldRoom = updatedList.removeAt(index);
 
-        // 如果是当前房间，未读数不增加；否则 +1
-        final int newUnread = isCurrentRoom
-            ? (oldRoom.unreadCount ?? 0)
-            : (oldRoom.unreadCount ?? 0) + 1;
+        int newUnread = oldRoom.unreadCount ?? 0;
+        if (!isCurrentRoom) {
+          newUnread = (oldRoom.unreadCount ?? 0) + 1;
+          NotificationHelper().show(
+            id: newMessage.roomId.hashCode,
+            title: oldRoom.roomName ?? '新消息',
+            body: newMessage.content,
+            payload: newMessage.roomId,
+          );
+        }
 
         final newRoom = oldRoom.copyWith(
           lastMessage: newMessage,
@@ -74,7 +79,7 @@ class RoomListService extends _$RoomListService {
         updatedList.insert(0, newRoom);
         state = AsyncValue.data(updatedList);
       } else {
-        // 如果列表中没有这个房间（比如新开启的私聊），建议直接触发一次 fetchRoomList
+        // 如果列表中没有这个房间（比如新开启的私聊），直接触发一次 fetchRoomList
         refresh(silent: true);
       }
     });

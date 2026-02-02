@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -170,6 +171,8 @@ Future<void> runMainApp() async {
         size: const Size(1200, 800),
         minimumSize: const Size(800, 600),
       );
+      // 初始化通知服务
+      await NotificationHelper().init();
     }
 
     // 启动主窗口（使用全局容器）
@@ -302,6 +305,7 @@ Widget _buildAppWrapper(Widget home) {
 /// 启动失败兜底页面
 Widget _buildErrorPage(String message) {
   return MaterialApp(
+    debugShowCheckedModeBanner: false,
     home: Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -313,6 +317,12 @@ Widget _buildErrorPage(String message) {
             textAlign: TextAlign.center,
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          desktop.windowManager.close();
+        },
+        child: const Icon(Icons.close),
       ),
     ),
   );

@@ -26,7 +26,7 @@ final class ChatMessagesProvider
         argument: null,
         retry: null,
         name: r'chatMessagesProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -49,7 +49,7 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'057c41933738b74737e4b2add18994f4024b98b2';
+String _$chatMessagesHash() => r'c5f3fd736c1f2cb515e37306874546b73867e61f';
 
 /// 存储每个房间的消息列表
 /// key = roomId, value = List<ChatMessage>

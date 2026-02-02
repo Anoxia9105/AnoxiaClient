@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/pages/chat/component/widget/CreateChatDialogWidget.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,7 +113,13 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   width: double.infinity,
                   child: TextButton.icon(
                     onPressed: () {
-                      _showCreateChatDialog(context);
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (BuildContext context) {
+                          return CreateChatDialogWidget();
+                        },
+                      );
                       close?.call();
                     },
                     label: Text("发起群聊"),
@@ -142,127 +149,6 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
       ),
     );
   }
-
-
-  void _showCreateChatDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      // ✨ 关键 1: 禁止点击背景遮罩关闭
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          clipBehavior: Clip.antiAlias, // 确保子组件不会超出圆角边界
-          child: SizedBox(
-            width: 800,  // 宽度大幅提升
-            height: 600, // 固定高度
-            child: Stack(
-              children: [
-                // --- 对话框主体内容 ---
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "发起新聊天",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 24),
-
-                      _buildDialogItem(
-                        context,
-                        icon: HugeIcons.strokeRoundedUser,
-                        color: Colors.blue,
-                        label: "新建私聊",
-                        subtitle: "与单个联系人开始对话",
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: 处理私聊
-                        },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _buildDialogItem(
-                        context,
-                        icon: HugeIcons.strokeRoundedUserGroup,
-                        color: Colors.orange,
-                        label: "创建群聊",
-                        subtitle: "建立多人讨论小组",
-                        onTap: () {
-                          Navigator.pop(context);
-                          // TODO: 处理群聊
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                // --- 右上角关闭按钮 ---
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedCancel01,
-                      size: 20,
-                      color: Colors.grey,
-                    ),
-                    hoverColor: Colors.red.withValues(alpha: 0.1), // 悬停变淡红
-                    splashRadius: 20,
-                    tooltip: "关闭",
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-// 抽取一个美观的选项组件
-  Widget _buildDialogItem(
-      BuildContext context, {
-        required dynamic icon,
-        required Color color,
-        required String label,
-        required String subtitle,
-        required VoidCallback onTap,
-      }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withValues(alpha: 0.1),
-              child: HugeIcon(icon: icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              ],
-            ),
-            const Spacer(),
-            const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
 
   // 构建列表主体
   Widget _buildRoomList(BuildContext context, WidgetRef ref) {

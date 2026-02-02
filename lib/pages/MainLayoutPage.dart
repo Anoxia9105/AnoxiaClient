@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/DevelopmentWidget.dart';
 import 'package:anoxia/pages/AppScaffold.dart';
 import 'package:anoxia/pages/contact/ContactPage.dart';
 import 'package:anoxia/pages/setting/SettingsPage.dart';
@@ -9,7 +10,6 @@ import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/app/MobileBottomBar.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
-import 'NotCodePage.dart';
 import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
 
@@ -59,8 +59,8 @@ class MainLayoutPage extends ConsumerWidget {
                   ChatPage(),
                   ContactPage(),
                   AIChatPage(),
-                  NotCodePage(),
-                  NotCodePage(),
+                  DevelopmentWidget(),
+                  DevelopmentWidget(),
                   SettingsPage(),
                 ],
               ),

@@ -38,24 +38,24 @@ class VibratingBadge extends StatelessWidget {
         color: Colors.red.shade600, // 亮一点的红色更醒目
         borderRadius: BorderRadius.circular(actualHeight / 2),
         // 增加白色边框，在深色/彩色背景下更清晰（可选）
-        border: Border.all(color: Colors.white, width: 1.5),
+        border: Border.all(color: Colors.white, width: 1),
       ),
       alignment: Alignment.center,
       child: isDot
           ? null // 点模式下不显示文字
           : FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          messageCount > 99 ? '99+' : messageCount.toString(),
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.bold, // 加粗更易读
-            // 桌面端显示时防止字体被缩放得太奇怪
-            height: 1.2,
-          ),
-        ),
-      ),
+              fit: BoxFit.scaleDown,
+              child: Text(
+                messageCount > 99 ? '99+' : messageCount.toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold, // 加粗更易读
+                  // 桌面端显示时防止字体被缩放得太奇怪
+                  height: 1.0,
+                ),
+              ),
+            ),
     );
   }
 }

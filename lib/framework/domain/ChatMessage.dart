@@ -5,6 +5,7 @@ import '../protocol/message/MessagePayload.dart';
 
 class ChatMessage {
   final String? messageId;
+  final String? clientMsgId;
   final String? roomId;
   final int? senderId;
   final MessageType? messageType;
@@ -13,11 +14,13 @@ class ChatMessage {
   final List<Attachment> attachments;
   final Map<String, dynamic> extra;
   final MessageState? messageStatus;
+  final DeliveryStatus deliveryStatus;
   final int? timestamp;
   final int? seq;
 
   ChatMessage({
     this.messageId,
+    this.clientMsgId,
     this.roomId,
     this.senderId,
     this.messageType,
@@ -28,7 +31,31 @@ class ChatMessage {
     this.content = '',
     this.attachments = const [],
     this.extra = const {},
+    this.deliveryStatus = DeliveryStatus.sent,
   });
+
+  ChatMessage copyWith({
+    String? messageId,
+    DeliveryStatus? deliveryStatus,
+    int? seq,
+    MessageState? messageStatus,
+  }) {
+    return ChatMessage(
+      messageId: messageId ?? this.messageId,
+      clientMsgId: clientMsgId,
+      roomId: roomId,
+      senderId: senderId,
+      messageType: messageType,
+      content: content,
+      payload: payload,
+      attachments: attachments,
+      extra: extra,
+      messageStatus: messageStatus ?? this.messageStatus,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+      timestamp: timestamp,
+      seq: seq ?? this.seq,
+    );
+  }
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     // 1. 预处理 payload (可能是 String 也可能是 Map)
@@ -63,8 +90,11 @@ class ChatMessage {
 
     return ChatMessage(
       messageId: json['messageId']?.toString(),
+      clientMsgId: json['clientMsgId']?.toString(),
       roomId: json['roomId']?.toString(),
-      senderId: json['senderId'] != null ? int.tryParse(json['senderId'].toString()) : null,
+      senderId: json['senderId'] != null
+          ? int.tryParse(json['senderId'].toString())
+          : null,
       messageType: MessageType.fromCode(json["messageType"] ?? 5),
       content: json['content']?.toString() ?? '',
 
@@ -82,7 +112,10 @@ class ChatMessage {
       extra: (rawExtra is Map<String, dynamic>) ? rawExtra : {},
 
       messageStatus: MessageState.from(json['messageStatus']),
-      timestamp: json['timestamp'] != null ? int.tryParse(json['timestamp'].toString()) : null,
+      deliveryStatus: DeliveryStatus.sent,
+      timestamp: json['timestamp'] != null
+          ? int.tryParse(json['timestamp'].toString())
+          : null,
       seq: json['seq'] != null ? int.tryParse(json['seq'].toString()) : null,
     );
   }

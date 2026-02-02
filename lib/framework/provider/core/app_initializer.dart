@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';
 import '../chat/room/room_list_service.dart';
@@ -55,6 +56,8 @@ class AppInitializer extends _$AppInitializer {
 
       log.info("💬 正在预加载聊天会话列表...");
       await ref.read(roomListServiceProvider.future);
+      //触发消息监听
+      ref.read(chatMessagesProvider);
       //触发系统事件
       ref.read(systemEventServiceProvider);
     }

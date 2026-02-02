@@ -1,10 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:flutter/material.dart';
@@ -156,16 +161,16 @@ class ChatInputController extends _$ChatInputController {
     // --- 策略：拆分发送 ---
     if (processor.images.isNotEmpty) {
       _doSend(
-        type: "IMAGE",
-        payload: {"content": "[图片]"},
+        type: MessageType.image,
+        payload: MessagePayload(content: "[图片]"),
         attachments: processor.images,
       );
     }
     // 发送文件
     if (processor.files.isNotEmpty) {
       _doSend(
-        type: "FILE",
-        payload: {"content": "[文件]"},
+        type: MessageType.file,
+        payload: MessagePayload(content: "[文件]"),
         attachments: processor.files,
       );
     }
@@ -184,25 +189,23 @@ class ChatInputController extends _$ChatInputController {
 
       if (processor.isSingleEmoji) {
         _doSend(
-          type: "TEXT",
-          payload: {
-            "content": processor.plainText, // emoji内容
-            "emojiCode": processor.plainText.characters.first,
-          },
+          type: MessageType.text,
+          payload: MessagePayload(
+            content: processor.plainText, // emoji内容
+            emojiCode: processor.plainText.characters.first,
+          ),
         );
       } else {
         final isRich = processor.hasAttributes || mentionIds.isNotEmpty;
         _doSend(
-          type: isRich ? "QUILL" : "TEXT",
+          type: isRich ? MessageType.quill : MessageType.text,
           payload: isRich
-              ? {
-                  "content": processor.plainText.characters
-                      .take(100)
-                      .toString(),
-                  "quillDelta": jsonEncode(cleanDelta.toJson()),
-                  "mentions": mentionIds,
-                }
-              : {"content": processor.plainText},
+              ? MessagePayload(
+                  content: processor.plainText.characters.take(100).toString(),
+                  quillDelta: jsonEncode(cleanDelta.toJson()),
+                  mentions: mentionIds,
+                )
+              : MessagePayload(content: processor.plainText),
         );
       }
     }
@@ -214,23 +217,48 @@ class ChatInputController extends _$ChatInputController {
   void clearInput() {
     state.clear();
     _isTyping = false;
+    ref.read(mentionStateProvider.notifier).hide();
   }
 
   // 统一的内部发送方法
   void _doSend({
-    required String type,
-    required Map<String, dynamic> payload,
+    required MessageType type,
+    required MessagePayload payload,
     List<Attachment>? attachments,
   }) {
     final room = ref.read(activeRoomProvider)!;
+    final String clientMsgId = const Uuid().v4();
+    final user = ref.read(authControllerProvider).value;
+    if (room == null || user == null) {
+      log.error("发送失败: 房间或用户信息缺失");
+      return;
+    }
+
+    final localMsg = ChatMessage(
+      messageId: clientMsgId,
+      clientMsgId: clientMsgId,
+      roomId: room.roomId,
+      senderId: user.userId,
+      messageType: type,
+      content: payload.content ?? '',
+      payload: payload,
+      attachments: attachments ?? [],
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      deliveryStatus: DeliveryStatus.sending,
+      seq: 0,
+    );
+
+    ref.read(chatMessagesProvider.notifier).upsertMessage(localMsg);
+
     final messageData = {
       "topic": "MESSAGE",
       "data": {
-        "messageId": "msg-${const Uuid().v4()}",
+        "messageId": clientMsgId,
+        "clientMsgId": clientMsgId,
         "roomId": room.roomId,
         "targetId": room.peerId,
-        "type": type,
-        "payload": payload,
+        "type": type.name,
+        "payload": payload.toJson(),
         "attachments": attachments?.map((e) => e.toJson()).toList() ?? [],
       },
     };
@@ -239,6 +267,12 @@ class ChatInputController extends _$ChatInputController {
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(jsonEncode(messageData));
+    // 4. 设置超时处理
+    Timer(const Duration(seconds: 10), () {
+      ref
+          .read(chatMessagesProvider.notifier)
+          .handleTimeout(room.roomId!, clientMsgId);
+    });
   }
 }
 

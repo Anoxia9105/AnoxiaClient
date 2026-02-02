@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
 class TaskbarBadgeUpdater {
@@ -14,6 +15,8 @@ class TaskbarBadgeUpdater {
   );
 
   static Future<void> updateBadge(int count) async {
+    // 如果窗口可见，不更新角标
+    if (await windowManager.isVisible()) return;
     if (count == _lastCount) return;
     _lastCount = count;
 
@@ -50,7 +53,7 @@ class TaskbarBadgeUpdater {
         order: img.ChannelOrder.rgba,
       );
 
-      // 🔥 使用高质量算法缩小到 16×16
+      // 使用高质量算法缩小到 16×16
       final int targetWidth = (targetSize * (badgeImage.width / renderSize))
           .toInt();
       final int targetHeight = targetSize.toInt();
@@ -59,7 +62,7 @@ class TaskbarBadgeUpdater {
         rawImage,
         width: targetWidth,
         height: targetHeight,
-        interpolation: img.Interpolation.average, // 🔥 高质量插值
+        interpolation: img.Interpolation.average, // 高质量插值
       );
 
       // 编码为 ICO
@@ -97,23 +100,9 @@ class TaskbarBadgeUpdater {
 
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width, size));
 
-    // 🔥 添加轻微阴影增强对比度
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(1, 1, width, size),
-        Radius.circular(size / 2),
-      ),
-      shadowPaint,
-    );
-
-    // 背景
+    // 背景（去掉阴影）
     final paint = Paint()
-      ..color =
-          const Color(0xFFD93025) // 🔥 更鲜艳的红色
+      ..color = const Color(0xFF0078D4)
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high;
 
@@ -128,7 +117,7 @@ class TaskbarBadgeUpdater {
     // 文字内容
     String text = count > 99 ? "99+" : count.toString();
 
-    // 🔥 字体大小优化
+    // 字体大小优化
     double fontSize;
     if (count <= 9) {
       fontSize = size * 0.68;
@@ -144,22 +133,18 @@ class TaskbarBadgeUpdater {
         style: TextStyle(
           color: Colors.white,
           fontSize: fontSize,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w500,
           fontFamily: 'Segoe UI',
           height: 1.0,
-          letterSpacing: count > 9 ? -1.0 : 0, // 🔥 多位数更紧凑
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
 
-    // 绘制到画布中心
+    // 绘制到画布中心（垂直居中微调更标准）
     textPainter.paint(
       canvas,
-      Offset(
-        (width - textPainter.width) / 2,
-        (size - textPainter.height) / 2 - 1, // 🔥 微调垂直居中
-      ),
+      Offset((width - textPainter.width) / 2, (size - textPainter.height) / 2),
     );
 
     final picture = recorder.endRecording();
