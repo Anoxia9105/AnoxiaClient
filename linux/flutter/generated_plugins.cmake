@@ -7,8 +7,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   emoji_picker_flutter
   flutter_secure_storage_linux
   flutter_webrtc
-  image_compression_flutter
   livekit_client
+  pasteboard
   screen_retriever_linux
   tray_manager
   url_launcher_linux

@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pasteboard/pasteboard.dart';
 
 import '../../../../framework/extensions/QuillCursorX.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
@@ -227,11 +228,74 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
       _handleSend(roomId ?? '');
       return KeyEventResult.handled;
     }
+    final isPaste =
+        event is KeyDownEvent &&
+        (HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed) &&
+        event.logicalKey == LogicalKeyboardKey.keyV;
+
+    if (isPaste) {
+      // 拦截事件，手动处理
+      _handlePaste(roomId ?? '');
+      return KeyEventResult.handled; // 告诉 Quill 不要再处理这个按键了
+    }
+
     return KeyEventResult.ignored;
   }
 
   void _handleSend(String roomId) {
     ref.read(chatInputControllerProvider(roomId).notifier).sendMessage();
     widget.bottomSheet();
+  }
+
+  /// 手动处理粘贴逻辑
+  Future<void> _handlePaste(String roomId) async {
+    final controller = ref.read(chatInputControllerProvider(roomId));
+
+    // A. 尝试从剪贴板读取图片 (使用 pasteboard 插件)
+    final imageBytes = await Pasteboard.image;
+
+    if (imageBytes != null) {
+      // 如果读到了图片，调用你 Controller 里写好的逻辑
+      ref
+          .read(chatImageUploadControllerProvider.notifier)
+          .handlePastedImage(controller, imageBytes);
+      return;
+    }
+
+    // B. 如果没有图片，尝试读取纯文本
+    // 因为我们拦截了 Ctrl+V，必须手动把文本塞回去，否则文本粘贴也会失效
+    final textData = await Clipboard.getData(Clipboard.kTextPlain);
+    if (textData != null &&
+        textData.text != null &&
+        textData.text!.isNotEmpty) {
+      final text = textData.text!;
+
+      // 获取当前光标位置
+      final selection = controller.selection;
+      final start = selection.baseOffset;
+
+      if (start < 0) {
+        // 如果没有焦点或位置无效，追加到末尾
+        controller.document.insert(controller.document.length - 1, text);
+      } else {
+        // 在光标处插入文本
+        // 如果有选中文本，先删除选中文本 (selection.start 到 selection.end)
+        if (!selection.isCollapsed) {
+          final len = selection.end - selection.start;
+          controller.replaceText(selection.start, len, text, null);
+        } else {
+          controller.document.insert(start, text);
+        }
+
+        // 移动光标到插入文本的后面
+        final newOffset =
+            (selection.isCollapsed ? start : selection.start) + text.length;
+        controller.updateSelection(
+          TextSelection.collapsed(offset: newOffset),
+          ChangeSource.local,
+        );
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
@@ -31,7 +32,35 @@ class ChatInputController extends _$ChatInputController {
 
   @override
   QuillController build(String roomId) {
-    final controller = QuillController.basic();
+    // 提前定义 controller 变量，以便在闭包中使用
+    late QuillController controller;
+
+    controller = QuillController.basic(
+      config: QuillControllerConfig(
+        clipboardConfig: QuillClipboardConfig(
+          enableExternalRichPaste: false, // 禁止富文本，防止格式错乱
+
+          // --- 核心修改：对接粘贴板图片 ---
+          onImagePaste: (Uint8List imageBytes) async {
+            log.info("检测到图片粘贴，大小: ${imageBytes.lengthInBytes} 字节");
+
+            // 调用 ChatImageUploadController 处理粘贴
+            // 逻辑：存临时文件 -> 插入预览 -> 后台静默上传
+            await ref.read(chatImageUploadControllerProvider.notifier)
+                .handlePastedImage(controller, imageBytes);
+
+            // 返回 null，表示“我已经手动处理了插入，Quill 你不用再管了”
+            return null;
+          },
+
+          // 处理纯文本粘贴（例如过滤敏感词）
+          onPlainTextPaste: (String plainText) async {
+            log.info("检测到TEXT粘贴$plainText");
+            return plainText;
+          },
+        ),
+      ),
+    );
 
     // 监听文本变化处理“正在输入”逻辑
     controller.addListener(_onTextChanged);
@@ -43,6 +72,7 @@ class ChatInputController extends _$ChatInputController {
 
     return controller;
   }
+
 
   /// 监听文本变化处理
   void _onTextChanged() {
@@ -145,7 +175,7 @@ class ChatInputController extends _$ChatInputController {
       (member) => member.userId == room.peerId,
     );
 
-    if (peerMember == null)  return;
+    if (peerMember == null) return;
 
     // 找不到对方成员 或 对方离线，不发送
     if (peerMember.onlineStatus != true) {
