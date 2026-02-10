@@ -33,7 +33,7 @@ class ContactList extends ConsumerWidget {
             onTap: () =>
                 ref.read(contactSelectionProvider.notifier).selectNewFriends(),
             trailing: VibratingBadge(
-              messageCount: ref.watch(pendingRequestCountProvider).value ?? 0,
+              count: ref.watch(pendingRequestCountProvider).value ?? 0,
             ),
           ),
           // 2. 加入的群聊

@@ -22,7 +22,7 @@ class DesktopSidebar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
-    final local= context.locale;
+    final local = context.locale;
     return SizedBox(
       width: 70,
       child: Column(
@@ -217,9 +217,9 @@ class SidebarButton extends ConsumerWidget {
 
                     if (index == 0 && unreadCount > 0)
                       Positioned(
-                        right: -10,
+                        right: -20,
                         top: -5,
-                        child: VibratingBadge(messageCount: unreadCount),
+                        child: VibratingBadge(count: unreadCount),
                       ),
                   ],
                 ),

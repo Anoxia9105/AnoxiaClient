@@ -262,34 +262,43 @@ class _RoomItem extends ConsumerWidget {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          isDeletedRoom ? "[已解散] ${room.lastMessage?.content ?? ''}" : (room.lastMessage?.content ?? ""),
+          isDeletedRoom
+              ? "[已解散] ${room.lastMessage?.content ?? ''}"
+              : (room.lastMessage?.content ?? ""),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isPinned) ...[
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedPin,
-                    size: 14,
-                    color: Theme.of(context).colorScheme.outline,
+        trailing: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 120),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isPinned) ...[
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedPin,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    DateUtil.formatTime(room.lastMessage?.timestamp),
+                    style: const TextStyle(fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 6),
                 ],
-                Text(
-                  DateUtil.formatTime(room.lastMessage?.timestamp),
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            VibratingBadge(messageCount: room.unreadCount ?? 0),
-          ],
+              ),
+              // VibratingBadge(count: room.unreadCount ?? 0),
+              VibratingBadge(isDot: (room.unreadCount ?? 0) > 0),
+            ],
+          ),
         ),
       ),
     );
@@ -451,22 +460,28 @@ class _RoomItem extends ConsumerWidget {
           ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
           break;
         case 'hide':
-          // await ref.read(roomListServiceProvider.notifier).hideRoom(roomId);
-          // // 如果当前正在该会话，清空选中
-          // final activeId = ref.read(activeRoomIdProvider);
-          // if (activeId == roomId) {
-          //   ref.read(activeRoomIdProvider.notifier).setActive(null);
-          // }
+          await ref.read(roomListServiceProvider.notifier).hideRoom(roomId);
+          // 如果当前正在该会话，清空选中
+          final activeId = ref.read(activeRoomIdProvider);
+          if (activeId == roomId) {
+            ref.read(activeRoomIdProvider.notifier).setActive(null);
+          }
           break;
         case 'leave':
-          // await ref.read(roomListServiceProvider.notifier).leaveGroup(roomId);
-          // final activeId = ref.read(activeRoomIdProvider);
-          // if (activeId == roomId) {
-          //   ref.read(activeRoomIdProvider.notifier).setActive(null);
-          // }
+          await ref.read(roomListServiceProvider.notifier).leaveGroup(roomId);
+          final activeId = ref.read(activeRoomIdProvider);
+          if (activeId == roomId) {
+            ref.read(activeRoomIdProvider.notifier).setActive(null);
+          }
           break;
         case 'dissolve':
-          // await ref.read(roomListServiceProvider.notifier).dissolveGroup(roomId);
+          await ref
+              .read(roomListServiceProvider.notifier)
+              .dissolveGroup(roomId);
+          final activeId = ref.read(activeRoomIdProvider);
+          if (activeId == roomId) {
+            ref.read(activeRoomIdProvider.notifier).setActive(null);
+          }
           break;
       }
     });

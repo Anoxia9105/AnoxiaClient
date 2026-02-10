@@ -37,67 +37,8 @@ class $AssetsImagesGen {
   AssetGenImage get appIconPng =>
       const AssetGenImage('assets/images/app_icon.png');
 
-  /// Directory path: assets/images/badge
-  $AssetsImagesBadgeGen get badge => const $AssetsImagesBadgeGen();
-
   /// List of all assets
   List<dynamic> get values => [appIconIco, appIconPng];
-}
-
-class $AssetsImagesBadgeGen {
-  const $AssetsImagesBadgeGen();
-
-  /// File path: assets/images/badge/badge_1.ico
-  String get badge1 => 'assets/images/badge/badge_1.ico';
-
-  /// File path: assets/images/badge/badge_1_16.ico
-  String get badge116 => 'assets/images/badge/badge_1_16.ico';
-
-  /// File path: assets/images/badge/badge_1back.ico
-  String get badge1back => 'assets/images/badge/badge_1back.ico';
-
-  /// File path: assets/images/badge/badge_2.ico
-  String get badge2 => 'assets/images/badge/badge_2.ico';
-
-  /// File path: assets/images/badge/badge_3.ico
-  String get badge3 => 'assets/images/badge/badge_3.ico';
-
-  /// File path: assets/images/badge/badge_4.ico
-  String get badge4 => 'assets/images/badge/badge_4.ico';
-
-  /// File path: assets/images/badge/badge_5.ico
-  String get badge5 => 'assets/images/badge/badge_5.ico';
-
-  /// File path: assets/images/badge/badge_6.ico
-  String get badge6 => 'assets/images/badge/badge_6.ico';
-
-  /// File path: assets/images/badge/badge_7.ico
-  String get badge7 => 'assets/images/badge/badge_7.ico';
-
-  /// File path: assets/images/badge/badge_8.ico
-  String get badge8 => 'assets/images/badge/badge_8.ico';
-
-  /// File path: assets/images/badge/badge_9.ico
-  String get badge9 => 'assets/images/badge/badge_9.ico';
-
-  /// File path: assets/images/badge/badge_more.ico
-  String get badgeMore => 'assets/images/badge/badge_more.ico';
-
-  /// List of all assets
-  List<String> get values => [
-    badge1,
-    badge116,
-    badge1back,
-    badge2,
-    badge3,
-    badge4,
-    badge5,
-    badge6,
-    badge7,
-    badge8,
-    badge9,
-    badgeMore,
-  ];
 }
 
 class Assets {

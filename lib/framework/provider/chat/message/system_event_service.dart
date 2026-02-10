@@ -10,7 +10,7 @@ import '../../../protocol/message/EventMessage.dart';
 part 'system_event_service.g.dart';
 
 /// 系统事件服务 - 负责全局监听并分发处理逻辑
-@Riverpod(keepAlive: true) // 保持活跃，全局单例监听
+@Riverpod(keepAlive: true)
 class SystemEventService extends _$SystemEventService {
   @override
   void build() {

@@ -33,7 +33,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'784e002f41b653c15f3e528c6fcbd6ce4e8e6073';
+String _$roomListServiceHash() => r'bcb40852eff836e4c04995e95e4ded841581c0dc';
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();
@@ -87,7 +87,7 @@ final class ActiveRoomIdProvider
   }
 }
 
-String _$activeRoomIdHash() => r'9a7068394b2d3d9b7db1507e6de20cb704f91179';
+String _$activeRoomIdHash() => r'f019dd813fb76334a3a2246f27cec851c1c3feb3';
 
 abstract class _$ActiveRoomId extends $Notifier<String?> {
   String? build();

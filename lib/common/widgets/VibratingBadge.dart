@@ -1,61 +1,95 @@
 import 'package:flutter/material.dart';
 
-/// 徽章：支持数字显示和纯红点模式
 class VibratingBadge extends StatelessWidget {
-  final int messageCount;
-  final double width;
-  final double height;
+  /// 消息数量
+  final int count;
 
   /// 是否显示为纯红点（无数字）
   final bool isDot;
 
+  /// 徽章背景色
+  final Color color;
+
+  /// 徽章文字颜色
+  final Color textColor;
+
+  /// 基础尺寸（红点的大小，或者数字圆形的高度/直径）
+  final double size;
+
+  /// 边框颜色（为了适配不同背景，通常设为白色或透明）
+  final Color? borderColor;
+
   const VibratingBadge({
     super.key,
-    required this.messageCount,
-    this.width = 18,
-    this.height = 18,
-    this.isDot = false, // 默认显示数字
+    this.count = 0,
+    this.isDot = false,
+    this.color = Colors.red,
+    this.textColor = Colors.white,
+    this.size = 18.0,
+    this.borderColor = Colors.white,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 数量为 0 时直接消失
-    if (messageCount == 0) {
+    // 0. 数量为 0 且不是红点模式时隐藏
+    if (count <= 0 && !isDot) {
       return const SizedBox.shrink();
     }
 
-    // 计算红点的实际尺寸
-    // 如果是 isDot 模式，红点固定为一个较小的尺寸
-    final double actualWidth = isDot ? 10 : width;
-    final double actualHeight = isDot ? 10 : height;
+    // --- 1. 纯红点模式 ---
+    if (isDot) {
+      return Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: borderColor != null
+              ? Border.all(color: borderColor!, width: 1.5)
+              : null,
+        ),
+      );
+    }
+
+    // --- 2. 数字模式 ---
+    final String text = count > 99 ? '99+' : count.toString();
+
+    // 判断是否为单字符（只有单字符时强制为正圆）
+    final bool isSingleDigit = text.length == 1;
 
     return Container(
-      width: actualWidth,
-      height: actualHeight,
-      // 数字模式需要边距，点模式不需要
-      padding: isDot ? null : const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: Colors.red.shade600, // 亮一点的红色更醒目
-        borderRadius: BorderRadius.circular(actualHeight / 2),
-        // 增加白色边框，在深色/彩色背景下更清晰（可选）
-        border: Border.all(color: Colors.white, width: 1),
-      ),
+      // 核心修改：如果是单数字，宽高锁死为 size；如果是多数字，高度固定，宽度自适应
+      height: size,
+      width: isSingleDigit ? size : null,
+      constraints: isSingleDigit
+          ? null
+          : BoxConstraints(minWidth: size), // 多位数时最小宽度也是 size
+      // 核心修改：单数字不需要 padding，多数字需要左右撑开
+      padding: isSingleDigit
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 6),
+
       alignment: Alignment.center,
-      child: isDot
-          ? null // 点模式下不显示文字
-          : FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                messageCount > 99 ? '99+' : messageCount.toString(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold, // 加粗更易读
-                  // 桌面端显示时防止字体被缩放得太奇怪
-                  height: 1.0,
-                ),
-              ),
-            ),
+      decoration: BoxDecoration(
+        color: color,
+        // 单数字用圆形，多数字用圆角矩形
+        shape: isSingleDigit ? BoxShape.circle : BoxShape.rectangle,
+        // 多数字时的圆角，设大一点（如 100）能确保两头是半圆
+        borderRadius: isSingleDigit ? null : BorderRadius.circular(100),
+        border: borderColor != null
+            ? Border.all(color: borderColor!, width: 1.5)
+            : null,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 10, // 字体略微调小保证在小圆圈内不拥挤
+          fontWeight: FontWeight.bold,
+          height: 1.0, // 关键：设置为 1.0 移除文字自带的行高边距，便于绝对居中
+        ),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }

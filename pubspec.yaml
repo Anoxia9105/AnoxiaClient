@@ -17,8 +17,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  #锁
-  #  synchronized: ^3.1.0
   cupertino_icons: ^1.0.8
   # 屏幕适配
   flutter_screenutil: ^5.9.3
@@ -45,7 +43,7 @@ dependencies:
   #列表滚动
   flutter_list_view: ^1.1.29
   #rtc
-  livekit_client: ^2.6.1
+  livekit_client: ^2.6.2
   #socket
   web_socket_channel: ^3.0.3
   #win toolbar
@@ -119,7 +117,6 @@ flutter:
   assets:
     - assets/i18n/
     - assets/images/
-    - assets/images/badge/
   #     - images/a_dot_burr.jpeg
   #     - images/a_dot_ham.jpeg
 

@@ -8,7 +8,7 @@ import '../../ws/ws_controller.dart';
 
 part 'high_message_service.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class HighMessageService extends _$HighMessageService {
   final Map<String, Timer> _typingTimers = {};
 

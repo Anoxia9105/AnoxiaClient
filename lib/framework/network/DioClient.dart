@@ -27,7 +27,7 @@ class DioClient {
           return handler.next(options);
         },
         onResponse: (response, handler) async {
-          // log.info(response.data);
+          log.info(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
 

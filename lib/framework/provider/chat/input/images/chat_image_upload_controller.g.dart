@@ -42,7 +42,7 @@ final class ChatImageUploadControllerProvider
 }
 
 String _$chatImageUploadControllerHash() =>
-    r'07f068943c2b89dcaf764765236509204411e1f5';
+    r'fc0ae6e1c757f56249d1f8dfec5ac63e8959099e';
 
 abstract class _$ChatImageUploadController
     extends $Notifier<Map<String, String>> {

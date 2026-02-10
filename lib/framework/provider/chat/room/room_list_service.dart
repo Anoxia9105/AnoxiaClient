@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/ChatMessage.dart';
 import '../../../domain/ChatRoomVO.dart';
+import '../../../logs/talker.dart';
 
 part 'room_list_service.g.dart';
 
@@ -160,6 +161,53 @@ class RoomListService extends _$RoomListService {
       return null;
     }
   }
+
+  /// 退出群聊
+  Future<void> leaveGroup(String roomId) async {
+    try {
+      print("🚀 正在请求后端退出群聊，房间 ID: $roomId");
+      await DioClient().post("/chat/room/leave?roomId=$roomId");
+
+      // 刷新房间列表
+      await refresh(silent: true);
+    } catch (e) {
+      print("❌ 退出群聊失败: $e");
+      rethrow;
+    }
+  }
+
+  /// 解散群聊
+  Future<void> dissolveGroup(String roomId) async {
+    try {
+      print("🚀 正在请求后端解散群聊，房间 ID: $roomId");
+      final res = await DioClient().post("/chat/room/disband?roomId=$roomId");
+
+      log.info("$res");
+
+      // 刷新房间列表
+      await refresh(silent: true);
+    } catch (e) {
+      print("❌ 解散群聊失败: $e");
+      rethrow;
+    }
+  }
+
+  /// 删除会话（单聊）
+  Future<void> hideRoom(String roomId) async {
+    try {
+      print("🚀 正在请求后端删除会话，房间 ID: $roomId");
+      final res = await DioClient().post("/chat/room/leave?roomId=$roomId");
+
+      if (res.data["code"] == 200) {
+        log.info("删除会话成功");
+        // 刷新房间列表
+        await refresh(silent: true);
+      }
+    } catch (e) {
+      print("❌ 删除会话失败: $e");
+      rethrow;
+    }
+  }
 }
 
 //当前选中房间
@@ -168,7 +216,7 @@ class ActiveRoomId extends _$ActiveRoomId {
   @override
   String? build() => null; // 初始没有选中的房间
 
-  void setActive(String roomId) {
+  void setActive(String? roomId) {
     if (state == roomId) return;
     state = roomId;
   }
