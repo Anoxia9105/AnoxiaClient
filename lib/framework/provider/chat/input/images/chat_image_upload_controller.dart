@@ -96,7 +96,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 场景 2：手动选择图片 (点击图标) ---
 
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
