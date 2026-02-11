@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -14,8 +13,6 @@ import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileB
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillImageBuild.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillMentionBuild.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';

@@ -1,4 +1,5 @@
 import 'package:anoxia/pages/chat/component/widget/messageRender/QuillMessageStrategy.dart';
+import 'package:anoxia/pages/chat/component/widget/messageRender/SystemMessageStrategy.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
@@ -14,6 +15,7 @@ class MessageRenderFactory {
     MessageType.image: ImageMessageStrategy(),
     MessageType.file: FileMessageStrategy(),
     MessageType.quill: QuillMessageStrategy(),
+    MessageType.system: SystemMessageStrategy(),
     // 'VOICE': VoiceMessageStrategy(),
   };
 

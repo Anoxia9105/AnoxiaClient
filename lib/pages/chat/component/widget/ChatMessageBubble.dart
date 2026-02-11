@@ -19,8 +19,6 @@ class ChatMessageBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    //TODO 系统消息 直接渲染
-
     final user = ref.watch(authControllerProvider.select((v) => v.value));
     final currentUserId = user?.userId;
     final isCurrentUser = message.senderId == user?.userId;
@@ -59,6 +57,12 @@ class ChatMessageBubble extends ConsumerWidget {
             message.payload?.emojiCode == null;
 
     final strategy = MessageRenderFactory.getStrategy(message.messageType);
+
+    //系统消息 直接渲染
+    if (message.messageType == MessageType.system) {
+      return strategy.buildContent(context, message, textColor);
+    }
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Column(

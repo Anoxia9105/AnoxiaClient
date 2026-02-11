@@ -5,7 +5,8 @@ enum MessageType {
   file(2),
   audio(3),
   video(4),
-  text(5);
+  text(5),
+  system(6);
 
   final int code;
   const MessageType(this.code);

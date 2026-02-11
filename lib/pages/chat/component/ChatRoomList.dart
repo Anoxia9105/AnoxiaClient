@@ -269,8 +269,9 @@ class _RoomItem extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-        trailing: ConstrainedBox(
+        trailing:  ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 120),
+
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
