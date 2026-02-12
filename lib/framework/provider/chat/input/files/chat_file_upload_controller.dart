@@ -25,7 +25,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
   /// 选择文件并插入编辑器
   Future<void> selectFiles(QuillController controller) async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.any, // 允许所有类型
     );
@@ -65,6 +65,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
   /// 批量上传文件逻辑
   Future<void> uploadFiles(List<Attachment> attachments) async {
+    // 修复：在文件处理开始前就设置上传状态，避免先显示失败状态
     ref.read(isUploadingProvider.notifier).start();
 
     try {

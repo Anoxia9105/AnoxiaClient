@@ -17,11 +17,12 @@ class RoomMemberService extends _$RoomMemberService {
   }
 
   /// 核心：同步房间成员列表
-  Future<void> syncMembers(String roomId) async {
-    // 如果已经同步过，直接返回（除非你需要强制刷新）
-    if (_syncedRoomIds.contains(roomId)) return;
+  /// [force] 是否强制刷新（忽略缓存）
+  Future<void> syncMembers(String roomId, {bool force = false}) async {
+    // 如果已经同步过且不强制刷新，直接返回
+    if (_syncedRoomIds.contains(roomId) && !force) return;
 
-    log.info("🚀 正在拉取房间 $roomId 的成员列表...");
+    log.info("🚀 正在拉取房间 $roomId 的成员列表...${force ? '（强制刷新）' : ''}");
 
     try {
       final res = await DioClient().get(
@@ -38,7 +39,10 @@ class RoomMemberService extends _$RoomMemberService {
         // 更新状态：保持旧的 Map，只替换/增加当前房间的成员
         state = {...state, roomId: members};
 
-        _syncedRoomIds.add(roomId);
+        // 只有成功才加入/保留在已同步列表中
+        if (!_syncedRoomIds.contains(roomId)) {
+          _syncedRoomIds.add(roomId);
+        }
         log.info("✅ 房间 $roomId 成员同步完成，共 ${members.length} 人");
       }
     } catch (e, st) {

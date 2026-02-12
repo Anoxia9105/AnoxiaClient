@@ -34,12 +34,14 @@ class EventMessage implements IPacket{
   final int operatorId; // Flutter 中建议用 String 处理 Long 以防溢出，或使用 int
   final String? content;
   final int timestamp;
+  final Map<String, dynamic>? extra; // 新增：额外字段
 
   EventMessage({
     required this.eventType,
     required this.operatorId,
     this.content,
     required this.timestamp,
+    this.extra, // 新增：初始化 extra
   });
 
   /// 从 Map (JSON) 构造对象
@@ -51,6 +53,7 @@ class EventMessage implements IPacket{
       operatorId: json['operatorId'],
       content: json['content'],
       timestamp: json['timestamp'] ?? DateTime.now().millisecondsSinceEpoch,
+      extra: json['extra'], // 新增：解析 extra
     );
   }
 
@@ -61,6 +64,7 @@ class EventMessage implements IPacket{
       'operatorId': operatorId,
       'content': content,
       'timestamp': timestamp,
+      'extra': extra, // 新增：序列化 extra
     };
   }
 

@@ -96,7 +96,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 场景 2：手动选择图片 (点击图标) ---
 
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
@@ -136,7 +136,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   /// [skipCompression] 为 true 表示文件已经处理好了（如粘贴）；false 表示需要在此方法内进行 Isolate 压缩
   Future<void> uploadImages(List<Attachment> images,
       {bool skipCompression = false}) async {
+    // 修复：在压缩开始前就设置上传状态，避免先显示失败状态
     ref.read(isUploadingProvider.notifier).start();
+    
     try {
       List<File> filesToUpload;
 
