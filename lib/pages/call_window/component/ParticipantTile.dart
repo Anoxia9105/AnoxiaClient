@@ -118,7 +118,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // 使用你的 AvatarWidget
-                      AvatarWidget(size: 60.w, url: avatarUrl, name: nickName),
+                      AvatarWidget(size: 30.w, url: avatarUrl, name: nickName),
                     ],
                   ),
                 ),

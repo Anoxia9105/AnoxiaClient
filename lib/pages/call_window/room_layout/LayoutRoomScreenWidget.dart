@@ -35,7 +35,7 @@ class _LayoutRoomScreenWidgetState extends State<LayoutRoomScreenWidget> {
         // 右侧：小列表显示其他参与者
         if (widget.otherParticipants.isNotEmpty)
           SizedBox(
-            width: 80.w,
+            width: 40.w,
             child: ListView.separated(
               itemCount: widget.otherParticipants.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
