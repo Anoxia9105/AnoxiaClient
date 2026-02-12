@@ -269,7 +269,7 @@ class _RoomItem extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-        trailing:  ConstrainedBox(
+        trailing: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 120),
 
           child: Column(
@@ -461,7 +461,7 @@ class _RoomItem extends ConsumerWidget {
           ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
           break;
         case 'hide':
-          await ref.read(roomListServiceProvider.notifier).hideRoom(roomId);
+          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
           // 如果当前正在该会话，清空选中
           final activeId = ref.read(activeRoomIdProvider);
           if (activeId == roomId) {
@@ -469,7 +469,7 @@ class _RoomItem extends ConsumerWidget {
           }
           break;
         case 'leave':
-          await ref.read(roomListServiceProvider.notifier).leaveGroup(roomId);
+          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
           final activeId = ref.read(activeRoomIdProvider);
           if (activeId == roomId) {
             ref.read(activeRoomIdProvider.notifier).setActive(null);

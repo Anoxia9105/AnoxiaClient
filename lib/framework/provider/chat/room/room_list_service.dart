@@ -162,16 +162,19 @@ class RoomListService extends _$RoomListService {
     }
   }
 
-  /// 退出群聊
-  Future<void> leaveGroup(String roomId) async {
+  /// 退出房间
+  Future<void> leaveRoom(String roomId) async {
     try {
-      print("🚀 正在请求后端退出群聊，房间 ID: $roomId");
-      await DioClient().post("/chat/room/leave?roomId=$roomId");
+      print("🚀 正在请求后端删除会话，房间 ID: $roomId");
+      final res = await DioClient().post("/chat/room/leave?roomId=$roomId");
 
-      // 刷新房间列表
-      await refresh(silent: true);
+      if (res.data["code"] == 200) {
+        log.info("删除会话成功");
+        // 刷新房间列表
+        await refresh(silent: true);
+      }
     } catch (e) {
-      print("❌ 退出群聊失败: $e");
+      print("❌ 删除会话失败: $e");
       rethrow;
     }
   }
@@ -188,23 +191,6 @@ class RoomListService extends _$RoomListService {
       await refresh(silent: true);
     } catch (e) {
       print("❌ 解散群聊失败: $e");
-      rethrow;
-    }
-  }
-
-  /// 删除会话（单聊）
-  Future<void> hideRoom(String roomId) async {
-    try {
-      print("🚀 正在请求后端删除会话，房间 ID: $roomId");
-      final res = await DioClient().post("/chat/room/leave?roomId=$roomId");
-
-      if (res.data["code"] == 200) {
-        log.info("删除会话成功");
-        // 刷新房间列表
-        await refresh(silent: true);
-      }
-    } catch (e) {
-      print("❌ 删除会话失败: $e");
       rethrow;
     }
   }
