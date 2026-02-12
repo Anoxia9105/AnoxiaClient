@@ -36,7 +36,7 @@ class MainLayoutPage extends ConsumerWidget {
           //     ),
           //   ),
           // ),
-          child: Text("不支持过小设备"),
+          child: Text('layout_too_small_device'.tr()),
         ),
       );
     }

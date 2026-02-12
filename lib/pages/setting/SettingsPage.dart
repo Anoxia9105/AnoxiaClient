@@ -132,10 +132,10 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       icon: Icon(Icons.expand_more),
                       initialValue: context.locale.languageCode,
-                      items: const [
-                        DropdownMenuItem(value: 'en', child: Text("English")),
-                        DropdownMenuItem(value: 'zh', child: Text("中文")),
-                        DropdownMenuItem(value: 'ja', child: Text("日本語")),
+                      items:  [
+                        DropdownMenuItem(value: 'en', child: Text('settings_language_english'.tr())),
+                        DropdownMenuItem(value: 'zh', child: Text('settings_language_chinese'.tr())),
+                        DropdownMenuItem(value: 'ja', child: Text('settings_language_japanese'.tr())),
                       ],
                       onChanged: (locale) {
                         if (locale != null) {
@@ -169,7 +169,7 @@ class SettingsPage extends ConsumerWidget {
                       icon: HugeIcons.strokeRoundedQuillWrite01,
                       size: 18,
                     ),
-                    title: Text("程序名称"),
+                    title: Text('settings_app_name'.tr()),
                     trailing: Text("Anoxia", style: TextStyle(fontSize: 14)),
                   ),
                   ListTile(
@@ -178,7 +178,7 @@ class SettingsPage extends ConsumerWidget {
                       icon: HugeIcons.strokeRoundedSortByUp01,
                       size: 18,
                     ),
-                    title: Text("程序版本"),
+                    title: Text('settings_app_version'.tr()),
                     trailing: Text("1.0.0", style: TextStyle(fontSize: 14)),
                   ),
                 ],

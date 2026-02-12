@@ -83,4 +83,30 @@ class RoomMemberService extends _$RoomMemberService {
     _syncedRoomIds.clear();
     state = {};
   }
+
+  /// 添加成员到群聊
+  Future<bool> addMembers(String roomId, List<int> userIds) async {
+    try {
+      log.info("🚀 正在添加成员到房间 $roomId，用户ID: $userIds");
+
+      final res = await DioClient().post(
+        "/chat/room/addMembers",
+        data: {
+          "roomId": roomId,
+          "userIds": userIds,
+        },
+      );
+
+      if (res.data["code"] == 200) {
+        log.info("✅ 添加成员成功");
+        // 强制刷新成员列表
+        await syncMembers(roomId, force: true);
+        return true;
+      }
+      return false;
+    } catch (e, st) {
+      log.error("❌ 添加成员失败", e, st);
+      return false;
+    }
+  }
 }

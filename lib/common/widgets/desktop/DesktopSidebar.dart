@@ -144,7 +144,7 @@ class DesktopSidebar extends ConsumerWidget {
                       ref.read(authControllerProvider.notifier).logout();
                       close?.call();
                     },
-                    label: Text("个人详情"),
+                    label: Text('sidebar_personal_details'.tr()),
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedUser),
                   ),
                 ),
@@ -155,7 +155,7 @@ class DesktopSidebar extends ConsumerWidget {
                       ref.read(authControllerProvider.notifier).logout();
                       close?.call();
                     },
-                    label: Text("退出登录", style: TextStyle(color: Colors.red)),
+                    label: Text('sidebar_logout'.tr(), style: TextStyle(color: Colors.red)),
                     icon: HugeIcon(
                       icon: HugeIcons.strokeRoundedLogout01,
                       color: Colors.red,

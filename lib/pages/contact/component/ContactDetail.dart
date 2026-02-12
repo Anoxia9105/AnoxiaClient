@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../../framework/domain/ChatContactDetailVO.dart';
 
@@ -22,7 +23,7 @@ class ContactDetail extends ConsumerWidget {
     // 如果没选中，或者当前不是详情视图，显示空状态
     if (selection.viewType != ContactViewType.contactDetail ||
         contact == null) {
-      return const Center(child: Text("请选择一个联系人"));
+      return Center(child: Text('contact_select_contact'.tr()));
     }
 
     // 只要 SystemEventService 更新了 ContactListService，这里就会自动刷新
@@ -46,7 +47,7 @@ class ContactDetail extends ConsumerWidget {
       body: detailAsync.when(
         data: (detail) => _buildDetailContent(context, detail, isOnline, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text("加载失败: $err")),
+        error: (err, _) => Center(child: Text('contact_load_failed'.tr() + ': $err')),
       ),
     );
   }
@@ -96,12 +97,12 @@ class ContactDetail extends ConsumerWidget {
 
           // Text("${detail.phoneNumber?.isEmpty}--${detail.phoneNumber ?? '----'}"),
           // 详细资料项列表
-          _buildInfoTile(context, "状态", isOnline ? "在线" : "离线"),
-          _buildInfoTile(context, "备注名", detail.remark ?? "无备注"),
-          _buildInfoTile(context, "用户账号", detail.userName ?? ""),
-          _buildInfoTile(context, "性别", detail.genderText),
-          _buildInfoTile(context, "电话", detail.phoneNumber ?? '没有电话'),
-          _buildInfoTile(context, "成为好友", detail.formattedDate),
+          _buildInfoTile(context, 'contact_status'.tr(), isOnline ? 'contact_online'.tr() : 'contact_offline'.tr()),
+          _buildInfoTile(context, 'contact_remark'.tr(), detail.remark ?? 'contact_no_remark'.tr()),
+          _buildInfoTile(context, 'contact_username'.tr(), detail.userName ?? ""),
+          _buildInfoTile(context, 'contact_gender'.tr(), _getTranslatedGender(detail.sex, context)),
+          _buildInfoTile(context, 'contact_phone'.tr(), detail.phoneNumber ?? 'contact_no_phone'.tr()),
+          _buildInfoTile(context, 'contact_became_friends'.tr(), detail.formattedDate),
 
           // 格式化后的时间
           const SizedBox(height: 40),
@@ -151,7 +152,7 @@ class ContactDetail extends ConsumerWidget {
                     ),
                     label: isCreating
                         ? CircularProgressIndicator()
-                        : Text("发消息"),
+                        : Text('chat_send_message'.tr()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -165,6 +166,14 @@ class ContactDetail extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _getTranslatedGender(String? sex, BuildContext context) {
+    switch (sex) {
+      case '0': return 'contact_male'.tr();
+      case '1': return 'contact_female'.tr();
+      default: return 'contact_unknown_gender'.tr();
+    }
   }
 
   Widget _buildInfoTile(BuildContext context, String label, String value) {

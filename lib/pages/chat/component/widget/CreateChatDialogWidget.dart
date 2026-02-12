@@ -3,6 +3,7 @@ import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../../../framework/provider/chat/room/create_new_gropu_controller.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
@@ -109,7 +110,7 @@ class _CreateChatDialogWidgetState
           const Spacer(),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("取消"),
+            child: Text('dialog_cancel'.tr()),
           ),
           const SizedBox(width: 8),
           FilledButton(
@@ -128,7 +129,7 @@ class _CreateChatDialogWidgetState
                       color: Colors.white,
                     ),
                   )
-                : Text("完成 (${selectedIds.length})"),
+                : Text('dialog_done'.tr() + ' (${selectedIds.length})'),
           ),
         ],
       ),
@@ -246,7 +247,7 @@ class _CreateChatDialogWidgetState
     //   // 成功后关闭对话框并重置状态
     //   ref.read(selectedContactIdsProvider.notifier).clear();
     //   Navigator.pop(context);
-    //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("群聊创建成功！")));
+    //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('group_chat_created_successfully'.tr())));
     // }
   }
 }

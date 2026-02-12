@@ -117,17 +117,8 @@ class SystemEventService extends _$SystemEventService {
   /// 处理用户加入房间
   void _handleUserJoined(EventMessage event) {
     // 刷新对应房间的成员列表
-    // 注意：这里需要从 event 中获取 roomId，假设 EventMessage 有 roomId 字段
-    // 如果没有，可能需要从 content 中解析
-
-    // 尝试从 event.content 中解析 roomId
-    String? roomId = _extractRoomIdFromEvent(event);
-    if (roomId != null) {
-      ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId, force: true);
-      log.info("用户 ${event.operatorId} 加入房间 $roomId，强制刷新成员列表");
-    } else {
-      log.warning("无法从 userJoined 事件中获取 roomId");
-    }
+    ref.read(roomListServiceProvider.notifier).refresh(silent: true);
+    log.info("用户加入房间强制刷新成员列表");
   }
 
   /// 处理用户离开房间
@@ -135,7 +126,9 @@ class SystemEventService extends _$SystemEventService {
     // 刷新对应房间的成员列表
     String? roomId = _extractRoomIdFromEvent(event);
     if (roomId != null) {
-      ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId, force: true);
+      ref
+          .read(roomMemberServiceProvider.notifier)
+          .syncMembers(roomId, force: true);
       log.info("用户 ${event.operatorId} 离开房间 $roomId，强制刷新成员列表");
     } else {
       log.warning("无法从 userLeft 事件中获取 roomId");
@@ -161,7 +154,9 @@ class SystemEventService extends _$SystemEventService {
     // 刷新对应房间的成员列表
     String? roomId = _extractRoomIdFromEvent(event);
     if (roomId != null) {
-      ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId, force: true);
+      ref
+          .read(roomMemberServiceProvider.notifier)
+          .syncMembers(roomId, force: true);
       log.info("用户 ${event.operatorId} 被禁言，强制刷新成员列表");
     } else {
       log.warning("无法从 userMuted 事件中获取 roomId");
@@ -173,7 +168,9 @@ class SystemEventService extends _$SystemEventService {
     // 刷新对应房间的成员列表
     String? roomId = _extractRoomIdFromEvent(event);
     if (roomId != null) {
-      ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId, force: true);
+      ref
+          .read(roomMemberServiceProvider.notifier)
+          .syncMembers(roomId, force: true);
       log.info("用户 ${event.operatorId} 角色变更，强制刷新成员列表");
     } else {
       log.warning("无法从 userRoleChanged 事件中获取 roomId");

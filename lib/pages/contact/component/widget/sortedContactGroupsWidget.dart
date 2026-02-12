@@ -5,6 +5,7 @@ import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class SortedContactGroupsWidget extends ConsumerWidget {
   final Widget Function(ChatContactVO vo)? itemBuilder;
@@ -90,7 +91,7 @@ class SortedContactGroupsWidget extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('加载失败: $err')),
+      error: (err, stack) => Center(child: Text('contact_load_failed_with_error'.tr() + ': $err')),
     );
   }
 

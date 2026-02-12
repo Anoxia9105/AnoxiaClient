@@ -3,6 +3,7 @@ import 'package:anoxia/pages/call_window/room_layout/LayoutRoomScreenWidget.dart
 import 'package:anoxia/pages/call_window/room_layout/LayoutRoomWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:livekit_client/livekit_client.dart';
 
@@ -43,7 +44,7 @@ class CallRoomPage extends ConsumerWidget {
               // 核心布局
               Expanded(
                 child: participants.isEmpty
-                    ? const Center(child: Text("等待加入..."))
+                    ? Center(child: Text('call_waiting_to_join'.tr()))
                     : screenSharer == null
                     ? LayoutRoomWidget(participants: participants)
                     : LayoutRoomScreenWidget(
@@ -68,9 +69,9 @@ class CallRoomPage extends ConsumerWidget {
         children: [
           CircularProgressIndicator(strokeWidth: 3),
           SizedBox(height: 24.h),
-          Text("正在连接通话房间...", style: TextStyle(fontSize: 16)),
+          Text('call_connecting_to_room'.tr(), style: TextStyle(fontSize: 16)),
           SizedBox(height: 8.h),
-          Text("请稍候", style: TextStyle(fontSize: 14)),
+          Text('call_please_wait'.tr(), style: TextStyle(fontSize: 14)),
         ],
       ),
     );
@@ -95,7 +96,7 @@ class CallRoomPage extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 24.h),
-              Text("连接失败", style: TextStyle(fontSize: 20)),
+              Text('call_connection_failed'.tr(), style: TextStyle(fontSize: 20)),
               SizedBox(height: 12.h),
               Container(
                 padding: EdgeInsets.all(12.w),

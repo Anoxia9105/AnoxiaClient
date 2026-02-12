@@ -6,6 +6,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../../common/utils/DateUtil.dart';
 import '../../../common/widgets/AvatarWidget.dart';
@@ -59,7 +60,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                         : null,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
-                    hintText: '搜索会话...',
+                    hintText: 'chat_search_placeholder'.tr(),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
@@ -81,11 +82,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           ],
         ),
       ),
-      // 2. 使用 AsyncValue 的 when 模式处理不同状态
       body: roomListAsync.when(
         data: (rooms) => _buildRoomList(context, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('加载失败')),
+        error: (err, stack) => Center(child: Text('chat_load_failed'.tr())),
       ),
     );
   }
@@ -124,7 +124,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                       );
                       close?.call();
                     },
-                    label: Text("发起群聊"),
+                    label: Text('chat_create_group'.tr()),
                     icon: HugeIcon(
                       icon: HugeIcons.strokeRoundedChatting01,
                       size: 18,
@@ -137,7 +137,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                     onPressed: () {
                       close?.call();
                     },
-                    label: Text("添加朋友"),
+                    label: Text('chat_add_friend'.tr()),
                     icon: HugeIcon(
                       icon: HugeIcons.strokeRoundedUserAdd01,
                       size: 18,
@@ -166,7 +166,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             Icon(Icons.search_off, size: 48, color: Colors.grey[300]),
             const SizedBox(height: 12),
             Text(
-              query.isEmpty ? "暂无消息会话" : "未找到相关会话",
+              query.isEmpty ? 'chat_no_conversations'.tr() : 'chat_no_related_conversations'.tr(),
               style: const TextStyle(color: Colors.grey),
             ),
           ],
@@ -194,6 +194,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         itemBuilder: (context, index) {
           return _RoomItem(room: sortedRooms[index]);
         },
+        clipBehavior: Clip.hardEdge, // 限制内容只在边界内绘制
       ),
     );
   }
@@ -210,8 +211,6 @@ class _RoomItem extends ConsumerWidget {
     final activeId = ref.watch(activeRoomIdProvider);
     final isSelected = activeId == room.roomId;
     final isSingle = room.roomType == 0;
-    final isGroup = room.roomType == 1;
-    final isDeletedRoom = (room.roomStatus ?? 0) == 3;
 
     final pinnedIds = ref.watch(pinnedRoomsProvider);
     final roomId = room.roomId;
@@ -236,16 +235,9 @@ class _RoomItem extends ConsumerWidget {
         _showContextMenu(context, ref, details.globalPosition, isPinned);
       },
       child: ListTile(
-        visualDensity: VisualDensity.compact,
-        dense: true,
-        onTap: () {
-          ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
-        },
+        onTap: () =>
+            ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!),
         selected: isSelected,
-        selectedTileColor: Theme.of(
-          context,
-        ).colorScheme.primary.withValues(alpha: 0.3),
-
         // 左侧头像
         leading: AvatarWidget(
           url: room.roomAvatar,
@@ -256,15 +248,13 @@ class _RoomItem extends ConsumerWidget {
         ),
         // 中间名称和最后消息
         title: Text(
-          room.roomName ?? "未知会话",
+          room.roomName ?? 'chat_unknown_conversation'.tr(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          isDeletedRoom
-              ? "[已解散] ${room.lastMessage?.content ?? ''}"
-              : (room.lastMessage?.content ?? ""),
+          (room.lastMessage?.content ?? ""),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
@@ -361,7 +351,7 @@ class _RoomItem extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                isPinned ? '取消置顶' : '置顶会话',
+                isPinned ? 'chat_unpin'.tr() : 'chat_pin'.tr(),
                 style: const TextStyle(fontSize: 13),
               ),
             ],
@@ -378,7 +368,7 @@ class _RoomItem extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(width: 8),
-              const Text('标为已读', style: TextStyle(fontSize: 13)),
+              Text('chat_mark_as_read'.tr(), style: const TextStyle(fontSize: 13)),
             ],
           ),
         ),
@@ -396,7 +386,7 @@ class _RoomItem extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '退出群聊',
+                  'chat_leave_group'.tr(),
                   style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context).colorScheme.error,
@@ -418,7 +408,7 @@ class _RoomItem extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '删除会话',
+                  'chat_delete_conversation'.tr(),
                   style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context).colorScheme.error,
@@ -440,7 +430,7 @@ class _RoomItem extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '解散群聊',
+                  'chat_dissolve_group'.tr(),
                   style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context).colorScheme.error,

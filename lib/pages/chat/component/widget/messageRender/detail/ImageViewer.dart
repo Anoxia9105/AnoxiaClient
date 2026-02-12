@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -77,7 +78,7 @@ class _ImageViewerState extends State<ImageViewer> {
   void _downloadImage() {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('开始下载…')));
+    ).showSnackBar(SnackBar(content: Text('image_download_started'.tr())));
 
     // DioClient().download(urlPath, savePath)
   }
@@ -85,10 +86,10 @@ class _ImageViewerState extends State<ImageViewer> {
   @override
   Widget build(BuildContext context) {
     if (widget.attachment.url == null || widget.attachment.url!.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.black,
         body: Center(
-          child: Text('无法加载图片', style: TextStyle(color: Colors.white)),
+          child: Text('image_load_failed'.tr(), style: const TextStyle(color: Colors.white)),
         ),
       );
     }
@@ -202,17 +203,17 @@ class _ImageViewerState extends State<ImageViewer> {
                   ),
 
                   // 添加错误处理
-                  errorBuilder: (context, error, stackTrace) => const Center(
+                  errorBuilder: (context, error, stackTrace) => Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.broken_image,
                           color: Colors.white54,
                           size: 50,
                         ),
-                        SizedBox(height: 8),
-                        Text("图片加载失败", style: TextStyle(color: Colors.white54)),
+                        const SizedBox(height: 8),
+                        Text('image_failed_to_load'.tr(), style: const TextStyle(color: Colors.white54)),
                       ],
                     ),
                   ),
