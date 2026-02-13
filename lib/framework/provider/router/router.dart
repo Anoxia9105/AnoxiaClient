@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/pages/chat/component/widget/messageRender/detail/ImageViewer.dart';
+import 'package:anoxia/pages/contact/AddFriendPage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -132,4 +133,13 @@ class ImageMessageDetailRoute extends GoRouteData
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       ImageViewer(attachment: attachment, heroTag: heroTag);
+}
+
+@TypedGoRoute<AddFriendRoute>(path: '/add-friend')
+class AddFriendRoute extends GoRouteData with $AddFriendRoute {
+  const AddFriendRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const AddFriendPage();
 }

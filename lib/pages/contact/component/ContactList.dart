@@ -1,9 +1,9 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
-import 'package:anoxia/framework/domain/ChatContactVO.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +35,14 @@ class ContactList extends ConsumerWidget {
             trailing: VibratingBadge(
               count: ref.watch(pendingRequestCountProvider).value ?? 0,
             ),
+          ),
+          // 2. 添加朋友
+          _buildFunctionTile(
+            ref: ref,
+            icon: HugeIcons.strokeRoundedUserAdd02,
+            title: "添加朋友",
+            isSelected: false,
+            onTap: () => const AddFriendRoute().push(ref.context),
           ),
           // 2. 加入的群聊
           _buildFunctionTile(

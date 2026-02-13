@@ -1,0 +1,68 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'user_search_service.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// 用户搜索服务
+
+@ProviderFor(UserSearchService)
+const userSearchServiceProvider = UserSearchServiceProvider._();
+
+/// 用户搜索服务
+final class UserSearchServiceProvider
+    extends $NotifierProvider<UserSearchService, UserSearchResponse> {
+  /// 用户搜索服务
+  const UserSearchServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userSearchServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userSearchServiceHash();
+
+  @$internal
+  @override
+  UserSearchService create() => UserSearchService();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserSearchResponse value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserSearchResponse>(value),
+    );
+  }
+}
+
+String _$userSearchServiceHash() => r'7ce74cdd18db55d1487074a1769175ad63e9bab8';
+
+/// 用户搜索服务
+
+abstract class _$UserSearchService extends $Notifier<UserSearchResponse> {
+  UserSearchResponse build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<UserSearchResponse, UserSearchResponse>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<UserSearchResponse, UserSearchResponse>,
+              UserSearchResponse,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

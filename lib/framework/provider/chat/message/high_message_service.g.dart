@@ -24,7 +24,7 @@ final class HighMessageServiceProvider
         argument: null,
         retry: null,
         name: r'highMessageServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -51,7 +51,7 @@ final class HighMessageServiceProvider
 }
 
 String _$highMessageServiceHash() =>
-    r'b03573276f9611b1b2fa72b1450b7823e214faed';
+    r'5775672969a07cbe49de2e2d40202757a18cd5a2';
 
 abstract class _$HighMessageService
     extends $Notifier<Map<String, Map<HighMessageType, HighMessage>>> {
