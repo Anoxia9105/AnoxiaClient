@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:anoxia/pages/chat/component/widget/CreateChatDialogWidget.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
@@ -135,6 +136,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   width: double.infinity,
                   child: TextButton.icon(
                     onPressed: () {
+                      const AddFriendRoute().push(ref.context);
                       close?.call();
                     },
                     label: Text('chat_add_friend'.tr()),
@@ -166,7 +168,9 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             Icon(Icons.search_off, size: 48, color: Colors.grey[300]),
             const SizedBox(height: 12),
             Text(
-              query.isEmpty ? 'chat_no_conversations'.tr() : 'chat_no_related_conversations'.tr(),
+              query.isEmpty
+                  ? 'chat_no_conversations'.tr()
+                  : 'chat_no_related_conversations'.tr(),
               style: const TextStyle(color: Colors.grey),
             ),
           ],
@@ -368,7 +372,10 @@ class _RoomItem extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(width: 8),
-              Text('chat_mark_as_read'.tr(), style: const TextStyle(fontSize: 13)),
+              Text(
+                'chat_mark_as_read'.tr(),
+                style: const TextStyle(fontSize: 13),
+              ),
             ],
           ),
         ),

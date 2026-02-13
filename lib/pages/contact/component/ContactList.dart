@@ -37,14 +37,6 @@ class ContactList extends ConsumerWidget {
               count: ref.watch(pendingRequestCountProvider).value ?? 0,
             ),
           ),
-          // 2. 添加朋友
-          _buildFunctionTile(
-            ref: ref,
-            icon: HugeIcons.strokeRoundedUserAdd02,
-            title: "添加朋友",
-            isSelected: false,
-            onTap: () => const AddFriendRoute().push(ref.context),
-          ),
           // 2. 加入的群聊
           _buildFunctionTile(
             ref: ref,

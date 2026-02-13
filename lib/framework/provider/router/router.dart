@@ -142,4 +142,12 @@ class AddFriendRoute extends GoRouteData with $AddFriendRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       const AddFriendPage();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return MaterialPage(
+      key: state.pageKey,
+      child: const AddFriendPage(),
+    );
+  }
 }

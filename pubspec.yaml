@@ -92,6 +92,7 @@ dependencies:
   #通知
   flutter_local_notifications: ^20.0.0
   pasteboard: ^0.4.0
+  flutter_staggered_animations: ^1.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
