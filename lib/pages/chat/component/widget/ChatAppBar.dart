@@ -8,12 +8,14 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../../../framework/domain/ChatRoomVO.dart';
 import '../../../../framework/protocol/message/HighMessage.dart';
 import '../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
+import 'AddMemberDialogWidget.dart';
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const ChatAppBar({super.key});
@@ -22,6 +24,8 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeId = ref.watch(activeRoomIdProvider);
     final roomListAsync = ref.watch(roomListServiceProvider);
+
+
     final isTyping = ref.watch(
       highMessageServiceProvider.select(
         (state) =>
@@ -35,16 +39,18 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     final currentUser = ref.watch(authControllerProvider).value;
-    final List<ChatRoomMemberVO> rawMembers = ref
-        .read(roomMemberServiceProvider.notifier)
-        .getMembersByRoom(activeId ?? '');
+    final List<ChatRoomMemberVO> rawMembers = ref.watch(
+      roomMemberServiceProvider.select((state) => state[activeId ?? ''] ?? []),
+    );
+
     final member = rawMembers.map((m) {
       if (m.userId == currentUser?.userId) {
         // 使用 copyWith 产生一个新对象，名字后面加上 (我)
-        return m.copyWith(nickName: "${m.nickName ?? '未知用户'} (我)");
+        return m.copyWith(nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} (我)");
       }
       return m;
     }).toList();
+
     return AppBar(
       actionsPadding: EdgeInsets.all(4),
       title: roomListAsync.when(
@@ -54,14 +60,14 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
-                currentRoom?.roomName ?? '对话详情',
+                currentRoom?.roomName ?? 'appbar_conversation_detail'.tr(),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                "对方正在输入...",
+                'appbar_user_typing'.tr(),
                 style: TextStyle(
                   fontSize: 12,
                   color: isTyping
@@ -72,12 +78,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ],
           );
         },
-        loading: () => const Text("正在连接..."),
-        error: (_, _) => const Text("会话已断开"),
+        loading: () => Text('appbar_connecting'.tr()),
+        error: (_, _) => Text('appbar_connection_lost'.tr()),
       ),
       actions: [
         IconButton(
-          tooltip: "开始会议",
+          tooltip: 'appbar_start_meeting'.tr(),
           onPressed: () {
             ref
                 .read(callWindowControllerProvider.notifier)
@@ -94,14 +100,22 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           child: VerticalDivider(indent: 4, endIndent: 4),
         ),
         IconButton(
-          tooltip: "聊天中查找",
+          tooltip: 'appbar_search_in_chat'.tr(),
           onPressed: () {},
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
         ),
         if (currentRoom != null && currentRoom.roomType == 1)
           IconButton(
-            tooltip: "添加人员",
-            onPressed: () {},
+            tooltip: 'appbar_add_member'.tr(),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AddMemberDialogWidget(
+                  roomId: currentRoom.roomId!,
+                  roomName: currentRoom.roomName!,
+                ),
+              );
+            },
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedAddTeam,
               size: 20,
@@ -110,7 +124,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         Builder(
           builder: (context) {
             return Tooltip(
-              message: "人员列表",
+              message: 'appbar_member_list'.tr(),
               child: InkWell(
                 onTap: () => Toast.showWidget(
                   context,
@@ -136,7 +150,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                               vertical: 8,
                             ),
                             child: Text(
-                              "人员列表 (${member.length})",
+                              'appbar_member_list'.tr() + ' (${member.length})',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -180,7 +194,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     children: [
                       const HugeIcon(
                         icon: HugeIcons.strokeRoundedUserMultiple02,
-                        size: 20,
+                        size: 18,
                       ),
                       Text("${member.length}"),
                     ],

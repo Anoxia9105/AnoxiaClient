@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:hugeicons/hugeicons.dart';
@@ -221,7 +222,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
         children: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("取消"),
+            child: Text('dialog_cancel'.tr()),
           ),
           const SizedBox(width: 15),
           FilledButton(

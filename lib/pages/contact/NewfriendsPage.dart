@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 class NewFriendsPage extends ConsumerStatefulWidget {
@@ -16,7 +17,7 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
   Widget build(BuildContext context) {
     final requestAsync = ref.watch(contactRequestsServiceProvider);
     return Scaffold(
-      appBar: AppBar(title: Text("新的朋友")),
+      appBar: AppBar(title: Text('contact_new_friends_title'.tr())),
       body: requestAsync.when(
         data: (req) {
           return ListView.separated(
@@ -79,7 +80,7 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('加载失败: $err')),
+        error: (err, stack) => Center(child: Text('contact_load_failed_with_error'.tr() + ': $err')),
       ),
     );
   }
@@ -118,8 +119,8 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
       );
     }
     if (status == 1) {
-      return Text("已同意");
+      return Text('contact_request_accepted'.tr());
     }
-    return Text("已拒绝");
+    return Text('contact_request_rejected'.tr());
   }
 }

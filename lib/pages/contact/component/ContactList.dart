@@ -8,6 +8,7 @@ import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ContactList extends ConsumerWidget {
   const ContactList({super.key});
@@ -28,7 +29,7 @@ class ContactList extends ConsumerWidget {
           _buildFunctionTile(
             ref: ref,
             icon: HugeIcons.strokeRoundedAddTeam,
-            title: "新的朋友",
+            title: 'contact_new_friends'.tr(),
             isSelected: currentViewType == ContactViewType.newFriends,
             onTap: () =>
                 ref.read(contactSelectionProvider.notifier).selectNewFriends(),
@@ -48,16 +49,16 @@ class ContactList extends ConsumerWidget {
           _buildFunctionTile(
             ref: ref,
             icon: HugeIcons.strokeRoundedUserGroup03,
-            title: "加入的群聊",
+            title: 'contact_joined_groups'.tr(),
             isSelected: currentViewType == ContactViewType.groups,
             onTap: () =>
                 ref.read(contactSelectionProvider.notifier).selectGroups(),
           ),
           // 联系人标题
           ListTile(
-            title: const Text(
-              "联系人",
-              style: TextStyle(fontWeight: FontWeight.bold),
+            title: Text(
+              'contact_contacts'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
 

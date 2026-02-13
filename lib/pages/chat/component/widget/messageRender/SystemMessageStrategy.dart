@@ -49,7 +49,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       case "join":
         return _buildMessageRow(
           icon: HugeIcons.strokeRoundedUserAdd02,
-          text: "$name加入了房间",
+          text: "${(message.extra["operator_name"] ?? "")}邀请[$name]加入了房间",
           textStyle: textStyle,
         );
       case "leave":

@@ -1,6 +1,7 @@
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -21,7 +22,7 @@ class CommandBar extends ConsumerWidget {
       reconnectButton = TextButton.icon(
         onPressed: () => notifier.reconnect(),
         icon: const Icon(Icons.refresh, size: 16),
-        label: const Text("重新连接"),
+        label: Text('call_window_reconnect'.tr()),
       );
     }
 
@@ -247,7 +248,7 @@ class CommandBar extends ConsumerWidget {
           ),
           iconSize: 24,
         ),
-        Text("挂断", style: TextStyle(fontSize: 10)),
+        Text('call_window_hang_up'.tr(), style: TextStyle(fontSize: 10)),
       ],
     );
   }

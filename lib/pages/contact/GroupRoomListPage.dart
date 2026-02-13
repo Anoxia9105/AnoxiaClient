@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../framework/provider/chat/room/room_list_service.dart';
 
@@ -12,7 +13,7 @@ class GroupRoomListPage extends ConsumerWidget {
     final groups = ref.watch(groupRoomListProvider);
 
     if (groups.isEmpty) {
-      return const Center(child: Text("暂无群聊"));
+      return Center(child: Text('group_no_groups'.tr()));
     }
 
     return ListView.builder(

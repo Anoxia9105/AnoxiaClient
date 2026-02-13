@@ -114,10 +114,10 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("创建房间失败", style: TextStyle()),
+                  Text('call_window_room_creation_failed'.tr(), style: TextStyle()),
                   FilledButton(
                     onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
-                    child: Text("重试"),
+                    child: Text('call_window_retry'.tr()),
                   ),
                 ],
               ),

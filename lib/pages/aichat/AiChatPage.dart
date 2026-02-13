@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../framework/domain/AiChatMessage.dart';
 import '../../framework/provider/ai/ai_chat_controller.dart';
@@ -16,7 +17,7 @@ class AIChatPage extends ConsumerWidget {
     final isGenerating = notifier.isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Gemini Chat")),
+      appBar: AppBar(title: Text('ai_chat_title'.tr())),
       body: Column(
         children: [
           Expanded(

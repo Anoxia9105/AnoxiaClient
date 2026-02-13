@@ -4,6 +4,7 @@ import 'package:anoxia/pages/chat/component/widget/ChatMessageBubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../framework/provider/chat/message/room_message_service.dart';
@@ -139,7 +140,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             ),
           );
         },
-        error: (err, _) => Center(child: Text("初始化失败: $err")),
+        error: (err, _) => Center(child: Text('chat_initialization_failed'.tr() + ': $err')),
         loading: () {
           return Center(child: CircularProgressIndicator());
         },
