@@ -42,6 +42,8 @@ dependencies:
   hugeicons: ^1.1.5
   #列表滚动
   flutter_list_view: ^1.1.29
+  # 可定位列表滚动
+  scrollable_positioned_list: ^0.3.8
   #rtc
   livekit_client: ^2.6.2
   #socket
