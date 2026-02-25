@@ -150,5 +150,11 @@
   "call_window_hang_up": "Hang up",
   "call_window_room_creation_failed": "Failed to create room",
   "call_window_retry": "Retry",
-  "ai_chat_title": "Gemini Chat"
+  "ai_chat_title": "Gemini Chat",
+  
+  "search_context_title": "Search Context",
+  "search_context_matches": "Matches",
+  "search_context_empty": "No search results",
+  "appbar_search_hint": "Enter keywords to search",
+  "search": "Search"
 }

@@ -16,6 +16,8 @@ import '../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
 import 'AddMemberDialogWidget.dart';
+import 'SearchContextPage.dart';
+
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const ChatAppBar({super.key});
@@ -101,7 +103,20 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
         IconButton(
           tooltip: 'appbar_search_in_chat'.tr(),
-          onPressed: () {},
+          onPressed: () {
+            if (currentRoom != null) {
+              // 直接跳转到搜索页面
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchContextPage(
+                    roomId: currentRoom!.roomId!,
+                    roomName: currentRoom!.roomName!,
+                  ),
+                ),
+              );
+            }
+          },
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
         ),
         if (currentRoom != null && currentRoom.roomType == 1)

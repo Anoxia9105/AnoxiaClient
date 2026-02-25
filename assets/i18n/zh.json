@@ -125,5 +125,11 @@
   "call_window_hang_up": "挂断",
   "call_window_room_creation_failed": "创建房间失败",
   "call_window_retry": "重试",
-  "ai_chat_title": "Gemini Chat"
+  "ai_chat_title": "Gemini Chat",
+  
+  "search_context_title": "搜索上下文",
+  "search_context_matches": "匹配数量",
+  "search_context_empty": "暂无搜索结果",
+  "appbar_search_hint": "输入关键词搜索",
+  "search": "搜索"
 }

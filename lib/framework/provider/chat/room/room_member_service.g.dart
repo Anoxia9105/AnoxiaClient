@@ -47,7 +47,7 @@ final class RoomMemberServiceProvider
   }
 }
 
-String _$roomMemberServiceHash() => r'4b4e11a5f0873a3ff99a629cb1c14b2534a6301d';
+String _$roomMemberServiceHash() => r'5ddda393a4667cbeef94a3b9b0bcc188f91710e5';
 
 abstract class _$RoomMemberService
     extends $Notifier<Map<String, List<ChatRoomMemberVO>>> {

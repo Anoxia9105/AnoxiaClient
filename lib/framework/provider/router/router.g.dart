@@ -12,6 +12,7 @@ List<RouteBase> get $appRoutes => [
   $splashRoute,
   $errorRoute,
   $imageMessageDetailRoute,
+  $addFriendRoute,
 ];
 
 RouteBase get $initLoginRoute =>
@@ -137,6 +138,32 @@ mixin $ImageMessageDetailRoute on GoRouteData {
       'hero-tag': _self.heroTag,
     },
   );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $addFriendRoute => GoRouteData.$route(
+  path: '/add-friend',
+  factory: $AddFriendRoute._fromState,
+);
+
+mixin $AddFriendRoute on GoRouteData {
+  static AddFriendRoute _fromState(GoRouterState state) =>
+      const AddFriendRoute();
+
+  @override
+  String get location => GoRouteData.$location('/add-friend');
 
   @override
   void go(BuildContext context) => context.go(location);

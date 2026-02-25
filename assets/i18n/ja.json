@@ -146,5 +146,11 @@
   "call_window_hang_up": "切断",
   "call_window_room_creation_failed": "ルームの作成に失敗しました",
   "call_window_retry": "再試行",
-  "ai_chat_title": "Gemini Chat"
+  "ai_chat_title": "Gemini Chat",
+  
+  "search_context_title": "検索コンテキスト",
+  "search_context_matches": "一致数",
+  "search_context_empty": "検索結果がありません",
+  "appbar_search_hint": "キーワードを入力して検索",
+  "search": "検索"
 }
