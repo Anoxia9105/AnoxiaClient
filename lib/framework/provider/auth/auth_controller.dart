@@ -59,8 +59,17 @@ class AuthController extends _$AuthController {
     });
   }
 
+  /// 手动登出：调用后会把 state 设为 AsyncData(null)
+  /// 1. 调用后端 logout API
+  /// 2. 清除本地存储的 Token
+  /// 3. 【关键步骤】：重置所有业务 Provider
+  ///    - invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
+  ///    - 这里重置了 roomListServiceProvider 和 activeRoomIdProvider
   Future<void> logout() async {
     try {
+      // . 调用后端 logout API
+      await DioClient().post("/logout");
+      
       // . 清除本地存储的 Token
       await TokenManager.instance.clearToken();
 

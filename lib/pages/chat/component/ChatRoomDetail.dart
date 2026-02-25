@@ -70,7 +70,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     super.dispose();
   }
 
+  /// 消息列表的 padding，用于在消息气泡周围添加空白
   final bodyPadding = 50.00;
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +80,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final entryTask = ref.watch(roomEntryTaskProvider(activeId ?? ''));
     //监听这个房间是否有更多消息
     final hasMore = ref.watch(
-      chatHasMoreProvider.select((map) => map[activeId] ?? true),
+      chatHasMoreProvider.select((map) => map[activeId] ?? false),
     );
 
     final messages = ref.watch(
@@ -93,6 +95,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         });
       }
     });
+
+print('hasMore: ${hasMore}');
+print('messages: ${messages.length}');
 
     return Scaffold(
       appBar: ChatAppBar(),
