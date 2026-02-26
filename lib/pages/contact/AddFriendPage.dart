@@ -23,6 +23,17 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
   UserVO? _selectedUser;
 
   @override
+  void initState() {
+    super.initState();
+    // 页面加载时清空上次的搜索结果
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userSearchServiceProvider.notifier).state = ref
+          .read(userSearchServiceProvider.notifier)
+          .build();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _remarkController.dispose();
@@ -43,7 +54,13 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('添加朋友'),
+        title: Text(
+          '添加朋友',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
         elevation: 0,
         backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
@@ -51,10 +68,12 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: colorScheme.onSurface,
+            size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
           splashRadius: 24,
         ),
+        centerTitle: false,
       ),
       body: SafeArea(
         child: Column(
@@ -68,12 +87,12 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -81,21 +100,21 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: '搜索用户名或昵称',
-                    hintStyle: TextStyle(
+                    hintStyle: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.outline,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
                     prefixIcon: Icon(
                       Icons.search_rounded,
                       color: colorScheme.outline,
-                      size: 22,
+                      size: 20,
                     ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: Icon(
                               Icons.clear_rounded,
                               color: colorScheme.outline,
-                              size: 20,
+                              size: 18,
                             ),
                             onPressed: () {
                               _searchController.clear();
@@ -106,20 +125,22 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                   .read(userSearchServiceProvider.notifier)
                                   .build();
                               _selectedUser = null;
+                              setState(() {});
                             },
                             splashRadius: 20,
                           )
                         : null,
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 16.0,
+                      horizontal: 18.0,
+                      vertical: 14.0,
                     ),
                   ),
-                  style: textTheme.bodyLarge?.copyWith(fontSize: 16),
+                  style: textTheme.bodyMedium?.copyWith(fontSize: 15),
                   onSubmitted: (value) {
                     _performSearch(value);
                   },
+                  onChanged: (value) => setState(() {}),
                 ),
               ),
             ), // 修复1: 添加缺失的逗号
@@ -131,7 +152,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
                       color: colorScheme.primary.withOpacity(0.2),
@@ -145,24 +166,24 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                       ? null
                       : () => _performSearch(_searchController.text),
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
+                    minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
                     elevation: 0,
-                    textStyle: textTheme.titleMedium?.copyWith(
+                    textStyle: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
                   ),
                   child: _isSearching
                       ? const SizedBox(
-                          height: 24,
-                          width: 24,
+                          height: 20,
+                          width: 20,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
+                            strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               Colors.white,
                             ),
@@ -520,19 +541,19 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
 
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(28),
           ),
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 32,
-                  offset: const Offset(0, 12),
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
                 ),
               ],
             ),

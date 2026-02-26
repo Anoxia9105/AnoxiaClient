@@ -130,6 +130,20 @@
   "search_context_title": "搜索上下文",
   "search_context_matches": "匹配数量",
   "search_context_empty": "暂无搜索结果",
+  "appbar_enter_search": "输入搜索",
   "appbar_search_hint": "输入关键词搜索",
-  "search": "搜索"
+  "search": "搜索",
+  
+  "discover_group_chat": "群聊发现",
+  "discover_group_chat_subtitle": "发现有趣的群组和话题",
+  "discover_nearby_people": "附近的人",
+  "discover_nearby_people_subtitle": "发现身边的用户",
+  "discover_friend_recommendation": "好友推荐",
+  "discover_friend_recommendation_subtitle": "可能认识的人",
+  "discover_hot_topics": "热门话题",
+  "discover_hot_topics_subtitle": "大家都在讨论什么",
+  "discover_file_manager": "文件管理",
+  "discover_file_manager_subtitle": "查看发送和接收的文件",
+  "discover_favorites": "收藏夹",
+  "discover_favorites_subtitle": "重要消息和链接收藏"
 }

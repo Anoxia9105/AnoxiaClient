@@ -1,8 +1,9 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
-import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:anoxia/pages/chat/component/widget/CreateChatDialogWidget.dart';
+import 'package:anoxia/pages/contact/AddFriendPage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -136,8 +137,9 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   width: double.infinity,
                   child: TextButton.icon(
                     onPressed: () {
-                      const AddFriendRoute().push(ref.context);
                       close?.call();
+                      // TODO: 显示添加好友弹框
+                      _showAddFriendDialog(context, ref);
                     },
                     label: Text('chat_add_friend'.tr()),
                     icon: HugeIcon(
@@ -199,6 +201,25 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           return _RoomItem(room: sortedRooms[index]);
         },
         clipBehavior: Clip.hardEdge, // 限制内容只在边界内绘制
+      ),
+    );
+  }
+
+  /// 显示添加好友弹框
+  void _showAddFriendDialog(BuildContext context, WidgetRef ref) {
+    final isDesktop = DeviceUtil.isRealDesktop();
+    final dialogWidth = isDesktop ? 900.0 : 400.0;
+    final dialogHeight = isDesktop ? 700.0 : 600.0;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: dialogWidth,
+          height: dialogHeight,
+          child: const AddFriendPage(),
+        ),
       ),
     );
   }

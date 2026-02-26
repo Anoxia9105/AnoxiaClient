@@ -74,7 +74,7 @@
   
   "chat_search_placeholder": "会話を検索...",
   "chat_load_failed": "読み込みに失敗しました",
-  "chat_create_group": "グループチャットを作成",
+  "chat_create_group": "グルチャ作成",
   "chat_add_friend": "友達を追加",
   "chat_no_conversations": "まだ会話がありません",
   "chat_no_related_conversations": "関連する会話が見つかりません",
@@ -151,6 +151,20 @@
   "search_context_title": "検索コンテキスト",
   "search_context_matches": "一致数",
   "search_context_empty": "検索結果がありません",
+  "appbar_enter_search": "検索を入力",
   "appbar_search_hint": "キーワードを入力して検索",
-  "search": "検索"
+  "search": "検索",
+  
+  "discover_group_chat": "グループチャット発見",
+  "discover_group_chat_subtitle": "面白いグループや話題を発見",
+  "discover_nearby_people": "近くの人",
+  "discover_nearby_people_subtitle": "周りのユーザーを発見",
+  "discover_friend_recommendation": "友達のおすすめ",
+  "discover_friend_recommendation_subtitle": "知り合いかもしれない人",
+  "discover_hot_topics": "ホットトピック",
+  "discover_hot_topics_subtitle": "みんなが何を話しているか",
+  "discover_file_manager": "ファイル管理",
+  "discover_file_manager_subtitle": "送受信したファイルを表示",
+  "discover_favorites": "お気に入り",
+  "discover_favorites_subtitle": "重要なメッセージとリンクのコレクション"
 }

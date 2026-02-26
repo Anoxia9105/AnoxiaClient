@@ -24,6 +24,7 @@ class SearchMessageService extends _$SearchMessageService {
       maxSeq: 0,
       firstMatchIndex: -1,
       lastMatchIndex: -1,
+      totalMatches: 0,
     );
   }
 
@@ -55,6 +56,7 @@ class SearchMessageService extends _$SearchMessageService {
       final hasMoreAfter = data["hasMoreAfter"] ?? false;
       final minSeq = data["minSeq"] ?? 0;
       final maxSeq = data["maxSeq"] ?? 0;
+      final totalMatches = data["totalMatches"] ?? 0;
 
       final List<ChatMessage> messages = [];
       if (messagesData is List) {
@@ -78,6 +80,7 @@ class SearchMessageService extends _$SearchMessageService {
         hasMoreAfter: hasMoreAfter,
         minSeq: minSeq,
         maxSeq: maxSeq,
+        totalMatches: totalMatches,
       );
     } catch (e) {
       log.error("搜索消息失败: $e");
@@ -110,6 +113,7 @@ class SearchMessageService extends _$SearchMessageService {
       maxSeq: 0,
       firstMatchIndex: -1,
       lastMatchIndex: -1,
+      totalMatches: 0,
     );
   }
 }
@@ -124,6 +128,7 @@ class SearchState {
   final int maxSeq;
   final int firstMatchIndex;
   final int lastMatchIndex;
+  final int totalMatches;
 
   SearchState({
     required this.isLoading,
@@ -134,6 +139,7 @@ class SearchState {
     required this.maxSeq,
     required this.firstMatchIndex,
     required this.lastMatchIndex,
+    required this.totalMatches,
   });
 
   SearchState copyWith({
@@ -145,6 +151,7 @@ class SearchState {
     int? maxSeq,
     int? firstMatchIndex,
     int? lastMatchIndex,
+    int? totalMatches,
   }) {
     return SearchState(
       isLoading: isLoading ?? this.isLoading,
@@ -155,6 +162,7 @@ class SearchState {
       maxSeq: maxSeq ?? this.maxSeq,
       firstMatchIndex: firstMatchIndex ?? this.firstMatchIndex,
       lastMatchIndex: lastMatchIndex ?? this.lastMatchIndex,
+      totalMatches: totalMatches ?? this.totalMatches,
     );
   }
 }

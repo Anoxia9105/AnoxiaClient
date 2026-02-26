@@ -1,9 +1,11 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/pages/chat/component/widget/SearchContextPage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,7 +97,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           IconButton(
             tooltip: 'appbar_search_in_chat'.tr(),
-            onPressed: () {},
+            onPressed: () {
+              _showSearchDialog(context, ref, activeId ?? '');
+            },
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedSearch01,
               size: 20,
@@ -204,6 +208,34 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  /// 显示搜索对话框
+  void _showSearchDialog(BuildContext context, WidgetRef ref, String roomId) {
+    final currentRoom = ref.read(roomListServiceProvider).value?.firstWhere(
+      (r) => r.roomId == roomId,
+      orElse: () => ChatRoomVO(),
+    );
+    final roomName = currentRoom?.roomName ?? 'appbar_conversation_detail'.tr();
+    
+    final isDesktop = DeviceUtil.isRealDesktop();
+    final dialogWidth = isDesktop ? 1000.0 : 400.0;
+    final dialogHeight = isDesktop ? 750.0 : 600.0;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: dialogWidth,
+          height: dialogHeight,
+          child: SearchContextPage(
+            roomId: roomId,
+            roomName: roomName,
+          ),
+        ),
       ),
     );
   }

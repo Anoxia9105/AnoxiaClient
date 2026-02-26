@@ -155,6 +155,20 @@
   "search_context_title": "Search Context",
   "search_context_matches": "Matches",
   "search_context_empty": "No search results",
+  "appbar_enter_search": "Enter search",
   "appbar_search_hint": "Enter keywords to search",
-  "search": "Search"
+  "search": "Search",
+  
+  "discover_group_chat": "Group Chat Discovery",
+  "discover_group_chat_subtitle": "Discover interesting groups and topics",
+  "discover_nearby_people": "Nearby People",
+  "discover_nearby_people_subtitle": "Discover users around you",
+  "discover_friend_recommendation": "Friend Recommendations",
+  "discover_friend_recommendation_subtitle": "People you might know",
+  "discover_hot_topics": "Hot Topics",
+  "discover_hot_topics_subtitle": "What everyone is discussing",
+  "discover_file_manager": "File Manager",
+  "discover_file_manager_subtitle": "View sent and received files",
+  "discover_favorites": "Favorites",
+  "discover_favorites_subtitle": "Important messages and link collections"
 }
