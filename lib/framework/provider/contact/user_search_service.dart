@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/domain/ContactRequest.dart';
 import 'package:anoxia/framework/domain/UserSearchResponse.dart';
 import 'package:anoxia/framework/logs/talker.dart';
@@ -12,25 +13,21 @@ class UserSearchService extends _$UserSearchService {
   @override
   UserSearchResponse build() {
     // 初始状态为空
-    return UserSearchResponse(
-      total: 0,
-      rows: [],
-      code: 200,
-      msg: "",
-    );
+    return UserSearchResponse(total: 0, rows: [], code: 200, msg: "");
   }
 
   /// 搜索用户
   /// [name] 搜索关键词
   /// [pageNum] 当前页码
   /// [pageSize] 每页大小
-  Future<UserSearchResponse> searchUsers(String name, {
+  Future<UserSearchResponse> searchUsers(
+    String name, {
     int pageNum = 1,
     int pageSize = 10,
   }) async {
     try {
       final response = await DioClient().get(
-        '/contact/search',
+        API.contactSearch,
         queryParameters: {
           'name': name,
           'pageNum': pageNum,
@@ -52,13 +49,10 @@ class UserSearchService extends _$UserSearchService {
   /// [remark] 申请备注
   Future<bool> sendContactRequest(int toUserId, String? remark) async {
     try {
-      final request = ContactRequest(
-        toUserId: toUserId,
-        remark: remark,
-      );
+      final request = ContactRequest(toUserId: toUserId, remark: remark);
 
       final response = await DioClient().post(
-        '/contact/request',
+        API.contactRequestCreate,
         data: request.toJson(),
       );
 

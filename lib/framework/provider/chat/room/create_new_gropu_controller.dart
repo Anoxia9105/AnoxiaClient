@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -44,11 +45,8 @@ class CreateGroupController extends _$CreateGroupController {
     // 2. 使用 AsyncValue.guard 捕获异常
     state = await AsyncValue.guard(() async {
       final res = await DioClient().post(
-        "/chat/createGroup",
-        data: {
-          'name': name,
-          'ids': userIds,
-        },
+        API.chatCreateGroup,
+        data: {'name': name, 'ids': userIds},
       );
 
       // 根据你后端 AjaxResult 的结构解析

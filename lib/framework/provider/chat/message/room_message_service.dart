@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -134,7 +135,7 @@ class ChatMessages extends _$ChatMessages {
 
     try {
       final res = await DioClient().get(
-        "/chat/history",
+        API.chatHistory,
         queryParameters: {
           "roomId": roomId,
           "lastSeq": null,
@@ -211,7 +212,7 @@ class ChatMessages extends _$ChatMessages {
 
     try {
       final res = await DioClient().get(
-        "/chat/history",
+        API.chatHistory,
         queryParameters: {
           "roomId": roomId,
           "lastSeq": oldestSeq, // 告诉服务器从哪条开始往前找

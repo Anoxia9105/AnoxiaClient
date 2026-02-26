@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/domain/ChatContactVO.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
@@ -14,7 +15,7 @@ class ContactListService extends _$ContactListService {
   }
 
   Future<Map<int, ChatContactVO>> _fetchContacts() async {
-    final response = await DioClient().get('/contact/list');
+    final response = await DioClient().get(API.contactList);
     final list = (response.data["data"] as List)
         .map((e) => ChatContactVO.fromJson(e))
         .toList();

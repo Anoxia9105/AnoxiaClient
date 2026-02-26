@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/domain/ChatContactRequestVO.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,7 +15,7 @@ class ContactRequestsService extends _$ContactRequestsService {
   }
 
   Future<List<ChatContactRequestVO>> _fetchRequests() async {
-    final response = await DioClient().get('/contact/request');
+    final response = await DioClient().get(API.contactRequest);
     return (response.data["data"] as List)
         .map((e) => ChatContactRequestVO.fromJson(e))
         .toList();
@@ -23,7 +24,7 @@ class ContactRequestsService extends _$ContactRequestsService {
   /// 同意好友请求的方法
   Future<void> acceptRequest(int requestId, bool isAccepted) async {
     await DioClient().get(
-      '/contact/acceptRequest',
+      API.contactAcceptRequest,
       queryParameters: {
         'requestId': requestId,
         "status": isAccepted ? 1 : 2,

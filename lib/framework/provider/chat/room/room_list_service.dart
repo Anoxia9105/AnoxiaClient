@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
@@ -19,7 +20,7 @@ class RoomListService extends _$RoomListService {
 
   Future<List<ChatRoomVO>> fetchRoomList() async {
     try {
-      final res = await DioClient().get("/chat/rooms");
+      final res = await DioClient().get(API.chatRooms);
 
       final data = res.data["data"];
       if (data is List) {
@@ -111,7 +112,7 @@ class RoomListService extends _$RoomListService {
     try {
       print("🚀 上报已读状态: 房间 $roomId, Seq $seq");
       await DioClient().get(
-        "/chat/readReport",
+        API.chatReadReport,
         queryParameters: {"roomId": roomId, "seq": seq},
       );
     } catch (e) {
@@ -143,7 +144,7 @@ class RoomListService extends _$RoomListService {
     try {
       print("🚀 正在请求后端创建私聊房间，目标用户: $targetUserId");
       final res = await DioClient().get(
-        "/chat/createPrivate",
+        API.chatCreatePrivate,
         queryParameters: {"targetId": targetUserId},
       );
 
@@ -166,7 +167,10 @@ class RoomListService extends _$RoomListService {
   Future<void> leaveRoom(String roomId) async {
     try {
       print("🚀 正在请求后端删除会话，房间 ID: $roomId");
-      final res = await DioClient().post("/chat/room/leave?roomId=$roomId");
+      final res = await DioClient().post(
+        API.chatRoomLeave,
+        data: {"roomId": roomId},
+      );
 
       if (res.data["code"] == 200) {
         log.info("删除会话成功");
@@ -183,7 +187,10 @@ class RoomListService extends _$RoomListService {
   Future<void> dissolveGroup(String roomId) async {
     try {
       print("🚀 正在请求后端解散群聊，房间 ID: $roomId");
-      final res = await DioClient().post("/chat/room/disband?roomId=$roomId");
+      final res = await DioClient().post(
+        API.chatRoomDisband,
+        data: {"roomId": roomId},
+      );
 
       log.info("$res");
 

@@ -29,7 +29,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 场景 1：粘贴图片 (Ctrl + V) ---
 
   Future<String?> handlePastedImage(
-      QuillController controller, Uint8List imageBytes) async {
+    QuillController controller,
+    Uint8List imageBytes,
+  ) async {
     try {
       // 1. 基础校验 (复用 UploadValidator)
       final tempPlatformFile = PlatformFile(
@@ -37,13 +39,16 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         size: imageBytes.lengthInBytes,
         bytes: imageBytes,
       );
-      if (!UploadValidator.validate(controller, [tempPlatformFile])) return null;
+      if (!UploadValidator.validate(controller, [tempPlatformFile]))
+        return null;
       if (!UploadValidator.validateSingleFile(tempPlatformFile)) return null;
 
       final String id = const Uuid().v4();
 
       // 2. 乐观更新：极速生成本地预览 (直接写入原始字节)
-      final File rawFile = File(p.join(Directory.systemTemp.path, "raw_$id.jpg"));
+      final File rawFile = File(
+        p.join(Directory.systemTemp.path, "raw_$id.jpg"),
+      );
       await rawFile.writeAsBytes(imageBytes);
 
       // 3. 立即插入 UI
@@ -71,7 +76,10 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   }
 
   /// 后台处理任务
-  Future<void> _backgroundProcessAndUpload(String id, Uint8List rawBytes) async {
+  Future<void> _backgroundProcessAndUpload(
+    String id,
+    Uint8List rawBytes,
+  ) async {
     try {
       // 在 Isolate 中压缩
       final File compressedFile = await Isolate.run(() async {
@@ -96,7 +104,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 场景 2：手动选择图片 (点击图标) ---
 
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
@@ -134,11 +142,13 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
   /// 统一上传入口
   /// [skipCompression] 为 true 表示文件已经处理好了（如粘贴）；false 表示需要在此方法内进行 Isolate 压缩
-  Future<void> uploadImages(List<Attachment> images,
-      {bool skipCompression = false}) async {
+  Future<void> uploadImages(
+    List<Attachment> images, {
+    bool skipCompression = false,
+  }) async {
     // 修复：在压缩开始前就设置上传状态，避免先显示失败状态
     ref.read(isUploadingProvider.notifier).start();
-    
+
     try {
       List<File> filesToUpload;
 
@@ -151,7 +161,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           images.map((img) async {
             final Uint8List rawBytes = await File(img.url!).readAsBytes();
             // 每张图开启一个 Isolate 进行压缩，不阻塞 UI
-            return await Isolate.run(() => _processImageInIsolatePureDart(rawBytes));
+            return await Isolate.run(
+              () => _processImageInIsolatePureDart(rawBytes),
+            );
           }),
         );
       }

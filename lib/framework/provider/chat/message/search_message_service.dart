@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -36,7 +37,7 @@ class SearchMessageService extends _$SearchMessageService {
 
     try {
       final res = await DioClient().get(
-        "/chat/search",
+        API.chatSearch,
         queryParameters: {
           "roomId": roomId,
           "keyword": keyword,
@@ -60,8 +61,8 @@ class SearchMessageService extends _$SearchMessageService {
         for (var item in messagesData) {
           if (item is Map) {
             // 将 Map<dynamic, dynamic> 转换为 Map<String, dynamic>
-            final Map<String, dynamic> stringKeyMap = item.map((key, value) => 
-              MapEntry(key.toString(), value)
+            final Map<String, dynamic> stringKeyMap = item.map(
+              (key, value) => MapEntry(key.toString(), value),
             );
             messages.add(ChatMessage.fromJson(stringKeyMap));
           }
@@ -69,15 +70,15 @@ class SearchMessageService extends _$SearchMessageService {
       }
 
       state = state.copyWith(
-            isLoading: false,
-            messages: messages,
-            firstMatchIndex: firstMatchIndex,
-            lastMatchIndex: lastMatchIndex,
-            hasMoreBefore: hasMoreBefore,
-            hasMoreAfter: hasMoreAfter,
-            minSeq: minSeq,
-            maxSeq: maxSeq,
-          );
+        isLoading: false,
+        messages: messages,
+        firstMatchIndex: firstMatchIndex,
+        lastMatchIndex: lastMatchIndex,
+        hasMoreBefore: hasMoreBefore,
+        hasMoreAfter: hasMoreAfter,
+        minSeq: minSeq,
+        maxSeq: maxSeq,
+      );
     } catch (e) {
       log.error("搜索消息失败: $e");
       state = state.copyWith(isLoading: false);
@@ -101,15 +102,15 @@ class SearchMessageService extends _$SearchMessageService {
   /// 重置搜索状态
   void reset() {
     state = SearchState(
-          isLoading: false,
-          messages: [],
-          hasMoreBefore: false,
-          hasMoreAfter: false,
-          minSeq: 0,
-          maxSeq: 0,
-          firstMatchIndex: -1,
-          lastMatchIndex: -1,
-        );
+      isLoading: false,
+      messages: [],
+      hasMoreBefore: false,
+      hasMoreAfter: false,
+      minSeq: 0,
+      maxSeq: 0,
+      firstMatchIndex: -1,
+      lastMatchIndex: -1,
+    );
   }
 }
 

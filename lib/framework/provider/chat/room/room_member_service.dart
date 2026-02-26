@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/ChatRoomMemberVO.dart';
 import '../../../network/DioClient.dart';
@@ -26,7 +27,7 @@ class RoomMemberService extends _$RoomMemberService {
 
     try {
       final res = await DioClient().get(
-        "/chat/members",
+        API.chatMembers,
         queryParameters: {'roomId': roomId},
       );
 
@@ -90,11 +91,8 @@ class RoomMemberService extends _$RoomMemberService {
       log.info("🚀 正在添加成员到房间 $roomId，用户ID: $userIds");
 
       final res = await DioClient().post(
-        "/chat/room/addMembers",
-        data: {
-          "roomId": roomId,
-          "userIds": userIds,
-        },
+        API.chatRoomAddMembers,
+        data: {"roomId": roomId, "userIds": userIds},
       );
 
       if (res.data["code"] == 200) {

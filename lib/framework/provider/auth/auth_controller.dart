@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -40,7 +41,7 @@ class AuthController extends _$AuthController {
 
     state = await AsyncValue.guard(() async {
       final res = await DioClient().post(
-        "/login",
+        API.login,
         data: {
           "username": username,
           "password": password,
@@ -68,8 +69,8 @@ class AuthController extends _$AuthController {
   Future<void> logout() async {
     try {
       // . 调用后端 logout API
-      await DioClient().post("/logout");
-      
+      await DioClient().post(API.logout);
+
       // . 清除本地存储的 Token
       await TokenManager.instance.clearToken();
 
@@ -89,7 +90,7 @@ class AuthController extends _$AuthController {
 
   // 内部辅助方法
   Future<UserInfo?> _fetchUserInfo() async {
-    final res = await DioClient().get("/getInfo");
+    final res = await DioClient().get(API.getInfo);
     return UserInfo.fromJson(res.data["data"]);
   }
 
@@ -103,6 +104,6 @@ class AuthController extends _$AuthController {
 @riverpod
 /// 获取验证码
 Future<CaptchaModel> getCaptcha(Ref ref) async {
-  final res = await DioClient().get("/captchaImage", auth: false);
+  final res = await DioClient().get(API.captchaImage, auth: false);
   return CaptchaModel(uuid: res.data["uuid"], imgBase64: res.data["img"]);
 }

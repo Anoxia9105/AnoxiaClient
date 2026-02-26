@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -30,7 +31,7 @@ class AiChatController extends _$AiChatController {
 
     try {
       final resp = await DioClient().post(
-        "/chat/gemini",
+        API.chatGemini,
         data: {'prompt': prompt},
       );
 

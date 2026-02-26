@@ -16,8 +16,6 @@ import '../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
 import 'AddMemberDialogWidget.dart';
-import 'SearchContextPage.dart';
-
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const ChatAppBar({super.key});
@@ -26,7 +24,6 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeId = ref.watch(activeRoomIdProvider);
     final roomListAsync = ref.watch(roomListServiceProvider);
-
 
     final isTyping = ref.watch(
       highMessageServiceProvider.select(
@@ -48,178 +45,166 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final member = rawMembers.map((m) {
       if (m.userId == currentUser?.userId) {
         // 使用 copyWith 产生一个新对象，名字后面加上 (我)
-        return m.copyWith(nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} (我)");
+        return m.copyWith(
+          nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} (我)",
+        );
       }
       return m;
     }).toList();
 
-    return AppBar(
-      actionsPadding: EdgeInsets.all(4),
-      title: roomListAsync.when(
-        data: (rooms) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(
-                currentRoom?.roomName ?? 'appbar_conversation_detail'.tr(),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: AppBar(
+        actionsPadding: EdgeInsets.all(4),
+        title: roomListAsync.when(
+          data: (rooms) {
+            if (isTyping) {
+              return Text(
                 'appbar_user_typing'.tr(),
                 style: TextStyle(
-                  fontSize: 12,
-                  color: isTyping
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Colors.transparent,
-                ),
-              ),
-            ],
-          );
-        },
-        loading: () => Text('appbar_connecting'.tr()),
-        error: (_, _) => Text('appbar_connection_lost'.tr()),
-      ),
-      actions: [
-        IconButton(
-          tooltip: 'appbar_start_meeting'.tr(),
-          onPressed: () {
-            ref
-                .read(callWindowControllerProvider.notifier)
-                .openCallWindow(
-                  title: currentRoom?.roomName ?? '',
-                  themeIndex: ref.read(themeIndexProvider),
-                  roomId: currentRoom?.roomId ?? '',
-                );
-          },
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedCall02, size: 20),
-        ),
-        Container(
-          margin: EdgeInsets.all(4),
-          child: VerticalDivider(indent: 4, endIndent: 4),
-        ),
-        IconButton(
-          tooltip: 'appbar_search_in_chat'.tr(),
-          onPressed: () {
-            if (currentRoom != null) {
-              // 直接跳转到搜索页面
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SearchContextPage(
-                    roomId: currentRoom!.roomId!,
-                    roomName: currentRoom!.roomName!,
-                  ),
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               );
             }
+            return Text(
+              currentRoom?.roomName ?? 'appbar_conversation_detail'.tr(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            );
           },
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
+          loading: () => Text('appbar_connecting'.tr()),
+          error: (_, _) => Text('appbar_connection_lost'.tr()),
         ),
-        if (currentRoom != null && currentRoom.roomType == 1)
+        actions: [
           IconButton(
-            tooltip: 'appbar_add_member'.tr(),
+            tooltip: 'appbar_start_meeting'.tr(),
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AddMemberDialogWidget(
-                  roomId: currentRoom.roomId!,
-                  roomName: currentRoom.roomName!,
-                ),
-              );
+              ref
+                  .read(callWindowControllerProvider.notifier)
+                  .openCallWindow(
+                    title: currentRoom?.roomName ?? '',
+                    themeIndex: ref.read(themeIndexProvider),
+                    roomId: currentRoom?.roomId ?? '',
+                  );
             },
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCall02, size: 20),
+          ),
+          Container(
+            margin: EdgeInsets.all(4),
+            child: VerticalDivider(indent: 4, endIndent: 4),
+          ),
+          IconButton(
+            tooltip: 'appbar_search_in_chat'.tr(),
+            onPressed: () {},
             icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedAddTeam,
+              icon: HugeIcons.strokeRoundedSearch01,
               size: 20,
             ),
           ),
-        Builder(
-          builder: (context) {
-            return Tooltip(
-              message: 'appbar_member_list'.tr(),
-              child: InkWell(
-                onTap: () => Toast.showWidget(
-                  context,
-                  child: Material(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      constraints: BoxConstraints(maxHeight: 400),
-                      width: 200,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant,
+          if (currentRoom != null && currentRoom.roomType == 1)
+            IconButton(
+              tooltip: 'appbar_add_member'.tr(),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AddMemberDialogWidget(
+                    roomId: currentRoom.roomId!,
+                    roomName: currentRoom.roomName!,
+                  ),
+                );
+              },
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedAddTeam,
+                size: 20,
+              ),
+            ),
+          Builder(
+            builder: (context) {
+              return Tooltip(
+                message: 'appbar_member_list'.tr(),
+                child: InkWell(
+                  onTap: () => Toast.showWidget(
+                    context,
+                    child: Material(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        constraints: BoxConstraints(maxHeight: 400),
+                        width: 200,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: Text(
+                                '${'appbar_member_list'.tr()} (${member.length})',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
-                            child: Text(
-                              'appbar_member_list'.tr() + ' (${member.length})',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            const Divider(height: 1),
+                            Flexible(
+                              child: ListView.separated(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                shrinkWrap: true,
+                                physics: const ClampingScrollPhysics(),
+                                itemCount: member.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(height: 1, indent: 56),
+                                itemBuilder: (context, index) {
+                                  final m = member[index];
+                                  return ListTile(
+                                    dense: true,
+                                    leading: AvatarWidget(
+                                      url: m.avatar,
+                                      name: m.nickName,
+                                      size: 30,
+                                      status: m.onlineStatus ?? false
+                                          ? AvatarStatus.online
+                                          : AvatarStatus.offline,
+                                    ),
+                                    title: Text(m.nickName ?? '未知用户'),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                          const Divider(height: 1),
-                          Flexible(
-                            child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              shrinkWrap: true,
-                              physics: const ClampingScrollPhysics(),
-                              itemCount: member.length,
-                              separatorBuilder: (context, index) =>
-                                  const Divider(height: 1, indent: 56),
-                              itemBuilder: (context, index) {
-                                final m = member[index];
-                                return ListTile(
-                                  dense: true,
-                                  leading: AvatarWidget(
-                                    url: m.avatar,
-                                    name: m.nickName,
-                                    size: 30,
-                                    status: m.onlineStatus ?? false
-                                        ? AvatarStatus.online
-                                        : AvatarStatus.offline,
-                                  ),
-                                  title: Text(m.nickName ?? '未知用户'),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
+                    direction: PreferDirection.bottomCenter,
                   ),
-                  direction: PreferDirection.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(8),
-                child: Ink(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const HugeIcon(
-                        icon: HugeIcons.strokeRoundedUserMultiple02,
-                        size: 18,
-                      ),
-                      Text("${member.length}"),
-                    ],
+                  borderRadius: BorderRadius.circular(8),
+                  child: Ink(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const HugeIcon(
+                          icon: HugeIcons.strokeRoundedUserMultiple02,
+                          size: 18,
+                        ),
+                        Text("${member.length}"),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
