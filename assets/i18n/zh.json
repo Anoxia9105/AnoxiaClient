@@ -123,6 +123,8 @@
   "contact_request_rejected": "已拒绝",
   "call_window_reconnect": "重新连接",
   "call_window_hang_up": "挂断",
+  "call_elapsed": "通话时长",
+  "call_network": "网络",
   "call_window_room_creation_failed": "创建房间失败",
   "call_window_retry": "重试",
   "ai_chat_title": "Gemini Chat",

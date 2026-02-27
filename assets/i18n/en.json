@@ -148,6 +148,8 @@
   "contact_request_rejected": "Rejected",
   "call_window_reconnect": "Reconnect",
   "call_window_hang_up": "Hang up",
+  "call_elapsed": "Call elapsed",
+  "call_network": "Network",
   "call_window_room_creation_failed": "Failed to create room",
   "call_window_retry": "Retry",
   "ai_chat_title": "Gemini Chat",

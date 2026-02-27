@@ -1,4 +1,10 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/ws/ws_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -50,7 +56,7 @@ class ChatMessageBubble extends ConsumerWidget {
       isMentionedMe = true;
     }
 
-    /// quill text 需要气泡框
+    /// 只有文本消息（非纯表情）和富文本消息才需要气泡，其他类型直接渲染内容即可
     final bool needsBubble =
         message.messageType == MessageType.quill ||
         message.messageType == MessageType.text &&
@@ -130,18 +136,21 @@ class ChatMessageBubble extends ConsumerWidget {
                                 contentBuilder: (context) => strategy
                                     .buildContent(context, message, textColor),
                               )
-                            : strategy.buildContent(
-                                context,
-                                message,
-                                textColor,
-                              ),
+                            : Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: strategy.buildContent(
+                                  context,
+                                  message,
+                                  textColor,
+                                ),
+                            ),
                       ),
                     ),
                     // 💡 发送状态指示器放在气泡下方，显得更简洁
                     if (isCurrentUser)
                       Padding(
                         padding: EdgeInsets.only(top: 2, right: 4),
-                        child: _buildStatusIndicator(message),
+                        child: _buildStatusIndicator(context, ref, message),
                       ),
                   ],
                 ),
@@ -200,7 +209,7 @@ class ChatMessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusIndicator(ChatMessage message) {
+  Widget _buildStatusIndicator(BuildContext context, WidgetRef ref, ChatMessage message) {
     switch (message.deliveryStatus) {
       case DeliveryStatus.sending:
         return const SizedBox(
@@ -213,17 +222,53 @@ class ChatMessageBubble extends ConsumerWidget {
         );
       case DeliveryStatus.failed:
         return GestureDetector(
-          onTap: () {
-            log.info("点击了重发消息: ${message.clientMsgId}");
-          },
+          onTap: () => _resendMessage(context, ref, message),
           child: const Icon(Icons.error, size: 16, color: Colors.red),
         );
       case DeliveryStatus.sent:
-        return Icon(
-          Icons.check,
-          size: 12,
-          color: Colors.blue.withValues(alpha: 0.8),
-        );
+        // return Icon(
+        //   Icons.check,
+        //   size: 12,
+        //   color: Colors.blue.withValues(alpha: 0.8),
+        // );
+        return SizedBox.shrink(); // 已发送状态不显示任何图标，保持界面简洁
     }
+  }
+
+  void _resendMessage(BuildContext context, WidgetRef ref, ChatMessage message) {
+    final room = ref.read(activeRoomProvider);
+    if (room == null) {
+      log.warning('重发失败：未找到活跃房间');
+      return;
+    }
+
+    final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
+
+    // 1) 将本地消息状态设为 sending
+    ref.read(chatMessagesProvider.notifier).upsertMessage(
+      message.copyWith(deliveryStatus: DeliveryStatus.sending),
+    );
+
+    // 2) 构造和发送消息数据（复用服务端 MESSAGE 协议格式）
+    final messageData = {
+      "topic": "MESSAGE",
+      "data": {
+        "messageId": message.messageId ?? clientMsgId,
+        "clientMsgId": clientMsgId,
+        "roomId": message.roomId ?? room.roomId,
+        "targetId": room.peerId,
+        "type": message.messageType?.name,
+        "payload": message.payload?.toJson(),
+        "attachments": message.attachments.map((e) => e.toJson()).toList(),
+      },
+    };
+
+    log.info("🔁 重发消息: $clientMsgId");
+    ref.read(wsControllerProvider.notifier).sendMessage(jsonEncode(messageData));
+
+    // 3) 重新启动超时检测（与 _doSend 保持一致的超时逻辑）
+    Timer(const Duration(seconds: 10), () {
+      ref.read(chatMessagesProvider.notifier).handleTimeout(room.roomId!, clientMsgId);
+    });
   }
 }

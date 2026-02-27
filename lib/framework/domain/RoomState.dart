@@ -31,6 +31,16 @@ class RoomState {
 
   // --- 参与者列表 ---
   final List<RemoteParticipant> remoteParticipants; // 远程参与者
+  // --- 额外监控字段（用于 UI 展示网络质量与计时）
+  /// 本地客户端加入房间的时间点（用于在 UI 上显示会议已进行多长时间）
+  final DateTime? joinedAt;
+
+  /// 每个 participant 的网络质量（字符串表示，便于 UI 显示），
+  /// key = participantSid/value = qualityLabel (例如: 'good','fair','poor')
+  final Map<String, String>? participantQuality;
+
+  /// 每个 participant 的测得 RTT（毫秒），key = participantSid/value = rttMs
+  final Map<String, int>? participantRttMs;
 
   /// 构造函数：初始化所有必要字段
   const RoomState({
@@ -51,6 +61,10 @@ class RoomState {
     this.currentAudioInput,
     this.currentAudioOutput,
     this.currentVideoInput,
+    // 新增字段：加入时间与网络质量相关展示数据，均为可选，默认 null
+    this.joinedAt,
+    this.participantQuality,
+    this.participantRttMs,
   });
 
   /// 状态克隆方法：局部更新状态并返回新实例
@@ -72,6 +86,9 @@ class RoomState {
     MediaDevice? currentAudioOutput,
     MediaDevice? currentVideoInput,
     List<RemoteParticipant>? remoteParticipants,
+    DateTime? joinedAt,
+    Map<String, String>? participantQuality,
+    Map<String, int>? participantRttMs,
   }) {
     return RoomState(
       token: token ?? this.token,
@@ -91,6 +108,9 @@ class RoomState {
       currentAudioOutput: currentAudioOutput ?? this.currentAudioOutput,
       currentVideoInput: currentVideoInput ?? this.currentVideoInput,
       remoteParticipants: remoteParticipants ?? this.remoteParticipants,
+      joinedAt: joinedAt ?? this.joinedAt,
+      participantQuality: participantQuality ?? this.participantQuality,
+      participantRttMs: participantRttMs ?? this.participantRttMs,
     );
   }
 

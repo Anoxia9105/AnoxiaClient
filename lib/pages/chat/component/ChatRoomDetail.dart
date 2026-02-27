@@ -73,7 +73,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   /// 消息列表的 padding，用于在消息气泡周围添加空白
   final bodyPadding = 50.00;
 
-
   @override
   Widget build(BuildContext context) {
     final activeId = ref.watch(activeRoomIdProvider);
@@ -95,9 +94,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         });
       }
     });
-
-print('hasMore: ${hasMore}');
-print('messages: ${messages.length}');
 
     return Scaffold(
       appBar: ChatAppBar(),
@@ -145,7 +141,8 @@ print('messages: ${messages.length}');
             ),
           );
         },
-        error: (err, _) => Center(child: Text('chat_initialization_failed'.tr() + ': $err')),
+        error: (err, _) =>
+            Center(child: Text('chat_initialization_failed'.tr() + ': $err')),
         loading: () {
           return Center(child: CircularProgressIndicator());
         },

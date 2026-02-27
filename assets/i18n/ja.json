@@ -144,6 +144,8 @@
   "contact_request_rejected": "拒否済み",
   "call_window_reconnect": "再接続",
   "call_window_hang_up": "切断",
+  "call_elapsed": "通話時間",
+  "call_network": "ネットワーク",
   "call_window_room_creation_failed": "ルームの作成に失敗しました",
   "call_window_retry": "再試行",
   "ai_chat_title": "Gemini Chat",
