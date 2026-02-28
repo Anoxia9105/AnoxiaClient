@@ -10,24 +10,19 @@ import '../../../framework/provider/kit/room_controller.dart';
 
 class CommandBar extends ConsumerWidget {
   final RoomState state;
+  final VoidCallback? onToggleChat;
+  final bool showChat;
 
-  const CommandBar({super.key, required this.state});
+  const CommandBar({
+    super.key,
+    required this.state,
+    this.onToggleChat,
+    this.showChat = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
-    // 运行时不再打印大量 debug 输出，保留 UI 简洁输出。
-
-    // 重连按钮（仅在重连状态显示）
-    Widget reconnectButton = const SizedBox.shrink();
-    if (state.isReconnecting) {
-      // 当处于自动重连期间，显示一个可点击的重连按钮（手动触发）
-      reconnectButton = TextButton.icon(
-        onPressed: () => notifier.reconnect(),
-        icon: const Icon(Icons.refresh, size: 16),
-        label: Text('call_window_reconnect'.tr()),
-      );
-    }
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -46,70 +41,104 @@ class CommandBar extends ConsumerWidget {
           // 会议计时器：基于 RoomState.joinedAt 进行本地计时
           MeetingTimer(joinedAt: state.joinedAt),
 
-          const SizedBox(width: 16),
+          Spacer(),
+          
+          // 📹 录音状态指示
+          if (state.isRecording)
+            Tooltip(
+              message: context.tr('call_recording_tooltip'),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    border: Border.all(
+                      color: Colors.red,
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 红色闪烁指示点
+                      _buildRecordingDot(),
+                      SizedBox(width: 8),
+                      Text(
+                        context.tr('call_recording_indicator'),
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           // 核心控制按钮组
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 麦克风控制
-                _buildActionButton(
-                  onPressed: () => notifier.toggleMic(),
-                  icon: state.micEnabled
-                      ? HugeIcons.strokeRoundedMic01
-                      : HugeIcons.strokeRoundedMicOff01,
-                  label: state.micEnabled ? "静音" : "取消静音",
-                ),
-                SizedBox(width: 16),
-
-                // 摄像头控制
-                _buildActionButton(
-                  onPressed: () => notifier.toggleCamera(),
-                  icon: state.cameraEnabled
-                      ? HugeIcons.strokeRoundedVideo01
-                      : HugeIcons.strokeRoundedVideoOff,
-                  label: "摄像头",
-                ),
-                SizedBox(width: 16),
-
-                // 扬声器控制
-                _buildActionButton(
-                  onPressed: () => notifier.toggleSpeaker(),
-                  icon: state.speakerOn
-                      ? HugeIcons.strokeRoundedVolumeUp
-                      : HugeIcons.strokeRoundedVolumeOff,
-                  label: state.speakerOn ? "扬声器" : "听筒",
-                ),
-                SizedBox(width: 16),
-
-                // 屏幕共享
-                _buildActionButton(
-                  onPressed: () => notifier.toggleScreenShare(context),
-                  icon: state.screenSharing
-                      ? HugeIcons.strokeRoundedComputerRemove
-                      : HugeIcons.strokeRoundedComputerScreenShare,
-                  label: "共享",
-                ),
-                // 设备选择菜单
-                _buildDeviceMenu(context, ref, notifier),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 16),
-
-          // 右侧区域：显示会议时长、网络状态，并包含重连/挂断按钮
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(width: 12),
-              // 本地网络质量指示：读取 state.participantQuality/participantRttMs
-              NetworkStatusIndicator(state: state),
-              const SizedBox(width: 12),
+              // 麦克风控制
+              _buildActionButton(
+                onPressed: () => notifier.toggleMic(),
+                icon: state.micEnabled
+                    ? HugeIcons.strokeRoundedMic01
+                    : HugeIcons.strokeRoundedMicOff01,
+                label: state.micEnabled ? "静音" : "取消静音",
+              ),
+              SizedBox(width: 8),
 
-              reconnectButton,
-              if (state.isReconnecting) SizedBox(width: 8),
+              // 摄像头控制
+              _buildActionButton(
+                onPressed: () => notifier.toggleCamera(),
+                icon: state.cameraEnabled
+                    ? HugeIcons.strokeRoundedVideo01
+                    : HugeIcons.strokeRoundedVideoOff,
+                label: "摄像头",
+              ),
 
+              SizedBox(width: 8),
+              // 扬声器控制
+              _buildActionButton(
+                onPressed: () => notifier.toggleSpeaker(),
+                icon: state.speakerOn
+                    ? HugeIcons.strokeRoundedVolumeUp
+                    : HugeIcons.strokeRoundedVolumeOff,
+                label: state.speakerOn ? "扬声器" : "听筒",
+              ),
+
+              SizedBox(width: 8),
+              // 屏幕共享
+              _buildActionButton(
+                onPressed: () => notifier.toggleScreenShare(context),
+                icon: state.screenSharing
+                    ? HugeIcons.strokeRoundedComputerRemove
+                    : HugeIcons.strokeRoundedComputerScreenShare,
+                label: "共享",
+              ),
+
+              SizedBox(width: 8),
+              // 聊天开关
+              if (onToggleChat != null)
+                _buildActionButton(
+                  onPressed: onToggleChat!,
+                  icon: showChat
+                      ? HugeIcons.strokeRoundedCancel01
+                      : HugeIcons.strokeRoundedChatting01,
+                  label: "聊天",
+                  isActive: showChat,
+                ),
+
+              SizedBox(width: 8),
+              // 设备选择菜单
+              _buildDeviceMenu(context, ref, notifier),
+
+              SizedBox(width: 8),
               // 挂断按钮
               _buildHangupButton(context, notifier),
             ],
@@ -125,94 +154,112 @@ class CommandBar extends ConsumerWidget {
     WidgetRef ref,
     RoomController notifier,
   ) {
-    return PopupMenuButton<String>(
-      icon: HugeIcon(icon: HugeIcons.strokeRoundedBoundingBox),
-      tooltip: "设备选择",
-      itemBuilder: (context) {
-        return [
-          // 麦克风选择
-          if (state.audioInputs.isNotEmpty)
-            PopupMenuItem(
-              enabled: false,
-              child: Text(
-                "麦克风",
-                style: TextStyle(color: Theme.of(context).hintColor),
-              ),
-            ),
-          ...state.audioInputs.map(
-            (device) => PopupMenuItem(
-              value: "mic_${device.deviceId}",
-              child: Row(
-                children: [
-                  if (state.currentAudioInput?.deviceId == device.deviceId)
-                    const Icon(Icons.check, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(device.label, overflow: TextOverflow.ellipsis),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PopupMenuButton<String>(
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings04, size: 20),
+          tooltip: "设备选择",
+          padding: EdgeInsets.all(8),
+          iconSize: 24,
+          constraints: BoxConstraints(minWidth: 40, minHeight: 40),
+          itemBuilder: (context) {
+            return [
+              // 麦克风选择
+              if (state.audioInputs.isNotEmpty)
+                PopupMenuItem(
+                  enabled: false,
+                  child: Text(
+                    "麦克风",
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
-                ],
-              ),
-              onTap: () => notifier.switchAudioInput(device),
-            ),
-          ),
-
-          const PopupMenuDivider(),
-
-          // 摄像头选择
-          if (state.videoInputs.isNotEmpty)
-            PopupMenuItem(
-              enabled: false,
-              child: Text(
-                "摄像头",
-                style: TextStyle(color: Theme.of(context).hintColor),
-              ),
-            ),
-          ...state.videoInputs.map(
-            (device) => PopupMenuItem(
-              value: "cam_${device.deviceId}",
-              child: Row(
-                children: [
-                  if (state.currentVideoInput?.deviceId == device.deviceId)
-                    const Icon(Icons.check, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(device.label, overflow: TextOverflow.ellipsis),
+                ),
+              ...state.audioInputs.map(
+                (device) => PopupMenuItem(
+                  value: "mic_${device.deviceId}",
+                  child: Row(
+                    children: [
+                      if (state.currentAudioInput?.deviceId == device.deviceId)
+                        const Icon(Icons.check, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          device.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                  onTap: () => notifier.switchAudioInput(device),
+                ),
               ),
-              onTap: () => notifier.switchVideoInput(device),
-            ),
-          ),
 
-          const PopupMenuDivider(),
+              const PopupMenuDivider(),
 
-          // 扬声器选择
-          if (state.audioOutputs.isNotEmpty)
-            PopupMenuItem(
-              enabled: false,
-              child: Text(
-                "扬声器",
-                style: TextStyle(color: Theme.of(context).hintColor),
-              ),
-            ),
-          ...state.audioOutputs.map(
-            (device) => PopupMenuItem(
-              value: "speaker_${device.deviceId}",
-              child: Row(
-                children: [
-                  if (state.currentAudioOutput?.deviceId == device.deviceId)
-                    const Icon(Icons.check, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(device.label, overflow: TextOverflow.ellipsis),
+              // 摄像头选择
+              if (state.videoInputs.isNotEmpty)
+                PopupMenuItem(
+                  enabled: false,
+                  child: Text(
+                    "摄像头",
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
-                ],
+                ),
+              ...state.videoInputs.map(
+                (device) => PopupMenuItem(
+                  value: "cam_${device.deviceId}",
+                  child: Row(
+                    children: [
+                      if (state.currentVideoInput?.deviceId == device.deviceId)
+                        const Icon(Icons.check, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          device.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: () => notifier.switchVideoInput(device),
+                ),
               ),
-              onTap: () => notifier.switchAudioOutput(device),
-            ),
-          ),
-        ];
-      },
+
+              const PopupMenuDivider(),
+
+              // 扬声器选择
+              if (state.audioOutputs.isNotEmpty)
+                PopupMenuItem(
+                  enabled: false,
+                  child: Text(
+                    "扬声器",
+                    style: TextStyle(color: Theme.of(context).hintColor),
+                  ),
+                ),
+              ...state.audioOutputs.map(
+                (device) => PopupMenuItem(
+                  value: "speaker_${device.deviceId}",
+                  child: Row(
+                    children: [
+                      if (state.currentAudioOutput?.deviceId == device.deviceId)
+                        const Icon(Icons.check, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          device.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: () => notifier.switchAudioOutput(device),
+                ),
+              ),
+            ];
+          },
+        ),
+        Text("设备", style: TextStyle(fontSize: 10)),
+      ],
     );
   }
 
@@ -221,17 +268,27 @@ class CommandBar extends ConsumerWidget {
     required VoidCallback onPressed,
     required List<List<dynamic>> icon,
     required String label,
+    bool isActive = false,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          tooltip: label,
-          onPressed: onPressed,
-          icon: HugeIcon(icon: icon, size: 20),
-          iconSize: 24,
-          padding: EdgeInsets.all(8),
-          constraints: BoxConstraints(minWidth: 40, minHeight: 40),
+        Builder(
+          builder: (btnContext) => IconButton(
+            tooltip: label,
+            onPressed: onPressed,
+            icon: HugeIcon(
+              icon: icon, 
+              size: 20,
+              color: isActive ? Theme.of(btnContext).colorScheme.primary : null,
+            ),
+            iconSize: 24,
+            padding: EdgeInsets.all(8),
+            constraints: BoxConstraints(minWidth: 40, minHeight: 40),
+            style: isActive ? IconButton.styleFrom(
+              backgroundColor: Theme.of(btnContext).colorScheme.primaryContainer,
+            ) : null,
+          ),
         ),
         Text(label, style: TextStyle(fontSize: 10)),
       ],
@@ -261,6 +318,25 @@ class CommandBar extends ConsumerWidget {
         ),
         Text('call_window_hang_up'.tr(), style: TextStyle(fontSize: 10)),
       ],
+    );
+  }
+
+  /// 构建闪烁的录音指示点
+  Widget _buildRecordingDot() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 1000),
+      onEnd: () {},
+      builder: (context, value, child) {
+        return Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: Color.lerp(Colors.red, Colors.red.withValues(alpha: 0.4), value)!,
+            shape: BoxShape.circle,
+          ),
+        );
+      },
     );
   }
 }
@@ -320,8 +396,9 @@ class _MeetingTimerState extends State<MeetingTimer> {
     final h = d.inHours;
     final m = d.inMinutes % 60;
     final s = d.inSeconds % 60;
-    if (h > 0)
+    if (h > 0) {
       return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -346,111 +423,6 @@ class _MeetingTimerState extends State<MeetingTimer> {
       children: [
         Text(_fmt(_elapsed), style: const TextStyle(fontSize: 12)),
         Text('call_elapsed'.tr(), style: const TextStyle(fontSize: 10)),
-      ],
-    );
-  }
-}
-
-/// 网络质量指示器：从 RoomState 中读取本地 participant 对应的 quality 标签与 RTT（ms），显示一个小图标与数值。
-class NetworkStatusIndicator extends StatelessWidget {
-  final RoomState state;
-  const NetworkStatusIndicator({super.key, required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    // 找到本地 participant 的 sid（LocalParticipant）
-    final localSid = state.room.localParticipant?.sid;
-    final quality = (localSid != null && state.participantQuality != null)
-        ? state.participantQuality![localSid]
-        : null;
-
-    final rtt = (localSid != null && state.participantRttMs != null)
-        ? state.participantRttMs![localSid]
-        : null;
-
-    // 将网络状态以 3-bar 信号样式展示，和 ParticipantTile 保持一致
-    Color color = Colors.white70;
-    int level = 0; // 0..3
-
-    if (quality != null) {
-      switch (quality) {
-        case 'good':
-          color = Colors.lightGreenAccent;
-          level = 3;
-          break;
-        case 'fair':
-          color = Colors.orangeAccent;
-          level = 2;
-          break;
-        case 'poor':
-          color = Colors.redAccent;
-          level = 1;
-          break;
-        default:
-          color = Colors.white70;
-          level = 3;
-      }
-    } else if (rtt != null) {
-      final rr = int.tryParse(rtt.toString()) ?? 9999;
-      if (rr < 100) {
-        color = Colors.lightGreenAccent;
-        level = 3;
-      } else if (rr < 250) {
-        color = Colors.orangeAccent;
-        level = 2;
-      } else {
-        color = Colors.redAccent;
-        level = 1;
-      }
-    } else {
-      // unknown
-      color = Colors.white70;
-      level = 0;
-    }
-
-    Widget bar(int idx) {
-      final active = level >= idx;
-      final h = 6.0 + idx * 4.0; // heights: 10,14,18
-      return Container(
-        width: 4,
-        height: h,
-        margin: const EdgeInsets.symmetric(horizontal: 1.0),
-        decoration: BoxDecoration(
-          color: active ? color : Colors.white12,
-          borderRadius: BorderRadius.circular(1),
-        ),
-      );
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            SizedBox(
-              width: 22,
-              height: 18,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    bar(1),
-                    bar(2),
-                    bar(3),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              rtt != null ? '${rtt}ms' : (quality ?? 'unknown'),
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-        Text('call_network'.tr(), style: const TextStyle(fontSize: 10)),
       ],
     );
   }

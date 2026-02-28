@@ -38,7 +38,7 @@ final class ContactRequestsServiceProvider
 }
 
 String _$contactRequestsServiceHash() =>
-    r'999c5c316c7b67269477f09263be4dcff950c4d7';
+    r'b362e43b3069b17677c7118df00dae180e635914';
 
 abstract class _$ContactRequestsService
     extends $AsyncNotifier<List<ChatContactRequestVO>> {

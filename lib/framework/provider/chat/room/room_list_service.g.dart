@@ -33,7 +33,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'34703baf64f35762f598a03de6d0740f1600a5fa';
+String _$roomListServiceHash() => r'09fae14766f88a4acb5878ed35d44b5eb3c26974';
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();

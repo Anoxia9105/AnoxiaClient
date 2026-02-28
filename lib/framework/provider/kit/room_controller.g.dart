@@ -50,7 +50,7 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'92db4ad7d80a56a5162c1e75641887ba51952904';
+String _$roomControllerHash() => r'168147a7af82b6595c1f36b14d9a8dcd0077e6d7';
 
 final class RoomControllerFamily extends $Family
     with

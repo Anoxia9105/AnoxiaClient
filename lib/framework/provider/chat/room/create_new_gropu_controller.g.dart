@@ -93,7 +93,7 @@ final class CreateGroupControllerProvider
 }
 
 String _$createGroupControllerHash() =>
-    r'a822968b9e4b8570a72e14fb5bc50a293ffa04c0';
+    r'd607555be4da764d4b90d1f83966eda10d9acfec';
 
 abstract class _$CreateGroupController extends $AsyncNotifier<ChatRoomVO?> {
   FutureOr<ChatRoomVO?> build();

@@ -9,6 +9,24 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # 官方参考库 - 用于对标功能，不编译
+    - lib-livekit/**
+    
+    # TODO: Phase 3 - 将在聊天和转录功能中实现
+    - lib/framework/provider/kit/livekit_chat_controller.dart
+    - lib/framework/provider/kit/livekit_transcription_controller.dart
+    - lib/pages/call_window/component/LiveKitChatWidget.dart
+    - lib/pages/call_window/component/LiveKitConnectionStateWidget.dart
+    - lib/pages/call_window/component/LiveKitTranscriptionWidget.dart
+    - lib/pages/call_window/component/LiveKitVolumeIndicator.dart
+    - lib/pages/call_window/component/LiveKitTrackStatsWidget.dart
+    - lib/pages/call_window/component/LiveKitParticipantList.dart
+    - lib/pages/call_window/room_layout/LiveKitGridLayout.dart
+    - lib/pages/call_window/room_layout/LiveKitCarouselLayout.dart
+    - lib/pages/call_window/room_layout/LiveKitFocusLayout.dart
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

@@ -44,7 +44,7 @@ final class UserSearchServiceProvider
   }
 }
 
-String _$userSearchServiceHash() => r'7ce74cdd18db55d1487074a1769175ad63e9bab8';
+String _$userSearchServiceHash() => r'9f1acf1cfc32dc92d99adfaa2fd42a0f877c4497';
 
 /// 用户搜索服务
 

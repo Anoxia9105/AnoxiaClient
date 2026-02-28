@@ -33,7 +33,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'567c51bf685d6b7fa50cba5e254aeb35d56f3cf9';
+String _$authControllerHash() => r'8c13f56b4eccb4d247a598651a32a2e713034ac0';
 
 abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
   FutureOr<UserInfo?> build();
@@ -96,4 +96,4 @@ final class GetCaptchaProvider
   }
 }
 
-String _$getCaptchaHash() => r'97d4ceb26b41b94b922637db017c94f50a4d05fb';
+String _$getCaptchaHash() => r'7c85dd7a0f8b8e2d1cbcf04d4c794e728c2d3d18';

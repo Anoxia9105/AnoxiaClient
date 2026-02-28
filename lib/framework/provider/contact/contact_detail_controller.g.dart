@@ -66,7 +66,7 @@ final class ContactDetailDataProvider
   }
 }
 
-String _$contactDetailDataHash() => r'c4950440e53db566327e6d04237cbd3e3170f3d9';
+String _$contactDetailDataHash() => r'f93acf54fc456d3f0479bbd3adf6b7dd6692d384';
 
 final class ContactDetailDataFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ChatContactDetailVO>, int> {

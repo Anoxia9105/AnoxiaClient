@@ -17,9 +17,8 @@ part 'room_controller.g.dart';
 @riverpod
 class RoomController extends _$RoomController {
   EventsListener<RoomEvent>? _listener;
-  Timer? _reconnectTimer;
-  int _reconnectAttempts = 0;
   Timer? _statsTimer;
+  ConnectionState? _lastConnectionState; // 记录上一个连接状态，防止重复触发
 
   // 操作防抖
   bool _isToggling = false;
@@ -53,29 +52,94 @@ class RoomController extends _$RoomController {
       _listener = listener;
 
       listener
-        ..on<RoomConnectedEvent>((_) => log.info("房间已连接"))
-        ..on<RoomDisconnectedEvent>((_) => log.info("房间已断开"))
+        ..on<RoomConnectedEvent>((_) {
+          log.info("✓ 房间已连接");
+          // 清除之前的连接错误状态
+          final current = state.value;
+          if (current != null && current.connectionError != null) {
+            state = AsyncData(current.copyWith(connectionError: null));
+          }
+        })
+        ..on<RoomDisconnectedEvent>((e) {
+          log.info("✗ 房间已断开 - 将启动自动重连流程");
+          // 触发自动重连（在 connectionState 监听器中实现）
+        })
         ..on<ParticipantConnectedEvent>((e) {
-          log.info("有人加入: ${e.participant.identity}");
+          log.info("➕ 参与者加入: ${e.participant.identity}");
           updateState(); // 有人加入，列表变了，必须刷新
         })
         ..on<ParticipantDisconnectedEvent>((e) {
-          log.info("有人离开: ${e.participant.identity}");
+          log.info("➖ 参与者离开: ${e.participant.identity}");
           updateState(); // 有人离开，列表变了，必须刷新
         })
         ..on<ActiveSpeakersChangedEvent>((e) {
           // 说话者变化。虽然 UI 组件自己会监听，但这里更新有助于排序
+          log.info("🔊 活跃发言者变化 (${e.speakers.length} 人)");
+          final current = state.value;
+          if (current != null && e.speakers.isNotEmpty) {
+            // 将第一个活跃说话者设为焦点参与者
+            final focusedId = e.speakers.first.identity;
+            state = AsyncData(current.copyWith(focusedParticipantId: focusedId));
+          }
           updateState();
+        })
+        ..on<RoomRecordingStatusChanged>((event) {
+          // 📹 房间录音状态变化
+          log.info('📹 房间录音状态变化: ${event.activeRecording}');
+          final current = state.value;
+          if (current != null) {
+            state = AsyncData(current.copyWith(isRecording: event.activeRecording));
+          }
+        })
+        ..on<RoomMetadataChangedEvent>((event) {
+          // 📝 房间元数据变化
+          log.info('📝 房间元数据变化: ${event.metadata}');
+          final current = state.value;
+          if (current != null) {
+            state = AsyncData(current.copyWith(roomMetadata: event.metadata));
+          }
         });
+
+      // 额外监听 Reconnecting 和 Reconnected 事件（某些 SDK 版本可能包含）
+      try {
+        listener
+          ..on<dynamic>((evt) {
+            final typeName = evt.runtimeType.toString();
+            if (typeName.contains('Reconnecting')) {
+              log.warning('🔄 房间正在重新连接...');
+              final current = state.value;
+              if (current != null) {
+                state = AsyncData(current.copyWith(isReconnecting: true));
+              }
+            } else if (typeName.contains('Reconnected')) {
+              log.info('✅ 房间已重新连接');
+              final current = state.value;
+              if (current != null) {
+                state = AsyncData(current.copyWith(isReconnecting: false, connectionError: null));
+              }
+            }
+          });
+      } catch (_) {
+        // 某些 SDK 版本可能不支持通用 dynamic 监听
+      }
 
       // 注意：有些 LiveKit 事件类型并不在包的顶层导出，直接以类型化泛型注册可能会导致编译错误。
       // 为了兼容各种 SDK 版本，我们在 Room 的 events 流上注册一个动态监听器，
       // 在运行时通过 runtimeType 字符串判断事件类型并提取字段。
-      // 该处理器主要用于捕获 connection-quality 更新并写回 RoomState，供 UI 显示网络质量。
-        room.events.listen((dynamic evt) {
+      // 该处理器主要用于捕获 connection-quality 更新、debugging 日志等。
+      room.events.listen((dynamic evt) {
         try {
           final typeName = evt.runtimeType.toString();
-          // 只关心 connection quality 相关事件
+          
+          // 调试：记录所有事件类型（仅在 debug 时输出，减少日志噪音）
+          if (typeName.toLowerCase().contains('reconnect') || 
+              typeName.toLowerCase().contains('disconnect') ||
+              typeName.toLowerCase().contains('connectionquality') ||
+              typeName.toLowerCase().contains('connection_state')) {
+            log.info('📡 Room Event: $typeName');
+          }
+          
+          // 只关心 connection quality 相关事件进行数据提取
           if (!typeName.toLowerCase().contains('connectionquality') && !typeName.toLowerCase().contains('connection_quality') && !typeName.toLowerCase().contains('participantconnectionquality')) {
             return; // 忽略非质量相关事件
           }
@@ -83,40 +147,7 @@ class RoomController extends _$RoomController {
           final current = state.value;
           if (current == null) return;
 
-          // 复制当前映射以便修改后替换（不可变模式）
-          final Map<String, String> qmap = Map.from(current.participantQuality ?? {});
-          final Map<String, int> rmap = Map.from(current.participantRttMs ?? {});
-
-          // 如果是 ParticipantConnectionQualityUpdatedEvent（常见于 livekit），优先用专门解析以提高可靠性
-          if (typeName.toLowerCase().contains('participantconnectionquality')) {
-            try {
-              final dynEvt = evt as dynamic;
-              String sid = '';
-              try {
-                sid = dynEvt.participant?.sid?.toString() ?? '';
-              } catch (_) {
-                sid = '';
-              }
-              if (sid.isNotEmpty) {
-                String qualityLabel = 'unknown';
-                try {
-                  final qv = dynEvt.connectionQuality?.toString() ?? '';
-                  if (qv.toLowerCase().contains('poor')) qualityLabel = 'poor';
-                  else if (qv.toLowerCase().contains('fair')) qualityLabel = 'fair';
-                  else if (qv.toLowerCase().contains('good') || qv.toLowerCase().contains('excellent')) qualityLabel = 'good';
-                  else if (qv.isNotEmpty) qualityLabel = qv;
-                } catch (_) {}
-
-                final Map<String, String> qmap = Map.from(current.participantQuality ?? {});
-                final Map<String, int> rmap = Map.from(current.participantRttMs ?? {});
-                qmap[sid] = qualityLabel;
-                state = AsyncData(current.copyWith(participantQuality: qmap, participantRttMs: rmap));
-              }
-            } catch (e) {
-              log.error('专门解析 ParticipantConnectionQualityUpdatedEvent 失败: $e');
-            }
-            return;
-          }
+          // 不再维护 participantQuality，改为由 ConnectionQuality 强类型直接在 ParticipantTile 获取
 
           // 尝试安全地取得更新项集合：有些事件带 updates 列表，有些事件本身就是单条更新
           Iterable<dynamic>? updates;
@@ -167,48 +198,21 @@ class RoomController extends _$RoomController {
                 if (rttMs == null && dyn.rtt != null && dyn.rtt is int) rttMs = dyn.rtt as int;
                 if (rttMs == null && dyn.roundTripTimeMs != null && dyn.roundTripTimeMs is int) rttMs = dyn.roundTripTimeMs as int;
                 if (rttMs == null && dyn.roundTripTime != null && dyn.roundTripTime is int) rttMs = dyn.roundTripTime as int;
-                // 有些事件把 rtt 放在 connectionQualityInfo 中（暂不处理），保留扩展点
               } catch (_) {
                 // ignore per-item rtt read errors
               }
 
-              // 读取 quality 字段（可能是 enum 或整数或字符串）
-              String qualityLabel = 'unknown';
-              try {
-                final dyn = update as dynamic;
-                // 常见字段可能为 quality 或 connectionQuality
-                var qvRaw;
-                if (dyn.quality != null) qvRaw = dyn.quality;
-                else if (dyn.connectionQuality != null) qvRaw = dyn.connectionQuality;
-                else if (dyn.connection_quality != null) qvRaw = dyn.connection_quality;
-
-                if (qvRaw != null) {
-                  final qv = qvRaw.toString();
-                  if (qv.toLowerCase().contains('poor')) {
-                    qualityLabel = 'poor';
-                  } else if (qv.toLowerCase().contains('fair')) {
-                    qualityLabel = 'fair';
-                  } else if (qv.toLowerCase().contains('good') || qv.toLowerCase().contains('excellent')) {
-                    // 将 'excellent' 归为 good 以便 UI 简化
-                    qualityLabel = 'good';
-                  } else {
-                    qualityLabel = qv;
-                  }
-                }
-              } catch (_) {
-                // ignore
+              if (rttMs != null) {
+                final Map<String, int> rmap = Map.from(current.participantRttMs ?? {});
+                rmap[sid] = rttMs;
+                state = AsyncData(current.copyWith(participantRttMs: rmap));
               }
-
-              if (rttMs != null) rmap[sid] = rttMs;
-              qmap[sid] = qualityLabel;
             } catch (inner) {
-              log.error('解析 connection quality 更新项失败: $inner');
+              log.error('解析 RTT 信息失败: $inner');
             }
           }
-
-          state = AsyncData(current.copyWith(participantQuality: qmap, participantRttMs: rmap));
         } catch (err) {
-          log.error('处理 connection quality 事件失败: $err');
+          log.error('处理 connection stats 事件失败: $err');
         }
       });
 
@@ -216,23 +220,23 @@ class RoomController extends _$RoomController {
 
       _bindDeviceEvents();
 
-      // 监控 connectionState，出现 disconnect / failed 时触发自动重连流程
+      // 监控 connectionState 变化（仅用于日志，不干预重连逻辑）
+      // SDK 会自动处理重连，通过 RoomReconnectingEvent 和 RoomReconnectedEvent
       room.addListener(() {
         try {
           final cs = room.connectionState;
-          // 如果连接不是 connected 或 connecting，则尝试重连（兼容不同 SDK 的枚举）
-          try {
-            if (cs != ConnectionState.connected && cs != ConnectionState.connecting) {
-              _scheduleReconnect(room, token);
-            }
-          } catch (_) {
-            // 若 SDK 中缺少某些枚举值，退回到字符串检查
-            final csStr = cs.toString();
-            if (csStr.toLowerCase().contains('dis') || csStr.toLowerCase().contains('fail')) {
-              _scheduleReconnect(room, token);
-            }
+          final csStr = cs.toString();
+          
+          // 防止重复触发：只在状态真正改变时才输出日志
+          if (cs == _lastConnectionState) {
+            return; // 状态未改变，忽略
           }
-        } catch (_) {}
+          _lastConnectionState = cs;
+          
+          log.info('📡 ConnectionState: $csStr');
+        } catch (e) {
+          log.error('监控连接状态时出错: $e');
+        }
       });
 
       // 启动周期性 stats 轮询（每 5s）用于采集 RTT（如果 SDK 支持）
@@ -312,8 +316,8 @@ class RoomController extends _$RoomController {
         currentVideoInput: Hardware.instance.selectedVideoInput,
         remoteParticipants: room.remoteParticipants.values.toList(),
         joinedAt: now,
-        participantQuality: {},
         participantRttMs: {},
+        participantVolumes: {},
       );
     } catch (e) {
       log.error("房间初始化失败: $e");
@@ -414,91 +418,7 @@ class RoomController extends _$RoomController {
     // 注意：不要在 dispose 回调中访问或修改 provider 的 state（会触发 Riverpod 的断言）。
     _listener?.dispose();
     _statsTimer?.cancel();
-    _reconnectTimer?.cancel();
     log.info("资源已清理");
-  }
-
-  /// 安排自动短线重连（指数退避）
-  void _scheduleReconnect(Room room, String token) {
-    // 如果已经安排了重连则不重复安排
-    if (_reconnectTimer != null && _reconnectTimer!.isActive) return;
-    _reconnectAttempts = 0;
-    // 标记为正在重连
-    final current = state.value;
-    if (current != null) {
-      state = AsyncData(current.copyWith(isReconnecting: true));
-    }
-
-    _reconnectTimer = Timer(const Duration(seconds: 1), () async {
-      try {
-        // 指数退避，最多 6 次
-        while (_reconnectAttempts < 6) {
-          final delaySeconds = (1 << _reconnectAttempts).clamp(1, 30);
-          log.info('尝试第 ${_reconnectAttempts + 1} 次重连，延迟 ${delaySeconds}s');
-          await Future.delayed(Duration(seconds: delaySeconds));
-
-          // 在每次尝试前，优先尝试刷新 room token（如果可用）以避免使用过期 token
-          String currentToken = token;
-          try {
-            final roomId = room.name ?? '';
-            if (roomId.isNotEmpty) {
-              try {
-                final fresh = await ref.read(roomTokenProvider(roomId).future);
-                if (fresh.isNotEmpty) {
-                  currentToken = fresh;
-                }
-              } catch (e) {
-                log.info('尝试获取 fresh token 失败，继续使用旧 token: $e');
-              }
-            }
-          } catch (_) {}
-
-          try {
-            await _connectRoom(room, currentToken);
-            log.info('自动重连成功');
-            _reconnectTimer?.cancel();
-            _reconnectAttempts = 0;
-
-            // 恢复 isReconnecting 状态
-            final cur = state.value;
-            if (cur != null) state = AsyncData(cur.copyWith(isReconnecting: false));
-            return;
-          } catch (e) {
-            log.warning('自动重连失败: $e');
-            // 如果是 token 过期导致的失败，停止无意义的重试并把错误暴露到 UI
-            try {
-              final err = e.toString().toLowerCase();
-              if (err.contains('token') && (err.contains('exp') || err.contains('expired'))) {
-                log.warning('检测到 token 过期，停止自动重连并通知 UI');
-                // 尝试让 roomToken provider 被重新获取（前端可触发刷新）
-                try {
-                  final roomId = room.name ?? '';
-                  if (roomId.isNotEmpty) {
-                    ref.invalidate(roomTokenProvider(roomId));
-                  }
-                } catch (_) {}
-
-                final cur = state.value;
-                if (cur != null) {
-                  state = AsyncData(cur.copyWith(connectionError: 'token_expired', isReconnecting: false));
-                }
-                _reconnectTimer?.cancel();
-                return;
-              }
-            } catch (_) {}
-
-            _reconnectAttempts++;
-            continue;
-          }
-        }
-
-        log.warning('自动重连尝试次数耗尽');
-      } catch (_) {
-      } finally {
-        final cur = state.value;
-        if (cur != null) state = AsyncData(cur.copyWith(isReconnecting: false));
-      }
-    });
   }
 
   // ================= 公开功能 API =================

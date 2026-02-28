@@ -35,7 +35,7 @@ final class ContactListServiceProvider
 }
 
 String _$contactListServiceHash() =>
-    r'd561e245e7ae9744a6854b19cbbe9f1285baa6b2';
+    r'acb60a1b77ee2f963b4ea4b83a13ecf18e3c1395';
 
 abstract class _$ContactListService
     extends $AsyncNotifier<Map<int, ChatContactVO>> {

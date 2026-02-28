@@ -14,6 +14,7 @@ import '../../framework/theme/AppColors.dart';
 import '../../framework/theme/AppTheme.dart';
 import 'component/deesktop/CallDesktopAppBar.dart';
 import 'CallRoomPage.dart';
+import 'component/PreJoinScreen.dart';
 
 class CallWindowPage extends ConsumerStatefulWidget {
   final WindowController controller;
@@ -29,6 +30,7 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
   int _themeIndex = 0;
   String _title = "";
   String _roomId = "";
+  bool _passedPrejoin = false;
 
   @override
   void initState() {
@@ -105,25 +107,51 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
         ),
         child: Scaffold(
           appBar: CallDesktopAppbar(title: _title),
-          body: tokenAsync.when(
-            data: (token) {
-              log.info("Token 获取成功: $token");
-              return CallRoomPage(token: token);
-            },
-            error: (err, stack) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('call_window_room_creation_failed'.tr(), style: TextStyle()),
-                  FilledButton(
-                    onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
-                    child: Text('call_window_retry'.tr()),
+          body: _passedPrejoin
+              ? tokenAsync.when(
+                  data: (token) {
+                    log.info("Token 获取成功: $token");
+                    return CallRoomPage(token: token);
+                  },
+                  error: (err, stack) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('call_window_room_creation_failed'.tr()),
+                        FilledButton(
+                          onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
+                          child: Text('call_window_retry'.tr()),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-          ),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                )
+              : tokenAsync.when(
+                  data: (token) {
+                    return PrejoinScreen(
+                      roomId: _roomId,
+                      onJoin: () {
+                        setState(() {
+                          _passedPrejoin = true;
+                        });
+                      },
+                    );
+                  },
+                  error: (err, stack) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('call_window_room_creation_failed'.tr(), style: TextStyle()),
+                        FilledButton(
+                          onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
+                          child: Text('call_window_retry'.tr()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                ),
         ),
       ),
     );

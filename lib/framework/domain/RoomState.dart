@@ -18,6 +18,9 @@ class RoomState {
   // --- 轨道状态 ---
   final LocalVideoTrack? screenShareTrack; // 屏幕共享轨道（单独记录，避免误关摄像头）
   final bool isReconnecting; // 是否正在重连
+  final bool isRecording; // 是否正在录音
+  final String? roomMetadata; // 房间元数据
+  final String? focusedParticipantId; // 焦点参与者 ID（正在说话的人）
 
   // --- 可用设备列表 ---
   final List<MediaDevice> audioInputs; // 音频输入设备（麦克风）
@@ -35,12 +38,11 @@ class RoomState {
   /// 本地客户端加入房间的时间点（用于在 UI 上显示会议已进行多长时间）
   final DateTime? joinedAt;
 
-  /// 每个 participant 的网络质量（字符串表示，便于 UI 显示），
-  /// key = participantSid/value = qualityLabel (例如: 'good','fair','poor')
-  final Map<String, String>? participantQuality;
-
   /// 每个 participant 的测得 RTT（毫秒），key = participantSid/value = rttMs
   final Map<String, int>? participantRttMs;
+
+  /// 每个 participant 的音量等级 (0.0-1.0)，key = participantSid
+  final Map<String, double>? participantVolumes;
 
   /// 构造函数：初始化所有必要字段
   const RoomState({
@@ -58,13 +60,16 @@ class RoomState {
     this.connectionError,
     this.screenShareTrack,
     this.isReconnecting = false,
+    this.isRecording = false,
+    this.roomMetadata,
+    this.focusedParticipantId,
     this.currentAudioInput,
     this.currentAudioOutput,
     this.currentVideoInput,
     // 新增字段：加入时间与网络质量相关展示数据，均为可选，默认 null
     this.joinedAt,
-    this.participantQuality,
     this.participantRttMs,
+    this.participantVolumes,
   });
 
   /// 状态克隆方法：局部更新状态并返回新实例
@@ -78,7 +83,10 @@ class RoomState {
     bool? screenSharing,
     bool? speakerOn,
     bool? isReconnecting,
+    bool? isRecording,
     LocalVideoTrack? screenShareTrack,
+    String? roomMetadata,
+    String? focusedParticipantId,
     List<MediaDevice>? audioInputs,
     List<MediaDevice>? audioOutputs,
     List<MediaDevice>? videoInputs,
@@ -87,8 +95,8 @@ class RoomState {
     MediaDevice? currentVideoInput,
     List<RemoteParticipant>? remoteParticipants,
     DateTime? joinedAt,
-    Map<String, String>? participantQuality,
     Map<String, int>? participantRttMs,
+    Map<String, double>? participantVolumes,
   }) {
     return RoomState(
       token: token ?? this.token,
@@ -100,7 +108,10 @@ class RoomState {
       screenSharing: screenSharing ?? this.screenSharing,
       speakerOn: speakerOn ?? this.speakerOn,
       isReconnecting: isReconnecting ?? this.isReconnecting,
+      isRecording: isRecording ?? this.isRecording,
       screenShareTrack: screenShareTrack ?? this.screenShareTrack,
+      roomMetadata: roomMetadata ?? this.roomMetadata,
+      focusedParticipantId: focusedParticipantId ?? this.focusedParticipantId,
       audioInputs: audioInputs ?? this.audioInputs,
       audioOutputs: audioOutputs ?? this.audioOutputs,
       videoInputs: videoInputs ?? this.videoInputs,
@@ -109,8 +120,8 @@ class RoomState {
       currentVideoInput: currentVideoInput ?? this.currentVideoInput,
       remoteParticipants: remoteParticipants ?? this.remoteParticipants,
       joinedAt: joinedAt ?? this.joinedAt,
-      participantQuality: participantQuality ?? this.participantQuality,
       participantRttMs: participantRttMs ?? this.participantRttMs,
+      participantVolumes: participantVolumes ?? this.participantVolumes,
     );
   }
 
