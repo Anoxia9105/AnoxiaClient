@@ -22,8 +22,6 @@ class ChatMessages extends _$ChatMessages {
   bool _isFetchingHistory = false;
   // 定义一个内部变量记录已同步的房间
   final Set<String> _syncedRoomIds = {};
-  // 生成 UUID 的工具
-  final _uuid = const Uuid();
 
   @override
   Map<String, List<ChatMessage>> build() {
@@ -259,25 +257,6 @@ class ChatMessages extends _$ChatMessages {
     } finally {
       _isFetchingHistory = false;
     }
-  }
-
-  ///添加消息到房间
-  void _addMessage(ChatMessage msg) {
-    final roomId = msg.roomId ?? "system";
-    final currentList = state[roomId] ?? [];
-
-    //去重检查
-    if (currentList.any((m) => m.seq == msg.seq)) return;
-
-    //插入新消息
-    List<ChatMessage> newList = [...currentList, msg];
-
-    // 只有当新消息 seq 小于最后一条时（乱序到达），才需要排序
-    if (currentList.isNotEmpty &&
-        (msg.seq ?? 0) < (currentList.last.seq ?? 0)) {
-      newList.sort((a, b) => (a.seq ?? 0).compareTo(b.seq ?? 0));
-    }
-    state = {...state, roomId: newList};
   }
 
   /// 清空某个房间消息

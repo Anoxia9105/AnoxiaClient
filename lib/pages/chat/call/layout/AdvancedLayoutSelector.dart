@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/pages/chat/call/provider/LayoutProvider.dart';
-import 'package:anoxia/pages/chat/call/room_layout/LiveKitGridLayout.dart' hide LayoutMode;
-import 'package:anoxia/pages/chat/call/room_layout/LiveKitFocusLayout.dart';
 
 /// 高级布局选择器 - 根据参与者数量自动或手动切换布局
 /// 
@@ -71,7 +69,7 @@ class AdvancedLayoutSelector extends ConsumerWidget {
     LayoutManager layoutManager,
   ) {
     if (mode == LayoutMode.grid) {
-      return LiveKitGridLayout(token: token);
+      return Text("LiveKitGridLayout");
     } else if (mode == LayoutMode.carousel) {
       // return LiveKitCarouselLayout(
       //   token: token,
@@ -88,16 +86,18 @@ class AdvancedLayoutSelector extends ConsumerWidget {
           child: Text('call_waiting_to_join'.tr()),
         );
       }
-      return LiveKitFocusLayout(
-        token: token,
-        focusedParticipant: focusedPerson ?? participants.first,
-        onUnfocus: () {
-          layoutManager.setFocusedParticipant(null);
-          onUnfocus?.call();
-        },
-      );
+      // return LiveKitFocusLayout(
+      //   token: token,
+      //   focusedParticipant: focusedPerson ?? participants.first,
+      //   onUnfocus: () {
+      //     layoutManager.setFocusedParticipant(null);
+      //     onUnfocus?.call();
+      //   },
+      // );
+      return Text("focus");
     } else {
-      return LiveKitGridLayout(token: token);
+      // return LiveKitGridLayout(token: token);
+      return Text("default");
     }
   }
 

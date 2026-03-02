@@ -77,6 +77,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   Widget build(BuildContext context) {
     final activeId = ref.watch(activeRoomIdProvider);
     final entryTask = ref.watch(roomEntryTaskProvider(activeId ?? ''));
+
     //监听这个房间是否有更多消息
     final hasMore = ref.watch(
       chatHasMoreProvider.select((map) => map[activeId] ?? false),
@@ -100,6 +101,20 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       drawerScrimColor: Colors.transparent,
       body: entryTask.when(
         data: (_) {
+          //消息为空
+          if (messages.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
+                  Text("暂无消息"),
+                ],
+              ),
+            );
+          }
+
+          //消息渲染
           return FlutterListView(
             controller: _listViewController,
             reverse: true,
@@ -115,10 +130,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                       child: CircularProgressIndicator(),
                     ),
                   );
-                }
-
-                if (index < 0 || index >= messages.length) {
-                  return const SizedBox.shrink();
                 }
 
                 final msg = messages[messages.length - 1 - index];

@@ -179,7 +179,8 @@ class ChatInputController extends _$ChatInputController {
 
     // 找不到对方成员 或 对方离线，不发送
     if (peerMember.onlineStatus != true) {
-      log.debug("对方(${room.peerId})离线/未找到，不发送typing状态（isTyping: $isTyping）");
+      
+      log.debug("${peerMember.nickName}离线，不发送typing（isTyping: $isTyping）");
       return;
     }
 

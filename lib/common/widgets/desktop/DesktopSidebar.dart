@@ -217,8 +217,8 @@ class SidebarButton extends ConsumerWidget {
 
                     if (index == 0 && unreadCount > 0)
                       Positioned(
-                        right: -20,
-                        top: -5,
+                        right: -15,
+                        top: -8,
                         child: VibratingBadge(count: unreadCount),
                       ),
                   ],

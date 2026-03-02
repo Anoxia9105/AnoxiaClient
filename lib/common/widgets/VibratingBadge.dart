@@ -67,7 +67,7 @@ class VibratingBadge extends StatelessWidget {
       // 核心修改：单数字不需要 padding，多数字需要左右撑开
       padding: isSingleDigit
           ? EdgeInsets.zero
-          : const EdgeInsets.symmetric(horizontal: 6),
+          : const EdgeInsets.symmetric(horizontal: 4),
 
       alignment: Alignment.center,
       decoration: BoxDecoration(

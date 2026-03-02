@@ -167,16 +167,25 @@ class RoomListService extends _$RoomListService {
   Future<void> leaveRoom(String roomId) async {
     try {
       print("🚀 正在请求后端删除会话，房间 ID: $roomId");
-      final res = await DioClient().post(
+      final res = await DioClient().get(
         API.chatRoomLeave,
-        data: {"roomId": roomId},
+        queryParameters: {"roomId": roomId},
       );
 
       if (res.data["code"] == 200) {
         log.info("删除会话成功");
         // 刷新房间列表
         await refresh(silent: true);
+        
+        // 删除对应房间缓存的消息
+        ref.read(chatMessagesProvider.notifier).clearRoom(roomId);
+        
+        // 清理加载更多状态
+        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+        
+        log.info("✅ 已删除房间 $roomId 的本地消息缓存和状态");
       }
+
     } catch (e) {
       print("❌ 删除会话失败: $e");
       rethrow;
@@ -186,7 +195,6 @@ class RoomListService extends _$RoomListService {
   /// 解散群聊
   Future<void> dissolveGroup(String roomId) async {
     try {
-      print("🚀 正在请求后端解散群聊，房间 ID: $roomId");
       final res = await DioClient().post(
         API.chatRoomDisband,
         data: {"roomId": roomId},
