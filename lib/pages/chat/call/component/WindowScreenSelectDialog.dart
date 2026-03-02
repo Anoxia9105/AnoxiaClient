@@ -6,7 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../../framework/theme/AppColors.dart';
+import '../../../../framework/theme/AppColors.dart';
 
 class WindowScreenSelectDialog extends StatefulWidget {
   const WindowScreenSelectDialog({super.key});

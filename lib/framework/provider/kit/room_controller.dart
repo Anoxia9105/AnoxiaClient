@@ -8,7 +8,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../pages/call_window/component/WindowScreenSelectDialog.dart';
+import '../../../pages/chat/call/component/WindowScreenSelectDialog.dart';
 import '../../domain/RoomState.dart';
 import '../../network/DioClient.dart';
 

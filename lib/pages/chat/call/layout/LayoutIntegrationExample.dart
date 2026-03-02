@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:anoxia/pages/call_window/layout/AdvancedLayoutSelector.dart';
+import 'package:anoxia/pages/chat/call/layout/AdvancedLayoutSelector.dart';
 
 /// 示例: 在 CallRoomPage 中使用 AdvancedLayoutSelector
 class CallRoomPageAdvancedLayoutExample extends ConsumerStatefulWidget {

@@ -1,4 +1,4 @@
-import 'package:anoxia/pages/call_window/component/ParticipantTile.dart';
+import 'package:anoxia/pages/chat/call/component/ParticipantTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:livekit_client/livekit_client.dart' show Participant;

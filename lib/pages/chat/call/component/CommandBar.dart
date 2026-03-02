@@ -6,7 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../framework/provider/kit/room_controller.dart';
+import '../../../../framework/provider/kit/room_controller.dart';
 
 class CommandBar extends ConsumerWidget {
   final RoomState state;

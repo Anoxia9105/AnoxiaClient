@@ -2,9 +2,9 @@
 
 import 'dart:convert';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/pages/call_window/component/ParticipantEncryptionIndicator.dart';
-import 'package:anoxia/pages/call_window/component/ParticipantPermissionIndicator.dart';
-import 'package:anoxia/pages/call_window/component/VolumeIndicator.dart';
+import 'package:anoxia/pages/chat/call/component/ParticipantEncryptionIndicator.dart';
+import 'package:anoxia/pages/chat/call/component/ParticipantPermissionIndicator.dart';
+import 'package:anoxia/pages/chat/call/component/VolumeIndicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:livekit_client/livekit_client.dart';

@@ -4,7 +4,7 @@ import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
-import 'package:anoxia/pages/call_window/CallWindowPage.dart';
+import 'package:anoxia/pages/chat/call/CallWindowPage.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

@@ -1,9 +1,8 @@
-import 'package:anoxia/pages/call_window/component/CommandBar.dart';
-import 'package:anoxia/pages/call_window/component/LiveKitChatWidget.dart';
-import 'package:anoxia/pages/call_window/component/TranscriptionWidget.dart';
-import 'package:anoxia/pages/call_window/component/ScreenShareStatusBar.dart';
-import 'package:anoxia/pages/call_window/room_layout/LayoutRoomScreenWidget.dart';
-import 'package:anoxia/pages/call_window/room_layout/LayoutRoomWidget.dart';
+import 'package:anoxia/pages/chat/call/component/CommandBar.dart';
+import 'package:anoxia/pages/chat/call/component/TranscriptionWidget.dart';
+import 'package:anoxia/pages/chat/call/component/ScreenShareStatusBar.dart';
+import 'package:anoxia/pages/chat/call/room_layout/LayoutRoomScreenWidget.dart';
+import 'package:anoxia/pages/chat/call/room_layout/LayoutRoomWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -11,7 +10,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../framework/provider/kit/room_controller.dart';
+import '../../../framework/provider/kit/room_controller.dart';
 
 class CallRoomPage extends ConsumerStatefulWidget {
   final String token;
@@ -38,7 +37,8 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // 如果重连失败（token 过期或多次重连耗尽），自动关闭窗口
             if (roomState.connectionError == 'token_expired' ||
-                roomState.connectionError == 'max_reconnect_attempts_exceeded') {
+                roomState.connectionError ==
+                    'max_reconnect_attempts_exceeded') {
               windowManager.close();
             }
           });
@@ -68,7 +68,8 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                         // 顶部工具栏
                         CommandBar(
                           state: roomState,
-                          onToggleChat: () => setState(() => _showChat = !_showChat),
+                          onToggleChat: () =>
+                              setState(() => _showChat = !_showChat),
                           showChat: _showChat,
                         ),
 
@@ -76,7 +77,9 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                         ScreenShareStatusBar(
                           room: roomState.room,
                           onStopScreenShare: () async {
-                            final screenPub = roomState.room.localParticipant
+                            final screenPub = roomState
+                                .room
+                                .localParticipant
                                 ?.videoTrackPublications
                                 .where((p) => p.isScreenShare)
                                 .firstOrNull;
@@ -108,14 +111,15 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                   if (_showChat && roomState.room.localParticipant != null)
                     SizedBox(
                       width: 350,
-                      child: LiveKitChatWidget(
-                        localParticipant: roomState.room.localParticipant,
-                        listener: null,
-                      ),
+                      // child: LiveKitChatWidget(
+                      //   localParticipant: roomState.room.localParticipant,
+                      //   listener: null,
+                      // ),
+                      child: Text("CHAT"),
                     ),
                 ],
               ),
-              
+
               // 重连中遮罩（不遮挡 CommandBar）
               if (roomState.isReconnecting)
                 Positioned(
@@ -130,8 +134,7 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation(Colors.white70),
+                            valueColor: AlwaysStoppedAnimation(Colors.white70),
                             strokeWidth: 3,
                           ),
                           SizedBox(height: 24),
@@ -201,7 +204,10 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                 ),
               ),
               SizedBox(height: 24.h),
-              Text('call_connection_failed'.tr(), style: TextStyle(fontSize: 20)),
+              Text(
+                'call_connection_failed'.tr(),
+                style: TextStyle(fontSize: 20),
+              ),
               SizedBox(height: 12.h),
               Container(
                 padding: EdgeInsets.all(12.w),

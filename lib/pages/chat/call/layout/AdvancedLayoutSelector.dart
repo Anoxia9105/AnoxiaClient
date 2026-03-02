@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:anoxia/pages/call_window/provider/LayoutProvider.dart';
-import 'package:anoxia/pages/call_window/room_layout/LiveKitGridLayout.dart' hide LayoutMode;
-import 'package:anoxia/pages/call_window/room_layout/LiveKitCarouselLayout.dart';
-import 'package:anoxia/pages/call_window/room_layout/LiveKitFocusLayout.dart';
+import 'package:anoxia/pages/chat/call/provider/LayoutProvider.dart';
+import 'package:anoxia/pages/chat/call/room_layout/LiveKitGridLayout.dart' hide LayoutMode;
+import 'package:anoxia/pages/chat/call/room_layout/LiveKitFocusLayout.dart';
 
 /// 高级布局选择器 - 根据参与者数量自动或手动切换布局
 /// 
@@ -74,14 +73,15 @@ class AdvancedLayoutSelector extends ConsumerWidget {
     if (mode == LayoutMode.grid) {
       return LiveKitGridLayout(token: token);
     } else if (mode == LayoutMode.carousel) {
-      return LiveKitCarouselLayout(
-        token: token,
-        focusedParticipant: focusedPerson ?? participants.firstOrNull,
-        onParticipantTap: (participant) {
-          layoutManager.setFocusedParticipant(participant.sid);
-          onParticipantTap?.call(participant);
-        },
-      );
+      // return LiveKitCarouselLayout(
+      //   token: token,
+      //   focusedParticipant: focusedPerson ?? participants.firstOrNull,
+      //   onParticipantTap: (participant) {
+      //     layoutManager.setFocusedParticipant(participant.sid);
+      //     onParticipantTap?.call(participant);
+      //   },
+      // );
+      return Text("carousel");
     } else if (mode == LayoutMode.focus) {
       if (participants.isEmpty) {
         return Center(
