@@ -96,6 +96,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       }
     });
 
+    final room = ref.read(activeRoomProvider);
+
     return Scaffold(
       appBar: ChatAppBar(),
       drawerScrimColor: Colors.transparent,
@@ -173,73 +175,39 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       bottomNavigationBar: entryTask.isLoading
           ? SizedBox.shrink()
           : Padding(
-              padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ChatInputField(
-                    bottomSheet: () => _scrollToBottom(animated: true),
-                  ),
-                  SizedBox(height: 28),
-                  /* Container(
-                    height: 28, // 桌面端状态栏通常很窄
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.1),
-                        ),
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 8,
-                          color: Colors.greenAccent,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          "已连接到 http://8.137.14.21:7880",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const Spacer(),
-                        // 中间：快捷键提示（淡淡的显示）
-                        Text(
-                          "Enter 发送 / Shift+Enter 换行",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                        const Spacer(),
-                        // 右侧：延迟和版本
-                        // Icon(Icons.speed, size: 14, color: Colors.grey[400]),
-                        // const SizedBox(width: 4),
-                        // Text(
-                        //   "42ms",
-                        //   style: TextStyle(
-                        //     fontSize: 11,
-                        //     color: Colors.grey[600],
-                        //   ),
-                        // ),
-                        // const SizedBox(width: 12),
-                        Text(
-                          "v1.0.2-alpha",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),*/
-                ],
+              padding: EdgeInsets.symmetric(
+                horizontal: bodyPadding,
+                vertical: 10,
               ),
+              child: () {
+                if (room != null) {
+                  if (room.roomStatus == 0) {
+                    return ChatInputField(
+                      bottomSheet: () => _scrollToBottom(animated: true),
+                    );
+                  }
+                  if (room.roomStatus == 1) return _bottomRoomStatus("禁言");
+                  if (room.roomStatus == 2) return _bottomRoomStatus("封禁");
+                  if (room.roomStatus == 3) return _bottomRoomStatus("解散");
+
+                  return SizedBox.shrink();
+                }
+              }(),
             ),
+    );
+  }
+
+  Widget _bottomRoomStatus(String text) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          width: 1,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Text(text, style: TextStyle(fontSize: 14),textAlign: TextAlign.center),
     );
   }
 

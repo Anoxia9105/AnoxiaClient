@@ -33,11 +33,8 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             state[activeId]?[HighMessageType.TYPING_STATUS]?.content == "true",
       ),
     );
-
-    final currentRoom = roomListAsync.value?.firstWhere(
-      (r) => r.roomId == activeId,
-      orElse: () => ChatRoomVO(),
-    );
+    
+    final currentRoom = ref.read(activeRoomProvider);
 
     final currentUser = ref.watch(authControllerProvider).value;
     final List<ChatRoomMemberVO> rawMembers = ref.watch(

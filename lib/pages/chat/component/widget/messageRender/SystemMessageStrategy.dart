@@ -23,12 +23,11 @@ class SystemMessageStrategy extends MessageRenderStrategy {
   Widget buildSystemctlMessage(ChatMessage message) {
     // 提取文本样式为常量
     final TextStyle textStyle = TextStyle(
-      fontSize: 14,
+      fontSize: 12,
       color: Colors.grey[600],
     );
 
-    // 检查必要字段
-    if (message.extra["action"] == null || message.extra["name"] == null) {
+    if (message.extra["action"] == null) {
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedSettingsError02,
         text: "未知系统消息",
@@ -37,34 +36,69 @@ class SystemMessageStrategy extends MessageRenderStrategy {
     }
 
     final type = message.extra["action"];
-    final name = message.extra["name"];
 
-    switch (type) {
-      case "create":
-        return _buildMessageRow(
-          icon: HugeIcons.strokeRoundedHome03,
-          text: "$name创建了房间",
-          textStyle: textStyle,
-        );
-      case "join":
-        return _buildMessageRow(
-          icon: HugeIcons.strokeRoundedUserAdd02,
-          text: "${(message.extra["operator_name"] ?? "")}邀请[$name]加入了房间",
-          textStyle: textStyle,
-        );
-      case "leave":
-        return _buildMessageRow(
-          icon: HugeIcons.strokeRoundedUserRemove02,
-          text: "$name离开了房间",
-          textStyle: textStyle,
-        );
-      default:
-        return _buildMessageRow(
-          icon: HugeIcons.strokeRoundedSettingsError02,
-          text: "未知系统消息",
-          textStyle: textStyle,
-        );
+    if (type == "ROOM_CREATED_GROUP") {
+      final names = message.extra["names"];
+      final nickName = message.extra["nickName"];
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedHome03,
+        text: "$nickName 邀请了[$names] 加入房间",
+        textStyle: textStyle,
+      );
     }
+    if (type == "ROOM_MUTED") {
+      final isMute = message.extra["isMute"];
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedHome03,
+        text: "管理员 ${isMute ? "[开启全体禁言]" : "[取消全体禁言]"}",
+        textStyle: textStyle,
+      );
+    }
+    if (type == "USER_KICKED") {
+      final name = message.extra["targetId"];
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedUserRemove02,
+        text: "$name 被管理员踢出了房间",
+        textStyle: textStyle,
+      );
+    }
+
+    if (type == "ROOM_CLOSED") {
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedHome03,
+        text: "房间已被解散",
+        textStyle: textStyle,
+      );
+    }
+
+    return SizedBox.shrink();
+
+    // switch (type) {
+    //   case "create":
+    //     return _buildMessageRow(
+    //       icon: HugeIcons.strokeRoundedHome03,
+    //       text: "$name创建了房间",
+    //       textStyle: textStyle,
+    //     );
+    //   case "join":
+    //     return _buildMessageRow(
+    //       icon: HugeIcons.strokeRoundedUserAdd02,
+    //       text: "${(message.extra["operator_name"] ?? "")}邀请[$name]加入了房间",
+    //       textStyle: textStyle,
+    //     );
+    //   case "leave":
+    //     return _buildMessageRow(
+    //       icon: HugeIcons.strokeRoundedUserRemove02,
+    //       text: "$name离开了房间",
+    //       textStyle: textStyle,
+    //     );
+    //   default:
+    //     return _buildMessageRow(
+    //       icon: HugeIcons.strokeRoundedSettingsError02,
+    //       text: "未知系统消息",
+    //       textStyle: textStyle,
+    //     );
+    // }
   }
 
   /// 构建消息行，统一布局和样式
@@ -74,7 +108,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
     required TextStyle textStyle,
   }) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         HugeIcon(icon: icon, size: 16, color: Colors.grey[500]),
