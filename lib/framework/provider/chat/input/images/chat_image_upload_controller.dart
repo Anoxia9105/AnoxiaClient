@@ -33,6 +33,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     Uint8List imageBytes,
   ) async {
     try {
+      ref.read(isUploadingProvider.notifier).start();
       // 1. 基础校验 (复用 UploadValidator)
       final tempPlatformFile = PlatformFile(
         name: "pasted_image.jpg",
@@ -146,7 +147,6 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     List<Attachment> images, {
     bool skipCompression = false,
   }) async {
-    // 修复：在压缩开始前就设置上传状态，避免先显示失败状态
     ref.read(isUploadingProvider.notifier).start();
 
     try {

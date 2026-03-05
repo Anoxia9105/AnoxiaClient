@@ -1,6 +1,6 @@
-import 'package:anoxia/common/widgets/DevelopmentWidget.dart';
 import 'package:anoxia/pages/AppScaffold.dart';
 import 'package:anoxia/pages/contact/ContactPage.dart';
+import 'package:anoxia/pages/me/MePage.dart';
 import 'package:anoxia/pages/setting/SettingsPage.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +61,7 @@ class MainLayoutPage extends ConsumerWidget {
                   ContactPage(),
                   AIChatPage(),
                   DiscoverPage(),
-                  DevelopmentWidget(),
+                  MyPage(),
                   SettingsPage(),
                 ],
               ),

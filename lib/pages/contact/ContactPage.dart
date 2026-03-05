@@ -14,13 +14,13 @@ class ContactPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selection = ref.watch(contactSelectionProvider.select((select)=>select.viewType));
-       return Row(
+    final selection = ref.watch(
+      contactSelectionProvider.select((select) => select.viewType),
+    );
+    return Row(
       children: [
-        SizedBox(width: 80.w, child: ContactList()),
-        Expanded(
-          child: _buildRightContent(selection),
-        ),
+        SizedBox(width: 100.w, child: ContactList()),
+        Expanded(child: _buildRightContent(selection)),
       ],
     );
   }
@@ -35,7 +35,7 @@ class ContactPage extends ConsumerWidget {
       case ContactViewType.groups:
         return GroupRoomListPage();
       case ContactViewType.none:
-      return Welcome();
+        return Welcome();
     }
   }
 }

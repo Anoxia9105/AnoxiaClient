@@ -12,6 +12,10 @@ class AIChatPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      // appBar: AppBar(title: Text('ai_chat_title'.tr())),
+      body: Center(child: Text('功能开发中，敬请期待...')),
+    );
     final messages = ref.watch(aiChatControllerProvider);
     final notifier = ref.read(aiChatControllerProvider.notifier);
     final isGenerating = notifier.isLoading;
@@ -35,8 +39,7 @@ class AIChatPage extends ConsumerWidget {
 
   Widget _bubble(AiChatMessage msg) {
     return Align(
-      alignment:
-      msg.isAi ? Alignment.centerLeft : Alignment.centerRight,
+      alignment: msg.isAi ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
@@ -58,26 +61,22 @@ class AIChatPage extends ConsumerWidget {
             child: TextField(
               controller: _controller,
               enabled: !isGenerating,
-              decoration: const InputDecoration(
-                hintText: "问问 Gemini...",
-              ),
+              decoration: const InputDecoration(hintText: "问问 Gemini..."),
             ),
           ),
           IconButton(
-            icon: Icon(
-              isGenerating ? Icons.hourglass_top : Icons.send,
-            ),
+            icon: Icon(isGenerating ? Icons.hourglass_top : Icons.send),
             color: isGenerating ? Colors.grey : Colors.blue,
             onPressed: isGenerating
                 ? null
                 : () {
-              if (_controller.text.isNotEmpty) {
-                ref
-                    .read(aiChatControllerProvider.notifier)
-                    .askGemini(_controller.text);
-                _controller.clear();
-              }
-            },
+                    if (_controller.text.isNotEmpty) {
+                      ref
+                          .read(aiChatControllerProvider.notifier)
+                          .askGemini(_controller.text);
+                      _controller.clear();
+                    }
+                  },
           ),
         ],
       ),
