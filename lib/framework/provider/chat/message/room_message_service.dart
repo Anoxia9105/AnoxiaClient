@@ -261,7 +261,19 @@ class ChatMessages extends _$ChatMessages {
 
   /// 清空某个房间消息
   void clearRoom(String roomId) {
+    _syncedRoomIds.remove(roomId);
     state = {...state, roomId: []};
+  }
+
+  /// 标记房间需要重新同步（断线重连后使用）
+  /// 只清除同步标记，不清空消息，下次进入房间时会增量拉取
+  void markNeedResync(String roomId) {
+    _syncedRoomIds.remove(roomId);
+  }
+
+  /// 标记所有房间需要重新同步（断线重连后使用）
+  void markAllNeedResync() {
+    _syncedRoomIds.clear();
   }
 
   /// 获取总消息数量，用于调试或内存监控

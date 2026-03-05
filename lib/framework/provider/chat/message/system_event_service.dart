@@ -4,9 +4,11 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
+import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../domain/ChatRoomVO.dart';
 import '../../../protocol/PacketType.dart';
 import '../../../protocol/message/EventMessage.dart';
 
@@ -25,11 +27,57 @@ class SystemEventService extends _$SystemEventService {
         .map((frame) => frame.data as EventMessage)
         .listen(_onEventReceived);
 
-    // 2. 销毁时释放
+    // 2. 监听 WS 连接状态：断线重连后自动刷新业务数据
+    ref.listen(wsControllerProvider, (previous, next) {
+      final wasDisconnected = previous?.status != WsStatus.connected;
+      final isNowConnected = next.status == WsStatus.connected;
+
+      if (wasDisconnected && isNowConnected) {
+        log.info("🔄 WS 重连成功，刷新业务数据补偿断线期间丢失的事件...");
+        _onReconnected();
+      }
+    });
+
+    // 3. 销毁时释放
     ref.onDispose(() {
       log.info("系统事件服务销毁");
       subscription.cancel();
     });
+  }
+
+  /// WS 重连成功后的数据补偿
+  Future<void> _onReconnected() async {
+    // 1. 刷新房间列表（补偿断线期间可能错过的：新房间、房间删除、禁言、未读数等）
+    await ref.read(roomListServiceProvider.notifier).refresh(silent: true);
+
+    // 2. 补偿当前房间的消息和成员
+    final activeRoomId = ref.read(activeRoomIdProvider);
+    if (activeRoomId != null) {
+      // 2a. 清除同步标记，让当前房间重新拉取消息（增量合并，不清空已有消息）
+      ref.read(chatMessagesProvider.notifier).markNeedResync(activeRoomId);
+
+      // 2b. 触发重新同步：拿刷新后的房间列表中最新的 lastMessage.seq 进行增量拉取
+      final rooms = ref.read(roomListServiceProvider).value ?? [];
+      ChatRoomVO? activeRoom;
+      try {
+        activeRoom = rooms.firstWhere((r) => r.roomId == activeRoomId);
+      } catch (_) {
+        activeRoom = null;
+      }
+      ref
+          .read(chatMessagesProvider.notifier)
+          .syncRoomMessages(activeRoomId, activeRoom?.lastMessage?.seq);
+
+      // 2c. 刷新成员列表（补偿断线期间可能错过的：成员变动、角色变更等）
+      ref
+          .read(roomMemberServiceProvider.notifier)
+          .syncMembers(activeRoomId, force: true);
+    }
+
+    // 3. 刷新通讯录（补偿断线期间的在线状态变化）
+    ref.read(contactListServiceProvider.notifier).refresh();
+
+    log.info("✅ 重连数据补偿完成");
   }
 
   /// 核心分发逻辑

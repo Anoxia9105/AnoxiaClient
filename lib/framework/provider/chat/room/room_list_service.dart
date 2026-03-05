@@ -326,13 +326,20 @@ class RoomListService extends _$RoomListService {
 }
 
 //当前选中房间
-@riverpod
+@Riverpod(keepAlive: true)
 class ActiveRoomId extends _$ActiveRoomId {
   @override
   String? build() => null; // 初始没有选中的房间
 
   void setActive(String? roomId) {
     if (state == roomId) return;
+
+    // 离开旧房间时：冲刷防抖队列，确保已读 seq 被上报
+    final oldRoomId = state;
+    if (oldRoomId != null) {
+      ref.read(roomListServiceProvider.notifier).markAsRead(oldRoomId);
+    }
+
     state = roomId;
   }
 }

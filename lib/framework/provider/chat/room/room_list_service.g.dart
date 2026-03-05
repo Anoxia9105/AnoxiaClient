@@ -66,7 +66,7 @@ final class ActiveRoomIdProvider
         argument: null,
         retry: null,
         name: r'activeRoomIdProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -87,7 +87,7 @@ final class ActiveRoomIdProvider
   }
 }
 
-String _$activeRoomIdHash() => r'f019dd813fb76334a3a2246f27cec851c1c3feb3';
+String _$activeRoomIdHash() => r'43d29da720d77afeb50534e806ca9ef3559e690b';
 
 abstract class _$ActiveRoomId extends $Notifier<String?> {
   String? build();
