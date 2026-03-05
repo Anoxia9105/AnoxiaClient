@@ -1,12 +1,12 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
-
 
 class AddMemberDialogWidget extends ConsumerStatefulWidget {
   final String roomId;
@@ -28,19 +28,16 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
   @override
   Widget build(BuildContext context) {
     final contactListAsync = ref.watch(contactListServiceProvider);
-    final currentMembers = ref.watch(
+    final members = ref.watch(
       roomMemberServiceProvider.select(
-        (state) => state[widget.roomId] ?? [],
+        (s) => s[widget.roomId]?.values.toList() ?? const <ChatRoomMemberVO>[],
       ),
     );
 
-    // 获取当前群聊成员的用户ID列表
-    final currentMemberIds = currentMembers.map((m) => m.userId).toSet();
+    final currentMemberIds = members.map((e) => e.userId).toSet();
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         constraints: BoxConstraints(maxWidth: 400, maxHeight: 600),
         child: Column(
@@ -59,7 +56,9 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowLeft01,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Expanded(
@@ -107,13 +106,10 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children:
-                        [
+                        children: [
                           Text(
                             widget.roomName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
                             '群聊',
@@ -136,23 +132,25 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                 data: (contactMap) {
                   // 过滤掉已经是群聊成员的联系人
                   final contacts = contactMap.values
-                      .where((contact) => 
-                          contact.contactId != null && 
-                          !currentMemberIds.contains(contact.contactId))
+                      .where(
+                        (contact) =>
+                            contact.contactId != null &&
+                            !currentMemberIds.contains(contact.contactId),
+                      )
                       .toList();
-                  
+
                   if (contacts.isEmpty) {
-                    return Center(
-                      child: Text('没有可添加的联系人'),
-                    );
+                    return Center(child: Text('没有可添加的联系人'));
                   }
-                  
+
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: contacts.length,
                     itemBuilder: (context, index) {
                       final contact = contacts[index];
-                      final isSelected = selectedContactIds.contains(contact.contactId);
+                      final isSelected = selectedContactIds.contains(
+                        contact.contactId,
+                      );
 
                       return ListTile(
                         leading: AvatarWidget(
@@ -178,7 +176,9 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                         ),
                         onTap: () {
                           setState(() {
-                            if (selectedContactIds.contains(contact.contactId)) {
+                            if (selectedContactIds.contains(
+                              contact.contactId,
+                            )) {
                               selectedContactIds.remove(contact.contactId!);
                             } else {
                               selectedContactIds.add(contact.contactId!);
@@ -189,12 +189,8 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                     },
                   );
                 },
-                loading: () => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                error: (err, stack) => Center(
-                  child: Text('加载联系人失败'),
-                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('加载联系人失败')),
               ),
             ),
 
@@ -228,7 +224,9 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
@@ -272,7 +270,9 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
@@ -284,21 +284,19 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                     ],
                                   ),
                                   child: Text(
-                                    success
-                                        ? '添加成员成功'
-                                        : '添加成员失败',
+                                    success ? '添加成员成功' : '添加成员失败',
                                     style: TextStyle(
                                       color: success
                                           ? Colors.green
-                                          : Theme.of(context).colorScheme.onSurface,
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
                               );
                             },
-                      child: Text(
-                        '添加 (${selectedContactIds.length})',
-                      ),
+                      child: Text('添加 (${selectedContactIds.length})'),
                     ),
                   ),
                 ],

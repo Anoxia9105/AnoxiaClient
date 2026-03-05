@@ -148,7 +148,7 @@ final class RoomTokenProvider
   }
 }
 
-String _$roomTokenHash() => r'cf4e41ab6f959ee0c9efb8c187caa0fccc97022d';
+String _$roomTokenHash() => r'3712f0dd5ee81e099d8fe7dcb199e7bbe4211b0d';
 
 final class RoomTokenFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String>, String> {

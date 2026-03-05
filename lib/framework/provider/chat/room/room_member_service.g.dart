@@ -16,7 +16,7 @@ final class RoomMemberServiceProvider
     extends
         $NotifierProvider<
           RoomMemberService,
-          Map<String, List<ChatRoomMemberVO>>
+          Map<String, Map<int, ChatRoomMemberVO>>
         > {
   const RoomMemberServiceProvider._()
     : super(
@@ -37,21 +37,20 @@ final class RoomMemberServiceProvider
   RoomMemberService create() => RoomMemberService();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Map<String, List<ChatRoomMemberVO>> value) {
+  Override overrideWithValue(Map<String, Map<int, ChatRoomMemberVO>> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<Map<String, List<ChatRoomMemberVO>>>(
-        value,
-      ),
+      providerOverride:
+          $SyncValueProvider<Map<String, Map<int, ChatRoomMemberVO>>>(value),
     );
   }
 }
 
-String _$roomMemberServiceHash() => r'd203d0a80e5c6d57ca423f2ed32ede5f336461f0';
+String _$roomMemberServiceHash() => r'9219379d9deeec164b9f3728b79b9fe7b8c427c9';
 
 abstract class _$RoomMemberService
-    extends $Notifier<Map<String, List<ChatRoomMemberVO>>> {
-  Map<String, List<ChatRoomMemberVO>> build();
+    extends $Notifier<Map<String, Map<int, ChatRoomMemberVO>>> {
+  Map<String, Map<int, ChatRoomMemberVO>> build();
   @$mustCallSuper
   @override
   void runBuild() {
@@ -59,17 +58,17 @@ abstract class _$RoomMemberService
     final ref =
         this.ref
             as $Ref<
-              Map<String, List<ChatRoomMemberVO>>,
-              Map<String, List<ChatRoomMemberVO>>
+              Map<String, Map<int, ChatRoomMemberVO>>,
+              Map<String, Map<int, ChatRoomMemberVO>>
             >;
     final element =
         ref.element
             as $ClassProviderElement<
               AnyNotifier<
-                Map<String, List<ChatRoomMemberVO>>,
-                Map<String, List<ChatRoomMemberVO>>
+                Map<String, Map<int, ChatRoomMemberVO>>,
+                Map<String, Map<int, ChatRoomMemberVO>>
               >,
-              Map<String, List<ChatRoomMemberVO>>,
+              Map<String, Map<int, ChatRoomMemberVO>>,
               Object?,
               Object?
             >;

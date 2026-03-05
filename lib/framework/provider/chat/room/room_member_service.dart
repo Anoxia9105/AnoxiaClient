@@ -8,22 +8,19 @@ part 'room_member_service.g.dart';
 
 @Riverpod(keepAlive: true)
 class RoomMemberService extends _$RoomMemberService {
-  // 记录已经同步过成员列表的房间 ID，避免重复请求
+  /// 已同步房间
   final Set<String> _syncedRoomIds = {};
 
   @override
-  Map<String, List<ChatRoomMemberVO>> build() {
-    // 初始为空 Map，key 是 roomId
+  Map<String, Map<int, ChatRoomMemberVO>> build() {
     return {};
   }
 
-  /// 核心：同步房间成员列表
-  /// [force] 是否强制刷新（忽略缓存）
+  /// 同步房间成员
   Future<void> syncMembers(String roomId, {bool force = false}) async {
-    // 如果已经同步过且不强制刷新，直接返回
     if (_syncedRoomIds.contains(roomId) && !force) return;
 
-    log.info("🚀 正在拉取房间 $roomId 的成员列表...${force ? '（强制刷新）' : ''}");
+    log.info("🚀 拉取房间 $roomId 成员列表");
 
     try {
       final res = await DioClient().get(
@@ -32,37 +29,50 @@ class RoomMemberService extends _$RoomMemberService {
       );
 
       final data = res.data["data"];
-      if (data is List) {
-        final List<ChatRoomMemberVO> members = data
-            .map((e) => ChatRoomMemberVO.fromJson(e))
-            .toList();
 
-        // 更新状态：保持旧的 Map，只替换/增加当前房间的成员
+      if (data is List) {
+        final Map<int, ChatRoomMemberVO> members = {};
+
+        for (final e in data) {
+          final m = ChatRoomMemberVO.fromJson(e);
+          if (m.userId != null) {
+            members[m.userId!] = m;
+          }
+        }
+
         state = {...state, roomId: members};
 
-        // 只有成功才加入/保留在已同步列表中
-        if (!_syncedRoomIds.contains(roomId)) {
-          _syncedRoomIds.add(roomId);
-        }
-        log.info("✅ 房间 $roomId 成员同步完成，共 ${members.length} 人");
+        _syncedRoomIds.add(roomId);
+
+        log.info("✅ 房间 $roomId 成员同步完成 ${members.length}");
       }
     } catch (e, st) {
-      log.error("❌ 同步房间 $roomId 成员失败", e, st);
-      // 失败了不加进 synced 列表，下次进房还可以重试
+      log.error("❌ 同步成员失败", e, st);
     }
   }
 
-  /// 全局更新：当某个用户上下线时，更新所有包含该用户的房间
+  /// O(1) 获取成员
+  ChatRoomMemberVO? getMember(String? roomId, int? userId) {
+    if (roomId == null || userId == null) return null;
+    return state[roomId]?[userId];
+  }
+
+  /// 获取房间成员列表
+  List<ChatRoomMemberVO> getMembersByRoom(String roomId) {
+    return state[roomId]?.values.toList() ?? [];
+  }
+
+  /// 更新用户在线状态（全局）
   void updateGlobalUserStatus(int userId, bool isOnline) {
-    final newState = <String, List<ChatRoomMemberVO>>{};
+    final newState = <String, Map<int, ChatRoomMemberVO>>{};
     bool changed = false;
 
     state.forEach((roomId, members) {
-      final index = members.indexWhere((m) => m.userId == userId);
-      if (index != -1) {
-        final newList = List<ChatRoomMemberVO>.from(members);
-        newList[index] = newList[index].copyWith(onlineStatus: isOnline);
-        newState[roomId] = newList;
+      if (members.containsKey(userId)) {
+        final updated = members[userId]!.copyWith(onlineStatus: isOnline);
+
+        newState[roomId] = {...members, userId: updated};
+
         changed = true;
       } else {
         newState[roomId] = members;
@@ -70,25 +80,20 @@ class RoomMemberService extends _$RoomMemberService {
     });
 
     if (changed) {
-      state = newState; // 只有发生变化时才触发 Riverpod UI 刷新
+      state = newState;
     }
   }
 
-  /// 获取指定房间的成员（辅助 Getter）
-  List<ChatRoomMemberVO> getMembersByRoom(String roomId) {
-    return state[roomId] ?? [];
-  }
-
-  /// 登出时清理所有缓存
+  /// 清空缓存
   void clearAll() {
     _syncedRoomIds.clear();
     state = {};
   }
 
-  /// 添加成员到群聊
+  /// 添加成员
   Future<bool> addMembers(String roomId, List<int> userIds) async {
     try {
-      log.info("🚀 正在添加成员到房间 $roomId，用户ID: $userIds");
+      log.info("🚀 添加成员 $userIds 到房间 $roomId");
 
       final res = await DioClient().post(
         API.chatRoomAddMembers,
@@ -96,11 +101,10 @@ class RoomMemberService extends _$RoomMemberService {
       );
 
       if (res.data["code"] == 200) {
-        log.info("✅ 添加成员成功");
-        // 强制刷新成员列表
         await syncMembers(roomId, force: true);
         return true;
       }
+
       return false;
     } catch (e, st) {
       log.error("❌ 添加成员失败", e, st);
@@ -111,25 +115,21 @@ class RoomMemberService extends _$RoomMemberService {
   /// 踢出成员
   Future<bool> kickMember(String roomId, int targetUserId) async {
     try {
-      log.info("🚀 正在从房间 $roomId 踢出用户 $targetUserId");
+      log.info("🚀 从房间 $roomId 踢出 $targetUserId");
 
       final res = await DioClient().get(
         API.chatRoomKickMember,
-        queryParameters: {
-          "roomId": roomId,
-          "targetUserId": targetUserId,
-        },
+        queryParameters: {"roomId": roomId, "targetUserId": targetUserId},
       );
 
       if (res.data["code"] == 200) {
-        log.info("✅ 踢出成员成功");
-        // 强制刷新成员列表
         await syncMembers(roomId, force: true);
         return true;
       }
+
       return false;
     } catch (e, st) {
-      log.error("❌ 踢出成员失败", e, st);
+      log.error("❌ 踢人失败", e, st);
       return false;
     }
   }

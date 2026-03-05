@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 class ChatRoomMemberVO {
   final String? roomId;
   final int? userId;
-  final int? roleId; // 0=普通成员 1=管理员 2=群主
+  final int? roleId; // 0=管理员 1=普通成员
   final DateTime? joinTime;
 
   // 用户个人信息
@@ -80,10 +80,7 @@ class ChatRoomMemberVO {
   }
 
   /// 拷贝方法，用于 Riverpod 局部更新状态
-  ChatRoomMemberVO copyWith({
-    bool? onlineStatus,
-    String? nickName,
-  }) {
+  ChatRoomMemberVO copyWith({bool? onlineStatus, String? nickName}) {
     return ChatRoomMemberVO(
       roomId: roomId,
       userId: userId,

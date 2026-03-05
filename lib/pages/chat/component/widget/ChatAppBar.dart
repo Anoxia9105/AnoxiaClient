@@ -37,19 +37,26 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final currentRoom = ref.read(activeRoomProvider);
 
     final currentUser = ref.watch(authControllerProvider).value;
-    final List<ChatRoomMemberVO> rawMembers = ref.watch(
-      roomMemberServiceProvider.select((state) => state[activeId ?? ''] ?? []),
-    );
 
-    final member = rawMembers.map((m) {
-      if (m.userId == currentUser?.userId) {
-        // 使用 copyWith 产生一个新对象，名字后面加上 (我)
-        return m.copyWith(
-          nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} (我)",
-        );
-      }
-      return m;
-    }).toList();
+    final members = ref.watch(
+      roomMemberServiceProvider.select((state) {
+        final map = state[activeId ?? ''];
+        if (map == null) return const <ChatRoomMemberVO>[];
+
+        final list = map.values.toList();
+
+        if (currentUser?.userId == null) return list;
+
+        return list.map((m) {
+          if (m.userId == currentUser?.userId) {
+            return m.copyWith(
+              nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} (我)",
+            );
+          }
+          return m;
+        }).toList();
+      }),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -134,7 +141,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             Builder(
               builder: (context) {
                 // 检查当前用户是否是管理员
-                final isAdmin = rawMembers.any(
+                final isAdmin = members.any(
                   (m) => m.userId == currentUser?.userId && m.roleId == 0,
                 );
 
@@ -196,7 +203,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                   vertical: 8,
                                 ),
                                 child: Text(
-                                  '${'appbar_member_list'.tr()} (${member.length})',
+                                  '${'appbar_member_list'.tr()} (${members.length})',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -208,11 +215,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                   ),
                                   shrinkWrap: true,
                                   physics: const ClampingScrollPhysics(),
-                                  itemCount: member.length,
+                                  itemCount: members.length,
                                   separatorBuilder: (context, index) =>
                                       const Divider(height: 1, indent: 56),
                                   itemBuilder: (context, index) {
-                                    final m = member[index];
+                                    final m = members[index];
                                     return ListTile(
                                       dense: true,
                                       leading: AvatarWidget(
@@ -234,7 +241,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
                                           // 2. 获取当前登录用户在成员列表中的角色 (判断“我”是不是管理员)
 
-                                          final isIMeAdmin = member.any(
+                                          final isIMeAdmin = members.any(
                                             (m) =>
                                                 m.userId == currentUserId &&
                                                 m.roleId == 0,
@@ -298,7 +305,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                             icon: HugeIcons.strokeRoundedUserMultiple02,
                             size: 18,
                           ),
-                          Text("${member.length}"),
+                          Text("${members.length}"),
                         ],
                       ),
                     ),

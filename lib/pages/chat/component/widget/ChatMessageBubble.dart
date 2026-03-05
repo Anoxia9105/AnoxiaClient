@@ -1,8 +1,6 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:collection/collection.dart';
-
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -11,6 +9,7 @@ import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../common/widgets/BubbleDialog.dart';
 import '../../../../framework/domain/ChatRoomMemberVO.dart';
@@ -30,22 +29,9 @@ class ChatMessageBubble extends ConsumerWidget {
     final isCurrentUser = message.senderId == currentUserId;
 
     final senderInfo = ref.watch(
-      roomMemberServiceProvider.select((map) {
-        if (message.roomId == null || message.senderId == null) {
-          return ChatRoomMemberVO(nickName: "--");
-        }
-
-        final memberList = map[message.roomId];
-        if (memberList == null || memberList.isEmpty) {
-          return ChatRoomMemberVO(nickName: "--");
-        }
-
-        final sender = memberList.firstWhereOrNull(
-          (m) => m.userId == message.senderId,
-        );
-
-        return sender ?? ChatRoomMemberVO(nickName: "--");
-      }),
+      roomMemberServiceProvider.select(
+        (state) => state[message.roomId]?[message.senderId],
+      ),
     );
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -75,8 +61,12 @@ class ChatMessageBubble extends ConsumerWidget {
 
     final strategy = MessageRenderFactory.getStrategy(message.messageType);
 
+    //系统消息 直接渲染
     if (message.messageType == MessageType.system) {
-      return strategy.buildContent(context, message, textColor);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 50),
+        child: strategy.buildContent(context, message, textColor),
+      );
     }
 
     return Container(
@@ -97,8 +87,8 @@ class ChatMessageBubble extends ConsumerWidget {
             children: [
               /// Avatar
               AvatarWidget(
-                url: isCurrentUser ? user?.avatar : senderInfo.avatar,
-                name: isCurrentUser ? user?.nickName : senderInfo.nickName,
+                url: isCurrentUser ? user?.avatar : senderInfo?.avatar,
+                name: isCurrentUser ? user?.nickName : senderInfo?.nickName,
                 size: 36,
               ),
 
@@ -169,6 +159,8 @@ class ChatMessageBubble extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    // 右侧留空
+                    SizedBox(width: 20.w),
                   ],
                 ),
               ),
@@ -182,7 +174,7 @@ class ChatMessageBubble extends ConsumerWidget {
   Widget _buildHeader(
     BuildContext context,
     bool isCurrentUser,
-    ChatRoomMemberVO sender,
+    ChatRoomMemberVO? sender,
   ) {
     final style = TextStyle(
       fontSize: 11,
@@ -196,7 +188,7 @@ class ChatMessageBubble extends ConsumerWidget {
         children: [
           if (!isCurrentUser)
             Text(
-              sender.nickName ?? "用户",
+              sender?.nickName ?? "未知用户",
               style: style.copyWith(fontWeight: FontWeight.bold),
             ),
           if (isCurrentUser)
