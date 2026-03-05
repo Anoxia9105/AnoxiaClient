@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -32,6 +33,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
         icon: HugeIcons.strokeRoundedSettingsError02,
         text: "未知系统消息",
         textStyle: textStyle,
+        timestamp: message.timestamp,
       );
     }
 
@@ -44,6 +46,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
         icon: HugeIcons.strokeRoundedHome03,
         text: "$nickName 邀请了[$names] 加入房间",
         textStyle: textStyle,
+        timestamp: message.timestamp,
       );
     }
     if (type == "ROOM_MUTED") {
@@ -52,14 +55,17 @@ class SystemMessageStrategy extends MessageRenderStrategy {
         icon: HugeIcons.strokeRoundedHome03,
         text: "管理员 ${isMute ? "[开启全体禁言]" : "[取消全体禁言]"}",
         textStyle: textStyle,
+        timestamp: message.timestamp,
       );
     }
     if (type == "USER_KICKED") {
-      final name = message.extra["targetId"];
+      // final name = message.extra["targetId"];
+      final nickName = message.extra["nickName"];
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedUserRemove02,
-        text: "$name 被管理员踢出了房间",
+        text: "$nickName 被管理员踢出了房间",
         textStyle: textStyle,
+        timestamp: message.timestamp,
       );
     }
 
@@ -68,6 +74,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
         icon: HugeIcons.strokeRoundedHome03,
         text: "房间已被解散",
         textStyle: textStyle,
+        timestamp: message.timestamp,
       );
     }
 
@@ -105,6 +112,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
   Widget _buildMessageRow({
     required dynamic icon,
     required String text,
+    required int? timestamp,
     required TextStyle textStyle,
   }) {
     return Row(
@@ -112,8 +120,22 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         HugeIcon(icon: icon, size: 16, color: Colors.grey[500]),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
+        // 消息主体文本
         Text(text, style: textStyle),
+        const SizedBox(width: 8),
+        // 时间标签样式
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4), // 圆角
+          ),
+          child: Text(
+            DateUtil.formatTimestampToTime(timestamp),
+            style: textStyle.copyWith(fontSize: 11, color: Colors.grey[600]),
+          ),
+        ),
       ],
     );
   }

@@ -3,6 +3,19 @@ import '../IPacket.dart';
 
 
 
+
+//  USER_ONLINE(0, "用户上线", false),
+//     USER_OFFLINE(1, "用户下线", false),
+//     USER_JOINED(2, "用户加入聊天室", true),
+//     USER_LEFT(3, "用户离开聊天室", true),
+//     ROOM_CREATED(4, "创建房间", true),
+//     ROOM_CREATED_GROUP(5, "创建房间-群聊", true),
+//     ROOM_CLOSED(6, "房间注销", true),
+//     ROOM_UPDATED(7, "房间信息更新", true),
+//     ROOM_MUTED(8, "房间禁言", true),
+//     USER_KICKED(9, "用户被踢出", true),
+//     USER_ROLE_CHANGED(10, "用户权限变更", true);
+
 /// 系统事件类型枚举 (对应 Java 的 SystemEventType)
 enum SystemEventType {
   userOnline(0),
@@ -10,11 +23,12 @@ enum SystemEventType {
   userJoined(2),
   userLeft(3),
   roomCreated(4),
-  roomClosed(5),
-  roomUpdated(6),
-  userMuted(7),
-  userKicked(8),
-  userRoleChanged(9);
+  roomCreatedGroup(5),
+  roomClosed(6),
+  roomUpdated(7),
+  userMuted(8),
+  userKicked(9),
+  userRoleChanged(10);
 
   final int code;
   const SystemEventType(this.code);

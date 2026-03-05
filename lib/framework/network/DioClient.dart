@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:anoxia/framework/network/TokenManager.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/main.dart';
 
 import '../logs/talker.dart';
@@ -19,7 +20,18 @@ class DioClient {
           // 默认需要鉴权，除非显式 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
-            final token = await TokenManager.instance.getToken();
+            // 优先从内存缓存获取 token
+            String? token = globalContainer.read(tokenCacheProvider);
+            
+            // 如果内存中没有，尝试从 TokenManager 恢复（仅用于自动登录场景）
+            if (token == null || token.isEmpty) {
+              token = await TokenManager.instance.getToken();
+              if (token != null && token.isNotEmpty) {
+                // 恢复到内存缓存
+                globalContainer.read(tokenCacheProvider.notifier).setToken(token);
+              }
+            }
+            
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }

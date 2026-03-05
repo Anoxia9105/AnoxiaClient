@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
@@ -13,8 +15,25 @@ part 'room_list_service.g.dart';
 
 @Riverpod(keepAlive: true)
 class RoomListService extends _$RoomListService {
+  /// 已读上报防抖定时器（按房间维度）
+  final Map<String, Timer> _readDebounceTimers = {};
+
+  /// 待上报的最新 seq（按房间维度）
+  final Map<String, int> _pendingReadSeqs = {};
+
   @override
   FutureOr<List<ChatRoomVO>> build() async {
+    ref.onDispose(() {
+      // 销毁时：把所有待上报的 seq 立即上报，然后取消定时器
+      for (final entry in _pendingReadSeqs.entries) {
+        _reportReadSeq(entry.key, entry.value);
+      }
+      for (final timer in _readDebounceTimers.values) {
+        timer.cancel();
+      }
+      _readDebounceTimers.clear();
+      _pendingReadSeqs.clear();
+    });
     return await fetchRoomList();
   }
 
@@ -44,9 +63,24 @@ class RoomListService extends _$RoomListService {
   }
 
   /// 改进的刷新：支持静默刷新，不闪烁
+  /// 刷新后自动将当前活跃房间的未读数归零，防止服务端数据覆盖本地已读状态
   Future<void> refresh({bool silent = false}) async {
     if (!silent) state = const AsyncValue.loading();
     final newState = await AsyncValue.guard(() => fetchRoomList());
+
+    // 刷新后：将当前活跃房间的未读数归零
+    final activeId = ref.read(activeRoomIdProvider);
+    if (activeId != null && newState is AsyncData<List<ChatRoomVO>>) {
+      final rooms = newState.value;
+      final index = rooms.indexWhere((r) => r.roomId == activeId);
+      if (index != -1 && (rooms[index].unreadCount ?? 0) > 0) {
+        final updatedList = List<ChatRoomVO>.from(rooms);
+        updatedList[index] = updatedList[index].copyWith(unreadCount: 0);
+        state = AsyncValue.data(updatedList);
+        return;
+      }
+    }
+
     state = newState;
   }
 
@@ -62,15 +96,21 @@ class RoomListService extends _$RoomListService {
       if (index != -1) {
         final oldRoom = updatedList.removeAt(index);
 
-        int newUnread = oldRoom.unreadCount ?? 0;
+        // 当前正在看的房间不增加未读数
+        int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
         if (!isCurrentRoom) {
-          newUnread = (oldRoom.unreadCount ?? 0) + 1;
           NotificationHelper().show(
             id: newMessage.roomId.hashCode,
             title: oldRoom.roomName ?? '新消息',
             body: newMessage.content,
             payload: newMessage.roomId,
           );
+        }
+
+        // 当前房间收到新消息时，防抖上报已读 seq
+        // 连续收到多条消息只会在最后一条后 2 秒上报一次
+        if (isCurrentRoom && newMessage.seq != null && newMessage.seq! > 0) {
+          _debouncedReportReadSeq(newMessage.roomId!, newMessage.seq!);
         }
 
         final newRoom = oldRoom.copyWith(
@@ -80,29 +120,77 @@ class RoomListService extends _$RoomListService {
 
         updatedList.insert(0, newRoom);
         state = AsyncValue.data(updatedList);
-      } else {
-        // 如果列表中没有这个房间（比如新开启的私聊），直接触发一次 fetchRoomList
-        refresh(silent: true);
       }
+      // 注意：这里不再对未知房间自动 refresh，由系统事件服务统一处理
+      // 避免与 system_event_service 中的 refresh 重复调用
     });
   }
 
   void markAsRead(String roomId) {
+    // 立即冲刷该房间的防抖定时器，确保 seq 被上报
+    _readDebounceTimers[roomId]?.cancel();
+    _readDebounceTimers.remove(roomId);
+    final pendingSeq = _pendingReadSeqs.remove(roomId);
+
     state.whenData((rooms) {
       final index = rooms.indexWhere((r) => r.roomId == roomId);
-      if (index != -1 && (rooms[index].unreadCount ?? 0) > 0) {
-        final List<ChatRoomVO> updatedList = List.from(rooms);
-
-        // 更新该房间的未读数为 0
-        updatedList[index] = updatedList[index].copyWith(unreadCount: 0);
-
-        // 这里的 seq 通常取自 lastMessage.seq
-        final int? lastSeq = updatedList[index].lastMessage?.seq;
-        if (lastSeq != null) {
-          _reportReadSeq(roomId, lastSeq); // 触发上报
+      if (index != -1) {
+        // 上报已读 seq：优先用待上报的 seq（更大），否则用 lastMessage 的 seq
+        final int? lastSeq = rooms[index].lastMessage?.seq;
+        final int? seqToReport = (pendingSeq != null && pendingSeq > 0)
+            ? pendingSeq
+            : lastSeq;
+        if (seqToReport != null && seqToReport > 0) {
+          _reportReadSeq(roomId, seqToReport);
         }
 
+        // 本地未读数归零
+        if ((rooms[index].unreadCount ?? 0) > 0) {
+          final List<ChatRoomVO> updatedList = List.from(rooms);
+          updatedList[index] = updatedList[index].copyWith(unreadCount: 0);
+          state = AsyncValue.data(updatedList);
+        }
+      }
+    });
+  }
+
+  /// 本地移除房间（被踢/房间关闭等场景）
+  void removeRoomLocally(String roomId) {
+    state.whenData((rooms) {
+      final updatedList = rooms.where((r) => r.roomId != roomId).toList();
+      if (updatedList.length != rooms.length) {
         state = AsyncValue.data(updatedList);
+      }
+    });
+  }
+
+  /// 本地更新房间状态（禁言/解禁等场景）
+  void updateRoomStatus(String roomId, int newStatus) {
+    state.whenData((rooms) {
+      final index = rooms.indexWhere((r) => r.roomId == roomId);
+      if (index != -1) {
+        final List<ChatRoomVO> updatedList = List.from(rooms);
+        updatedList[index] = updatedList[index].copyWith(roomStatus: newStatus);
+        state = AsyncValue.data(updatedList);
+      }
+    });
+  }
+
+  /// 防抖上报已读 seq：2 秒内连续收到消息只上报最后一次
+  void _debouncedReportReadSeq(String roomId, int seq) {
+    // 记录最新的 seq（总是取最大值）
+    final currentPending = _pendingReadSeqs[roomId] ?? 0;
+    if (seq > currentPending) {
+      _pendingReadSeqs[roomId] = seq;
+    }
+
+    // 取消旧的定时器，重新计时
+    _readDebounceTimers[roomId]?.cancel();
+    _readDebounceTimers[roomId] = Timer(const Duration(seconds: 2), () {
+      final pendingSeq = _pendingReadSeqs.remove(roomId);
+      _readDebounceTimers.remove(roomId);
+      if (pendingSeq != null && pendingSeq > 0) {
+        _reportReadSeq(roomId, pendingSeq);
       }
     });
   }
@@ -209,6 +297,32 @@ class RoomListService extends _$RoomListService {
       rethrow;
     }
   }
+
+  /// 房间禁言/解除禁言
+  Future<bool> muteRoom(String roomId, bool isMute) async {
+    try {
+      log.info("🚀 正在${isMute ? '禁言' : '解除禁言'}房间 $roomId");
+
+      final res = await DioClient().get(
+        API.chatRoomMute,
+        queryParameters: {
+          "roomId": roomId,
+          "isMute": isMute,
+        },
+      );
+
+      if (res.data["code"] == 200) {
+        log.info("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
+        // 刷新房间列表以更新 roomStatus
+        await refresh(silent: true);
+        return true;
+      }
+      return false;
+    } catch (e, st) {
+      log.error("❌ ${isMute ? '禁言' : '解除禁言'}房间失败", e, st);
+      return false;
+    }
+  }
 }
 
 //当前选中房间
@@ -310,12 +424,17 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
 int totalUnreadCount(Ref ref) {
   //  监听房间列表的状态变化
   final roomList = ref.watch(roomListServiceProvider);
+  //  排除当前正在查看的房间
+  final activeId = ref.watch(activeRoomIdProvider);
 
   if (roomList.value != null) {
-    //  累加所有房间的未读数
+    //  累加所有房间的未读数（排除当前活跃房间）
     return roomList.value!.fold(
       0,
-      (sum, room) => sum + (room.unreadCount ?? 0),
+      (sum, room) {
+        if (room.roomId == activeId) return sum;
+        return sum + (room.unreadCount ?? 0);
+      },
     );
   }
   return 0;

@@ -35,6 +35,8 @@ class API {
   static const String chatRoomLeave = '/chat/room/leave';
   static const String chatRoomDisband = '/chat/room/disband';
   static const String chatRoomAddMembers = '/chat/room/addMembers';
+  static const String chatRoomKickMember = '/chat/room/kickMember';
+  static const String chatRoomMute = '/chat/room/muteRoom';
 
   // ======================== 消息接口 ========================
   static const String chatHistory = '/chat/history';

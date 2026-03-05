@@ -1,3 +1,4 @@
+import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatInputField.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatMessageBubble.dart';
@@ -98,6 +99,23 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
     final room = ref.read(activeRoomProvider);
 
+    if (room?.roomStatus == 2) {
+      return Scaffold(
+        appBar: AppBar(title: Text("${room?.roomName}")),
+        drawerScrimColor: Colors.transparent,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              //程序log
+              Assets.images.appIconPng.image(width: 100, height: 100),
+              Text("房间已被封禁"),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: ChatAppBar(),
       drawerScrimColor: Colors.transparent,
@@ -186,9 +204,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                       bottomSheet: () => _scrollToBottom(animated: true),
                     );
                   }
-                  if (room.roomStatus == 1) return _bottomRoomStatus("禁言");
-                  if (room.roomStatus == 2) return _bottomRoomStatus("封禁");
-                  if (room.roomStatus == 3) return _bottomRoomStatus("解散");
+                  if (room.roomStatus == 1) return _bottomRoomStatus("房间禁言中");
+                  if (room.roomStatus == 2) return _bottomRoomStatus("房间已被封禁");
+                  if (room.roomStatus == 3) return _bottomRoomStatus("房间已解散");
 
                   return SizedBox.shrink();
                 }
@@ -207,7 +225,11 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
         ),
       ),
-      child: Text(text, style: TextStyle(fontSize: 14),textAlign: TextAlign.center),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 14),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
@@ -217,7 +239,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final activeId = ref.read(activeRoomIdProvider);
     final messageCount = ref.read(chatMessagesProvider)[activeId]?.length ?? 0;
     print(messageCount);
-    // 如果没消息，滚个寂寞，直接返回
+    // 如果没消息直接返回
     if (messageCount == 0 || messageCount < 10) return;
     if (animated) {
       _listViewController.sliverController.animateToIndex(

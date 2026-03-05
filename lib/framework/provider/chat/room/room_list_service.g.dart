@@ -33,7 +33,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'09fae14766f88a4acb5878ed35d44b5eb3c26974';
+String _$roomListServiceHash() => r'ad82e7853cbfc2578c6b803bc30bcbaf3f5974a4';
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();
@@ -401,4 +401,4 @@ final class TotalUnreadCountProvider extends $FunctionalProvider<int, int, int>
   }
 }
 
-String _$totalUnreadCountHash() => r'eeb1e180ff6a80acbb6d12b8cdd2fc16ed988099';
+String _$totalUnreadCountHash() => r'28ba55bb5ba482ddd0f850e95fd5ebcd14e7bae5';

@@ -1,6 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/pages/chat/component/widget/CreateChatDialogWidget.dart';
 import 'package:anoxia/pages/contact/AddFriendPage.dart';
@@ -30,6 +31,12 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final roomListAsync = ref.watch(roomListServiceProvider);
 
@@ -41,6 +48,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             Expanded(
               child: SizedBox(
                 child: TextField(
+                  controller: _searchController,
                   onChanged: (val) =>
                       ref.read(roomSearchQueryProvider.notifier).update(val),
                   maxLength: 20,
@@ -253,15 +261,22 @@ class _RoomItem extends ConsumerWidget {
     }
 
     return GestureDetector(
-      onSecondaryTapDown: (details) {
+      onSecondaryTapDown: (details) async {
+        if (roomId == null) return;
+        await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
         _showContextMenu(context, ref, details.globalPosition, isPinned);
       },
-      onLongPressStart: (details) {
+      onLongPressStart: (details) async {
+        if (roomId == null) return;
+        await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
         _showContextMenu(context, ref, details.globalPosition, isPinned);
       },
       child: ListTile(
-        onTap: () =>
-            ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!),
+        onTap: () {
+          if (room.roomId != null) {
+            ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
+          }
+        },
         selected: isSelected,
         // 左侧头像
         leading: AvatarWidget(
@@ -330,8 +345,6 @@ class _RoomItem extends ConsumerWidget {
     final roomId = room.roomId;
     if (roomId == null) return;
 
-    final isGroup = room.roomType == 1;
-
     final RelativeRect position = RelativeRect.fromLTRB(
       globalPosition.dx,
       globalPosition.dy,
@@ -342,20 +355,16 @@ class _RoomItem extends ConsumerWidget {
     final user = ref.read(authControllerProvider).value;
     final currentUserId = user?.userId;
 
-    // 群聊内：只有 roleId==2（群主/创建者）才显示“解散群聊”
-    bool canDissolve = false;
-    if (isGroup && currentUserId != null) {
-      final members = ref
-          .read(roomMemberServiceProvider.notifier)
-          .getMembersByRoom(roomId);
-      final me = members
-          .where((m) => m.userId == currentUserId)
-          .cast()
-          .toList();
-      if (me.isNotEmpty) {
-        canDissolve = (me.first.roleId ?? 0) == 2;
-      }
-    }
+    // 群聊内：只有 roleId==0（群主/创建者）才显示“解散群聊”
+
+    final members = ref
+        .read(roomMemberServiceProvider.notifier)
+        .getMembersByRoom(roomId);
+
+    final ChatRoomMemberVO? me = members.where(
+      (m) => m.userId == currentUserId,
+    ).firstOrNull;
+    bool canDissolve = me?.roleId == 0;
 
     showMenu<String>(
       context: context,
@@ -401,29 +410,7 @@ class _RoomItem extends ConsumerWidget {
           ),
         ),
         const PopupMenuDivider(height: 1),
-        if (isGroup)
-          PopupMenuItem(
-            value: 'leave',
-            height: 36,
-            child: Row(
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedLogout01,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'chat_leave_group'.tr(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
+        if (!canDissolve)
           PopupMenuItem(
             value: 'hide',
             height: 36,
@@ -445,7 +432,7 @@ class _RoomItem extends ConsumerWidget {
               ],
             ),
           ),
-        if (isGroup && canDissolve)
+        if (canDissolve)
           PopupMenuItem(
             value: 'dissolve',
             height: 36,

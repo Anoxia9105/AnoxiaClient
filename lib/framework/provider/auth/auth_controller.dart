@@ -8,6 +8,7 @@ import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 import '../chat/room/room_list_service.dart';
+import 'token_provider.dart';
 
 part 'auth_controller.g.dart';
 
@@ -22,10 +23,13 @@ class AuthController extends _$AuthController {
     if (token == null || token.isEmpty) return null;
 
     try {
+      // 恢复 token 到内存缓存
+      ref.read(tokenCacheProvider.notifier).setToken(token);
       return await _fetchUserInfo();
     } catch (e, st) {
       log.error("[AuthController] 自动恢复失败", e, st);
       await TokenManager.instance.clearToken();
+      ref.read(tokenCacheProvider.notifier).clearToken();
       return null;
     }
   }
@@ -55,7 +59,11 @@ class AuthController extends _$AuthController {
         return null;
       }
       String token = res.data["token"];
+      
+      // 同时保存到 TokenManager 和内存缓存
       await TokenManager.instance.setToken(token);
+      ref.read(tokenCacheProvider.notifier).setToken(token);
+      
       return await _fetchUserInfo();
     });
   }
@@ -63,7 +71,8 @@ class AuthController extends _$AuthController {
   /// 手动登出：调用后会把 state 设为 AsyncData(null)
   /// 1. 调用后端 logout API
   /// 2. 清除本地存储的 Token
-  /// 3. 【关键步骤】：重置所有业务 Provider
+  /// 3. 清除内存中的 Token
+  /// 4. 【关键步骤】：重置所有业务 Provider
   ///    - invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
   ///    - 这里重置了 roomListServiceProvider 和 activeRoomIdProvider
   Future<void> logout() async {
@@ -73,6 +82,9 @@ class AuthController extends _$AuthController {
 
       // . 清除本地存储的 Token
       await TokenManager.instance.clearToken();
+      
+      // . 清除内存中的 Token
+      ref.read(tokenCacheProvider.notifier).clearToken();
 
       // . 【关键步骤】：重置所有业务 Provider
       // invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()

@@ -107,4 +107,30 @@ class RoomMemberService extends _$RoomMemberService {
       return false;
     }
   }
+
+  /// 踢出成员
+  Future<bool> kickMember(String roomId, int targetUserId) async {
+    try {
+      log.info("🚀 正在从房间 $roomId 踢出用户 $targetUserId");
+
+      final res = await DioClient().get(
+        API.chatRoomKickMember,
+        queryParameters: {
+          "roomId": roomId,
+          "targetUserId": targetUserId,
+        },
+      );
+
+      if (res.data["code"] == 200) {
+        log.info("✅ 踢出成员成功");
+        // 强制刷新成员列表
+        await syncMembers(roomId, force: true);
+        return true;
+      }
+      return false;
+    } catch (e, st) {
+      log.error("❌ 踢出成员失败", e, st);
+      return false;
+    }
+  }
 }

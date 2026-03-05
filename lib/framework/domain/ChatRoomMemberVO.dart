@@ -5,8 +5,6 @@ class ChatRoomMemberVO {
   final int? userId;
   final int? roleId; // 0=普通成员 1=管理员 2=群主
   final DateTime? joinTime;
-  final DateTime? lastActiveTime;
-  final int? lastReadSeq;
 
   // 用户个人信息
   final String? nickName;
@@ -24,8 +22,6 @@ class ChatRoomMemberVO {
     this.userId,
     this.roleId,
     this.joinTime,
-    this.lastActiveTime,
-    this.lastReadSeq,
     this.nickName,
     this.avatar,
     this.sex,
@@ -47,10 +43,6 @@ class ChatRoomMemberVO {
           : int.tryParse(json['roleId']?.toString() ?? ''),
       // 处理后端 pattern = "yyyy-MM-dd HH:mm:ss" 的字符串
       joinTime: _parseDate(json['joinTime']),
-      lastActiveTime: _parseDate(json['lastActiveTime']),
-      lastReadSeq: json['lastReadSeq'] is int
-          ? json['lastReadSeq']
-          : int.tryParse(json['lastReadSeq']?.toString() ?? ''),
       nickName: json['nickName'],
       avatar: json['avatar'],
       sex: json['sex']?.toString(),
@@ -91,16 +83,12 @@ class ChatRoomMemberVO {
   ChatRoomMemberVO copyWith({
     bool? onlineStatus,
     String? nickName,
-    int? lastReadSeq,
-    DateTime? lastActiveTime,
   }) {
     return ChatRoomMemberVO(
       roomId: roomId,
       userId: userId,
       roleId: roleId,
       joinTime: joinTime,
-      lastActiveTime: lastActiveTime ?? this.lastActiveTime,
-      lastReadSeq: lastReadSeq ?? this.lastReadSeq,
       nickName: nickName,
       avatar: avatar,
       sex: sex,
