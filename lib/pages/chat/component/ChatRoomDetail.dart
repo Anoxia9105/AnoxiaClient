@@ -154,21 +154,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
                 final msg = messages[messages.length - 1 - index];
 
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: bodyPadding),
-                  child: ChatMessageBubble(
-                    key: ValueKey(msg.messageId),
-                    message: msg,
-                  ),
+                return ChatMessageBubble(
+                  key: ValueKey(msg.messageId),
+                  message: msg,
                 );
               },
               childCount: messages.length + (hasMore ? 1 : 0),
               // 开启 keepPosition: true
               // 这能保证在分页加载旧消息时，滚动位置不会跳动
               keepPosition: true,
-
-              // 性能优化：给一个大概的预估高度
-              preferItemHeight: 60,
             ),
           );
         },
@@ -184,7 +178,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
               onPressed: () => _scrollToBottom(animated: true),
               child: const HugeIcon(
                 icon: HugeIcons.strokeRoundedCircleArrowDown02,
-                size: 20,
+                size: 18,
                 strokeWidth: 2,
               ),
             )

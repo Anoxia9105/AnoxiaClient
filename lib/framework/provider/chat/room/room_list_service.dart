@@ -264,16 +264,15 @@ class RoomListService extends _$RoomListService {
         log.info("删除会话成功");
         // 刷新房间列表
         await refresh(silent: true);
-        
+
         // 删除对应房间缓存的消息
         ref.read(chatMessagesProvider.notifier).clearRoom(roomId);
-        
+
         // 清理加载更多状态
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
-        
+
         log.info("✅ 已删除房间 $roomId 的本地消息缓存和状态");
       }
-
     } catch (e) {
       print("❌ 删除会话失败: $e");
       rethrow;
@@ -283,9 +282,9 @@ class RoomListService extends _$RoomListService {
   /// 解散群聊
   Future<void> dissolveGroup(String roomId) async {
     try {
-      final res = await DioClient().post(
+      final res = await DioClient().get(
         API.chatRoomDisband,
-        data: {"roomId": roomId},
+        queryParameters: {"roomId": roomId},
       );
 
       log.info("$res");
@@ -305,10 +304,7 @@ class RoomListService extends _$RoomListService {
 
       final res = await DioClient().get(
         API.chatRoomMute,
-        queryParameters: {
-          "roomId": roomId,
-          "isMute": isMute,
-        },
+        queryParameters: {"roomId": roomId, "isMute": isMute},
       );
 
       if (res.data["code"] == 200) {
@@ -436,13 +432,10 @@ int totalUnreadCount(Ref ref) {
 
   if (roomList.value != null) {
     //  累加所有房间的未读数（排除当前活跃房间）
-    return roomList.value!.fold(
-      0,
-      (sum, room) {
-        if (room.roomId == activeId) return sum;
-        return sum + (room.unreadCount ?? 0);
-      },
-    );
+    return roomList.value!.fold(0, (sum, room) {
+      if (room.roomId == activeId) return sum;
+      return sum + (room.unreadCount ?? 0);
+    });
   }
   return 0;
 }

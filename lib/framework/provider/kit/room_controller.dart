@@ -79,7 +79,9 @@ class RoomController extends _$RoomController {
           if (current != null && e.speakers.isNotEmpty) {
             // 将第一个活跃说话者设为焦点参与者
             final focusedId = e.speakers.first.identity;
-            state = AsyncData(current.copyWith(focusedParticipantId: focusedId));
+            state = AsyncData(
+              current.copyWith(focusedParticipantId: focusedId),
+            );
           }
           updateState();
         })
@@ -88,7 +90,9 @@ class RoomController extends _$RoomController {
           log.info('📹 房间录音状态变化: ${event.activeRecording}');
           final current = state.value;
           if (current != null) {
-            state = AsyncData(current.copyWith(isRecording: event.activeRecording));
+            state = AsyncData(
+              current.copyWith(isRecording: event.activeRecording),
+            );
           }
         })
         ..on<RoomMetadataChangedEvent>((event) {
@@ -102,23 +106,24 @@ class RoomController extends _$RoomController {
 
       // 额外监听 Reconnecting 和 Reconnected 事件（某些 SDK 版本可能包含）
       try {
-        listener
-          ..on<dynamic>((evt) {
-            final typeName = evt.runtimeType.toString();
-            if (typeName.contains('Reconnecting')) {
-              log.warning('🔄 房间正在重新连接...');
-              final current = state.value;
-              if (current != null) {
-                state = AsyncData(current.copyWith(isReconnecting: true));
-              }
-            } else if (typeName.contains('Reconnected')) {
-              log.info('✅ 房间已重新连接');
-              final current = state.value;
-              if (current != null) {
-                state = AsyncData(current.copyWith(isReconnecting: false, connectionError: null));
-              }
+        listener..on<dynamic>((evt) {
+          final typeName = evt.runtimeType.toString();
+          if (typeName.contains('Reconnecting')) {
+            log.warning('🔄 房间正在重新连接...');
+            final current = state.value;
+            if (current != null) {
+              state = AsyncData(current.copyWith(isReconnecting: true));
             }
-          });
+          } else if (typeName.contains('Reconnected')) {
+            log.info('✅ 房间已重新连接');
+            final current = state.value;
+            if (current != null) {
+              state = AsyncData(
+                current.copyWith(isReconnecting: false, connectionError: null),
+              );
+            }
+          }
+        });
       } catch (_) {
         // 某些 SDK 版本可能不支持通用 dynamic 监听
       }
@@ -130,17 +135,21 @@ class RoomController extends _$RoomController {
       room.events.listen((dynamic evt) {
         try {
           final typeName = evt.runtimeType.toString();
-          
+
           // 调试：记录所有事件类型（仅在 debug 时输出，减少日志噪音）
-          if (typeName.toLowerCase().contains('reconnect') || 
+          if (typeName.toLowerCase().contains('reconnect') ||
               typeName.toLowerCase().contains('disconnect') ||
               typeName.toLowerCase().contains('connectionquality') ||
               typeName.toLowerCase().contains('connection_state')) {
             log.info('📡 Room Event: $typeName');
           }
-          
+
           // 只关心 connection quality 相关事件进行数据提取
-          if (!typeName.toLowerCase().contains('connectionquality') && !typeName.toLowerCase().contains('connection_quality') && !typeName.toLowerCase().contains('participantconnectionquality')) {
+          if (!typeName.toLowerCase().contains('connectionquality') &&
+              !typeName.toLowerCase().contains('connection_quality') &&
+              !typeName.toLowerCase().contains(
+                'participantconnectionquality',
+              )) {
             return; // 忽略非质量相关事件
           }
 
@@ -164,7 +173,9 @@ class RoomController extends _$RoomController {
 
           // 记录事件类型与一个示例（仅作调试）
           try {
-            log.info('收到 connection-quality 事件: $typeName, sample=${evt.toString()}');
+            log.info(
+              '收到 connection-quality 事件: $typeName, sample=${evt.toString()}',
+            );
           } catch (_) {}
 
           for (final update in itemsToProcess) {
@@ -183,7 +194,12 @@ class RoomController extends _$RoomController {
                 }
 
                 if (sid.isEmpty) {
-                  sid = (dyn.participantSid ?? dyn.participantIdentity ?? dyn.participantId ?? '').toString();
+                  sid =
+                      (dyn.participantSid ??
+                              dyn.participantIdentity ??
+                              dyn.participantId ??
+                              '')
+                          .toString();
                 }
               } catch (_) {
                 sid = '';
@@ -194,16 +210,26 @@ class RoomController extends _$RoomController {
               int? rttMs;
               try {
                 final dyn = update as dynamic;
-                if (dyn.rttMs != null && dyn.rttMs is int) rttMs = dyn.rttMs as int;
-                if (rttMs == null && dyn.rtt != null && dyn.rtt is int) rttMs = dyn.rtt as int;
-                if (rttMs == null && dyn.roundTripTimeMs != null && dyn.roundTripTimeMs is int) rttMs = dyn.roundTripTimeMs as int;
-                if (rttMs == null && dyn.roundTripTime != null && dyn.roundTripTime is int) rttMs = dyn.roundTripTime as int;
+                if (dyn.rttMs != null && dyn.rttMs is int)
+                  rttMs = dyn.rttMs as int;
+                if (rttMs == null && dyn.rtt != null && dyn.rtt is int)
+                  rttMs = dyn.rtt as int;
+                if (rttMs == null &&
+                    dyn.roundTripTimeMs != null &&
+                    dyn.roundTripTimeMs is int)
+                  rttMs = dyn.roundTripTimeMs as int;
+                if (rttMs == null &&
+                    dyn.roundTripTime != null &&
+                    dyn.roundTripTime is int)
+                  rttMs = dyn.roundTripTime as int;
               } catch (_) {
                 // ignore per-item rtt read errors
               }
 
               if (rttMs != null) {
-                final Map<String, int> rmap = Map.from(current.participantRttMs ?? {});
+                final Map<String, int> rmap = Map.from(
+                  current.participantRttMs ?? {},
+                );
                 rmap[sid] = rttMs;
                 state = AsyncData(current.copyWith(participantRttMs: rmap));
               }
@@ -226,13 +252,13 @@ class RoomController extends _$RoomController {
         try {
           final cs = room.connectionState;
           final csStr = cs.toString();
-          
+
           // 防止重复触发：只在状态真正改变时才输出日志
           if (cs == _lastConnectionState) {
             return; // 状态未改变，忽略
           }
           _lastConnectionState = cs;
-          
+
           log.info('📡 ConnectionState: $csStr');
         } catch (e) {
           log.error('监控连接状态时出错: $e');
@@ -258,16 +284,28 @@ class RoomController extends _$RoomController {
 
           if (stats == null) return;
 
-          final Map<String, int> rmap = Map.from(current.participantRttMs ?? {});
+          final Map<String, int> rmap = Map.from(
+            current.participantRttMs ?? {},
+          );
           try {
             if (stats is Iterable) {
               for (final entry in stats) {
                 try {
-                  final sid = (entry is Map) ? (entry['participantId'] ?? entry['participant'] ?? entry['sid']) : null;
-                  final rtt = (entry is Map) ? (entry['roundTripTimeMs'] ?? entry['rttMs'] ?? entry['rtt']) : null;
+                  final sid = (entry is Map)
+                      ? (entry['participantId'] ??
+                            entry['participant'] ??
+                            entry['sid'])
+                      : null;
+                  final rtt = (entry is Map)
+                      ? (entry['roundTripTimeMs'] ??
+                            entry['rttMs'] ??
+                            entry['rtt'])
+                      : null;
                   if (sid != null && rtt != null) {
                     final sidStr = sid.toString();
-                    rmap[sidStr] = (rtt is num) ? rtt.toInt() : int.tryParse(rtt.toString()) ?? 0;
+                    rmap[sidStr] = (rtt is num)
+                        ? rtt.toInt()
+                        : int.tryParse(rtt.toString()) ?? 0;
                   }
                 } catch (_) {}
               }
@@ -278,7 +316,9 @@ class RoomController extends _$RoomController {
                     final rtt = v['roundTripTimeMs'] ?? v['rttMs'] ?? v['rtt'];
                     if (rtt != null) {
                       final sidStr = k.toString();
-                      rmap[sidStr] = (rtt is num) ? rtt.toInt() : int.tryParse(rtt.toString()) ?? 0;
+                      rmap[sidStr] = (rtt is num)
+                          ? rtt.toInt()
+                          : int.tryParse(rtt.toString()) ?? 0;
                     }
                   }
                 } catch (_) {}
@@ -618,7 +658,7 @@ class RoomController extends _$RoomController {
 Future<String> roomToken(Ref ref, String roomId) async {
   try {
     final res = await DioClient().get(
-      "/call/room",
+      API.callToken,
       queryParameters: {"roomId": roomId},
       options: Options(responseType: ResponseType.plain),
     );

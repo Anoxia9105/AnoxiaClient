@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:collection/collection.dart';
 
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
@@ -11,7 +12,6 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../common/utils/DateUtil.dart';
 import '../../../../common/widgets/BubbleDialog.dart';
 import '../../../../framework/domain/ChatRoomMemberVO.dart';
 import '../../../../framework/logs/talker.dart';
@@ -27,18 +27,29 @@ class ChatMessageBubble extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider.select((v) => v.value));
     final currentUserId = user?.userId;
-    final isCurrentUser = message.senderId == user?.userId;
+    final isCurrentUser = message.senderId == currentUserId;
 
     final senderInfo = ref.watch(
-      roomMemberServiceProvider.select(
-        (map) => (map[message.roomId] ?? []).firstWhere(
+      roomMemberServiceProvider.select((map) {
+        if (message.roomId == null || message.senderId == null) {
+          return ChatRoomMemberVO(nickName: "--");
+        }
+
+        final memberList = map[message.roomId];
+        if (memberList == null || memberList.isEmpty) {
+          return ChatRoomMemberVO(nickName: "--");
+        }
+
+        final sender = memberList.firstWhereOrNull(
           (m) => m.userId == message.senderId,
-          orElse: () => ChatRoomMemberVO(nickName: "用户"),
-        ),
-      ),
+        );
+
+        return sender ?? ChatRoomMemberVO(nickName: "--");
+      }),
     );
 
     final colorScheme = Theme.of(context).colorScheme;
+
     final bubbleBgColor = isCurrentUser
         ? colorScheme.primary
         : colorScheme.surfaceContainerHigh;
@@ -49,6 +60,7 @@ class ChatMessageBubble extends ConsumerWidget {
 
     final mentionList = message.payload?.mentions;
     bool isMentionedMe = false;
+
     if (mentionList != null &&
         !isCurrentUser &&
         currentUserId != null &&
@@ -56,7 +68,6 @@ class ChatMessageBubble extends ConsumerWidget {
       isMentionedMe = true;
     }
 
-    /// 只有文本消息（非纯表情）和富文本消息才需要气泡，其他类型直接渲染内容即可
     final bool needsBubble =
         message.messageType == MessageType.quill ||
         message.messageType == MessageType.text &&
@@ -64,39 +75,36 @@ class ChatMessageBubble extends ConsumerWidget {
 
     final strategy = MessageRenderFactory.getStrategy(message.messageType);
 
-    //系统消息 直接渲染
     if (message.messageType == MessageType.system) {
       return strategy.buildContent(context, message, textColor);
     }
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 50),
       child: Column(
         crossAxisAlignment: isCurrentUser
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          // ---  顶部名称与时间层 ---
           _buildHeader(context, isCurrentUser, senderInfo),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
 
-          // ---  头像与消息体层 ---
           Row(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
             textDirection: isCurrentUser
                 ? TextDirection.rtl
                 : TextDirection.ltr,
             children: [
-              // 头像
+              /// Avatar
               AvatarWidget(
                 url: isCurrentUser ? user?.avatar : senderInfo.avatar,
                 name: isCurrentUser ? user?.nickName : senderInfo.nickName,
                 size: 36,
               ),
 
-              // 消息气泡
+              const SizedBox(width: 6),
+
+              /// Message
               Flexible(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -105,69 +113,53 @@ class ChatMessageBubble extends ConsumerWidget {
                       ? TextDirection.rtl
                       : TextDirection.ltr,
                   children: [
+                    /// Bubble
                     Flexible(
                       child: GestureDetector(
                         onLongPress: () => Feedback.forLongPress(context),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.7,
-                          ),
-                          child: needsBubble
-                              ? BubbleWidget(
-                                  arrowDirection: isCurrentUser
-                                      ? AxisDirection.right
-                                      : AxisDirection.left,
-                                  arrowOffset: 15,
-                                  arrowLength: 6,
-                                  arrowRadius: 4,
-                                  arrowWidth: 15,
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 8,
-                                    horizontal: 8,
-                                  ),
-                                  border: BorderSide(
-                                    width: 1,
-                                    color: colorScheme.surface.withValues(
-                                      alpha: 0.5,
-                                    ),
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                  backgroundColor: bubbleBgColor,
-                                  contentBuilder: (context) =>
-                                      strategy.buildContent(
-                                        context,
-                                        message,
-                                        textColor,
-                                      ),
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4,
-                                  ),
-                                  child: strategy.buildContent(
-                                    context,
-                                    message,
-                                    textColor,
+                        child: needsBubble
+                            ? BubbleWidget(
+                                arrowDirection: isCurrentUser
+                                    ? AxisDirection.right
+                                    : AxisDirection.left,
+                                arrowOffset: 15,
+                                arrowLength: 6,
+                                arrowRadius: 4,
+                                arrowWidth: 15,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 8,
+                                ),
+                                border: BorderSide(
+                                  width: 1,
+                                  color: colorScheme.surface.withValues(
+                                    alpha: 0.5,
                                   ),
                                 ),
-                        ),
+                                borderRadius: BorderRadius.circular(4),
+                                backgroundColor: bubbleBgColor,
+                                contentBuilder: (context) => strategy
+                                    .buildContent(context, message, textColor),
+                              )
+                            : strategy.buildContent(
+                                context,
+                                message,
+                                textColor,
+                              ),
                       ),
                     ),
-                    // 3. 状态与 @ 提示（贴底显示）
+
+                    /// status
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           if (isMentionedMe)
-                            Text(
+                            const Text(
                               "@你",
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Colors.red,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -187,7 +179,6 @@ class ChatMessageBubble extends ConsumerWidget {
     );
   }
 
-  // 修改后的 Header：名称加粗，时间变淡
   Widget _buildHeader(
     BuildContext context,
     bool isCurrentUser,
@@ -199,23 +190,17 @@ class ChatMessageBubble extends ConsumerWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 44), // 避开头像的宽度，对齐气泡起始位
+      padding: const EdgeInsets.symmetric(horizontal: 45),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!isCurrentUser) ...[
+          if (!isCurrentUser)
             Text(
               sender.nickName ?? "用户",
               style: style.copyWith(fontWeight: FontWeight.bold),
             ),
-            // Text("  ·  ", style: style),
-          ],
-          // 消息发送时间
-          // Text(DateUtil.formatTimestampToTime(message.timestamp), style: style),
-          if (isCurrentUser) ...[
-            // Text("  ·  ", style: style),
+          if (isCurrentUser)
             Text("我", style: style.copyWith(fontWeight: FontWeight.bold)),
-          ],
         ],
       ),
     );
@@ -226,29 +211,22 @@ class ChatMessageBubble extends ConsumerWidget {
     WidgetRef ref,
     ChatMessage message,
   ) {
-  
     switch (message.deliveryStatus) {
       case DeliveryStatus.sending:
         return const SizedBox(
           width: 10,
           height: 10,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation(Colors.grey),
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2),
         );
+
       case DeliveryStatus.failed:
         return GestureDetector(
           onTap: () => _resendMessage(context, ref, message),
           child: const Icon(Icons.error, size: 16, color: Colors.red),
         );
+
       case DeliveryStatus.sent:
-        // return Icon(
-        //   Icons.check,
-        //   size: 12,
-        //   color: Colors.blue.withValues(alpha: 0.8),
-        // );
-        return SizedBox.shrink(); // 已发送状态不显示任何图标，保持界面简洁
+        return const SizedBox.shrink();
     }
   }
 
@@ -258,6 +236,7 @@ class ChatMessageBubble extends ConsumerWidget {
     ChatMessage message,
   ) {
     final room = ref.read(activeRoomProvider);
+
     if (room == null) {
       log.warning('重发失败：未找到活跃房间');
       return;
@@ -265,14 +244,12 @@ class ChatMessageBubble extends ConsumerWidget {
 
     final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
 
-    // 1) 将本地消息状态设为 sending
     ref
         .read(chatMessagesProvider.notifier)
         .upsertMessage(
           message.copyWith(deliveryStatus: DeliveryStatus.sending),
         );
 
-    // 2) 构造和发送消息数据（复用服务端 MESSAGE 协议格式）
     final messageData = {
       "topic": "MESSAGE",
       "data": {
@@ -287,11 +264,11 @@ class ChatMessageBubble extends ConsumerWidget {
     };
 
     log.info("🔁 重发消息: $clientMsgId");
+
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(jsonEncode(messageData));
 
-    // 3) 重新启动超时检测（与 _doSend 保持一致的超时逻辑）
     Timer(const Duration(seconds: 10), () {
       ref
           .read(chatMessagesProvider.notifier)
