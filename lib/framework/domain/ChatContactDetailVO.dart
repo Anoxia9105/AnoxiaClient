@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:intl/intl.dart';
 
 class ChatContactDetailVO {
@@ -52,15 +53,15 @@ class ChatContactDetailVO {
   /// 辅助方法：获取性别文本
   String get genderText {
     switch (sex) {
-      case '0': return '男';
-      case '1': return '女';
-      default: return '未知';
+      case '0': return 'gender_male'.tr();
+      case '1': return 'gender_female'.tr();
+      default: return 'gender_unknown'.tr();
     }
   }
 
   /// 辅助方法：格式化好友时间
   String get formattedDate {
-    if (createdAt == null) return '未知时间';
+    if (createdAt == null) return 'unknown_time'.tr();
     return DateFormat('yyyy-MM-dd HH:mm').format(createdAt!);
   }
 }

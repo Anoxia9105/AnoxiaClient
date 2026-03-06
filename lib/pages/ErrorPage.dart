@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/pages/AppScaffold.dart';
 
@@ -14,7 +15,7 @@ class ErrorPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.error, size: 64),
-            Text(message ?? "发生未知错误"), // 💡 显示错误信息
+            Text(message ?? "error_unknown".tr()),
             // ... 重试按钮 ...
           ],
         ),

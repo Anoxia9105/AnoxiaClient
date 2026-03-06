@@ -22,9 +22,9 @@ class GroupRoomListPage extends ConsumerWidget {
         final room = groups[index];
         return ListTile(
           leading: AvatarWidget(url: room.roomAvatar, name: room.roomName),
-          title: Text(room.roomName ?? '未命名群聊'),
+          title: Text(room.roomName ?? 'group_unnamed'.tr()),
           subtitle: Text(
-            room.lastMessage?.content ?? '暂无消息',
+            room.lastMessage?.content ?? 'chat_no_messages_in_group'.tr(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

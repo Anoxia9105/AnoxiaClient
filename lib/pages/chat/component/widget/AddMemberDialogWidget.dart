@@ -63,7 +63,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                   ),
                   Expanded(
                     child: Text(
-                      '添加成员',
+                      'member_add_title'.tr(),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -112,7 +112,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '群聊',
+                            'member_group_chat'.tr(),
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context).colorScheme.outline,
@@ -140,7 +140,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                       .toList();
 
                   if (contacts.isEmpty) {
-                    return Center(child: Text('没有可添加的联系人'));
+                    return Center(child: Text('member_no_contacts'.tr()));
                   }
 
                   return ListView.builder(
@@ -161,7 +161,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                               ? AvatarStatus.online
                               : AvatarStatus.offline,
                         ),
-                        title: Text(contact.nickName ?? '未知用户'),
+                        title: Text(contact.nickName ?? 'chat_unknown_user'.tr()),
                         trailing: Checkbox(
                           value: isSelected,
                           onChanged: (value) {
@@ -190,7 +190,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('加载联系人失败')),
+                error: (err, stack) => Center(child: Text('member_load_failed'.tr())),
               ),
             ),
 
@@ -209,7 +209,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text('取消'.tr()),
+                      child: Text('dialog_cancel'.tr()),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -247,7 +247,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Text('正在添加成员...'),
+                                      Text('member_adding'.tr()),
                                     ],
                                   ),
                                 ),
@@ -284,7 +284,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                     ],
                                   ),
                                   child: Text(
-                                    success ? '添加成员成功' : '添加成员失败',
+                                    success ? 'member_add_success'.tr() : 'member_add_failed'.tr(),
                                     style: TextStyle(
                                       color: success
                                           ? Colors.green
@@ -296,7 +296,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                 ),
                               );
                             },
-                      child: Text('添加 (${selectedContactIds.length})'),
+                      child: Text('member_add_count'.tr(args: [selectedContactIds.length.toString()])),
                     ),
                   ),
                 ],

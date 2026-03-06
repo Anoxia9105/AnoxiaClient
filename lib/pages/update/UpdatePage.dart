@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_file_plus/open_file_plus.dart';
@@ -112,9 +113,9 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
 
   String _formatError(dynamic e) {
     String s = e.toString();
-    if (s.contains("404")) return "远程更新文件不存在 (404)";
-    if (s.contains("SocketException")) return "网络连接失败，请检查联网状态";
-    return "下载过程出错: $e";
+    if (s.contains("404")) return "update_error_404".tr();
+    if (s.contains("SocketException")) return "update_error_network".tr();
+    return "update_error_generic".tr(args: [e.toString()]);
   }
 
   @override
@@ -142,7 +143,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
               children: [
                 // 标题
                 Text(
-                  "发现新版本",
+                  "update_new_version".tr(),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -161,7 +162,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
 
                 // 更新说明
                 Text(
-                  "更新说明",
+                  "update_release_notes".tr(),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -180,7 +181,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
                   child: SingleChildScrollView(
                     child: Text(
                       widget.updateInfo.releaseNotes.isEmpty
-                          ? "性能优化与稳定性提升"
+                          ? "update_default_notes".tr()
                           : widget.updateInfo.releaseNotes,
                       style: theme.textTheme.bodyMedium,
                     ),
@@ -197,7 +198,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "${(_progress * 100).toInt()}% - ${_progress >= 1 ? '准备安装...' : '下载中...'}",
+                    "${(_progress * 100).toInt()}% - ${_progress >= 1 ? 'update_preparing_install'.tr() : 'update_downloading'.tr()}",
                     style: theme.textTheme.bodyMedium,
                   ),
                 ] else ...[
@@ -205,7 +206,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: _startDownload,
-                      child: Text(_hasStarted ? "重试下载" : "立即升级"),
+                      child: Text(_hasStarted ? "update_retry_download".tr() : "update_now".tr()),
                     ),
                   ),
                 ],

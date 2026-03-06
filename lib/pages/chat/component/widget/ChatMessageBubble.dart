@@ -8,6 +8,7 @@ import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -188,11 +189,11 @@ class ChatMessageBubble extends ConsumerWidget {
         children: [
           if (!isCurrentUser)
             Text(
-              sender?.nickName ?? "未知用户",
+              sender?.nickName ?? "chat_unknown_user".tr(),
               style: style.copyWith(fontWeight: FontWeight.bold),
             ),
           if (isCurrentUser)
-            Text("我", style: style.copyWith(fontWeight: FontWeight.bold)),
+            Text("chat_me".tr(), style: style.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );

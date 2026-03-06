@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -31,7 +32,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
     if (message.extra["action"] == null) {
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedSettingsError02,
-        text: "未知系统消息",
+        text: "system_msg_unknown".tr(),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );
@@ -44,7 +45,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       final nickName = message.extra["nickName"];
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedHome03,
-        text: "$nickName 邀请了[$names] 加入房间",
+        text: "system_msg_invite".tr(namedArgs: {"nickName": nickName ?? '', "names": names ?? ''}),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );
@@ -53,7 +54,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       final isMute = message.extra["isMute"];
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedHome03,
-        text: "管理员 ${isMute ? "[开启全体禁言]" : "[取消全体禁言]"}",
+        text: isMute ? "system_msg_mute_on".tr() : "system_msg_mute_off".tr(),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );
@@ -63,7 +64,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       final nickName = message.extra["nickName"];
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedUserRemove02,
-        text: "$nickName 被管理员踢出了房间",
+        text: "system_msg_kicked".tr(namedArgs: {"nickName": nickName ?? ''}),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );
@@ -72,7 +73,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
     if (type == "ROOM_CLOSED") {
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedHome03,
-        text: "房间已被解散",
+        text: "system_msg_room_closed".tr(),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );

@@ -8,6 +8,7 @@ import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_co
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/pages/chat/component/widget/MentionListWidget.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/ChatQuillToolbar.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/QuillStyleConfig.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileBuild.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillImageBuild.dart';
@@ -82,7 +83,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
         .map(
           (m) => MentionUser(
             id: m.userId ?? -1,
-            name: m.nickName ?? '未知用户',
+            name: m.nickName ?? 'chat_unknown_user_label'.tr(),
             avatar: m.avatar,
           ),
         )
@@ -191,7 +192,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
           characterShortcutEvents: const [],
           spaceShortcutEvents: const [],
           enableSelectionToolbar: false,
-          placeholder: "输入消息...",
+          placeholder: "chat_input_placeholder".tr(),
           autoFocus: true,
           padding: const EdgeInsets.all(8),
           customStyles: QuillStyleConfig.get(context),

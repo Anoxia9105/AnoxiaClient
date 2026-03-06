@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:anoxia/common/utils/fileUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file_plus/open_file_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -147,7 +148,7 @@ class _FileMessageListState extends State<_FileMessageList> {
   Future<void> _openFileLocation(String filePath) async {
     final file = File(filePath);
     if (!file.existsSync()) {
-      Toast.showToast('文件不存在，无法定位');
+      Toast.showToast('file_not_found'.tr());
       return;
     }
 
@@ -170,7 +171,7 @@ class _FileMessageListState extends State<_FileMessageList> {
 
     final openResult = await OpenFile.open(file.parent.path);
     if (openResult.type != ResultType.done) {
-      Toast.showToast('打开目录失败: ${openResult.message}');
+      Toast.showToast('file_open_dir_failed'.tr(args: [openResult.message]));
     }
   }
 
@@ -204,7 +205,7 @@ class _FileMessageListState extends State<_FileMessageList> {
     }
 
     if ((file.url ?? '').isEmpty) {
-      Toast.showToast('文件地址无效，无法下载');
+      Toast.showToast('file_url_invalid'.tr());
       return;
     }
 
@@ -243,9 +244,9 @@ class _FileMessageListState extends State<_FileMessageList> {
         _downloadedPathMap[key] = savePath;
       });
 
-      Toast.showToast('下载完成: $fileName');
+      Toast.showToast('file_download_complete'.tr(args: [fileName]));
     } catch (e) {
-      Toast.showToast('下载失败: $e');
+      Toast.showToast('file_download_failed'.tr(args: [e.toString()]));
       if (!mounted) return;
       setState(() {
         _progressMap.remove(key);
@@ -316,7 +317,7 @@ class _FileMessageListState extends State<_FileMessageList> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    file.name ?? '未知文件',
+                    file.name ?? 'file_unknown'.tr(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -335,7 +336,7 @@ class _FileMessageListState extends State<_FileMessageList> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${((progress ?? 0) * 100).toInt()}% 下载中...',
+                      'file_downloading'.tr(args: [((progress ?? 0) * 100).toInt().toString()]),
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -351,11 +352,15 @@ class _FileMessageListState extends State<_FileMessageList> {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '已下载，点击打开位置',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context).colorScheme.primary,
+                        Expanded(
+                          child: Text(
+                            'file_downloaded_open_location'.tr(),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
                       ],

@@ -114,13 +114,13 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
                   slivers: [
                     // --- 屏幕部分 ---
                     if (screens.isNotEmpty) ...[
-                      _buildSectionTitle("显示器 / 屏幕"),
+                      _buildSectionTitle("call_share_screen".tr()),
                       _buildSourceGrid(screens, crossCount: 2),
                     ],
 
                     // --- 窗口部分 ---
                     if (windows.isNotEmpty) ...[
-                      _buildSectionTitle("应用程序窗口"),
+                      _buildSectionTitle("call_share_window".tr()),
                       _buildSourceGrid(windows, crossCount: 3),
                     ],
 
@@ -192,8 +192,8 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
         children: [
           HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
           const SizedBox(width: 10),
-          const Text(
-            "选择要共享的内容",
+          Text(
+            "call_share_select_title".tr(),
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
@@ -233,8 +233,8 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
               ),
             ),
             onPressed: _selectedSource != null ? _onOk : null,
-            child: const Text(
-              "开始共享",
+            child: Text(
+              "call_share_start".tr(),
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),

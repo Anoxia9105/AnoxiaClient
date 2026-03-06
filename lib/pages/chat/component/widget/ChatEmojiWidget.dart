@@ -81,7 +81,7 @@ class ChatEmojiWidget extends StatelessWidget {
                     ),
                     SizedBox(width: 6),
                     Text(
-                      "搜索表情...",
+                      "toolbar_search_emoji".tr(),
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                   ],
@@ -141,8 +141,8 @@ class MyCustomSearchViewState extends SearchViewState<MyCustomSearchView> {
                   child: TextField(
                     focusNode: focusNode,
                     onChanged: onTextInputChanged,
-                    decoration: const InputDecoration(
-                      hintText: "搜索表情...",
+                    decoration: InputDecoration(
+                      hintText: "emoji_search_hint".tr(),
                       border: InputBorder.none,
                     ),
                   ),
@@ -154,7 +154,7 @@ class MyCustomSearchViewState extends SearchViewState<MyCustomSearchView> {
               child: results.isEmpty
                   ? Center(
                       child: Text(
-                        "没找到相关表情哦~",
+                        "emoji_not_found".tr(),
                         style: TextStyle(color: Colors.grey),
                       ),
                     )

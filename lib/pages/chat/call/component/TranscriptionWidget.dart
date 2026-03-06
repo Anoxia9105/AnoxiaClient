@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../model/TranscriptionSegment.dart';
 import '../provider/TranscriptionNotifier.dart';
 
@@ -128,7 +129,7 @@ class TranscriptionWidget extends ConsumerWidget {
                   ),
                   SizedBox(width: 4.w),
                   Text(
-                    '置信度: ${(segment.confidence * 100).toStringAsFixed(0)}%',
+                    'call_transcription_confidence'.tr(args: [(segment.confidence * 100).toStringAsFixed(0)]),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: Colors.orange,
                       fontSize: 10.sp,
@@ -149,7 +150,7 @@ class TranscriptionWidget extends ConsumerWidget {
       TranscriptionSegment(
         id: 'interim',
         speakerId: state.currentSpeakerId ?? 'unknown',
-        speakerName: '正在听取...',
+        speakerName: 'call_transcription_listening'.tr(),
         text: state.currentInterimText ?? '',
         startTime: 0,
         endTime: 0,
@@ -222,7 +223,7 @@ class _TranscriptionPanelState extends ConsumerState<TranscriptionPanel> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '转录字幕',
+                  'call_transcription_title'.tr(),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -256,7 +257,7 @@ class _TranscriptionPanelState extends ConsumerState<TranscriptionPanel> {
                   children: [
                     if (transcriptionState.segments.isEmpty)
                       Text(
-                        '等待转录...',
+                        'call_transcription_waiting'.tr(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.white70,
                             ),
@@ -302,7 +303,7 @@ class _TranscriptionPanelState extends ConsumerState<TranscriptionPanel> {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: '正在听取: ',
+                                text: 'call_transcription_listening_prefix'.tr(),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall

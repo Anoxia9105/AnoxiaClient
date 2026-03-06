@@ -63,8 +63,8 @@ class _CreateChatDialogWidgetState
               child: TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  hintText: "输入群聊名称...",
-                  errorText: _isNameEmpty ? "群聊名称不能为空哦" : null,
+                  hintText: "create_group_name_hint".tr(),
+                  errorText: _isNameEmpty ? "create_group_name_empty".tr() : null,
                   prefixIcon: const Icon(Icons.edit_note),
                 ),
               ),
@@ -103,9 +103,9 @@ class _CreateChatDialogWidgetState
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const Text(
-            "发起群聊",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            "create_group_title".tr(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           TextButton(
@@ -161,7 +161,7 @@ class _CreateChatDialogWidgetState
               }
               // 4. 清理并关闭
               ref.read(selectedContactIdsProvider.notifier).clear();
-              Toast.showToast("群聊创建成功", type: ToastType.success);
+              Toast.showToast("create_group_success".tr(), type: ToastType.success);
               if (mounted) {
                 Navigator.pop(context);
               }
@@ -185,7 +185,7 @@ class _CreateChatDialogWidgetState
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              "已选择 ${selectedIds.length} 人",
+              "create_group_selected_count".tr(args: [selectedIds.length.toString()]),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),

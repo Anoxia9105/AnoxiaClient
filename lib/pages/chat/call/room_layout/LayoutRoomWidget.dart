@@ -1,6 +1,7 @@
 import 'package:anoxia/pages/chat/call/component/ParticipantTile.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // 布局模式枚举
 enum LayoutMode { grid, single, focus }
@@ -48,7 +49,7 @@ class _LayoutRoomWidgetState extends State<LayoutRoomWidget> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '焦点: ${_focusedParticipant?.name ?? '无名参与者'}',
+                'call_focus_participant'.tr(args: [_focusedParticipant?.name ?? 'call_unknown_participant'.tr()]),
                 style: TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
@@ -199,7 +200,7 @@ class _LayoutRoomWidgetState extends State<LayoutRoomWidget> {
             children: [
               Icon(Icons.fullscreen, size: 18),
               SizedBox(width: 12),
-              Text('单屏'),
+              Text('call_layout_single'.tr()),
             ],
           ),
         ),
@@ -209,7 +210,7 @@ class _LayoutRoomWidgetState extends State<LayoutRoomWidget> {
             children: [
               Icon(Icons.zoom_in, size: 18),
               SizedBox(width: 12),
-              Text('焦点'),
+              Text('call_layout_focus'.tr()),
             ],
           ),
         ),
@@ -219,7 +220,7 @@ class _LayoutRoomWidgetState extends State<LayoutRoomWidget> {
             children: [
               Icon(Icons.grid_3x3, size: 18),
               SizedBox(width: 12),
-              Text('网格'),
+              Text('call_layout_grid'.tr()),
             ],
           ),
         ),

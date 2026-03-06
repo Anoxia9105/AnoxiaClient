@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:anoxia/pages/chat/component/widget/quill/QuillStyleConfig.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileBuild.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillImageBuild.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -75,7 +76,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isError) return const Text("消息格式错误");
+    if (_isError) return Text("chat_message_format_error".tr());
 
     // 1. IntrinsicWidth 会测量子组件实际需要的最小宽度
     // 2. QuillEditorConfig 的 isReadOnly 配合特定的布局能实现自适应

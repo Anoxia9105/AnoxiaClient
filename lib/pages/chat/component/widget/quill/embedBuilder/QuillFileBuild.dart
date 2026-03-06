@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart'; // 确保导入 isUploadingProvider
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart'; // 确保导入
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // 必须导入
@@ -62,7 +63,7 @@ class QuillFileBuild implements EmbedBuilder {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              attachment.name ?? '未知文件',
+                              attachment.name ?? 'file_unknown'.tr(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -74,7 +75,7 @@ class QuillFileBuild implements EmbedBuilder {
                             const SizedBox(height: 4),
                             Text(
                               isFailed
-                                  ? "上传失败，请删除重试"
+                                  ? "upload_failed_retry".tr()
                                   : FileUtil.formatFileSize(
                                       attachment.size ?? 0,
                                     ),
@@ -115,5 +116,5 @@ class QuillFileBuild implements EmbedBuilder {
   bool get expanded => false;
 
   @override
-  String toPlainText(Embed node) => '[文件]';
+  String toPlainText(Embed node) => 'quill_file_plain'.tr();
 }

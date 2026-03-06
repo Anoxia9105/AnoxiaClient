@@ -1,6 +1,7 @@
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 /// 提及用户数据模型
 class MentionUser {
@@ -46,7 +47,7 @@ class MentionListWidget extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           constraints: const BoxConstraints(minWidth: 200),
           child: Text(
-            searchText.isEmpty ? '暂无可@的用户' : '没有找到匹配 "$searchText" 的用户',
+            searchText.isEmpty ? 'mention_no_users'.tr() : 'mention_user_not_found'.tr(args: [searchText]),
             style: TextStyle(
               color: colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 14,

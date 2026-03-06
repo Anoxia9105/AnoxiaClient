@@ -1,5 +1,6 @@
 import 'package:anoxia/pages/chat/component/widget/messageRender/QuillMessageStrategy.dart';
 import 'package:anoxia/pages/chat/component/widget/messageRender/SystemMessageStrategy.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
@@ -33,7 +34,7 @@ class _DefaultMessageStrategy extends MessageRenderStrategy {
     Color textColor,
   ) {
     return Text(
-      "[消息解析错误]",
+      "chat_message_parse_error".tr(),
       style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
     );
   }

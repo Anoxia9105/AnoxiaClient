@@ -172,7 +172,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
             AvatarWidget(
               size: 40,
               url: '',
-              name: chatMessage.senderId?.toString() ?? '未知',
+              name: chatMessage.senderId?.toString() ?? 'search_unknown'.tr(),
               borderRadius: 20,
             ),
             const SizedBox(width: 12),
@@ -187,7 +187,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          '用户 ${chatMessage.senderId ?? '未知'}',
+                          'search_user_prefix'.tr(args: [chatMessage.senderId?.toString() ?? 'search_unknown'.tr()]),
                           style: textTheme.labelMedium?.copyWith(
                             color: colorScheme.outline,
                             fontWeight: FontWeight.w500,
@@ -293,7 +293,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
         );
       } else {
         return Text(
-          '[图片]',
+          'search_image_placeholder'.tr(),
           style: textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurface.withOpacity(0.6),
             fontStyle: FontStyle.italic,

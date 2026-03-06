@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';
@@ -165,7 +166,7 @@ class WsController extends _$WsController {
   void _handleDone() {
     log.info("WebSocket 连接由服务端关闭或网络中断");
     state = WsState(status: WsStatus.disconnected);
-    Toast.showNotificationNow("连接由服务端关闭或网络中断");
+    Toast.showNotificationNow("ws_connection_closed".tr());
     _retryConnection();
   }
 

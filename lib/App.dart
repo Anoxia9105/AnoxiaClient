@@ -80,10 +80,10 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     await trayManager.setContextMenu(
       Menu(
         items: [
-          MenuItem(key: 'show_window', label: '显示窗口'),
-          MenuItem(key: 'hide_window', label: '隐藏窗口'),
+          MenuItem(key: 'show_window', label: 'tray_show_window'.tr()),
+          MenuItem(key: 'hide_window', label: 'tray_hide_window'.tr()),
           MenuItem.separator(),
-          MenuItem(key: 'exit_app', label: '退出'),
+          MenuItem(key: 'exit_app', label: 'tray_exit'.tr()),
         ],
       ),
     );

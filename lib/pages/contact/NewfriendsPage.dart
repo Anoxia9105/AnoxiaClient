@@ -94,7 +94,7 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            tooltip: "同意",
+            tooltip: "contact_accept".tr(),
             onPressed: () => ref
                 .read(contactRequestsServiceProvider.notifier)
                 .acceptRequest(id, true),
@@ -105,7 +105,7 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
             ),
           ),
           IconButton(
-            tooltip: "拒绝",
+            tooltip: "contact_reject".tr(),
             onPressed: () => ref
                 .read(contactRequestsServiceProvider.notifier)
                 .acceptRequest(id, false),

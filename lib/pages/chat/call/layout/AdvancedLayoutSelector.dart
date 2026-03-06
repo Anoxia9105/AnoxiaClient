@@ -119,7 +119,7 @@ class AdvancedLayoutSelector extends ConsumerWidget {
           child: _buildMenuItemWithDescription(
             icon: Icons.grid_3x3,
             label: 'layout_grid'.tr(),
-            description: '多人会议',
+            description: 'call_layout_multi'.tr(),
             isSelected: currentMode == LayoutMode.grid,
           ),
         ),
@@ -128,7 +128,7 @@ class AdvancedLayoutSelector extends ConsumerWidget {
           child: _buildMenuItemWithDescription(
             icon: Icons.featured_play_list,
             label: 'layout_carousel'.tr(),
-            description: '演讲/直播',
+            description: 'call_layout_presentation'.tr(),
             isSelected: currentMode == LayoutMode.carousel,
           ),
         ),
@@ -137,7 +137,7 @@ class AdvancedLayoutSelector extends ConsumerWidget {
           child: _buildMenuItemWithDescription(
             icon: Icons.fullscreen,
             label: 'layout_focus'.tr(),
-            description: '单人焦点',
+            description: 'call_layout_single_focus'.tr(),
             isSelected: currentMode == LayoutMode.focus,
           ),
         ),

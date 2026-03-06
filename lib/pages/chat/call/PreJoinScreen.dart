@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -67,7 +68,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('获取设备失败: $e')),
+        SnackBar(content: Text('call_get_device_failed'.tr(args: [e.toString()]))),
       );
     }
   }
@@ -84,7 +85,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('加入房间'),
+          title: Text('call_join_room'.tr()),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: widget.onBack ?? () => Navigator.pop(context),
@@ -140,9 +141,9 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
                 size: 64.w,
               ),
               SizedBox(height: 16.h),
-              const Text(
-                '摄像头预览',
-                style: TextStyle(color: Colors.white54),
+              Text(
+                'call_camera_preview'.tr(),
+                style: const TextStyle(color: Colors.white54),
               ),
             ],
           ),
@@ -162,7 +163,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '设备设置',
+              'call_device_settings'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -171,7 +172,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
 
             // 摄像头选择
             _buildDeviceSelector(
-              label: '摄像头',
+              label: 'call_camera'.tr(),
               devices: _availableCameras,
               selectedId: _selectedCameraId,
               onChanged: (id) {
@@ -189,7 +190,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
 
             // 麦克风选择
             _buildDeviceSelector(
-              label: '麦克风',
+              label: 'call_microphone'.tr(),
               devices: _availableMicrophones,
               selectedId: _selectedMicrophoneId,
               onChanged: (id) {
@@ -207,7 +208,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
 
             // 扬声器选择
             _buildDeviceSelector(
-              label: '扬声器',
+              label: 'call_speaker'.tr(),
               devices: _availableSpeakers,
               selectedId: _selectedSpeakerId,
               onChanged: (id) {
@@ -299,14 +300,14 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '网络状态',
+                  'call_network_status'.tr(),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  '网络连接良好',
+                  'call_network_good'.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.grey,
                       ),
@@ -329,7 +330,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      child: const Text('加入房间'),
+      child: Text('call_join_room'.tr()),
     );
   }
 
@@ -341,7 +342,7 @@ class _PreJoinScreenState extends ConsumerState<PreJoinScreen> {
       widget.onJoined?.call();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加入失败: $e')),
+        SnackBar(content: Text('call_join_failed'.tr(args: [e.toString()]))),
       );
     }
   }

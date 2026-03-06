@@ -109,7 +109,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             children: [
               //程序log
               Assets.images.appIconPng.image(width: 100, height: 100),
-              Text("房间已被封禁"),
+              Text("chat_room_banned".tr()),
             ],
           ),
         ),
@@ -128,7 +128,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
-                  Text("暂无消息"),
+                  Text("chat_no_messages".tr()),
                 ],
               ),
             );
@@ -198,9 +198,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                       bottomSheet: () => _scrollToBottom(animated: true),
                     );
                   }
-                  if (room.roomStatus == 1) return _bottomRoomStatus("房间禁言中");
-                  if (room.roomStatus == 2) return _bottomRoomStatus("房间已被封禁");
-                  if (room.roomStatus == 3) return _bottomRoomStatus("房间已解散");
+                  if (room.roomStatus == 1) return _bottomRoomStatus('chat_room_muted'.tr());
+                  if (room.roomStatus == 2) return _bottomRoomStatus('chat_room_banned_status'.tr());
+                  if (room.roomStatus == 3) return _bottomRoomStatus('chat_room_dissolved'.tr());
 
                   return SizedBox.shrink();
                 }

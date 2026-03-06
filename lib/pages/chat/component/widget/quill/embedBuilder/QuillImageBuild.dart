@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,13 +53,13 @@ class QuillImageBuild implements EmbedBuilder {
 
             // 失败遮罩层
             if (isFailed)
-              const Column(
+              Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.cloud_off, color: Colors.red, size: 32),
+                  const Icon(Icons.cloud_off, color: Colors.red, size: 32),
                   Text(
-                    "上传失败",
-                    style: TextStyle(
+                    "upload_failed".tr(),
+                    style: const TextStyle(
                       color: Colors.red,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -89,6 +90,6 @@ class QuillImageBuild implements EmbedBuilder {
 
   @override
   String toPlainText(Embed node) {
-    return '[图像]';
+    return 'quill_image_plain'.tr();
   }
 }

@@ -50,7 +50,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         return list.map((m) {
           if (m.userId == currentUser?.userId) {
             return m.copyWith(
-              nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} (我)",
+              nickName: "${m.nickName ?? 'appbar_unknown_user'.tr()} ${'chat_me_suffix'.tr()}",
             );
           }
           return m;
@@ -150,7 +150,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 final isMuted = currentRoom.roomStatus == 1;
 
                 return IconButton(
-                  tooltip: isMuted ? '解除禁言' : '全员禁言',
+                  tooltip: isMuted ? 'chat_unmute_tooltip'.tr() : 'chat_mute_tooltip'.tr(),
                   onPressed: () {
                     _handleMuteRoom(
                       context,
@@ -230,7 +230,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                             ? AvatarStatus.online
                                             : AvatarStatus.offline,
                                       ),
-                                      title: Text(m.nickName ?? '未知用户'),
+                                      title: Text(m.nickName ?? 'chat_unknown_user'.tr()),
                                       trailing: Builder(
                                         builder: (context) {
                                           // 1. 获取当前登录用户的 ID
@@ -250,7 +250,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                           // 3. 逻辑判断
                                           if (m.roleId == 0) {
                                             return Text(
-                                              "管理员",
+                                              "chat_admin".tr(),
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Theme.of(
@@ -275,10 +275,10 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                                   ref,
                                                   currentRoom?.roomId ?? '',
                                                   m.userId ?? 0,
-                                                  m.nickName ?? '未知用户',
+                                                  m.nickName ?? 'chat_unknown_user'.tr(),
                                                 );
                                               },
-                                              tooltip: '踢出成员',
+                                              tooltip: 'chat_kick_member'.tr(),
                                             );
                                           }
                                           // 其他情况（普通成员看别人，或者普通成员看自己）什么都不显示
@@ -355,12 +355,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('确认踢出'),
-        content: Text('确定要将「$targetUserName」踢出该群聊吗？'),
+        title: Text('chat_confirm_kick'.tr()),
+        content: Text('chat_confirm_kick_content'.tr(args: [targetUserName])),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
+            child: Text('dialog_cancel'.tr()),
           ),
           TextButton(
             onPressed: () async {
@@ -377,17 +377,17 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 cancelLoading();
 
                 if (success) {
-                  BotToast.showText(text: '踢出成功');
+                  BotToast.showText(text: 'chat_kick_success'.tr());
                 } else {
-                  BotToast.showText(text: '踢出失败，请重试');
+                  BotToast.showText(text: 'chat_kick_failed'.tr());
                 }
               } catch (e) {
                 cancelLoading();
-                BotToast.showText(text: '操作失败：$e');
+                BotToast.showText(text: 'chat_operation_failed'.tr(args: [e.toString()]));
               }
             },
             child: Text(
-              '确定',
+              'chat_confirm_btn'.tr(),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
@@ -407,14 +407,14 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(isMute ? '全员禁言' : '解除禁言'),
+        title: Text(isMute ? 'chat_mute_all'.tr() : 'chat_unmute_all'.tr()),
         content: Text(
-          isMute ? '确定要开启全员禁言吗？开启后所有成员都不能发言。' : '确定要解除全员禁言吗？解除后所有成员都可以发言。',
+          isMute ? 'chat_mute_confirm'.tr() : 'chat_unmute_confirm'.tr(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
+            child: Text('dialog_cancel'.tr()),
           ),
           TextButton(
             onPressed: () async {
@@ -431,17 +431,17 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 cancelLoading();
 
                 if (success) {
-                  BotToast.showText(text: isMute ? '已开启全员禁言' : '已解除全员禁言');
+                  BotToast.showText(text: isMute ? 'chat_mute_success'.tr() : 'chat_unmute_success'.tr());
                 } else {
-                  BotToast.showText(text: '操作失败，请重试');
+                  BotToast.showText(text: 'chat_operation_retry_failed'.tr());
                 }
               } catch (e) {
                 cancelLoading();
-                BotToast.showText(text: '操作失败：$e');
+                BotToast.showText(text: 'chat_operation_failed'.tr(args: [e.toString()]));
               }
             },
             child: Text(
-              '确定',
+              'chat_confirm_btn'.tr(),
               style: TextStyle(
                 color: isMute
                     ? Theme.of(context).colorScheme.error

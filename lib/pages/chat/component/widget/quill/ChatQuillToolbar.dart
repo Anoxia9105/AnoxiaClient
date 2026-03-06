@@ -3,6 +3,7 @@ import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatEmojiWidget.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -46,31 +47,31 @@ class ChatQuillToolbar extends ConsumerWidget {
                   _buildActionButton(
                     HugeIcons.strokeRoundedTextBold,
                     Attribute.bold,
-                    "加粗",
+                    "toolbar_bold".tr(),
                     iconColor,
                   ),
                   _buildActionButton(
                     HugeIcons.strokeRoundedTextItalic,
                     Attribute.italic,
-                    "斜体",
+                    "toolbar_italic".tr(),
                     iconColor,
                   ),
                   _buildActionButton(
                     HugeIcons.strokeRoundedTextUnderline,
                     Attribute.underline,
-                    "下划线",
+                    "toolbar_underline".tr(),
                     iconColor,
                   ),
                   _buildActionButton(
                     HugeIcons.strokeRoundedTextStrikethrough,
                     Attribute.strikeThrough,
-                    "删除线",
+                    "toolbar_strikethrough".tr(),
                     iconColor,
                   ),
 
                   // 清除格式按钮
                   IconButton(
-                    tooltip: "清除格式",
+                    tooltip: "toolbar_clear_format".tr(),
                     visualDensity: VisualDensity.compact,
                     onPressed: _clearAttributes,
                     icon: HugeIcon(
@@ -101,19 +102,19 @@ class ChatQuillToolbar extends ConsumerWidget {
                   _buildActionButton(
                     HugeIcons.strokeRoundedQuoteDown,
                     Attribute.blockQuote,
-                    "引用",
+                    "toolbar_quote".tr(),
                     iconColor,
                   ),
                   _buildActionButton(
                     HugeIcons.strokeRoundedSourceCode,
                     Attribute.codeBlock,
-                    "代码块",
+                    "toolbar_code_block".tr(),
                     iconColor,
                   ),
                   Builder(
                     builder: (context) {
                       return IconButton(
-                        tooltip: "文字颜色",
+                        tooltip: "toolbar_text_color".tr(),
                         padding: EdgeInsets.zero,
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
@@ -136,7 +137,7 @@ class ChatQuillToolbar extends ConsumerWidget {
                   Builder(
                     builder: (context) {
                       return IconButton(
-                        tooltip: "背景颜色",
+                        tooltip: "toolbar_bg_color".tr(),
                         padding: EdgeInsets.zero,
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
@@ -181,7 +182,7 @@ class ChatQuillToolbar extends ConsumerWidget {
                 builder: (context) {
                   return _buildCustomBtn(
                     HugeIcons.strokeRoundedRelieved02,
-                    "表情",
+                    "toolbar_emoji".tr(),
                     () {
                       Function? close;
                       close = Toast.showWidget(
@@ -230,21 +231,21 @@ class ChatQuillToolbar extends ConsumerWidget {
               ),
               _buildCustomBtn(
                 HugeIcons.strokeRoundedImage02,
-                "图片",
+                "toolbar_image".tr(),
                 onImagePressed,
                 iconColor,
                 enabled: !isUploading,
               ),
               _buildCustomBtn(
                 HugeIcons.strokeRoundedFiles02,
-                "文件",
+                "toolbar_file".tr(),
                 onFilePressed,
                 iconColor,
                 enabled: !isUploading,
               ),
               // 发送按钮通常用主题色突出
               IconButton(
-                tooltip: "发送",
+                tooltip: "toolbar_send".tr(),
                 visualDensity: VisualDensity.compact,
                 onPressed: isUploading ? null : onSend,
                 icon: HugeIcon(

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
@@ -75,7 +76,7 @@ class TaskbarBadgeUpdater {
 
       await _channel.invokeMethod('SetOverlayIcon', {
         'icon': file.path,
-        'tooltip': count > 99 ? '99+ 条未读' : '$count 条未读',
+        'tooltip': count > 99 ? 'taskbar_unread_99plus'.tr() : 'taskbar_unread_count'.tr(args: [count.toString()]),
       });
     } catch (e) {
       debugPrint("任务栏角标更新失败: $e");

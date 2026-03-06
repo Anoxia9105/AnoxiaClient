@@ -148,7 +148,7 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            '正在尝试恢复你的通话...',
+                            'call_reconnecting_hint'.tr(),
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
@@ -226,7 +226,7 @@ class _CallRoomPageState extends ConsumerState<CallRoomPage> {
                       ref.invalidate(roomControllerProvider(widget.token)),
 
                   child: Text(
-                    "重新尝试",
+                    "call_retry".tr(),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),

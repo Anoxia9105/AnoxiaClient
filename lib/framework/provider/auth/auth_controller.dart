@@ -1,6 +1,7 @@
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/CaptchaModel.dart';
@@ -65,7 +66,7 @@ class AuthController extends _$AuthController {
         auth: false,
       );
       if (res.data["token"] == null) {
-        Toast.showToast("登录失败,请检查用户名/密码/验证码是否正确", type: ToastType.error);
+        Toast.showToast("login_failed".tr(), type: ToastType.error);
         return null;
       }
       String token = res.data["token"];

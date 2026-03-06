@@ -14,7 +14,7 @@ class AIChatPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       // appBar: AppBar(title: Text('ai_chat_title'.tr())),
-      body: Center(child: Text('功能开发中，敬请期待...')),
+      body: Center(child: Text('feature_coming_soon'.tr())),
     );
     final messages = ref.watch(aiChatControllerProvider);
     final notifier = ref.read(aiChatControllerProvider.notifier);
@@ -61,7 +61,7 @@ class AIChatPage extends ConsumerWidget {
             child: TextField(
               controller: _controller,
               enabled: !isGenerating,
-              decoration: const InputDecoration(hintText: "问问 Gemini..."),
+              decoration: InputDecoration(hintText: "ai_chat_hint".tr()),
             ),
           ),
           IconButton(

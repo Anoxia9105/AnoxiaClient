@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class ColorsBox {
@@ -123,9 +124,9 @@ class ColorsBox {
                       color: theme.colorScheme.primary,
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      "重置颜色",
-                      style: TextStyle(
+                    Text(
+                      "toolbar_reset_color".tr(),
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),

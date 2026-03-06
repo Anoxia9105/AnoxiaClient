@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/domain/UserVO.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -55,7 +56,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '添加朋友',
+          'add_friend_title'.tr(),
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
             fontSize: 18,
@@ -99,7 +100,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: '搜索用户名或昵称',
+                    hintText: 'add_friend_search_hint'.tr(),
                     hintStyle: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.outline,
                       fontSize: 15,
@@ -189,7 +190,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             ),
                           ),
                         )
-                      : const Text('搜索'),
+                      : Text('add_friend_search_btn'.tr()),
                 ),
               ),
             ), // 修复2: 添加缺失的逗号并闭合 Padding
@@ -275,7 +276,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                   ),
                                                   const SizedBox(height: 6),
                                                   Text(
-                                                    '用户名: ${user.userName}',
+                                                    'add_friend_username'.tr(args: [user.userName]),
                                                     style: textTheme.bodyMedium
                                                         ?.copyWith(
                                                           color: colorScheme
@@ -293,7 +294,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                             top: 4,
                                                           ),
                                                       child: Text(
-                                                        '手机号: ${user.phonenumber}',
+                                                        'add_friend_phone'.tr(args: [user.phonenumber!]),
                                                         style: textTheme
                                                             .bodyMedium
                                                             ?.copyWith(
@@ -329,7 +330,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                   ),
                                                 ),
                                                 child: Text(
-                                                  '已是好友',
+                                                  'add_friend_already_friend'.tr(),
                                                   style: textTheme.bodySmall
                                                       ?.copyWith(
                                                         color:
@@ -390,7 +391,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                           fontSize: 14,
                                                         ),
                                                   ),
-                                                  child: const Text('添加'),
+                                                  child: Text('add_friend_add_btn'.tr()),
                                                 ),
                                               ),
                                           ],
@@ -431,7 +432,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            '未找到相关用户',
+                            'add_friend_not_found'.tr(),
                             style: textTheme.titleMedium?.copyWith(
                               color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
@@ -440,7 +441,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            '请尝试使用其他关键词搜索',
+                            'add_friend_try_other_keyword'.tr(),
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.outline,
                               fontSize: 15,
@@ -474,7 +475,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           ),
                           const SizedBox(height: 28),
                           Text(
-                            '搜索用户添加为朋友',
+                            'add_friend_search_to_add'.tr(),
                             style: textTheme.titleLarge?.copyWith(
                               color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
@@ -483,7 +484,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            '输入用户名或昵称开始搜索',
+                            'add_friend_input_hint'.tr(),
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.outline,
                               fontSize: 15,
@@ -513,7 +514,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('搜索失败，请重试'),
+          content: Text('add_friend_search_failed'.tr()),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -583,7 +584,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            '用户名: ${user.userName}',
+                            'add_friend_username'.tr(args: [user.userName]),
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.outline,
                               fontSize: 14,
@@ -637,7 +638,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                 TextField(
                   controller: _remarkController,
                   decoration: InputDecoration(
-                    hintText: '请输入验证信息，让对方知道你是谁',
+                    hintText: 'add_friend_verify_hint'.tr(),
                     hintStyle: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.outline,
                       fontSize: 15,
@@ -690,7 +691,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        child: const Text('取消'),
+                        child: Text('add_friend_cancel'.tr()),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -737,7 +738,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                     ),
                                   ),
                                 )
-                              : const Text('发送'),
+                              : Text('add_friend_send'.tr()),
                         ),
                       ),
                     ),
@@ -765,7 +766,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('好友申请已发送'),
+            content: Text('add_friend_request_sent'.tr()),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -777,7 +778,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('申请失败，可能是已经是好友或已发送过申请'),
+            content: Text('add_friend_request_failed'.tr()),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -790,7 +791,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('发送失败，请重试'),
+          content: Text('add_friend_send_failed'.tr()),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

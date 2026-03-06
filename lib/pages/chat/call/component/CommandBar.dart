@@ -89,7 +89,7 @@ class CommandBar extends ConsumerWidget {
                 icon: state.micEnabled
                     ? HugeIcons.strokeRoundedMic01
                     : HugeIcons.strokeRoundedMicOff01,
-                label: state.micEnabled ? "静音" : "取消静音",
+                label: state.micEnabled ? "call_mute".tr() : "call_unmute".tr(),
               ),
               SizedBox(width: 8),
 
@@ -99,7 +99,7 @@ class CommandBar extends ConsumerWidget {
                 icon: state.cameraEnabled
                     ? HugeIcons.strokeRoundedVideo01
                     : HugeIcons.strokeRoundedVideoOff,
-                label: "摄像头",
+                label: "call_camera".tr(),
               ),
 
               SizedBox(width: 8),
@@ -109,7 +109,7 @@ class CommandBar extends ConsumerWidget {
                 icon: state.speakerOn
                     ? HugeIcons.strokeRoundedVolumeUp
                     : HugeIcons.strokeRoundedVolumeOff,
-                label: state.speakerOn ? "扬声器" : "听筒",
+                label: state.speakerOn ? "call_speaker".tr() : "call_earpiece".tr(),
               ),
 
               SizedBox(width: 8),
@@ -119,7 +119,7 @@ class CommandBar extends ConsumerWidget {
                 icon: state.screenSharing
                     ? HugeIcons.strokeRoundedComputerRemove
                     : HugeIcons.strokeRoundedComputerScreenShare,
-                label: "共享",
+                label: "call_share".tr(),
               ),
 
               SizedBox(width: 8),
@@ -130,7 +130,7 @@ class CommandBar extends ConsumerWidget {
                   icon: showChat
                       ? HugeIcons.strokeRoundedCancel01
                       : HugeIcons.strokeRoundedChatting01,
-                  label: "聊天",
+                  label: "call_chat".tr(),
                   isActive: showChat,
                 ),
 
@@ -159,7 +159,7 @@ class CommandBar extends ConsumerWidget {
       children: [
         PopupMenuButton<String>(
           icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings04, size: 20),
-          tooltip: "设备选择",
+          tooltip: "call_device_select".tr(),
           padding: EdgeInsets.all(8),
           iconSize: 24,
           constraints: BoxConstraints(minWidth: 40, minHeight: 40),
@@ -170,7 +170,7 @@ class CommandBar extends ConsumerWidget {
                 PopupMenuItem(
                   enabled: false,
                   child: Text(
-                    "麦克风",
+                    "call_microphone".tr(),
                     style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                 ),
@@ -201,7 +201,7 @@ class CommandBar extends ConsumerWidget {
                 PopupMenuItem(
                   enabled: false,
                   child: Text(
-                    "摄像头",
+                    "call_camera".tr(),
                     style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                 ),
@@ -232,7 +232,7 @@ class CommandBar extends ConsumerWidget {
                 PopupMenuItem(
                   enabled: false,
                   child: Text(
-                    "扬声器",
+                    "call_speaker".tr(),
                     style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                 ),
@@ -258,7 +258,7 @@ class CommandBar extends ConsumerWidget {
             ];
           },
         ),
-        Text("设备", style: TextStyle(fontSize: 10)),
+        Text("call_device_label".tr(), style: TextStyle(fontSize: 10)),
       ],
     );
   }
@@ -301,7 +301,7 @@ class CommandBar extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          tooltip: "挂断",
+          tooltip: "call_hangup".tr(),
           onPressed: () async {
             await notifier.leave();
             if (context.mounted) {

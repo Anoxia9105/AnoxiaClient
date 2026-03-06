@@ -10,7 +10,7 @@ class DiscoverPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       // appBar: AppBar(title: Text('ai_chat_title'.tr())),
-      body: Center(child: Text('功能开发中，敬请期待...')),
+      body: Center(child: Text('feature_coming_soon'.tr())),
     );
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
