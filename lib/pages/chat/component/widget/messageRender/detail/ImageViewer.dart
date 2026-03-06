@@ -26,7 +26,6 @@ class _ImageViewerState extends State<ImageViewer> {
   late final PhotoViewController _controller;
   late final PhotoViewScaleStateController _scaleStateCtrl;
 
-  // 缩放因子控制
   static const double _step = 0.2;
   static const double _minScaleFactor = 0.5;
   static const double _maxScaleFactor = 4.0;
@@ -45,6 +44,7 @@ class _ImageViewerState extends State<ImageViewer> {
     super.dispose();
   }
 
+  // 鼠标滚轮缩放控制
   void _onPointerSignal(PointerSignalEvent evt) {
     if (evt is PointerScrollEvent) {
       final double oldScale = _controller.scale ?? 1.0;
@@ -59,28 +59,21 @@ class _ImageViewerState extends State<ImageViewer> {
 
   void _zoomIn() {
     final double oldScale = _controller.scale ?? 1.0;
-    final double target = (oldScale * (1 + _step)).clamp(
-      _minScaleFactor,
-      _maxScaleFactor,
-    );
+    final double target = (oldScale * (1 + _step)).clamp(_minScaleFactor, _maxScaleFactor);
     _controller.scale = target;
   }
 
   void _zoomOut() {
     final double oldScale = _controller.scale ?? 1.0;
-    final double target = (oldScale * (1 - _step)).clamp(
-      _minScaleFactor,
-      _maxScaleFactor,
-    );
+    final double target = (oldScale * (1 - _step)).clamp(_minScaleFactor, _maxScaleFactor);
     _controller.scale = target;
   }
 
   void _downloadImage() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('image_download_started'.tr())));
-
-    // DioClient().download(urlPath, savePath)
+    // 这里调用你之前的下载逻辑
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('image_download_started'.tr())),
+    );
   }
 
   @override
@@ -95,8 +88,12 @@ class _ImageViewerState extends State<ImageViewer> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.black,
+      // 延伸到状态栏下方，保证全屏点击关闭
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft02,
@@ -106,144 +103,104 @@ class _ImageViewerState extends State<ImageViewer> {
         ),
         actions: [
           IconButton(
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedArrowLeft01,
-              color: Colors.white,
-              size: 30,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedZoomInArea,
-              color: Colors.white,
-              size: 16,
-            ),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedZoomInArea, color: Colors.white, size: 20),
             onPressed: _zoomIn,
           ),
           IconButton(
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedZoomOutArea,
-              color: Colors.white,
-              size: 16,
-            ),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedZoomOutArea, color: Colors.white, size: 20),
             onPressed: _zoomOut,
           ),
           IconButton(
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedRefresh,
-              color: Colors.white,
-              size: 16,
-            ),
-            tooltip: '重置缩放',
-            onPressed: () {
-              // 重置时也回到 contained 状态
-              _controller.scale = _controller.initial.scale;
-            },
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, color: Colors.white, size: 20),
+            onPressed: () => _controller.scale = _controller.initial.scale,
           ),
           IconButton(
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedDownload01,
-              color: Colors.white,
-              size: 16,
-            ),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01, color: Colors.white, size: 20),
             onPressed: _downloadImage,
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      backgroundColor: Colors.black,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: Stack(
           children: [
-            // 中心图片区域
+            // 主体图片展示区
             Positioned.fill(
-              // 使用 Positioned.fill 确保占满全屏
               child: Listener(
                 onPointerSignal: _onPointerSignal,
                 child: PhotoView(
                   controller: _controller,
                   scaleStateController: _scaleStateCtrl,
-                  imageProvider: CachedNetworkImageProvider(
-                    widget.attachment.url!,
-                  ),
-                  // 背景设为透明或黑，防止缩小时看到白底
-                  backgroundDecoration: const BoxDecoration(
-                    color: Colors.black,
-                  ),
-
-                  // 初始缩放为“包含”，即等比缩放至能看到全图
+                  // --- 核心优化：点击背景或图片关闭窗口 ---
+                  onTapUp: (context, details, value) => Navigator.pop(context),
+                  // ------------------------------------
+                  imageProvider: CachedNetworkImageProvider(widget.attachment.url!),
+                  backgroundDecoration: const BoxDecoration(color: Colors.black),
                   initialScale: PhotoViewComputedScale.contained,
-
-                  //  最小缩放：允许稍微比全屏小一点，增加阻尼感
                   minScale: PhotoViewComputedScale.contained * 0.8,
-
-                  //  最大缩放：允许放大到覆盖屏幕的 2.5 倍
                   maxScale: PhotoViewComputedScale.covered * 2.5,
-
                   enableRotation: false,
                   basePosition: Alignment.center,
                   heroAttributes: PhotoViewHeroAttributes(tag: widget.heroTag),
-
-                  // 添加加载指示器，大图加载时体验更好
-                  loadingBuilder: (context, event) => Center(
-                    child: SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        value: event == null
-                            ? null
-                            : event.cumulativeBytesLoaded /
-                                  (event.expectedTotalBytes ?? 1),
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  // 添加错误处理
-                  errorBuilder: (context, error, stackTrace) => Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.broken_image,
-                          color: Colors.white54,
-                          size: 50,
-                        ),
-                        const SizedBox(height: 8),
-                        Text('image_failed_to_load'.tr(), style: const TextStyle(color: Colors.white54)),
-                      ],
-                    ),
-                  ),
+                  loadingBuilder: (context, event) => _buildLoading(event),
+                  errorBuilder: (context, error, stackTrace) => _buildError(),
                 ),
               ),
             ),
 
-            // 底部文件名 (保持不变)
+            // 底部文件名提示 (穿透点击)
             Positioned(
               bottom: 16.h,
               left: 0,
               right: 0,
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    widget.attachment.name ?? '图像',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              child: IgnorePointer( // 忽略此层点击，防止拦截关闭手势
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Text(
+                      widget.attachment.name ?? 'image'.tr(),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoading(ImageChunkEvent? event) {
+    return Center(
+      child: SizedBox(
+        width: 30,
+        height: 30,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: event == null ? null : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+          const SizedBox(height: 8),
+          Text('image_failed_to_load'.tr(), style: const TextStyle(color: Colors.white54)),
+        ],
       ),
     );
   }

@@ -7,7 +7,17 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
+import '../chat/input/chat_input_controller.dart';
+import '../chat/input/files/chat_file_upload_controller.dart';
+import '../chat/input/images/chat_image_upload_controller.dart';
+import '../chat/message/high_message_service.dart';
+import '../chat/message/room_message_service.dart';
+import '../chat/message/search_message_service.dart';
+import '../chat/message/system_event_service.dart';
 import '../chat/room/room_list_service.dart';
+import '../chat/room/room_member_service.dart';
+import '../contact/user_search_service.dart';
+import '../ws/ws_controller.dart';
 import 'token_provider.dart';
 
 part 'auth_controller.g.dart';
@@ -75,28 +85,65 @@ class AuthController extends _$AuthController {
   /// 4. 【关键步骤】：重置所有业务 Provider
   ///    - invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
   ///    - 这里重置了 roomListServiceProvider 和 activeRoomIdProvider
-  Future<void> logout() async {
-    try {
-      // . 调用后端 logout API
-      await DioClient().post(API.logout);
+  bool _isLoggingOut = false;
 
-      // . 清除本地存储的 Token
+  Future<void> logout() async {
+    // 防止递归调用（如 logout 接口本身返回 401 又触发 logout）
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+
+    try {
+      // 1. 调用后端 logout API（需要带 token，后端据此清除服务端会话缓存）
+      //    使用 auth: true 确保 header 携带 Bearer token
+      await DioClient().post(API.logout);
+    } catch (e) {
+      log.warning("[AuthController] 后端登出请求失败（忽略）: $e");
+    }
+
+    try {
+      // 2. 清除本地存储的 Token
       await TokenManager.instance.clearToken();
-      
-      // . 清除内存中的 Token
+
+      // 3. 清除内存中的 Token
       ref.read(tokenCacheProvider.notifier).clearToken();
 
-      // . 【关键步骤】：重置所有业务 Provider
-      // invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
+      // 4. 【关键步骤】：重置所有 keepAlive 业务 Provider
+      //    invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
+      //    顺序很重要：先清依赖下游（消息/输入），再清上游（房间/WS）
+
+      // ── 聊天输入 & 上传 ──
+      ref.invalidate(chatInputControllerProvider);
+      ref.invalidate(isUploadingProvider);
+      ref.invalidate(mentionStateProvider);
+      ref.invalidate(chatImageUploadControllerProvider);
+      ref.invalidate(chatFileUploadControllerProvider);
+
+      // ── 消息相关 ──
+      ref.invalidate(chatMessagesProvider);
+      ref.invalidate(highMessageServiceProvider);
+      ref.invalidate(searchMessageServiceProvider);
+      ref.invalidate(systemEventServiceProvider);
+
+      // ── 房间 & 成员 ──
       ref.invalidate(roomListServiceProvider);
       ref.invalidate(activeRoomIdProvider);
+      ref.invalidate(roomMemberServiceProvider);
 
+      // ── 联系人 / 搜索 ──
+      ref.invalidate(userSearchServiceProvider);
+
+      // ── WebSocket（最后断开，避免触发重连） ──
+      ref.invalidate(wsControllerProvider);
+
+      // 5. 设置用户状态为 null，触发路由跳转到登录页
       state = const AsyncData(null);
-      log.info("[AuthController] 登出成功，业务缓存已清理");
+      log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {
-      log.error("[AuthController] 登出异常", e, st);
-      // 即使出错，通常也强制设为 null 确保用户能回到登录页
+      log.error("[AuthController] 登出清理异常", e, st);
+      // 即使出错也强制设为 null，确保用户能回到登录页
       state = const AsyncData(null);
+    } finally {
+      _isLoggingOut = false;
     }
   }
 

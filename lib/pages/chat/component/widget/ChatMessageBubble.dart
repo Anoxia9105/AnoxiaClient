@@ -89,7 +89,7 @@ class ChatMessageBubble extends ConsumerWidget {
               AvatarWidget(
                 url: isCurrentUser ? user?.avatar : senderInfo?.avatar,
                 name: isCurrentUser ? user?.nickName : senderInfo?.nickName,
-                size: 36,
+                size: 32,
               ),
 
               const SizedBox(width: 6),
@@ -147,9 +147,9 @@ class ChatMessageBubble extends ConsumerWidget {
                         children: [
                           if (isMentionedMe)
                             const Text(
-                              "@你",
+                              "@",
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 16,
                                 color: Colors.red,
                                 fontWeight: FontWeight.bold,
                               ),

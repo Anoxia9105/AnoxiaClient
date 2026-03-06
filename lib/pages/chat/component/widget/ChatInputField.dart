@@ -81,7 +81,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
         .where((m) => m.userId != currentUser?.userId)
         .map(
           (m) => MentionUser(
-            id: m.userId.toString(),
+            id: m.userId ?? -1,
             name: m.nickName ?? '未知用户',
             avatar: m.avatar,
           ),

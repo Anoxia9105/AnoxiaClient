@@ -14,7 +14,7 @@ class QuillMentionBuild implements EmbedBuilder {
         ? jsonDecode(data)
         : data as Map<String, dynamic>;
 
-    final String userName = dataMap['userName'] ?? '未知用户';
+    final String userName = dataMap['userName'] ?? '--';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -49,7 +49,7 @@ class QuillMentionBuild implements EmbedBuilder {
   String toPlainText(Embed node) {
     final data = node.value.data;
     final dataMap = data is String ? jsonDecode(data) : data;
-    final userName = dataMap['userName'] ?? '未知用户';
+    final userName = dataMap['userName'] ?? '';
     return '@$userName';
   }
 }

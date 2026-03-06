@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 提及用户数据模型
 class MentionUser {
-  final String id;
+  final int id;
   final String name;
   final String? avatar;
 
