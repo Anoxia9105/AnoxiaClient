@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
 import '../../../../../framework/protocol/message/Attachment.dart';
-import 'MessageRenderStrategy.dart';
+import 'base/MessageRenderStrategy.dart';
 
 class FileMessageStrategy extends MessageRenderStrategy {
   @override

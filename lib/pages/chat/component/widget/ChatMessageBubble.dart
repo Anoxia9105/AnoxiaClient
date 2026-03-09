@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/pages/chat/component/widget/messageMenu/ChatMessageContextMenu.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +17,7 @@ import '../../../../common/widgets/BubbleDialog.dart';
 import '../../../../framework/domain/ChatRoomMemberVO.dart';
 import '../../../../framework/logs/talker.dart';
 import '../../../../framework/provider/chat/room/room_member_service.dart';
-import 'messageRender/MessageRenderFactory.dart';
+import 'messageRender/base/MessageRenderFactory.dart';
 
 class ChatMessageBubble extends ConsumerWidget {
   final ChatMessage message;
@@ -106,8 +107,9 @@ class ChatMessageBubble extends ConsumerWidget {
                   children: [
                     /// Bubble
                     Flexible(
-                      child: GestureDetector(
-                        onLongPress: () => Feedback.forLongPress(context),
+                      child: ChatMessageContextMenu(
+                        message: message,
+                        ref: ref,
                         child: needsBubble
                             ? BubbleWidget(
                                 arrowDirection: isCurrentUser
@@ -193,7 +195,10 @@ class ChatMessageBubble extends ConsumerWidget {
               style: style.copyWith(fontWeight: FontWeight.bold),
             ),
           if (isCurrentUser)
-            Text("chat_me".tr(), style: style.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              "chat_me".tr(),
+              style: style.copyWith(fontWeight: FontWeight.bold),
+            ),
         ],
       ),
     );

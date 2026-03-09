@@ -3,12 +3,12 @@ import 'package:anoxia/pages/chat/component/widget/messageRender/SystemMessageSt
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../framework/domain/ChatMessage.dart';
-import '../../../../../framework/protocol/message/MessageEunm.dart';
-import 'FileMessageStrategy.dart';
-import 'ImageMessageStrategy.dart';
+import '../../../../../../framework/domain/ChatMessage.dart';
+import '../../../../../../framework/protocol/message/MessageEunm.dart';
+import '../FileMessageStrategy.dart';
+import '../ImageMessageStrategy.dart';
 import 'MessageRenderStrategy.dart';
-import 'TextMessageStrategy.dart';
+import '../TextMessageStrategy.dart';
 
 class MessageRenderFactory {
   static final Map<MessageType, MessageRenderStrategy> _strategies = {

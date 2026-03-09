@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
-import 'MessageRenderStrategy.dart';
+import 'base/MessageRenderStrategy.dart';
 
 /// 系统消息渲染策略
 /// 用于渲染各种系统消息，如创建房间、加入房间、离开房间等

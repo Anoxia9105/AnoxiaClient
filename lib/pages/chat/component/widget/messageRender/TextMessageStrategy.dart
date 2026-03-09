@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
-import 'MessageRenderStrategy.dart';
+import 'base/MessageRenderStrategy.dart';
 
 class TextMessageStrategy extends MessageRenderStrategy {
   @override
@@ -10,13 +10,20 @@ class TextMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
-    if (message.payload?.emojiCode != null &&
-        message.payload?.content != null) {
-      return Text(message.payload?.content ?? '',style: TextStyle(fontSize: 48));
+    final content = message.payload?.content ?? '';
+
+    // 大表情渲染逻辑
+    if (message.payload?.emojiCode != null && content.isNotEmpty) {
+      return Text(content, style: const TextStyle(fontSize: 48));
     }
+
+    // 普通文本渲染
     return SelectionArea(
-      child: SelectableText(
-        message.payload?.content ?? '',
+      contextMenuBuilder: (context, selectableRegionState) {
+        return const SizedBox.shrink();
+      },
+      child: Text(
+        content,
         style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
       ),
     );

@@ -373,5 +373,12 @@
   "tray_hide_window": "隐藏窗口",
   "tray_exit": "退出",
   "taskbar_unread_99plus": "99+ 条未读",
-  "taskbar_unread_count": "{} 条未读"
+  "taskbar_unread_count": "{} 条未读",
+
+  "chat_copy": "复制",
+  "chat_favorite": "收藏",
+  "chat_revoke": "撤回"
+
+
+
 }

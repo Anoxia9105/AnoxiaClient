@@ -384,5 +384,9 @@
   "tray_hide_window": "ウィンドウを非表示",
   "tray_exit": "終了",
   "taskbar_unread_99plus": "99+ 件の未読",
-  "taskbar_unread_count": "{} 件の未読"
+  "taskbar_unread_count": "{} 件の未読",
+  
+   "chat_copy": "コピー",
+  "chat_favorite": "お気に入り",
+  "chat_revoke": "撤回する"
 }

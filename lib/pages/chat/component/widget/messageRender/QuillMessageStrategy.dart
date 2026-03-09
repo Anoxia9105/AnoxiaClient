@@ -9,7 +9,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
 import '../quill/embedBuilder/QuillMentionBuild.dart';
-import 'MessageRenderStrategy.dart';
+import 'base/MessageRenderStrategy.dart';
 
 class QuillMessageStrategy extends MessageRenderStrategy {
   @override
@@ -50,7 +50,9 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.message.payload?.quillDelta !=
         widget.message.payload?.quillDelta) {
+      _controller.dispose();
       _initController();
+      setState(() {});
     }
   }
 
@@ -84,6 +86,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       child: QuillEditor.basic(
         controller: _controller,
         config: QuillEditorConfig(
+          enableInteractiveSelection: false,
           showCursor: false,
           autoFocus: false,
           expands: false,

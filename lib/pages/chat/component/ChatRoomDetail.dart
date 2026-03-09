@@ -117,7 +117,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     }
 
     return Scaffold(
-      appBar: ChatAppBar(),
+      appBar: entryTask.isLoading ? AppBar() : ChatAppBar(),
       drawerScrimColor: Colors.transparent,
       body: entryTask.when(
         data: (_) {
@@ -198,9 +198,12 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                       bottomSheet: () => _scrollToBottom(animated: true),
                     );
                   }
-                  if (room.roomStatus == 1) return _bottomRoomStatus('chat_room_muted'.tr());
-                  if (room.roomStatus == 2) return _bottomRoomStatus('chat_room_banned_status'.tr());
-                  if (room.roomStatus == 3) return _bottomRoomStatus('chat_room_dissolved'.tr());
+                  if (room.roomStatus == 1)
+                    return _bottomRoomStatus('chat_room_muted'.tr());
+                  if (room.roomStatus == 2)
+                    return _bottomRoomStatus('chat_room_banned_status'.tr());
+                  if (room.roomStatus == 3)
+                    return _bottomRoomStatus('chat_room_dissolved'.tr());
 
                   return SizedBox.shrink();
                 }

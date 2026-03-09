@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart'; // 别忘了引
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
-import 'MessageRenderStrategy.dart';
+import 'base/MessageRenderStrategy.dart';
 
 class ImageMessageStrategy extends MessageRenderStrategy {
   @override

@@ -388,5 +388,9 @@
   "tray_hide_window": "Hide Window",
   "tray_exit": "Exit",
   "taskbar_unread_99plus": "99+ unread",
-  "taskbar_unread_count": "{} unread"
+  "taskbar_unread_count": "{} unread",
+
+   "chat_copy": "copy",
+  "chat_favorite": "favorite",
+  "chat_revoke": "revoke"
 }
