@@ -187,7 +187,12 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          'search_user_prefix'.tr(args: [chatMessage.senderId?.toString() ?? 'search_unknown'.tr()]),
+                          'search_user_prefix'.tr(
+                            args: [
+                              chatMessage.senderId?.toString() ??
+                                  'search_unknown'.tr(),
+                            ],
+                          ),
                           style: textTheme.labelMedium?.copyWith(
                             color: colorScheme.outline,
                             fontWeight: FontWeight.w500,
@@ -457,111 +462,74 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
           // 搜索输入栏
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              border: Border(
-                bottom: BorderSide(
-                  color: colorScheme.outlineVariant.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-            ),
             child: Row(
               children: [
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: textTheme.bodyMedium,
-                      decoration: InputDecoration(
-                        hintText: 'appbar_search_hint'.tr(),
-                        hintStyle: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.outline,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: colorScheme.outline,
-                          size: 20,
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear_rounded,
-                                  color: colorScheme.outline,
-                                  size: 18,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _savedKeyword = ''; // 清除保存的关键词
-                                  setState(() {});
-                                },
-                                splashRadius: 20,
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: 'appbar_search_hint'.tr(),
+                      hintStyle: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.outline,
                       ),
-                      onSubmitted: (value) => _performSearch(),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 2),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: colorScheme.outline,
+                        size: 20,
                       ),
-                    ],
-                  ),
-                  child: FilledButton(
-                    onPressed: _isSearching ? null : _performSearch,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.clear_rounded,
+                                color: colorScheme.outline,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                _savedKeyword = ''; // 清除保存的关键词
+                                setState(() {});
+                              },
+                              splashRadius: 20,
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
                     ),
-                    child: _isSearching
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
-                        : HugeIcon(
-                            icon: HugeIcons.strokeRoundedSearch01,
-                            size: 20,
-                          ),
+                    onSubmitted: (value) => _performSearch(),
+                    onChanged: (value) => setState(() {}),
                   ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: _isSearching ? null : _performSearch,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: _isSearching
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
+                          ),
+                        )
+                      : HugeIcon(
+                          icon: HugeIcons.strokeRoundedSearch01,
+                          size: 20,
+                        ),
                 ),
               ],
             ),

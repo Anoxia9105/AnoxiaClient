@@ -28,7 +28,8 @@ enum SystemEventType {
   roomUpdated(7),
   userMuted(8),
   userKicked(9),
-  userRoleChanged(10);
+  userRoleChanged(10),
+  messageRecall(11);
 
   final int code;
   const SystemEventType(this.code);

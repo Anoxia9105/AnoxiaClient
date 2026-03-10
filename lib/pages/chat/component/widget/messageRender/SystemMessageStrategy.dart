@@ -45,7 +45,9 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       final nickName = message.extra["nickName"];
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedHome03,
-        text: "system_msg_invite".tr(namedArgs: {"nickName": nickName ?? '', "names": names ?? ''}),
+        text: "system_msg_invite".tr(
+          namedArgs: {"nickName": nickName ?? '', "names": names ?? ''},
+        ),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );
@@ -74,6 +76,16 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       return _buildMessageRow(
         icon: HugeIcons.strokeRoundedHome03,
         text: "system_msg_room_closed".tr(),
+        textStyle: textStyle,
+        timestamp: message.timestamp,
+      );
+    }
+
+    if (type == "MESSAGE_RECALL") {
+      final nickName = message.extra["nickName"];
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedUndo,
+        text: "system_msg_recall".tr(args: [nickName ?? '--']),
         textStyle: textStyle,
         timestamp: message.timestamp,
       );

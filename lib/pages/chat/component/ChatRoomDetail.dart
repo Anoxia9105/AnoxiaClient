@@ -173,13 +173,12 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         },
       ),
       floatingActionButton: _showScrollDownButton
-          ? FloatingActionButton.small(
-              elevation: 1,
-              onPressed: () => _scrollToBottom(animated: true),
-              child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedCircleArrowDown02,
-                size: 18,
-                strokeWidth: 2,
+          ? SizedBox(
+              width: 35,
+              height: 35,
+              child: IconButton(
+                onPressed: _scrollToBottom,
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCircleArrowDown02),
               ),
             )
           : null,
@@ -187,10 +186,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       bottomNavigationBar: entryTask.isLoading
           ? SizedBox.shrink()
           : Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: bodyPadding,
-                vertical: 10,
-              ),
+              padding: EdgeInsets.only(left: bodyPadding, right: bodyPadding, bottom: 10),
               child: () {
                 if (room != null) {
                   if (room.roomStatus == 0) {

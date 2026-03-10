@@ -280,9 +280,56 @@ class ChatMessages extends _$ChatMessages {
   int get totalMessageCount {
     return state.values.fold(0, (sum, list) => sum + list.length);
   }
+
+  /// 撤回消息
+  Future<bool> recallMessage(String messageId, String roomId) async {
+    try {
+      final res = await DioClient().get(
+        API.chatRecall,
+        queryParameters: {"messageId": messageId},
+      );
+
+      if (res.data["code"] == 200) {
+        // 撤回成功后，从消息列表中移除该消息
+        removeMessage(messageId, roomId);
+        return true;
+      } else {
+        log.error("撤回消息失败: ${res.data['msg']}");
+        return false;
+      }
+    } catch (e) {
+      log.error("撤回消息请求失败: $e");
+      return false;
+    }
+  }
+
+  /// 收藏消息
+  Future<bool> addFavorite(String messageId) async {
+    try {
+      final res = await DioClient().post('${API.chatFavoriteAdd}/$messageId');
+
+      return res.data["code"] == 200;
+    } catch (e) {
+      log.error("收藏消息失败: $e");
+      return false;
+    }
+  }
+
+  /// 从消息列表中移除消息
+  void removeMessage(String messageId, String roomId) {
+    final currentList = state[roomId] ?? [];
+    final newList = currentList
+        .where((msg) => msg.messageId != messageId)
+        .toList();
+
+    if (newList.length != currentList.length) {
+      state = {...state, roomId: newList};
+      log.info("消息 $messageId 已从房间 $roomId 中移除");
+    }
+  }
 }
 
-// 存储每个房间的“加载更多”状态
+// 存储每个房间的"加载更多"状态
 // key: roomId, value: 是否还有更多
 @riverpod
 class ChatHasMore extends _$ChatHasMore {

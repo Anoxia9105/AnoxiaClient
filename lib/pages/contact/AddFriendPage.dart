@@ -58,8 +58,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         title: Text(
           'add_friend_title'.tr(),
           style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: 0.2,
           ),
         ),
         elevation: 0,
@@ -69,7 +70,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: colorScheme.onSurface,
-            size: 20,
+            size: 22,
           ),
           onPressed: () => Navigator.of(context).pop(),
           splashRadius: 24,
@@ -79,121 +80,107 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // 搜索栏
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16.0,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'add_friend_search_hint'.tr(),
-                    hintStyle: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.outline,
-                      fontSize: 15,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: colorScheme.outline,
-                      size: 20,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear_rounded,
-                              color: colorScheme.outline,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              // 清空搜索结果
-                              ref
-                                  .read(userSearchServiceProvider.notifier)
-                                  .state = ref
-                                  .read(userSearchServiceProvider.notifier)
-                                  .build();
-                              _selectedUser = null;
-                              setState(() {});
-                            },
-                            splashRadius: 20,
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18.0,
-                      vertical: 14.0,
-                    ),
-                  ),
-                  style: textTheme.bodyMedium?.copyWith(fontSize: 15),
-                  onSubmitted: (value) {
-                    _performSearch(value);
-                  },
-                  onChanged: (value) => setState(() {}),
-                ),
-              ),
-            ), // 修复1: 添加缺失的逗号
-            // 搜索按钮
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.2),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: FilledButton(
-                  onPressed: _isSearching
-                      ? null
-                      : () => _performSearch(_searchController.text),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    elevation: 0,
-                    textStyle: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  child: _isSearching
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Material(
+                elevation: 2,
+                borderRadius: BorderRadius.circular(18),
+                color: colorScheme.surface,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'add_friend_search_hint'.tr(),
+                          hintStyle: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.outline,
+                            fontSize: 15,
                           ),
-                        )
-                      : Text('add_friend_search_btn'.tr()),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: colorScheme.outline,
+                            size: 20,
+                          ),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear_rounded,
+                                    color: colorScheme.outline,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    ref
+                                        .read(userSearchServiceProvider.notifier)
+                                        .state = ref
+                                        .read(userSearchServiceProvider.notifier)
+                                        .build();
+                                    _selectedUser = null;
+                                    setState(() {});
+                                  },
+                                  splashRadius: 20,
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 18.0,
+                            vertical: 14.0,
+                          ),
+                        ),
+                        style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                        onSubmitted: (value) {
+                          _performSearch(value);
+                        },
+                        onChanged: (value) => setState(() {}),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 8, right: 8),
+                      height: 40,
+                      child: VerticalDivider(
+                        color: colorScheme.outlineVariant,
+                        thickness: 1,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ElevatedButton(
+                        onPressed: _isSearching
+                            ? null
+                            : () => _performSearch(_searchController.text),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          minimumSize: const Size(44, 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          elevation: 0,
+                          textStyle: textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                        child: _isSearching
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Icon(Icons.search_rounded, size: 22),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ), // 修复2: 添加缺失的逗号并闭合 Padding
+            ),
             // 搜索结果
             Expanded(
               child: searchService.rows.isNotEmpty
@@ -276,7 +263,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                   ),
                                                   const SizedBox(height: 6),
                                                   Text(
-                                                    'add_friend_username'.tr(args: [user.userName]),
+                                                    'add_friend_username'.tr(
+                                                      args: [user.userName],
+                                                    ),
                                                     style: textTheme.bodyMedium
                                                         ?.copyWith(
                                                           color: colorScheme
@@ -294,7 +283,11 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                             top: 4,
                                                           ),
                                                       child: Text(
-                                                        'add_friend_phone'.tr(args: [user.phonenumber!]),
+                                                        'add_friend_phone'.tr(
+                                                          args: [
+                                                            user.phonenumber!,
+                                                          ],
+                                                        ),
                                                         style: textTheme
                                                             .bodyMedium
                                                             ?.copyWith(
@@ -330,7 +323,8 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                   ),
                                                 ),
                                                 child: Text(
-                                                  'add_friend_already_friend'.tr(),
+                                                  'add_friend_already_friend'
+                                                      .tr(),
                                                   style: textTheme.bodySmall
                                                       ?.copyWith(
                                                         color:
@@ -391,7 +385,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                                           fontSize: 14,
                                                         ),
                                                   ),
-                                                  child: Text('add_friend_add_btn'.tr()),
+                                                  child: Text(
+                                                    'add_friend_add_btn'.tr(),
+                                                  ),
                                                 ),
                                               ),
                                           ],

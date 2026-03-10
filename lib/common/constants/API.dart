@@ -43,6 +43,9 @@ class API {
   static const String chatMembers = '/chat/members';
   static const String chatReadReport = '/chat/readReport';
   static const String chatSearch = '/chat/search';
+  static const String chatRecall = '/chat/recall';
+  static const String chatFavoriteAdd = '/chat/favorite/add';
+  static const String chatFavoriteList = '/chat/favorite/list';
 
   // ======================== 通话 ========================
   static const String callToken = '/call/token';

@@ -86,7 +86,11 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       child: QuillEditor.basic(
         controller: _controller,
         config: QuillEditorConfig(
-          enableInteractiveSelection: false,
+          // enableInteractiveSelection: false,
+          textSelectionThemeData: TextSelectionThemeData(
+            selectionColor: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2)
+          ),
+          enableSelectionToolbar:false,
           showCursor: false,
           autoFocus: false,
           expands: false,

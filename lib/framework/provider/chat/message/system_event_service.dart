@@ -105,9 +105,11 @@ class SystemEventService extends _$SystemEventService {
       case SystemEventType.roomClosed:
         _handleRoomClosed(event);
         break;
-
       case SystemEventType.userLeft:
         _handleUserLeft(event);
+        break;
+      case SystemEventType.messageRecall:
+        _handleMessageRecall(event);
         break;
 
       case SystemEventType.roomUpdated:
@@ -258,7 +260,9 @@ class SystemEventService extends _$SystemEventService {
 
     // 1. 本地立即更新房间状态（0=正常, 1=禁言）
     final newStatus = (isMute == true) ? 1 : 0;
-    ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, newStatus);
+    ref
+        .read(roomListServiceProvider.notifier)
+        .updateRoomStatus(roomId, newStatus);
     log.info("房间 $roomId ${isMute == true ? '已禁言' : '已解除禁言'}，本地更新状态");
 
     // 2. 兜底：静默刷新确保与服务端同步
@@ -282,5 +286,18 @@ class SystemEventService extends _$SystemEventService {
   String? _extractRoomIdFromEvent(EventMessage event) {
     // 从 extra 字段中提取 roomId
     return event.extra?['roomId'] as String?;
+  }
+
+  /// 处理消息撤回
+  void _handleMessageRecall(EventMessage event) {
+    final String? roomId = _extractRoomIdFromEvent(event);
+    final String? messageId = event.extra?['messageId'] as String?;
+
+    if (roomId == null || messageId == null) {
+      log.warning("无法从 messageRecall 事件中获取 roomId 或 messageId");
+      return;
+    }
+
+    ref.read(chatMessagesProvider.notifier).removeMessage(messageId, roomId);
   }
 }

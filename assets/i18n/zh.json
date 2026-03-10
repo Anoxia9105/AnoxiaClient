@@ -59,7 +59,6 @@
   "app_dark_themes19": "水墨石墨",
   "help_page_title": "帮助",
   "feedback_page_title": "反馈",
-  
   "chat_search_placeholder": "搜索会话...",
   "chat_load_failed": "加载失败",
   "chat_create_group": "发起群聊",
@@ -73,7 +72,6 @@
   "chat_leave_group": "退出群聊",
   "chat_delete_conversation": "删除会话",
   "chat_dissolve_group": "解散群聊",
-  
   "appbar_unknown_user": "未知用户",
   "appbar_conversation_detail": "对话详情",
   "appbar_user_typing": "对方正在输入...",
@@ -83,7 +81,6 @@
   "appbar_search_in_chat": "聊天中查找",
   "appbar_add_member": "添加人员",
   "appbar_member_list": "人员列表",
-  
   "contact_select_contact": "请选择一个联系人",
   "contact_load_failed": "加载失败",
   "contact_status": "状态",
@@ -102,7 +99,6 @@
   "contact_male": "男",
   "contact_female": "女",
   "contact_unknown_gender": "未知",
-  
   "chat_send_message": "发消息",
   "call_waiting_to_join": "等待加入...",
   "call_connecting_to_room": "正在连接通话房间...",
@@ -147,14 +143,12 @@
   "call_window_room_creation_failed": "创建房间失败",
   "call_window_retry": "重试",
   "ai_chat_title": "Gemini Chat",
-  
   "search_context_title": "搜索上下文",
   "search_context_matches": "匹配数量",
   "search_context_empty": "暂无搜索结果",
   "appbar_enter_search": "输入搜索",
   "appbar_search_hint": "输入关键词搜索",
   "search": "搜索",
-  
   "discover_group_chat": "群聊发现",
   "discover_group_chat_subtitle": "发现有趣的群组和话题",
   "discover_nearby_people": "附近的人",
@@ -184,7 +178,6 @@
   "prejoin_recheck": "重新检查",
   "prejoin_cancel": "取消",
   "prejoin_join": "加入会议",
-
   "file_not_found": "文件不存在，无法定位",
   "file_open_dir_failed": "打开目录失败: {}",
   "file_url_invalid": "文件地址无效，无法下载",
@@ -193,7 +186,6 @@
   "file_unknown": "未知文件",
   "file_downloading": "{}% 下载中...",
   "file_downloaded_open_location": "已下载，点击打开位置",
-
   "chat_me": "我",
   "chat_unknown_user": "未知用户",
   "chat_message_format_error": "消息格式错误",
@@ -201,9 +193,7 @@
   "chat_room_banned": "房间已被封禁",
   "chat_no_messages": "暂无消息",
   "chat_no_messages_in_group": "暂无消息",
-
   "login_failed": "登录失败,请检查用户名/密码/验证码是否正确",
-
   "update_new_version": "发现新版本",
   "update_release_notes": "更新说明",
   "update_default_notes": "性能优化与稳定性提升",
@@ -214,7 +204,6 @@
   "update_error_404": "远程更新文件不存在 (404)",
   "update_error_network": "网络连接失败，请检查联网状态",
   "update_error_generic": "下载过程出错: {}",
-
   "add_friend_title": "添加朋友",
   "add_friend_search_hint": "搜索用户名或昵称",
   "add_friend_search_btn": "搜索",
@@ -233,11 +222,9 @@
   "add_friend_request_sent": "好友申请已发送",
   "add_friend_request_failed": "申请失败，可能是已经是好友或已发送过申请",
   "add_friend_send_failed": "发送失败，请重试",
-
   "contact_accept": "同意",
   "contact_reject": "拒绝",
   "group_unnamed": "未命名群聊",
-
   "toolbar_bold": "加粗",
   "toolbar_italic": "斜体",
   "toolbar_underline": "下划线",
@@ -253,14 +240,12 @@
   "toolbar_send": "发送",
   "toolbar_reset_color": "重置颜色",
   "toolbar_search_emoji": "搜索表情...",
-
   "system_msg_unknown": "未知系统消息",
   "system_msg_invite": "{nickName} 邀请了[{names}] 加入房间",
   "system_msg_mute_on": "管理员 [开启全体禁言]",
   "system_msg_mute_off": "管理员 [取消全体禁言]",
   "system_msg_kicked": "{nickName} 被管理员踢出了房间",
   "system_msg_room_closed": "房间已被解散",
-
   "upload_failed": "上传失败",
   "upload_failed_retry": "上传失败，请删除重试",
   "quill_image_plain": "[图像]",
@@ -268,15 +253,12 @@
   "search_unknown": "未知",
   "search_image_placeholder": "[图片]",
   "search_user_prefix": "用户 {}",
-
   "feature_coming_soon": "功能开发中，敬请期待...",
   "error_unknown": "发生未知错误",
-
   "create_group_title": "发起群聊",
   "create_group_name_hint": "输入群聊名称...",
   "create_group_name_empty": "群聊名称不能为空哦",
   "create_group_success": "群聊创建成功",
-
   "chat_admin": "管理员",
   "chat_kick_member": "踢出成员",
   "chat_confirm_kick": "确认踢出",
@@ -292,18 +274,15 @@
   "chat_unmute_confirm": "确定要解除全员禁言吗？解除后所有成员都可以发言。",
   "chat_mute_success": "已开启全员禁言",
   "chat_unmute_success": "已解除全员禁言",
-
   "member_no_contacts": "没有可添加的联系人",
   "member_load_failed": "加载联系人失败",
   "member_adding": "正在添加成员...",
   "member_add_count": "添加 ({})",
   "member_add_success": "添加成员成功",
   "member_add_failed": "添加成员失败",
-
   "upload_total_count_exceeded": "消息附件总数不能超过 {} 个（已有 {} 个）",
   "upload_total_size_exceeded": "消息附件总大小不能超过 {}MB",
   "upload_single_file_too_large": "文件 {} 超过 50MB，已跳过",
-
   "call_layout_single": "单屏",
   "call_layout_focus": "焦点",
   "call_layout_grid": "网格",
@@ -341,7 +320,6 @@
   "call_layout_multi": "多人会议",
   "call_layout_presentation": "演讲/直播",
   "call_layout_single_focus": "单人焦点",
-
   "chat_me_suffix": "(我)",
   "chat_unmute_tooltip": "解除禁言",
   "chat_mute_tooltip": "全员禁言",
@@ -350,20 +328,14 @@
   "chat_room_dissolved": "房间已解散",
   "chat_unknown_user_label": "未知用户",
   "chat_input_placeholder": "输入消息...",
-
   "member_add_title": "添加成员",
   "member_group_chat": "群聊",
-
   "create_group_selected_count": "已选择 {} 人",
-
   "ai_chat_hint": "问问 Gemini...",
-
   "emoji_search_hint": "搜索表情...",
   "emoji_not_found": "没找到相关表情哦~",
-
   "mention_no_users": "暂无可@的用户",
   "mention_user_not_found": "没有找到匹配 \"{}\" 的用户",
-
   "gender_male": "男",
   "gender_female": "女",
   "gender_unknown": "未知",
@@ -374,11 +346,15 @@
   "tray_exit": "退出",
   "taskbar_unread_99plus": "99+ 条未读",
   "taskbar_unread_count": "{} 条未读",
-
   "chat_copy": "复制",
+  "chat_copy_success": "复制成功",
   "chat_favorite": "收藏",
-  "chat_revoke": "撤回"
-
-
-
+  "chat_favorite_success": "收藏成功",
+  "chat_favorite_failed": "收藏失败",
+  "chat_favorite_error": "收藏操作出错",
+  "chat_revoke": "撤回",
+  "chat_revoke_success": "消息撤回成功",
+  "chat_revoke_failed": "消息撤回失败",
+  "chat_revoke_error": "撤回操作出错",
+  "system_msg_recall": "{} 撤回了一条消息"
 }

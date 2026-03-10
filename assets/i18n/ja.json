@@ -387,6 +387,14 @@
   "taskbar_unread_count": "{} 件の未読",
   
    "chat_copy": "コピー",
+  "chat_copy_success": "コピーしました",
   "chat_favorite": "お気に入り",
-  "chat_revoke": "撤回する"
+  "chat_favorite_success": "お気に入りに追加しました",
+  "chat_favorite_failed": "お気に入りに追加できませんでした",
+  "chat_favorite_error": "お気に入り操作エラー",
+  "chat_revoke": "撤回する",
+  "chat_revoke_success": "メッセージを撤回しました",
+  "chat_revoke_failed": "メッセージの撤回に失敗しました",
+  "chat_revoke_error": "撤回操作エラー",
+  "system_msg_recall": "{} ニュースを1件撤回した"
 }
