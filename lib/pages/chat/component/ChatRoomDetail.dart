@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../framework/provider/chat/message/room_message_service.dart';
@@ -186,7 +187,11 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       bottomNavigationBar: entryTask.isLoading
           ? SizedBox.shrink()
           : Padding(
-              padding: EdgeInsets.only(left: bodyPadding, right: bodyPadding, bottom: 10),
+              padding: EdgeInsets.only(
+                left: bodyPadding,
+                right: bodyPadding,
+                bottom: 10,
+              ),
               child: () {
                 if (room != null) {
                   if (room.roomStatus == 0) {

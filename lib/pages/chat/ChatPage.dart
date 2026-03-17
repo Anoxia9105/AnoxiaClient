@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/pages/chat/component/ChatRoomDetail.dart';
 import 'package:anoxia/pages/chat/component/ChatRoomList.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -26,7 +27,13 @@ class ChatPage extends ConsumerWidget {
         SizedBox(width: 90.w, child: ChatRoomList()),
         VerticalDivider(),
         Expanded(
-          child: activeId == null ? Center(child: Welcome()) : ChatRoomDetail(),
+          child: activeId == null ? Center(child: Welcome()) : Row(
+            children: [
+              Expanded(child: ChatRoomDetail()),
+              VerticalDivider(),
+              SizedBox(width: 100.w,child: Center(child: Text("chat_room_info".tr())),)
+            ],
+          ),
         ),
       ],
     );
