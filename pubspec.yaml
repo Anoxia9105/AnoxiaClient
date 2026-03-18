@@ -94,6 +94,7 @@ dependencies:
   #剪贴板
   pasteboard: ^0.4.0
   flutter_staggered_animations: ^1.1.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -32,6 +32,17 @@ class QuillStyleConfig {
         color: Colors.blue,
         decoration: TextDecoration.underline,
       ),
+      code: DefaultListBlockStyle(
+        baseTextStyle.copyWith(color: Colors.white60, fontSize: 14),
+        const HorizontalSpacing(4, 4),
+        const VerticalSpacing(4, 4),
+        const VerticalSpacing(4, 4),
+        BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        null,
+      ),
     );
   }
 }

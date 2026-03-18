@@ -437,101 +437,70 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           'search_context_title'.tr(),
           style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
-        elevation: 0,
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: colorScheme.onSurface,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-          splashRadius: 24,
-        ),
-        centerTitle: false,
       ),
       body: Column(
         children: [
           // 搜索输入栏
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    style: textTheme.bodyMedium,
-                    decoration: InputDecoration(
-                      hintText: 'appbar_search_hint'.tr(),
-                      hintStyle: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.outline,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: colorScheme.outline,
-                        size: 20,
-                      ),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.clear_rounded,
-                                color: colorScheme.outline,
-                                size: 18,
-                              ),
-                              onPressed: () {
-                                _searchController.clear();
-                                _savedKeyword = ''; // 清除保存的关键词
-                                setState(() {});
-                              },
-                              splashRadius: 20,
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    onSubmitted: (value) => _performSearch(),
-                    onChanged: (value) => setState(() {}),
-                  ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              style: textTheme.bodyMedium,
+              decoration: InputDecoration(
+                hintText: 'appbar_search_hint'.tr(),
+                hintStyle: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.outline,
                 ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _isSearching ? null : _performSearch,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: _isSearching
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onPrimary,
-                            ),
-                          ),
-                        )
-                      : HugeIcon(
-                          icon: HugeIcons.strokeRoundedSearch01,
-                          size: 20,
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: colorScheme.outline,
+                  size: 20,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty && _isSearching
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear_rounded,
+                          color: colorScheme.outline,
+                          size: 18,
                         ),
+                        onPressed: () {
+                          _searchController.clear();
+                          _savedKeyword = '';
+                          setState(() {});
+                        },
+                        splashRadius: 20,
+                      )
+                    : IconButton(
+                        onPressed: _isSearching ? null : _performSearch,
+                        icon: _isSearching
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    colorScheme.onPrimary,
+                                  ),
+                                ),
+                              )
+                            : HugeIcon(
+                                icon: HugeIcons.strokeRoundedSearch01,
+                                size: 20,
+                              ),
+                      ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-              ],
+              ),
+              onSubmitted: (value) => _performSearch(),
+              onChanged: (value) => setState(() {}),
             ),
           ),
           // 搜索结果信息栏
