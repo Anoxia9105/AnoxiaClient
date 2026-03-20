@@ -12,7 +12,7 @@ import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
 import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
-import 'discover/DiscoverPage.dart';
+import 'notes/DiscoverPage.dart';
 
 class MainLayoutPage extends ConsumerWidget {
   const MainLayoutPage({super.key});
@@ -60,7 +60,7 @@ class MainLayoutPage extends ConsumerWidget {
                   ChatPage(),
                   ContactPage(),
                   AIChatPage(),
-                  DiscoverPage(),
+                  NotesPage(),
                   MyPage(),
                   SettingsPage(),
                 ],

@@ -37,6 +37,21 @@ class RoomListService extends _$RoomListService {
     return await fetchRoomList();
   }
 
+
+  
+  void toggleSearch(){
+    state.whenData((rooms) {
+      final List<ChatRoomVO> updatedList = rooms.map((room) {
+        if(room.roomId == ref.read(activeRoomIdProvider)){
+          return room.copyWith(isOpenSearch: !(room.isOpenSearch ?? false));
+        }
+        return room;
+      }).toList();
+      state = AsyncValue.data(updatedList);
+    });
+  }
+
+
   Future<List<ChatRoomVO>> fetchRoomList() async {
     try {
       final res = await DioClient().get(API.chatRooms);

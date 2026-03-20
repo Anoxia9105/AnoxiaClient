@@ -13,6 +13,7 @@ class ChatRoomVO {
 
   final int? unreadCount; // 未读数 (来自Redis)
   final ChatMessage? lastMessage; // 最后一条消息 (来自Redis)
+  final bool? isOpenSearch; // 是否开启搜索栏
 
   ChatRoomVO({
     this.roomId,
@@ -25,7 +26,8 @@ class ChatRoomVO {
     this.lastReadSeq,
     this.peerId,
     this.unreadCount,
-    this.lastMessage,
+    this.lastMessage, 
+    this.isOpenSearch,
   });
 
   ChatRoomVO copyWith({
@@ -40,6 +42,7 @@ class ChatRoomVO {
     int? peerId,
     int? unreadCount,
     ChatMessage? lastMessage,
+    bool? isOpenSearch,
   }) {
     return ChatRoomVO(
       roomId: roomId ?? this.roomId,
@@ -53,6 +56,7 @@ class ChatRoomVO {
       peerId: peerId ?? this.peerId,
       unreadCount: unreadCount ?? this.unreadCount,
       lastMessage: lastMessage ?? this.lastMessage,
+      isOpenSearch: isOpenSearch ?? this.isOpenSearch,
     );
   }
 

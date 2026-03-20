@@ -64,7 +64,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1.0),
         child: Container(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), // 边框颜色
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.1), // 边框颜色
           height: 1.0, // 实际线条粗细
         ),
       ),
@@ -101,10 +103,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     roomId: currentRoom?.roomId ?? '',
                   );
             },
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedCall02,
-              size: 20,
-            ),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCall02, size: 20),
           ),
         if (currentRoom?.roomStatus != 3)
           Container(
@@ -113,13 +112,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
         IconButton(
           tooltip: 'appbar_search_in_chat'.tr(),
-          onPressed: () {
-            _showSearchDialog(context, ref, activeId ?? '');
-          },
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedSearch01,
-            size: 20,
-          ),
+          onPressed: () =>
+              ref.read(roomListServiceProvider.notifier).toggleSearch(),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
         ),
         if (currentRoom != null &&
             currentRoom.roomType == 1 &&
@@ -150,11 +145,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               final isAdmin = members.any(
                 (m) => m.userId == currentUser?.userId && m.roleId == 0,
               );
-    
+
               if (!isAdmin) return const SizedBox.shrink();
-    
+
               final isMuted = currentRoom.roomStatus == 1;
-    
+
               return IconButton(
                 tooltip: isMuted
                     ? 'chat_unmute_tooltip'.tr()
@@ -194,9 +189,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         width: 200,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outlineVariant,
+                            color: Theme.of(context).colorScheme.outlineVariant,
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -248,15 +241,15 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                             .read(authControllerProvider)
                                             .value
                                             ?.userId;
-    
+
                                         // 2. 获取当前登录用户在成员列表中的角色 (判断“我”是不是管理员)
-    
+
                                         final isIMeAdmin = members.any(
                                           (m) =>
                                               m.userId == currentUserId &&
                                               m.roleId == 0,
                                         );
-    
+
                                         // 3. 逻辑判断
                                         if (m.roleId == 0) {
                                           return Text(
@@ -269,7 +262,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                             ),
                                           );
                                         }
-    
+
                                         // 如果“我”是管理员，且当前行不是“我”自己，则显示踢出按钮
                                         if (isIMeAdmin &&
                                             m.userId != currentUserId) {
@@ -325,31 +318,6 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             },
           ),
       ],
-    );
-  }
-
-  /// 显示搜索对话框
-  void _showSearchDialog(BuildContext context, WidgetRef ref, String roomId) {
-    final currentRoom = ref
-        .read(roomListServiceProvider)
-        .value
-        ?.firstWhere((r) => r.roomId == roomId, orElse: () => ChatRoomVO());
-    final roomName = currentRoom?.roomName ?? 'appbar_conversation_detail'.tr();
-
-    final isDesktop = DeviceUtil.isRealDesktop();
-    final dialogWidth = isDesktop ? 1000.0 : 400.0;
-    final dialogHeight = isDesktop ? 750.0 : 600.0;
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: dialogWidth,
-          height: dialogHeight,
-          child: SearchContextPage(roomId: roomId, roomName: roomName),
-        ),
-      ),
     );
   }
 

@@ -18,7 +18,7 @@ class LayoutController extends _$LayoutController {
       icon: HugeIcons.strokeRoundedChatGpt,
     ),
     SidebarItem(
-      name: "sidebar_discover",
+      name: "sidebar_notes",
       icon: HugeIcons.strokeRoundedPathfinderCrop,
     ),
     SidebarItem(name: "sidebar_my", icon: HugeIcons.strokeRoundedUser),

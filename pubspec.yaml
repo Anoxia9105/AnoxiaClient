@@ -94,7 +94,10 @@ dependencies:
   #剪贴板
   pasteboard: ^0.4.0
   flutter_staggered_animations: ^1.1.1
-  
+    #卡片动画
+  flutter_card_swiper: ^7.0.2
+    #树形视图
+  flutter_fancy_tree_view: ^1.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
