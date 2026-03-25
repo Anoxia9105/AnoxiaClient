@@ -356,5 +356,8 @@
   "chat_revoke_success": "消息撤回成功",
   "chat_revoke_failed": "消息撤回失败",
   "chat_revoke_error": "撤回操作出错",
-  "system_msg_recall": "{} 撤回了一条消息"
+  "system_msg_recall": "{} 撤回了一条消息",
+  "system_msg_callstart": "{} 开启了会议",
+  "system_msg_callend": "会议已结束 {}"
+
 }

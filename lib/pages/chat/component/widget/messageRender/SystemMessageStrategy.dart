@@ -90,6 +90,25 @@ class SystemMessageStrategy extends MessageRenderStrategy {
         timestamp: message.timestamp,
       );
     }
+    if (type == "CALL_STARTED") {
+      final nickName = message.extra["nickName"];
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedCall02,
+        text: "system_msg_callstart".tr(args: [nickName ?? '--']),
+        textStyle: textStyle,
+        timestamp: message.timestamp,
+      );
+    }
+    if (type == "CALL_ENDED") {
+      final durationText = message.extra["durationText"];
+      return _buildMessageRow(
+        icon: HugeIcons.strokeRoundedCallEnd03,
+        text: "system_msg_callend".tr(args: [durationText ?? '--']),
+        textStyle: textStyle,
+        timestamp: message.timestamp,
+      );
+    }
+
 
     return SizedBox.shrink();
 

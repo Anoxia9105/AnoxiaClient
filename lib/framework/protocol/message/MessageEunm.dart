@@ -11,11 +11,26 @@ enum MessageType {
   final int code;
   const MessageType(this.code);
 
-  static MessageType fromCode(int code) {
-    return MessageType.values.firstWhere(
-      (e) => e.code == code,
-      orElse: () => MessageType.text,
-    );
+  static MessageType fromCode(dynamic value) {
+    if (value == null) return MessageType.text;
+
+    // 1. 处理后端传来的字符串（如 "TEXT"）
+    if (value is String) {
+      return MessageType.values.firstWhere(
+        (e) => e.name.toUpperCase() == value.toUpperCase(),
+        orElse: () => MessageType.text,
+      );
+    }
+
+    // 2. 处理后端传来的数字（如 5）
+    if (value is int) {
+      return MessageType.values.firstWhere(
+        (e) => e.code == value,
+        orElse: () => MessageType.text,
+      );
+    }
+
+    return MessageType.text;
   }
 }
 

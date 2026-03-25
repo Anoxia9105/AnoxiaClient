@@ -49,7 +49,7 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'27169603f1826694ae1eb7c5b6a7cec392bf65f0';
+String _$chatMessagesHash() => r'c360f1935753f0f4c134fd1ed405d698990dfc96';
 
 /// 存储每个房间的消息列表
 /// key = roomId, value = List<ChatMessage>

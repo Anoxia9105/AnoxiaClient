@@ -657,12 +657,22 @@ class RoomController extends _$RoomController {
 @riverpod
 Future<String> roomToken(Ref ref, String roomId) async {
   try {
+    log.info("请求房间Token");
     final res = await DioClient().get(
       API.callToken,
-      queryParameters: {"roomId": roomId},
-      options: Options(responseType: ResponseType.plain),
+      queryParameters: {"roomId": roomId}
     );
-    return res.data.toString();
+    
+    if (res.data == null) {
+      throw Exception("Token 获取失败，响应数据异常");
+    }
+
+    if (res.data["code"] == 200) {
+      log.info("获取房间Token成功");
+      return res.data["data"].toString();
+    } else {
+      throw Exception("Token 获取失败，服务器返回错误: ${res.data["message"] ?? "未知错误"}");
+    }
   } catch (e) {
     log.error("获取房间Token失败: $e");
     rethrow;

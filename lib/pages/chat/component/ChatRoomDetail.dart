@@ -1,3 +1,5 @@
+import 'package:anoxia/common/utils/DateUtil.dart';
+import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatInputField.dart';
@@ -23,6 +25,35 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   final FlutterListViewController _listViewController =
       FlutterListViewController();
   bool _showScrollDownButton = false;
+
+  /// =========================
+  /// ✅ 时间分组判断
+  /// =========================
+  bool shouldShowTime(ChatMessage curr, ChatMessage? prev) {
+    if (prev == null) return true;
+
+    if (curr.timestamp != null && prev.timestamp != null) {
+      final diff = curr.timestamp! - prev.timestamp!;
+      return diff > 5 * 60 * 1000; // 5分钟
+    }
+
+    return false;
+  }
+
+  /// =========================
+  /// ✅ 时间UI
+  /// =========================
+  Widget _buildTimeLabel(int timestamp) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          DateUtil.formatTimestampToTime(timestamp),
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -153,8 +184,33 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                   );
                 }
 
-                final msg = messages[messages.length - 1 - index];
+                /// =========================
+                /// ✅ 关键：索引转换
+                /// =========================
+                final realIndex = messages.length - 1 - index;
+                final msg = messages[realIndex];
 
+                /// 上一条（更旧）
+                final prevMsg = realIndex < messages.length - 1
+                    ? messages[realIndex + 1]
+                    : null;
+
+                final showTime = shouldShowTime(msg, prevMsg);
+
+                /// =========================
+                /// ✅ 组合时间 + 气泡
+                /// =========================
+                if (msg.timestamp != null) {
+                  return Column(
+                    children: [
+                      if (showTime) _buildTimeLabel(msg.timestamp!),
+                      ChatMessageBubble(
+                        key: ValueKey(msg.messageId),
+                        message: msg,
+                      ),
+                    ],
+                  );
+                }
                 return ChatMessageBubble(
                   key: ValueKey(msg.messageId),
                   message: msg,
@@ -168,7 +224,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           );
         },
         error: (err, _) =>
-            Center(child: Text('chat_initialization_failed'.tr() + ': $err')),
+            Center(child: Text('${'chat_initialization_failed'.tr()}: $err')),
         loading: () {
           return Center(child: CircularProgressIndicator());
         },
@@ -199,12 +255,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                       bottomSheet: () => _scrollToBottom(animated: true),
                     );
                   }
-                  if (room.roomStatus == 1)
+                  if (room.roomStatus == 1) {
                     return _bottomRoomStatus('chat_room_muted'.tr());
-                  if (room.roomStatus == 2)
+                  }
+                  if (room.roomStatus == 2) {
                     return _bottomRoomStatus('chat_room_banned_status'.tr());
-                  if (room.roomStatus == 3)
+                  }
+                  if (room.roomStatus == 3) {
                     return _bottomRoomStatus('chat_room_dissolved'.tr());
+                  }
 
                   return SizedBox.shrink();
                 }
@@ -236,7 +295,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (!_listViewController.hasClients) return;
     final activeId = ref.read(activeRoomIdProvider);
     final messageCount = ref.read(chatMessagesProvider)[activeId]?.length ?? 0;
-    print(messageCount);
     // 如果没消息直接返回
     if (messageCount == 0 || messageCount < 10) return;
     if (animated) {

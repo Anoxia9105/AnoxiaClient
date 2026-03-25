@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -148,6 +149,15 @@ class ChatMessageBubble extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          //太丑了先去掉，后续再优化
+                          // Text(
+                          //   DateUtil.formatTimestampToTime(message.timestamp),
+                          //   style: TextStyle(
+                          //     fontSize: 10,
+                          //     color: Theme.of(context).colorScheme.outline,
+                          //   ),
+                          // ),
+
                           if (isMentionedMe)
                             const Text(
                               "@",

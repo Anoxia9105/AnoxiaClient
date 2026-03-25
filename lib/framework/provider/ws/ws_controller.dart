@@ -24,7 +24,7 @@ class WsController extends _$WsController {
   int _reconnectAttempts = 0;
 
   // 使用延迟初始化，确保每次 build 时或是需要时它是新鲜的
-  late StreamController<PacketFrame<IPacket>> _messageController;
+  late final StreamController<PacketFrame<IPacket>> _messageController;
 
   @override
   WsState build() {
@@ -174,12 +174,11 @@ class WsController extends _$WsController {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
 
-    // 如果是因为用户退出导致的断开，不需要重连
     final user = ref.read(authControllerProvider).value;
     if (user == null) return;
 
     int delaySeconds = (1 << _reconnectAttempts).clamp(2, 30);
-    log.warning("将在 $delaySeconds 秒后进行第 $_reconnectAttempts 次重连...");
+    log.warning("将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...");
 
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;
@@ -192,6 +191,7 @@ class WsController extends _$WsController {
     _reconnectTimer?.cancel();
     _channel?.sink.close();
     _channel = null;
+    _reconnectAttempts = 0;
     if (closeStream) {
       _messageController.close();
     }

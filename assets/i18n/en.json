@@ -356,5 +356,7 @@
   "chat_revoke_success": "Message revoked successfully",
   "chat_revoke_failed": "Failed to revoke message",
   "chat_revoke_error": "Revoke operation error",
-  "system_msg_recall": "{} recalled a message"
+  "system_msg_recall": "{} recalled a message",
+  "system_msg_callstart": "{} started a meeting",
+  "system_msg_callend": "{} ended a meeting"
 }

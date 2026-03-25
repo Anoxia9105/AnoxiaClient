@@ -396,5 +396,7 @@
   "chat_revoke_success": "メッセージを撤回しました",
   "chat_revoke_failed": "メッセージの撤回に失敗しました",
   "chat_revoke_error": "撤回操作エラー",
-  "system_msg_recall": "{} ニュースを1件撤回した"
+  "system_msg_recall": "{} ニュースを1件撤回した",
+  "system_msg_callstart": "{} が会議を開始しました",
+  "system_msg_callend": "{} が会議を終了しました"
 }
