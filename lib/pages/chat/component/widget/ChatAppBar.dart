@@ -3,7 +3,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/pages/chat/component/widget/SearchContextPage.dart';
 import 'package:bot_toast/bot_toast.dart';

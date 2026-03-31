@@ -2,11 +2,8 @@
 
 import 'dart:convert';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/pages/chat/call/component/ParticipantEncryptionIndicator.dart';
-import 'package:anoxia/pages/chat/call/component/ParticipantPermissionIndicator.dart';
 import 'package:anoxia/pages/chat/call/component/VolumeIndicator.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -48,11 +45,9 @@ Widget _buildSignalIconForParticipant(Participant p) {
     final active = level >= idx;
     final double h = 4.0 + idx * 3.0;
     return Container(
-      width: 2.5, 
+      width: 2.5,
       height: h,
-      margin: const EdgeInsets.symmetric(
-        horizontal: 1.0,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 1.0),
       decoration: BoxDecoration(
         color: active ? color : Colors.white10,
         borderRadius: BorderRadius.circular(1),
@@ -63,12 +58,9 @@ Widget _buildSignalIconForParticipant(Participant p) {
   return Tooltip(
     message: qualityLabel,
     child: Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black54, 
+        color: Colors.black54,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -165,20 +157,19 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final volume = p.audioLevel;
 
     // 检查是否屏幕共享
-    final isScreenShare = p.videoTrackPublications
-        .any((pub) => pub.isScreenShare && !pub.muted && pub.subscribed);
-    
+    final isScreenShare = p.videoTrackPublications.any(
+      (pub) => pub.isScreenShare && !pub.muted && pub.subscribed,
+    );
+
     // 屏幕共享时显示特殊标签
     final displayName = isScreenShare ? "$nickName's Screen" : nickName;
 
     return Padding(
       padding: const EdgeInsets.all(4),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+      child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            // 如果正在说话，显示蓝色；否则显示淡色
             color: isSpeaking
                 ? Colors.blueAccent
                 : Theme.of(
@@ -186,16 +177,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
                   ).colorScheme.onSurface.withValues(alpha: 0.1),
             width: isSpeaking ? 2.0 : 1.0,
           ),
-          // 焦点参与者额外的发光效果
-          boxShadow: isSpeaking
-              ? [
-                  BoxShadow(
-                    color: Colors.blueAccent.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  )
-                ]
-              : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -210,7 +191,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // 使用你的 AvatarWidget
-                      AvatarWidget(size: 30.w, url: avatarUrl, name: nickName),
+                      AvatarWidget(size: 48, url: avatarUrl, name: nickName),
                     ],
                   ),
                 ),
@@ -249,10 +230,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
                           fontSize: 12,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      ParticipantEncryptionIndicator(participant: p),
-                      const SizedBox(width: 2),
-                      ParticipantPermissionIndicator(participant: p),
                     ],
                   ),
                 ),
@@ -261,10 +238,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
               Positioned(
                 left: 8,
                 bottom: 36,
-                right: 8,
-                child: VolumeIndicator(
-                  volume: volume,
-                ),
+                child: VolumeIndicator(volume: volume),
               ),
               // 信号图标（右下角）——放到右下，带提示和美化容器
               Positioned(

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

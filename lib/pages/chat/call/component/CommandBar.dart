@@ -1,4 +1,8 @@
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,26 +10,18 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../framework/provider/kit/room_controller.dart';
 
 class CommandBar extends ConsumerWidget {
   final RoomState state;
-  final VoidCallback? onToggleChat;
-  final bool showChat;
 
-  const CommandBar({
-    super.key,
-    required this.state,
-    this.onToggleChat,
-    this.showChat = false,
-  });
+  const CommandBar({super.key, required this.state});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -38,108 +34,82 @@ class CommandBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // 会议计时器：基于 RoomState.joinedAt 进行本地计时
           MeetingTimer(joinedAt: state.joinedAt),
 
-          Spacer(),
-          
-          // 📹 录音状态指示
-          if (state.isRecording)
-            Tooltip(
-              message: context.tr('call_recording_tooltip'),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.2),
-                    border: Border.all(
-                      color: Colors.red,
-                      width: 1.5,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 红色闪烁指示点
-                      _buildRecordingDot(),
-                      SizedBox(width: 8),
-                      Text(
-                        context.tr('call_recording_indicator'),
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          const Spacer(),
 
-          // 核心控制按钮组
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 麦克风控制
-              _buildActionButton(
-                onPressed: () => notifier.toggleMic(),
-                icon: state.micEnabled
-                    ? HugeIcons.strokeRoundedMic01
-                    : HugeIcons.strokeRoundedMicOff01,
-                label: state.micEnabled ? "call_mute".tr() : "call_unmute".tr(),
+              // 麦克风：split button
+              Builder(
+                builder: (context) {
+                  return _splitButton(
+                    context: context,
+                    icon: state.micEnabled
+                        ? HugeIcons.strokeRoundedMic01
+                        : HugeIcons.strokeRoundedMicOff01,
+                    label: 'call_microphone'.tr(),
+                    active: state.micEnabled,
+                    onTap: () => notifier.toggleMic(),
+                    onArrowTap: () =>
+                        _showAudioInputMenu(context, notifier, state),
+                  );
+                },
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
 
-              // 摄像头控制
-              _buildActionButton(
-                onPressed: () => notifier.toggleCamera(),
-                icon: state.cameraEnabled
-                    ? HugeIcons.strokeRoundedVideo01
-                    : HugeIcons.strokeRoundedVideoOff,
-                label: "call_camera".tr(),
+              // 摄像头：split button
+              Builder(
+                builder: (context) {
+                  return _splitButton(
+                    context: context,
+                    icon: state.cameraEnabled
+                        ? HugeIcons.strokeRoundedVideo01
+                        : HugeIcons.strokeRoundedVideoOff,
+                    label: 'call_camera'.tr(),
+                    active: state.cameraEnabled,
+                    onTap: () => notifier.toggleCamera(),
+                    onArrowTap: () =>
+                        _showVideoInputMenu(context, notifier, state),
+                  );
+                },
               ),
+              const SizedBox(width: 8),
 
-              SizedBox(width: 8),
-              // 扬声器控制
-              _buildActionButton(
-                onPressed: () => notifier.toggleSpeaker(),
-                icon: state.speakerOn
-                    ? HugeIcons.strokeRoundedVolumeUp
-                    : HugeIcons.strokeRoundedVolumeOff,
-                label: state.speakerOn ? "call_speaker".tr() : "call_earpiece".tr(),
+              // 扬声器：split button
+              Builder(
+                builder: (context) {
+                  return _splitButton(
+                    context: context,
+                    icon: state.speakerOn
+                        ? HugeIcons.strokeRoundedVolumeUp
+                        : HugeIcons.strokeRoundedVolumeOff,
+                    label: state.speakerOn
+                        ? 'call_speaker'.tr()
+                        : 'call_earpiece'.tr(),
+                    active: state.speakerOn,
+                    onTap: () => notifier.toggleSpeaker(),
+                    onArrowTap: () =>
+                        _showAudioOutputMenu(context, notifier, state),
+                  );
+                },
               ),
+              const SizedBox(width: 8),
 
-              SizedBox(width: 8),
-              // 屏幕共享
-              _buildActionButton(
-                onPressed: () => notifier.toggleScreenShare(context),
+              // 屏幕共享：solo button
+              _soloButton(
+                context: context,
                 icon: state.screenSharing
                     ? HugeIcons.strokeRoundedComputerRemove
                     : HugeIcons.strokeRoundedComputerScreenShare,
-                label: "call_share".tr(),
+                label: 'call_share'.tr(),
+                active: state.screenSharing,
+                onTap: () => notifier.toggleScreenShare(context),
               ),
+              const SizedBox(width: 8),
 
-              SizedBox(width: 8),
-              // 聊天开关
-              if (onToggleChat != null)
-                _buildActionButton(
-                  onPressed: onToggleChat!,
-                  icon: showChat
-                      ? HugeIcons.strokeRoundedCancel01
-                      : HugeIcons.strokeRoundedChatting01,
-                  label: "call_chat".tr(),
-                  isActive: showChat,
-                ),
-
-              SizedBox(width: 8),
-              // 设备选择菜单
-              _buildDeviceMenu(context, ref, notifier),
-
-              SizedBox(width: 8),
-              // 挂断按钮
+              // 挂断
               _buildHangupButton(context, notifier),
             ],
           ),
@@ -148,201 +118,293 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
-  /// 设备选择下拉菜单
-  Widget _buildDeviceMenu(
-    BuildContext context,
-    WidgetRef ref,
-    RoomController notifier,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PopupMenuButton<String>(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedSettings04, size: 20),
-          tooltip: "call_device_select".tr(),
-          padding: EdgeInsets.all(8),
-          iconSize: 24,
-          constraints: BoxConstraints(minWidth: 40, minHeight: 40),
-          itemBuilder: (context) {
-            return [
-              // 麦克风选择
-              if (state.audioInputs.isNotEmpty)
-                PopupMenuItem(
-                  enabled: false,
-                  child: Text(
-                    "call_microphone".tr(),
-                    style: TextStyle(color: Theme.of(context).hintColor),
-                  ),
-                ),
-              ...state.audioInputs.map(
-                (device) => PopupMenuItem(
-                  value: "mic_${device.deviceId}",
-                  child: Row(
-                    children: [
-                      if (state.currentAudioInput?.deviceId == device.deviceId)
-                        const Icon(Icons.check, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          device.label,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: () => notifier.switchAudioInput(device),
-                ),
-              ),
+  // ──────────────────────────────────────────
+  // 组合分裂按钮
+  // ──────────────────────────────────────────
 
-              const PopupMenuDivider(),
-
-              // 摄像头选择
-              if (state.videoInputs.isNotEmpty)
-                PopupMenuItem(
-                  enabled: false,
-                  child: Text(
-                    "call_camera".tr(),
-                    style: TextStyle(color: Theme.of(context).hintColor),
-                  ),
-                ),
-              ...state.videoInputs.map(
-                (device) => PopupMenuItem(
-                  value: "cam_${device.deviceId}",
-                  child: Row(
-                    children: [
-                      if (state.currentVideoInput?.deviceId == device.deviceId)
-                        const Icon(Icons.check, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          device.label,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: () => notifier.switchVideoInput(device),
-                ),
-              ),
-
-              const PopupMenuDivider(),
-
-              // 扬声器选择
-              if (state.audioOutputs.isNotEmpty)
-                PopupMenuItem(
-                  enabled: false,
-                  child: Text(
-                    "call_speaker".tr(),
-                    style: TextStyle(color: Theme.of(context).hintColor),
-                  ),
-                ),
-              ...state.audioOutputs.map(
-                (device) => PopupMenuItem(
-                  value: "speaker_${device.deviceId}",
-                  child: Row(
-                    children: [
-                      if (state.currentAudioOutput?.deviceId == device.deviceId)
-                        const Icon(Icons.check, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          device.label,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  onTap: () => notifier.switchAudioOutput(device),
-                ),
-              ),
-            ];
-          },
-        ),
-        Text("call_device_label".tr(), style: TextStyle(fontSize: 10)),
-      ],
-    );
-  }
-
-  /// 构建功能按钮
-  Widget _buildActionButton({
-    required VoidCallback onPressed,
+  Widget _splitButton({
+    required VoidCallback onTap,
+    required VoidCallback onArrowTap,
     required List<List<dynamic>> icon,
     required String label,
-    bool isActive = false,
+    required BuildContext context,
+    bool active = false,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Builder(
-          builder: (btnContext) => IconButton(
-            tooltip: label,
-            onPressed: onPressed,
-            icon: HugeIcon(
-              icon: icon, 
-              size: 20,
-              color: isActive ? Theme.of(btnContext).colorScheme.primary : null,
-            ),
-            iconSize: 24,
-            padding: EdgeInsets.all(8),
-            constraints: BoxConstraints(minWidth: 40, minHeight: 40),
-            style: isActive ? IconButton.styleFrom(
-              backgroundColor: Theme.of(btnContext).colorScheme.primaryContainer,
-            ) : null,
+    final color = active ? Theme.of(context).colorScheme.primary : null;
+    final dividerColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.15);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: dividerColor, width: 0.5),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 左半：功能
+              Tooltip(
+                message: label,
+                child: InkWell(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    bottomLeft: Radius.circular(10),
+                  ),
+                  onTap: onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    child: HugeIcon(icon: icon, size: 18, color: color),
+                  ),
+                ),
+              ),
+              // 分割线
+              VerticalDivider(width: 1, thickness: 0.5, color: dividerColor),
+              // 右半：下拉
+              SizedBox(
+                height: double.infinity,
+                child: InkWell(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  ),
+                  onTap: onArrowTap,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6),
+                    child: Icon(Icons.keyboard_arrow_down_rounded, size: 14),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        Text(label, style: TextStyle(fontSize: 10)),
-      ],
+      ),
     );
   }
 
-  /// 构建挂断按钮
+  // ──────────────────────────────────────────
+  // 单体按钮（无下拉）
+  // ──────────────────────────────────────────
+
+  Widget _soloButton({
+    required VoidCallback onTap,
+    required List<List<dynamic>> icon,
+    required String label,
+    required BuildContext context,
+    bool active = false,
+  }) {
+    final color = active ? Theme.of(context).colorScheme.primary : null;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.15),
+          width: 0.5,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Tooltip(
+          message: label,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: HugeIcon(icon: icon, size: 18, color: color),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────
+  // 挂断按钮
+  // ──────────────────────────────────────────
+
   Widget _buildHangupButton(BuildContext context, RoomController notifier) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          tooltip: "call_hangup".tr(),
-          onPressed: () async {
+    return Tooltip(
+      message: 'call_hangup'.tr(),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.redAccent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: InkWell(
+          onTap: () async {
             await notifier.leave();
             if (context.mounted) {
               await windowManager.close();
             }
           },
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedCallRinging03,
-            size: 24,
-            color: Colors.redAccent,
-            strokeWidth: 2,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedCallRinging03,
+              size: 18,
+              color: Colors.white,
+            ),
           ),
-          iconSize: 24,
         ),
-        Text('call_window_hang_up'.tr(), style: TextStyle(fontSize: 10)),
-      ],
+      ),
     );
   }
 
-  /// 构建闪烁的录音指示点
-  Widget _buildRecordingDot() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 1000),
-      onEnd: () {},
-      builder: (context, value, child) {
-        return Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: Color.lerp(Colors.red, Colors.red.withValues(alpha: 0.4), value)!,
-            shape: BoxShape.circle,
+  // ──────────────────────────────────────────
+  // 设备选择菜单（弹出式）
+  // ──────────────────────────────────────────
+
+  void _showAudioInputMenu(
+    BuildContext context,
+    RoomController notifier,
+    RoomState state,
+  ) {
+    _showDeviceMenu(
+      context: context,
+      items: state.audioInputs
+          .map(
+            (d) => _DeviceMenuItem(
+              label: d.label,
+              selected: state.currentAudioInput?.deviceId == d.deviceId,
+              onTap: () => notifier.switchAudioInput(d),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  void _showVideoInputMenu(
+    BuildContext context,
+    RoomController notifier,
+    RoomState state,
+  ) {
+    _showDeviceMenu(
+      context: context,
+      items: state.videoInputs
+          .map(
+            (d) => _DeviceMenuItem(
+              label: d.label,
+              selected: state.currentVideoInput?.deviceId == d.deviceId,
+              onTap: () => notifier.switchVideoInput(d),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  void _showAudioOutputMenu(
+    BuildContext context,
+    RoomController notifier,
+    RoomState state,
+  ) {
+    _showDeviceMenu(
+      context: context,
+      items: state.audioOutputs
+          .map(
+            (d) => _DeviceMenuItem(
+              label: d.label,
+              selected: state.currentAudioOutput?.deviceId == d.deviceId,
+              onTap: () => notifier.switchAudioOutput(d),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  void _showDeviceMenu({
+    required BuildContext context,
+    required List<_DeviceMenuItem> items,
+  }) {
+    if (items.isEmpty) return;
+
+    Function? close;
+    close = Toast.showWidget(
+      context,
+      direction: PreferDirection.topRight,
+      child: Material(
+        color: Colors.transparent,
+        child: BubbleWidget(
+          arrowDirection: AxisDirection.up,
+          arrowOffset: 280,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          border: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
           ),
-        );
-      },
+          contentBuilder: (context) => Container(
+            constraints: BoxConstraints(maxWidth: 300, maxHeight: 300),
+            padding: const EdgeInsets.all(8),
+            child: ListView.separated(
+              itemBuilder: (BuildContext context, int index) {
+                final item = items[index];
+                return ListTile(
+                  dense: true,
+                  onTap: () {
+                    item.onTap();
+                    close?.call();
+                  },
+                  selected: item.selected,
+                  leading: Icon(
+                    item.selected ? Icons.check : Icons.circle_outlined,
+                    size: 16,
+                    color: item.selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.transparent,
+                  ),
+                  title: Text(
+                    item.label,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 4,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: item.selected
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              separatorBuilder: (BuildContext context, int index) => Divider(),
+              itemCount: items.length,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-/// 显示会议已进行时长（本地计算）。
-/// 使用 StatefulWidget 并在每秒刷新，显示格式为 mm:ss 或 hh:mm:ss。
+// ──────────────────────────────────────────
+// 内部数据类
+// ──────────────────────────────────────────
+
+class _DeviceMenuItem {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DeviceMenuItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+}
+
+// ──────────────────────────────────────────
+// 会议计时器（不变）
+// ──────────────────────────────────────────
+
 class MeetingTimer extends StatefulWidget {
   final DateTime? joinedAt;
   const MeetingTimer({super.key, required this.joinedAt});
@@ -404,20 +466,18 @@ class _MeetingTimerState extends State<MeetingTimer> {
 
   @override
   Widget build(BuildContext context) {
-    // 即使 joinedAt 为空，也显示占位，便于在 UI 上直观看到计时器区域。
     if (widget.joinedAt == null) {
-      return Column(
+      return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
+          const Text(
             '--:--',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
-          Text('call_elapsed'.tr(), style: const TextStyle(fontSize: 10)),
         ],
       );
     }
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

@@ -32,8 +32,8 @@ GoRouter router(Ref ref) {
   final refreshNotifier = RouterRefreshNotifier();
 
   // 监听两个核心状态的变化
-  ref.listen(appInitializerProvider, (_, __) => refreshNotifier.notify());
-  ref.listen(authControllerProvider, (_, __) => refreshNotifier.notify());
+  ref.listen(appInitializerProvider, (_, _) => refreshNotifier.notify());
+  ref.listen(authControllerProvider, (_, _) => refreshNotifier.notify());
   ref.onDispose(refreshNotifier.dispose);
 
   final router = GoRouter(

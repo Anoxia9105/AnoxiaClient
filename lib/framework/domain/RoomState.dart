@@ -1,50 +1,51 @@
 import 'package:livekit_client/livekit_client.dart';
 
-/// 房间状态类：用于保存 LiveKit 会话中所有的 UI 状态和媒体信息
 class RoomState {
   final Room room;
   final String token;
 
   // --- 连接状态 ---
-  final ConnectionState connectionState; // 当前房间的连接状态
-  final String? connectionError; // 连接错误信息
+  final ConnectionState connectionState;
+  final String? connectionError;
 
   // --- 开关控制状态 ---
-  final bool micEnabled; // 本地麦克风是否已开启
-  final bool cameraEnabled; // 本地摄像头是否已开启
-  final bool screenSharing; // 当前是否正在进行屏幕共享
-  final bool speakerOn; // 扬声器是否开启
+  final bool micEnabled;
+  final bool cameraEnabled;
+  final bool screenSharing;
+  final bool speakerOn;
 
-  // --- 轨道状态 ---
-  final LocalVideoTrack? screenShareTrack; // 屏幕共享轨道（单独记录，避免误关摄像头）
-  final bool isReconnecting; // 是否正在重连
-  final bool isRecording; // 是否正在录音
-  final String? roomMetadata; // 房间元数据
-  final String? focusedParticipantId; // 焦点参与者 ID（正在说话的人）
+  // --- 轨道与房间状态 ---
+  final LocalVideoTrack? screenShareTrack;
+  final bool isReconnecting;
+  final bool isRecording;
+  final String? roomMetadata;
+  final String? focusedParticipantId;
 
   // --- 可用设备列表 ---
-  final List<MediaDevice> audioInputs; // 音频输入设备（麦克风）
-  final List<MediaDevice> audioOutputs; // 音频输出设备（扬声器/耳机）
-  final List<MediaDevice> videoInputs; // 视频输入设备（摄像头）
+  final List<MediaDevice> audioInputs;
+  final List<MediaDevice> audioOutputs;
+  final List<MediaDevice> videoInputs;
 
   // --- 当前选中的设备 ---
-  final MediaDevice? currentAudioInput; // 当前麦克风
-  final MediaDevice? currentAudioOutput; // 当前扬声器
-  final MediaDevice? currentVideoInput; // 当前摄像头
+  final MediaDevice? currentAudioInput;
+  final MediaDevice? currentAudioOutput;
+  final MediaDevice? currentVideoInput;
 
-  // --- 参与者列表 ---
-  final List<RemoteParticipant> remoteParticipants; // 远程参与者
-  // --- 额外监控字段（用于 UI 展示网络质量与计时）
-  /// 本地客户端加入房间的时间点（用于在 UI 上显示会议已进行多长时间）
+  // --- 参与者 ---
+  final List<RemoteParticipant> remoteParticipants;
+
+  // --- 监控数据 ---
+  /// 本地客户端加入房间的时间点
   final DateTime? joinedAt;
 
-  /// 每个 participant 的测得 RTT（毫秒），key = participantSid/value = rttMs
-  final Map<String, int>? participantRttMs;
+  /// 每个参与者的连接质量
+  /// key = participant.identity，value = ConnectionQuality（excellent/good/poor/lost）
+  /// 对应官方 ParticipantConnectionQualityUpdatedEvent 事件
+  final Map<String, ConnectionQuality>? participantQuality;
 
-  /// 每个 participant 的音量等级 (0.0-1.0)，key = participantSid
+  /// 每个参与者的音量等级 (0.0-1.0)，key = participant.identity
   final Map<String, double>? participantVolumes;
 
-  /// 构造函数：初始化所有必要字段
   const RoomState({
     required this.room,
     required this.token,
@@ -66,13 +67,11 @@ class RoomState {
     this.currentAudioInput,
     this.currentAudioOutput,
     this.currentVideoInput,
-    // 新增字段：加入时间与网络质量相关展示数据，均为可选，默认 null
     this.joinedAt,
-    this.participantRttMs,
+    this.participantQuality,
     this.participantVolumes,
   });
 
-  /// 状态克隆方法：局部更新状态并返回新实例
   RoomState copyWith({
     String? token,
     Room? room,
@@ -95,7 +94,7 @@ class RoomState {
     MediaDevice? currentVideoInput,
     List<RemoteParticipant>? remoteParticipants,
     DateTime? joinedAt,
-    Map<String, int>? participantRttMs,
+    Map<String, ConnectionQuality>? participantQuality,
     Map<String, double>? participantVolumes,
   }) {
     return RoomState(
@@ -120,13 +119,12 @@ class RoomState {
       currentVideoInput: currentVideoInput ?? this.currentVideoInput,
       remoteParticipants: remoteParticipants ?? this.remoteParticipants,
       joinedAt: joinedAt ?? this.joinedAt,
-      participantRttMs: participantRttMs ?? this.participantRttMs,
+      participantQuality: participantQuality ?? this.participantQuality,
       participantVolumes: participantVolumes ?? this.participantVolumes,
     );
   }
 
   @override
-  String toString() {
-    return 'RoomState{connectionState: $connectionState, micEnabled: $micEnabled, cameraEnabled: $cameraEnabled, screenSharing: $screenSharing, speakerOn: $speakerOn, isReconnecting: $isReconnecting}';
-  }
+  String toString() =>
+      'RoomState{connectionState: $connectionState, mic: $micEnabled, camera: $cameraEnabled, screen: $screenSharing, reconnecting: $isReconnecting}';
 }

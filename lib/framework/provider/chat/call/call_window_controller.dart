@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../logs/talker.dart';
+import '../../../logs/talker.dart';
 import 'Channel.dart';
 
 part 'call_window_controller.g.dart';

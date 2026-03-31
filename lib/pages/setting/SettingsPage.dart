@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/provider/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

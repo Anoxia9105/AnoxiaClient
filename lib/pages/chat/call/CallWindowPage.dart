@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:anoxia/framework/provider/kit/room_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,12 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../framework/logs/talker.dart';
-import '../../../framework/provider/call/Channel.dart';
+import '../../../framework/provider/chat/call/Channel.dart';
 import '../../../framework/theme/AppColors.dart';
 import '../../../framework/theme/AppTheme.dart';
 import 'component/deesktop/CallDesktopAppBar.dart';
 import 'CallRoomPage.dart';
-import 'component/PreJoinScreen.dart';
 
 class CallWindowPage extends ConsumerStatefulWidget {
   final WindowController controller;
@@ -30,7 +29,6 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
   int _themeIndex = 0;
   String _title = "";
   String _roomId = "";
-  bool _passedPrejoin = false;
 
   @override
   void initState() {
@@ -84,7 +82,6 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
   void dispose() {
     windowManager.removeListener(this);
     Channel.callChannel.setMethodCallHandler(null);
-
     super.dispose();
   }
 
@@ -101,57 +98,32 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+      navigatorObservers: [BotToastNavigatorObserver()], 
       home: Container(
         decoration: BoxDecoration(
           gradient: themeData.extension<AppColors>()?.scaffoldGradient,
         ),
         child: Scaffold(
           appBar: CallDesktopAppbar(title: _title),
-          body: _passedPrejoin
-              ? tokenAsync.when(
-                  data: (token) {
-                    log.info("Token 获取成功: $token");
-                    return CallRoomPage(token: token);
-                  },
-                  error: (err, stack) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('call_window_room_creation_failed'.tr()),
-                        FilledButton(
-                          onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
-                          child: Text('call_window_retry'.tr()),
-                        ),
-                      ],
-                    ),
+          body: tokenAsync.when(
+            data: (token) {
+              log.info("Token 获取成功（开始启动通话）: $token");
+              return CallRoomPage(token: token);
+            },
+            error: (err, stack) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('call_window_room_creation_failed'.tr()),
+                  FilledButton(
+                    onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
+                    child: Text('call_window_retry'.tr()),
                   ),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                )
-              : tokenAsync.when(
-                  data: (token) {
-                    return PrejoinScreen(
-                      roomId: _roomId,
-                      onJoin: () {
-                        setState(() {
-                          _passedPrejoin = true;
-                        });
-                      },
-                    );
-                  },
-                  error: (err, stack) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('call_window_room_creation_failed'.tr(), style: TextStyle()),
-                        FilledButton(
-                          onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
-                          child: Text('call_window_retry'.tr()),
-                        ),
-                      ],
-                    ),
-                  ),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                ),
+                ],
+              ),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+          ),
         ),
       ),
     );
