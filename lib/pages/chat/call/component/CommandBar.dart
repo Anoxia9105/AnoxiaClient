@@ -10,7 +10,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
-
 class CommandBar extends ConsumerWidget {
   final RoomState state;
 
@@ -57,7 +56,7 @@ class CommandBar extends ConsumerWidget {
                   );
                 },
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
 
               // 摄像头：split button
               Builder(
@@ -75,7 +74,7 @@ class CommandBar extends ConsumerWidget {
                   );
                 },
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
 
               // 扬声器：split button
               Builder(
@@ -97,6 +96,26 @@ class CommandBar extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
 
+              // 握手：solo button
+              _soloButton(
+                context: context,
+                icon: HugeIcons.strokeRoundedHold03,
+                label: '举手',
+                active: state.screenSharing,
+                onTap: () => notifier.toggleScreenShare(context),
+              ),
+              const SizedBox(width: 2),
+
+              // 握手：solo button
+              _soloButton(
+                context: context,
+                icon: HugeIcons.strokeRoundedRubberDuck,
+                label: '小黄鸭',
+                active: state.screenSharing,
+                onTap: () => notifier.toggleScreenShare(context),
+              ),
+
+              const SizedBox(width: 2),
               // 屏幕共享：solo button
               _soloButton(
                 context: context,

@@ -237,6 +237,7 @@ class RoomController extends _$RoomController {
   void _handleDataEvent(DataReceivedEvent e) {
     try {
       final json = jsonDecode(utf8.decode(e.data)) as Map<String, dynamic>;
+      log.info("📨 收到数据事件原始内容: $json");
       final type = json['type'] as String?;
       log.info("📨 收到数据事件: type=$type 来自: ${e.participant?.identity}");
 

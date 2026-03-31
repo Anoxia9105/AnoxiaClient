@@ -36,8 +36,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         size: imageBytes.lengthInBytes,
         bytes: imageBytes,
       );
-      
-      if (!UploadValidator.validate(controller, [tempPlatformFile])) return null;
+
+      if (!UploadValidator.validate(controller, [tempPlatformFile]))
+        return null;
       if (!UploadValidator.validateSingleFile(tempPlatformFile)) return null;
 
       final String id = const Uuid().v4();
@@ -56,7 +57,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         size: imageBytes.lengthInBytes,
         type: "jpg",
       );
-      
+
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: BlockEmbed.imageType,
@@ -76,11 +77,12 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 场景 2：手动选择图片 (点击图标) ---
 
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    // final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
-    
+
     if (result == null || result.files.isEmpty) return;
     if (!UploadValidator.validate(controller, result.files)) return;
 
@@ -115,7 +117,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   /// 统一上传入口（不再包含压缩逻辑）
   Future<void> uploadImages(List<Attachment> images) async {
     if (images.isEmpty) return;
-    
+
     // 设置全局上传状态（例如显示进度条或加载中指示）
     ref.read(isUploadingProvider.notifier).start();
 
@@ -138,11 +140,11 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       if (res.data is List) {
         final List urls = res.data;
         final Map<String, String> resultMap = {};
-        
+
         for (int i = 0; i < images.length && i < urls.length; i++) {
           resultMap[images[i].id!] = urls[i].toString();
         }
-        
+
         // 更新 State，让 DeltaProcessor 将本地路径替换为远程 URL
         state = {...state, ...resultMap};
       }
