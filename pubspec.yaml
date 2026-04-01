@@ -98,6 +98,13 @@ dependencies:
   flutter_card_swiper: ^7.0.2
     #树形视图
   flutter_fancy_tree_view: ^1.6.0
+  #拆分器视图插件
+  split_view: ^3.2.1
+
+    # 本地存储
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

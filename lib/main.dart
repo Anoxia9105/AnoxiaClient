@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/framework/provider/note/model/note_entity.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/chat/call/CallWindowPage.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -10,6 +11,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
@@ -64,7 +66,9 @@ Future<void> main(List<String> args) async {
     await Future.wait([
       EasyLocalization.ensureInitialized(), // 多语言初始化
       SPUtil.init(), // 本地存储初始化
+      Hive.initFlutter(), // 初始化 Hive
     ]);
+    Hive.registerAdapter(NoteEntityAdapter());
 
     // 检查更新
     if (!DeviceUtil.isWeb) {

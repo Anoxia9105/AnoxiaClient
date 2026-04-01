@@ -22,7 +22,8 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   Map<String, UploadEntry> build() => {};
 
   Future<void> selectFiles(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    // final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.any,
     );
@@ -32,13 +33,15 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     final List<Attachment> uploadList = [];
     for (final file in result.files.where((f) => f.path != null)) {
       if (!UploadValidator.validateSingleFile(file)) continue;
-      uploadList.add(Attachment(
-        id: const Uuid().v4(),
-        url: file.path!,
-        name: p.basenameWithoutExtension(file.path!),
-        size: file.size,
-        type: file.extension ?? 'bin',
-      ));
+      uploadList.add(
+        Attachment(
+          id: const Uuid().v4(),
+          url: file.path!,
+          name: p.basenameWithoutExtension(file.path!),
+          size: file.size,
+          type: file.extension ?? 'bin',
+        ),
+      );
     }
     if (uploadList.isEmpty) return;
 
@@ -60,7 +63,10 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
     try {
       final files = attachments.map((a) => File(a.url!)).toList();
-      final res = await DioClient().uploadFiles("/file/uploadBatch", files: files);
+      final res = await DioClient().uploadFiles(
+        "/file/uploadBatch",
+        files: files,
+      );
 
       // 修复：正确解析包装对象（与图片控制器一致）
       final rawList = res.data is Map ? res.data['data'] : res.data;
@@ -88,10 +94,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   }
 
   void _markFailed(List<Attachment> attachments) {
-    state = {
-      ...state,
-      for (final a in attachments) a.id!: UploadEntry.failed,
-    };
+    state = {...state, for (final a in attachments) a.id!: UploadEntry.failed};
   }
 
   Map<String, String> get urlMap => {

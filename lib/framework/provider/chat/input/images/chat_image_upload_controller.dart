@@ -67,7 +67,8 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 场景 2：选择图片 ---
 
   Future<void> selectImages(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
+    // final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
@@ -77,13 +78,15 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     final List<Attachment> uploadList = [];
     for (final file in result.files.where((f) => f.path != null)) {
       if (!UploadValidator.validateSingleFile(file)) continue;
-      uploadList.add(Attachment(
-        id: const Uuid().v4(),
-        url: file.path!,
-        name: p.basenameWithoutExtension(file.path!),
-        size: file.size,
-        type: file.extension ?? 'jpg',
-      ));
+      uploadList.add(
+        Attachment(
+          id: const Uuid().v4(),
+          url: file.path!,
+          name: p.basenameWithoutExtension(file.path!),
+          size: file.size,
+          type: file.extension ?? 'jpg',
+        ),
+      );
     }
     if (uploadList.isEmpty) return;
 
@@ -113,7 +116,10 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           .toList();
       if (files.isEmpty) return;
 
-      final res = await DioClient().uploadFiles("/file/uploadBatch", files: files);
+      final res = await DioClient().uploadFiles(
+        "/file/uploadBatch",
+        files: files,
+      );
 
       // 修复：正确解析包装对象
       final rawList = res.data is Map ? res.data['data'] : res.data;
@@ -136,17 +142,11 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   // --- 工具方法 ---
 
   void _markUploading(List<Attachment> images) {
-    state = {
-      ...state,
-      for (final i in images) i.id!: UploadEntry.uploading,
-    };
+    state = {...state, for (final i in images) i.id!: UploadEntry.uploading};
   }
 
   void _markFailed(List<Attachment> images) {
-    state = {
-      ...state,
-      for (final i in images) i.id!: UploadEntry.failed,
-    };
+    state = {...state, for (final i in images) i.id!: UploadEntry.failed};
   }
 
   /// 供 DeltaProcessor 使用：只返回上传成功的 id -> url 映射

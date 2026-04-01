@@ -1,6 +1,7 @@
 import 'package:anoxia/pages/AppScaffold.dart';
 import 'package:anoxia/pages/contact/ContactPage.dart';
 import 'package:anoxia/pages/me/MePage.dart';
+import 'package:anoxia/pages/notes/NotesPage.dart';
 import 'package:anoxia/pages/setting/SettingsPage.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,6 @@ import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
 import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
-import 'notes/DiscoverPage.dart';
 
 class MainLayoutPage extends ConsumerWidget {
   const MainLayoutPage({super.key});
