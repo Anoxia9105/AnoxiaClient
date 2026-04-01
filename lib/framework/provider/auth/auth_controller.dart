@@ -114,7 +114,6 @@ class AuthController extends _$AuthController {
 
       // ── 聊天输入 & 上传 ──
       ref.invalidate(chatInputControllerProvider);
-      ref.invalidate(isUploadingProvider);
       ref.invalidate(mentionStateProvider);
       ref.invalidate(chatImageUploadControllerProvider);
       ref.invalidate(chatFileUploadControllerProvider);

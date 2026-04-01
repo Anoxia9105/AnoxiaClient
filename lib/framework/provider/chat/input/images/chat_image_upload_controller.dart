@@ -8,6 +8,7 @@ import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:path/path.dart' as p;
@@ -19,38 +20,28 @@ part 'chat_image_upload_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ChatImageUploadController extends _$ChatImageUploadController {
   @override
-  Map<String, String> build() {
-    return {}; // imageId -> serverUrl
-  }
+  Map<String, UploadEntry> build() => {};
 
-  // --- 场景 1：粘贴图片 (Ctrl + V) ---
+  // --- 场景 1：粘贴图片 ---
 
-  Future<String?> handlePastedImage(
+  Future<void> handlePastedImage(
     QuillController controller,
     Uint8List imageBytes,
   ) async {
     try {
-      // 1. 基础校验 (复用 UploadValidator)
-      final tempPlatformFile = PlatformFile(
+      final tempFile = PlatformFile(
         name: "pasted_image.jpg",
         size: imageBytes.lengthInBytes,
         bytes: imageBytes,
       );
+      if (!UploadValidator.validate(controller, [tempFile])) return;
+      if (!UploadValidator.validateSingleFile(tempFile)) return;
 
-      if (!UploadValidator.validate(controller, [tempPlatformFile]))
-        return null;
-      if (!UploadValidator.validateSingleFile(tempPlatformFile)) return null;
-
-      final String id = const Uuid().v4();
-
-      // 2. 将字节写入临时文件，用于 UI 预览和上传
-      final File rawFile = File(
-        p.join(Directory.systemTemp.path, "pasted_$id.jpg"),
-      );
+      final id = const Uuid().v4();
+      final rawFile = File(p.join(Directory.systemTemp.path, "pasted_$id.jpg"));
       await rawFile.writeAsBytes(imageBytes);
 
-      // 3. 立即插入 UI 预览
-      final previewAttachment = Attachment(
+      final attachment = Attachment(
         id: id,
         url: rawFile.path,
         name: "pasted_image",
@@ -58,100 +49,112 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         type: "jpg",
       );
 
+      // 立即标记为 uploading，再插入 embed，彻底消灭空窗期
+      _markUploading([attachment]);
+
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: BlockEmbed.imageType,
-        data: previewAttachment.toJson(),
+        data: attachment.toJson(),
       );
 
-      // 4. 后台直接上传原文件
-      unawaited(uploadImages([previewAttachment]));
-
-      return null;
+      unawaited(uploadImages([attachment]));
     } catch (e, st) {
       log.error("处理粘贴图片失败: $e", st);
-      return null;
     }
   }
 
-  // --- 场景 2：手动选择图片 (点击图标) ---
+  // --- 场景 2：选择图片 ---
 
   Future<void> selectImages(QuillController controller) async {
     final result = await FilePicker.platform.pickFiles(
-    // final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
-
     if (result == null || result.files.isEmpty) return;
     if (!UploadValidator.validate(controller, result.files)) return;
 
     final List<Attachment> uploadList = [];
     for (final file in result.files.where((f) => f.path != null)) {
       if (!UploadValidator.validateSingleFile(file)) continue;
-
-      final attachment = Attachment(
+      uploadList.add(Attachment(
         id: const Uuid().v4(),
-        url: file.path!, // 使用原图路径
+        url: file.path!,
         name: p.basenameWithoutExtension(file.path!),
         size: file.size,
         type: file.extension ?? 'jpg',
-      );
+      ));
+    }
+    if (uploadList.isEmpty) return;
 
-      // 插入编辑器预览
+    // 先全部标记 uploading，再插入 embed
+    _markUploading(uploadList);
+
+    for (final a in uploadList) {
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: BlockEmbed.imageType,
-        data: attachment.toJson(),
+        data: a.toJson(),
       );
-      uploadList.add(attachment);
     }
 
-    if (uploadList.isNotEmpty) {
-      unawaited(uploadImages(uploadList));
-    }
+    unawaited(uploadImages(uploadList));
   }
 
-  // --- 核心：统一上传逻辑 ---
+  // --- 核心上传逻辑 ---
 
-  /// 统一上传入口（不再包含压缩逻辑）
   Future<void> uploadImages(List<Attachment> images) async {
     if (images.isEmpty) return;
 
-    // 设置全局上传状态（例如显示进度条或加载中指示）
-    ref.read(isUploadingProvider.notifier).start();
-
     try {
-      // 准备待上传的文件列表
-      final List<File> filesToUpload = images
-          .where((img) => img.url != null)
-          .map((img) => File(img.url!))
+      final files = images
+          .where((i) => i.url != null)
+          .map((i) => File(i.url!))
           .toList();
+      if (files.isEmpty) return;
 
-      if (filesToUpload.isEmpty) return;
+      final res = await DioClient().uploadFiles("/file/uploadBatch", files: files);
 
-      // 执行 Dio 批量上传
-      final res = await DioClient().uploadFiles(
-        "/file/uploadBatch",
-        files: filesToUpload,
-      );
+      // 修复：正确解析包装对象
+      final rawList = res.data is Map ? res.data['data'] : res.data;
 
-      // 处理返回结果
-      if (res.data is List) {
-        final List urls = res.data;
-        final Map<String, String> resultMap = {};
-
-        for (int i = 0; i < images.length && i < urls.length; i++) {
-          resultMap[images[i].id!] = urls[i].toString();
-        }
-
-        // 更新 State，让 DeltaProcessor 将本地路径替换为远程 URL
-        state = {...state, ...resultMap};
+      if (rawList is List && rawList.isNotEmpty) {
+        state = {
+          ...state,
+          for (int i = 0; i < images.length && i < rawList.length; i++)
+            images[i].id!: UploadEntry.success(rawList[i].toString()),
+        };
+      } else {
+        _markFailed(images);
       }
     } catch (e, st) {
       log.error("图片上传失败: $e\n$st");
-    } finally {
-      ref.read(isUploadingProvider.notifier).stop();
+      _markFailed(images);
     }
   }
+
+  // --- 工具方法 ---
+
+  void _markUploading(List<Attachment> images) {
+    state = {
+      ...state,
+      for (final i in images) i.id!: UploadEntry.uploading,
+    };
+  }
+
+  void _markFailed(List<Attachment> images) {
+    state = {
+      ...state,
+      for (final i in images) i.id!: UploadEntry.failed,
+    };
+  }
+
+  /// 供 DeltaProcessor 使用：只返回上传成功的 id -> url 映射
+  Map<String, String> get urlMap => {
+    for (final e in state.entries)
+      if (e.value.isSuccess) e.key: e.value.serverUrl!,
+  };
+
+  /// 消息发送后调用，清理 state
+  void clear() => state = {};
 }

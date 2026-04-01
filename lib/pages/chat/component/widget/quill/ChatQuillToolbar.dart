@@ -1,6 +1,8 @@
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatEmojiWidget.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -33,7 +35,12 @@ class ChatQuillToolbar extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final iconColor = colorScheme.onSurfaceVariant;
 
-    final isUploading = ref.watch(isUploadingProvider);
+    final imageState = ref.watch(chatImageUploadControllerProvider);
+    final fileState = ref.watch(chatFileUploadControllerProvider);
+    final isUploading = [
+      ...imageState.values,
+      ...fileState.values,
+    ].any((e) => e.isUploading);
 
     return Padding(
       padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
@@ -281,11 +288,7 @@ class ChatQuillToolbar extends ConsumerWidget {
         );
       },
       // 选中状态可以给个背景色或改变颜色
-      icon: HugeIcon(
-        icon: icon,
-        size: 16,
-        color: color
-      ),
+      icon: HugeIcon(icon: icon, size: 16, color: color),
     );
   }
 

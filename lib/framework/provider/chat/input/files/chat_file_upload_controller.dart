@@ -2,104 +2,102 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
-import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
-import 'package:path/path.dart' as p;
 
 part 'chat_file_upload_controller.g.dart';
 
 @Riverpod(keepAlive: true)
 class ChatFileUploadController extends _$ChatFileUploadController {
   @override
-  Map<String, String> build() {
-    // fileId -> serverUrl
-    return {};
-  }
+  Map<String, UploadEntry> build() => {};
 
-  /// 选择文件并插入编辑器
   Future<void> selectFiles(QuillController controller) async {
     final result = await FilePicker.platform.pickFiles(
-    // final result = await FilePicker.pickFiles(
       allowMultiple: true,
-      type: FileType.any, // 允许所有类型
+      type: FileType.any,
     );
-
     if (result == null || result.files.isEmpty) return;
-
-    //使用公共校验逻辑
     if (!UploadValidator.validate(controller, result.files)) return;
 
     final List<Attachment> uploadList = [];
-
     for (final file in result.files.where((f) => f.path != null)) {
-      //单个文件验证
       if (!UploadValidator.validateSingleFile(file)) continue;
-      final attachment = Attachment(
+      uploadList.add(Attachment(
         id: const Uuid().v4(),
         url: file.path!,
         name: p.basenameWithoutExtension(file.path!),
         size: file.size,
-        type: file.extension ?? 'bin', // 默认为二进制流
-      );
+        type: file.extension ?? 'bin',
+      ));
+    }
+    if (uploadList.isEmpty) return;
 
-      // 在编辑器中插入文件节点 (注意这里 type 是 'file')
+    _markUploading(uploadList);
+
+    for (final a in uploadList) {
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: 'file',
-        data: attachment.toJson(),
+        data: a.toJson(),
       );
-
-      uploadList.add(attachment);
     }
 
-    if (uploadList.isNotEmpty) {
-      unawaited(uploadFiles(uploadList));
-    }
+    unawaited(uploadFiles(uploadList));
   }
 
-  /// 批量上传文件逻辑
   Future<void> uploadFiles(List<Attachment> attachments) async {
-    // 修复：在文件处理开始前就设置上传状态，避免先显示失败状态
-    ref.read(isUploadingProvider.notifier).start();
+    if (attachments.isEmpty) return;
 
     try {
-      // 1. 将路径转换为 File 对象列表
-      final List<File> filesToUpload = attachments
-          .map((a) => File(a.url!))
-          .toList();
+      final files = attachments.map((a) => File(a.url!)).toList();
+      final res = await DioClient().uploadFiles("/file/uploadBatch", files: files);
 
-      // 2. 调用现有的批量上传接口
-      final res = await DioClient().uploadFiles(
-        "/file/uploadBatch",
-        files: filesToUpload,
-      );
+      // 修复：正确解析包装对象（与图片控制器一致）
+      final rawList = res.data is Map ? res.data['data'] : res.data;
 
-      if (res.data is List) {
-        final List urls = res.data;
-        final Map<String, String> resultMap = {};
-
-        // 3. 映射 ID 和服务器 URL
-        for (int i = 0; i < attachments.length && i < urls.length; i++) {
-          resultMap[attachments[i].id!] = urls[i].toString();
-        }
-
-        // 4. 更新状态
-        state = {...state, ...resultMap};
+      if (rawList is List && rawList.isNotEmpty) {
+        state = {
+          ...state,
+          for (int i = 0; i < attachments.length && i < rawList.length; i++)
+            attachments[i].id!: UploadEntry.success(rawList[i].toString()),
+        };
+      } else {
+        _markFailed(attachments);
       }
     } catch (e, st) {
-      log.error("文件批量上传失败: $e\n$st");
-    } finally {
-      ref.read(isUploadingProvider.notifier).stop();
+      log.error("文件上传失败: $e\n$st");
+      _markFailed(attachments);
     }
   }
 
-  /// 清理已上传的映射（建议在消息发送后调用）
+  void _markUploading(List<Attachment> attachments) {
+    state = {
+      ...state,
+      for (final a in attachments) a.id!: UploadEntry.uploading,
+    };
+  }
+
+  void _markFailed(List<Attachment> attachments) {
+    state = {
+      ...state,
+      for (final a in attachments) a.id!: UploadEntry.failed,
+    };
+  }
+
+  Map<String, String> get urlMap => {
+    for (final e in state.entries)
+      if (e.value.isSuccess) e.key: e.value.serverUrl!,
+  };
+
   void clear() => state = {};
 }

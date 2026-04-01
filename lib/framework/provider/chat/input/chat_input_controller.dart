@@ -39,14 +39,14 @@ class ChatInputController extends _$ChatInputController {
       config: QuillControllerConfig(
         clipboardConfig: QuillClipboardConfig(
           enableExternalRichPaste: false, // 禁止富文本，防止格式错乱
-
           // --- 核心修改：对接粘贴板图片 ---
           onImagePaste: (Uint8List imageBytes) async {
             log.info("检测到图片粘贴，大小: ${imageBytes.lengthInBytes} 字节");
 
             // 调用 ChatImageUploadController 处理粘贴
             // 逻辑：存临时文件 -> 插入预览 -> 后台静默上传
-            await ref.read(chatImageUploadControllerProvider.notifier)
+            await ref
+                .read(chatImageUploadControllerProvider.notifier)
                 .handlePastedImage(controller, imageBytes);
 
             // 返回 null，表示“我已经手动处理了插入，Quill 你不用再管了”
@@ -72,7 +72,6 @@ class ChatInputController extends _$ChatInputController {
 
     return controller;
   }
-
 
   /// 监听文本变化处理
   void _onTextChanged() {
@@ -160,8 +159,7 @@ class ChatInputController extends _$ChatInputController {
     if (room == null || room.peerId == null) return;
 
     //用户在线发送 TYPING_STATUS 不在线不发送
-    final roomMembers = ref
-        .read(roomMembersProvider(room.roomId!));
+    final roomMembers = ref.read(roomMembersProvider(room.roomId!));
 
     // 4.1 成员列表为空（未同步），不发送
     if (roomMembers.isEmpty) {
@@ -178,7 +176,6 @@ class ChatInputController extends _$ChatInputController {
 
     // 找不到对方成员 或 对方离线，不发送
     if (peerMember.onlineStatus != true) {
-      
       log.debug("${peerMember.nickName}离线，不发送typing（isTyping: $isTyping）");
       return;
     }
@@ -202,15 +199,19 @@ class ChatInputController extends _$ChatInputController {
     if (room == null || state.document.isEmpty()) return;
 
     final uploadState = {
-      ...ref.read(chatImageUploadControllerProvider),
-      ...ref.read(chatFileUploadControllerProvider),
+      ...ref.read(chatImageUploadControllerProvider.notifier).urlMap,
+      ...ref.read(chatFileUploadControllerProvider.notifier).urlMap,
     };
     final processor = DeltaProcessor(state.document.toDelta(), uploadState);
     final mentionIds = processor.mentionedUserIds;
     // 拦截：正在上传中
-    if (ref.read(isUploadingProvider)) {
-      return;
-    }
+    final imageState = ref.read(chatImageUploadControllerProvider);
+    final fileState = ref.read(chatFileUploadControllerProvider);
+    final allEntries = [...imageState.values, ...fileState.values];
+
+    if (allEntries.any((e) => e.isUploading)) return;
+    if (allEntries.any((e) => e.isFailed)) return;
+
     // 拦截：检查是否有失败/未上传的文件
     if (!processor.isAllUploaded) {
       return;
@@ -341,18 +342,6 @@ FocusNode chatFocusNode(Ref ref, String roomId) {
   return node;
 }
 
-/// 上传状态（UI 用）
-@Riverpod(keepAlive: true)
-class IsUploading extends _$IsUploading {
-  @override
-  bool build() {
-    return false;
-  }
-
-  void start() => state = true;
-
-  void stop() => state = false;
-}
 
 // 在 chat_input_controller.dart 中添加
 @Riverpod(keepAlive: true)

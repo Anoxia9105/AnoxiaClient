@@ -59,7 +59,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'af76b2a80858596b7d118de12f4def219a000a98';
+    r'64d3ff991e0fcfd7dc898b38d6eb4e5a5a802aab';
 
 final class ChatInputControllerFamily extends $Family
     with
@@ -192,64 +192,6 @@ final class ChatFocusNodeFamily extends $Family
 
   @override
   String toString() => r'chatFocusNodeProvider';
-}
-
-/// 上传状态（UI 用）
-
-@ProviderFor(IsUploading)
-const isUploadingProvider = IsUploadingProvider._();
-
-/// 上传状态（UI 用）
-final class IsUploadingProvider extends $NotifierProvider<IsUploading, bool> {
-  /// 上传状态（UI 用）
-  const IsUploadingProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'isUploadingProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$isUploadingHash();
-
-  @$internal
-  @override
-  IsUploading create() => IsUploading();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-}
-
-String _$isUploadingHash() => r'b5cff5477f9aac35ce4b59ad446866bdb5f32d7c';
-
-/// 上传状态（UI 用）
-
-abstract class _$IsUploading extends $Notifier<bool> {
-  bool build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final created = build();
-    final ref = this.ref as $Ref<bool, bool>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<bool, bool>,
-              bool,
-              Object?,
-              Object?
-            >;
-    element.handleValue(ref, created);
-  }
 }
 
 @ProviderFor(MentionState)

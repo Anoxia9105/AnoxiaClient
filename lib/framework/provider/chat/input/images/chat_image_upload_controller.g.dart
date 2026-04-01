@@ -13,7 +13,8 @@ part of 'chat_image_upload_controller.dart';
 const chatImageUploadControllerProvider = ChatImageUploadControllerProvider._();
 
 final class ChatImageUploadControllerProvider
-    extends $NotifierProvider<ChatImageUploadController, Map<String, String>> {
+    extends
+        $NotifierProvider<ChatImageUploadController, Map<String, UploadEntry>> {
   const ChatImageUploadControllerProvider._()
     : super(
         from: null,
@@ -33,30 +34,31 @@ final class ChatImageUploadControllerProvider
   ChatImageUploadController create() => ChatImageUploadController();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Map<String, String> value) {
+  Override overrideWithValue(Map<String, UploadEntry> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<Map<String, String>>(value),
+      providerOverride: $SyncValueProvider<Map<String, UploadEntry>>(value),
     );
   }
 }
 
 String _$chatImageUploadControllerHash() =>
-    r'a649916ffad0743ccf7c3341787c22c5b99cf246';
+    r'6134c2b8365f0ca28d7ef33c17f2005149db5bfa';
 
 abstract class _$ChatImageUploadController
-    extends $Notifier<Map<String, String>> {
-  Map<String, String> build();
+    extends $Notifier<Map<String, UploadEntry>> {
+  Map<String, UploadEntry> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
-    final ref = this.ref as $Ref<Map<String, String>, Map<String, String>>;
+    final ref =
+        this.ref as $Ref<Map<String, UploadEntry>, Map<String, UploadEntry>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<Map<String, String>, Map<String, String>>,
-              Map<String, String>,
+              AnyNotifier<Map<String, UploadEntry>, Map<String, UploadEntry>>,
+              Map<String, UploadEntry>,
               Object?,
               Object?
             >;

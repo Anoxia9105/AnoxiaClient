@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
-import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -12,20 +12,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class QuillImageBuild implements EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
-    // 1. 先解析基础数据
     final data = embedContext.node.value.data;
     final dataMap = data is String ? jsonDecode(data) : data;
-    Attachment attachment = Attachment.fromJson(dataMap);
+    final attachment = Attachment.fromJson(dataMap);
 
     return Consumer(
-      builder: (context, ref, child) {
-        // 监听上传状态
+      builder: (context, ref, _) {
         final uploadState = ref.watch(chatImageUploadControllerProvider);
-        final isUploading = ref.watch(isUploadingProvider);
-
-        final bool isSuccess = uploadState.containsKey(attachment.id);
-        // 如果不在上传映射表里，且全局上传状态已经停止，判定为失败
-        final bool isFailed = !isSuccess && !isUploading;
+        // 直接读 per-item 状态，无需依赖全局 isUploadingProvider
+        final entry = uploadState[attachment.id] ?? UploadEntry.uploading;
 
         return Stack(
           alignment: Alignment.center,
@@ -35,24 +30,22 @@ class QuillImageBuild implements EmbedBuilder {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isFailed
+                  color: entry.isFailed
                       ? Colors.red
                       : Colors.grey.withValues(alpha: 0.2),
-                  width: isFailed ? 2 : 1,
+                  width: entry.isFailed ? 2 : 1,
                 ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Opacity(
-                  opacity: isFailed ? 0.5 : 1.0,
-                  // 只有本地文件存在时才 Image.file
+                  opacity: entry.isFailed ? 0.5 : 1.0,
                   child: Image.file(File(attachment.url!), fit: BoxFit.cover),
                 ),
               ),
             ),
 
-            // 失败遮罩层
-            if (isFailed)
+            if (entry.isFailed)
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -68,8 +61,7 @@ class QuillImageBuild implements EmbedBuilder {
                 ],
               ),
 
-            // 上传中进度（可选）
-            if (!isSuccess && isUploading)
+            if (entry.isUploading)
               const CircularProgressIndicator(strokeWidth: 2),
           ],
         );
@@ -78,9 +70,8 @@ class QuillImageBuild implements EmbedBuilder {
   }
 
   @override
-  WidgetSpan buildWidgetSpan(Widget widget) {
-    return WidgetSpan(child: widget, alignment: PlaceholderAlignment.bottom);
-  }
+  WidgetSpan buildWidgetSpan(Widget widget) =>
+      WidgetSpan(child: widget, alignment: PlaceholderAlignment.bottom);
 
   @override
   String get key => BlockEmbed.imageType;
@@ -89,7 +80,5 @@ class QuillImageBuild implements EmbedBuilder {
   bool get expanded => false;
 
   @override
-  String toPlainText(Embed node) {
-    return 'quill_image_plain'.tr();
-  }
+  String toPlainText(Embed node) => 'quill_image_plain'.tr();
 }
