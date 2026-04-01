@@ -142,6 +142,7 @@ class RoomState {
 }
 
 class ReactionItem {
+  final String id;
   final String message;
   final String uid;
   final DateTime createdAt;
@@ -149,5 +150,5 @@ class ReactionItem {
     required this.message,
     required this.uid,
     required this.createdAt,
-  });
+  }) : id = '${uid}_${DateTime.now().microsecondsSinceEpoch}';
 }
