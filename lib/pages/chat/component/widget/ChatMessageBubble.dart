@@ -1,4 +1,3 @@
-import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -15,9 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../common/widgets/BubbleDialog.dart';
-import '../../../../framework/domain/ChatRoomMemberVO.dart';
 import '../../../../framework/logs/talker.dart';
-import '../../../../framework/provider/chat/room/room_member_service.dart';
 import 'messageRender/base/MessageRenderFactory.dart';
 
 class ChatMessageBubble extends ConsumerWidget {
@@ -30,12 +27,6 @@ class ChatMessageBubble extends ConsumerWidget {
     final user = ref.watch(authControllerProvider.select((v) => v.value));
     final currentUserId = user?.userId;
     final isCurrentUser = message.senderId == currentUserId;
-
-    final senderInfo = ref.watch(
-      roomMemberServiceProvider.select(
-        (state) => state[message.roomId]?[message.senderId],
-      ),
-    );
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -79,7 +70,7 @@ class ChatMessageBubble extends ConsumerWidget {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          _buildHeader(context, isCurrentUser, senderInfo),
+          _buildHeader(context, isCurrentUser, message.senderName),
           const SizedBox(height: 2),
 
           Row(
@@ -90,8 +81,8 @@ class ChatMessageBubble extends ConsumerWidget {
             children: [
               /// Avatar
               AvatarWidget(
-                url: isCurrentUser ? user?.avatar : senderInfo?.avatar,
-                name: isCurrentUser ? user?.nickName : senderInfo?.nickName,
+                url: isCurrentUser ? user?.avatar : message.senderAvatar,
+                name: isCurrentUser ? user?.nickName : message.senderName,
                 size: 32,
               ),
 
@@ -187,7 +178,7 @@ class ChatMessageBubble extends ConsumerWidget {
   Widget _buildHeader(
     BuildContext context,
     bool isCurrentUser,
-    ChatRoomMemberVO? sender,
+    String? sendName,
   ) {
     final style = TextStyle(
       fontSize: 11,
@@ -201,7 +192,7 @@ class ChatMessageBubble extends ConsumerWidget {
         children: [
           if (!isCurrentUser)
             Text(
-              sender?.nickName ?? "chat_unknown_user".tr(),
+              sendName ?? "chat_unknown_user".tr(),
               style: style.copyWith(fontWeight: FontWeight.bold),
             ),
           if (isCurrentUser)

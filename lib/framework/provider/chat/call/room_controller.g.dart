@@ -8,12 +8,30 @@ part of 'room_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 房间控制器
+/// 负责管理 LiveKit 房间的完整生命周期：
+///   - 连接 / 断开 / 重连
+///   - 本地媒体（麦克风、摄像头、屏幕共享）
+///   - 设备切换
+///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
 
 @ProviderFor(RoomController)
 const roomControllerProvider = RoomControllerFamily._();
 
+/// 房间控制器
+/// 负责管理 LiveKit 房间的完整生命周期：
+///   - 连接 / 断开 / 重连
+///   - 本地媒体（麦克风、摄像头、屏幕共享）
+///   - 设备切换
+///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
 final class RoomControllerProvider
     extends $AsyncNotifierProvider<RoomController, RoomState> {
+  /// 房间控制器
+  /// 负责管理 LiveKit 房间的完整生命周期：
+  ///   - 连接 / 断开 / 重连
+  ///   - 本地媒体（麦克风、摄像头、屏幕共享）
+  ///   - 设备切换
+  ///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
   const RoomControllerProvider._({
     required RoomControllerFamily super.from,
     required String super.argument,
@@ -50,7 +68,14 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'ebff7939ad93fa1b4047be0f1084a5623fd8210e';
+String _$roomControllerHash() => r'e790a75bd0b2ac26d290ba7e8e8784bf0d592b4e';
+
+/// 房间控制器
+/// 负责管理 LiveKit 房间的完整生命周期：
+///   - 连接 / 断开 / 重连
+///   - 本地媒体（麦克风、摄像头、屏幕共享）
+///   - 设备切换
+///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
 
 final class RoomControllerFamily extends $Family
     with
@@ -70,12 +95,26 @@ final class RoomControllerFamily extends $Family
         isAutoDispose: true,
       );
 
+  /// 房间控制器
+  /// 负责管理 LiveKit 房间的完整生命周期：
+  ///   - 连接 / 断开 / 重连
+  ///   - 本地媒体（麦克风、摄像头、屏幕共享）
+  ///   - 设备切换
+  ///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
+
   RoomControllerProvider call(String token) =>
       RoomControllerProvider._(argument: token, from: this);
 
   @override
   String toString() => r'roomControllerProvider';
 }
+
+/// 房间控制器
+/// 负责管理 LiveKit 房间的完整生命周期：
+///   - 连接 / 断开 / 重连
+///   - 本地媒体（麦克风、摄像头、屏幕共享）
+///   - 设备切换
+///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
 
 abstract class _$RoomController extends $AsyncNotifier<RoomState> {
   late final _$args = ref.$arg as String;
@@ -99,12 +138,20 @@ abstract class _$RoomController extends $AsyncNotifier<RoomState> {
   }
 }
 
+/// 从服务端获取加入房间的 JWT Token
+/// [roomId] 房间 ID
+
 @ProviderFor(roomToken)
 const roomTokenProvider = RoomTokenFamily._();
+
+/// 从服务端获取加入房间的 JWT Token
+/// [roomId] 房间 ID
 
 final class RoomTokenProvider
     extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
     with $FutureModifier<String>, $FutureProvider<String> {
+  /// 从服务端获取加入房间的 JWT Token
+  /// [roomId] 房间 ID
   const RoomTokenProvider._({
     required RoomTokenFamily super.from,
     required String super.argument,
@@ -148,7 +195,10 @@ final class RoomTokenProvider
   }
 }
 
-String _$roomTokenHash() => r'cc9e3e992891e9560cf983dbabb99e0911a7d022';
+String _$roomTokenHash() => r'b46818769fa412a740fe2451eb85846c663f5b76';
+
+/// 从服务端获取加入房间的 JWT Token
+/// [roomId] 房间 ID
 
 final class RoomTokenFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String>, String> {
@@ -160,6 +210,9 @@ final class RoomTokenFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
+
+  /// 从服务端获取加入房间的 JWT Token
+  /// [roomId] 房间 ID
 
   RoomTokenProvider call(String roomId) =>
       RoomTokenProvider._(argument: roomId, from: this);

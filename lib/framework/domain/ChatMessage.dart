@@ -8,6 +8,8 @@ class ChatMessage {
   final String? clientMsgId;
   final String? roomId;
   final int? senderId;
+  final String? senderName;
+  final String? senderAvatar;
   final MessageType? messageType;
   final String content;
   final MessagePayload? payload;
@@ -23,6 +25,8 @@ class ChatMessage {
     this.clientMsgId,
     this.roomId,
     this.senderId,
+    this.senderName,
+    this.senderAvatar,
     this.messageType,
     this.payload,
     this.messageStatus,
@@ -95,6 +99,8 @@ class ChatMessage {
       senderId: json['senderId'] != null
           ? int.tryParse(json['senderId'].toString())
           : null,
+      senderName: json['senderName']?.toString(),
+      senderAvatar: json['senderAvatar']?.toString(),
       messageType: MessageType.fromCode(json["messageType"] ?? 5),
       content: json['content']?.toString() ?? '',
 

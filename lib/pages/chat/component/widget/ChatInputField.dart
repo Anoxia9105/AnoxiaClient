@@ -76,9 +76,8 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
 
     // 获取并过滤成员列表（排除自己）
     final currentUser = ref.read(authControllerProvider).value;
-    final mentionUsers = ref
-        .read(roomMemberServiceProvider.notifier)
-        .getMembersByRoom(room.roomId ?? '')
+    final roomMembers = ref.read(roomMembersProvider(room.roomId!));
+    final mentionUsers = roomMembers
         .where((m) => m.userId != currentUser?.userId)
         .map(
           (m) => MentionUser(

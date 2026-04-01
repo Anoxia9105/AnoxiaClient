@@ -161,8 +161,7 @@ class ChatInputController extends _$ChatInputController {
 
     //用户在线发送 TYPING_STATUS 不在线不发送
     final roomMembers = ref
-        .read(roomMemberServiceProvider.notifier)
-        .getMembersByRoom(room.roomId!);
+        .read(roomMembersProvider(room.roomId!));
 
     // 4.1 成员列表为空（未同步），不发送
     if (roomMembers.isEmpty) {

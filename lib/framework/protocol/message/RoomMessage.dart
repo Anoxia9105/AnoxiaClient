@@ -18,6 +18,8 @@ class RoomMessage implements IPacket {
   // RoomMessageData 字段
   final String messageId;
   final int senderId;
+  final String senderName;
+  final String senderAvatar;
   final MessageState state;
   final DeliveryStatus status;
   final int timestamp;
@@ -33,6 +35,8 @@ class RoomMessage implements IPacket {
     this.extra = const {},
     required this.messageId,
     required this.senderId,
+    required this.senderName,
+    required this.senderAvatar,
     required this.state,
     required this.status,
     required this.timestamp,
@@ -61,6 +65,8 @@ class RoomMessage implements IPacket {
       senderId: json['senderId'] != null
           ? int.parse(json['senderId'].toString())
           : 0,
+      senderName: json['senderName']?.toString() ?? '',
+      senderAvatar: json['senderAvatar']?.toString() ?? '',
       state: MessageState.from(json['state']),
       status: DeliveryStatus.from(json['status']),
       timestamp: json['timestamp'] != null
@@ -83,6 +89,8 @@ class RoomMessage implements IPacket {
       'extra': extra,
       'messageId': messageId,
       'senderId': senderId,
+      'senderName': senderName,
+      'senderAvatar': senderAvatar,
       'state': state.toJson(),
       'status': status.toJson(),
       'timestamp': timestamp,
@@ -101,6 +109,8 @@ class RoomMessage implements IPacket {
     Map<String, dynamic>? extra,
     String? messageId,
     int? senderId,
+    String? senderName,
+    String? senderAvatar,
     MessageState? state,
     DeliveryStatus? status,
     int? timestamp,
@@ -116,6 +126,8 @@ class RoomMessage implements IPacket {
       extra: extra ?? this.extra,
       messageId: messageId ?? this.messageId,
       senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
+      senderAvatar: senderAvatar ?? this.senderAvatar,
       state: state ?? this.state,
       status: status ?? this.status,
       timestamp: timestamp ?? this.timestamp,
@@ -136,6 +148,8 @@ class RoomMessage implements IPacket {
         mapEquals(other.extra, extra) &&
         other.messageId == messageId &&
         other.senderId == senderId &&
+        other.senderName == senderName &&
+        other.senderAvatar == senderAvatar &&
         other.state == state &&
         other.status == status &&
         other.timestamp == timestamp &&
@@ -153,6 +167,8 @@ class RoomMessage implements IPacket {
         extra.hashCode ^
         messageId.hashCode ^
         senderId.hashCode ^
+        senderName.hashCode ^
+        senderAvatar.hashCode ^
         state.hashCode ^
         status.hashCode ^
         timestamp.hashCode ^

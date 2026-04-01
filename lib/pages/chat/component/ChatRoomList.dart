@@ -357,13 +357,11 @@ class _RoomItem extends ConsumerWidget {
 
     // 群聊内：只有 roleId==0（群主/创建者）才显示“解散群聊”
 
-    final members = ref
-        .read(roomMemberServiceProvider.notifier)
-        .getMembersByRoom(roomId);
+    final members = ref.read(roomMembersProvider(roomId));
 
-    final ChatRoomMemberVO? me = members.where(
-      (m) => m.userId == currentUserId,
-    ).firstOrNull;
+    final ChatRoomMemberVO? me = members
+        .where((m) => m.userId == currentUserId)
+        .firstOrNull;
     bool canDissolve = me?.roleId == 0;
 
     showMenu<String>(

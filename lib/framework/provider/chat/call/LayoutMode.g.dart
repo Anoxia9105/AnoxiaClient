@@ -66,7 +66,7 @@ final class LayoutModeProvider
   }
 }
 
-String _$layoutModeHash() => r'2ffdc15d4970c75caa0e17c447455f06f15b523c';
+String _$layoutModeHash() => r'50f4baa4e1f6e14d38982aa4a7bdc667d600f3c7';
 
 final class LayoutModeFamily extends $Family
     with $FunctionalFamilyOverride<LayoutMode, RoomState> {

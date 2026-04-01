@@ -3,7 +3,6 @@ import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../domain/ChatMessage.dart';
 import '../../../logs/talker.dart';
@@ -50,6 +49,8 @@ class ChatMessages extends _$ChatMessages {
       clientMsgId: msg.clientMsgId,
       roomId: msg.roomId,
       senderId: msg.senderId.toInt(),
+      senderName: msg.senderName,
+      senderAvatar: msg.senderAvatar,
       messageType: msg.type,
       content: msg.payload?.content ?? '',
       payload: msg.payload,
