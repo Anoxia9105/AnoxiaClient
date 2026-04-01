@@ -237,24 +237,88 @@ class RoomController extends _$RoomController {
   void _handleDataEvent(DataReceivedEvent e) {
     try {
       final json = jsonDecode(utf8.decode(e.data)) as Map<String, dynamic>;
-      log.info("📨 收到数据事件原始内容: $json");
-      final type = json['type'] as String?;
-      log.info("📨 收到数据事件: type=$type 来自: ${e.participant?.identity}");
+      final payload = json['payload'] as Map<String, dynamic>? ?? {};
+      log.info("📨 收到数据事件: topic=${e.topic} 来自: ${e.participant?.identity}");
 
-      switch (type) {
-        case 'hand_raise':
-          // TODO: 处理举手
+      switch (e.topic) {
+        case 'app-hand-raise':
+          _onHandRaise(payload);
           break;
-        case 'reaction':
-          // TODO: 处理表情
+        case 'app-chat':
+          _onChat(payload);
           break;
-        case 'mute_command':
-          // TODO: 处理主持人静音指令
+        case 'app-mute-command':
+          _onMuteCommand(payload);
           break;
       }
     } catch (err) {
       log.error("解析数据事件失败: $err");
     }
+  }
+
+  void _onHandRaise(Map<String, dynamic> payload) {
+    final uid = payload['uid'] as String?;
+    final raised = payload['raised'] as bool? ?? false;
+    if (uid == null) return;
+
+    final current = state.value;
+    if (current == null) return;
+
+    final map = Map<String, bool>.from(current.handRaiseMap ?? {});
+    if (raised) {
+      map[uid] = true;
+    } else {
+      map.remove(uid);
+    }
+    state = AsyncData(current.copyWith(handRaiseMap: map));
+    log.info("✋ ${uid} ${raised ? '举手' : '放手'}");
+  }
+
+  void _onChat(Map<String, dynamic> payload) {
+    final message = payload['message'] as String?;
+    final uid = payload['uid'] as String?;
+    if (message == null || uid == null) return;
+
+    final current = state.value;
+    if (current == null) return;
+
+    final list = List<ReactionItem>.from(current.reactions ?? []);
+    list.add(
+      ReactionItem(message: message, uid: uid, createdAt: DateTime.now()),
+    );
+    state = AsyncData(current.copyWith(reactions: list));
+    log.info("💬 收到消息: $message 来自: $uid");
+
+    // 3秒后自动清除
+    Future.delayed(const Duration(seconds: 3), () {
+      final cur = state.value;
+      if (cur == null) return;
+      final updated = (cur.reactions ?? [])
+          .where(
+            (r) =>
+                !(r.uid == uid &&
+                    r.message == message &&
+                    DateTime.now().difference(r.createdAt).inSeconds >= 3),
+          )
+          .toList();
+      state = AsyncData(cur.copyWith(reactions: updated));
+    });
+  }
+
+  void _onMuteCommand(Map<String, dynamic> payload) {
+    final targetUid = payload['uid'] as String?;
+    final muted = payload['muted'] as bool? ?? true;
+    final current = state.value;
+    if (current == null) return;
+
+    // 判断是否是发给自己的
+    final localIdentity = current.room.localParticipant?.identity;
+    if (targetUid != localIdentity) return;
+
+    // 执行静音
+    current.room.localParticipant?.setMicrophoneEnabled(!muted);
+    state = AsyncData(current.copyWith(micEnabled: !muted));
+    log.info("📢 收到主持人指令: ${muted ? '静音' : '取消静音'}");
   }
 
   void _bindDeviceEvents() {
@@ -454,24 +518,57 @@ class RoomController extends _$RoomController {
   }
 
   /// 发送自定义数据事件（举手/表情/主持人指令等）
-  Future<void> sendDataEvent(String type, Map<String, dynamic> payload) async {
+  Future<void> sendDataEvent({
+    required String topic,
+    Map<String, dynamic> payload = const {},
+  }) async {
     final currentState = state.value;
     if (currentState == null) return;
-    try {
-      final data = jsonEncode({
-        'type': type,
-        'payload': payload,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      await currentState.room.localParticipant?.publishData(
-        utf8.encode(data),
-        topic: 'app-event',
-      );
-      log.info("📤 发送数据事件: type=$type");
-    } catch (e) {
-      log.error("发送数据事件失败: $e");
-    }
+    final data = jsonEncode({
+      'payload': payload,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+    await currentState.room.localParticipant?.publishData(
+      utf8.encode(data),
+      topic: topic,
+    );
   }
+
+  /// 举手/放手
+  Future<void> sendHandRaise(bool raised) => sendDataEvent(
+    topic: 'app-hand-raise',
+    payload: {
+      'raised': raised,
+      'uid': state.value?.room.localParticipant?.identity ?? '',
+    },
+  );
+
+  /// 表情
+  Future<void> sendReaction(String emoji) => sendDataEvent(
+    topic: 'app-chat',
+    payload: {
+      'message': emoji,
+      'uid': state.value?.room.localParticipant?.identity ?? '',
+    },
+  );
+
+  /// 弹幕
+  Future<void> sendDanmaku(String message) => sendDataEvent(
+    topic: 'app-chat',
+    payload: {
+      'message': message,
+      'uid': state.value?.room.localParticipant?.identity ?? '',
+    },
+  );
+
+  /// 主持人静音指令（targetUid = 要被静音的人）
+  Future<void> sendMuteCommand(String targetUid, bool muted) => sendDataEvent(
+    topic: 'app-mute-command',
+    payload: {
+      'uid': targetUid, // 目标用户，不是自己
+      'muted': muted,
+    },
+  );
 }
 
 @riverpod

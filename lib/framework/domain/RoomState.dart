@@ -46,6 +46,12 @@ class RoomState {
   /// 每个参与者的音量等级 (0.0-1.0)，key = participant.identity
   final Map<String, double>? participantVolumes;
 
+  // 举手状态：key = participant.identity
+  final Map<String, bool>? handRaiseMap;
+
+  // 表情：当前飘动的表情列表
+  final List<ReactionItem>? reactions;
+
   const RoomState({
     required this.room,
     required this.token,
@@ -70,6 +76,8 @@ class RoomState {
     this.joinedAt,
     this.participantQuality,
     this.participantVolumes,
+    this.handRaiseMap,
+    this.reactions,
   });
 
   RoomState copyWith({
@@ -96,6 +104,8 @@ class RoomState {
     DateTime? joinedAt,
     Map<String, ConnectionQuality>? participantQuality,
     Map<String, double>? participantVolumes,
+    Map<String, bool>? handRaiseMap,
+    List<ReactionItem>? reactions,
   }) {
     return RoomState(
       token: token ?? this.token,
@@ -121,10 +131,23 @@ class RoomState {
       joinedAt: joinedAt ?? this.joinedAt,
       participantQuality: participantQuality ?? this.participantQuality,
       participantVolumes: participantVolumes ?? this.participantVolumes,
+      handRaiseMap: handRaiseMap ?? this.handRaiseMap,
+      reactions: reactions ?? this.reactions,
     );
   }
 
   @override
   String toString() =>
       'RoomState{connectionState: $connectionState, mic: $micEnabled, camera: $cameraEnabled, screen: $screenSharing, reconnecting: $isReconnecting}';
+}
+
+class ReactionItem {
+  final String message;
+  final String uid;
+  final DateTime createdAt;
+  ReactionItem({
+    required this.message,
+    required this.uid,
+    required this.createdAt,
+  });
 }

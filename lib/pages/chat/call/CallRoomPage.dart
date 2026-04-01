@@ -4,7 +4,8 @@ import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/pages/chat/call/component/CommandBar.dart';
 import 'package:anoxia/pages/chat/call/room_layout/LayoutRoomCarouselWidget.dart';
 import 'package:anoxia/pages/chat/call/room_layout/LayoutRoomScreenWidget.dart';
-import 'package:anoxia/pages/chat/call/room_layout/LayoutRoomWidget.dart' hide LayoutMode;
+import 'package:anoxia/pages/chat/call/room_layout/LayoutRoomWidget.dart'
+    hide LayoutMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -36,8 +37,10 @@ class CallRoomPage extends ConsumerWidget {
         children: [
           const CircularProgressIndicator(strokeWidth: 3),
           const SizedBox(height: 24),
-          Text('call_connecting_to_room'.tr(),
-              style: const TextStyle(fontSize: 16)),
+          Text(
+            'call_connecting_to_room'.tr(),
+            style: const TextStyle(fontSize: 16),
+          ),
           const SizedBox(height: 8),
           Text('call_please_wait'.tr(), style: const TextStyle(fontSize: 14)),
         ],
@@ -54,20 +57,28 @@ class CallRoomPage extends ConsumerWidget {
           children: [
             Icon(Icons.error_outline, color: Colors.red.shade600, size: 48),
             const SizedBox(height: 24),
-            Text('call_connection_failed'.tr(),
-                style: const TextStyle(fontSize: 20)),
+            Text(
+              'call_connection_failed'.tr(),
+              style: const TextStyle(fontSize: 20),
+            ),
             const SizedBox(height: 12),
-            Text(error,
-                style: const TextStyle(fontSize: 14, height: 1.5),
-                textAlign: TextAlign.center),
+            Text(
+              error,
+              style: const TextStyle(fontSize: 14, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => ref.invalidate(roomControllerProvider(token)),
-                child: Text('call_retry'.tr(),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500)),
+                child: Text(
+                  'call_retry'.tr(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ),
           ],
@@ -105,13 +116,14 @@ class _CallRoomBody extends ConsumerWidget {
     ];
 
     final screenSharer = participants
-        .where(
-          (p) => p.videoTrackPublications.any((pub) => pub.isScreenShare),
-        )
+        .where((p) => p.videoTrackPublications.any((pub) => pub.isScreenShare))
         .firstOrNull;
 
     return Stack(
       children: [
+        /// 漂浮的反应
+        ...(roomState.reactions ?? []).map((r) => _FloatingReaction(item: r)),
+
         Column(
           children: [
             CommandBar(state: roomState),
@@ -122,6 +134,7 @@ class _CallRoomBody extends ConsumerWidget {
                       mode: layoutMode,
                       participants: participants,
                       screenSharer: screenSharer,
+                      handRaiseMap: roomState.handRaiseMap ?? {},
                     ),
             ),
           ],
@@ -174,15 +187,80 @@ class _CallRoomBody extends ConsumerWidget {
     required LayoutMode mode,
     required List<Participant> participants,
     required Participant? screenSharer,
+    required Map<String, bool> handRaiseMap,
   }) {
     return switch (mode) {
-      LayoutMode.grid => LayoutRoomWidget(participants: participants),
+      LayoutMode.grid => LayoutRoomWidget(
+        participants: participants,
+        handRaiseMap: handRaiseMap,
+      ),
       LayoutMode.focus => LayoutRoomScreenWidget(
-          screenParticipant: screenSharer!,
-          otherParticipants:
-              participants.where((p) => p.sid != screenSharer.sid).toList(),
-        ),
-      LayoutMode.carousel => LayoutRoomCarouselWidget(participants: participants),
+        screenParticipant: screenSharer!,
+        otherParticipants: participants
+            .where((p) => p.sid != screenSharer.sid)
+            .toList(),
+        handRaiseMap: handRaiseMap,
+      ),
+      LayoutMode.carousel => LayoutRoomCarouselWidget(
+        participants: participants,
+        handRaiseMap: handRaiseMap,
+      ),
     };
+  }
+}
+
+class _FloatingReaction extends StatefulWidget {
+  final ReactionItem item;
+  const _FloatingReaction({required this.item});
+
+  @override
+  State<_FloatingReaction> createState() => _FloatingReactionState();
+}
+
+class _FloatingReactionState extends State<_FloatingReaction>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _opacity;
+  late Animation<double> _offset;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..forward();
+    _opacity = Tween(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+    _offset = Tween(
+      begin: 0.0,
+      end: -200.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Positioned(
+        bottom: 100 + _offset.value,
+        right: 30,
+        child: Opacity(
+          opacity: _opacity.value,
+          child: Text(
+            widget.item.message,
+            style: const TextStyle(fontSize: 40),
+          ),
+        ),
+      ),
+    );
   }
 }

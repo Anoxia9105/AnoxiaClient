@@ -74,8 +74,13 @@ Widget _buildSignalIconForParticipant(Participant p) {
 
 class ParticipantTile extends StatefulWidget {
   final Participant participant;
+  final bool handRaised;
 
-  const ParticipantTile({super.key, required this.participant});
+  const ParticipantTile({
+    super.key,
+    required this.participant,
+    this.handRaised = false,
+  });
 
   @override
   State<ParticipantTile> createState() => _ParticipantTileState();
@@ -162,7 +167,8 @@ class _ParticipantTileState extends State<ParticipantTile> {
     );
 
     // 屏幕共享时显示特殊标签
-    final displayName = isScreenShare ? "$nickName's Screen" : nickName;
+    // final displayName = isScreenShare ? "$nickName's Screen" : nickName;
+    final displayName = nickName;
 
     return Padding(
       padding: const EdgeInsets.all(4),
@@ -193,6 +199,19 @@ class _ParticipantTileState extends State<ParticipantTile> {
                       // 使用你的 AvatarWidget
                       AvatarWidget(size: 48, url: avatarUrl, name: nickName),
                     ],
+                  ),
+                ),
+              if (widget.handRaised)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text('✋', style: TextStyle(fontSize: 20)),
                   ),
                 ),
               Positioned(
@@ -240,7 +259,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                 bottom: 36,
                 child: VolumeIndicator(volume: volume),
               ),
-              // 信号图标（右下角）——放到右下，带提示和美化容器
+              // 信号图标（右下角）
               Positioned(
                 right: 10,
                 bottom: 10,

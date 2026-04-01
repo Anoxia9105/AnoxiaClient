@@ -1,15 +1,18 @@
 import 'package:anoxia/pages/chat/call/component/ParticipantTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:livekit_client/livekit_client.dart' show Participant;
+import 'package:livekit_client/livekit_client.dart';
 
 class LayoutRoomScreenWidget extends StatefulWidget {
   final Participant screenParticipant;
   final List<Participant> otherParticipants;
+  final Map<String, bool> handRaiseMap;
+
   const LayoutRoomScreenWidget({
     super.key,
     required this.screenParticipant,
     required this.otherParticipants,
+    this.handRaiseMap = const {},
   });
 
   @override
@@ -21,11 +24,12 @@ class _LayoutRoomScreenWidgetState extends State<LayoutRoomScreenWidget> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // 左侧：大屏幕显示共享内容
+        // 左侧：大屏显示共享内容
         Expanded(
-          flex: 3, // 占据 3/4 的宽度
+          flex: 3,
           child: ParticipantTile(
             participant: widget.screenParticipant,
+            handRaised: widget.handRaiseMap[widget.screenParticipant.identity] == true,
             key: ValueKey('${widget.screenParticipant.sid}-screen'),
           ),
         ),
@@ -40,11 +44,13 @@ class _LayoutRoomScreenWidgetState extends State<LayoutRoomScreenWidget> {
               itemCount: widget.otherParticipants.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
+                final p = widget.otherParticipants[index];
                 return AspectRatio(
                   aspectRatio: 1.0,
                   child: ParticipantTile(
-                    participant: widget.otherParticipants[index],
-                    key: ValueKey(widget.otherParticipants[index].sid),
+                    participant: p,
+                    handRaised: widget.handRaiseMap[p.identity] == true,
+                    key: ValueKey(p.sid),
                   ),
                 );
               },

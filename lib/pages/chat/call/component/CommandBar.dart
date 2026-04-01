@@ -101,18 +101,29 @@ class CommandBar extends ConsumerWidget {
                 context: context,
                 icon: HugeIcons.strokeRoundedHold03,
                 label: '举手',
-                active: state.screenSharing,
-                onTap: () => notifier.toggleScreenShare(context),
+                active:
+                    state.handRaiseMap?[state
+                        .room
+                        .localParticipant
+                        ?.identity] ==
+                    true,
+                onTap: () {
+                  final uid = state.room.localParticipant?.identity ?? '';
+                  final isRaised = state.handRaiseMap?[uid] == true;
+                  notifier.sendHandRaise(!isRaised);
+                },
               ),
               const SizedBox(width: 2),
 
-              // 握手：solo button
-              _soloButton(
-                context: context,
-                icon: HugeIcons.strokeRoundedRubberDuck,
-                label: '小黄鸭',
-                active: state.screenSharing,
-                onTap: () => notifier.toggleScreenShare(context),
+              // 表情按钮（点击弹出表情选择）
+              Builder(
+                builder: (context) => _soloButton(
+                  context: context,
+                  icon: HugeIcons.strokeRoundedRubberDuck,
+                  label: '表情',
+                  active: false,
+                  onTap: () => _showReactionPicker(context, notifier, state),
+                ),
               ),
 
               const SizedBox(width: 2),
@@ -137,6 +148,49 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
+  void _showReactionPicker(
+    BuildContext context,
+    RoomController notifier,
+    RoomState state,
+  ) {
+    const emojis = ['👍', '❤️', '😂', '😮', '👏', '🎉', '🔥', '💯'];
+
+    Function? close;
+    close = Toast.showWidget(
+      context,
+      direction: PreferDirection.topRight,
+      child: Material(
+        color: Colors.transparent,
+        child: BubbleWidget(
+          arrowDirection: AxisDirection.up,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          border: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+          contentBuilder: (context) => Padding(
+            padding: const EdgeInsets.all(8),
+            child: Wrap(
+              spacing: 8,
+              children: emojis.map((emoji) {
+                return InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    notifier.sendReaction(emoji);
+                    close?.call();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   // ──────────────────────────────────────────
   // 组合分裂按钮
   // ──────────────────────────────────────────
