@@ -26,6 +26,8 @@ class NoteEditorWidget extends ConsumerStatefulWidget {
 class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   late QuillController _quillController;
   late TextEditingController _titleController;
+  late final ScrollController _editorScrollController;
+
   Timer? _saveTimer;
   bool _isDirty = false;
   bool _isSaving = false;
@@ -33,6 +35,7 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   @override
   void initState() {
     super.initState();
+    _editorScrollController = ScrollController();
     _titleController = TextEditingController(text: widget.node.name);
     _initQuill();
   }
@@ -61,12 +64,14 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   void didUpdateWidget(NoteEditorWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.node.id != widget.node.id) {
-      // 节点切换：先强制保存旧内容
       _forceSave();
+
       _quillController.removeListener(_onContentChanged);
       _quillController.dispose();
+
       _titleController.dispose();
       _titleController = TextEditingController(text: widget.node.name);
+
       _initQuill();
     }
   }
@@ -88,24 +93,26 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   }
 
   Future<void> _doSave() async {
-    setState(() => _isSaving = true);
     final delta = jsonEncode(_quillController.document.toDelta().toJson());
     await ref.read(noteProvider.notifier).saveContent(widget.node.id, delta);
-    if (mounted) {
-      setState(() {
-        _isDirty = false;
-        _isSaving = false;
-      });
-    }
+
+    if (!mounted) return;
+    setState(() {
+      _isDirty = false;
+      _isSaving = false;
+    });
   }
 
   @override
   void dispose() {
     _saveTimer?.cancel();
-    _forceSave(); // 离开时保存
+    _forceSave();
+
     _quillController.removeListener(_onContentChanged);
     _quillController.dispose();
+    _editorScrollController.dispose();
     _titleController.dispose();
+
     super.dispose();
   }
 
@@ -117,7 +124,6 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── 标题区 ──────────────────────────────────────────
         if (widget.showTitle) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -142,7 +148,6 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
                     },
                   ),
                 ),
-                // 保存状态指示
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   child: _isSaving
@@ -163,7 +168,7 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
                           key: const ValueKey('saved'),
                           Icons.check_circle_outline,
                           size: 14,
-                          color: Colors.green.shade400,
+                          color: Colors.green,
                         ),
                 ),
                 const SizedBox(width: 8),
@@ -173,7 +178,6 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
           const Divider(height: 1),
         ],
 
-        // ── 工具栏 ──────────────────────────────────────────
         Container(
           decoration: BoxDecoration(
             color: cs.surfaceContainerLow,
@@ -184,20 +188,154 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
           child: MyQuillToolbar(controller: _quillController),
         ),
 
-        // ── 编辑器 ──────────────────────────────────────────
         Expanded(
-          child: QuillEditor(
-            controller: _quillController,
-            focusNode: FocusNode(),
-            scrollController: ScrollController(),
-            config: QuillEditorConfig(
-              placeholder: '开始记录你的想法...',
-              padding: const EdgeInsets.all(16),
-              autoFocus: false,
-            ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _LineNumberColumn(
+                controller: _quillController,
+                editorScrollController: _editorScrollController,
+              ),
+              Expanded(
+                child: QuillEditor(
+                  scrollController: _editorScrollController,
+                  controller: _quillController,
+                  focusNode: FocusNode(),
+                  config: QuillEditorConfig(
+                    placeholder: '开始记录你的想法...',
+                    padding: const EdgeInsets.all(16),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _NoScrollBarBehavior extends ScrollBehavior {
+  const _NoScrollBarBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child; // 👈 不包 Scrollbar
+  }
+}
+
+class _LineNumberColumn extends StatefulWidget {
+  final QuillController controller;
+  final ScrollController editorScrollController;
+
+  const _LineNumberColumn({
+    required this.controller,
+    required this.editorScrollController,
+  });
+
+  @override
+  State<_LineNumberColumn> createState() => _LineNumberColumnState();
+}
+
+class _LineNumberColumnState extends State<_LineNumberColumn> {
+  static const double _lineHeight = 20.0;
+  final ScrollController _lineScrollController = ScrollController();
+
+  int lineCount = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _calcLines();
+
+    widget.controller.addListener(_calcLines);
+    widget.editorScrollController.addListener(_syncScroll);
+  }
+
+  String _normalizePlainText(String text) {
+    // Quill 的 plainText 通常会多带一个结尾换行，去掉它，避免多出一行
+    if (text.endsWith('\n')) {
+      return text.substring(0, text.length - 1);
+    }
+    return text;
+  }
+
+  void _calcLines() {
+    final text = _normalizePlainText(widget.controller.document.toPlainText());
+
+    final lines = text.isEmpty ? 1 : text.split('\n').length;
+
+    if (lines != lineCount) {
+      setState(() => lineCount = lines);
+    }
+  }
+
+  void _syncScroll() {
+    if (!_lineScrollController.hasClients ||
+        !widget.editorScrollController.hasClients) {
+      return;
+    }
+
+    final editorPos = widget.editorScrollController.position;
+    final linePos = _lineScrollController.position;
+
+    final editorMax = editorPos.maxScrollExtent;
+    final lineMax = linePos.maxScrollExtent;
+
+    if (editorMax <= 0 || lineMax <= 0) {
+      return;
+    }
+
+    // 按比例同步，而不是直接复制 offset
+    final ratio = (editorPos.pixels / editorMax).clamp(0.0, 1.0);
+    final target = (lineMax * ratio).clamp(0.0, lineMax);
+
+    if ((linePos.pixels - target).abs() > 0.5) {
+      _lineScrollController.jumpTo(target);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_calcLines);
+    widget.editorScrollController.removeListener(_syncScroll);
+    _lineScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return ScrollConfiguration(
+      behavior: const _NoScrollBarBehavior(),
+      child: Container(
+        width: 44,
+        color: cs.surfaceContainerLowest,
+        child: ListView.builder(
+          controller: _lineScrollController,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 16, bottom: 16),
+          itemExtent: _lineHeight,
+          itemCount: lineCount,
+          itemBuilder: (context, index) {
+            return Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
