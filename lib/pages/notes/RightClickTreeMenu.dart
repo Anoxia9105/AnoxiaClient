@@ -4,24 +4,20 @@ import 'package:hugeicons/hugeicons.dart';
 
 class RightClickTreeMenu<T extends Object> extends StatelessWidget {
   final T node;
-  final List<T> roots;
-  final TreeController<T> controller;
   final Widget child;
 
   final String Function(T node)? getTitle;
-  final T Function()? createNode;
-  final void Function(T newNode, T parent)? addChild;
+  final Future<void> Function(T parent, String type, String name)? onCreateChild;
+  final Future<void> Function(T node, String newName)? onRename;
   final void Function(T node)? onDeleted;
 
   const RightClickTreeMenu({
     super.key,
     required this.node,
-    required this.roots,
-    required this.controller,
     required this.child,
     this.getTitle,
-    this.createNode,
-    this.addChild,
+    this.onCreateChild,
+    this.onRename,
     this.onDeleted,
   });
 
@@ -83,6 +79,20 @@ class RightClickTreeMenu<T extends Object> extends StatelessWidget {
                 ),
               ),
             ),
+            PopupMenuItem(
+              value: 'rename',
+              child: ListTile(
+                dense: true,
+                leading: HugeIcon(
+                  icon: HugeIcons.strokeRoundedEdit02,
+                  size: 18,
+                ),
+                title: Text(
+                  '重命名',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
           ],
         );
 
@@ -119,12 +129,48 @@ class RightClickTreeMenu<T extends Object> extends StatelessWidget {
           );
 
           if (title != null && title.trim().isNotEmpty) {
-            final newNode = createNode?.call();
-            if (newNode != null) {
-              (newNode as dynamic).title = title.trim(); // 假设节点有 title 属性
-              addChild?.call(newNode, node);
-              controller.rebuild();
-            }
+            await onCreateChild?.call(
+              node,
+              result == 'addfolder' ? 'folder' : 'note',
+              title.trim(),
+            );
+          }
+        } else if (result == 'rename') {
+          final title = await showDialog<String>(
+            context: context,
+            builder: (ctx) {
+              final controller = TextEditingController(
+                text: getTitle?.call(node) ?? '',
+              );
+              return AlertDialog(
+                title: const Text('重命名'),
+                content: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  decoration: const InputDecoration(hintText: '请输入名称'),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(
+                      '取消',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  FilledButton(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.indigo),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(controller.text),
+                    child: const Text('保存'),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (title != null && title.trim().isNotEmpty) {
+            await onRename?.call(node, title.trim());
           }
         } else if (result == 'delete') {
           final confirmed = await showDialog<bool>(
@@ -149,13 +195,7 @@ class RightClickTreeMenu<T extends Object> extends StatelessWidget {
           );
 
           if (confirmed == true) {
-            if ((node as dynamic).parent != null) {
-              (node as dynamic).parent.children.remove(node);
-            } else {
-              roots.remove(node);
-            }
             onDeleted?.call(node);
-            controller.rebuild();
           }
         }
       },

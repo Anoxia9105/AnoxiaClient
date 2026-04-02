@@ -71,105 +71,154 @@ class _CardLayoutViewState extends ConsumerState<CardLayoutView>
       return const NoteEmptyPlaceholder();
     }
 
-    return Column(
-      children: [
-        // ── Tab 栏 ──────────────────────────────────────────
-        Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            border: Border(
-              bottom: BorderSide(color: cs.outlineVariant, width: 0.5),
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            indicatorColor: cs.primary,
-            indicatorWeight: 2,
-            labelColor: cs.primary,
-            unselectedLabelColor: cs.onSurfaceVariant,
-            labelStyle: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: const TextStyle(fontSize: 13),
-            tabs: notes
-                .map(
-                  (n) => Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.sticky_note_2_outlined, size: 14),
-                        const SizedBox(width: 4),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 100),
-                          child: Text(n.name, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLowest,
+                border: Border(
+                  bottom: BorderSide(color: cs.outlineVariant, width: 0.6),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        '笔记卡片',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
                         ),
-                      ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_currentIndex + 1} / ${notes.length}',
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 40,
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      indicator: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      dividerColor: Colors.transparent,
+                      labelColor: cs.onPrimaryContainer,
+                      unselectedLabelColor: cs.onSurfaceVariant,
+                      labelStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      unselectedLabelStyle: const TextStyle(fontSize: 13),
+                      tabs: notes
+                          .map(
+                            (n) => Tab(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.sticky_note_2_outlined, size: 14),
+                                  const SizedBox(width: 6),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 120,
+                                    ),
+                                    child: Text(
+                                      n.name,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ),
-                )
-                .toList(),
-          ),
-        ),
-
-        // ── CardSwiper ──────────────────────────────────────
-        Expanded(
-          child: CardSwiper(
-            controller: _swiperController,
-            cardsCount: notes.length,
-            initialIndex: _currentIndex.clamp(0, notes.length - 1),
-            numberOfCardsDisplayed: notes.length > 2 ? 2 : 1,
-            backCardOffset: const Offset(16, 12),
-            scale: 0.94,
-            padding: const EdgeInsets.all(16),
-            onSwipe: (prev, current, direction) {
-              if (current != null && current != _currentIndex) {
-                setState(() => _currentIndex = current);
-                _tabChangingProgrammatically = true;
-                _tabController.animateTo(current);
-                _tabChangingProgrammatically = false;
-                ref.read(noteProvider.notifier).setCardIndex(current);
-              }
-              return true;
-            },
-            cardBuilder: (context, index, pX, pY) {
-              final note = notes[index];
-              return _NoteCard(note: note, isActive: index == _currentIndex);
-            },
-          ),
-        ),
-
-        // ── 底部翻页按钮 ────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _NavButton(
-                icon: Icons.chevron_left,
-                onTap: _currentIndex > 0
-                    ? () => _goToIndex(_currentIndex - 1)
-                    : null,
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(
-                '${_currentIndex + 1} / ${notes.length}',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+            ),
+            Expanded(
+              child: CardSwiper(
+                controller: _swiperController,
+                cardsCount: notes.length,
+                initialIndex: _currentIndex.clamp(0, notes.length - 1),
+                numberOfCardsDisplayed: notes.length > 2 ? 2 : 1,
+                backCardOffset: const Offset(18, 14),
+                scale: 0.94,
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+                onSwipe: (prev, current, direction) {
+                  if (current != null && current != _currentIndex) {
+                    setState(() => _currentIndex = current);
+                    _tabChangingProgrammatically = true;
+                    _tabController.animateTo(current);
+                    _tabChangingProgrammatically = false;
+                    ref.read(noteProvider.notifier).setCardIndex(current);
+                  }
+                  return true;
+                },
+                cardBuilder: (context, index, pX, pY) {
+                  final note = notes[index];
+                  return _NoteCard(note: note, isActive: index == _currentIndex);
+                },
               ),
-              const SizedBox(width: 12),
-              _NavButton(
-                icon: Icons.chevron_right,
-                onTap: _currentIndex < notes.length - 1
-                    ? () => _goToIndex(_currentIndex + 1)
-                    : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _NavButton(
+                    icon: Icons.chevron_left,
+                    onTap: _currentIndex > 0
+                        ? () => _goToIndex(_currentIndex - 1)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '左右滑动切换',
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                  ),
+                  const SizedBox(width: 12),
+                  _NavButton(
+                    icon: Icons.chevron_right,
+                    onTap: _currentIndex < notes.length - 1
+                        ? () => _goToIndex(_currentIndex + 1)
+                        : null,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -188,12 +237,12 @@ class _NoteCard extends StatelessWidget {
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
         color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: cs.shadow.withValues(alpha: isActive ? 0.12 : 0.06),
-            blurRadius: isActive ? 20 : 8,
-            offset: const Offset(0, 4),
+            blurRadius: isActive ? 24 : 12,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
@@ -203,7 +252,7 @@ class _NoteCard extends StatelessWidget {
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         child: NoteEditorWidget(node: note),
       ),
     );

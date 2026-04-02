@@ -124,28 +124,92 @@ class _LeftTreeViewState extends ConsumerState<LeftTreeView> {
         final roots = noteState.roots;
         _rebuildController(roots);
         final tc = _treeController!;
+        final noteCount = noteState.flatNotes.length;
+        final folderCount = flattenAll(roots).where((e) => e.isFolder).length;
 
-        return Column(
-          children: [
-            // ── 搜索栏 ────────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: cs.outlineVariant.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: cs.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.account_tree_rounded,
+                            size: 18,
+                            color: cs.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '笔记结构',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '$noteCount 篇笔记 · $folderCount 个文件夹',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
                       controller: _searchController,
                       style: const TextStyle(fontSize: 13),
                       decoration: InputDecoration(
-                        hintText: '搜索笔记...',
+                        hintText: '搜索笔记、文件夹...',
                         hintStyle: const TextStyle(fontSize: 13),
-                        prefixIcon: const Icon(Icons.search, size: 18),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                        suffixIcon: _searchQuery.isEmpty
+                            ? null
+                            : IconButton(
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                  _rebuildController(roots);
+                                },
+                                icon: const Icon(Icons.close_rounded, size: 16),
+                              ),
                         filled: true,
-                        fillColor: cs.surfaceContainerHighest,
+                        fillColor: cs.surfaceContainerLow,
                         isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -154,88 +218,112 @@ class _LeftTreeViewState extends ConsumerState<LeftTreeView> {
                         _rebuildController(roots);
                       },
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.create_new_folder_outlined,
-                      size: 18,
-                    ),
-                    tooltip: '新建文件夹',
-                    onPressed: () => _showCreateDialog(context, type: 'folder'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.note_add_outlined, size: 18),
-                    tooltip: '新建笔记',
-                    onPressed: () => _showCreateDialog(context, type: 'note'),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-
-            // ── 树形列表 ──────────────────────────────────────
-            Expanded(
-              child: roots.isEmpty
-                  ? _EmptyTree(
-                      onCreateNote: () =>
-                          _showCreateDialog(context, type: 'note'),
-                    )
-                  : AnimatedTreeView<NoteTreeNode>(
-                      treeController: tc,
-                      nodeBuilder: (context, entry) {
-                        return _TreeNodeTile(
-                          entry: entry,
-                          selectedId: noteState.selectedNode?.id,
-                          roots: roots,
-                          treeController: tc,
-                          onTap: () {
-                            if (entry.node.isNote) {
-                              ref
-                                  .read(noteProvider.notifier)
-                                  .selectNode(entry.node);
-                            } else {
-                              tc.toggleExpansion(entry.node);
-                            }
-                          },
-                          onNodeMoved: (node, newParent) {
-                            ref
-                                .read(noteProvider.notifier)
-                                .moveNode(
-                                  node.id,
-                                  newParent?.id,
-                                  (newParent?.level ?? -1) + 1,
-                                );
-                          },
-                          onCreateChild: (type) => _showCreateDialog(
-                            context,
-                            type: type,
-                            parent: entry.node,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionChipButton(
+                            icon: Icons.note_add_outlined,
+                            label: '新建笔记',
+                            onTap: () => _showCreateDialog(context, type: 'note'),
                           ),
-                          onDelete: (node) async {
-                            final ok = await _confirmDelete(context, node.name);
-                            if (ok == true) {
-                              ref
-                                  .read(noteProvider.notifier)
-                                  .deleteNode(node.id);
-                            }
-                          },
-                          onRename: (node) async {
-                            final name = await _showRenameDialog(
-                              context,
-                              node.name,
-                            );
-                            if (name != null && name.trim().isNotEmpty) {
-                              ref
-                                  .read(noteProvider.notifier)
-                                  .renameNode(node.id, name.trim());
-                            }
-                          },
-                        );
-                      },
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _ActionChipButton(
+                            icon: Icons.create_new_folder_outlined,
+                            label: '新建文件夹',
+                            onTap: () =>
+                                _showCreateDialog(context, type: 'folder'),
+                          ),
+                        ),
+                      ],
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: roots.isEmpty
+                      ? _EmptyTree(
+                          onCreateNote: () =>
+                              _showCreateDialog(context, type: 'note'),
+                        )
+                      : AnimatedTreeView<NoteTreeNode>(
+                          treeController: tc,
+                          nodeBuilder: (context, entry) {
+                            return _TreeNodeTile(
+                              entry: entry,
+                              selectedId: noteState.selectedNode?.id,
+                              onTap: () {
+                                if (entry.node.isNote) {
+                                  ref
+                                      .read(noteProvider.notifier)
+                                      .selectNode(entry.node);
+                                } else {
+                                  tc.toggleExpansion(entry.node);
+                                }
+                              },
+                              onNodeMoved: (node, newParent) {
+                                ref
+                                    .read(noteProvider.notifier)
+                                    .moveNode(
+                                      node.id,
+                                      newParent?.id,
+                                      (newParent?.level ?? -1) + 1,
+                                    );
+                              },
+                              onCreateChild: (target, type, name) async {
+                                final parent = target.isFolder
+                                    ? target
+                                    : target.parent;
+                                final notifier = ref.read(noteProvider.notifier);
+
+                                if (type == 'folder') {
+                                  await notifier.createFolder(
+                                    name: name,
+                                    parentId: parent?.id,
+                                    level: (parent?.level ?? -1) + 1,
+                                  );
+                                } else {
+                                  await notifier.createNote(
+                                    name: name,
+                                    parentId: parent?.id,
+                                    level: (parent?.level ?? -1) + 1,
+                                  );
+                                }
+                              },
+                              onDelete: (node) async {
+                                final ok = await _confirmDelete(
+                                  context,
+                                  node.name,
+                                );
+                                if (ok == true) {
+                                  ref
+                                      .read(noteProvider.notifier)
+                                      .deleteNode(node.id);
+                                }
+                              },
+                              onRename: (node, newName) async {
+                                await ref
+                                    .read(noteProvider.notifier)
+                                    .renameNode(node.id, newName);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -299,19 +387,16 @@ class _LeftTreeViewState extends ConsumerState<LeftTreeView> {
 class _TreeNodeTile extends StatelessWidget {
   final TreeEntry<NoteTreeNode> entry;
   final int? selectedId;
-  final List<NoteTreeNode> roots;
-  final TreeController<NoteTreeNode> treeController;
   final VoidCallback onTap;
   final void Function(NoteTreeNode node, NoteTreeNode? newParent) onNodeMoved;
-  final void Function(String type) onCreateChild;
+  final Future<void> Function(NoteTreeNode node, String type, String name)
+  onCreateChild;
   final void Function(NoteTreeNode) onDelete;
-  final void Function(NoteTreeNode) onRename;
+  final Future<void> Function(NoteTreeNode node, String newName) onRename;
 
   const _TreeNodeTile({
     required this.entry,
     required this.selectedId,
-    required this.roots,
-    required this.treeController,
     required this.onTap,
     required this.onNodeMoved,
     required this.onCreateChild,
@@ -335,41 +420,81 @@ class _TreeNodeTile extends StatelessWidget {
 
     Widget tile = AnimatedContainer(
       duration: const Duration(milliseconds: 150),
-      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: isSelected
-            ? cs.primaryContainer.withValues(alpha: 0.6)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+            ? cs.primaryContainer.withValues(alpha: 0.72)
+            : cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSelected
+              ? cs.primary.withValues(alpha: 0.18)
+              : Colors.transparent,
+        ),
       ),
       child: ListTile(
         dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+        minLeadingWidth: 0,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: node.isFolder
-            ? Icon(
-                entry.isExpanded ? Icons.folder_open : Icons.folder,
-                size: 18,
-                color: Colors.amber.shade600,
+            ? Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  entry.isExpanded ? Icons.folder_open_rounded : Icons.folder,
+                  size: 18,
+                  color: Colors.amber.shade800,
+                ),
               )
-            : HugeIcon(
-                icon: HugeIcons.strokeRoundedNote01,
-                size: 18,
-                color: isSelected ? cs.primary : cs.onSurfaceVariant,
+            : Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? cs.primary.withValues(alpha: 0.12)
+                      : cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedNote01,
+                  size: 18,
+                  color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                ),
               ),
         title: Text(
           node.name,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected ? cs.primary : cs.onSurface,
           ),
           overflow: TextOverflow.ellipsis,
         ),
+        subtitle: node.isFolder
+            ? Text(
+                '${node.children.length} 个项目',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              )
+            : null,
         trailing: node.isFolder && node.children.isNotEmpty
-            ? Icon(
-                entry.isExpanded ? Icons.expand_less : Icons.expand_more,
-                size: 16,
-                color: cs.outline,
+            ? Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  entry.isExpanded
+                      ? Icons.keyboard_arrow_down_rounded
+                      : Icons.keyboard_arrow_right_rounded,
+                  size: 16,
+                  color: cs.outline,
+                ),
               )
             : null,
         onTap: onTap,
@@ -396,15 +521,10 @@ class _TreeNodeTile extends StatelessWidget {
         }
         return RightClickTreeMenu<NoteTreeNode>(
           node: node,
-          roots: roots,
-          controller: treeController,
           getTitle: (n) => n.name,
-          createNode: null,
-          addChild: (newNode, parent) {
-            newNode.parent = parent;
-            parent.children.add(newNode);
-          },
+          onCreateChild: onCreateChild,
           onDeleted: onDelete,
+          onRename: onRename,
           child: TreeDraggable<NoteTreeNode>(
             node: node,
             feedback: Material(
@@ -445,19 +565,89 @@ class _EmptyTree extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.folder_open, size: 48, color: cs.outlineVariant),
-          const SizedBox(height: 8),
-          Text('还没有笔记', style: TextStyle(color: cs.outline)),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: onCreateNote,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('创建第一篇'),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.72),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.note_alt_rounded, size: 34, color: cs.primary),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '还没有笔记',
+              style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '从第一篇笔记开始搭建你的知识树。',
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: onCreateNote,
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('创建第一篇'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionChipButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionChipButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: cs.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

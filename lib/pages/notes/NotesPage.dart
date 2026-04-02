@@ -19,41 +19,82 @@ class NotesPage extends ConsumerWidget {
         backgroundColor: cs.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
-        title: Row(
+        toolbarHeight: 72,
+        titleSpacing: 20,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.sticky_note_2, color: cs.primary, size: 22),
-            const SizedBox(width: 8),
-            const Text(
-              '我的笔记',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.auto_stories_rounded, color: cs.primary),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  '我的笔记',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              layoutMode == NoteLayoutMode.card
+                  ? '卡片模式下浏览和整理灵感'
+                  : '树形结构下专注管理与编辑',
+              style: TextStyle(
+                fontSize: 12,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
         actions: [
-          // ── 布局切换 ──────────────────────────────────────
           _LayoutToggle(
             current: layoutMode,
             onChanged: (mode) {
               ref.read(noteProvider.notifier).setLayoutMode(mode);
             },
           ),
-          const SizedBox(width: 4),
-          // ── 新建笔记 ──────────────────────────────────────
-          _CreateMenu(layoutMode: layoutMode),
           const SizedBox(width: 8),
+          _CreateMenu(layoutMode: layoutMode),
+          const SizedBox(width: 20),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: cs.outlineVariant),
         ),
       ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        transitionBuilder: (child, animation) =>
-            FadeTransition(opacity: animation, child: child),
-        child: layoutMode == NoteLayoutMode.card
-            ? const CardLayoutView(key: ValueKey('card'))
-            : const TreeLayoutView(key: ValueKey('tree')),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              cs.primary.withValues(alpha: 0.04),
+              cs.surface,
+              cs.surfaceContainerLowest,
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) =>
+                FadeTransition(opacity: animation, child: child),
+            child: layoutMode == NoteLayoutMode.card
+                ? const CardLayoutView(key: ValueKey('card'))
+                : const TreeLayoutView(key: ValueKey('tree')),
+          ),
+        ),
       ),
     );
   }
@@ -70,10 +111,12 @@ class _LayoutToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      height: 32,
+      height: 40,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -116,18 +159,29 @@ class _ToggleBtn extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          width: 36,
+          height: 32,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? cs.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: selected ? cs.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: cs.primary.withValues(alpha: 0.22),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Icon(
             icon,
             size: 18,
-            color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+            color: selected ? cs.onPrimary : cs.onSurfaceVariant,
           ),
         ),
       ),
@@ -143,6 +197,7 @@ class _CreateMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     return MenuAnchor(
       menuChildren: [
         MenuItemButton(
@@ -156,10 +211,18 @@ class _CreateMenu extends ConsumerWidget {
           onPressed: () => _createFolder(context, ref),
         ),
       ],
-      builder: (context, controller, child) => IconButton(
+      builder: (context, controller, child) => FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: cs.primary,
+          foregroundColor: cs.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
         onPressed: controller.isOpen ? controller.close : controller.open,
-        icon: const Icon(Icons.add),
-        tooltip: '新建',
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('新建'),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:anoxia/framework/domain/NoteTreeNode.dart';
 import 'package:anoxia/framework/provider/note/note_provider.dart';
 import 'package:anoxia/pages/notes/QuillToolbarWidget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,7 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   late QuillController _quillController;
   late TextEditingController _titleController;
   late final ScrollController _editorScrollController;
+  late final FocusNode _editorFocusNode;
 
   Timer? _saveTimer;
   bool _isDirty = false;
@@ -36,6 +38,7 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   void initState() {
     super.initState();
     _editorScrollController = ScrollController();
+    _editorFocusNode = FocusNode();
     _titleController = TextEditingController(text: widget.node.name);
     _initQuill();
   }
@@ -93,6 +96,14 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
   }
 
   Future<void> _doSave() async {
+    if (!mounted) return;
+    setState(() => _isSaving = true);
+
+    final newTitle = _titleController.text.trim();
+    if (newTitle.isNotEmpty && newTitle != widget.node.name) {
+      await ref.read(noteProvider.notifier).renameNode(widget.node.id, newTitle);
+    }
+
     final delta = jsonEncode(_quillController.document.toDelta().toJson());
     await ref.read(noteProvider.notifier).saveContent(widget.node.id, delta);
 
@@ -111,9 +122,24 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
     _quillController.removeListener(_onContentChanged);
     _quillController.dispose();
     _editorScrollController.dispose();
+    _editorFocusNode.dispose();
     _titleController.dispose();
 
     super.dispose();
+  }
+
+  KeyEventResult _handleEditorKeyPress(KeyEvent event) {
+    final isSaveShortcut =
+        event is KeyDownEvent &&
+        (HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed) &&
+        event.logicalKey == LogicalKeyboardKey.keyS;
+
+    if (!isSaveShortcut) return KeyEventResult.ignored;
+
+    _saveTimer?.cancel();
+    _forceSave();
+    return KeyEventResult.handled;
   }
 
   @override
@@ -121,96 +147,197 @@ class _NoteEditorWidgetState extends ConsumerState<NoteEditorWidget> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (widget.showTitle) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _titleController,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '无标题',
-                    ),
-                    onSubmitted: (v) {
-                      if (v.trim().isNotEmpty) {
-                        ref
-                            .read(noteProvider.notifier)
-                            .renameNode(widget.node.id, v.trim());
-                      }
-                    },
-                  ),
-                ),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _isSaving
-                      ? const SizedBox(
-                          key: ValueKey('saving'),
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 1.5),
-                        )
-                      : _isDirty
-                      ? Icon(
-                          key: const ValueKey('dirty'),
-                          Icons.circle,
-                          size: 8,
-                          color: cs.primary,
-                        )
-                      : Icon(
-                          key: const ValueKey('saved'),
-                          Icons.check_circle_outline,
-                          size: 14,
-                          color: Colors.green,
+    return Container(
+      color: cs.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.showTitle) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '正在编辑',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-        ],
-
-        Container(
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            border: Border(
-              bottom: BorderSide(color: cs.outlineVariant, width: 0.5),
-            ),
-          ),
-          child: MyQuillToolbar(controller: _quillController),
-        ),
-
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _LineNumberColumn(
-                controller: _quillController,
-                editorScrollController: _editorScrollController,
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: _titleController,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.4,
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            hintText: '无标题',
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onSubmitted: (v) {
+                            if (v.trim().isNotEmpty) {
+                              ref
+                                  .read(noteProvider.notifier)
+                                  .renameNode(widget.node.id, v.trim());
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  _SaveStatusBadge(isSaving: _isSaving, isDirty: _isDirty),
+                ],
               ),
-              Expanded(
-                child: QuillEditor(
-                  scrollController: _editorScrollController,
-                  controller: _quillController,
-                  focusNode: FocusNode(),
-                  config: QuillEditorConfig(
-                    placeholder: '开始记录你的想法...',
-                    padding: const EdgeInsets.all(16),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Text(
+                '支持富文本编辑，内容会自动保存，也可以使用 Ctrl + S 手动保存。',
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: cs.outlineVariant.withValues(alpha: 0.45),
+                ),
+              ),
+              child: MyQuillToolbar(controller: _quillController),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: cs.outlineVariant.withValues(alpha: 0.4),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.shadow.withValues(alpha: 0.04),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _LineNumberColumn(
+                        controller: _quillController,
+                        editorScrollController: _editorScrollController,
+                      ),
+                      Expanded(
+                        child: QuillEditor(
+                          scrollController: _editorScrollController,
+                          controller: _quillController,
+                          focusNode: _editorFocusNode,
+                          config: QuillEditorConfig(
+                            placeholder: '开始记录你的想法...',
+                            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+                            onKeyPressed: (event, node) =>
+                                _handleEditorKeyPress(event),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SaveStatusBadge extends StatelessWidget {
+  final bool isSaving;
+  final bool isDirty;
+
+  const _SaveStatusBadge({required this.isSaving, required this.isDirty});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final Color backgroundColor;
+    final Color foregroundColor;
+    final Widget leading;
+    final String label;
+
+    if (isSaving) {
+      backgroundColor = cs.primaryContainer;
+      foregroundColor = cs.primary;
+      leading = SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 1.8,
+          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
         ),
-      ],
+      );
+      label = '保存中';
+    } else if (isDirty) {
+      backgroundColor = cs.tertiaryContainer;
+      foregroundColor = cs.onTertiaryContainer;
+      leading = Icon(Icons.edit_rounded, size: 14, color: foregroundColor);
+      label = '未保存';
+    } else {
+      backgroundColor = Colors.green.withValues(alpha: 0.12);
+      foregroundColor = Colors.green.shade700;
+      leading = Icon(Icons.check_rounded, size: 14, color: foregroundColor);
+      label = '已保存';
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          leading,
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: foregroundColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
