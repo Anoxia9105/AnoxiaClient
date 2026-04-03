@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'dart:async';
@@ -18,6 +19,8 @@ class CommandBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
+    final historyNotifier = ref.read(historyPanelProvider.notifier);
+    final historyActive = ref.watch(historyPanelProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -123,6 +126,17 @@ class CommandBar extends ConsumerWidget {
                   label: '表情',
                   active: false,
                   onTap: () => _showReactionPicker(context, notifier, state),
+                ),
+              ),
+              const SizedBox(width: 2),
+              //历史记录
+              Builder(
+                builder: (context) => _soloButton(
+                  context: context,
+                  icon: HugeIcons.strokeRoundedTransactionHistory,
+                  label: '历史',
+                  active: historyActive, // ← provider 状态
+                  onTap: () => historyNotifier.toggle(), // ← 直接 toggle
                 ),
               ),
 

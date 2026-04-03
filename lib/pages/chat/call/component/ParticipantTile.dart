@@ -59,10 +59,7 @@ Widget _buildSignalIconForParticipant(Participant p) {
     message: qualityLabel,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(4),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -89,36 +86,6 @@ class ParticipantTile extends StatefulWidget {
 class _ParticipantTileState extends State<ParticipantTile> {
   // 当前应该显示的视频轨道
   VideoTrack? videoTrack;
-
-  // 监听器函数句柄
-  late final VoidCallback _listener;
-
-  @override
-  void initState() {
-    super.initState();
-    _listener = () {
-      // 可以在这里做节流，但通常 setState 开销在单个组件内很小
-      if (mounted) setState(() {});
-    };
-
-    widget.participant.addListener(_listener);
-  }
-
-  @override
-  void dispose() {
-    // 2. 移除监听，防止内存泄漏
-    widget.participant.removeListener(_listener);
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant ParticipantTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.participant != widget.participant) {
-      oldWidget.participant.removeListener(_listener);
-      widget.participant.addListener(_listener);
-    }
-  }
 
   /// 计算当前应该显示哪个视频轨道 (屏幕共享 > 摄像头)
   VideoTrack? _getVisibleVideoTrack() {
@@ -158,13 +125,14 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final nickName = meta['nickName'] ?? p.identity ?? 'Unknown';
     final avatarUrl = meta['avatar'] ?? '';
     final isSpeaking = p.isSpeaking;
+    final isCurrentUser = p is LocalParticipant;
     final isMuted = p.isMicrophoneEnabled() == false;
     final volume = p.audioLevel;
 
     // 检查是否屏幕共享
-    final isScreenShare = p.videoTrackPublications.any(
-      (pub) => pub.isScreenShare && !pub.muted && pub.subscribed,
-    );
+    // final isScreenShare = p.videoTrackPublications.any(
+    //   (pub) => pub.isScreenShare && !pub.muted && pub.subscribed,
+    // );
 
     // 屏幕共享时显示特殊标签
     // final displayName = isScreenShare ? "$nickName's Screen" : nickName;
@@ -249,6 +217,18 @@ class _ParticipantTileState extends State<ParticipantTile> {
                           fontSize: 12,
                         ),
                       ),
+                      _buildSignalIconForParticipant(p),
+                      if (!isCurrentUser)
+                        IconButton(
+                          constraints: const BoxConstraints(), // 移除最小尺寸限制
+                          padding: EdgeInsets.all(1), // 移除默认内边距
+                          tooltip: "更多",
+                          onPressed: () {},
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedMoreHorizontal,
+                            size: 14, // 你的图标尺寸
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -258,12 +238,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
                 left: 8,
                 bottom: 36,
                 child: VolumeIndicator(volume: volume),
-              ),
-              // 信号图标（右下角）
-              Positioned(
-                right: 10,
-                bottom: 10,
-                child: _buildSignalIconForParticipant(p),
               ),
             ],
           ),

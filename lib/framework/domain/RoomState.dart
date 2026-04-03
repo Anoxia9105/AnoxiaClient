@@ -49,7 +49,7 @@ class RoomState {
   // 举手状态：key = participant.identity
   final Map<String, bool>? handRaiseMap;
 
-  // 表情：当前飘动的表情列表
+  // 消息反应列表
   final List<ReactionItem>? reactions;
 
   const RoomState({
@@ -145,10 +145,15 @@ class ReactionItem {
   final String id;
   final String message;
   final String uid;
+  final String name;
+  final String? avatar;
   final DateTime createdAt;
+
   ReactionItem({
     required this.message,
     required this.uid,
     required this.createdAt,
+    required this.name,
+    this.avatar,
   }) : id = '${uid}_${DateTime.now().microsecondsSinceEpoch}';
 }

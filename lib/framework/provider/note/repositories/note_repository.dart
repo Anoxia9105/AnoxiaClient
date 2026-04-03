@@ -7,7 +7,7 @@ class NoteRepository {
 
   Future<void> init() async {
     if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(NoteEntityAdapter());
+      // Hive.registerAdapter(NoteEntityAdapter());
     }
     _box = await Hive.openBox<NoteEntity>(_boxName);
   }

@@ -47,7 +47,7 @@ class RoomController extends _$RoomController {
     final room = Room(
       roomOptions: const RoomOptions(
         adaptiveStream: true, // 自适应流：根据网络自动降码率
-        dynacast: true,       // 动态广播：只向订阅者发流，节省带宽
+        dynacast: true, // 动态广播：只向订阅者发流，节省带宽
       ),
     );
 
@@ -75,7 +75,6 @@ class RoomController extends _$RoomController {
 
       listener
         // ============ 房间级别事件 ============
-
         /// 房间连接成功
         /// 通常在 build 中 connect 之后就会触发，这里主要用于清除之前的错误状态
         ..on<RoomConnectedEvent>((event) {
@@ -85,14 +84,12 @@ class RoomController extends _$RoomController {
             state = AsyncData(current.copyWith(connectionError: null));
           }
         })
-
         /// 房间断开连接
         /// SDK 会在网络中断或主动 disconnect 后触发
         /// 重连逻辑由 SDK 自动处理，不需要手动干预
         ..on<RoomDisconnectedEvent>((event) {
           log.info("✗ 房间已断开");
         })
-
         /// 房间正在重连中（网络抖动时触发）
         /// 更新 isReconnecting 状态，UI 层展示重连遮罩
         ..on<RoomReconnectingEvent>((event) {
@@ -102,7 +99,6 @@ class RoomController extends _$RoomController {
             state = AsyncData(current.copyWith(isReconnecting: true));
           }
         })
-
         /// 房间重连成功
         /// 清除重连状态和错误信息
         ..on<RoomReconnectedEvent>((event) {
@@ -114,7 +110,6 @@ class RoomController extends _$RoomController {
             );
           }
         })
-
         /// 房间元数据变化（服务端通过 Server API 更新的房间信息）
         ..on<RoomMetadataChangedEvent>((event) {
           log.info("📝 房间元数据变化: ${event.metadata}");
@@ -123,7 +118,6 @@ class RoomController extends _$RoomController {
             state = AsyncData(current.copyWith(roomMetadata: event.metadata));
           }
         })
-
         /// 录制状态变化（服务端开启/停止录制时触发）
         ..on<RoomRecordingStatusChanged>((event) {
           log.info("📹 录制状态变化: ${event.activeRecording}");
@@ -134,21 +128,17 @@ class RoomController extends _$RoomController {
             );
           }
         })
-
         // ============ 参与者事件 ============
-
         /// 新参与者加入房间
         ..on<ParticipantConnectedEvent>((e) {
           log.info("➕ 参与者加入: ${e.participant.identity}");
           _updateParticipants();
         })
-
         /// 参与者离开房间
         ..on<ParticipantDisconnectedEvent>((e) {
           log.info("➖ 参与者离开: ${e.participant.identity}");
           _updateParticipants();
         })
-
         /// 活跃发言者变化（SDK 根据音量实时检测）
         /// 将第一个发言者设为焦点，UI 层可以据此高亮或置顶
         ..on<ActiveSpeakersChangedEvent>((e) {
@@ -156,13 +146,10 @@ class RoomController extends _$RoomController {
           final current = state.value;
           if (current != null && e.speakers.isNotEmpty) {
             state = AsyncData(
-              current.copyWith(
-                focusedParticipantId: e.speakers.first.identity,
-              ),
+              current.copyWith(focusedParticipantId: e.speakers.first.identity),
             );
           }
         })
-
         /// 参与者连接质量变化
         /// 对应官方 participant_context.dart 中的 ParticipantConnectionQualityUpdatedEvent
         /// quality 枚举值：excellent / good / poor / lost
@@ -179,11 +166,9 @@ class RoomController extends _$RoomController {
             state = AsyncData(current.copyWith(participantQuality: qmap));
           }
         })
-
         // ============ Track（媒体轨道）事件 ============
         // 以下事件都需要刷新参与者列表，确保 UI 中摄像头/静音状态实时更新
         // 不监听这些事件的话，别人开关摄像头/静音你这边 UI 不会更新
-
         /// 远端参与者发布了新轨道（如开启摄像头）
         ..on<TrackPublishedEvent>((e) {
           log.info(
@@ -191,7 +176,6 @@ class RoomController extends _$RoomController {
           );
           _updateParticipants();
         })
-
         /// 远端参与者撤销了轨道（如关闭摄像头）
         ..on<TrackUnpublishedEvent>((e) {
           log.info(
@@ -199,19 +183,16 @@ class RoomController extends _$RoomController {
           );
           _updateParticipants();
         })
-
         /// 本地轨道发布成功（自己开启摄像头/麦克风后触发）
         ..on<LocalTrackPublishedEvent>((e) {
           log.info("📡 本地轨道发布: ${e.publication.sid}");
           _updateParticipants();
         })
-
         /// 本地轨道撤销（自己关闭摄像头/麦克风后触发）
         ..on<LocalTrackUnpublishedEvent>((e) {
           log.info("📡 本地轨道撤销: ${e.publication.sid}");
           _updateParticipants();
         })
-
         /// 轨道被静音（任意参与者）
         ..on<TrackMutedEvent>((e) {
           log.info(
@@ -219,7 +200,6 @@ class RoomController extends _$RoomController {
           );
           _updateParticipants();
         })
-
         /// 轨道取消静音（任意参与者）
         ..on<TrackUnmutedEvent>((e) {
           log.info(
@@ -227,9 +207,7 @@ class RoomController extends _$RoomController {
           );
           _updateParticipants();
         })
-
         // ============ 自定义数据通道 ============
-
         /// 收到房间内任意参与者发送的自定义数据
         /// 注意：LiveKit publishData 不会回传给发送方自己，
         /// 所以发送方需要在发送时直接更新本地状态
@@ -382,6 +360,8 @@ class RoomController extends _$RoomController {
   void _onChat(Map<String, dynamic> payload) {
     final message = payload['message'] as String?;
     final uid = payload['uid'] as String?;
+    final name = payload['name'] as String? ?? uid ?? '';
+    final avatar = payload['avatar'] as String?;
     if (message == null || uid == null) return;
 
     final current = state.value;
@@ -390,24 +370,16 @@ class RoomController extends _$RoomController {
     final item = ReactionItem(
       message: message,
       uid: uid,
+      name: name,
+      avatar: avatar?.isNotEmpty == true ? avatar : null,
       createdAt: DateTime.now(),
     );
+
     final list = List<ReactionItem>.from(current.reactions ?? [])..add(item);
     state = AsyncData(current.copyWith(reactions: list));
     log.info("💬 收到消息: $message 来自: $uid");
 
-    // 3 秒后按唯一 id 精确删除这条消息
-    Future.delayed(const Duration(seconds: 3), () {
-      final cur = state.value;
-      if (cur == null) return;
-      state = AsyncData(
-        cur.copyWith(
-          reactions: (cur.reactions ?? [])
-              .where((r) => r.id != item.id)
-              .toList(),
-        ),
-      );
-    });
+
   }
 
   /// 处理主持人静音指令
@@ -718,34 +690,22 @@ class RoomController extends _$RoomController {
   ///   2. 3 秒后按唯一 id 精确删除（避免同表情互相误删）
   ///   3. 再广播给房间内其他人
   Future<void> sendReaction(String message) async {
-    final uid = state.value?.room.localParticipant?.identity ?? '';
+    final current = state.value;
+    if (current == null) return;
+    final uid = current.room.localParticipant?.identity ?? '';
     if (uid.isEmpty) return;
 
-    // 先更新本地状态
-    final current = state.value;
-    if (current != null) {
-      final item = ReactionItem(
-        message: message,
-        uid: uid,
-        createdAt: DateTime.now(),
-      );
-      final list = List<ReactionItem>.from(current.reactions ?? [])..add(item);
-      state = AsyncData(current.copyWith(reactions: list));
+    final meta = _parseParticipantMeta(current.room.localParticipant);
+    final item = ReactionItem(
+      message: message,
+      uid: uid,
+      name: meta.name,
+      avatar: meta.avatar,
+      createdAt: DateTime.now(),
+    );
 
-      // 3 秒后按唯一 id 精确删除
-      Future.delayed(const Duration(seconds: 3), () {
-        final cur = state.value;
-        if (cur == null) return;
-        state = AsyncData(
-          cur.copyWith(
-            reactions: (cur.reactions ?? [])
-                .where((r) => r.id != item.id)
-                .toList(),
-          ),
-        );
-      });
-    }
-
+    final list = List<ReactionItem>.from(current.reactions ?? [])..add(item);
+    state = AsyncData(current.copyWith(reactions: list));
     // 广播给其他人
     await sendDataEvent(
       topic: 'app-chat',
@@ -760,11 +720,23 @@ class RoomController extends _$RoomController {
   /// 接收方收到后会检查 targetUid 是否是自己，是则执行静音
   Future<void> sendMuteCommand(String targetUid, bool muted) => sendDataEvent(
     topic: 'app-mute-command',
-    payload: {
-      'uid': targetUid,
-      'muted': muted,
-    },
+    payload: {'uid': targetUid, 'muted': muted},
   );
+
+  /// 从参与者 metadata JSON 解析 name 和 avatar
+  /// metadata 格式: {"name": "Alice", "avatar": "https://..."}
+  ({String name, String? avatar}) _parseParticipantMeta(Participant? p) {
+    if (p == null) return (name: '', avatar: null);
+    try {
+      final meta = jsonDecode(p.metadata ?? '{}') as Map<String, dynamic>;
+      return (
+        name: meta['nickName'] as String? ?? p.identity,
+        avatar: meta['avatar'] as String?,
+      );
+    } catch (_) {
+      return (name: p.identity, avatar: null);
+    }
+  }
 }
 
 // ================= roomToken Provider =================

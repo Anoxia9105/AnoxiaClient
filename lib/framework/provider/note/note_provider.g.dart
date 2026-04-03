@@ -48,7 +48,7 @@ final class NoteRepositoryProvider
   }
 }
 
-String _$noteRepositoryHash() => r'c40c20639cd7a7ae8ae6f501e1fd302672eb27b3';
+String _$noteRepositoryHash() => r'cf883481505a8ca5829dae87a4fc24365b450347';
 
 @ProviderFor(NoteNotifier)
 const noteProvider = NoteNotifierProvider._();

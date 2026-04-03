@@ -1,5 +1,4 @@
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,7 +43,6 @@ class _ImageViewerState extends State<ImageViewer> {
     super.dispose();
   }
 
-  // 鼠标滚轮缩放控制
   void _onPointerSignal(PointerSignalEvent evt) {
     if (evt is PointerScrollEvent) {
       final double oldScale = _controller.scale ?? 1.0;
@@ -59,18 +57,19 @@ class _ImageViewerState extends State<ImageViewer> {
 
   void _zoomIn() {
     final double oldScale = _controller.scale ?? 1.0;
-    final double target = (oldScale * (1 + _step)).clamp(_minScaleFactor, _maxScaleFactor);
+    final double target =
+        (oldScale * (1 + _step)).clamp(_minScaleFactor, _maxScaleFactor);
     _controller.scale = target;
   }
 
   void _zoomOut() {
     final double oldScale = _controller.scale ?? 1.0;
-    final double target = (oldScale * (1 - _step)).clamp(_minScaleFactor, _maxScaleFactor);
+    final double target =
+        (oldScale * (1 - _step)).clamp(_minScaleFactor, _maxScaleFactor);
     _controller.scale = target;
   }
 
   void _downloadImage() {
-    // 这里调用你之前的下载逻辑
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('image_download_started'.tr())),
     );
@@ -81,16 +80,21 @@ class _ImageViewerState extends State<ImageViewer> {
     if (widget.attachment.url == null || widget.attachment.url!.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.black,
-        body: Center(
-          child: Text('image_load_failed'.tr(), style: const TextStyle(color: Colors.white)),
+        body: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Center(
+            child: Text(
+              'image_load_failed'.tr(),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         ),
       );
     }
 
     return Scaffold(
       backgroundColor: Colors.black,
-      // 延伸到状态栏下方，保证全屏点击关闭
-      extendBodyBehindAppBar: true, 
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -103,19 +107,35 @@ class _ImageViewerState extends State<ImageViewer> {
         ),
         actions: [
           IconButton(
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedZoomInArea, color: Colors.white, size: 20),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedZoomInArea,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: _zoomIn,
           ),
           IconButton(
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedZoomOutArea, color: Colors.white, size: 20),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedZoomOutArea,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: _zoomOut,
           ),
           IconButton(
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, color: Colors.white, size: 20),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedRefresh,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => _controller.scale = _controller.initial.scale,
           ),
           IconButton(
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01, color: Colors.white, size: 20),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedDownload01,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: _downloadImage,
           ),
           const SizedBox(width: 8),
@@ -127,44 +147,56 @@ class _ImageViewerState extends State<ImageViewer> {
           children: [
             // 主体图片展示区
             Positioned.fill(
-              child: Listener(
-                onPointerSignal: _onPointerSignal,
-                child: PhotoView(
-                  controller: _controller,
-                  scaleStateController: _scaleStateCtrl,
-                  // --- 核心优化：点击背景或图片关闭窗口 ---
-                  onTapUp: (context, details, value) => Navigator.pop(context),
-                  // ------------------------------------
-                  imageProvider: CachedNetworkImageProvider(widget.attachment.url!),
-                  backgroundDecoration: const BoxDecoration(color: Colors.black),
-                  initialScale: PhotoViewComputedScale.contained,
-                  minScale: PhotoViewComputedScale.contained * 0.8,
-                  maxScale: PhotoViewComputedScale.covered * 2.5,
-                  enableRotation: false,
-                  basePosition: Alignment.center,
-                  heroAttributes: PhotoViewHeroAttributes(tag: widget.heroTag),
-                  loadingBuilder: (context, event) => _buildLoading(event),
-                  errorBuilder: (context, error, stackTrace) => _buildError(),
+              child: GestureDetector(
+                // 兜底关闭：errorBuilder 会替换整个 PhotoView，导致 onTapUp 失效
+                // 外层套 GestureDetector 确保任何情况下点击都能关闭
+                onTap: () => Navigator.pop(context),
+                child: Listener(
+                  onPointerSignal: _onPointerSignal,
+                  child: PhotoView(
+                    controller: _controller,
+                    scaleStateController: _scaleStateCtrl,
+                    onTapUp: (context, details, value) =>
+                        Navigator.pop(context),
+                    imageProvider: NetworkImage(widget.attachment.url!),
+                    backgroundDecoration:
+                        const BoxDecoration(color: Colors.black),
+                    initialScale: PhotoViewComputedScale.contained,
+                    minScale: PhotoViewComputedScale.contained * 0.8,
+                    maxScale: PhotoViewComputedScale.covered * 2.5,
+                    enableRotation: false,
+                    basePosition: Alignment.center,
+                    heroAttributes:
+                        PhotoViewHeroAttributes(tag: widget.heroTag),
+                    loadingBuilder: (context, event) =>
+                        _buildLoading(event),
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildError(),
+                  ),
                 ),
               ),
             ),
 
-            // 底部文件名提示 (穿透点击)
+            // 底部文件名提示（穿透点击，不拦截关闭手势）
             Positioned(
               bottom: 16.h,
               left: 0,
               right: 0,
-              child: IgnorePointer( // 忽略此层点击，防止拦截关闭手势
+              child: IgnorePointer(
                 child: Center(
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Text(
                       widget.attachment.name ?? 'image'.tr(),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -185,7 +217,10 @@ class _ImageViewerState extends State<ImageViewer> {
         height: 30,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          value: event == null ? null : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+          value: event == null
+              ? null
+              : event.cumulativeBytesLoaded /
+                  (event.expectedTotalBytes ?? 1),
           color: Colors.white,
         ),
       ),
@@ -199,7 +234,15 @@ class _ImageViewerState extends State<ImageViewer> {
         children: [
           const Icon(Icons.broken_image, color: Colors.white54, size: 50),
           const SizedBox(height: 8),
-          Text('image_failed_to_load'.tr(), style: const TextStyle(color: Colors.white54)),
+          Text(
+            'image_failed_to_load'.tr(),
+            style: const TextStyle(color: Colors.white54),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'tap_to_close'.tr(),
+            style: const TextStyle(color: Colors.white30, fontSize: 12),
+          ),
         ],
       ),
     );

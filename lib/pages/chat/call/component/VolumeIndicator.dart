@@ -21,10 +21,10 @@ class VolumeIndicator extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(barCount, (i) {
         final active = i < activeCount;
-        // 每根柱高度递增，形成波形感
-        final height = 4.0 + (i % 4) * 2.5;
+        final height = 8.0; // 固定高度，保证每根柱子高度一致
+
         return Container(
-          width: 2.5,
+          width: 2,
           height: height,
           margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
@@ -34,7 +34,7 @@ class VolumeIndicator extends StatelessWidget {
                     Colors.redAccent,
                     i / barCount,
                   )
-                : Colors.white.withValues(alpha: 0.15),
+                : Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(1),
           ),
         );
