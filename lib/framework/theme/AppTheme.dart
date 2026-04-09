@@ -4,217 +4,205 @@ import 'package:flutter/material.dart';
 import 'ThemeMixin.dart';
 
 class AppTheme with ThemeMixin {
-  AppTheme._(); // 禁止实例化
+  AppTheme._();
 
-  /// 主题元数据 - 精心设计的现代化配色方案
   static final List<ThemeOption> themes = [
     // ==================== 亮色主题系列 ====================
     ThemeOption(
       'app_light_themes1',
-      const Color(0xFF6366F1), // Indigo 500 - 经典靛蓝
+      const Color(0xFF5A5FD6), // Indigo - 降低饱和，更沉稳
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFF8FAFC), Color(0xFFEFF6FF)],
+        colors: [Color(0xFFF4F5FB), Color(0xFFEAECF8)], // 带蓝调的米白，不再纯白刺眼
       ),
     ),
     ThemeOption(
       'app_light_themes2',
-      const Color(0xFF10B981), // Emerald 500 - 翡翠绿
+      const Color(0xFF0E9E72), // Emerald - 稍暗
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+        colors: [Color(0xFFEFF9F4), Color(0xFFD6F5E8)], // 柔和绿白
       ),
     ),
     ThemeOption(
       'app_light_themes3',
-      const Color(0xFFF472B6), // Pink 400 - 樱花粉
+      const Color(0xFFD45F9A), // Pink - 降饱和，更柔和
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFFFF5F7), Color(0xFFFFF0F5)],
+        colors: [Color(0xFFFCF0F5), Color(0xFFF8E6EF)], // 奶粉色，不再荧光
       ),
     ),
     ThemeOption(
       'app_light_themes4',
-      const Color(0xFF14B8A6), // Teal 500 - 薄荷青
+      const Color(0xFF0FA090), // Teal - 稍深
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)],
+        colors: [Color(0xFFEEFAF8), Color(0xFFD5F4F0)],
       ),
     ),
     ThemeOption(
       'app_light_themes5',
-      const Color(0xFF6B7280), // Gray 500 - 素雅灰
+      const Color(0xFF5A6172), // Gray - 偏蓝灰，更有质感
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFFFFFFF), Color(0xFFF9FAFB)],
+        colors: [Color(0xFFF5F5F7), Color(0xFFECEDF0)], // 带冷调的灰白，不再死白
       ),
     ),
     ThemeOption(
       'app_light_themes6',
-      const Color(0xFFF59E0B), // Amber 500 - 暖阳橙
+      const Color(0xFFD48A10), // Amber - 降亮度
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+        colors: [Color(0xFFFBF5E6), Color(0xFFF5E8C2)], // 奶油黄，不再刺眼
       ),
     ),
     ThemeOption(
       'app_light_themes7',
-      const Color(0xFF8B5CF6), // Violet 500 - 薰衣草紫
+      const Color(0xFF7250D4), // Violet - 降亮度
       Brightness.light,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+        colors: [Color(0xFFF2EFF9), Color(0xFFE8E2F6)], // 淡薰衣草
       ),
     ),
-    
+
     // ==================== 暗色主题系列 ====================
     ThemeOption(
       'app_dark_themes8',
-      const Color(0xFF3B82F6), // Blue 500 - 星空蓝
+      const Color(0xFF6BA3E8), // Blue - 降亮，去除荧光感
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+        colors: [Color(0xFF0D1520), Color(0xFF162032)], // 更深邃，不偏绿
       ),
     ),
     ThemeOption(
       'app_dark_themes9',
-      const Color(0xFFA855F7), // Purple 500 - 霓虹紫
+      const Color(0xFF9370CC), // Purple - 降饱和
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+        colors: [Color(0xFF1A1730), Color(0xFF2A2550)],
       ),
     ),
     ThemeOption(
       'app_dark_themes10',
-      const Color(0xFF6EE7B7), // Emerald 300 - 森林雾
+      const Color(0xFF52C49A), // Emerald - 降亮
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF134E4A), Color(0xFF115E59)],
+        colors: [Color(0xFF0E3530), Color(0xFF0F4A44)],
       ),
     ),
     ThemeOption(
       'app_dark_themes11',
-      const Color(0xFFFBBF24), // Amber 400 - 鎏金岁月
+      const Color(0xFFD4A030), // Amber - 降亮，更古铜
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF451A03), Color(0xFF78350F)],
+        colors: [Color(0xFF2A1500), Color(0xFF4A2800)],
       ),
     ),
     ThemeOption(
       'app_dark_themes12',
-      const Color(0xFFF87171), // Red 400 - 熔岩之心
+      const Color(0xFFD46060), // Red - 降亮，不再荧光红
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF2B0F0F), Color(0xFF450A0A)],
+        colors: [Color(0xFF200A0A), Color(0xFF3A0E0E)],
       ),
     ),
     ThemeOption(
       'app_dark_themes13',
-      const Color(0xFF0EA5E9), // Sky 500 - 深海之蓝
+      const Color(0xFF3E9FD4), // Sky - 降饱和
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF0C4A6E), Color(0xFF075985)],
+        colors: [Color(0xFF082030), Color(0xFF0A3A52)],
       ),
     ),
     ThemeOption(
       'app_dark_themes14',
-      const Color(0xFFD97706), // Amber 600 - 可可大地
+      const Color(0xFFB86A20), // Amber - 更深沉
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF271C19), Color(0xFF451A03)],
+        colors: [Color(0xFF1E1208), Color(0xFF352010)],
       ),
     ),
     ThemeOption(
       'app_dark_themes15',
-      const Color(0xFFC084FC), // Purple 400 - 紫晶星云
+      const Color(0xFFAA6EE0), // Purple - 降亮
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF2E1065), Color(0xFF4C1D95)],
+        colors: [Color(0xFF1E0A48), Color(0xFF350E70)],
       ),
     ),
     ThemeOption(
       'app_dark_themes16',
-      const Color(0xFF22C55E), // Green 500 - 矩阵代码
+      const Color(0xFF38A85A), // Green - 降亮，去荧光
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF022C22), Color(0xFF064E3B)],
+        colors: [Color(0xFF021A10), Color(0xFF043020)],
       ),
     ),
     ThemeOption(
       'app_dark_themes17',
-      const Color(0xFFF97316), // Orange 500 - 落日余晖
+      const Color(0xFFD4662A), // Orange - 降亮
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF431407), Color(0xFF7C2D12)],
+        colors: [Color(0xFF2A0D04), Color(0xFF4E1A08)],
       ),
     ),
     ThemeOption(
       'app_dark_themes18',
-      const Color(0xFF67E8F9), // Cyan 300 - 冬之冰川
+      const Color(0xFF4ECCE0), // Cyan - 降亮，去荧光
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF164E63), Color(0xFF0E7490)],
+        colors: [Color(0xFF082A35), Color(0xFF0A4050)],
       ),
     ),
     ThemeOption(
       'app_dark_themes19',
-      const Color(0xFF9CA3AF), // Gray 400 - 水墨石墨
+      const Color(0xFF8A9099), // Gray - 微暖调
       Brightness.dark,
       const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF171717), Color(0xFF262626)],
+        colors: [Color(0xFF141416), Color(0xFF1E2022)], // 带点暖意，不再死黑
       ),
     ),
-    // ThemeOption(
-    //   '测试1',
-    //   const Color(0xFF2B2B2B),
-    //   Brightness.light,
-    //   const LinearGradient(
-    //     begin: Alignment.topLeft,
-    //     end: Alignment.topRight,
-    //     colors: [Color(0xFFC9D6FF), Color(0xFFE2E2E2)],
-    //   ),
-    // ),
   ];
 
-  /// 根据 index 获取 ThemeData
-  static ThemeData getTheme({int? index,String? overrideFontFamily}) {
+  static ThemeData getTheme({int? index, String? overrideFontFamily}) {
     final idx = (index == null || index < 0 || index >= themes.length) ? 0 : index;
     final t = themes[idx];
     return ThemeMixin.buildTheme(
@@ -226,7 +214,6 @@ class AppTheme with ThemeMixin {
   }
 }
 
-/// 主题元数据类
 class ThemeOption {
   final String name;
   final Color? color;
