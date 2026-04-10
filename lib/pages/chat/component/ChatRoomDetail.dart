@@ -13,6 +13,19 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../framework/provider/chat/message/room_message_service.dart';
 import '../../../framework/provider/chat/room/room_list_service.dart';
 
+/// 展平列表的条目类型：时间分隔条 或 消息气泡
+sealed class _ChatListItem {}
+
+class _TimeDividerItem extends _ChatListItem {
+  final int timestamp;
+  _TimeDividerItem(this.timestamp);
+}
+
+class _MessageItem extends _ChatListItem {
+  final ChatMessage message;
+  _MessageItem(this.message);
+}
+
 class ChatRoomDetail extends ConsumerStatefulWidget {
   const ChatRoomDetail({super.key});
 
@@ -26,29 +39,58 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   bool _showScrollDownButton = false;
 
   /// =========================
-  /// ✅ 时间分组判断
+  /// ✅ 将原始消息列表展平为 [时间分隔条 + 消息] 的混合列表
+  /// 消息列表按时间升序排列（index 0 = 最旧）
+  /// 规则：第一条消息强制插入时间条，之后两条消息间隔 > 30分钟才插入
   /// =========================
-  bool shouldShowTime(ChatMessage curr, ChatMessage? prev) {
-    if (prev == null) return true;
+  List<_ChatListItem> _buildFlatList(List<ChatMessage> messages) {
+    final List<_ChatListItem> items = [];
+    for (int i = 0; i < messages.length; i++) {
+      final msg = messages[i];
+      final prevMsg = i > 0 ? messages[i - 1] : null;
 
-    if (curr.timestamp != null && prev.timestamp != null) {
-      final diff = curr.timestamp! - prev.timestamp!;
-      return diff > 5 * 60 * 1000; // 5分钟
+      bool showTime = false;
+      if (prevMsg == null) {
+        // 第一条消息，强制显示时间
+        showTime = true;
+      } else if (msg.timestamp != null && prevMsg.timestamp != null) {
+        final diff = msg.timestamp! - prevMsg.timestamp!;
+        showTime = diff > 30 * 60 * 1000; // 30分钟
+      }
+
+      if (showTime && msg.timestamp != null) {
+        items.add(_TimeDividerItem(msg.timestamp!));
+      }
+      items.add(_MessageItem(msg));
     }
-
-    return false;
+    return items;
   }
 
   /// =========================
-  /// ✅ 时间UI
+  /// ✅ 微信风格时间分隔 UI
   /// =========================
-  Widget _buildTimeLabel(int timestamp) {
+  Widget _buildTimeDividerWidget(int timestamp, BuildContext context) {
+    final locale = context.locale.languageCode;
+    final text = DateUtil.formatWeChatTimeDivider(timestamp, locale);
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(4),
+        ),
         child: Text(
-          DateUtil.formatTimestampToTime(timestamp),
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.45),
+          ),
         ),
       ),
     );
@@ -81,16 +123,18 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       final currentMessages = ref.read(chatMessagesProvider)[activeId] ?? [];
       if (currentMessages.isEmpty) return;
 
+      // 构建展平列表以获取实际 item 总数（含时间分隔条）
+      final flatItems = _buildFlatList(currentMessages);
+
       // 1. 找出当前可见的最大索引（在 reverse:true 中，最大索引就是最顶部的旧消息）
       int maxVisibleIndex = 0;
       for (var pos in positions) {
         if (pos.index > maxVisibleIndex) maxVisibleIndex = pos.index;
       }
 
-      // 2. 阈值判断：如果滑到了倒数第 5 条消息
-      // currentMessages.length - 1 是最顶端
+      // 2. 阈值判断：如果滑到了倒数第 5 个 item 附近
       if (currentMessages.length >= 10 &&
-          maxVisibleIndex >= currentMessages.length - 5) {
+          maxVisibleIndex >= flatItems.length - 5) {
         ref.read(chatMessagesProvider.notifier).loadMoreHistory(activeId);
       }
     };
@@ -165,16 +209,18 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             );
           }
 
-          //消息渲染
+          //消息渲染 —— 构建展平列表（时间分隔条 + 消息气泡）
+          final flatItems = _buildFlatList(messages);
+          // flatItems 按时间升序：[0]=最旧 ... [last]=最新
+          // reverse:true 模式下 index 0 = 最新，所以需要反转索引
+
           return FlutterListView(
             controller: _listViewController,
             reverse: true,
             delegate: FlutterListViewDelegate(
               (context, index) {
-                //如果还有更多消息，且当前是最后一个消息
-                if (messages.isNotEmpty &&
-                    hasMore &&
-                    index == messages.length) {
+                // loading indicator（加载更多历史消息）
+                if (hasMore && index == flatItems.length) {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
@@ -183,39 +229,20 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                   );
                 }
 
-                /// =========================
-                /// ✅ 关键：索引转换
-                /// =========================
-                final realIndex = messages.length - 1 - index;
-                final msg = messages[realIndex];
+                /// reverse 模式下索引反转
+                final realIndex = flatItems.length - 1 - index;
+                final item = flatItems[realIndex];
 
-                /// 上一条（更旧）
-                final prevMsg = realIndex < messages.length - 1
-                    ? messages[realIndex + 1]
-                    : null;
-
-                final showTime = shouldShowTime(msg, prevMsg);
-
-                /// =========================
-                /// ✅ 组合时间 + 气泡
-                /// =========================
-                if (msg.timestamp != null) {
-                  return Column(
-                    children: [
-                      if (showTime) _buildTimeLabel(msg.timestamp!),
-                      ChatMessageBubble(
-                        key: ValueKey(msg.messageId),
-                        message: msg,
-                      ),
-                    ],
-                  );
-                }
-                return ChatMessageBubble(
-                  key: ValueKey(msg.messageId),
-                  message: msg,
-                );
+                return switch (item) {
+                  _TimeDividerItem(:final timestamp) =>
+                    _buildTimeDividerWidget(timestamp, context),
+                  _MessageItem(:final message) => ChatMessageBubble(
+                    key: ValueKey(message.messageId),
+                    message: message,
+                  ),
+                };
               },
-              childCount: messages.length + (hasMore ? 1 : 0),
+              childCount: flatItems.length + (hasMore ? 1 : 0),
               // 开启 keepPosition: true
               // 这能保证在分页加载旧消息时，滚动位置不会跳动
               keepPosition: true,
