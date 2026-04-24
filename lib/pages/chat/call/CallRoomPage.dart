@@ -103,6 +103,16 @@ class _CallRoomBody extends ConsumerWidget {
         .where((p) => p.videoTrackPublications.any((pub) => pub.isScreenShare))
         .firstOrNull;
 
+    final notifier = ref.read(roomControllerProvider(token).notifier);
+
+    // 静音回调：向目标参与者发送静音指令
+    void onMute(String identity) =>
+        notifier.sendMuteCommand(identity, true);
+
+    // 踢出回调：调用服务端踢出接口
+    void onKick(String identity) =>
+        notifier.kickParticipant(identity);
+
     return Stack(
       children: [
         Column(
@@ -120,6 +130,8 @@ class _CallRoomBody extends ConsumerWidget {
                             participants: participants,
                             screenSharer: screenSharer,
                             handRaiseMap: roomState.handRaiseMap ?? {},
+                            onMute: onMute,
+                            onKick: onKick,
                           ),
                   ),
                   // 历史面板
@@ -167,17 +179,30 @@ class _CallRoomBody extends ConsumerWidget {
     required List<Participant> participants,
     required Participant? screenSharer,
     required Map<String, bool> handRaiseMap,
+    void Function(String identity)? onMute,
+    void Function(String identity)? onKick,
   }) {
     return switch (mode) {
       LayoutMode.grid => LayoutRoomWidget(
-          participants: participants, handRaiseMap: handRaiseMap),
+          participants: participants,
+          handRaiseMap: handRaiseMap,
+          onMute: onMute,
+          onKick: onKick,
+        ),
       LayoutMode.focus => LayoutRoomScreenWidget(
           screenParticipant: screenSharer!,
           otherParticipants:
               participants.where((p) => p.sid != screenSharer.sid).toList(),
-          handRaiseMap: handRaiseMap),
+          handRaiseMap: handRaiseMap,
+          onMute: onMute,
+          onKick: onKick,
+        ),
       LayoutMode.carousel => LayoutRoomCarouselWidget(
-          participants: participants, handRaiseMap: handRaiseMap),
+          participants: participants,
+          handRaiseMap: handRaiseMap,
+          onMute: onMute,
+          onKick: onKick,
+        ),
     };
   }
 }

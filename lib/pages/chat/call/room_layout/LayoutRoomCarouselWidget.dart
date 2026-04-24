@@ -5,11 +5,15 @@ import 'package:livekit_client/livekit_client.dart';
 class LayoutRoomCarouselWidget extends StatelessWidget {
   final List<Participant> participants;
   final Map<String, bool> handRaiseMap;
+  final void Function(String identity)? onMute;
+  final void Function(String identity)? onKick;
 
   const LayoutRoomCarouselWidget({
     super.key,
     required this.participants,
     this.handRaiseMap = const {},
+    this.onMute,
+    this.onKick,
   });
 
   @override
@@ -27,6 +31,8 @@ class LayoutRoomCarouselWidget extends StatelessWidget {
             child: ParticipantTile(
               participant: remote,
               handRaised: handRaiseMap[remote.identity] == true,
+              onMute: onMute,
+              onKick: onKick,
               key: ValueKey(remote.sid),
             ),
           )

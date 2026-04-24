@@ -2,7 +2,10 @@
 
 import 'dart:convert';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/pages/chat/call/component/VolumeIndicator.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -72,11 +75,17 @@ Widget _buildSignalIconForParticipant(Participant p) {
 class ParticipantTile extends StatefulWidget {
   final Participant participant;
   final bool handRaised;
+  /// 点击"静音"时触发，传入目标参与者 identity
+  final void Function(String identity)? onMute;
+  /// 点击"踢出"时触发，传入目标参与者 identity
+  final void Function(String identity)? onKick;
 
   const ParticipantTile({
     super.key,
     required this.participant,
     this.handRaised = false,
+    this.onMute,
+    this.onKick,
   });
 
   @override
@@ -107,6 +116,88 @@ class _ParticipantTileState extends State<ParticipantTile> {
     }
 
     return null;
+  }
+
+  /// 弹出"更多"操作菜单（静音 / 踢出）
+  void _showMoreMenu(BuildContext context, String identity) {
+    Function? close;
+
+    final items = [
+      _MoreMenuItem(
+        icon: HugeIcons.strokeRoundedMicOff01,
+        iconColor: null,
+        label: '静音',
+        onTap: () {
+          widget.onMute?.call(identity);
+          close?.call();
+        },
+      ),
+      _MoreMenuItem(
+        icon: HugeIcons.strokeRoundedUserRemove01,
+        iconColor: Colors.redAccent,
+        label: '踢出',
+        labelColor: Colors.redAccent,
+        onTap: () {
+          widget.onKick?.call(identity);
+          close?.call();
+        },
+      ),
+    ];
+
+    close = Toast.showWidget(
+      context,
+      direction: PreferDirection.topCenter,
+      child: Material(
+        color: Colors.transparent,
+        child: BubbleWidget(
+          arrowDirection: AxisDirection.down,
+          arrowOffset: 70,
+          arrowLength: 0,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          border: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 0.5,
+          ),
+          contentBuilder: (ctx) => Container(
+            constraints: const BoxConstraints(minWidth: 100),
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: items.map((item) {
+                return InkWell(
+                  onTap: item.onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        HugeIcon(
+                          icon: item.icon,
+                          size: 15,
+                          color: item.iconColor ??
+                              Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: item.labelColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -219,14 +310,20 @@ class _ParticipantTileState extends State<ParticipantTile> {
                       ),
                       _buildSignalIconForParticipant(p),
                       if (!isCurrentUser)
-                        IconButton(
-                          constraints: const BoxConstraints(), // 移除最小尺寸限制
-                          padding: EdgeInsets.all(1), // 移除默认内边距
-                          tooltip: "更多",
-                          onPressed: () {},
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedMoreHorizontal,
-                            size: 14, // 你的图标尺寸
+                        Builder(
+                          builder: (btnCtx) => IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(2),
+                            tooltip: "更多",
+                            onPressed: () => _showMoreMenu(
+                              btnCtx,
+                              p.identity,
+                            ),
+                            icon: const HugeIcon(
+                              icon: HugeIcons.strokeRoundedMoreHorizontal,
+                              size: 16,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                     ],
@@ -245,4 +342,24 @@ class _ParticipantTileState extends State<ParticipantTile> {
       ),
     );
   }
+}
+
+// ──────────────────────────────────────────
+// 内部数据类
+// ──────────────────────────────────────────
+
+class _MoreMenuItem {
+  final List<List<dynamic>> icon;
+  final Color? iconColor;
+  final String label;
+  final Color? labelColor;
+  final VoidCallback onTap;
+
+  const _MoreMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.iconColor,
+    this.labelColor,
+  });
 }

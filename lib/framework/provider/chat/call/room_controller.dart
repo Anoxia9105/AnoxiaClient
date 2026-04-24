@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
@@ -339,6 +340,7 @@ class RoomController extends _$RoomController {
   void _onHandRaise(Map<String, dynamic> payload) {
     final uid = payload['uid'] as String?;
     final raised = payload['raised'] as bool? ?? false;
+    final name = payload['name'] as String? ?? uid ?? '';
     if (uid == null) return;
 
     final current = state.value;
@@ -352,11 +354,14 @@ class RoomController extends _$RoomController {
     }
     state = AsyncData(current.copyWith(handRaiseMap: map));
     log.info("✋ $uid ${raised ? '举手' : '放手'}");
+
+    // Toast 提示
+    Toast.showNotificationNow(
+      raised ? '$name 举手了 ✋' : '$name 放手了',
+    );
   }
 
   /// 处理远端表情/弹幕消息
-  /// 添加到 reactions 列表，3 秒后按唯一 id 精确删除
-  /// 用 id 而不是 uid+message 匹配，避免同一人发相同表情时误删其他条
   void _onChat(Map<String, dynamic> payload) {
     final message = payload['message'] as String?;
     final uid = payload['uid'] as String?;
@@ -378,8 +383,6 @@ class RoomController extends _$RoomController {
     final list = List<ReactionItem>.from(current.reactions ?? [])..add(item);
     state = AsyncData(current.copyWith(reactions: list));
     log.info("💬 收到消息: $message 来自: $uid");
-
-
   }
 
   /// 处理主持人静音指令
@@ -387,6 +390,7 @@ class RoomController extends _$RoomController {
   void _onMuteCommand(Map<String, dynamic> payload) {
     final targetUid = payload['uid'] as String?;
     final muted = payload['muted'] as bool? ?? true;
+    final senderName = payload['senderName'] as String? ?? '主持人';
     final current = state.value;
     if (current == null) return;
 
@@ -397,6 +401,11 @@ class RoomController extends _$RoomController {
     current.room.localParticipant?.setMicrophoneEnabled(!muted);
     state = AsyncData(current.copyWith(micEnabled: !muted));
     log.info("📢 收到主持人指令: ${muted ? '静音' : '取消静音'}");
+
+    // Toast 提示
+    Toast.showNotificationNow(
+      muted ? '$senderName 将您静音 🔇' : '$senderName 取消了您的静音 🔈',
+    );
   }
 
   /// 绑定设备热插拔监听
@@ -658,25 +667,26 @@ class RoomController extends _$RoomController {
   ///   1. 先更新本地 handRaiseMap
   ///   2. 再广播给房间内其他人
   Future<void> sendHandRaise(bool raised) async {
-    final uid = state.value?.room.localParticipant?.identity ?? '';
+    final current = state.value;
+    if (current == null) return;
+    final uid = current.room.localParticipant?.identity ?? '';
     if (uid.isEmpty) return;
 
-    // 先更新本地状态
-    final current = state.value;
-    if (current != null) {
-      final map = Map<String, bool>.from(current.handRaiseMap ?? {});
-      if (raised) {
-        map[uid] = true;
-      } else {
-        map.remove(uid);
-      }
-      state = AsyncData(current.copyWith(handRaiseMap: map));
-    }
+    final meta = _parseParticipantMeta(current.room.localParticipant);
 
-    // 广播给其他人
+    // 先更新本地状态
+    final map = Map<String, bool>.from(current.handRaiseMap ?? {});
+    if (raised) {
+      map[uid] = true;
+    } else {
+      map.remove(uid);
+    }
+    state = AsyncData(current.copyWith(handRaiseMap: map));
+
+    // 广播给其他人（携带用户名）
     await sendDataEvent(
       topic: 'app-hand-raise',
-      payload: {'raised': raised, 'uid': uid},
+      payload: {'raised': raised, 'uid': uid, 'name': meta.name},
     );
 
     log.info("✋ 本地${raised ? '举手' : '放手'}");
@@ -718,10 +728,52 @@ class RoomController extends _$RoomController {
   /// [muted] true=静音，false=取消静音
   ///
   /// 接收方收到后会检查 targetUid 是否是自己，是则执行静音
-  Future<void> sendMuteCommand(String targetUid, bool muted) => sendDataEvent(
-    topic: 'app-mute-command',
-    payload: {'uid': targetUid, 'muted': muted},
-  );
+  Future<void> sendMuteCommand(String targetUid, bool muted) {
+    final current = state.value;
+    final meta = _parseParticipantMeta(current?.room.localParticipant);
+    return sendDataEvent(
+      topic: 'app-mute-command',
+      payload: {
+        'uid': targetUid,
+        'muted': muted,
+        'senderName': meta.name,
+      },
+    );
+  }
+
+  /// 踢出参与者（从通话房间移除）
+  /// [identity] LiveKit 参与者 identity
+  /// 对应后端接口 GET /call/participant/remove?roomId=&identity=
+  Future<bool> kickParticipant(String identity) async {
+    final current = state.value;
+    if (current == null) return false;
+    try {
+      final roomId = current.room.name;
+      if (roomId == null || roomId.isEmpty) {
+        log.warning("踢出失败: roomId 为空");
+        return false;
+      }
+      final res = await DioClient().get(
+        API.callRemoveParticipant,
+        queryParameters: {'roomId': roomId, 'identity': identity},
+      );
+      final code = res.data?['code'];
+      if (code == 200) {
+        Toast.showNotificationNow('已将该用户移出通话');
+        log.info("✅ 踢出参与者 $identity 成功");
+        return true;
+      } else {
+        final msg = res.data?['msg'] ?? '未知错误';
+        Toast.showNotificationNow('踢出失败: $msg');
+        log.warning("踢出参与者 $identity 失败: $msg");
+        return false;
+      }
+    } catch (e) {
+      log.error("踢出参与者失败: $e");
+      Toast.showNotificationNow('踢出失败，请重试');
+      return false;
+    }
+  }
 
   /// 从参与者 metadata JSON 解析 name 和 avatar
   /// metadata 格式: {"name": "Alice", "avatar": "https://..."}

@@ -7,12 +7,16 @@ class LayoutRoomScreenWidget extends StatefulWidget {
   final Participant screenParticipant;
   final List<Participant> otherParticipants;
   final Map<String, bool> handRaiseMap;
+  final void Function(String identity)? onMute;
+  final void Function(String identity)? onKick;
 
   const LayoutRoomScreenWidget({
     super.key,
     required this.screenParticipant,
     required this.otherParticipants,
     this.handRaiseMap = const {},
+    this.onMute,
+    this.onKick,
   });
 
   @override
@@ -30,6 +34,8 @@ class _LayoutRoomScreenWidgetState extends State<LayoutRoomScreenWidget> {
           child: ParticipantTile(
             participant: widget.screenParticipant,
             handRaised: widget.handRaiseMap[widget.screenParticipant.identity] == true,
+            onMute: widget.onMute,
+            onKick: widget.onKick,
             key: ValueKey('${widget.screenParticipant.sid}-screen'),
           ),
         ),
@@ -50,6 +56,8 @@ class _LayoutRoomScreenWidgetState extends State<LayoutRoomScreenWidget> {
                   child: ParticipantTile(
                     participant: p,
                     handRaised: widget.handRaiseMap[p.identity] == true,
+                    onMute: widget.onMute,
+                    onKick: widget.onKick,
                     key: ValueKey(p.sid),
                   ),
                 );

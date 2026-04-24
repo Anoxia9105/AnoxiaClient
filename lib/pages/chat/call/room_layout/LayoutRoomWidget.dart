@@ -5,16 +5,22 @@ import 'package:livekit_client/livekit_client.dart';
 class LayoutRoomWidget extends StatelessWidget {
   final List<Participant> participants;
   final Map<String, bool> handRaiseMap;
+  final void Function(String identity)? onMute;
+  final void Function(String identity)? onKick;
 
   const LayoutRoomWidget({
     super.key,
     required this.participants,
     this.handRaiseMap = const {},
+    this.onMute,
+    this.onKick,
   });
 
   Widget _tile(Participant p) => ParticipantTile(
         participant: p,
         handRaised: handRaiseMap[p.identity] == true,
+        onMute: onMute,
+        onKick: onKick,
       );
 
   @override
