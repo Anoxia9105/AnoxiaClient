@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -102,6 +103,12 @@ class RoomListService extends _$RoomListService {
   /// 实时更新：计算未读数的逻辑
   void updateRoomPosition(ChatMessage newMessage, ChatRoomVO? activeRoom) {
     final isCurrentRoom = activeRoom?.roomId == newMessage.roomId;
+    final currentUser = ref.read(authControllerProvider).value;
+    final isSelfMessage = newMessage.senderId == currentUser?.userId;
+
+    final action = newMessage.extra['action']?.toString().toUpperCase();
+    final isCallSystemMessage = action == 'CALL_STARTED' || action == 'CALL_ENDED';
+
     state.whenData((rooms) {
       final List<ChatRoomVO> updatedList = List.from(rooms);
       final index = updatedList.indexWhere(
@@ -113,12 +120,15 @@ class RoomListService extends _$RoomListService {
 
         // 当前正在看的房间不增加未读数
         int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
-        if (!isCurrentRoom) {
+        // 普通消息：只要不是自己发的、且不是通话系统消息，就尝试发系统通知。
+        // 窗口是否聚焦由 NotificationHelper 内部判断。
+        if (!isSelfMessage && !isCallSystemMessage) {
           NotificationHelper().show(
             id: newMessage.roomId.hashCode,
             title: oldRoom.roomName ?? '新消息',
             body: newMessage.content,
             payload: newMessage.roomId,
+            avatarUrl: newMessage.senderAvatar ?? oldRoom.roomAvatar,
           );
         }
 

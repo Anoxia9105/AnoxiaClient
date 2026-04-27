@@ -39,6 +39,16 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     ? '通话中'
     : (isCallingNow ? '加入通话' : '发起通话');
 
+  final callActionIcon = callWindow != null
+    ? HugeIcons.strokeRoundedCallEnd03
+    : (isCallingNow
+      ? HugeIcons.strokeRoundedCallRinging03
+      : HugeIcons.strokeRoundedCall02);
+
+  final callActionColor = callWindow != null
+    ? Colors.orangeAccent
+    : (isCallingNow ? Theme.of(context).colorScheme.primary : null);
+
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
     final members = ref.watch(roomMembersProvider(activeId ?? ''));
 
@@ -90,7 +100,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           );
         },
         loading: () => Text('appbar_connecting'.tr()),
-  error: (error, stackTrace) => Text('appbar_connection_lost'.tr()),
+    error: (error, stackTrace) => Text('appbar_connection_lost'.tr()),
       ),
       actions: [
         // 发起通话按钮（房间未解散才显示）
@@ -105,11 +115,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               );
             },
             icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCall02,
+              icon: callActionIcon,
               size: 20,
-              color: isCallingNow
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+              color: callActionColor,
             ),
           ),
 

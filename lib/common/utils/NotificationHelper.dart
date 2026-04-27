@@ -7,7 +7,6 @@ import 'package:anoxia/main.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
@@ -64,7 +63,7 @@ class NotificationHelper {
   Future<String> getIconPath() async {
     // 获取应用文档目录或临时目录
     final directory = await getApplicationSupportDirectory();
-    final filePath = p.join(directory.path, 'notification_icon.png');
+  final filePath = '${directory.path}${Platform.pathSeparator}notification_icon.png';
     final file = File(filePath);
 
     // 如果文件不存在，从 Assets 复制过去
@@ -74,6 +73,81 @@ class NotificationHelper {
     }
     log.info("获取图标成功: ${file.path}");
     return file.path;
+  }
+
+  Future<Uri?> _resolveWindowsAvatarUri(String? avatarUrl) async {
+    if (avatarUrl == null || avatarUrl.isEmpty) return null;
+
+    try {
+      // 本地文件
+      final asFile = File(avatarUrl);
+      if (await asFile.exists()) {
+        return Uri.file(asFile.path, windows: true);
+      }
+
+      // file:///...
+      final uri = Uri.tryParse(avatarUrl);
+      if (uri != null && uri.scheme == 'file') {
+        final f = File.fromUri(uri);
+        if (await f.exists()) {
+          return Uri.file(f.path, windows: true);
+        }
+      }
+
+      // 网络头像：下载到本地，再用 file URI（兼容非 MSIX）
+      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        final dir = await getApplicationSupportDirectory();
+    final lastDot = uri.path.lastIndexOf('.');
+    final ext =
+      (lastDot != -1 && lastDot < uri.path.length - 1) ? uri.path.substring(lastDot) : '.png';
+    final filePath =
+      '${dir.path}${Platform.pathSeparator}notification_avatar_${avatarUrl.hashCode}$ext';
+        final file = File(filePath);
+
+        if (!await file.exists()) {
+          final client = HttpClient();
+          try {
+            final req = await client.getUrl(uri);
+            final resp = await req.close();
+            if (resp.statusCode == 200) {
+              final bytes = await resp.fold<List<int>>(
+                <int>[],
+                (prev, e) => prev..addAll(e),
+              );
+              await file.writeAsBytes(bytes, flush: true);
+            }
+          } finally {
+            client.close(force: true);
+          }
+        }
+
+        if (await file.exists()) {
+          return Uri.file(file.path, windows: true);
+        }
+      }
+    } catch (e) {
+      log.error('解析通知头像失败: $e');
+    }
+
+    return null;
+  }
+
+  Future<bool> _shouldNotify({bool force = false}) async {
+    if (force) return true;
+
+    try {
+      final visible = await windowManager.isVisible();
+      final focused = await windowManager.isFocused();
+      final minimized = await windowManager.isMinimized();
+
+      // 只有“可见+聚焦+未最小化”才不通知
+      if (visible && focused && !minimized) {
+        return false;
+      }
+    } catch (e) {
+      log.error('判断窗口状态失败，降级为发送通知: $e');
+    }
+    return true;
   }
 
   void _onTapNotification(NotificationResponse response) {
@@ -112,14 +186,33 @@ class NotificationHelper {
     required String title,
     required String body,
     String? payload,
+    String? avatarUrl,
+    bool force = false,
   }) async {
-    if (await windowManager.isVisible()) {
+    if (!await _shouldNotify(force: force)) {
       return;
     }
-    const details = NotificationDetails(
+
+    WindowsNotificationDetails? windowsDetails;
+    final avatarUri = await _resolveWindowsAvatarUri(avatarUrl);
+    if (avatarUri != null) {
+      windowsDetails = WindowsNotificationDetails(
+        images: [
+          WindowsImage(
+            avatarUri,
+            altText: 'avatar',
+            placement: WindowsImagePlacement.appLogoOverride,
+            crop: WindowsImageCrop.circle,
+          ),
+        ],
+      );
+    }
+
+    final details = NotificationDetails(
       android: AndroidNotificationDetails('main_channel', 'Main'),
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
+      windows: windowsDetails,
     );
 
     await _plugin.show(

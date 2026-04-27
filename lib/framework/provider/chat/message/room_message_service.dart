@@ -1,4 +1,6 @@
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/utils/NotificationHelper.dart';
+import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -85,12 +87,49 @@ class ChatMessages extends _$ChatMessages {
       final startTime =
           (msg.extra['startTime'] as num?)?.toInt() ?? msg.timestamp ?? 0;
       callStatus.markStarted(roomId, startTime: startTime);
+      _notifyCallEvent(msg, roomId, action);
       return;
     }
 
     if (action == 'CALL_ENDED') {
       callStatus.markEnded(roomId);
+      _notifyCallEvent(msg, roomId, action);
     }
+  }
+
+  void _notifyCallEvent(ChatMessage msg, String roomId, String action) {
+    final rooms = ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
+    String roomName = '通话通知';
+    for (final r in rooms) {
+      if (r.roomId == roomId) {
+        roomName = (r.roomName != null && r.roomName!.isNotEmpty)
+            ? r.roomName!
+            : roomName;
+        break;
+      }
+    }
+
+    String body;
+    if (action == 'CALL_STARTED') {
+      final nickName = msg.extra['nickName']?.toString();
+      body = (nickName != null && nickName.isNotEmpty)
+          ? '$nickName 发起了通话'
+          : '房间通话已开始';
+    } else {
+      final durationText = msg.extra['durationText']?.toString();
+      body = (durationText != null && durationText.isNotEmpty)
+          ? '房间通话已结束（$durationText）'
+          : '房间通话已结束';
+    }
+
+    NotificationHelper().show(
+      id: roomId.hashCode ^ action.hashCode,
+      title: roomName,
+      body: body,
+      payload: roomId,
+      avatarUrl: msg.senderAvatar,
+      force: true,
+    );
   }
 
   /// 核心：通过 clientMsgId 找到本地消息并替换
