@@ -29,7 +29,10 @@ enum SystemEventType {
   userMuted(8),
   userKicked(9),
   userRoleChanged(10),
-  messageRecall(11);
+  messageRecall(11),
+  callStarted(12),
+  callEnded(13),
+  contactUpdated(14);
 
   final int code;
   const SystemEventType(this.code);
@@ -73,6 +76,7 @@ class EventMessage implements IPacket{
   }
 
   /// 转为 Map (JSON)
+  @override
   Map<String, dynamic> toJson() {
     return {
       'eventType': eventType.name, // 或者用 eventType.code
@@ -85,6 +89,13 @@ class EventMessage implements IPacket{
 
   static SystemEventType _parseEventType(dynamic value) {
     if (value is int) return SystemEventType.fromCode(value);
+    if (value is String) {
+      final normalized = value.toLowerCase().replaceAll('_', '');
+      for (final e in SystemEventType.values) {
+        final en = e.name.toLowerCase().replaceAll('_', '');
+        if (en == normalized) return e;
+      }
+    }
     return SystemEventType.values.firstWhere(
           (e) => e.name == value,
       orElse: () => SystemEventType.userOnline,

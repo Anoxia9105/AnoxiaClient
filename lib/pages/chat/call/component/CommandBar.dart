@@ -3,12 +3,14 @@ import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:anoxia/pages/chat/call/component/VolumeIndicator.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:livekit_client/livekit_client.dart';
 import 'package:window_manager/window_manager.dart';
 
 class CommandBar extends ConsumerWidget {
@@ -177,6 +179,7 @@ class CommandBar extends ConsumerWidget {
         color: Colors.transparent,
         child: BubbleWidget(
           arrowDirection: AxisDirection.up,
+          arrowOffset: 410,
           backgroundColor: Theme.of(context).colorScheme.surface,
           border: BorderSide(
             color: Theme.of(context).colorScheme.outlineVariant,
@@ -368,6 +371,11 @@ class CommandBar extends ConsumerWidget {
             ),
           )
           .toList(),
+      footer: state.room.localParticipant != null
+          ? _LocalVolumeFooter(
+              localParticipant: state.room.localParticipant!,
+            )
+          : null,
     );
   }
 
@@ -410,66 +418,87 @@ class CommandBar extends ConsumerWidget {
   }
 
   void _showDeviceMenu({
-    required BuildContext context,
-    required List<_DeviceMenuItem> items,
-  }) {
-    if (items.isEmpty) return;
+  required BuildContext context,
+  required List<_DeviceMenuItem> items,
+  Widget? footer,
+}) {
+  if (items.isEmpty) return;
 
-    Function? close;
-    close = Toast.showWidget(
-      context,
-      direction: PreferDirection.topRight,
-      child: Material(
-        color: Colors.transparent,
-        child: BubbleWidget(
-          arrowDirection: AxisDirection.up,
-          arrowOffset: 280,
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          border: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 0.5,
-          ),
-          contentBuilder: (context) => Container(
-            constraints: BoxConstraints(maxWidth: 300, maxHeight: 300),
-            padding: const EdgeInsets.all(8),
-            child: ListView.separated(
-              itemBuilder: (BuildContext context, int index) {
-                final item = items[index];
-                return ListTile(
-                  dense: true,
-                  onTap: () {
-                    item.onTap();
-                    close?.call();
-                  },
-                  selected: item.selected,
-                  leading: Icon(
-                    item.selected ? Icons.check : Icons.circle_outlined,
-                    size: 16,
-                    color: item.selected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.transparent,
+  Function? close;
+  close = Toast.showWidget(
+    context,
+    direction: PreferDirection.topRight,
+    child: Material(
+      color: Colors.transparent,
+      child: BubbleWidget(
+        arrowDirection: AxisDirection.up,
+        arrowOffset: 280,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        border: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 0.5,
+        ),
+        contentBuilder: (context) => SizedBox( // 1. 最外层强制固定宽高
+          width: 300,
+          height: 260,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded( // 2. 列表部分占满剩余空间，支持内部滚动
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < items.length; i++) ...[
+                        ListTile(
+                          dense: true,
+                          onTap: () {
+                            items[i].onTap();
+                            close?.call();
+                          },
+                          selected: items[i].selected,
+                          leading: Icon(
+                            items[i].selected
+                                ? Icons.check
+                                : Icons.circle_outlined,
+                            size: 16,
+                            color: items[i].selected
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent,
+                          ),
+                          title: Text(
+                            items[i].label,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 4,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: items[i].selected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        if (i < items.length - 1) const Divider(height: 1),
+                      ],
+                    ],
                   ),
-                  title: Text(
-                    item.label,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 4,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: item.selected
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              separatorBuilder: (BuildContext context, int index) => Divider(),
-              itemCount: items.length,
-            ),
+                ),
+              ),
+              if (footer != null) ...[ // 3. Footer 自然固定在底部
+                Divider(
+                  height: 1,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                footer,
+              ],
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ──────────────────────────────────────────
@@ -486,6 +515,62 @@ class _DeviceMenuItem {
     required this.selected,
     required this.onTap,
   });
+}
+
+// ──────────────────────────────────────────
+// 麦克风弹框底部实时音量指示器
+// ──────────────────────────────────────────
+
+class _LocalVolumeFooter extends StatefulWidget {
+  final LocalParticipant localParticipant;
+  const _LocalVolumeFooter({required this.localParticipant});
+
+  @override
+  State<_LocalVolumeFooter> createState() => _LocalVolumeFooterState();
+}
+
+class _LocalVolumeFooterState extends State<_LocalVolumeFooter> {
+  Timer? _timer;
+  double _volume = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!mounted) return;
+      final v = widget.localParticipant.audioLevel;
+      if ((v - _volume).abs() > 0.005) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _volume = v);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.mic,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          VolumeIndicator(volume: _volume),
+        ],
+      ),
+    );
+  }
 }
 
 // ──────────────────────────────────────────

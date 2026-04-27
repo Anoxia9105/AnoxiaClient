@@ -49,6 +49,7 @@ class API {
 
   // ======================== 通话 ========================
   static const String callToken = '/call/token';
+  static const String callStatus = '/call/status';
   static const String callRemoveParticipant = '/call/participant/remove';
 
   // ======================== AI 聊天接口 ========================

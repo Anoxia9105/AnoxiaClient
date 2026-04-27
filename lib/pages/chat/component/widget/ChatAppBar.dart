@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -25,6 +26,18 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final roomListAsync = ref.watch(roomListServiceProvider);
     final currentRoom = ref.read(activeRoomProvider);
     final currentUser = ref.watch(authControllerProvider).value;
+    final currentRoomId = currentRoom?.roomId ?? '';
+  final callWindow = ref.watch(callWindowControllerProvider);
+
+  final callStatus = ref.watch(roomCallStatusProvider(currentRoomId));
+  final isCallingNow = callStatus.calling;
+
+  // 首次进入当前房间时拉一次状态（无轮询）
+  ref.read(callStatusControllerProvider.notifier).ensureLoaded(currentRoomId);
+
+  final callActionLabel = callWindow != null
+    ? '通话中'
+    : (isCallingNow ? '加入通话' : '发起通话');
 
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
     final members = ref.watch(roomMembersProvider(activeId ?? ''));
@@ -77,13 +90,13 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           );
         },
         loading: () => Text('appbar_connecting'.tr()),
-        error: (_, __) => Text('appbar_connection_lost'.tr()),
+  error: (error, stackTrace) => Text('appbar_connection_lost'.tr()),
       ),
       actions: [
         // 发起通话按钮（房间未解散才显示）
         if (currentRoom?.roomStatus != 3)
           IconButton(
-            tooltip: 'appbar_start_meeting'.tr(),
+            tooltip: callActionLabel,
             onPressed: () {
               ref.read(callWindowControllerProvider.notifier).openCallWindow(
                 title: currentRoom?.roomName ?? '',
@@ -91,7 +104,13 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 roomId: currentRoom?.roomId ?? '',
               );
             },
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCall02, size: 20),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedCall02,
+              size: 20,
+              color: isCallingNow
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
           ),
 
         if (currentRoom?.roomStatus != 3)

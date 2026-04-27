@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/pages/chat/call/component/VolumeIndicator.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -95,6 +94,56 @@ class ParticipantTile extends StatefulWidget {
 class _ParticipantTileState extends State<ParticipantTile> {
   // 当前应该显示的视频轨道
   VideoTrack? videoTrack;
+
+  /// 监听参与者事件，变化时触发 rebuild
+  EventsListener<ParticipantEvent>? _participantListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeParticipant(widget.participant);
+  }
+
+  @override
+  void didUpdateWidget(covariant ParticipantTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.participant != widget.participant) {
+      _participantListener?.dispose();
+      _subscribeParticipant(widget.participant);
+    }
+  }
+
+  void _subscribeParticipant(Participant p) {
+    _participantListener = p.createListener();
+    _participantListener!
+      ..on<SpeakingChangedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<TrackMutedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<TrackUnmutedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<TrackPublishedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<TrackUnpublishedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<TrackSubscribedEvent>((_) {
+        if (mounted) setState(() {});
+      })
+      ..on<TrackUnsubscribedEvent>((_) {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _participantListener?.dispose();
+    super.dispose();
+  }
 
   /// 计算当前应该显示哪个视频轨道 (屏幕共享 > 摄像头)
   VideoTrack? _getVisibleVideoTrack() {
@@ -218,7 +267,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final isSpeaking = p.isSpeaking;
     final isCurrentUser = p is LocalParticipant;
     final isMuted = p.isMicrophoneEnabled() == false;
-    final volume = p.audioLevel;
 
     // 检查是否屏幕共享
     // final isScreenShare = p.videoTrackPublications.any(
@@ -329,12 +377,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     ],
                   ),
                 ),
-              ),
-              // 音量指示器
-              Positioned(
-                left: 8,
-                bottom: 36,
-                child: VolumeIndicator(volume: volume),
               ),
             ],
           ),

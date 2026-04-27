@@ -1,6 +1,7 @@
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -13,7 +14,7 @@ import '../../ws/ws_controller.dart';
 part 'room_message_service.g.dart';
 
 /// 存储每个房间的消息列表
-/// key = roomId, value = List<ChatMessage>
+/// key = roomId, value = `List<ChatMessage>`
 @Riverpod(keepAlive: true)
 class ChatMessages extends _$ChatMessages {
   final int _pageSize = 50;
@@ -60,10 +61,36 @@ class ChatMessages extends _$ChatMessages {
       timestamp: msg.timestamp.toInt(),
       seq: msg.seq.toInt(),
     );
+
+    _syncCallStatusBySystemMessage(chatMessage);
+
     upsertMessage(chatMessage);
     ref
         .read(roomListServiceProvider.notifier)
         .updateRoomPosition(chatMessage, ref.read(activeRoomProvider));
+  }
+
+  void _syncCallStatusBySystemMessage(ChatMessage msg) {
+    if (msg.messageType != MessageType.system) return;
+
+    final roomId = msg.roomId;
+    final action = msg.extra['action']?.toString().toUpperCase();
+    if (roomId == null || roomId.isEmpty || action == null || action.isEmpty) {
+      return;
+    }
+
+    final callStatus = ref.read(callStatusControllerProvider.notifier);
+
+    if (action == 'CALL_STARTED') {
+      final startTime =
+          (msg.extra['startTime'] as num?)?.toInt() ?? msg.timestamp ?? 0;
+      callStatus.markStarted(roomId, startTime: startTime);
+      return;
+    }
+
+    if (action == 'CALL_ENDED') {
+      callStatus.markEnded(roomId);
+    }
   }
 
   /// 核心：通过 clientMsgId 找到本地消息并替换

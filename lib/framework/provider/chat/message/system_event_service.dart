@@ -1,5 +1,6 @@
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
@@ -72,6 +73,9 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(activeRoomId, force: true);
+
+  // 2d. 补偿当前房间的通话状态
+      ref.read(callStatusControllerProvider.notifier).refresh(activeRoomId);
     }
 
     // 3. 刷新通讯录（补偿断线期间的在线状态变化）
@@ -118,6 +122,15 @@ class SystemEventService extends _$SystemEventService {
 
       case SystemEventType.userRoleChanged:
         _handleUserRoleChanged(event);
+        break;
+      case SystemEventType.callStarted:
+        _handleCallStarted(event);
+        break;
+      case SystemEventType.callEnded:
+        _handleCallEnded(event);
+        break;
+      case SystemEventType.contactUpdated:
+        ref.read(contactListServiceProvider.notifier).refresh();
         break;
     }
   }
@@ -243,9 +256,35 @@ class SystemEventService extends _$SystemEventService {
 
   /// 处理房间信息更新
   void _handleRoomUpdated(EventMessage event) {
+    final String? roomId = _extractRoomIdFromEvent(event);
+    if (roomId != null && roomId.isNotEmpty) {
+      ref.read(callStatusControllerProvider.notifier).refresh(roomId);
+    }
+
     // 兜底刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
     log.info("房间信息更新，刷新房间列表");
+  }
+
+  /// 处理通话开始
+  void _handleCallStarted(EventMessage event) {
+    final String? roomId = _extractRoomIdFromEvent(event);
+    if (roomId == null || roomId.isEmpty) return;
+
+    final startTime = (event.extra?['startTime'] as num?)?.toInt();
+    ref
+        .read(callStatusControllerProvider.notifier)
+        .markStarted(roomId, startTime: startTime);
+    log.info("房间 $roomId 通话开始");
+  }
+
+  /// 处理通话结束
+  void _handleCallEnded(EventMessage event) {
+    final String? roomId = _extractRoomIdFromEvent(event);
+    if (roomId == null || roomId.isEmpty) return;
+
+    ref.read(callStatusControllerProvider.notifier).markEnded(roomId);
+    log.info("房间 $roomId 通话结束");
   }
 
   /// 处理全体禁言/解除禁言
