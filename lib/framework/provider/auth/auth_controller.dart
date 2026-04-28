@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/CaptchaModel.dart';
@@ -17,7 +20,11 @@ import '../chat/message/search_message_service.dart';
 import '../chat/message/system_event_service.dart';
 import '../chat/room/room_list_service.dart';
 import '../chat/room/room_member_service.dart';
+import '../contact/contact_list_controller.dart';
+import '../contact/contact_requests_controller.dart';
+import '../contact/contact_selection_controller.dart';
 import '../contact/user_search_service.dart';
+import '../core/app_initializer.dart';
 import '../ws/ws_controller.dart';
 import 'token_provider.dart';
 
@@ -93,22 +100,42 @@ class AuthController extends _$AuthController {
     if (_isLoggingOut) return;
     _isLoggingOut = true;
 
-    try {
-      // 1. 调用后端 logout API（需要带 token，后端据此清除服务端会话缓存）
-      //    使用 auth: true 确保 header 携带 Bearer token
-      await DioClient().post(API.logout);
-    } catch (e) {
-      log.warning("[AuthController] 后端登出请求失败（忽略）: $e");
-    }
+    final token = ref.read(tokenCacheProvider);
+
+    // 后端登出改为异步通知，不阻塞本地退出速度
+    unawaited(() async {
+      try {
+        await DioClient()
+            .post(
+              API.logout,
+              auth: false,
+              options: Options(
+                headers: {
+                  if (token != null && token.isNotEmpty)
+                    'Authorization': 'Bearer $token',
+                },
+              ),
+            )
+            .timeout(const Duration(seconds: 2));
+      } catch (e) {
+        log.warning("[AuthController] 后端登出请求失败（忽略）: $e");
+      }
+    }());
 
     try {
+      // 1. 先关闭 WS 重连并断开连接，避免清理期间被自动拉起
+      await ref.read(wsControllerProvider.notifier).disconnectForLogout();
+
       // 2. 清除本地存储的 Token
       await TokenManager.instance.clearToken();
 
       // 3. 清除内存中的 Token
       ref.read(tokenCacheProvider.notifier).clearToken();
 
-      // 4. 【关键步骤】：重置所有 keepAlive 业务 Provider
+      // 4. 先更新认证态，让路由快速回到登录页（提升体感速度）
+      state = const AsyncData(null);
+
+      // 5. 重置所有业务 Provider（后置清理，不阻塞页面跳转）
       //    invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
       //    顺序很重要：先清依赖下游（消息/输入），再清上游（房间/WS）
 
@@ -130,13 +157,15 @@ class AuthController extends _$AuthController {
       ref.invalidate(roomMemberServiceProvider);
 
       // ── 联系人 / 搜索 ──
+      ref.invalidate(contactListServiceProvider);
+      ref.invalidate(contactRequestsServiceProvider);
+      ref.invalidate(contactSelectionProvider);
       ref.invalidate(userSearchServiceProvider);
 
-      // ── WebSocket（最后断开，避免触发重连） ──
+      // ── WebSocket / 初始化状态 ──
       ref.invalidate(wsControllerProvider);
+      ref.invalidate(appInitializerProvider);
 
-      // 5. 设置用户状态为 null，触发路由跳转到登录页
-      state = const AsyncData(null);
       log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {
       log.error("[AuthController] 登出清理异常", e, st);

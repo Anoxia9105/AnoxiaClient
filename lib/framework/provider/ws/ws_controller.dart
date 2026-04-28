@@ -22,6 +22,8 @@ class WsController extends _$WsController {
   Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
+  bool _reconnectEnabled = true;
+  bool _manualDisconnecting = false;
 
   // 使用延迟初始化，确保每次 build 时或是需要时它是新鲜的
   late final StreamController<PacketFrame<IPacket>> _messageController;
@@ -39,13 +41,18 @@ class WsController extends _$WsController {
         data: (user) {
           if (user != null) {
             log.info("[WsController] 检测到用户登录，准备连接...");
+            _reconnectEnabled = true;
             _initConnection();
           } else {
             log.info("[WsController] 检测到用户退出，断开连接...");
-            _disposeAll(closeStream: false); // 登出不断流，只断开网络
+            _reconnectEnabled = false;
+            _disposeAll(closeStream: false, manual: true); // 登出不断流，只断开网络
           }
         },
-        error: (err, _) => _disposeAll(closeStream: false),
+        error: (err, _) {
+          _reconnectEnabled = false;
+          _disposeAll(closeStream: false, manual: true);
+        },
         loading: () => {},
       );
     });
@@ -57,7 +64,8 @@ class WsController extends _$WsController {
     }
 
     ref.onDispose(() {
-      _disposeAll(closeStream: true);
+      _reconnectEnabled = false;
+      _disposeAll(closeStream: true, manual: true);
     });
 
     return WsState(status: WsStatus.disconnected);
@@ -69,8 +77,9 @@ class WsController extends _$WsController {
   void _initConnection() async {
     // 保护：如果已经在连接或已连接，跳过
     if (state.status == WsStatus.connecting ||
-        state.status == WsStatus.connected)
+        state.status == WsStatus.connected) {
       return;
+    }
 
     final token = await TokenManager.instance.getToken();
     if (token != null && token.isNotEmpty) {
@@ -81,7 +90,12 @@ class WsController extends _$WsController {
   }
 
   Future<void> connect(String token) async {
-    if (state.status == WsStatus.connected) return;
+    if (state.status == WsStatus.connected) {
+      return;
+    }
+    if (!_reconnectEnabled) {
+      return;
+    }
 
     state = WsState(status: WsStatus.connecting);
 
@@ -100,6 +114,7 @@ class WsController extends _$WsController {
       );
 
       _reconnectAttempts = 0;
+  _manualDisconnecting = false;
       state = WsState(status: WsStatus.connected);
       log.info("✅ WebSocket 连接成功");
 
@@ -166,13 +181,17 @@ class WsController extends _$WsController {
   void _handleDone() {
     log.info("WebSocket 连接由服务端关闭或网络中断");
     state = WsState(status: WsStatus.disconnected);
-    Toast.showNotificationNow("ws_connection_closed".tr());
+    if (!_manualDisconnecting) {
+      Toast.showNotificationNow("ws_connection_closed".tr());
+    }
     _retryConnection();
   }
 
   void _retryConnection() {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+
+  if (!_reconnectEnabled) return;
 
     final user = ref.read(authControllerProvider).value;
     if (user == null) return;
@@ -186,7 +205,13 @@ class WsController extends _$WsController {
     });
   }
 
-  void _disposeAll({bool closeStream = false}) {
+  Future<void> disconnectForLogout() async {
+    _reconnectEnabled = false;
+    _disposeAll(closeStream: false, manual: true);
+  }
+
+  void _disposeAll({bool closeStream = false, bool manual = false}) {
+    _manualDisconnecting = manual;
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();

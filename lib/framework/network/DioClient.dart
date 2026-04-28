@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -44,16 +45,25 @@ class DioClient {
             final dynamic bizCode = response.data['code'];
 
             if (bizCode == 401) {
-              // 鉴权失败，跳转登录
-              globalContainer.read(authControllerProvider.notifier).logout();
-              log.info("鉴权失败，已清除 token 并跳转登录页");
-              // return handler.reject(
-              //   DioException(
-              //     requestOptions: response.requestOptions,
-              //     error: "登录过期",
-              //   ),
-              // );
-              return;
+              final requestPath = response.requestOptions.path;
+              final isLogoutApi = requestPath.contains('/logout');
+
+              // 鉴权失败，跳转登录（避免 logout 自身再触发 logout）
+              if (!isLogoutApi) {
+                unawaited(
+                  globalContainer.read(authControllerProvider.notifier).logout(),
+                );
+                log.info("鉴权失败，已触发登出并跳转登录页");
+              }
+
+              return handler.reject(
+                DioException(
+                  requestOptions: response.requestOptions,
+                  response: response,
+                  type: DioExceptionType.badResponse,
+                  error: "登录过期",
+                ),
+              );
             }
             if (bizCode != HttpStatus.ok) {
               final String? errorMsg = response.data['msg']?.toString();
@@ -68,11 +78,7 @@ class DioClient {
           log.error(
             '【onError拦截器】Dio 发生错误 -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
           );
-          if (e.type == DioExceptionType.connectionTimeout)
-            if (e.type == DioExceptionType.receiveTimeout)
-              if (e.type == DioExceptionType.sendTimeout)
-                if (e.type == DioExceptionType.connectionError)
-                  return handler.next(e);
+          return handler.next(e);
         },
       ),
     );
@@ -98,7 +104,7 @@ class DioClient {
         options: _mergeOptions(options, auth: auth),
         cancelToken: cancelToken,
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }
@@ -117,7 +123,7 @@ class DioClient {
         options: _mergeOptions(options, auth: auth),
         cancelToken: cancelToken,
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }
@@ -136,7 +142,7 @@ class DioClient {
         options: _mergeOptions(options, auth: auth),
         cancelToken: cancelToken,
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }
@@ -155,7 +161,7 @@ class DioClient {
         options: _mergeOptions(options, auth: auth),
         cancelToken: cancelToken,
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }
@@ -187,12 +193,12 @@ class DioClient {
         ),
         cancelToken: cancelToken,
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }
 
-  /// 多文件上传（支持 files: List<File>）
+  /// 多文件上传（支持 `files: List<File>`）
   Future<Response> uploadFiles(
     String path, {
     required List<File> files,
@@ -226,7 +232,7 @@ class DioClient {
         ),
         cancelToken: cancelToken,
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }
@@ -257,7 +263,7 @@ class DioClient {
           auth: false,
         ), // Updates usually don't need auth
       );
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       rethrow;
     }
   }

@@ -43,10 +43,8 @@ class DioConfig {
     _dio!.interceptors.add(
       InterceptorsWrapper(
         onError: (e, handler) {
-          if (e.type == DioExceptionType.connectionTimeout)
-            if (e.type == DioExceptionType.connectionError)
-              // 可以在这里统一处理一些非业务错
-              return handler.next(e);
+          // 可以在这里统一处理一些非业务错，但必须继续透传，避免请求悬挂
+          return handler.next(e);
         },
       ),
     );
