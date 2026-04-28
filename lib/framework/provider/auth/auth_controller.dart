@@ -11,20 +11,7 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
-import '../chat/input/chat_input_controller.dart';
-import '../chat/input/files/chat_file_upload_controller.dart';
-import '../chat/input/images/chat_image_upload_controller.dart';
-import '../chat/message/high_message_service.dart';
-import '../chat/message/room_message_service.dart';
-import '../chat/message/search_message_service.dart';
-import '../chat/message/system_event_service.dart';
-import '../chat/room/room_list_service.dart';
-import '../chat/room/room_member_service.dart';
-import '../contact/contact_list_controller.dart';
-import '../contact/contact_requests_controller.dart';
-import '../contact/contact_selection_controller.dart';
-import '../contact/user_search_service.dart';
-import '../core/app_initializer.dart';
+import '../core/session_reset_service.dart';
 import '../ws/ws_controller.dart';
 import 'token_provider.dart';
 
@@ -135,36 +122,8 @@ class AuthController extends _$AuthController {
       // 4. 先更新认证态，让路由快速回到登录页（提升体感速度）
       state = const AsyncData(null);
 
-      // 5. 重置所有业务 Provider（后置清理，不阻塞页面跳转）
-      //    invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
-      //    顺序很重要：先清依赖下游（消息/输入），再清上游（房间/WS）
-
-      // ── 聊天输入 & 上传 ──
-      ref.invalidate(chatInputControllerProvider);
-      ref.invalidate(mentionStateProvider);
-      ref.invalidate(chatImageUploadControllerProvider);
-      ref.invalidate(chatFileUploadControllerProvider);
-
-      // ── 消息相关 ──
-      ref.invalidate(chatMessagesProvider);
-      ref.invalidate(highMessageServiceProvider);
-      ref.invalidate(searchMessageServiceProvider);
-      ref.invalidate(systemEventServiceProvider);
-
-      // ── 房间 & 成员 ──
-      ref.invalidate(roomListServiceProvider);
-      ref.invalidate(activeRoomIdProvider);
-      ref.invalidate(roomMemberServiceProvider);
-
-      // ── 联系人 / 搜索 ──
-      ref.invalidate(contactListServiceProvider);
-      ref.invalidate(contactRequestsServiceProvider);
-      ref.invalidate(contactSelectionProvider);
-      ref.invalidate(userSearchServiceProvider);
-
-      // ── WebSocket / 初始化状态 ──
-      ref.invalidate(wsControllerProvider);
-      ref.invalidate(appInitializerProvider);
+  // 5. 重置所有业务 Provider（后置清理，不阻塞页面跳转）
+  resetSessionProviders(ref);
 
       log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {
