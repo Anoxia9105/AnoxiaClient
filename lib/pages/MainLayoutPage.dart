@@ -11,8 +11,8 @@ import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/app/MobileBottomBar.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
-import 'aichat/AiChatPage.dart';
 import 'chat/ChatPage.dart';
+import 'favorite/FavoritesPage.dart';
 
 class MainLayoutPage extends ConsumerWidget {
   const MainLayoutPage({super.key});
@@ -59,7 +59,7 @@ class MainLayoutPage extends ConsumerWidget {
                 children: [
                   ChatPage(),
                   ContactPage(),
-                  AIChatPage(),
+                  FavoritesPage(),
                   NotesPage(),
                   MyPage(),
                   SettingsPage(),

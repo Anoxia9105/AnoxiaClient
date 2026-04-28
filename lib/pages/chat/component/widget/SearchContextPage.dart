@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
@@ -339,7 +340,6 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     int lastIndex = 0;
 
     // 查找所有匹配的关键词位置
-    int startIndex = 0;
     while (true) {
       // 不区分大小写的查找（对于中文实际上没区别）
       int index = text.indexOf(keyword, lastIndex);
@@ -540,6 +540,8 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
           Expanded(
             child: Stack(
               children: [
+                if (searchState.isLoading && searchState.messages.isEmpty)
+                  const _SearchContextSkeleton(),
                 if (searchState.messages.isNotEmpty)
                   ScrollablePositionedList.builder(
                     itemScrollController: _itemScrollController,
@@ -586,12 +588,17 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                       ],
                     ),
                   ),
-                // 加载指示器
-                if (searchState.isLoading)
-                  Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
+                // 有结果时的增量加载提示：不再遮挡列表
+                if (searchState.isLoading && searchState.messages.isNotEmpty)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(
+                      minHeight: 2,
+                      color: colorScheme.primary,
+                      backgroundColor: colorScheme.primary.withValues(
+                        alpha: 0.15,
                       ),
                     ),
                   ),
@@ -600,6 +607,52 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SearchContextSkeleton extends StatelessWidget {
+  const _SearchContextSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 8,
+      separatorBuilder: (context, index) => const SizedBox(height: 4),
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.25),
+            ),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SkeletonBox(width: 40, height: 40, circle: true),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(width: 120, height: 10),
+                    SizedBox(height: 8),
+                    SkeletonBox(height: 12),
+                    SizedBox(height: 6),
+                    SkeletonBox(width: 180, height: 12),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

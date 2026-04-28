@@ -30,7 +30,11 @@ import 'app_initializer.dart';
 /// 1) 避免登出时散落 invalidate，降低漏清理风险；
 /// 2) 新增会话级 provider 时只维护这一处；
 /// 3) 支持未来“切号/账号切换”复用同一套清理逻辑。
-void resetSessionProviders(Ref ref) {
+void resetSessionProviders(
+  Ref ref, {
+  bool includeWs = true,
+  bool includeInitializer = true,
+}) {
   // ── 聊天输入 & 上传 ──
   ref.invalidate(chatInputControllerProvider);
   ref.invalidate(mentionStateProvider);
@@ -73,6 +77,10 @@ void resetSessionProviders(Ref ref) {
   ref.invalidate(noteProvider);
 
   // ── WebSocket / 初始化状态 ──
-  ref.invalidate(wsControllerProvider);
-  ref.invalidate(appInitializerProvider);
+  if (includeWs) {
+    ref.invalidate(wsControllerProvider);
+  }
+  if (includeInitializer) {
+    ref.invalidate(appInitializerProvider);
+  }
 }

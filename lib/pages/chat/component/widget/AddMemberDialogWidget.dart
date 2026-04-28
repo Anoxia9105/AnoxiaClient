@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -189,7 +190,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                     },
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const _AddMemberListSkeleton(),
                 error: (err, stack) => Center(child: Text('member_load_failed'.tr())),
               ),
             ),
@@ -305,6 +306,38 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AddMemberListSkeleton extends StatelessWidget {
+  const _AddMemberListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: 7,
+      separatorBuilder: (context, index) => const SizedBox(height: 4),
+      itemBuilder: (context, index) {
+        final nameWidth = 95.0 + (index % 3) * 24;
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const SkeletonBox(width: 40, height: 40, radius: 8),
+          title: Align(
+            alignment: Alignment.centerLeft,
+            child: SkeletonLine(width: nameWidth, height: 13),
+          ),
+          subtitle: const Padding(
+            padding: EdgeInsets.only(top: 7),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SkeletonLine(width: 76, height: 10),
+            ),
+          ),
+          trailing: const SkeletonBox(width: 20, height: 20, radius: 6),
+        );
+      },
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,8 +80,10 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
             separatorBuilder: (BuildContext context, int index) => Divider(),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('contact_load_failed_with_error'.tr() + ': $err')),
+        loading: () => const _NewFriendsSkeleton(),
+        error: (err, stack) => Center(
+          child: Text('${'contact_load_failed_with_error'.tr()}: $err'),
+        ),
       ),
     );
   }
@@ -122,5 +125,55 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
       return Text('contact_request_accepted'.tr());
     }
     return Text('contact_request_rejected'.tr());
+  }
+}
+
+class _NewFriendsSkeleton extends StatelessWidget {
+  const _NewFriendsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: 8,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      separatorBuilder: (context, index) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final nickWidth = 75.0 + (index % 4) * 18;
+        final remarkWidth = 140.0 + (index % 3) * 26;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SkeletonBox(width: 40, height: 40, radius: 8),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLine(width: nickWidth, height: 14),
+                    const SizedBox(height: 8),
+                    SkeletonLine(width: remarkWidth, height: 11),
+                    const SizedBox(height: 6),
+                    const SkeletonLine(width: 110, height: 10),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              index.isEven
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SkeletonBox(width: 28, height: 28, circle: true),
+                        SizedBox(width: 8),
+                        SkeletonBox(width: 28, height: 28, circle: true),
+                      ],
+                    )
+                  : const SkeletonBox(width: 58, height: 26, radius: 14),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

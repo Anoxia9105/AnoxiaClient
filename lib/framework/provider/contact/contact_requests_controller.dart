@@ -7,7 +7,7 @@ import 'contact_list_controller.dart';
 
 part 'contact_requests_controller.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class ContactRequestsService extends _$ContactRequestsService {
   @override
   FutureOr<List<ChatContactRequestVO>> build() {
@@ -51,7 +51,7 @@ class ContactRequestsService extends _$ContactRequestsService {
 }
 
 /// 统计待处理的数量
-@riverpod
+@Riverpod(keepAlive: true)
 Future<int> pendingRequestCount(Ref ref) async {
   // 监听整个列表的状态
   final requestsAsync = ref.watch(contactRequestsServiceProvider);

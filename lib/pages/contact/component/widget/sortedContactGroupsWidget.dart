@@ -1,5 +1,6 @@
 import 'package:alphabet_list_view/alphabet_list_view.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/ChatContactVO.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
@@ -90,8 +91,10 @@ class SortedContactGroupsWidget extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('contact_load_failed_with_error'.tr() + ': $err')),
+      loading: () => const _ContactGroupsSkeleton(),
+      error: (err, stack) => Center(
+        child: Text('${'contact_load_failed_with_error'.tr()}: $err'),
+      ),
     );
   }
 
@@ -106,6 +109,52 @@ class SortedContactGroupsWidget extends ConsumerWidget {
         tag,
         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
       ),
+    );
+  }
+}
+
+class _ContactGroupsSkeleton extends StatelessWidget {
+  const _ContactGroupsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    const count = 12;
+    return ListView.builder(
+      itemCount: count,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemBuilder: (context, index) {
+        final showHeader = index == 0 || index == 5 || index == 9;
+        final nameWidth = 90.0 + (index % 4) * 22;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showHeader)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                child: SkeletonLine(width: 16, height: 12),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: ListTile(
+                dense: true,
+                leading: const SkeletonBox(width: 40, height: 40, radius: 8),
+                title: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SkeletonLine(width: nameWidth, height: 13),
+                ),
+                subtitle: const Padding(
+                  padding: EdgeInsets.only(top: 7),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SkeletonLine(width: 72, height: 10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

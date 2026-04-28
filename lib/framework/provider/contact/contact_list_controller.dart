@@ -7,7 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'contact_list_controller.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class ContactListService extends _$ContactListService {
   @override
   FutureOr<Map<int, ChatContactVO>> build() {
@@ -51,7 +51,7 @@ class ContactListService extends _$ContactListService {
 }
 
 // 进行拼音排序和分组的 Provider
-@riverpod
+@Riverpod(keepAlive: true)
 Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
   final contactsAsync = ref.watch(contactListServiceProvider);
   // 💡 获取 Map 里的所有对象

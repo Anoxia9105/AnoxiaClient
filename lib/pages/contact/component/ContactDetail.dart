@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
@@ -46,7 +47,7 @@ class ContactDetail extends ConsumerWidget {
       ),
       body: detailAsync.when(
         data: (detail) => _buildDetailContent(context, detail, isOnline, ref),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _ContactDetailSkeleton(),
         error: (err, _) => Center(child: Text('contact_load_failed'.tr() + ': $err')),
       ),
     );
@@ -189,6 +190,55 @@ class ContactDetail extends ConsumerWidget {
             ),
           ),
           Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactDetailSkeleton extends StatelessWidget {
+  const _ContactDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: const [
+          SizedBox(height: 24),
+          SkeletonBox(width: 100, height: 100, radius: 12),
+          SizedBox(height: 16),
+          SkeletonBox(width: 140, height: 22),
+          SizedBox(height: 28),
+          Divider(),
+          _ContactInfoSkeletonLine(),
+          _ContactInfoSkeletonLine(),
+          _ContactInfoSkeletonLine(),
+          _ContactInfoSkeletonLine(),
+          _ContactInfoSkeletonLine(),
+          SizedBox(height: 40),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32),
+            child: SkeletonBox(height: 48, radius: 10),
+          ),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactInfoSkeletonLine extends StatelessWidget {
+  const _ContactInfoSkeletonLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 32),
+      title: Row(
+        children: [
+          SkeletonBox(width: 70, height: 12),
+          SizedBox(width: 16),
+          Expanded(child: SkeletonBox(height: 12)),
         ],
       ),
     );

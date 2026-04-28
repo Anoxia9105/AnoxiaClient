@@ -13,8 +13,8 @@ class LayoutController extends _$LayoutController {
       icon: HugeIcons.strokeRoundedContact01,
     ),
     SidebarItem(
-      name: "sidebar_documentation",
-      icon: HugeIcons.strokeRoundedChatGpt,
+      name: "sidebar_favorites",
+      icon: HugeIcons.strokeRoundedFavourite,
     ),
     SidebarItem(
       name: "sidebar_notes",

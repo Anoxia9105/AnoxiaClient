@@ -13,6 +13,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 import '../../../common/utils/DateUtil.dart';
 import '../../../common/widgets/AvatarWidget.dart';
+import '../../../common/widgets/SkeletonBox.dart';
 import '../../../common/widgets/VibratingBadge.dart';
 import '../../../framework/domain/ChatRoomVO.dart';
 import '../../../framework/provider/auth/auth_controller.dart';
@@ -94,7 +95,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
       ),
       body: roomListAsync.when(
         data: (rooms) => _buildRoomList(context, ref),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _ChatRoomListSkeleton(),
         error: (err, stack) => Center(child: Text('chat_load_failed'.tr())),
       ),
     );
@@ -228,6 +229,71 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           height: dialogHeight,
           child: const AddFriendPage(),
         ),
+      ),
+    );
+  }
+}
+
+class _ChatRoomListSkeleton extends StatelessWidget {
+  const _ChatRoomListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      itemBuilder: (context, index) => _ChatRoomSkeletonItem(index: index),
+      separatorBuilder: (context, index) => const SizedBox(height: 4),
+      itemCount: 9,
+    );
+  }
+}
+
+class _ChatRoomSkeletonItem extends StatelessWidget {
+  final int index;
+
+  const _ChatRoomSkeletonItem({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final titleWidth = 82.0 + (index % 3) * 26;
+    final subtitleWidth = 130.0 + (index % 4) * 28;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: const [
+              SkeletonBox(width: 40, height: 40, radius: 8),
+              Positioned(
+                right: -1,
+                bottom: -1,
+                child: SkeletonBox(width: 11, height: 11, circle: true),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonLine(width: titleWidth, height: 13),
+                const SizedBox(height: 9),
+                SkeletonLine(width: subtitleWidth, height: 11),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SkeletonLine(width: 38, height: 10),
+              SizedBox(height: 10),
+              SkeletonBox(width: 12, height: 12, circle: true),
+            ],
+          ),
+        ],
       ),
     );
   }

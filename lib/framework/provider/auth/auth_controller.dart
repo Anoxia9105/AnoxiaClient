@@ -12,6 +12,7 @@ import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 import '../core/session_reset_service.dart';
+import '../core/app_initializer.dart';
 import '../ws/ws_controller.dart';
 import 'token_provider.dart';
 
@@ -119,11 +120,20 @@ class AuthController extends _$AuthController {
       // 3. 清除内存中的 Token
       ref.read(tokenCacheProvider.notifier).clearToken();
 
-      // 4. 先更新认证态，让路由快速回到登录页（提升体感速度）
+      // 4. 第一阶段：先清空会话数据（侧边栏/聊天列表/消息等），
+      //    但此时不要重建 WS 和 AppInitializer，避免旧用户状态下被拉起。
+      resetSessionProviders(
+        ref,
+        includeWs: false,
+        includeInitializer: false,
+      );
+
+      // 5. 切换认证态，触发路由回到登录页
       state = const AsyncData(null);
 
-  // 5. 重置所有业务 Provider（后置清理，不阻塞页面跳转）
-  resetSessionProviders(ref);
+      // 6. 第二阶段：在未登录态下再重置 WS 和初始化流程，避免旧会话复活。
+      ref.invalidate(wsControllerProvider);
+      ref.invalidate(appInitializerProvider);
 
       log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {

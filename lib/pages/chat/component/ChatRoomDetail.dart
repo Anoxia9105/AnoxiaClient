@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
@@ -162,6 +163,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final messages = ref.watch(
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
+    final hasCachedMessages = messages.isNotEmpty;
+    final showInitialSkeleton = entryTask.isLoading && !hasCachedMessages;
 
     //当房间 ID 改变时，重置滚动按钮状态
     ref.listen<String?>(activeRoomIdProvider, (previous, next) {
@@ -192,69 +195,74 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     }
 
     return Scaffold(
-      appBar: entryTask.isLoading ? AppBar() : ChatAppBar(),
+      appBar: showInitialSkeleton ? AppBar() : ChatAppBar(),
       drawerScrimColor: Colors.transparent,
-      body: entryTask.when(
-        data: (_) {
-          //消息为空
-          if (messages.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
-                  Text("chat_no_messages".tr()),
-                ],
+      body: showInitialSkeleton
+          ? const _ChatRoomDetailSkeleton()
+          : entryTask.hasError && !hasCachedMessages
+          ? Center(
+              child: Text(
+                '${'chat_initialization_failed'.tr()}: ${entryTask.error}',
               ),
-            );
-          }
-
-          //消息渲染 —— 构建展平列表（时间分隔条 + 消息气泡）
-          final flatItems = _buildFlatList(messages);
-          // flatItems 按时间升序：[0]=最旧 ... [last]=最新
-          // reverse:true 模式下 index 0 = 最新，所以需要反转索引
-
-          return FlutterListView(
-            controller: _listViewController,
-            reverse: true,
-            delegate: FlutterListViewDelegate(
-              (context, index) {
-                // loading indicator（加载更多历史消息）
-                if (hasMore && index == flatItems.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                /// reverse 模式下索引反转
-                final realIndex = flatItems.length - 1 - index;
-                final item = flatItems[realIndex];
-
-                return switch (item) {
-                  _TimeDividerItem(:final timestamp) =>
-                    _buildTimeDividerWidget(timestamp, context),
-                  _MessageItem(:final message) => ChatMessageBubble(
-                    key: ValueKey(message.messageId),
-                    message: message,
+            )
+          : () {
+              //消息为空
+              if (messages.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
+                      Text("chat_no_messages".tr()),
+                    ],
                   ),
-                };
-              },
-              childCount: flatItems.length + (hasMore ? 1 : 0),
-              // 开启 keepPosition: true
-              // 这能保证在分页加载旧消息时，滚动位置不会跳动
-              keepPosition: true,
-            ),
-          );
-        },
-        error: (err, _) =>
-            Center(child: Text('${'chat_initialization_failed'.tr()}: $err')),
-        loading: () {
-          return Center(child: CircularProgressIndicator());
-        },
-      ),
+                );
+              }
+
+              //消息渲染 —— 构建展平列表（时间分隔条 + 消息气泡）
+              final flatItems = _buildFlatList(messages);
+              // flatItems 按时间升序：[0]=最旧 ... [last]=最新
+              // reverse:true 模式下 index 0 = 最新，所以需要反转索引
+
+              return FlutterListView(
+                controller: _listViewController,
+                reverse: true,
+                delegate: FlutterListViewDelegate(
+                  (context, index) {
+                    // loading indicator（加载更多历史消息）
+                    if (hasMore && index == flatItems.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Center(
+                          child: SkeletonBox(
+                            width: 120,
+                            height: 12,
+                            radius: 10,
+                          ),
+                        ),
+                      );
+                    }
+
+                    /// reverse 模式下索引反转
+                    final realIndex = flatItems.length - 1 - index;
+                    final item = flatItems[realIndex];
+
+                    return switch (item) {
+                      _TimeDividerItem(:final timestamp) =>
+                        _buildTimeDividerWidget(timestamp, context),
+                      _MessageItem(:final message) => ChatMessageBubble(
+                        key: ValueKey(message.messageId),
+                        message: message,
+                      ),
+                    };
+                  },
+                  childCount: flatItems.length + (hasMore ? 1 : 0),
+                  // 开启 keepPosition: true
+                  // 这能保证在分页加载旧消息时，滚动位置不会跳动
+                  keepPosition: true,
+                ),
+              );
+            }(),
       floatingActionButton: _showScrollDownButton
           ? SizedBox(
               width: 35,
@@ -266,8 +274,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             )
           : null,
 
-      bottomNavigationBar: entryTask.isLoading
-          ? SizedBox.shrink()
+    bottomNavigationBar: showInitialSkeleton
+      ? const _ChatInputSkeleton()
           : Padding(
               padding: EdgeInsets.only(
                 left: bodyPadding,
@@ -332,5 +340,100 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     } else {
       _listViewController.sliverController.jumpToIndex(0);
     }
+  }
+}
+
+class _ChatRoomDetailSkeleton extends StatelessWidget {
+  const _ChatRoomDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      reverse: true,
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+      itemCount: 14,
+      itemBuilder: (context, index) {
+        final isSelf = index % 2 == 0;
+        final showTime = index % 4 == 0;
+        final bubbleWidth = isSelf
+            ? 120.0 + (index % 3) * 34
+            : 150.0 + (index % 3) * 42;
+        final bubbleHeight = 34.0 + (index % 3) * 12;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Column(
+            children: [
+              if (showTime)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: SkeletonLine(width: 84, height: 11),
+                ),
+              Row(
+                mainAxisAlignment: isSelf
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (!isSelf) ...[
+                    const SkeletonBox(width: 30, height: 30, circle: true),
+                    const SizedBox(width: 8),
+                  ],
+                  SkeletonBox(
+                    width: bubbleWidth,
+                    height: bubbleHeight,
+                    radius: 14,
+                  ),
+                  if (isSelf) ...[
+                    const SizedBox(width: 8),
+                    const SkeletonBox(width: 30, height: 30, circle: true),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ChatInputSkeleton extends StatelessWidget {
+  const _ChatInputSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(50, 0, 50, 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            width: 1,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+          ),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(child: SkeletonBox(height: 18, radius: 9)),
+                SizedBox(width: 12),
+                SkeletonBox(width: 22, height: 22, circle: true),
+                SizedBox(width: 8),
+                SkeletonBox(width: 22, height: 22, circle: true),
+              ],
+            ),
+            SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SkeletonLine(width: 120, height: 10),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
