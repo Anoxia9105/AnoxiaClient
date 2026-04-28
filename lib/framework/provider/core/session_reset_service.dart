@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../chat/call/call_status_provider.dart';
+import '../chat/call/call_window_controller.dart';
+import '../chat/call/history_panel_provider.dart';
+import '../chat/call/room_controller.dart';
 import '../chat/input/chat_input_controller.dart';
 import '../chat/input/files/chat_file_upload_controller.dart';
 import '../chat/input/images/chat_image_upload_controller.dart';
@@ -8,6 +11,7 @@ import '../chat/message/high_message_service.dart';
 import '../chat/message/room_message_service.dart';
 import '../chat/message/search_message_service.dart';
 import '../chat/message/system_event_service.dart';
+import '../chat/room/create_new_gropu_controller.dart';
 import '../chat/room/pinned_rooms_provider.dart';
 import '../chat/room/room_list_service.dart';
 import '../chat/room/room_member_service.dart';
@@ -43,9 +47,20 @@ void resetSessionProviders(Ref ref) {
   // ── 房间 / 成员 / 通话 ──
   ref.invalidate(roomListServiceProvider);
   ref.invalidate(activeRoomIdProvider);
+  ref.invalidate(activeRoomProvider);
+  ref.invalidate(roomSearchQueryProvider);
+  ref.invalidate(roomEntryTaskProvider);
   ref.invalidate(roomMemberServiceProvider);
   ref.invalidate(pinnedRoomsProvider);
   ref.invalidate(callStatusControllerProvider);
+  ref.invalidate(historyPanelProvider);
+  ref.invalidate(roomControllerProvider);
+  ref.invalidate(roomTokenProvider);
+  ref.invalidate(callWindowControllerProvider);
+
+  // ── 建群流程临时态 ──
+  ref.invalidate(selectedContactIdsProvider);
+  ref.invalidate(createGroupControllerProvider);
 
   // ── 联系人 / 搜索 ──
   ref.invalidate(contactListServiceProvider);
