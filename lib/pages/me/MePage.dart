@@ -29,12 +29,13 @@ class _MyPageState extends ConsumerState<MyPage> {
   final _confirmPwdController = TextEditingController();
 
   String _sex = '2';
-  int? _boundUserId;
+  String? _boundUserSnapshot;
   bool _savingProfile = false;
   bool _updatingPwd = false;
   bool _showOldPwd = false;
   bool _showNewPwd = false;
   bool _showConfirmPwd = false;
+  bool _showPasswordSection = false;
 
   @override
   void dispose() {
@@ -48,22 +49,35 @@ class _MyPageState extends ConsumerState<MyPage> {
   }
 
   void _bindUser(UserInfo user) {
-    if (_boundUserId == user.userId) return;
-    _boundUserId = user.userId;
+    final snapshot = [
+      user.userId.toString(),
+      user.nickName,
+      user.email,
+      user.phoneNumber,
+      user.sex,
+      user.avatar,
+    ].join('|');
+    if (_boundUserSnapshot == snapshot) return;
+    _boundUserSnapshot = snapshot;
     _nickController.text = user.nickName;
     _emailController.text = user.email;
     _phoneController.text = user.phoneNumber;
     _sex = user.sex;
   }
 
+  void _switchSection(bool showPasswordSection) {
+    if (_showPasswordSection == showPasswordSection) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _showPasswordSection = showPasswordSection);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authAsync = ref.watch(authControllerProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: Text('me_page_title'.tr())),
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: authAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => Center(child: Text('chat_load_failed'.tr())),
@@ -76,15 +90,15 @@ class _MyPageState extends ConsumerState<MyPage> {
             child: Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 860),
+                constraints: const BoxConstraints(maxWidth: 900),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 20),
                   children: [
                     _buildProfileOverview(context, user),
-                    const SizedBox(height: 12),
-                    _buildEditProfileCard(context, user),
-                    const SizedBox(height: 12),
-                    _buildUpdatePasswordCard(context),
+                    const SizedBox(height: 14),
+                    _buildSectionSwitcher(context),
+                    const SizedBox(height: 14),
+                    _buildSectionContent(context, user),
                   ],
                 ),
               ),
@@ -101,22 +115,41 @@ class _MyPageState extends ConsumerState<MyPage> {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.95),
-            colorScheme.secondaryContainer.withValues(alpha: 0.88),
+            colorScheme.primary.withValues(alpha: 0.83),
+            colorScheme.tertiary.withValues(alpha: 0.72),
           ],
         ),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: 0.18),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          AvatarWidget(url: user.avatar, name: user.nickName, size: 66),
-          const SizedBox(width: 14),
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.75),
+                width: 2,
+              ),
+            ),
+            child: AvatarWidget(
+              url: user.avatar,
+              name: user.nickName,
+              size: 72,
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +160,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: colorScheme.onPrimaryContainer,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -136,7 +169,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                    color: Colors.white.withValues(alpha: 0.85),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -148,18 +181,21 @@ class _MyPageState extends ConsumerState<MyPage> {
                       context,
                       icon: Icons.badge_outlined,
                       text: _sexText(user.sex),
+                      onDark: true,
                     ),
                     if (user.email.trim().isNotEmpty)
                       _buildInfoChip(
                         context,
                         icon: Icons.alternate_email_rounded,
                         text: user.email,
+                        onDark: true,
                       ),
                     if (user.phoneNumber.trim().isNotEmpty)
                       _buildInfoChip(
                         context,
                         icon: Icons.phone_outlined,
                         text: user.phoneNumber,
+                        onDark: true,
                       ),
                   ],
                 ),
@@ -175,28 +211,129 @@ class _MyPageState extends ConsumerState<MyPage> {
     BuildContext context, {
     required IconData icon,
     required String text,
+    bool onDark = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final fg = onDark ? Colors.white : colorScheme.onSurface;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.surface.withValues(alpha: 0.55),
+        color: onDark
+            ? Colors.white.withValues(alpha: 0.18)
+            : colorScheme.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: onDark
+              ? Colors.white.withValues(alpha: 0.24)
+              : colorScheme.outlineVariant.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: colorScheme.onSurface.withValues(alpha: 0.75)),
+          Icon(icon, size: 14, color: fg.withValues(alpha: 0.84)),
           const SizedBox(width: 6),
           Text(
             text,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.85),
+              color: fg.withValues(alpha: 0.92),
               fontWeight: FontWeight.w600,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionSwitcher(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selectedBg = colorScheme.primary;
+    final selectedFg = colorScheme.onPrimary;
+    final unselectedBg = colorScheme.surface.withValues(alpha: 0.9);
+    final unselectedFg = colorScheme.onSurface.withValues(alpha: 0.82);
+
+    Widget tab({
+      required bool selected,
+      required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+    }) {
+      return Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(
+              color: selected ? selectedBg : unselectedBg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: selected
+                    ? selectedBg.withValues(alpha: 0.9)
+                    : colorScheme.outlineVariant.withValues(alpha: 0.65),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 17,
+                  color: selected ? selectedFg : unselectedFg,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? selectedFg : unselectedFg,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        tab(
+          selected: !_showPasswordSection,
+          icon: Icons.person_outline_rounded,
+          label: 'me_profile_edit_title'.tr(),
+          onTap: () => _switchSection(false),
+        ),
+        const SizedBox(width: 10),
+        tab(
+          selected: _showPasswordSection,
+          icon: Icons.lock_outline_rounded,
+          label: 'me_password_title'.tr(),
+          onTap: () => _switchSection(true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionContent(BuildContext context, UserInfo user) {
+    return Stack(
+      children: [
+        Offstage(
+          offstage: _showPasswordSection,
+          child: TickerMode(
+            enabled: !_showPasswordSection,
+            child: _buildEditProfileCard(context, user),
+          ),
+        ),
+        Offstage(
+          offstage: !_showPasswordSection,
+          child: TickerMode(
+            enabled: _showPasswordSection,
+            child: _buildUpdatePasswordCard(context),
+          ),
+        ),
+      ],
     );
   }
 
@@ -264,7 +401,10 @@ class _MyPageState extends ConsumerState<MyPage> {
               ),
               items: [
                 DropdownMenuItem(value: '0', child: Text('contact_male'.tr())),
-                DropdownMenuItem(value: '1', child: Text('contact_female'.tr())),
+                DropdownMenuItem(
+                  value: '1',
+                  child: Text('contact_female'.tr()),
+                ),
                 DropdownMenuItem(
                   value: '2',
                   child: Text('contact_unknown_gender'.tr()),
@@ -347,7 +487,8 @@ class _MyPageState extends ConsumerState<MyPage> {
                 context,
                 label: 'me_password_confirm'.tr(),
                 visible: _showConfirmPwd,
-                onToggle: () => setState(() => _showConfirmPwd = !_showConfirmPwd),
+                onToggle: () =>
+                    setState(() => _showConfirmPwd = !_showConfirmPwd),
               ),
               validator: (v) {
                 if ((v ?? '').isEmpty) {
@@ -394,26 +535,40 @@ class _MyPageState extends ConsumerState<MyPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
+      key: ValueKey(title),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.75)),
+        color: colorScheme.surface.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(10),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  child: HugeIcon(icon: icon, color: colorScheme.primary, size: 18),
+                  child: HugeIcon(
+                    icon: icon,
+                    color: colorScheme.primary,
+                    size: 19,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -430,16 +585,18 @@ class _MyPageState extends ConsumerState<MyPage> {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           const Divider(height: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           child,
         ],
       ),
@@ -454,22 +611,25 @@ class _MyPageState extends ConsumerState<MyPage> {
     final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, size: 18),
+      prefixIcon: Icon(icon, size: 19),
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.26),
+      floatingLabelBehavior: FloatingLabelBehavior.auto,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: colorScheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.75)),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.75),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.4),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.7),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }
 
@@ -513,10 +673,14 @@ class _MyPageState extends ConsumerState<MyPage> {
       final ok = res.data is Map && res.data['code'] == 200;
       if (ok) {
         await ref.read(authControllerProvider.notifier).refreshUserInfo();
-        Toast.showToast('me_profile_save_success'.tr(), type: ToastType.success);
+        Toast.showToast(
+          'me_profile_save_success'.tr(),
+          type: ToastType.success,
+        );
       } else {
         Toast.showToast(
-          (res.data is Map ? (res.data['msg']?.toString() ?? '') : '').isNotEmpty
+          (res.data is Map ? (res.data['msg']?.toString() ?? '') : '')
+                  .isNotEmpty
               ? res.data['msg'].toString()
               : 'me_profile_save_failed'.tr(),
           type: ToastType.error,
@@ -548,10 +712,14 @@ class _MyPageState extends ConsumerState<MyPage> {
         _oldPwdController.clear();
         _newPwdController.clear();
         _confirmPwdController.clear();
-        Toast.showToast('me_password_update_success'.tr(), type: ToastType.success);
+        Toast.showToast(
+          'me_password_update_success'.tr(),
+          type: ToastType.success,
+        );
       } else {
         Toast.showToast(
-          (res.data is Map ? (res.data['msg']?.toString() ?? '') : '').isNotEmpty
+          (res.data is Map ? (res.data['msg']?.toString() ?? '') : '')
+                  .isNotEmpty
               ? res.data['msg'].toString()
               : 'me_password_update_failed'.tr(),
           type: ToastType.error,
