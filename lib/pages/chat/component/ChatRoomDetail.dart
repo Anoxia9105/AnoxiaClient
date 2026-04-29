@@ -13,6 +13,8 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../framework/provider/chat/message/room_message_service.dart';
 import '../../../framework/provider/chat/room/room_list_service.dart';
+import '../../../framework/provider/ws/ws_controller.dart';
+import '../../../framework/provider/ws/ws_state.dart';
 
 /// 展平列表的条目类型：时间分隔条 或 消息气泡
 sealed class _ChatListItem {}
@@ -154,6 +156,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   Widget build(BuildContext context) {
     final activeId = ref.watch(activeRoomIdProvider);
     final entryTask = ref.watch(roomEntryTaskProvider(activeId ?? ''));
+    final wsState = ref.watch(wsControllerProvider);
 
     //监听这个房间是否有更多消息
     final hasMore = ref.watch(
@@ -194,75 +197,74 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       );
     }
 
+    final contentBody = showInitialSkeleton
+        ? const _ChatRoomDetailSkeleton()
+        : entryTask.hasError && !hasCachedMessages
+        ? Center(
+            child: Text(
+              '${'chat_initialization_failed'.tr()}: ${entryTask.error}',
+            ),
+          )
+        : () {
+            //消息为空
+            if (messages.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
+                    Text("chat_no_messages".tr()),
+                  ],
+                ),
+              );
+            }
+
+            //消息渲染 —— 构建展平列表（时间分隔条 + 消息气泡）
+            final flatItems = _buildFlatList(messages);
+
+            return FlutterListView(
+              controller: _listViewController,
+              reverse: true,
+              delegate: FlutterListViewDelegate(
+                (context, index) {
+                  // loading indicator（加载更多历史消息）
+                  if (hasMore && index == flatItems.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Center(
+                        child: SkeletonBox(width: 120, height: 12, radius: 10),
+                      ),
+                    );
+                  }
+
+                  /// reverse 模式下索引反转
+                  final realIndex = flatItems.length - 1 - index;
+                  final item = flatItems[realIndex];
+
+                  return switch (item) {
+                    _TimeDividerItem(:final timestamp) =>
+                      _buildTimeDividerWidget(timestamp, context),
+                    _MessageItem(:final message) => ChatMessageBubble(
+                      key: ValueKey(message.messageId),
+                      message: message,
+                    ),
+                  };
+                },
+                childCount: flatItems.length + (hasMore ? 1 : 0),
+                keepPosition: true,
+              ),
+            );
+          }();
+
     return Scaffold(
       appBar: showInitialSkeleton ? AppBar() : ChatAppBar(),
       drawerScrimColor: Colors.transparent,
-      body: showInitialSkeleton
-          ? const _ChatRoomDetailSkeleton()
-          : entryTask.hasError && !hasCachedMessages
-          ? Center(
-              child: Text(
-                '${'chat_initialization_failed'.tr()}: ${entryTask.error}',
-              ),
-            )
-          : () {
-              //消息为空
-              if (messages.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
-                      Text("chat_no_messages".tr()),
-                    ],
-                  ),
-                );
-              }
-
-              //消息渲染 —— 构建展平列表（时间分隔条 + 消息气泡）
-              final flatItems = _buildFlatList(messages);
-              // flatItems 按时间升序：[0]=最旧 ... [last]=最新
-              // reverse:true 模式下 index 0 = 最新，所以需要反转索引
-
-              return FlutterListView(
-                controller: _listViewController,
-                reverse: true,
-                delegate: FlutterListViewDelegate(
-                  (context, index) {
-                    // loading indicator（加载更多历史消息）
-                    if (hasMore && index == flatItems.length) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Center(
-                          child: SkeletonBox(
-                            width: 120,
-                            height: 12,
-                            radius: 10,
-                          ),
-                        ),
-                      );
-                    }
-
-                    /// reverse 模式下索引反转
-                    final realIndex = flatItems.length - 1 - index;
-                    final item = flatItems[realIndex];
-
-                    return switch (item) {
-                      _TimeDividerItem(:final timestamp) =>
-                        _buildTimeDividerWidget(timestamp, context),
-                      _MessageItem(:final message) => ChatMessageBubble(
-                        key: ValueKey(message.messageId),
-                        message: message,
-                      ),
-                    };
-                  },
-                  childCount: flatItems.length + (hasMore ? 1 : 0),
-                  // 开启 keepPosition: true
-                  // 这能保证在分页加载旧消息时，滚动位置不会跳动
-                  keepPosition: true,
-                ),
-              );
-            }(),
+      body: Column(
+        children: [
+          _WsConnectionBanner(state: wsState),
+          Expanded(child: contentBody),
+        ],
+      ),
       floatingActionButton: _showScrollDownButton
           ? SizedBox(
               width: 35,
@@ -340,6 +342,78 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     } else {
       _listViewController.sliverController.jumpToIndex(0);
     }
+  }
+}
+
+class _WsConnectionBanner extends StatelessWidget {
+  final WsState state;
+
+  const _WsConnectionBanner({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.status == WsStatus.connected) {
+      return const SizedBox.shrink();
+    }
+
+    final cs = Theme.of(context).colorScheme;
+    final (icon, text, bg, fg) = switch (state.status) {
+      WsStatus.connecting => (
+        Icons.wifi_protected_setup_rounded,
+        'appbar_connecting'.tr(),
+        cs.primaryContainer.withValues(alpha: .7),
+        cs.primary,
+      ),
+      WsStatus.error => (
+        Icons.error_outline_rounded,
+        state.error?.trim().isNotEmpty == true
+            ? 'appbar_connection_lost'.tr()
+            : 'appbar_connection_lost'.tr(),
+        cs.errorContainer.withValues(alpha: .85),
+        cs.error,
+      ),
+      WsStatus.disconnected => (
+        Icons.portable_wifi_off_rounded,
+        'appbar_connection_lost'.tr(),
+        cs.errorContainer.withValues(alpha: .85),
+        cs.error,
+      ),
+      WsStatus.connected => (
+        Icons.check,
+        '',
+        Colors.transparent,
+        Colors.transparent,
+      ),
+    };
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: fg.withValues(alpha: .25)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: fg),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: fg,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

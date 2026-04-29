@@ -6,6 +6,7 @@ import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/ChatMessage.dart';
@@ -122,10 +123,10 @@ class RoomListService extends _$RoomListService {
         int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
         // 普通消息：只要不是自己发的、且不是通话系统消息，就尝试发系统通知。
         // 窗口是否聚焦由 NotificationHelper 内部判断。
-        if (!isSelfMessage && !isCallSystemMessage) {
-          NotificationHelper().show(
-            id: newMessage.roomId.hashCode,
-            title: oldRoom.roomName ?? '新消息',
+          if (!isSelfMessage && !isCallSystemMessage) {
+            NotificationHelper().show(
+              id: newMessage.roomId.hashCode,
+              title: oldRoom.roomName ?? tr('chat_new_message'),
             body: newMessage.content,
             payload: newMessage.roomId,
             avatarUrl: newMessage.senderAvatar ?? oldRoom.roomAvatar,
@@ -134,7 +135,10 @@ class RoomListService extends _$RoomListService {
 
         // 当前房间收到新消息时，防抖上报已读 seq
         // 连续收到多条消息只会在最后一条后 2 秒上报一次
-        if (isCurrentRoom && newMessage.seq != null && newMessage.seq! > 0) {
+        if (isCurrentRoom &&
+            !isSelfMessage &&
+            newMessage.seq != null &&
+            newMessage.seq! > 0) {
           _debouncedReportReadSeq(newMessage.roomId!, newMessage.seq!);
         }
 

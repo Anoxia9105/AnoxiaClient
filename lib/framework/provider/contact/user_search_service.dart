@@ -16,6 +16,11 @@ class UserSearchService extends _$UserSearchService {
     return UserSearchResponse(total: 0, rows: [], code: 200, msg: "");
   }
 
+  /// 清空搜索结果
+  void clearResults() {
+    state = build();
+  }
+
   /// 搜索用户
   /// [name] 搜索关键词
   /// [pageNum] 当前页码
@@ -34,6 +39,15 @@ class UserSearchService extends _$UserSearchService {
           'pageSize': pageSize,
         },
       );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final code = data['code'];
+        if (code is int && code != 200) {
+          final msg = (data['msg'] ?? 'search failed').toString();
+          throw Exception(msg);
+        }
+      }
 
       final searchResponse = UserSearchResponse.fromJson(response.data);
       state = searchResponse;

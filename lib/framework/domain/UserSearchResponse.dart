@@ -20,13 +20,30 @@ class UserSearchResponse {
 
   /// 从 JSON 构造对象
   factory UserSearchResponse.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic value, {int fallback = 0}) {
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
+    final dynamic rowsRaw = json['rows'];
+    final List<UserVO> parsedRows = rowsRaw is List
+        ? rowsRaw
+              .whereType<Map>()
+              .map(
+                (e) => UserVO.fromJson(
+                  e.map((key, value) => MapEntry(key.toString(), value)),
+                ),
+              )
+              .toList()
+        : <UserVO>[];
+
     return UserSearchResponse(
-      total: json['total'],
-      rows: (json['rows'] as List)
-          .map((e) => UserVO.fromJson(e))
-          .toList(),
-      code: json['code'],
-      msg: json['msg'],
+      total: toInt(json['total']),
+      rows: parsedRows,
+      code: toInt(json['code'], fallback: 200),
+      msg: (json['msg'] ?? '').toString(),
     );
   }
 

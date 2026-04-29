@@ -353,11 +353,19 @@ class _RoomItem extends ConsumerWidget {
               : AvatarStatus.none,
         ),
         // 中间名称和最后消息
-        title: Text(
-          room.roomName ?? 'chat_unknown_conversation'.tr(),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                room.roomName ?? 'chat_unknown_conversation'.tr(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            const SizedBox(width: 6),
+            _RoomTypeTag(isSingle: isSingle),
+          ],
         ),
         subtitle: Text(
           (room.lastMessage?.content ?? ""),
@@ -555,5 +563,49 @@ class _RoomItem extends ConsumerWidget {
           break;
       }
     });
+  }
+}
+
+class _RoomTypeTag extends StatelessWidget {
+  final bool isSingle;
+
+  const _RoomTypeTag({required this.isSingle});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bgColor = isSingle
+        ? colorScheme.tertiaryContainer.withValues(alpha: 0.7)
+        : colorScheme.primaryContainer.withValues(alpha: 0.8);
+    final fgColor = isSingle
+        ? colorScheme.onTertiaryContainer
+        : colorScheme.onPrimaryContainer;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isSingle ? Icons.person_outline : Icons.groups_2_outlined,
+            size: 11,
+            color: fgColor,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            isSingle ? 'chat_type_private'.tr() : 'chat_type_group'.tr(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: fgColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

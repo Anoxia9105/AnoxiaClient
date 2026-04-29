@@ -1,4 +1,5 @@
-import 'dart:convert';
+﻿import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:anoxia/pages/chat/component/widget/quill/QuillStyleConfig.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileBuild.dart';
@@ -83,30 +84,80 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       return Text("chat_message_format_error".tr());
     }
 
-    return SizedBox(
-      width: double.infinity,
-      child: QuillEditor.basic(
-        controller: _controller!,
-        config: QuillEditorConfig(
-          textSelectionThemeData: TextSelectionThemeData(
-            selectionColor: Theme.of(
-              context,
-            ).colorScheme.onPrimary.withValues(alpha: 0.2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth * 0.72;
+        final targetWidth = _resolveTargetWidth(context, maxWidth);
+
+        return SizedBox(
+          width: targetWidth,
+          child: QuillEditor.basic(
+            controller: _controller!,
+            config: QuillEditorConfig(
+              textSelectionThemeData: TextSelectionThemeData(
+                selectionColor: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: 0.2),
+              ),
+              enableSelectionToolbar: false,
+              showCursor: false,
+              autoFocus: false,
+              expands: false,
+              scrollable: false,
+              padding: EdgeInsets.zero,
+              customStyles: QuillStyleConfig.get(
+                context,
+                color: widget.textColor,
+              ),
+              embedBuilders: [
+                QuillImageBuild(),
+                QuillFileBuild(),
+                QuillMentionBuild(),
+              ],
+            ),
           ),
-          enableSelectionToolbar: false,
-          showCursor: false,
-          autoFocus: false,
-          expands: false,
-          scrollable: false,
-          padding: EdgeInsets.zero,
-          customStyles: QuillStyleConfig.get(context, color: widget.textColor),
-          embedBuilders: [
-            QuillImageBuild(),
-            QuillFileBuild(),
-            QuillMentionBuild(),
-          ],
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  double _resolveTargetWidth(BuildContext context, double maxWidth) {
+    if (_hasEmbed()) return maxWidth;
+
+    final plain = _controller?.document.toPlainText() ?? '';
+    final trimmed = plain.replaceAll(RegExp(r'\n+$'), '').trim();
+    if (trimmed.isEmpty) {
+      return 64;
+    }
+
+    if (trimmed.contains('\n')) {
+      return maxWidth;
+    }
+
+    final textStyle = DefaultTextStyle.of(context).style.copyWith(
+      fontSize: 15,
+      height: 1.35,
+    );
+
+    final painter = TextPainter(
+      text: TextSpan(text: trimmed, style: textStyle),
+      textDirection: ui.TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+
+    final estimated = painter.width + 2;
+    return estimated.clamp(64, maxWidth).toDouble();
+  }
+
+  bool _hasEmbed() {
+    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    if (opsJson is! List) return false;
+
+    for (final op in opsJson) {
+      if (op['insert'] is Map) {
+        return true;
+      }
+    }
+    return false;
   }
 }

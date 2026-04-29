@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';
@@ -23,7 +21,6 @@ class WsController extends _$WsController {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   bool _reconnectEnabled = true;
-  bool _manualDisconnecting = false;
 
   // 使用延迟初始化，确保每次 build 时或是需要时它是新鲜的
   late final StreamController<PacketFrame<IPacket>> _messageController;
@@ -114,7 +111,6 @@ class WsController extends _$WsController {
       );
 
       _reconnectAttempts = 0;
-  _manualDisconnecting = false;
       state = WsState(status: WsStatus.connected);
       log.info("✅ WebSocket 连接成功");
 
@@ -181,9 +177,6 @@ class WsController extends _$WsController {
   void _handleDone() {
     log.info("WebSocket 连接由服务端关闭或网络中断");
     state = WsState(status: WsStatus.disconnected);
-    if (!_manualDisconnecting) {
-      Toast.showNotificationNow("ws_connection_closed".tr());
-    }
     _retryConnection();
   }
 
@@ -211,7 +204,6 @@ class WsController extends _$WsController {
   }
 
   void _disposeAll({bool closeStream = false, bool manual = false}) {
-    _manualDisconnecting = manual;
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();

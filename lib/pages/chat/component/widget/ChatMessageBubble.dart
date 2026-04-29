@@ -234,6 +234,8 @@ class ChatMessageBubble extends ConsumerWidget {
     WidgetRef ref,
     ChatMessage message,
   ) {
+    final messageNotifier = ref.read(chatMessagesProvider.notifier);
+    final wsNotifier = ref.read(wsControllerProvider.notifier);
     final room = ref.read(activeRoomProvider);
 
     if (room == null) {
@@ -243,11 +245,9 @@ class ChatMessageBubble extends ConsumerWidget {
 
     final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
 
-    ref
-        .read(chatMessagesProvider.notifier)
-        .upsertMessage(
-          message.copyWith(deliveryStatus: DeliveryStatus.sending),
-        );
+    messageNotifier.upsertMessage(
+      message.copyWith(deliveryStatus: DeliveryStatus.sending),
+    );
 
     final messageData = {
       "topic": "MESSAGE",
@@ -264,14 +264,10 @@ class ChatMessageBubble extends ConsumerWidget {
 
     log.info("🔁 重发消息: $clientMsgId");
 
-    ref
-        .read(wsControllerProvider.notifier)
-        .sendMessage(jsonEncode(messageData));
+    wsNotifier.sendMessage(jsonEncode(messageData));
 
     Timer(const Duration(seconds: 10), () {
-      ref
-          .read(chatMessagesProvider.notifier)
-          .handleTimeout(room.roomId!, clientMsgId);
+      messageNotifier.handleTimeout(room.roomId!, clientMsgId);
     });
   }
 }
