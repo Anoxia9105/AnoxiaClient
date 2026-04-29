@@ -33,14 +33,16 @@ class ChatFavorite {
   factory ChatFavorite.fromJson(Map<String, dynamic> json) {
     final senderInfo = _extractSenderInfo(json);
 
-    final rawCreatedAt = json['createdAt']?.toString();
+    final rawCreatedAt =
+        json['createdAt']?.toString() ?? json['created_at']?.toString();
     return ChatFavorite(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      msgId: json['msgId']?.toString() ?? '',
+      msgId: json['msgId']?.toString() ?? json['msg_id']?.toString() ?? '',
       senderId: senderInfo.senderId,
       senderName: senderInfo.senderName,
       senderAvatar: senderInfo.senderAvatar,
-      favoriteType: json['favoriteType']?.toString() ?? '',
+      favoriteType:
+          json['favoriteType']?.toString() ?? json['favorite_type']?.toString() ?? '',
       content: json['content']?.toString() ?? '',
       payload: json['payload']?.toString() ?? '',
       attachments: json['attachments']?.toString() ?? '',
@@ -56,7 +58,9 @@ class ChatFavorite {
 
   String get senderDisplayName {
     final text = senderName.trim();
-    return text;
+    if (text.isNotEmpty) return text;
+    if (senderId != null) return 'User #$senderId';
+    return '';
   }
 
   MessageType get messageType {
@@ -352,17 +356,42 @@ class ChatFavorite {
   static _SenderInfo _extractSenderInfo(Map<String, dynamic> json) {
     final senderId = _readInt(
       json,
-      keys: ['senderId', 'fromUserId', 'fromId', 'userId'],
+      keys: [
+        'senderId',
+        'sender_id',
+        'fromUserId',
+        'from_user_id',
+        'fromId',
+        'userId',
+      ],
     );
 
     String senderName = _readString(
       json,
-      keys: ['senderName', 'fromUserName', 'nickName', 'nickname', 'userName'],
+      keys: [
+        'senderName',
+        'sender_name',
+        'fromUserName',
+        'from_user_name',
+        'nickName',
+        'nick_name',
+        'nickname',
+        'userName',
+        'user_name',
+      ],
     );
 
     String senderAvatar = _readString(
       json,
-      keys: ['senderAvatar', 'fromUserAvatar', 'avatar', 'avatarUrl'],
+      keys: [
+        'senderAvatar',
+        'sender_avatar',
+        'fromUserAvatar',
+        'from_user_avatar',
+        'avatar',
+        'avatarUrl',
+        'avatar_url',
+      ],
     );
 
     final payloadRaw = json['payload']?.toString() ?? '';
@@ -373,13 +402,31 @@ class ChatFavorite {
             ? senderName
             : _readString(
                 payloadDecoded,
-                keys: ['senderName', 'fromUserName', 'nickName', 'nickname', 'userName'],
+                keys: [
+                  'senderName',
+                  'sender_name',
+                  'fromUserName',
+                  'from_user_name',
+                  'nickName',
+                  'nick_name',
+                  'nickname',
+                  'userName',
+                  'user_name',
+                ],
               );
         senderAvatar = senderAvatar.isNotEmpty
             ? senderAvatar
             : _readString(
                 payloadDecoded,
-                keys: ['senderAvatar', 'fromUserAvatar', 'avatar', 'avatarUrl'],
+                keys: [
+                  'senderAvatar',
+                  'sender_avatar',
+                  'fromUserAvatar',
+                  'from_user_avatar',
+                  'avatar',
+                  'avatarUrl',
+                  'avatar_url',
+                ],
               );
       }
     }

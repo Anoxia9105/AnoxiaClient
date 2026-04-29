@@ -8,7 +8,7 @@ final chatFavoriteServiceProvider = Provider<ChatFavoriteService>((ref) {
 });
 
 final chatFavoriteListProvider =
-    FutureProvider<List<ChatFavorite>>((ref) async {
+    FutureProvider.autoDispose<List<ChatFavorite>>((ref) async {
       final service = ref.watch(chatFavoriteServiceProvider);
       return service.listFavorites();
     });

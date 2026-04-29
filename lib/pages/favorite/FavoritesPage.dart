@@ -2,6 +2,8 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/ChatFavorite.dart';
+import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
 import 'package:anoxia/pages/chat/component/widget/messageRender/base/MessageRenderFactory.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -343,6 +345,7 @@ class _FavoriteDetailPanel extends StatelessWidget {
         (message.payload?.content?.trim().isNotEmpty ?? false) ||
         (message.payload?.quillDelta?.trim().isNotEmpty ?? false) ||
         message.attachments.isNotEmpty;
+  final isRefinedTextDetail = _isRefinedTextDetail(message, detailFallback);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,7 +411,13 @@ class _FavoriteDetailPanel extends StatelessWidget {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-            child: hasRenderableBody
+            child: isRefinedTextDetail
+                ? _FavoriteTextDetailCard(
+                    text: detailFallback,
+                    senderName: item.senderDisplayName,
+                    dateLabel: _formatDate(item.createdAt),
+                  )
+                : hasRenderableBody
                 ? strategy.buildContent(context, message, cs.onSurface)
                 : SelectableText(
                     detailFallback.isEmpty ? '[empty]' : detailFallback,
@@ -421,6 +430,101 @@ class _FavoriteDetailPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  bool _isRefinedTextDetail(ChatMessage message, String detailText) {
+    if (message.messageType != MessageType.text) return false;
+
+    final text = detailText.trim();
+    if (text.isEmpty) return false;
+    if (text.contains('\n')) return false;
+
+    return text.length <= 120;
+  }
+}
+
+class _FavoriteTextDetailCard extends StatelessWidget {
+  final String text;
+  final String senderName;
+  final String dateLabel;
+
+  const _FavoriteTextDetailCard({
+    required this.text,
+    required this.senderName,
+    required this.dateLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.surfaceContainerHighest.withValues(alpha: .55),
+            cs.surfaceContainerLow.withValues(alpha: .75),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.format_quote_rounded, size: 18, color: cs.primary),
+              const SizedBox(width: 6),
+              Text(
+                'TEXT',
+                style: TextStyle(
+                  color: cs.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                dateLabel,
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SelectableText(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.7,
+              color: cs.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (senderName.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '— $senderName',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
