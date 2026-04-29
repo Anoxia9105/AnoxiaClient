@@ -137,17 +137,17 @@ class DesktopSidebar extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Divider(height: 1),
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      ref.read(authControllerProvider.notifier).logout();
-                      close?.call();
-                    },
-                    label: Text('sidebar_personal_details'.tr()),
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedUser),
-                  ),
-                ),
+                // SizedBox(
+                //   width: double.infinity,
+                //   child: TextButton.icon(
+                //     onPressed: () {
+                //       ref.read(authControllerProvider.notifier).logout();
+                //       close?.call();
+                //     },
+                //     label: Text('sidebar_personal_details'.tr()),
+                //     icon: HugeIcon(icon: HugeIcons.strokeRoundedUser),
+                //   ),
+                // ),
                 SizedBox(
                   width: double.infinity,
                   child: TextButton.icon(
