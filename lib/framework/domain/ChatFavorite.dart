@@ -9,6 +9,9 @@ class ChatFavorite {
   final int id;
   final String msgId;
   final String favoriteType;
+  final int? senderId;
+  final String senderName;
+  final String senderAvatar;
   final String content;
   final String payload;
   final String attachments;
@@ -17,6 +20,9 @@ class ChatFavorite {
   const ChatFavorite({
     required this.id,
     required this.msgId,
+    required this.senderId,
+    required this.senderName,
+    required this.senderAvatar,
     required this.favoriteType,
     required this.content,
     required this.payload,
@@ -25,10 +31,15 @@ class ChatFavorite {
   });
 
   factory ChatFavorite.fromJson(Map<String, dynamic> json) {
+    final senderInfo = _extractSenderInfo(json);
+
     final rawCreatedAt = json['createdAt']?.toString();
     return ChatFavorite(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       msgId: json['msgId']?.toString() ?? '',
+      senderId: senderInfo.senderId,
+      senderName: senderInfo.senderName,
+      senderAvatar: senderInfo.senderAvatar,
       favoriteType: json['favoriteType']?.toString() ?? '',
       content: json['content']?.toString() ?? '',
       payload: json['payload']?.toString() ?? '',
@@ -40,23 +51,29 @@ class ChatFavorite {
   }
 
   String get typeLabel {
-    final upper = favoriteType.toUpperCase();
-    if (upper.isEmpty) return 'TEXT';
-    return upper;
+    return messageType.name.toUpperCase();
+  }
+
+  String get senderDisplayName {
+    final text = senderName.trim();
+    return text;
   }
 
   MessageType get messageType {
     final raw = favoriteType.trim();
-    if (raw.isNotEmpty) {
-      final byNameOrCode = MessageType.fromCode(raw);
-      if (byNameOrCode != MessageType.text || raw.toUpperCase() == 'TEXT') {
-        return byNameOrCode;
-      }
+    final explicitType = _parseType(raw);
 
-      final asInt = int.tryParse(raw);
-      if (asInt != null) {
-        return MessageType.fromCode(asInt);
-      }
+    if (explicitType != null && explicitType != MessageType.text) {
+      return explicitType;
+    }
+
+    final inferredPayloadType = _inferPayloadType();
+    if (inferredPayloadType != null) {
+      return inferredPayloadType;
+    }
+
+    if (explicitType != null) {
+      return explicitType;
     }
 
     final att = _buildAttachments();
@@ -66,6 +83,57 @@ class ChatFavorite {
     }
 
     return MessageType.text;
+  }
+
+  MessageType? _parseType(String raw) {
+    if (raw.isEmpty) return null;
+
+    final byName = MessageType.fromCode(raw);
+    final upper = raw.toUpperCase();
+    final hasNameMatch = MessageType.values.any((e) => e.name.toUpperCase() == upper);
+    if (hasNameMatch) return byName;
+
+    final asInt = int.tryParse(raw);
+    if (asInt != null) {
+      return MessageType.fromCode(asInt);
+    }
+
+    return null;
+  }
+
+  MessageType? _inferPayloadType() {
+    final payloadRaw = payload.trim();
+    if (payloadRaw.isNotEmpty) {
+      final decoded = _decodeMaybeJson(payloadRaw);
+      if (_containsQuillDelta(decoded)) {
+        return MessageType.quill;
+      }
+    }
+
+    final att = _buildAttachments();
+    if (att.isNotEmpty) {
+      final hasImage = att.any((e) => e.isImage);
+      return hasImage ? MessageType.image : MessageType.file;
+    }
+
+    return null;
+  }
+
+  bool _containsQuillDelta(dynamic decoded) {
+    if (decoded is List) {
+      return decoded.any((e) => e is Map && e.containsKey('insert'));
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      final quillDelta = decoded['quillDelta'];
+      final delta = decoded['delta'];
+      final ops = decoded['ops'];
+      if (quillDelta != null || delta != null || ops != null) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   String get summary {
@@ -145,6 +213,9 @@ class ChatFavorite {
 
     return ChatMessage(
       messageId: msgId,
+      senderId: senderId,
+      senderName: senderName,
+      senderAvatar: senderAvatar,
       messageType: resolvedType,
       content: content,
       payload: resolvedPayload,
@@ -163,13 +234,21 @@ class ChatFavorite {
 
       if (decoded is Map<String, dynamic>) {
         final parsed = MessagePayload.fromJson(decoded);
+        final normalizedQuillDelta = _extractQuillDeltaString(decoded);
         final parsedContent = parsed.content?.trim() ?? '';
         if (parsedContent.isNotEmpty || content.trim().isEmpty) {
-          return parsed;
+          return MessagePayload(
+            content: parsed.content,
+            quillDelta: parsed.quillDelta ?? normalizedQuillDelta,
+            replyTo: parsed.replyTo,
+            mentions: parsed.mentions,
+            markdown: parsed.markdown,
+            emojiCode: parsed.emojiCode,
+          );
         }
         return MessagePayload(
           content: content.trim(),
-          quillDelta: parsed.quillDelta,
+          quillDelta: parsed.quillDelta ?? normalizedQuillDelta,
           replyTo: parsed.replyTo,
           mentions: parsed.mentions,
           markdown: parsed.markdown,
@@ -188,6 +267,18 @@ class ChatFavorite {
     }
 
     return MessagePayload(content: content.trim());
+  }
+
+  String? _extractQuillDeltaString(Map<String, dynamic> decoded) {
+    final candidates = [decoded['quillDelta'], decoded['delta'], decoded['ops']];
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      if (candidate is String && candidate.trim().isNotEmpty) return candidate;
+      if (candidate is List || candidate is Map<String, dynamic>) {
+        return jsonEncode(candidate);
+      }
+    }
+    return null;
   }
 
   List<Attachment> _buildAttachments() {
@@ -257,4 +348,92 @@ class ChatFavorite {
 
     return const [];
   }
+
+  static _SenderInfo _extractSenderInfo(Map<String, dynamic> json) {
+    final senderId = _readInt(
+      json,
+      keys: ['senderId', 'fromUserId', 'fromId', 'userId'],
+    );
+
+    String senderName = _readString(
+      json,
+      keys: ['senderName', 'fromUserName', 'nickName', 'nickname', 'userName'],
+    );
+
+    String senderAvatar = _readString(
+      json,
+      keys: ['senderAvatar', 'fromUserAvatar', 'avatar', 'avatarUrl'],
+    );
+
+    final payloadRaw = json['payload']?.toString() ?? '';
+    if (payloadRaw.trim().isNotEmpty) {
+      final payloadDecoded = _decodeStatic(payloadRaw);
+      if (payloadDecoded is Map<String, dynamic>) {
+        senderName = senderName.isNotEmpty
+            ? senderName
+            : _readString(
+                payloadDecoded,
+                keys: ['senderName', 'fromUserName', 'nickName', 'nickname', 'userName'],
+              );
+        senderAvatar = senderAvatar.isNotEmpty
+            ? senderAvatar
+            : _readString(
+                payloadDecoded,
+                keys: ['senderAvatar', 'fromUserAvatar', 'avatar', 'avatarUrl'],
+              );
+      }
+    }
+
+    return _SenderInfo(
+      senderId: senderId,
+      senderName: senderName,
+      senderAvatar: senderAvatar,
+    );
+  }
+
+  static int? _readInt(Map<String, dynamic> source, {required List<String> keys}) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null) continue;
+      final parsed = int.tryParse(value.toString());
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static String _readString(Map<String, dynamic> source, {required List<String> keys}) {
+    for (final key in keys) {
+      final value = source[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  static dynamic _decodeStatic(dynamic source) {
+    dynamic current = source;
+    for (var i = 0; i < 3; i++) {
+      if (current is! String) return current;
+      final text = current.trim();
+      if (text.isEmpty) return text;
+
+      try {
+        current = jsonDecode(text);
+      } catch (_) {
+        return current;
+      }
+    }
+    return current;
+  }
+}
+
+class _SenderInfo {
+  final int? senderId;
+  final String senderName;
+  final String senderAvatar;
+
+  const _SenderInfo({
+    required this.senderId,
+    required this.senderName,
+    required this.senderAvatar,
+  });
 }

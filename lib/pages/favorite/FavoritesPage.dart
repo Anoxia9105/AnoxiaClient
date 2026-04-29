@@ -263,7 +263,10 @@ class _FavoriteListPanel extends StatelessWidget {
                       children: [
                         AvatarWidget(
                           size: 40,
-                          name: item.typeLabel,
+                          url: item.senderAvatar,
+                          name: item.senderDisplayName.isNotEmpty
+                              ? item.senderDisplayName
+                              : item.typeLabel,
                           borderRadius: 10,
                         ),
                         const SizedBox(width: 10),
@@ -288,6 +291,19 @@ class _FavoriteListPanel extends StatelessWidget {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+                              if (item.senderDisplayName.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  item.senderDisplayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: cs.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 4),
                               Text(
                                 _formatDate(item.createdAt),
@@ -363,6 +379,25 @@ class _FavoriteDetailPanel extends StatelessWidget {
                   ),
                 ),
               ),
+              if (item.senderDisplayName.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    item.senderDisplayName,
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               Text(
                 _formatDate(item.createdAt),
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
