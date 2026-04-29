@@ -71,6 +71,16 @@
   "settings_page_layout_subtitle": "アプリのレイアウト方式を選択してください",
   "settings_page_about_title": "アプリについてとサポート",
   "settings_page_about_subtitle": "このアプリに関する情報",
+  "settings_feedback_title": "不具合フィードバック",
+  "settings_feedback_subtitle": "バグや改善要望を送信してください。できるだけ早く対応します",
+  "settings_feedback_subject": "件名",
+  "settings_feedback_subject_required": "件名を入力してください",
+  "settings_feedback_content": "内容",
+  "settings_feedback_content_required": "内容を入力してください",
+  "settings_feedback_contact": "連絡先（任意）",
+  "settings_feedback_submit": "フィードバックを送信",
+  "settings_feedback_submit_success": "フィードバックを送信しました。ありがとうございます",
+  "settings_feedback_submit_failed": "フィードバックの送信に失敗しました。後でもう一度お試しください",
 
 
 

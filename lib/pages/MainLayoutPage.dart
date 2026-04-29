@@ -1,7 +1,6 @@
 import 'package:anoxia/pages/AppScaffold.dart';
 import 'package:anoxia/pages/contact/ContactPage.dart';
 import 'package:anoxia/pages/me/MePage.dart';
-import 'package:anoxia/pages/notes/NotesPage.dart';
 import 'package:anoxia/pages/setting/SettingsPage.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +21,7 @@ class MainLayoutPage extends ConsumerWidget {
     print("🛠️ MainLayoutPage 开始构建: ${DateTime.now().millisecond}ms");
 
     final layout = ref.watch(layoutControllerProvider);
+    final safeIndex = layout.currentIndex.clamp(0, layout.items.length - 1);
 
     //最小尺寸检测
     final size = MediaQuery.of(context).size;
@@ -44,7 +44,7 @@ class MainLayoutPage extends ConsumerWidget {
 
     //外层Scaffold
     return AppScaffold(
-      title: layout.items[layout.currentIndex].name,
+      title: layout.items[safeIndex].name,
       showDesktopHeaderEnhancements: true,
       body: Row(
         children: [
@@ -56,12 +56,11 @@ class MainLayoutPage extends ConsumerWidget {
             child: Scaffold(
               body: IndexedStack(
                 key: ValueKey(context.locale.languageCode),
-                index: layout.currentIndex,
+                index: safeIndex,
                 children: [
                   ChatPage(),
                   ContactPage(),
                   FavoritesPage(),
-                  NotesPage(),
                   MyPage(),
                   SettingsPage(),
                 ],

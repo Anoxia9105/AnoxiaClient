@@ -32,6 +32,7 @@ class API {
   static const String userProfileUpdate = '/system/user/profile';
   static const String userProfileUpdatePassword =
       '/system/user/profile/updatePwd';
+  static const String feedbackSubmit = '/feedback/submit';
 
   // ======================== 聊天室接口 ========================
   static const String chatRooms = '/chat/rooms';

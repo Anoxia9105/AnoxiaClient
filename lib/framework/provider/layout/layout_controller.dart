@@ -16,10 +16,6 @@ class LayoutController extends _$LayoutController {
       name: "sidebar_favorites",
       icon: HugeIcons.strokeRoundedFavourite,
     ),
-    SidebarItem(
-      name: "sidebar_notes",
-      icon: HugeIcons.strokeRoundedPathfinderCrop,
-    ),
     SidebarItem(name: "sidebar_my", icon: HugeIcons.strokeRoundedUser),
     SidebarItem(
       name: "sidebar_setting",
@@ -37,6 +33,9 @@ class LayoutController extends _$LayoutController {
   }
 
   void setIndex(int index) {
+    if (index < 0 || index >= state.items.length) {
+      return;
+    }
     if (state.currentIndex != index) {
       state = state.copyWith(currentIndex: index);
     }
