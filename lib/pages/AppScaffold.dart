@@ -11,12 +11,15 @@ class AppScaffold extends StatelessWidget {
 
   // 是否隐藏应用栏Logo
   final bool hideAppBarLogo;
+  // 桌面端是否显示头部增强区（搜索/状态/快捷按钮）
+  final bool showDesktopHeaderEnhancements;
 
   const AppScaffold({
     super.key,
     required this.body,
     this.bottomNavigationBar,
     this.hideAppBarLogo = false,
+    this.showDesktopHeaderEnhancements = false,
     this.title,
   });
 
@@ -37,7 +40,10 @@ class AppScaffold extends StatelessWidget {
   //获取应用栏
   PreferredSizeWidget getAppbar() {
     if (DeviceUtil.isRealDesktop()) {
-      return DesktopAppBar(hideAppBarLogo: hideAppBarLogo);
+      return DesktopAppBar(
+        hideAppBarLogo: hideAppBarLogo,
+        showHeaderEnhancements: showDesktopHeaderEnhancements,
+      );
     }
     return AppBar(title: Text(title ?? ''));
   }

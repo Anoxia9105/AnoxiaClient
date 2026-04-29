@@ -222,14 +222,27 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: dialogWidth,
-          height: dialogHeight,
-          child: const AddFriendPage(),
-        ),
-      ),
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          elevation: 0,
+          clipBehavior: Clip.antiAlias,
+          backgroundColor: colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+              width: 1,
+            ),
+          ),
+          child: SizedBox(
+            width: dialogWidth,
+            height: dialogHeight,
+            child: const AddFriendPage(),
+          ),
+        );
+      },
     );
   }
 }

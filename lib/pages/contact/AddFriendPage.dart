@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/UserVO.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
@@ -79,308 +80,94 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Material(
-                elevation: 2,
-                borderRadius: BorderRadius.circular(18),
-                color: colorScheme.surface,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'add_friend_search_hint'.tr(),
-                          hintStyle: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.outline,
-                            fontSize: 15,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search_rounded,
-                            color: colorScheme.outline,
-                            size: 20,
-                          ),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear_rounded,
-                                    color: colorScheme.outline,
-                                    size: 18,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    ref.read(userSearchServiceProvider.notifier).clearResults();
-                                    setState(() {});
-                                  },
-                                  splashRadius: 20,
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18.0,
-                            vertical: 14.0,
-                          ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'add_friend_search_hint'.tr(),
+                        hintStyle: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.outline,
+                          fontSize: 14.5,
                         ),
-                        style: textTheme.bodyMedium?.copyWith(fontSize: 15),
-                        onSubmitted: (value) {
-                          _performSearch(value);
-                        },
-                        onChanged: (value) => setState(() {}),
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(left: 8, right: 8),
-                      height: 40,
-                      child: VerticalDivider(
-                        color: colorScheme.outlineVariant,
-                        thickness: 1,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ElevatedButton(
-                        onPressed: _isSearching
-                            ? null
-                            : () => _performSearch(_searchController.text),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          minimumSize: const Size(44, 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          elevation: 0,
-                          textStyle: textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
+                        prefixIcon: Icon(
+                          Icons.search_rounded,
+                          color: colorScheme.outline,
+                          size: 19,
                         ),
-                        child: _isSearching
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.clear_rounded,
+                                  color: colorScheme.outline,
+                                  size: 18,
                                 ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  ref.read(userSearchServiceProvider.notifier).clearResults();
+                                  setState(() {});
+                                },
+                                splashRadius: 18,
                               )
-                            : Icon(Icons.search_rounded, size: 22),
+                            : null,
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       ),
+                      style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                      onSubmitted: _performSearch,
+                      onChanged: (_) => setState(() {}),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _isSearching
+                        ? null
+                        : () => _performSearch(_searchController.text),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(42, 42),
+                      shape: const CircleBorder(),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: _isSearching
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.arrow_forward_rounded, size: 20),
+                  ),
+                ],
               ),
             ),
             // 搜索结果
             Expanded(
-              child: searchService.rows.isNotEmpty
+              child: _isSearching
+                  ? _buildSearchSkeleton(colorScheme)
+                  : searchService.rows.isNotEmpty
                   ? AnimationLimiter(
-                      child: ListView.builder(
+                      child: ListView.separated(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 12.0,
                         ),
                         itemCount: searchService.rows.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final user = searchService.rows[index];
-
-                          // 检查是否已经是好友
                           final isFriend = contactIds.contains(user.userId);
 
                           return AnimationConfiguration.staggeredList(
                             position: index,
-                            duration: const Duration(milliseconds: 300),
+                            duration: const Duration(milliseconds: 260),
                             child: SlideAnimation(
-                              verticalOffset: 50.0,
+                              verticalOffset: 28,
                               child: FadeInAnimation(
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 8.0,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                    border: Border.all(
-                                      color: colorScheme.outlineVariant,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(16),
-                                      onTap: !isFriend
-                                          ? () {
-                                              _showAddFriendDialog(user);
-                                            }
-                                          : null,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(18.0),
-                                        child: Row(
-                                          children: [
-                                            AvatarWidget(
-                                              url: user.avatar,
-                                              name: user.nickName,
-                                              size: 64,
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    user.nickName,
-                                                    style: textTheme.titleMedium
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 17,
-                                                        ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  const SizedBox(height: 6),
-                                                  Text(
-                                                    'add_friend_username'.tr(
-                                                      args: [user.userName],
-                                                    ),
-                                                    style: textTheme.bodyMedium
-                                                        ?.copyWith(
-                                                          color: colorScheme
-                                                              .outline,
-                                                          fontSize: 14,
-                                                        ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  if (user.phonenumber != null)
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                            top: 4,
-                                                          ),
-                                                      child: Text(
-                                                        'add_friend_phone'.tr(
-                                                          args: [
-                                                            user.phonenumber!,
-                                                          ],
-                                                        ),
-                                                        style: textTheme
-                                                            .bodyMedium
-                                                            ?.copyWith(
-                                                              color: colorScheme
-                                                                  .outline,
-                                                              fontSize: 14,
-                                                            ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            if (isFriend)
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 16,
-                                                      vertical: 8,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme
-                                                      .surfaceVariant,
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                  border: Border.all(
-                                                    color: colorScheme
-                                                        .outlineVariant,
-                                                    width: 1,
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  'add_friend_already_friend'
-                                                      .tr(),
-                                                  style: textTheme.bodySmall
-                                                      ?.copyWith(
-                                                        color:
-                                                            colorScheme.outline,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        fontSize: 13,
-                                                      ),
-                                                ),
-                                              )
-                                            else
-                                              Container(
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme.primary,
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: colorScheme.primary
-                                                          .withOpacity(0.3),
-                                                      blurRadius: 8,
-                                                      offset: const Offset(
-                                                        0,
-                                                        2,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: ElevatedButton(
-                                                  onPressed: () {
-                                                    _showAddFriendDialog(user);
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        colorScheme.primary,
-                                                    foregroundColor:
-                                                        colorScheme.onPrimary,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            16,
-                                                          ),
-                                                    ),
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 20,
-                                                          vertical: 10,
-                                                        ),
-                                                    elevation: 0,
-                                                    textStyle: textTheme
-                                                        .bodyMedium
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 14,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    'add_friend_add_btn'.tr(),
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                child: _buildUserCard(
+                                  context: context,
+                                  user: user,
+                                  isFriend: isFriend,
                                 ),
                               ),
                             ),
@@ -482,6 +269,152 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     );
   }
 
+  Widget _buildSearchSkeleton(ColorScheme colorScheme) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: 6,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+          ),
+          child: Row(
+            children: [
+              const SkeletonBox(width: 52, height: 52, circle: true),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLine(width: 120, height: 14),
+                    SizedBox(height: 8),
+                    SkeletonLine(width: 180, height: 11),
+                    SizedBox(height: 7),
+                    SkeletonLine(width: 140, height: 11),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              SkeletonBox(
+                width: 62,
+                height: 30,
+                radius: 14,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserCard({
+    required BuildContext context,
+    required UserVO user,
+    required bool isFriend,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.7)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: isFriend ? null : () => _showAddFriendDialog(user),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                AvatarWidget(
+                  url: user.avatar,
+                  name: user.nickName,
+                  size: 52,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.nickName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'add_friend_username'.tr(args: [user.userName]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.outline,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      if ((user.phonenumber ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Text(
+                            'add_friend_phone'.tr(args: [user.phonenumber!]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.outline,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                isFriend
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'add_friend_already_friend'.tr(),
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colorScheme.outline,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    : FilledButton.tonal(
+                        onPressed: () => _showAddFriendDialog(user),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: const Size(60, 32),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(
+                          'add_friend_add_btn'.tr(),
+                          style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 执行搜索
   void _performSearch(String keyword) async {
     if (keyword.trim().isEmpty) return;
@@ -493,6 +426,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     try {
       await ref.read(userSearchServiceProvider.notifier).searchUsers(keyword);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('add_friend_search_failed'.tr()),
@@ -505,9 +439,11 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isSearching = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
     }
   }
 
@@ -761,6 +697,8 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           .read(userSearchServiceProvider.notifier)
           .sendContactRequest(user.userId, _remarkController.text);
 
+      if (!mounted) return;
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -787,6 +725,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('add_friend_send_failed'.tr()),
@@ -799,9 +738,11 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isSending = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
     }
   }
 }

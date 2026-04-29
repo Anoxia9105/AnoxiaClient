@@ -28,6 +28,11 @@ class API {
   static const String contactRequestCreate = '/contact/request';
   static const String contactUserDetail = '/contact/userDetail';
 
+  // ======================== 个人中心接口 ========================
+  static const String userProfileUpdate = '/system/user/profile';
+  static const String userProfileUpdatePassword =
+      '/system/user/profile/updatePwd';
+
   // ======================== 聊天室接口 ========================
   static const String chatRooms = '/chat/rooms';
   static const String chatCreatePrivate = '/chat/createPrivate';

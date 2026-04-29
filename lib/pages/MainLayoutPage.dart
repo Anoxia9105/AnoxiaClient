@@ -45,6 +45,7 @@ class MainLayoutPage extends ConsumerWidget {
     //外层Scaffold
     return AppScaffold(
       title: layout.items[layout.currentIndex].name,
+      showDesktopHeaderEnhancements: true,
       body: Row(
         children: [
           //如果是桌面或平板，显示侧边栏

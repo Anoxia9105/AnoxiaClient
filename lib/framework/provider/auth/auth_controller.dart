@@ -151,6 +151,15 @@ class AuthController extends _$AuthController {
     return UserInfo.fromJson(res.data["data"]);
   }
 
+  /// 刷新当前登录用户信息（用于资料更新后同步 UI）
+  Future<void> refreshUserInfo() async {
+    final current = state.value;
+    if (current == null) return;
+
+    final next = await _fetchUserInfo();
+    state = AsyncData(next);
+  }
+
   /// logout mutation action
   static final logoutMutation = Mutation<void>();
 

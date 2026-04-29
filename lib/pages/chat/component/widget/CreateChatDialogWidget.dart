@@ -21,6 +21,7 @@ class _CreateChatDialogWidgetState
     extends ConsumerState<CreateChatDialogWidget> {
   final _nameController = TextEditingController();
   bool _isNameEmpty = true;
+  bool _showNameError = false;
 
   @override
   void initState() {
@@ -45,11 +46,14 @@ class _CreateChatDialogWidgetState
     final selectedIds = ref.watch(selectedContactIdsProvider);
     // 监听创建状态
     final createStatus = ref.watch(createGroupControllerProvider);
-    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      backgroundColor: colorScheme.surface,
       child: SizedBox(
         width: 900, // 稍微调宽
         height: 650,
@@ -59,13 +63,46 @@ class _CreateChatDialogWidgetState
             _buildAppBar(context, selectedIds, createStatus),
             // 2. 群名输入区
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
               child: TextField(
                 controller: _nameController,
+                style: textTheme.bodyLarge,
+                onTap: () {
+                  if (_showNameError) {
+                    setState(() => _showNameError = false);
+                  }
+                },
                 decoration: InputDecoration(
                   hintText: "create_group_name_hint".tr(),
-                  errorText: _isNameEmpty ? "create_group_name_empty".tr() : null,
-                  prefixIcon: const Icon(Icons.edit_note),
+                  errorText: (_showNameError && _isNameEmpty)
+                      ? "create_group_name_empty".tr()
+                      : null,
+                  helperText: ' ',
+                  helperStyle: const TextStyle(height: 0.8),
+                  isDense: true,
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 13,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.edit_note_rounded,
+                    color: colorScheme.primary,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.2,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -73,10 +110,31 @@ class _CreateChatDialogWidgetState
               child: Row(
                 children: [
                   // 左侧：联系人列表
-                  Expanded(flex: 3, child: _buildContactPicker(ref)),
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 10, 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+                            ),
+                          ),
+                          child: _buildContactPicker(ref),
+                        ),
+                      ),
+                    ),
+                  ),
 
                   // 分割线
-                  const VerticalDivider(width: 1, thickness: 1),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
 
                   // 右侧：已选预览
                   Expanded(
@@ -100,12 +158,20 @@ class _CreateChatDialogWidgetState
     final isLoading = createStatus is AsyncLoading;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55),
+          ),
+        ),
+      ),
       child: Row(
         children: [
           Text(
             "create_group_title".tr(),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const Spacer(),
           TextButton(
@@ -120,6 +186,12 @@ class _CreateChatDialogWidgetState
                     _nameController.text.isEmpty)
                 ? null
                 : _submit,
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
             child: isLoading
                 ? const SizedBox(
                     width: 20,
@@ -138,6 +210,11 @@ class _CreateChatDialogWidgetState
 
   void _submit() {
     final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _showNameError = true);
+      return;
+    }
+
     ref
         .read(createGroupControllerProvider.notifier)
         .createGroup(
@@ -177,8 +254,15 @@ class _CreateChatDialogWidgetState
     Set<int> selectedIds,
   ) {
     final contactMap = ref.watch(contactListServiceProvider).value ?? {};
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+      margin: const EdgeInsets.fromLTRB(10, 8, 16, 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -186,29 +270,48 @@ class _CreateChatDialogWidgetState
             padding: const EdgeInsets.all(16.0),
             child: Text(
               "create_group_selected_count".tr(args: [selectedIds.length.toString()]),
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
-            child: ListView(
-              children: selectedIds
-                  .map(
-                    (id) => ListTile(
-                      leading: AvatarWidget(
-                        url: contactMap[id]?.avatar,
-                        name: contactMap[id]?.nickName,
-                      ),
-                      title: Text('${contactMap[id]?.nickName}'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        onPressed: () => ref
-                            .read(selectedContactIdsProvider.notifier)
-                            .remove(id),
+            child: selectedIds.isEmpty
+                ? Center(
+                    child: Text(
+                      'chat_no_conversations'.tr(),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.outline,
                       ),
                     ),
                   )
-                  .toList(),
-            ),
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    separatorBuilder: (context, index) => const SizedBox(height: 4),
+                    itemCount: selectedIds.length,
+                    itemBuilder: (context, index) {
+                      final id = selectedIds.elementAt(index);
+                      return ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        tileColor: colorScheme.surface,
+                        leading: AvatarWidget(
+                          url: contactMap[id]?.avatar,
+                          name: contactMap[id]?.nickName,
+                        ),
+                        title: Text(
+                          '${contactMap[id]?.nickName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          onPressed: () => ref
+                              .read(selectedContactIdsProvider.notifier)
+                              .remove(id),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -222,32 +325,27 @@ class _CreateChatDialogWidgetState
         final selectedIds = ref.watch(selectedContactIdsProvider);
         final checked = selectedIds.contains(vo.contactId);
 
-        return CheckboxListTile(
-          value: checked,
-          onChanged: (_) => ref
-              .read(selectedContactIdsProvider.notifier)
-              .toggle(vo.contactId!),
-          title: Text(vo.nickName ?? ''),
-          secondary: AvatarWidget(url: vo.avatar, name: vo.nickName),
-          controlAffinity: ListTileControlAffinity.leading,
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+          child: CheckboxListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+            value: checked,
+            onChanged: (_) => ref
+                .read(selectedContactIdsProvider.notifier)
+                .toggle(vo.contactId!),
+            title: Text(
+              vo.nickName ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            secondary: AvatarWidget(url: vo.avatar, name: vo.nickName),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
         );
       },
     );
   }
 
-  void _handleCreateGroup(WidgetRef ref) async {
-    final ids = ref.read(selectedContactIdsProvider);
-
-    // // 调用 API
-    // await ref.read(groupControllerProvider.notifier).createGroup(ids);
-    //
-    // // 处理结果
-    // final state = ref.read(groupControllerProvider);
-    // if (!state.hasError) {
-    //   // 成功后关闭对话框并重置状态
-    //   ref.read(selectedContactIdsProvider.notifier).clear();
-    //   Navigator.pop(context);
-    //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('group_chat_created_successfully'.tr())));
-    // }
-  }
 }
