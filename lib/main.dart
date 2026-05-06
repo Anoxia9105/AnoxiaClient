@@ -8,6 +8,7 @@ import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/chat/call/CallWindowPage.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -335,13 +336,44 @@ Widget _buildErrorPage(String message) {
 Future<AppUpdateInfo?> _checkUpdate() async {
   try {
     final packageInfo = await PackageInfo.fromPlatform();
-    final currentVersion = Version.parse(packageInfo.version);
+    final currentVersionText = packageInfo.version;
+    final currentVersion = Version.parse(currentVersionText);
 
-    final response = await DioClient().get(API.updateUrl);
-    final remoteData = AppUpdateInfo.fromJson(response.data);
+    String clientType = 'all';
+    if (DeviceUtil.isRealWeb()) {
+      clientType = 'web';
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      clientType = 'android';
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      clientType = 'ios';
+    } else if (defaultTargetPlatform == TargetPlatform.windows) {
+      clientType = 'windows';
+    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
+      clientType = 'macos';
+    } else if (defaultTargetPlatform == TargetPlatform.linux) {
+      clientType = 'linux';
+    }
+
+    final response = await DioClient().get(
+      API.appUpdateLatest,
+      auth: false,
+      queryParameters: {
+        'clientType': clientType,
+        'currentVersion': currentVersionText,
+      },
+    );
+    final payload = response.data;
+    if (payload is! Map || payload['code'] != 200 || payload['data'] is! Map) {
+      return null;
+    }
+
+    final remoteData = AppUpdateInfo.fromJson(payload['data']);
+    if (remoteData.latestVersion.isEmpty || remoteData.downloadUrl.isEmpty) {
+      return null;
+    }
     final latestVersion = Version.parse(remoteData.latestVersion);
 
-    if (latestVersion > currentVersion) {
+    if (latestVersion > currentVersion || remoteData.hasUpdate) {
       return remoteData;
     }
   } catch (e) {

@@ -11,8 +11,8 @@ class API {
   static const String wsBaseUrl = 'wss://chat.anoxia.cn/chat?token=';
   static const String wsRoomBaseUrl = 'wss://live.anoxia.cn';
 
-  //更新地址
-  static const String updateUrl = 'http://8.137.14.21/version.json';
+  // 更新检查接口
+  static const String appUpdateLatest = '/app/update/latest';
 
   // ======================== 认证接口 ========================
   static const String login = '/login';

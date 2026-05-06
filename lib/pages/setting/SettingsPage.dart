@@ -1,12 +1,12 @@
-import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../common/utils/DeviceUtil.dart';
 import '../../framework/theme/AppTheme.dart';
@@ -25,6 +25,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   final _feedbackContentController = TextEditingController();
   final _feedbackContactController = TextEditingController();
   bool _submittingFeedback = false;
+  bool _checkingUpdate = false;
+  AppUpdateInfo? _updateInfo;
+  String? _updateError;
 
   @override
   void dispose() {
@@ -34,27 +37,75 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     super.dispose();
   }
 
+  Future<void> _checkUpdate() async {
+    if (_checkingUpdate) return;
+    setState(() {
+      _checkingUpdate = true;
+      _updateError = null;
+    });
+
+    try {
+      final currentVersion = await ref.read(appVersionProvider.future);
+      final info = await ref
+          .read(settingsRepositoryProvider)
+          .checkForUpdate(
+            currentVersion: currentVersion,
+            clientType: resolveUpdateClientType(),
+          );
+      if (!mounted) return;
+      setState(() => _updateInfo = info);
+      if (info.hasUpdate) {
+        Toast.showToast('update_new_version'.tr(), type: ToastType.success);
+      } else {
+        Toast.showToast('settings_update_no_update'.tr(), type: ToastType.info);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _updateError = 'settings_update_check_failed'.tr());
+      Toast.showToast(
+        'settings_update_check_failed'.tr(),
+        type: ToastType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _checkingUpdate = false);
+      }
+    }
+  }
+
+  Future<void> _openDownloadUrl(String url) async {
+    final ok = await launchUrlString(url, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      Toast.showToast(
+        'settings_update_open_download_failed'.tr(),
+        type: ToastType.error,
+      );
+    }
+  }
+
   Future<void> _submitFeedback() async {
     if (!_feedbackFormKey.currentState!.validate()) return;
     if (_submittingFeedback) return;
 
     setState(() => _submittingFeedback = true);
     try {
-      final res = await DioClient().post(
-        API.feedbackSubmit,
-        data: {
-          'title': _feedbackTitleController.text.trim(),
-          'content': _feedbackContentController.text.trim(),
-          'contact': _feedbackContactController.text.trim(),
-          'clientType': DeviceUtil.isMobile(context)
-              ? 'mobile'
-              : (DeviceUtil.isDesktop(context) ? 'desktop' : 'tablet'),
-          'appVersion': '1.0.0',
-        },
-      );
+      final appVersion = ref
+          .read(appVersionProvider)
+          .maybeWhen(data: (value) => value, orElse: () => 'unknown');
+      final clientType = DeviceUtil.isMobile(context)
+          ? 'mobile'
+          : (DeviceUtil.isDesktop(context) ? 'desktop' : 'tablet');
+      final result = await ref
+          .read(settingsRepositoryProvider)
+          .submitFeedback(
+            title: _feedbackTitleController.text.trim(),
+            content: _feedbackContentController.text.trim(),
+            contact: _feedbackContactController.text.trim(),
+            clientType: clientType,
+            appVersion: appVersion,
+          );
 
-      final ok = res.data is Map && res.data['code'] == 200;
-      if (ok) {
+      if (result.success) {
         _feedbackTitleController.clear();
         _feedbackContentController.clear();
         _feedbackContactController.clear();
@@ -64,9 +115,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
       } else {
         Toast.showToast(
-          (res.data is Map ? (res.data['msg']?.toString() ?? '') : '')
-                  .isNotEmpty
-              ? res.data['msg'].toString()
+          (result.message ?? '').isNotEmpty
+              ? result.message!
               : 'settings_feedback_submit_failed'.tr(),
           type: ToastType.error,
         );
@@ -85,6 +135,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final themeIndex = ref.watch(themeIndexProvider);
     final callWin = ref.read(callWindowControllerProvider);
+    final appVersionAsync = ref.watch(appVersionProvider);
+    final appVersionText = appVersionAsync.maybeWhen(
+      data: (value) => value,
+      orElse: () => '--',
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text("settings_page_title".tr())),
@@ -257,8 +312,119 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       size: 18,
                     ),
                     title: Text('settings_app_version'.tr()),
-                    trailing: Text("1.0.0", style: TextStyle(fontSize: 14)),
+                    trailing: Text(
+                      appVersionText,
+                      style: const TextStyle(fontSize: 14),
+                    ),
                   ),
+                  ListTile(
+                    dense: true,
+                    leading: HugeIcon(
+                      icon: HugeIcons.strokeRoundedCloudSavingDone01,
+                      size: 18,
+                    ),
+                    title: Text('settings_update_check'.tr()),
+                    subtitle: _updateInfo?.latestVersion.isNotEmpty == true
+                        ? Text(
+                            '${'settings_update_latest'.tr()}: ${_updateInfo!.latestVersion}',
+                            style: const TextStyle(fontSize: 12),
+                          )
+                        : null,
+                    trailing: FilledButton.tonalIcon(
+                      onPressed: _checkingUpdate ? null : _checkUpdate,
+                      icon: _checkingUpdate
+                          ? SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            )
+                          : const Icon(Icons.refresh, size: 16),
+                      label: Text('settings_update_check'.tr()),
+                    ),
+                  ),
+                  if (_updateError != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      child: Text(
+                        _updateError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  if (_updateInfo != null)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: .04)
+                            : Colors.black.withValues(alpha: .03),
+                        border: Border.all(
+                          color: _updateInfo!.hasUpdate
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: .45)
+                              : Theme.of(
+                                  context,
+                                ).dividerColor.withValues(alpha: .25),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _updateInfo!.hasUpdate
+                                ? '${'update_new_version'.tr()}: ${_updateInfo!.latestVersion}'
+                                : 'settings_update_no_update'.tr(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: _updateInfo!.hasUpdate
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _updateInfo!.releaseNotes.isNotEmpty
+                                ? _updateInfo!.releaseNotes
+                                : 'update_default_notes'.tr(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              height: 1.45,
+                            ),
+                          ),
+                          if (_updateInfo!.hasUpdate &&
+                              _updateInfo!.downloadUrl.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: () =>
+                                    _openDownloadUrl(_updateInfo!.downloadUrl),
+                                icon: const Icon(
+                                  Icons.download_rounded,
+                                  size: 18,
+                                ),
+                                label: Text('update_now'.tr()),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
