@@ -4,6 +4,7 @@ import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -81,6 +82,9 @@ class SystemEventService extends _$SystemEventService {
     // 3. 刷新通讯录（补偿断线期间的在线状态变化）
     ref.read(contactListServiceProvider.notifier).refresh();
 
+    // 4. 刷新好友申请列表（补偿断线期间可能错过的新申请）
+    ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
+
     log.info("✅ 重连数据补偿完成");
   }
 
@@ -131,6 +135,10 @@ class SystemEventService extends _$SystemEventService {
         break;
       case SystemEventType.contactUpdated:
         ref.read(contactListServiceProvider.notifier).refresh();
+        ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
+        break;
+      case SystemEventType.contactRequest:
+        ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
         break;
     }
   }

@@ -32,7 +32,8 @@ enum SystemEventType {
   messageRecall(11),
   callStarted(12),
   callEnded(13),
-  contactUpdated(14);
+  contactUpdated(14),
+  contactRequest(15);
 
   final int code;
   const SystemEventType(this.code);

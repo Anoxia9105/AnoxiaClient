@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../framework/provider/contact/contact_requests_controller.dart';
 import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/setting/update_check_provider.dart';
 import '../VibratingBadge.dart';
@@ -14,7 +15,9 @@ class MobileBottomBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final layout = ref.watch(layoutControllerProvider);
     final hasUpdate = ref.watch(hasAppUpdateProvider);
+    final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
     final settingsIndex = layout.items.length - 1;
+    const contactsIndex = 1;
 
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
@@ -33,7 +36,19 @@ class MobileBottomBar extends ConsumerWidget {
           strokeWidth: 1.5,
         );
 
-        if (idx == settingsIndex && hasUpdate) {
+        if (idx == contactsIndex && pendingRequests > 0) {
+          iconWidget = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              iconWidget,
+              Positioned(
+                right: -8,
+                top: -6,
+                child: VibratingBadge(count: pendingRequests),
+              ),
+            ],
+          );
+        } else if (idx == settingsIndex && hasUpdate) {
           iconWidget = Stack(
             clipBehavior: Clip.none,
             children: [

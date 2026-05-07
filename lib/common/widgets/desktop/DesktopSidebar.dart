@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -20,6 +21,7 @@ class DesktopSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    context.locale; // 监听 locale 变化以触发重建
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
@@ -193,8 +195,11 @@ class SidebarButton extends ConsumerWidget {
 
     final unreadCount = ref.watch(totalUnreadCountProvider);
     final hasUpdate = ref.watch(hasAppUpdateProvider);
+    final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
     // settings 是最后一个 item（index = items.length - 1）
     final settingsIndex = layout.items.length - 1;
+    // contacts 是 index 1
+    const contactsIndex = 1;
     return SizedBox(
       width: double.infinity,
       child: Material(
@@ -223,6 +228,13 @@ class SidebarButton extends ConsumerWidget {
                         right: -15,
                         top: -8,
                         child: VibratingBadge(count: unreadCount),
+                      ),
+
+                    if (index == contactsIndex && pendingRequests > 0)
+                      Positioned(
+                        right: -8,
+                        top: -6,
+                        child: VibratingBadge(count: pendingRequests),
                       ),
 
                     if (index == settingsIndex && hasUpdate)
