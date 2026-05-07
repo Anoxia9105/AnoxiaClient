@@ -3,7 +3,8 @@ class AppUpdateInfo {
   final String latestVersion;
   final String downloadUrl;
   final String releaseNotes;
-  final bool forceUpdate; // 是否强制更新
+  final bool forceUpdate;
+  final String minSupportVersion; // 最低支持版本，低于此版本强制更新
 
   AppUpdateInfo({
     this.hasUpdate = false,
@@ -11,6 +12,7 @@ class AppUpdateInfo {
     required this.downloadUrl,
     required this.releaseNotes,
     this.forceUpdate = false,
+    this.minSupportVersion = '',
   });
 
   factory AppUpdateInfo.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,10 @@ class AppUpdateInfo {
       releaseNotes: (json['releaseNotes'] ?? json['release_notes'] ?? '')
           .toString(),
       forceUpdate: forceRaw == true || forceRaw == 1,
+      minSupportVersion:
+          (json['minSupportVersion'] ?? json['min_support_version'] ?? '')
+              .toString(),
     );
   }
 }
+

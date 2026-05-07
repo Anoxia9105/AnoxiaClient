@@ -1,14 +1,17 @@
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
+import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
+import 'package:anoxia/pages/update/UpdatePage.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../common/utils/DeviceUtil.dart';
+import '../../framework/provider/core/AppUpdateInfo.dart' as core;
 import '../../framework/theme/AppTheme.dart';
 import 'SettingItemCard.dart';
 
@@ -54,6 +57,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           );
       if (!mounted) return;
       setState(() => _updateInfo = info);
+
+      // 同步到全局 badge 状态（带 currentVersion 以便 minSupportVersion 判断）
+      ref
+          .read(appUpdateCheckerProvider.notifier)
+          .syncResult(info, currentVersion: currentVersion);
+
       if (info.hasUpdate) {
         Toast.showToast('update_new_version'.tr(), type: ToastType.success);
       } else {
@@ -73,14 +82,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  Future<void> _openDownloadUrl(String url) async {
-    final ok = await launchUrlString(url, mode: LaunchMode.externalApplication);
-    if (!ok) {
-      Toast.showToast(
-        'settings_update_open_download_failed'.tr(),
-        type: ToastType.error,
-      );
-    }
+  /// 将 settings_provider 的 AppUpdateInfo 转换为 core 的 AppUpdateInfo（UpdatePage 使用）
+  core.AppUpdateInfo _toCoreUpdateInfo(AppUpdateInfo info) {
+    return core.AppUpdateInfo(
+      hasUpdate: info.hasUpdate,
+      latestVersion: info.latestVersion,
+      downloadUrl: info.downloadUrl,
+      releaseNotes: info.releaseNotes,
+      forceUpdate: info.forceUpdate,
+      minSupportVersion: info.minSupportVersion,
+    );
+  }
+
+  void _navigateToUpdatePage(AppUpdateInfo info) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UpdatePage(updateInfo: _toCoreUpdateInfo(info)),
+      ),
+    );
   }
 
   Future<void> _submitFeedback() async {
@@ -323,7 +342,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       icon: HugeIcons.strokeRoundedCloudSavingDone01,
                       size: 18,
                     ),
-                    title: Text('settings_update_check'.tr()),
+                    title: Row(
+                      children: [
+                        Text('settings_update_check'.tr()),
+                        if (ref.watch(hasAppUpdateProvider)) ...[
+                          const SizedBox(width: 8),
+                          VibratingBadge(isDot: true),
+                        ],
+                      ],
+                    ),
                     subtitle: _updateInfo?.latestVersion.isNotEmpty == true
                         ? Text(
                             '${'settings_update_latest'.tr()}: ${_updateInfo!.latestVersion}',
@@ -413,7 +440,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               width: double.infinity,
                               child: FilledButton.icon(
                                 onPressed: () =>
-                                    _openDownloadUrl(_updateInfo!.downloadUrl),
+                                    _navigateToUpdatePage(_updateInfo!),
                                 icon: const Icon(
                                   Icons.download_rounded,
                                   size: 18,

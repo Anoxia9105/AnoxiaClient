@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';
 import '../chat/room/room_list_service.dart';
@@ -60,6 +61,8 @@ class AppInitializer extends _$AppInitializer {
       ref.read(chatMessagesProvider);
       //触发系统事件
       ref.read(systemEventServiceProvider);
+      // 触发后台版本检查（keepAlive，延迟 3s 后自动发起）
+      ref.read(appUpdateCheckerProvider);
     }
   }
 

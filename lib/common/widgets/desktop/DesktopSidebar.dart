@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,6 @@ class DesktopSidebar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
-    final local = context.locale;
     return SizedBox(
       width: 70,
       child: Column(
@@ -192,6 +192,9 @@ class SidebarButton extends ConsumerWidget {
     final bool isActive = layout.currentIndex == index;
 
     final unreadCount = ref.watch(totalUnreadCountProvider);
+    final hasUpdate = ref.watch(hasAppUpdateProvider);
+    // settings 是最后一个 item（index = items.length - 1）
+    final settingsIndex = layout.items.length - 1;
     return SizedBox(
       width: double.infinity,
       child: Material(
@@ -220,6 +223,13 @@ class SidebarButton extends ConsumerWidget {
                         right: -15,
                         top: -8,
                         child: VibratingBadge(count: unreadCount),
+                      ),
+
+                    if (index == settingsIndex && hasUpdate)
+                      Positioned(
+                        right: -8,
+                        top: -6,
+                        child: VibratingBadge(isDot: true),
                       ),
                   ],
                 ),
