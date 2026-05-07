@@ -90,17 +90,21 @@ class ImageMessageStrategy extends MessageRenderStrategy {
     );
   }
 
-  // 提取占位图组件，保持界面整洁
+  // 提取占位图组件，骨架屏静态样式
   Widget _buildPlaceholder(double width, double height) {
     return Container(
       width: width,
       height: height,
-      color: Colors.grey[200],
-      child: const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.grey[200]!,
+            Colors.grey[100]!,
+            Colors.grey[200]!,
+          ],
         ),
       ),
     );

@@ -295,83 +295,149 @@ class _FileMessageListState extends State<_FileMessageList> {
     required bool isDownloading,
     required bool isDownloaded,
   }) {
-    return InkWell(
-      onTap: () => _handleFileTap(context, file),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.2),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _handleFileTap(context, file),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(10),
           ),
-        ),
-        child: Row(
-          children: [
-            FileUtil.buildFileIcon(file.type ?? ''),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    file.name ?? 'file_unknown'.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    FileUtil.formatFileSize(file.size ?? 0),
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  if (isDownloading) ...[
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(height: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 文件图标
+              FileUtil.buildFileIcon(file.type ?? ''),
+              const SizedBox(width: 10),
+
+              // 文件信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      'file_downloading'.tr(args: [((progress ?? 0) * 100).toInt().toString()]),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      file.name ?? 'file_unknown'.tr(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
                       ),
                     ),
-                  ] else if (isDownloaded) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 3),
+                    // 文件大小 + 状态行
                     Row(
                       children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'file_downloaded_open_location'.tr(),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                        Text(
+                          FileUtil.formatFileSize(file.size ?? 0),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 11,
                           ),
                         ),
+                        if (isDownloaded) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 12,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            'file_downloaded_open_location'.tr(),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
+
+                    // 下载进度条
+                    if (isDownloading) ...[
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 3,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'file_downloading'.tr(args: [((progress ?? 0) * 100).toInt().toString()]),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(width: 8),
+
+              // 右侧操作按钮
+              _buildTrailingIcon(context, isDownloading, isDownloaded, progress),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTrailingIcon(
+    BuildContext context,
+    bool isDownloading,
+    bool isDownloaded,
+    double? progress,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (isDownloading) {
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: progress,
+          color: colorScheme.primary,
+        ),
+      );
+    }
+
+    if (isDownloaded) {
+      return Icon(
+        Icons.folder_open_rounded,
+        size: 18,
+        color: colorScheme.primary.withValues(alpha: 0.8),
+      );
+    }
+
+    return Icon(
+      Icons.download_rounded,
+      size: 18,
+      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
     );
   }
 }

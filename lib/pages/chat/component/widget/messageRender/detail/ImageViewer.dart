@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -158,7 +159,10 @@ class _ImageViewerState extends State<ImageViewer> {
                     scaleStateController: _scaleStateCtrl,
                     onTapUp: (context, details, value) =>
                         Navigator.pop(context),
-                    imageProvider: NetworkImage(widget.attachment.url!),
+                    imageProvider: CachedNetworkImageProvider(
+                      widget.attachment.url!,
+                    ),
+                    filterQuality: FilterQuality.high,
                     backgroundDecoration:
                         const BoxDecoration(color: Colors.black),
                     initialScale: PhotoViewComputedScale.contained,
