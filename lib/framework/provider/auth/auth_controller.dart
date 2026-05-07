@@ -72,6 +72,12 @@ class AuthController extends _$AuthController {
       
       return await _fetchUserInfo();
     });
+
+    // 登录成功后重新触发 App 初始化（_preloadData 在登出时不会为新 session 重跑）
+    if (state is AsyncData && state.value != null) {
+      log.info("[AuthController] 登录成功，重新触发 App 初始化序列...");
+      ref.invalidate(appInitializerProvider);
+    }
   }
 
   /// 手动登出：调用后会把 state 设为 AsyncData(null)
@@ -131,9 +137,11 @@ class AuthController extends _$AuthController {
       // 5. 切换认证态，触发路由回到登录页
       state = const AsyncData(null);
 
-      // 6. 第二阶段：在未登录态下再重置 WS 和初始化流程，避免旧会话复活。
+      // 6. 第二阶段：在未登录态下再重置 WS，避免旧会话复活。
+      //    注意：不再 invalidate appInitializerProvider，
+      //    它的重新初始化由 login() 成功后主动触发，
+      //    避免此处用 null 用户 build 留下 AsyncData(false) 脏状态。
       ref.invalidate(wsControllerProvider);
-      ref.invalidate(appInitializerProvider);
 
       log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {

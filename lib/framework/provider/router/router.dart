@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'dart:convert';
-
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/pages/chat/component/widget/messageRender/detail/ImageViewer.dart';
 import 'package:anoxia/pages/contact/AddFriendPage.dart';
@@ -57,6 +55,13 @@ GoRouter router(Ref ref) {
       }
 
       if (!initStatus.hasValue) {
+        // 已认证用户在 re-init（重新登录后重跑初始化）期间，不打回 Splash
+        // 直接放行到首页，让业务 provider 在后台完成加载
+        final isAuthenticated =
+            authStatus is AsyncData && authStatus.value != null;
+        if (isAuthenticated) {
+          return isLogin ? const HomeRoute().location : null;
+        }
         return isSplash ? null : const SplashRoute().location;
       }
 
