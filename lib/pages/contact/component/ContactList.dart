@@ -3,7 +3,6 @@ import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
-import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

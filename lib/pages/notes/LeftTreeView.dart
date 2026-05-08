@@ -44,6 +44,7 @@ class _LeftTreeViewState extends ConsumerState<LeftTreeView> {
     return result;
   }
 
+  // ignore: unused_element
   bool _isDescendant(NoteTreeNode parent, NoteTreeNode potentialChild) {
     if (parent.id == potentialChild.id) return true;
     for (var child in parent.children) {
@@ -352,35 +353,6 @@ class _LeftTreeViewState extends ConsumerState<LeftTreeView> {
     );
   }
 
-  Future<String?> _showRenameDialog(BuildContext context, String current) {
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        final c = TextEditingController(text: current);
-        return AlertDialog(
-          title: const Text('重命名'),
-          content: TextField(
-            controller: c,
-            autofocus: true,
-            onSubmitted: (_) => Navigator.of(ctx).pop(c.text),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消', style: TextStyle(color: Colors.grey)),
-            ),
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.indigo),
-              ),
-              onPressed: () => Navigator.of(ctx).pop(c.text),
-              child: const Text('保存'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 // ── 单个节点 Tile ────────────────────────────────────────────
@@ -504,8 +476,8 @@ class _TreeNodeTile extends StatelessWidget {
     return TreeDragTarget<NoteTreeNode>(
       node: node,
       onNodeAccepted: (details) {
-        final dragged = details.draggedNode as NoteTreeNode;
-        final target = details.targetNode as NoteTreeNode;
+        final dragged = details.draggedNode;
+        final target = details.targetNode;
         if (_isDescendant(dragged, target)) return;
         onNodeMoved(dragged, target.isFolder ? target : target.parent);
       },

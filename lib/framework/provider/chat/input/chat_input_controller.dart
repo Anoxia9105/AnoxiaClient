@@ -287,7 +287,7 @@ class ChatInputController extends _$ChatInputController {
     final room = ref.read(activeRoomProvider)!;
     final String clientMsgId = const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
-    if (room == null || user == null) {
+    if (user == null) {
       log.error("发送失败: 房间或用户信息缺失");
       return;
     }

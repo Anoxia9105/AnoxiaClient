@@ -154,8 +154,7 @@ class _MyQuillToolbarState extends State<MyQuillToolbar> {
               iconSize: 12,
               iconTheme: quillIconTheme,
               customOnPressedCallback: (ctl, isBg) async {
-                Function? onCancel;
-                onCancel = Toast.showWidget(context, child: Text("Colors"));
+                Toast.showWidget(context, child: Text("Colors"));
               },
             ),
             controller: controller,
@@ -169,8 +168,7 @@ class _MyQuillToolbarState extends State<MyQuillToolbar> {
               iconSize: 12,
               iconTheme: quillIconTheme,
               customOnPressedCallback: (ctl, isBg) async {
-                Function? onCancel;
-                onCancel = Toast.showWidget(
+              Toast.showWidget(
                   context,
                   child: Text("Background Colors"),
                 );
