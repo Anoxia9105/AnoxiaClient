@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
@@ -42,6 +43,38 @@ final ProviderContainer globalContainer = ProviderContainer(
   // ],
 );
 
+const String _kBluetoothPermissionRequestedKey =
+    'bluetooth_permission_requested_v1';
+
+Future<void> _checkBluetoothPermissions() async {
+  // 仅 Android 需要在运行时申请蓝牙权限
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+
+  final requested =
+      SPUtil.instance.get<bool>(_kBluetoothPermissionRequestedKey) ?? false;
+  if (requested) return;
+
+  bool hasPermanentlyDenied = false;
+
+  var status = await Permission.bluetooth.request();
+  if (status.isPermanentlyDenied) {
+    log.warning('Bluetooth Permission disabled');
+    hasPermanentlyDenied = true;
+  }
+
+  status = await Permission.bluetoothConnect.request();
+  if (status.isPermanentlyDenied) {
+    log.warning('Bluetooth Connect Permission disabled');
+    hasPermanentlyDenied = true;
+  }
+
+  await SPUtil.instance.set(_kBluetoothPermissionRequestedKey, true);
+
+  if (hasPermanentlyDenied) {
+    await openAppSettings();
+  }
+}
+
 /// 应用入口
 Future<void> main(List<String> args) async {
   log.info("程序启动参数：$args");
@@ -69,6 +102,10 @@ Future<void> main(List<String> args) async {
       SPUtil.init(), // 本地存储初始化
       Hive.initFlutter(), // 初始化 Hive
     ]);
+
+    // Android 蓝牙耳机权限（首次启动会触发系统弹窗）
+    await _checkBluetoothPermissions();
+
     Hive.registerAdapter(NoteEntityAdapter());
 
     // 检查更新

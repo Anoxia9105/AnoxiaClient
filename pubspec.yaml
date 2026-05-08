@@ -36,6 +36,8 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   #网络检测
   connectivity_plus: ^7.0.0
+  # 权限申请（蓝牙耳机连接所需）
+  permission_handler: ^11.3.1
   #国际化 多语言设置
   easy_localization: ^3.0.8
   #图标
