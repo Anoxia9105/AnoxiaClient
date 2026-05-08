@@ -315,7 +315,8 @@ class ChatInputController extends _$ChatInputController {
         "clientMsgId": clientMsgId,
         "roomId": room.roomId,
         "targetId": room.peerId,
-        "type": type.name,
+        // 服务端 Java 枚举按名称反序列化，需使用大写（如 TEXT / IMAGE）
+        "type": type.name.toUpperCase(),
         "payload": payload.toJson(),
         "attachments": attachments?.map((e) => e.toJson()).toList() ?? [],
       },

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';
@@ -21,6 +23,9 @@ class WsController extends _$WsController {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   bool _reconnectEnabled = true;
+  int? _lastAckErrorCode;
+  String? _lastAckErrorMessage;
+  DateTime? _lastAckErrorAt;
 
   // 使用延迟初始化，确保每次 build 时或是需要时它是新鲜的
   late final StreamController<PacketFrame<IPacket>> _messageController;
@@ -141,6 +146,12 @@ class WsController extends _$WsController {
 
     try {
       final Map<String, dynamic> jsonMap = jsonDecode(message as String);
+
+      // 优先处理 ACK 错误包：{code, message, retryable}
+      if (_handleAckError(jsonMap)) {
+        return;
+      }
+
       final topic = PacketType.from(jsonMap['topic']);
       final rawData = jsonMap['data'] as Map<String, dynamic>?;
 
@@ -155,6 +166,52 @@ class WsController extends _$WsController {
       }
     } catch (e) {
       log.error("WS 消息解析异常", e);
+    }
+  }
+
+  bool _handleAckError(Map<String, dynamic> jsonMap) {
+    if (jsonMap.containsKey('topic')) return false;
+    if (!jsonMap.containsKey('code')) return false;
+
+    final int? code = int.tryParse(jsonMap['code']?.toString() ?? '');
+    final String rawMessage = (jsonMap['message']?.toString() ?? '').trim();
+
+    // code=0 代表成功 ACK，静默即可
+    if (code == null || code == 0) return true;
+
+    final now = DateTime.now();
+    final bool duplicated = _lastAckErrorCode == code &&
+        _lastAckErrorMessage == rawMessage &&
+        _lastAckErrorAt != null &&
+        now.difference(_lastAckErrorAt!) < const Duration(seconds: 2);
+
+    if (!duplicated) {
+      _lastAckErrorCode = code;
+      _lastAckErrorMessage = rawMessage;
+      _lastAckErrorAt = now;
+      Toast.showToast(
+        _resolveAckErrorMessage(code, rawMessage),
+        type: ToastType.error,
+      );
+    }
+
+    log.warning('[WsController] ACK业务失败: code=$code, message=$rawMessage');
+    return true;
+  }
+
+  String _resolveAckErrorMessage(int code, String serverMessage) {
+    switch (code) {
+      case 2001:
+        return 'chat_send_failed_not_friend'.tr();
+      case 2002:
+        return 'chat_send_failed_blocked'.tr();
+      case 2003:
+        return 'chat_send_failed_deleted'.tr();
+      default:
+        if (serverMessage.isNotEmpty) {
+          return 'chat_send_failed_with_reason'.tr(args: [serverMessage]);
+        }
+        return 'chat_send_failed_generic'.tr();
     }
   }
 

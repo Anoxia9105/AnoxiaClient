@@ -60,6 +60,7 @@ class ChatMessages extends _$ChatMessages {
       attachments: msg.attachments,
       extra: msg.extra,
       messageStatus: msg.state,
+      deliveryStatus: msg.status,
       timestamp: msg.timestamp.toInt(),
       seq: msg.seq.toInt(),
     );
