@@ -27,6 +27,8 @@ class API {
   static const String contactSearch = '/contact/search';
   static const String contactRequestCreate = '/contact/request';
   static const String contactUserDetail = '/contact/userDetail';
+  static const String contactRemarkUpdate = '/contact/remark';
+  static const String contactDelete = '/contact/delete';
 
   // ======================== 个人中心接口 ========================
   static const String userProfileUpdate = '/system/user/profile';

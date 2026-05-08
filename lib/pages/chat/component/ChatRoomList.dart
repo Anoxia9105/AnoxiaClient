@@ -324,6 +324,28 @@ class _RoomItem extends ConsumerWidget {
     final isSelected = activeId == room.roomId;
     final isSingle = room.roomType == 0;
 
+    final contactMap = ref.watch(contactListServiceProvider).value;
+    final peerContact = (isSingle && room.peerId != null && contactMap != null)
+        ? contactMap[room.peerId]
+        : null;
+
+    final displayRoomName = isSingle
+        ? (() {
+            final remark = (peerContact?.remark ?? '').trim();
+            if (remark.isNotEmpty) return remark;
+
+            final nickName = (peerContact?.nickName ?? '').trim();
+            if (nickName.isNotEmpty) return nickName;
+
+            final roomName = (room.roomName ?? '').trim();
+            if (roomName.isNotEmpty) return roomName;
+
+            return 'chat_unknown_conversation'.tr();
+          })()
+        : (room.roomName?.trim().isNotEmpty == true
+              ? room.roomName!.trim()
+              : 'chat_unknown_conversation'.tr());
+
     final pinnedIds = ref.watch(pinnedRoomsProvider);
     final roomId = room.roomId;
     final isPinned = roomId != null && pinnedIds.contains(room.roomId);
@@ -343,12 +365,16 @@ class _RoomItem extends ConsumerWidget {
       onSecondaryTapDown: (details) async {
         if (roomId == null) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
-        _showContextMenu(context, ref, details.globalPosition, isPinned);
+        if (context.mounted) {
+          _showContextMenu(context, ref, details.globalPosition, isPinned);
+        }
       },
       onLongPressStart: (details) async {
         if (roomId == null) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
-        _showContextMenu(context, ref, details.globalPosition, isPinned);
+        if (context.mounted) {
+          _showContextMenu(context, ref, details.globalPosition, isPinned);
+        }
       },
       child: ListTile(
         onTap: () {
@@ -370,10 +396,13 @@ class _RoomItem extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                room.roomName ?? 'chat_unknown_conversation'.tr(),
+                displayRoomName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
             const SizedBox(width: 6),

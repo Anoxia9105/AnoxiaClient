@@ -37,4 +37,9 @@ class ContactSelection extends _$ContactSelection {
   void selectGroups() {
     state = ContactSelectionState(viewType: ContactViewType.groups);
   }
+
+  // 清空选中（如删除联系人后）
+  void clearSelection() {
+    state = ContactSelectionState();
+  }
 }

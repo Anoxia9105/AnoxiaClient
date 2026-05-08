@@ -1,10 +1,15 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -41,14 +46,81 @@ class ContactDetail extends ConsumerWidget {
     return Scaffold(
       // backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
+        actionsPadding: EdgeInsets.symmetric(horizontal: 8),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz)),
+          Builder(
+            builder: (context) {
+              return IconButton(
+                onPressed: () {
+                  Function? close;
+                  close = Toast.showWidget(
+                    context,
+                    direction: PreferDirection.rightTop,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: BubbleWidget(
+                        arrowDirection: AxisDirection.right,
+                        arrowOffset: 25,
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        border: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 0.5,
+                        ),
+                        contentBuilder: (context) => Container(
+                          constraints: BoxConstraints(
+                            maxWidth: 220,
+                            maxHeight: 600,
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                leading: const HugeIcon(icon: HugeIcons.strokeRoundedEdit01),
+                                title: Text('contact_edit_remark'.tr()),
+                                onTap: () async {
+                                  close?.call();
+                                  await _showEditRemarkDialog(
+                                    context,
+                                    ref,
+                                    contact.contactId!,
+                                    detailAsync.asData?.value.remark,
+                                  );
+                                },
+                                dense: true,
+                              ),
+                              ListTile(
+                                dense: true,
+                                leading: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01),
+                                title: Text('contact_delete'.tr()),
+                                onTap: () async {
+                                  close?.call();
+                                  await _showDeleteConfirmDialog(
+                                    context,
+                                    ref,
+                                    contact.contactId!,
+                                    detailAsync.asData?.value.nickName,
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.more_horiz),
+              );
+            },
+          ),
         ],
       ),
       body: detailAsync.when(
         data: (detail) => _buildDetailContent(context, detail, isOnline, ref),
         loading: () => const _ContactDetailSkeleton(),
-        error: (err, _) => Center(child: Text('contact_load_failed'.tr() + ': $err')),
+        error: (err, _) =>
+            Center(child: Text('contact_load_failed'.tr() + ': $err')),
       ),
     );
   }
@@ -98,12 +170,36 @@ class ContactDetail extends ConsumerWidget {
 
           // Text("${detail.phoneNumber?.isEmpty}--${detail.phoneNumber ?? '----'}"),
           // 详细资料项列表
-          _buildInfoTile(context, 'contact_status'.tr(), isOnline ? 'contact_online'.tr() : 'contact_offline'.tr()),
-          _buildInfoTile(context, 'contact_remark'.tr(), detail.remark ?? 'contact_no_remark'.tr()),
-          _buildInfoTile(context, 'contact_username'.tr(), detail.userName ?? ""),
-          _buildInfoTile(context, 'contact_gender'.tr(), _getTranslatedGender(detail.sex, context)),
-          _buildInfoTile(context, 'contact_phone'.tr(), detail.phoneNumber ?? 'contact_no_phone'.tr()),
-          _buildInfoTile(context, 'contact_became_friends'.tr(), detail.formattedDate),
+          _buildInfoTile(
+            context,
+            'contact_status'.tr(),
+            isOnline ? 'contact_online'.tr() : 'contact_offline'.tr(),
+          ),
+          _buildInfoTile(
+            context,
+            'contact_remark'.tr(),
+            detail.remark ?? 'contact_no_remark'.tr(),
+          ),
+          _buildInfoTile(
+            context,
+            'contact_username'.tr(),
+            detail.userName ?? "",
+          ),
+          _buildInfoTile(
+            context,
+            'contact_gender'.tr(),
+            _getTranslatedGender(detail.sex, context),
+          ),
+          _buildInfoTile(
+            context,
+            'contact_phone'.tr(),
+            detail.phoneNumber ?? 'contact_no_phone'.tr(),
+          ),
+          _buildInfoTile(
+            context,
+            'contact_became_friends'.tr(),
+            detail.formattedDate,
+          ),
 
           // 格式化后的时间
           const SizedBox(height: 40),
@@ -171,9 +267,149 @@ class ContactDetail extends ConsumerWidget {
 
   String _getTranslatedGender(String? sex, BuildContext context) {
     switch (sex) {
-      case '0': return 'contact_male'.tr();
-      case '1': return 'contact_female'.tr();
-      default: return 'contact_unknown_gender'.tr();
+      case '0':
+        return 'contact_male'.tr();
+      case '1':
+        return 'contact_female'.tr();
+      default:
+        return 'contact_unknown_gender'.tr();
+    }
+  }
+
+  Future<void> _showEditRemarkDialog(
+    BuildContext context,
+    WidgetRef ref,
+    int contactId,
+    String? initialRemark,
+  ) async {
+    final controller = TextEditingController(text: initialRemark ?? '');
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('contact_edit_remark'.tr()),
+          content: TextField(
+            controller: controller,
+            maxLength: 30,
+            decoration: InputDecoration(
+              hintText: 'contact_edit_remark'.tr(),
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: colorScheme.outlineVariant),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.7)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('cancel'.tr()),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+              child: Text('confirm'.tr()),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+    if (result == null) return;
+
+    try {
+      final encodedRemark = Uri.encodeComponent(result);
+      final response = await DioClient().put(
+        '${API.contactRemarkUpdate}?contactId=$contactId&remark=$encodedRemark',
+      );
+
+      final ok = response.data is Map && response.data['code'] == 200;
+      if (!ok) {
+        final msg = response.data is Map ? response.data['msg']?.toString() : null;
+        Toast.showToast(msg?.isNotEmpty == true ? msg! : '操作失败');
+        return;
+      }
+
+      ref.invalidate(contactDetailDataProvider(contactId));
+      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
+      _syncSelectedContact(ref, contactId);
+      Toast.showToast('备注更新成功', type: ToastType.success);
+    } catch (_) {
+      Toast.showToast('备注更新失败', type: ToastType.error);
+    }
+  }
+
+  Future<void> _showDeleteConfirmDialog(
+    BuildContext context,
+    WidgetRef ref,
+    int contactId,
+    String? nickName,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('contact_delete'.tr()),
+          content: Text(
+            '${'contact_delete'.tr()} ${nickName ?? ''} ?',
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text('cancel'.tr()),
+            ),
+            FilledButton.tonal(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text('confirm'.tr()),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final response = await DioClient().delete(
+        '${API.contactDelete}?contactId=$contactId',
+      );
+
+      final ok = response.data is Map && response.data['code'] == 200;
+      if (!ok) {
+        final msg = response.data is Map ? response.data['msg']?.toString() : null;
+        Toast.showToast(msg?.isNotEmpty == true ? msg! : '操作失败');
+        return;
+      }
+
+      ref.invalidate(contactDetailDataProvider(contactId));
+      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
+      ref.read(contactSelectionProvider.notifier).clearSelection();
+      Toast.showToast('联系人已删除', type: ToastType.success);
+    } catch (_) {
+      Toast.showToast('删除失败', type: ToastType.error);
+    }
+  }
+
+  void _syncSelectedContact(WidgetRef ref, int contactId) {
+    final contactMap = ref.read(contactListServiceProvider).value;
+    final latest = contactMap?[contactId];
+    if (latest != null) {
+      ref.read(contactSelectionProvider.notifier).selectContact(latest);
     }
   }
 
