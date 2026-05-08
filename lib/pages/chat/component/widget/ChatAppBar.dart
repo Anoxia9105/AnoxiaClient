@@ -27,27 +27,40 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final currentRoom = ref.read(activeRoomProvider);
     final currentUser = ref.watch(authControllerProvider).value;
     final currentRoomId = currentRoom?.roomId ?? '';
-  final callWindow = ref.watch(callWindowControllerProvider);
+    final callWindow = ref.watch(callWindowControllerProvider);
 
-  final callStatus = ref.watch(roomCallStatusProvider(currentRoomId));
-  final isCallingNow = callStatus.calling;
+    final callStatus = ref.watch(roomCallStatusProvider(currentRoomId));
+    final isCallingNow = callStatus.calling;
 
-  // 首次进入当前房间时拉一次状态（无轮询）
-  ref.read(callStatusControllerProvider.notifier).ensureLoaded(currentRoomId);
+    // 首次进入当前房间时拉一次状态（无轮询）
+    ref.read(callStatusControllerProvider.notifier).ensureLoaded(currentRoomId);
 
-  final callActionLabel = callWindow != null
-    ? '通话中'
-    : (isCallingNow ? '加入通话' : '发起通话');
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasActiveCallWindow = callWindow != null;
 
-  final callActionIcon = callWindow != null
-    ? HugeIcons.strokeRoundedCallEnd03
-    : (isCallingNow
-      ? HugeIcons.strokeRoundedCallRinging03
-      : HugeIcons.strokeRoundedCall02);
+    final callActionLabel = hasActiveCallWindow
+        ? 'appbar_call_back_to_window'.tr()
+        : (isCallingNow
+              ? 'appbar_call_join'.tr()
+              : 'appbar_start_meeting'.tr());
 
-  final callActionColor = callWindow != null
-    ? Colors.orangeAccent
-    : (isCallingNow ? Theme.of(context).colorScheme.primary : null);
+    final callActionIcon = hasActiveCallWindow
+        ? HugeIcons.strokeRoundedVideoReplay
+        : (isCallingNow
+              ? HugeIcons.strokeRoundedCallRinging03
+              : HugeIcons.strokeRoundedCall02);
+
+    final callButtonBackground = hasActiveCallWindow
+        ? colorScheme.tertiaryContainer.withValues(alpha: 0.9)
+        : (isCallingNow
+              ? colorScheme.primaryContainer.withValues(alpha: 0.9)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7));
+
+    final callActionColor = hasActiveCallWindow
+        ? colorScheme.onTertiaryContainer
+        : (isCallingNow
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurfaceVariant);
 
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
     final members = ref.watch(roomMembersProvider(activeId ?? ''));
@@ -107,7 +120,23 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (currentRoom?.roomStatus != 3)
           IconButton(
             tooltip: callActionLabel,
+            style: IconButton.styleFrom(
+              backgroundColor: callButtonBackground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              side: BorderSide(
+                color: hasActiveCallWindow
+                    ? colorScheme.tertiary.withValues(alpha: 0.35)
+                    : colorScheme.outlineVariant.withValues(alpha: 0.4),
+                width: 0.8,
+              ),
+            ),
             onPressed: () {
+              if ((currentRoom?.roomId ?? '').isEmpty) {
+                BotToast.showText(text: 'appbar_connection_lost'.tr());
+                return;
+              }
               ref.read(callWindowControllerProvider.notifier).openCallWindow(
                 title: currentRoom?.roomName ?? '',
                 themeIndex: ref.read(themeIndexProvider),

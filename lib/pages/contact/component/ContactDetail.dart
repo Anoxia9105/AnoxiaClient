@@ -68,15 +68,15 @@ class ContactDetail extends ConsumerWidget {
                         ),
                         contentBuilder: (context) => Container(
                           constraints: BoxConstraints(
-                            maxWidth: 220,
-                            maxHeight: 600,
+                            maxWidth: 200,
+                            maxHeight: 400,
                           ),
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(8),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               ListTile(
-                                leading: const HugeIcon(icon: HugeIcons.strokeRoundedEdit01),
+                                leading: const HugeIcon(icon: HugeIcons.strokeRoundedEdit01,size: 20,),
                                 title: Text('contact_edit_remark'.tr()),
                                 onTap: () async {
                                   close?.call();
@@ -91,7 +91,7 @@ class ContactDetail extends ConsumerWidget {
                               ),
                               ListTile(
                                 dense: true,
-                                leading: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01),
+                                leading: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01,size: 20),
                                 title: Text('contact_delete'.tr()),
                                 onTap: () async {
                                   close?.call();
@@ -119,8 +119,11 @@ class ContactDetail extends ConsumerWidget {
       body: detailAsync.when(
         data: (detail) => _buildDetailContent(context, detail, isOnline, ref),
         loading: () => const _ContactDetailSkeleton(),
-        error: (err, _) =>
-            Center(child: Text('contact_load_failed'.tr() + ': $err')),
+        error: (err, _) => Center(
+          child: Text(
+            'contact_load_failed_with_error'.tr(args: [err.toString()]),
+          ),
+        ),
       ),
     );
   }
@@ -315,11 +318,11 @@ class ContactDetail extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text('cancel'.tr()),
+              child: Text('dialog_cancel'.tr()),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-              child: Text('confirm'.tr()),
+              child: Text('chat_confirm_btn'.tr()),
             ),
           ],
         );
@@ -338,16 +341,16 @@ class ContactDetail extends ConsumerWidget {
       final ok = response.data is Map && response.data['code'] == 200;
       if (!ok) {
         final msg = response.data is Map ? response.data['msg']?.toString() : null;
-        Toast.showToast(msg?.isNotEmpty == true ? msg! : '操作失败');
+        Toast.showToast(msg?.isNotEmpty == true ? msg! : 'chat_operation_retry_failed'.tr());
         return;
       }
 
       ref.invalidate(contactDetailDataProvider(contactId));
       await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
       _syncSelectedContact(ref, contactId);
-      Toast.showToast('备注更新成功', type: ToastType.success);
+      Toast.showToast('contact_edit_remark_success'.tr(), type: ToastType.success);
     } catch (_) {
-      Toast.showToast('备注更新失败', type: ToastType.error);
+      Toast.showToast('contact_edit_remark_failed'.tr(), type: ToastType.error);
     }
   }
 
@@ -365,17 +368,17 @@ class ContactDetail extends ConsumerWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('contact_delete'.tr()),
           content: Text(
-            '${'contact_delete'.tr()} ${nickName ?? ''} ?',
+            'contact_delete_confirm_content'.tr(args: [nickName ?? '']),
             style: TextStyle(color: colorScheme.onSurface),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text('cancel'.tr()),
+              child: Text('dialog_cancel'.tr()),
             ),
             FilledButton.tonal(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text('confirm'.tr()),
+              child: Text('chat_confirm_btn'.tr()),
             ),
           ],
         );
@@ -392,16 +395,16 @@ class ContactDetail extends ConsumerWidget {
       final ok = response.data is Map && response.data['code'] == 200;
       if (!ok) {
         final msg = response.data is Map ? response.data['msg']?.toString() : null;
-        Toast.showToast(msg?.isNotEmpty == true ? msg! : '操作失败');
+        Toast.showToast(msg?.isNotEmpty == true ? msg! : 'chat_operation_retry_failed'.tr());
         return;
       }
 
       ref.invalidate(contactDetailDataProvider(contactId));
       await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
       ref.read(contactSelectionProvider.notifier).clearSelection();
-      Toast.showToast('联系人已删除', type: ToastType.success);
+      Toast.showToast('contact_delete_success'.tr(), type: ToastType.success);
     } catch (_) {
-      Toast.showToast('删除失败', type: ToastType.error);
+      Toast.showToast('contact_delete_failed'.tr(), type: ToastType.error);
     }
   }
 
