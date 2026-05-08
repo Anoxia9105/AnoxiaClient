@@ -21,8 +21,8 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   Map<String, UploadEntry> build() => {};
 
   Future<void> selectFiles(QuillController controller) async {
-    final result = await FilePicker.platform.pickFiles(
-    // final result = await FilePicker.pickFiles(
+    // final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.any,
     );
