@@ -178,6 +178,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     });
 
     final room = ref.watch(activeRoomProvider);
+    final isRoomBanned = room?.roomStatus == 2;
 
     final contentBody = showInitialSkeleton
         ? const _ChatRoomDetailSkeleton()
@@ -187,6 +188,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
               '${'chat_initialization_failed'.tr()}: ${entryTask.error}',
             ),
           )
+        : isRoomBanned
+        ? _buildBannedContentView()
         : () {
             //消息为空
             if (messages.isEmpty) {
@@ -279,7 +282,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                     'chat_room_muted'.tr(),
                     icon: HugeIcons.strokeRoundedVolumeMute01,
                   ),
-                  2 => _buildBannedView(),
+                  2 => const SizedBox.shrink(),
                   3 => _bottomRoomStatusTag(
                     'chat_room_dissolved'.tr(),
                     icon: HugeIcons.strokeRoundedDelete02,
@@ -325,6 +328,16 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 封禁状态：显示图标 + 标题 + 提示语
+  Widget _buildBannedContentView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: _buildBannedView(),
       ),
     );
   }

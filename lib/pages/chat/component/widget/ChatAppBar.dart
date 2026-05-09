@@ -24,7 +24,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeId = ref.watch(activeRoomIdProvider);
     final roomListAsync = ref.watch(roomListServiceProvider);
-    final currentRoom = ref.read(activeRoomProvider);
+  final currentRoom = ref.watch(activeRoomProvider);
     final currentUser = ref.watch(authControllerProvider).value;
     final currentRoomId = currentRoom?.roomId ?? '';
     final callWindow = ref.watch(callWindowControllerProvider);
