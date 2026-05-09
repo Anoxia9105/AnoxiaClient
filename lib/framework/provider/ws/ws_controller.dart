@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';
 import '../../logs/talker.dart';
@@ -39,6 +42,7 @@ class WsController extends _$WsController {
 
     // 监听认证状态逻辑优化
     ref.listen(authControllerProvider, (previous, next) {
+      log.info("[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}");
       next.when(
         data: (user) {
           if (user != null) {
@@ -105,7 +109,16 @@ class WsController extends _$WsController {
       final url = "${API.wsBaseUrl}$token";
       log.info("[WsController] 正在尝试建立 WebSocket 连接: $url");
 
-      _channel = WebSocketChannel.connect(Uri.parse(url));
+      if (kIsWeb) {
+        _channel = WebSocketChannel.connect(Uri.parse(url));
+      } else {
+        // 桌面端关闭压缩扩展协商，避免部分代理链路下触发 1002(PROTOCOL_ERROR)
+        final socket = await io.WebSocket.connect(
+          url,
+          compression: io.CompressionOptions.compressionOff,
+        );
+        _channel = IOWebSocketChannel(socket);
+      }
       await _channel!.ready; // 确保握手成功
 
       _channel!.stream.listen(
@@ -147,8 +160,8 @@ class WsController extends _$WsController {
     try {
       final Map<String, dynamic> jsonMap = jsonDecode(message as String);
 
-      // 优先处理 ACK 错误包：{code, message, retryable}
-      if (_handleAckError(jsonMap)) {
+      // 兼容旧格式 ACK：顶层 {code, message, retryable}
+      if (_handleLegacyAckError(jsonMap)) {
         return;
       }
 
@@ -156,6 +169,11 @@ class WsController extends _$WsController {
       final rawData = jsonMap['data'] as Map<String, dynamic>?;
 
       if (rawData == null) return;
+
+      // 新格式 ACK：PacketFrame(EVENT, data={code,message,retryable,...})
+      if (_handleAckError(rawData)) {
+        return;
+      }
 
       final packetData = PacketRegistry.parse(topic, rawData);
       if (packetData != null) {
@@ -169,8 +187,12 @@ class WsController extends _$WsController {
     }
   }
 
-  bool _handleAckError(Map<String, dynamic> jsonMap) {
+  bool _handleLegacyAckError(Map<String, dynamic> jsonMap) {
     if (jsonMap.containsKey('topic')) return false;
+    return _handleAckError(jsonMap);
+  }
+
+  bool _handleAckError(Map<String, dynamic> jsonMap) {
     if (!jsonMap.containsKey('code')) return false;
 
     final int? code = int.tryParse(jsonMap['code']?.toString() ?? '');
@@ -232,7 +254,9 @@ class WsController extends _$WsController {
   }
 
   void _handleDone() {
-    log.info("WebSocket 连接由服务端关闭或网络中断");
+    final closeCode = _channel?.closeCode;
+    final closeReason = _channel?.closeReason;
+    log.info("WebSocket 连接关闭: closeCode=$closeCode, closeReason=$closeReason");
     state = WsState(status: WsStatus.disconnected);
     _retryConnection();
   }
@@ -261,6 +285,8 @@ class WsController extends _$WsController {
   }
 
   void _disposeAll({bool closeStream = false, bool manual = false}) {
+    log.info("[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}");
+    log.info("[WsController] 断开调用栈: ${StackTrace.current}");
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();
