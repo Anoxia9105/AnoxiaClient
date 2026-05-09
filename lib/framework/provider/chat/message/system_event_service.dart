@@ -246,13 +246,20 @@ class SystemEventService extends _$SystemEventService {
     }
   }
 
-  /// 处理房间创建（私聊/群聊被邀请加入）
-  /// 注意：此事件只通过 system_event_service 触发一次 refresh
-  /// room_message_service 中收到的 topic=0 系统消息不再触发额外的 refresh
+  /// 处理房间创建（私聊/群聊被邀请加入）/ 解封
   void _handleRoomCreated(EventMessage event) {
-    // 直接刷新房间列表（只调用一次）
+    final String? roomId = _extractRoomIdFromEvent(event);
+    final createdType = event.extra?['type']?.toString().toLowerCase();
+
+    // 解封：恢复房间状态为正常
+    if (createdType == 'unban' && roomId != null) {
+      ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, 0);
+      log.info("房间 $roomId 已解封，恢复正常状态");
+    }
+
+    // 刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    log.info("房间创建成功，刷新房间列表");
+    log.info("房间创建/解封，刷新房间列表");
   }
 
   /// 处理房间信息更新

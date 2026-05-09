@@ -330,27 +330,44 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
-  /// 封禁状态：显示 logo + 提示语
+  /// 封禁状态：显示图标 + 标题 + 提示语
   Widget _buildBannedView() {
     final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
-              size: 32,
-              color: cs.error,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: cs.errorContainer.withValues(alpha: 0.25),
+                shape: BoxShape.circle,
+              ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedAlert02,
+                size: 28,
+                color: cs.error,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               'chat_room_banned_status'.tr(),
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: cs.error,
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'chat_room_banned_hint'.tr(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: cs.onSurfaceVariant,
+                height: 1.4,
               ),
             ),
           ],
