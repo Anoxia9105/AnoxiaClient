@@ -293,39 +293,38 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   Widget _bottomRoomStatusTag(String text, {dynamic icon}) {
     final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            width: 1,
-            color: cs.outlineVariant.withValues(alpha: 0.22),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          width: 1,
+          color: cs.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          HugeIcon(
+            icon: icon ?? HugeIcons.strokeRoundedAlert02,
+            size: 16,
+            color: cs.onSurfaceVariant.withValues(alpha: 0.7),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HugeIcon(
-              icon: icon ?? HugeIcons.strokeRoundedAlert02,
-              size: 14,
-              color: cs.onSurfaceVariant,
+          const SizedBox(width: 8),
+          Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.3,
             ),
-            const SizedBox(width: 6),
-            Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: cs.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-                height: 1.1,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -333,7 +332,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   /// 封禁状态：显示图标 + 标题 + 提示语
   Widget _buildBannedView() {
     final cs = Theme.of(context).colorScheme;
-    return Center(
+    return Align(
+      alignment: Alignment.center,
+      heightFactor: 1.0,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
         child: Column(
