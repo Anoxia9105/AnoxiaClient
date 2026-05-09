@@ -5,7 +5,7 @@ import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:open_file_plus/open_file_plus.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
@@ -169,7 +169,7 @@ class _FileMessageListState extends State<_FileMessageList> {
       return;
     }
 
-    final openResult = await OpenFile.open(file.parent.path);
+  final openResult = await OpenFilex.open(file.parent.path);
     if (openResult.type != ResultType.done) {
       Toast.showToast('file_open_dir_failed'.tr(args: [openResult.message]));
     }

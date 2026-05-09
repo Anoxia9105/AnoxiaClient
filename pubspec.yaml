@@ -3,7 +3,7 @@ description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.4
+version: 1.0.5
 
 environment:
   sdk: ^3.10.1
@@ -84,7 +84,7 @@ dependencies:
   # 获取文件目录
   path_provider: ^2.1.5
   # 打开文件
-  open_file_plus: ^3.4.1+1
+  open_filex: ^4.7.0
   # 版本比较
   pub_semver: ^2.2.0
   #处理图片格式

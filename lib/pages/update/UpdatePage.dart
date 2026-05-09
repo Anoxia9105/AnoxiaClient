@@ -3,7 +3,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:open_file_plus/open_file_plus.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -89,7 +89,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
 
       log.info("📦 下载完成，正在唤起安装程序...");
 
-      final result = await OpenFile.open(savePath);
+  final result = await OpenFilex.open(savePath);
 
       if (result.type == ResultType.done) {
         log.info("✅ 安装程序已启动，执行安全退出序列...");
