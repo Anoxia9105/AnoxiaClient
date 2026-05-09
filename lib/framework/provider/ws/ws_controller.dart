@@ -112,7 +112,7 @@ class WsController extends _$WsController {
         (message) => _handleIncomingMessage(message),
         onError: (err) => _handleError(err),
         onDone: () => _handleDone(),
-        cancelOnError: true,
+        cancelOnError: false,
       );
 
       _reconnectAttempts = 0;

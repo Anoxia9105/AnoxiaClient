@@ -116,8 +116,8 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     error: (error, stackTrace) => Text('appbar_connection_lost'.tr()),
       ),
       actions: [
-        // 发起通话按钮（房间未解散才显示）
-        if (currentRoom?.roomStatus != 3)
+        // 发起通话按钮（房间正常状态才显示，禁言/封禁/解散不显示）
+        if (currentRoom?.roomStatus == 0)
           IconButton(
             tooltip: callActionLabel,
             style: IconButton.styleFrom(
@@ -150,7 +150,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
-        if (currentRoom?.roomStatus != 3)
+        if (currentRoom?.roomStatus == 0)
           Container(
             margin: EdgeInsets.all(4),
             child: VerticalDivider(indent: 4, endIndent: 4),

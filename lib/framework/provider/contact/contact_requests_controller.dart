@@ -15,10 +15,15 @@ class ContactRequestsService extends _$ContactRequestsService {
   }
 
   Future<List<ChatContactRequestVO>> _fetchRequests() async {
-    final response = await DioClient().get(API.contactRequest);
-    return (response.data["data"] as List)
-        .map((e) => ChatContactRequestVO.fromJson(e))
-        .toList();
+    try {
+      final response = await DioClient().get(API.contactRequest);
+      return (response.data["data"] as List)
+          .map((e) => ChatContactRequestVO.fromJson(e))
+          .toList();
+    } catch (e) {
+      // 服务端异常时返回空列表，避免阻塞UI
+      return [];
+    }
   }
 
   /// 同意好友请求的方法
@@ -46,7 +51,9 @@ class ContactRequestsService extends _$ContactRequestsService {
     if (!quiet) {
       state = const AsyncValue.loading(); // 先展示加载状态
     }
-    state = await AsyncValue.guard(() => _fetchRequests()); // 获取新数据并更新
+    final result = await AsyncValue.guard(() => _fetchRequests());
+    if (!ref.mounted) return; // provider 已被销毁，不再更新 state
+    state = result;
   }
 }
 

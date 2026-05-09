@@ -330,6 +330,8 @@
   "system_msg_mute_off": "管理者 [全体ミュートを解除しました]",
   "system_msg_kicked": "{nickName} が管理者によってルームから追放されました",
   "system_msg_room_closed": "ルームが解散されました",
+  "system_msg_room_banned": "管理者 [この会話をBANしました]",
+  "system_msg_room_unbanned": "管理者 [この会話のBANを解除しました]",
 
   "upload_failed": "アップロード失敗",
   "upload_failed_retry": "アップロード失敗、削除して再試行してください",

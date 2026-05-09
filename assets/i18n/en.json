@@ -304,6 +304,8 @@
   "system_msg_mute_off": "Admin [disabled mute all]",
   "system_msg_kicked": "{nickName} was kicked from the room by admin",
   "system_msg_room_closed": "Room has been dissolved",
+  "system_msg_room_banned": "Admin [banned this conversation]",
+  "system_msg_room_unbanned": "Admin [unbanned this conversation]",
   "upload_failed": "Upload failed",
   "upload_failed_retry": "Upload failed, please delete and retry",
   "quill_image_plain": "[Image]",

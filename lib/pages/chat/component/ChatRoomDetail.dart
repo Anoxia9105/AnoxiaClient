@@ -292,13 +292,13 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                     );
                   }
                   if (room.roomStatus == 1) {
-                    return _bottomRoomStatus('chat_room_muted'.tr());
+                    return _bottomRoomStatus('chat_room_muted'.tr(), icon: HugeIcons.strokeRoundedVolumeMute01);
                   }
                   if (room.roomStatus == 2) {
-                    return _bottomRoomStatus('chat_room_banned_status'.tr());
+                    return _bottomRoomStatus('chat_room_banned_status'.tr(), icon: HugeIcons.strokeRoundedCancel01);
                   }
                   if (room.roomStatus == 3) {
-                    return _bottomRoomStatus('chat_room_dissolved'.tr());
+                    return _bottomRoomStatus('chat_room_dissolved'.tr(), icon: HugeIcons.strokeRoundedDelete02);
                   }
 
                   return SizedBox.shrink();
@@ -308,20 +308,37 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
-  Widget _bottomRoomStatus(String text) {
+  Widget _bottomRoomStatus(String text, {dynamic icon}) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: EdgeInsets.all(10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           width: 1,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+          color: cs.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 14),
-        textAlign: TextAlign.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          HugeIcon(
+            icon: icon ?? HugeIcons.strokeRoundedAlert02,
+            size: 16,
+            color: cs.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -15,160 +15,120 @@ class SystemMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
-    return Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: buildSystemctlMessage(message),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
+        child: _buildSystemMessage(context, message),
+      ),
     );
   }
 
-  /// 构建系统消息UI
-  Widget buildSystemctlMessage(ChatMessage message) {
-    // 提取文本样式为常量
-    final TextStyle textStyle = TextStyle(
-      fontSize: 12,
-      color: Colors.grey[600],
-    );
-
+  /// 根据 action 解析图标 + 文本
+  Widget _buildSystemMessage(BuildContext context, ChatMessage message) {
     if (message.extra["action"] == null) {
-      return _buildMessageRow(
+      return _buildChip(
+        context,
         icon: HugeIcons.strokeRoundedSettingsError02,
         text: "system_msg_unknown".tr(),
-        textStyle: textStyle,
         timestamp: message.timestamp,
       );
     }
 
     final type = message.extra["action"];
 
-    if (type == "ROOM_CREATED_GROUP") {
-      final names = message.extra["names"];
-      final nickName = message.extra["nickName"];
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedHome03,
-        text: "system_msg_invite".tr(
-          namedArgs: {"nickName": nickName ?? '', "names": names ?? ''},
+    final (dynamic icon, String text) = switch (type) {
+      "ROOM_CREATED_GROUP" => (
+        HugeIcons.strokeRoundedHome03,
+        "system_msg_invite".tr(namedArgs: {
+          "nickName": message.extra["nickName"] ?? '',
+          "names": message.extra["names"] ?? '',
+        }),
+      ),
+      "ROOM_MUTED" => (
+        message.extra["isMute"] == true
+            ? HugeIcons.strokeRoundedVolumeMute01
+            : HugeIcons.strokeRoundedVolumeHigh,
+        message.extra["isMute"] == true
+            ? "system_msg_mute_on".tr()
+            : "system_msg_mute_off".tr(),
+      ),
+      "USER_KICKED" => (
+        HugeIcons.strokeRoundedUserRemove02,
+        "system_msg_kicked".tr(
+          namedArgs: {"nickName": message.extra["nickName"] ?? ''},
         ),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
-    if (type == "ROOM_MUTED") {
-      final isMute = message.extra["isMute"];
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedHome03,
-        text: isMute ? "system_msg_mute_on".tr() : "system_msg_mute_off".tr(),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
-    if (type == "USER_KICKED") {
-      // final name = message.extra["targetId"];
-      final nickName = message.extra["nickName"];
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedUserRemove02,
-        text: "system_msg_kicked".tr(namedArgs: {"nickName": nickName ?? ''}),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
+      ),
+      "ROOM_CLOSED" => (
+        HugeIcons.strokeRoundedHome03,
+        "system_msg_room_closed".tr(),
+      ),
+      "MESSAGE_RECALL" => (
+        HugeIcons.strokeRoundedUndo,
+        "system_msg_recall".tr(args: [message.extra["nickName"] ?? '--']),
+      ),
+      "CALL_STARTED" => (
+        HugeIcons.strokeRoundedCall02,
+        "system_msg_callstart".tr(args: [message.extra["nickName"] ?? '--']),
+      ),
+      "CALL_ENDED" => (
+        HugeIcons.strokeRoundedCallEnd03,
+        "system_msg_callend".tr(
+          args: [message.extra["durationText"] ?? '--'],
+        ),
+      ),
+      "ROOM_DISSOLVED" => (
+        HugeIcons.strokeRoundedCancel01,
+        message.extra["type"] == "ban"
+            ? "system_msg_room_banned".tr()
+            : "system_msg_room_closed".tr(),
+      ),
+      "ROOM_CREATED" when message.extra["type"] == "unban" => (
+        HugeIcons.strokeRoundedHome03,
+        "system_msg_room_unbanned".tr(),
+      ),
+      _ => (null, ''),
+    };
 
-    if (type == "ROOM_CLOSED") {
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedHome03,
-        text: "system_msg_room_closed".tr(),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
+    if (icon == null) return const SizedBox.shrink();
 
-    if (type == "MESSAGE_RECALL") {
-      final nickName = message.extra["nickName"];
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedUndo,
-        text: "system_msg_recall".tr(args: [nickName ?? '--']),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
-    if (type == "CALL_STARTED") {
-      final nickName = message.extra["nickName"];
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedCall02,
-        text: "system_msg_callstart".tr(args: [nickName ?? '--']),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
-    if (type == "CALL_ENDED") {
-      final durationText = message.extra["durationText"];
-      return _buildMessageRow(
-        icon: HugeIcons.strokeRoundedCallEnd03,
-        text: "system_msg_callend".tr(args: [durationText ?? '--']),
-        textStyle: textStyle,
-        timestamp: message.timestamp,
-      );
-    }
-
-
-    return SizedBox.shrink();
-
-    // switch (type) {
-    //   case "create":
-    //     return _buildMessageRow(
-    //       icon: HugeIcons.strokeRoundedHome03,
-    //       text: "$name创建了房间",
-    //       textStyle: textStyle,
-    //     );
-    //   case "join":
-    //     return _buildMessageRow(
-    //       icon: HugeIcons.strokeRoundedUserAdd02,
-    //       text: "${(message.extra["operator_name"] ?? "")}邀请[$name]加入了房间",
-    //       textStyle: textStyle,
-    //     );
-    //   case "leave":
-    //     return _buildMessageRow(
-    //       icon: HugeIcons.strokeRoundedUserRemove02,
-    //       text: "$name离开了房间",
-    //       textStyle: textStyle,
-    //     );
-    //   default:
-    //     return _buildMessageRow(
-    //       icon: HugeIcons.strokeRoundedSettingsError02,
-    //       text: "未知系统消息",
-    //       textStyle: textStyle,
-    //     );
-    // }
+    return _buildChip(context, icon: icon, text: text, timestamp: message.timestamp);
   }
 
-  /// 构建消息行，统一布局和样式
-  Widget _buildMessageRow({
+  /// 居中气泡式系统消息
+  Widget _buildChip(
+    BuildContext context, {
     required dynamic icon,
     required String text,
     required int? timestamp,
-    required TextStyle textStyle,
   }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        HugeIcon(icon: icon, size: 16, color: Colors.grey[500]),
-        const SizedBox(width: 8),
-        // 消息主体文本
-        Text(text, style: textStyle),
-        const SizedBox(width: 8),
-        // 时间标签样式
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(4), // 圆角
+    final cs = Theme.of(context).colorScheme;
+    final fgColor = cs.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HugeIcon(icon: icon, size: 14, color: fgColor),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 12, color: fgColor),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          child: Text(
+          const SizedBox(width: 6),
+          Text(
             DateUtil.formatTimestampToTime(timestamp),
-            style: textStyle.copyWith(fontSize: 11, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 10, color: fgColor.withValues(alpha: 0.6)),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

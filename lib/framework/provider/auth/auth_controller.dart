@@ -122,17 +122,20 @@ class AuthController extends _$AuthController {
       // 2. 清除内存中的 Token
       ref.read(tokenCacheProvider.notifier).clearToken();
 
-      // 3. 先清空会话数据（侧边栏/聊天列表/消息等）
-      resetSessionProviders(
-        ref,
-        includeWs: false,
-        includeInitializer: false,
-      );
-
-      // 4. 切换认证态，触发路由回到登录页。
+      // 3. 先切换认证态，触发路由回到登录页。
       //    WsController 自身已通过 ref.listen(authControllerProvider) 监听此变化，
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
       state = const AsyncData(null);
+
+      // 4. 延迟清空会话数据，避免在 auth 状态变更的同步回调链内
+      //    invalidate chatMessagesProvider 等，引发 CircularDependencyError。
+      Future.microtask(() {
+        resetSessionProviders(
+          ref,
+          includeWs: false,
+          includeInitializer: false,
+        );
+      });
 
       log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {
