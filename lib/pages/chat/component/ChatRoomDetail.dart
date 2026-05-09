@@ -276,8 +276,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
             )
           : null,
 
-    bottomNavigationBar: showInitialSkeleton
-      ? const _ChatInputSkeleton()
+      bottomNavigationBar: showInitialSkeleton
+          ? const _ChatInputSkeleton()
           : Padding(
               padding: EdgeInsets.only(
                 left: bodyPadding,
@@ -285,60 +285,68 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                 bottom: 10,
               ),
               child: () {
-                if (room != null) {
-                  if (room.roomStatus == 0) {
-                    return ChatInputField(
-                      bottomSheet: () => _scrollToBottom(animated: true),
-                    );
-                  }
-                  if (room.roomStatus == 1) {
-                    return _bottomRoomStatus('chat_room_muted'.tr(), icon: HugeIcons.strokeRoundedVolumeMute01);
-                  }
-                  if (room.roomStatus == 2) {
-                    return _bottomRoomStatus('chat_room_banned_status'.tr(), icon: HugeIcons.strokeRoundedCancel01);
-                  }
-                  if (room.roomStatus == 3) {
-                    return _bottomRoomStatus('chat_room_dissolved'.tr(), icon: HugeIcons.strokeRoundedDelete02);
-                  }
-
-                  return SizedBox.shrink();
+                if (room == null) {
+                  return const SizedBox.shrink();
                 }
+
+                return switch (room.roomStatus) {
+                  0 => ChatInputField(
+                    bottomSheet: () => _scrollToBottom(animated: true),
+                  ),
+                  1 => _bottomRoomStatusTag(
+                    'chat_room_muted'.tr(),
+                    icon: HugeIcons.strokeRoundedVolumeMute01,
+                  ),
+                  2 => _bottomRoomStatusTag(
+                    'chat_room_banned_status'.tr(),
+                    icon: HugeIcons.strokeRoundedCancel01,
+                  ),
+                  3 => _bottomRoomStatusTag(
+                    'chat_room_dissolved'.tr(),
+                    icon: HugeIcons.strokeRoundedDelete02,
+                  ),
+                  _ => const SizedBox.shrink(),
+                };
               }(),
             ),
     );
   }
 
-  Widget _bottomRoomStatus(String text, {dynamic icon}) {
+  Widget _bottomRoomStatusTag(String text, {dynamic icon}) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          width: 1,
-          color: cs.outlineVariant.withValues(alpha: 0.3),
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            width: 1,
+            color: cs.outlineVariant.withValues(alpha: 0.22),
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          HugeIcon(
-            icon: icon ?? HugeIcons.strokeRoundedAlert02,
-            size: 16,
-            color: cs.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            HugeIcon(
+              icon: icon ?? HugeIcons.strokeRoundedAlert02,
+              size: 14,
               color: cs.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+                height: 1.1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -502,7 +510,9 @@ class _ChatInputSkeleton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             width: 1,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
         ),
         child: const Column(
