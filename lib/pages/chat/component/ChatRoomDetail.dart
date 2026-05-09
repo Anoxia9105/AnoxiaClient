@@ -1,7 +1,6 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatInputField.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatMessageBubble.dart';
@@ -178,24 +177,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       }
     });
 
-    final room = ref.read(activeRoomProvider);
-
-    if (room?.roomStatus == 2) {
-      return Scaffold(
-        appBar: AppBar(title: Text("${room?.roomName}")),
-        drawerScrimColor: Colors.transparent,
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              //程序log
-              Assets.images.appIconPng.image(width: 100, height: 100),
-              Text("chat_room_banned".tr()),
-            ],
-          ),
-        ),
-      );
-    }
+    final room = ref.watch(activeRoomProvider);
 
     final contentBody = showInitialSkeleton
         ? const _ChatRoomDetailSkeleton()
@@ -297,10 +279,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                     'chat_room_muted'.tr(),
                     icon: HugeIcons.strokeRoundedVolumeMute01,
                   ),
-                  2 => _bottomRoomStatusTag(
-                    'chat_room_banned_status'.tr(),
-                    icon: HugeIcons.strokeRoundedCancel01,
-                  ),
+                  2 => _buildBannedView(),
                   3 => _bottomRoomStatusTag(
                     'chat_room_dissolved'.tr(),
                     icon: HugeIcons.strokeRoundedDelete02,
@@ -343,6 +322,35 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                 color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
                 height: 1.1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 封禁状态：显示 logo + 提示语
+  Widget _buildBannedView() {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedCancel01,
+              size: 32,
+              color: cs.error,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'chat_room_banned_status'.tr(),
+              style: TextStyle(
+                fontSize: 13,
+                color: cs.error,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

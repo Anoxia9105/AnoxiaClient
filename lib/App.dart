@@ -10,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 import 'common/utils/DeviceUtil.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/router/router.dart';
+import 'framework/provider/chat/message/system_event_service.dart';
 import 'gen/assets.gen.dart';
 
 class App extends ConsumerStatefulWidget {
@@ -23,6 +24,9 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   @override
   void initState() {
     super.initState();
+    // 全局启动系统事件监听服务（禁言/封禁/解散等事件分发入口）
+    ref.read(systemEventServiceProvider);
+
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
       windowManager.setPreventClose(true);

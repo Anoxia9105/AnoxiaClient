@@ -66,11 +66,52 @@ class ChatMessages extends _$ChatMessages {
     );
 
     _syncCallStatusBySystemMessage(chatMessage);
+    _syncRoomStatusBySystemMessage(chatMessage);
 
     upsertMessage(chatMessage);
     ref
         .read(roomListServiceProvider.notifier)
         .updateRoomPosition(chatMessage, ref.read(activeRoomProvider));
+  }
+
+  void _syncRoomStatusBySystemMessage(ChatMessage msg) {
+    if (msg.messageType != MessageType.system) return;
+
+    final roomId = msg.roomId;
+    final action = msg.extra['action']?.toString().toUpperCase();
+    if (roomId == null || roomId.isEmpty || action == null || action.isEmpty) {
+      return;
+    }
+
+    int? nextStatus;
+    switch (action) {
+      case 'ROOM_MUTED':
+        // isMute=true → 禁言(1), isMute=false → 正常(0)
+        final isMute = msg.extra['isMute'] == true;
+        nextStatus = isMute ? 1 : 0;
+        break;
+      case 'ROOM_DISSOLVED':
+        // type=ban → 封禁(2)，其它 → 解散(3)
+        final dissolveType = msg.extra['type']?.toString().toLowerCase();
+        nextStatus = dissolveType == 'ban' ? 2 : 3;
+        break;
+      case 'ROOM_CREATED':
+        // type=unban → 解封，恢复正常(0)
+        final createdType = msg.extra['type']?.toString().toLowerCase();
+        if (createdType == 'unban') {
+          nextStatus = 0;
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (nextStatus != null) {
+      ref
+          .read(roomListServiceProvider.notifier)
+          .updateRoomStatus(roomId, nextStatus);
+      log.info('房间 $roomId 根据系统消息[$action]更新状态为 $nextStatus');
+    }
   }
 
   void _syncCallStatusBySystemMessage(ChatMessage msg) {
@@ -99,7 +140,8 @@ class ChatMessages extends _$ChatMessages {
   }
 
   void _notifyCallEvent(ChatMessage msg, String roomId, String action) {
-    final rooms = ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
+    final rooms =
+        ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     String roomName = '通话通知';
     for (final r in rooms) {
       if (r.roomId == roomId) {

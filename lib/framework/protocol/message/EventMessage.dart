@@ -24,9 +24,9 @@ enum SystemEventType {
   userLeft(3),
   roomCreated(4),
   roomCreatedGroup(5),
-  roomClosed(6),
+  roomDissolved(6),
   roomUpdated(7),
-  userMuted(8),
+  roomMuted(8),
   userKicked(9),
   userRoleChanged(10),
   messageRecall(11),
@@ -69,10 +69,12 @@ class EventMessage implements IPacket{
       // 这里假设后端传的是枚举名字符串或者是 code
       // 如果传的是 code: SystemEventType.fromCode(json['eventType'])
       eventType: _parseEventType(json['eventType']),
-      operatorId: json['operatorId'],
+      operatorId: int.tryParse(json['operatorId']?.toString() ?? '') ?? 0,
       content: json['content'],
-      timestamp: json['timestamp'] ?? DateTime.now().millisecondsSinceEpoch,
-      extra: json['extra'], // 新增：解析 extra
+      timestamp:
+          int.tryParse(json['timestamp']?.toString() ?? '') ??
+          DateTime.now().millisecondsSinceEpoch,
+      extra: (json['extra'] as Map?)?.cast<String, dynamic>(), // 新增：解析 extra
     );
   }
 
@@ -92,6 +94,15 @@ class EventMessage implements IPacket{
     if (value is int) return SystemEventType.fromCode(value);
     if (value is String) {
       final normalized = value.toLowerCase().replaceAll('_', '');
+
+      // 兼容后端历史/别名事件名
+      if (normalized == 'roomclosed' || normalized == 'roomdissolved') {
+        return SystemEventType.roomDissolved;
+      }
+      if (normalized == 'usermuted' || normalized == 'roommuted') {
+        return SystemEventType.roomMuted;
+      }
+
       for (final e in SystemEventType.values) {
         final en = e.name.toLowerCase().replaceAll('_', '');
         if (en == normalized) return e;

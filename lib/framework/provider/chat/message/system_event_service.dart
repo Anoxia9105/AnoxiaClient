@@ -107,11 +107,11 @@ class SystemEventService extends _$SystemEventService {
       case SystemEventType.userKicked:
         _handleUserKicked(event);
         break;
-      case SystemEventType.userMuted:
+      case SystemEventType.roomMuted:
         _handleUserMuted(event);
         break;
-      case SystemEventType.roomClosed:
-        _handleRoomClosed(event);
+      case SystemEventType.roomDissolved:
+        _handleRoomDissolved(event);
         break;
       case SystemEventType.userLeft:
         _handleUserLeft(event);
@@ -199,29 +199,22 @@ class SystemEventService extends _$SystemEventService {
     }
   }
 
-  /// 处理房间注销/解散
-  void _handleRoomClosed(EventMessage event) {
+  /// 处理房间解散/封禁
+  /// 说明：此状态下保留会话与历史消息，仅把底部输入区切成状态标签
+  void _handleRoomDissolved(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
+    final dissolveType = event.extra?['type']?.toString().toLowerCase();
 
     if (roomId != null) {
-      // 1. 本地移除该房间
-      ref.read(roomListServiceProvider.notifier).removeRoomLocally(roomId);
-
-      // 2. 如果当前正在该房间，清空选中状态
-      final activeId = ref.read(activeRoomIdProvider);
-      if (activeId == roomId) {
-        ref.read(activeRoomIdProvider.notifier).setActive(null);
-      }
-
-      // 3. 清理该房间的消息缓存
-      ref.read(chatMessagesProvider.notifier).clearRoom(roomId);
-
-      log.info("房间 $roomId 已关闭，本地移除");
+      // type=ban 视为封禁(2)，其它视为解散(3)
+      final nextStatus = dissolveType == 'ban' ? 2 : 3;
+      ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, nextStatus);
+      log.info("房间 $roomId 已${nextStatus == 2 ? '封禁' : '解散'}，保留历史消息并更新状态");
     }
 
-    // 4. 兜底：静默刷新房间列表
+    // 兜底：静默刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    log.info("房间已关闭，兜底刷新房间列表");
+    log.info("房间状态已更新，兜底刷新房间列表");
   }
 
   /// 处理用户加入房间
@@ -298,7 +291,10 @@ class SystemEventService extends _$SystemEventService {
   /// 处理全体禁言/解除禁言
   void _handleUserMuted(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
-    final bool? isMute = event.extra?['isMute'];
+    final dynamic rawIsMute = event.extra?['isMute'];
+    final bool isMute = rawIsMute == true ||
+        rawIsMute == 1 ||
+        rawIsMute?.toString().toLowerCase() == 'true';
 
     if (roomId == null) {
       log.warning("无法从 userMuted 事件中获取 roomId");
@@ -306,11 +302,11 @@ class SystemEventService extends _$SystemEventService {
     }
 
     // 1. 本地立即更新房间状态（0=正常, 1=禁言）
-    final newStatus = (isMute == true) ? 1 : 0;
+    final newStatus = isMute ? 1 : 0;
     ref
         .read(roomListServiceProvider.notifier)
         .updateRoomStatus(roomId, newStatus);
-    log.info("房间 $roomId ${isMute == true ? '已禁言' : '已解除禁言'}，本地更新状态");
+    log.info("房间 $roomId ${isMute ? '已禁言' : '已解除禁言'}，本地更新状态");
 
     // 2. 兜底：静默刷新确保与服务端同步
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
@@ -332,7 +328,10 @@ class SystemEventService extends _$SystemEventService {
   /// 从事件中提取房间 ID
   String? _extractRoomIdFromEvent(EventMessage event) {
     // 从 extra 字段中提取 roomId
-    return event.extra?['roomId'] as String?;
+    final raw = event.extra?['roomId'];
+    if (raw == null) return null;
+    final roomId = raw.toString().trim();
+    return roomId.isEmpty ? null : roomId;
   }
 
   /// 处理消息撤回

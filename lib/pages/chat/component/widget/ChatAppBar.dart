@@ -164,9 +164,10 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
         ),
 
-        // 添加成员按钮（群聊 + 未解散）
+        // 添加成员按钮（群聊 + 正常/禁言状态）
         if (currentRoom != null &&
             currentRoom.roomType == 1 &&
+            currentRoom.roomStatus != 2 &&
             currentRoom.roomStatus != 3)
           IconButton(
             tooltip: 'appbar_add_member'.tr(),
@@ -185,9 +186,10 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
-        // 全体禁言按钮（群聊 + 管理员 + 未解散）
+        // 全体禁言按钮（群聊 + 管理员 + 正常/禁言状态）
         if (currentRoom != null &&
             currentRoom.roomType == 1 &&
+            currentRoom.roomStatus != 2 &&
             currentRoom.roomStatus != 3 &&
             isAdmin)
           _MuteButton(
@@ -200,8 +202,8 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
-        // 成员列表按钮（未解散才显示）
-        if (currentRoom?.roomStatus != 3)
+        // 成员列表按钮（未封禁/未解散才显示）
+        if (currentRoom?.roomStatus != 2 && currentRoom?.roomStatus != 3)
           Builder(
             builder: (context) => _MemberListButton(
               members: displayMembers,
