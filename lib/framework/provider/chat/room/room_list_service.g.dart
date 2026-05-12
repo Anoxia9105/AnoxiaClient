@@ -33,7 +33,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'ead5fef67cf43048dd41ea5bac2b56f4855c48be';
+String _$roomListServiceHash() => r'0e6b65fa514d1fff976b3e69cc1a95d2d6c48ee4';
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();
@@ -147,7 +147,7 @@ final class ActiveRoomProvider
   }
 }
 
-String _$activeRoomHash() => r'23c67a4e85422a44601478eadf684861ea22c7f0';
+String _$activeRoomHash() => r'0a582900eac84bf2f437acd5bed3bcc0a1a9118f';
 
 @ProviderFor(roomEntryTask)
 const roomEntryTaskProvider = RoomEntryTaskFamily._();

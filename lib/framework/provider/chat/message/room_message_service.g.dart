@@ -9,17 +9,17 @@ part of 'room_message_service.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// 存储每个房间的消息列表
-/// key = roomId, value = List<ChatMessage>
+/// key = roomId, value = `List<ChatMessage>`
 
 @ProviderFor(ChatMessages)
 const chatMessagesProvider = ChatMessagesProvider._();
 
 /// 存储每个房间的消息列表
-/// key = roomId, value = List<ChatMessage>
+/// key = roomId, value = `List<ChatMessage>`
 final class ChatMessagesProvider
     extends $NotifierProvider<ChatMessages, Map<String, List<ChatMessage>>> {
   /// 存储每个房间的消息列表
-  /// key = roomId, value = List<ChatMessage>
+  /// key = roomId, value = `List<ChatMessage>`
   const ChatMessagesProvider._()
     : super(
         from: null,
@@ -49,10 +49,10 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'24392abc5efdf42b57f14f42c912ae7346dc8cf7';
+String _$chatMessagesHash() => r'0a5aded796c9af629d344557609f46a63e0a0f1f';
 
 /// 存储每个房间的消息列表
-/// key = roomId, value = List<ChatMessage>
+/// key = roomId, value = `List<ChatMessage>`
 
 abstract class _$ChatMessages
     extends $Notifier<Map<String, List<ChatMessage>>> {

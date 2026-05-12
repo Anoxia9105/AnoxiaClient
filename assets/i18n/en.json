@@ -415,6 +415,8 @@
   "chat_favorite_success": "Added to favorites",
   "chat_favorite_failed": "Failed to add to favorites",
   "chat_favorite_error": "Favorite operation error",
+  "favorite_empty_placeholder": "[empty]",
+  "favorite_text_type": "TEXT",
   "chat_revoke": "revoke",
   "chat_revoke_success": "Message revoked successfully",
   "chat_revoke_failed": "Failed to revoke message",

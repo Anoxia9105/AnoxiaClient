@@ -4,6 +4,8 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/main.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,6 +21,7 @@ class NotificationHelper {
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  bool _initialized = false;
 
   Future<void> init() async {
     // 1. Android
@@ -58,6 +61,12 @@ class NotificationHelper {
       settings: settings,
       onDidReceiveNotificationResponse: _onTapNotification,
     );
+    _initialized = true;
+  }
+
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    await init();
   }
 
   Future<String> getIconPath() async {
@@ -189,6 +198,12 @@ class NotificationHelper {
     String? avatarUrl,
     bool force = false,
   }) async {
+    // Web 不支持本地通知插件，直接跳过
+    if (kIsWeb) return;
+
+    // 统一在 helper 内懒初始化，避免调用方关心平台与初始化时机
+    await _ensureInitialized();
+
     if (!await _shouldNotify(force: force)) {
       return;
     }
@@ -222,5 +237,28 @@ class NotificationHelper {
       notificationDetails: details,
       payload: payload,
     );
+  }
+
+  /// 同步手机桌面 App 图标角标（Android/iOS）
+  Future<void> updateAppIconBadge(int count) async {
+    if (kIsWeb) return;
+
+    final isMobile =
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    if (!isMobile) return;
+
+    try {
+      final supported = await FlutterAppBadger.isAppBadgeSupported();
+      if (!supported) return;
+
+      if (count <= 0) {
+        FlutterAppBadger.removeBadge();
+      } else {
+        FlutterAppBadger.updateBadgeCount(count);
+      }
+    } catch (e) {
+      log.warning('更新桌面角标失败: $e');
+    }
   }
 }

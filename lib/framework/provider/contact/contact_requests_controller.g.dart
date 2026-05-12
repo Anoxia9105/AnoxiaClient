@@ -24,7 +24,7 @@ final class ContactRequestsServiceProvider
         argument: null,
         retry: null,
         name: r'contactRequestsServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -38,7 +38,7 @@ final class ContactRequestsServiceProvider
 }
 
 String _$contactRequestsServiceHash() =>
-    r'b362e43b3069b17677c7118df00dae180e635914';
+    r'6bee6e02a44768e7b79f535bf5cd25e5aedaa93a';
 
 abstract class _$ContactRequestsService
     extends $AsyncNotifier<List<ChatContactRequestVO>> {
@@ -85,7 +85,7 @@ final class PendingRequestCountProvider
         argument: null,
         retry: null,
         name: r'pendingRequestCountProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -105,4 +105,4 @@ final class PendingRequestCountProvider
 }
 
 String _$pendingRequestCountHash() =>
-    r'03112f3df3768bfaba7a91e80a1d5587e82cf3b1';
+    r'e0e837c7b80e5aaeb1c6d32d578b183dc7a4e409';

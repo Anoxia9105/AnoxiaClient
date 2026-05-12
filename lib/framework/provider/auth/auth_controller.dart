@@ -11,7 +11,6 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
-import '../core/session_reset_service.dart';
 import '../core/app_initializer.dart';
 import 'token_provider.dart';
 
@@ -126,16 +125,6 @@ class AuthController extends _$AuthController {
       //    WsController 自身已通过 ref.listen(authControllerProvider) 监听此变化，
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
       state = const AsyncData(null);
-
-      // 4. 延迟清空会话数据，避免在 auth 状态变更的同步回调链内
-      //    invalidate chatMessagesProvider 等，引发 CircularDependencyError。
-      Future.microtask(() {
-        resetSessionProviders(
-          ref,
-          includeWs: false,
-          includeInitializer: false,
-        );
-      });
 
       log.info("[AuthController] 登出成功，全部业务缓存已清理");
     } catch (e, st) {

@@ -1,6 +1,8 @@
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/pages/chat/call/component/VolumeIndicator.dart';
@@ -156,7 +158,7 @@ class CommandBar extends ConsumerWidget {
               const SizedBox(width: 8),
 
               // 挂断
-              _buildHangupButton(context, notifier),
+              _buildHangupButton(context, ref, notifier),
             ],
           ),
         ],
@@ -322,7 +324,11 @@ class CommandBar extends ConsumerWidget {
   // 挂断按钮
   // ──────────────────────────────────────────
 
-  Widget _buildHangupButton(BuildContext context, RoomController notifier) {
+  Widget _buildHangupButton(
+    BuildContext context,
+    WidgetRef ref,
+    RoomController notifier,
+  ) {
     return Tooltip(
       message: 'call_hangup'.tr(),
       child: DecoratedBox(
@@ -334,7 +340,12 @@ class CommandBar extends ConsumerWidget {
           onTap: () async {
             await notifier.leave();
             if (context.mounted) {
-              await windowManager.close();
+              if (DeviceUtil.isRealDesktop()) {
+                await windowManager.close();
+              } else {
+                ref.read(mobileCallSessionControllerProvider.notifier).end();
+                Navigator.of(context).maybePop();
+              }
             }
           },
           borderRadius: BorderRadius.circular(10),

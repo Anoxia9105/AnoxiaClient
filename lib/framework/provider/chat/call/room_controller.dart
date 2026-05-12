@@ -21,7 +21,7 @@ part 'room_controller.g.dart';
 ///   - 本地媒体（麦克风、摄像头、屏幕共享）
 ///   - 设备切换
 ///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
-@riverpod
+@Riverpod(keepAlive: true)
 class RoomController extends _$RoomController {
   /// LiveKit 事件监听器，负责监听房间内所有事件
   EventsListener<RoomEvent>? _listener;
@@ -621,6 +621,7 @@ class RoomController extends _$RoomController {
       await currentState.room.disconnect();
       log.info("已离开房间");
     }
+    ref.invalidateSelf();
   }
 
   /// 手动重连

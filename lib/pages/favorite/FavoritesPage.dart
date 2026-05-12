@@ -8,6 +8,7 @@ import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.da
 import 'package:anoxia/pages/chat/component/widget/messageRender/base/MessageRenderFactory.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
@@ -38,6 +39,22 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
   void _syncSelection(List<ChatFavorite> items) {
     if (items.isEmpty) return;
+
+    final isMobile = DeviceUtil.isRealMobile();
+
+    if (isMobile) {
+      final stillExists = _selectedId != null &&
+          items.any((element) => element.id == _selectedId);
+      if (stillExists || _selectedId == null) {
+        return;
+      }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _selectedId = null);
+      });
+      return;
+    }
 
     final stillExists = _selectedId != null &&
         items.any((element) => element.id == _selectedId);
@@ -108,43 +125,19 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     final selected = items.where((e) => e.id == _selectedId).firstOrNull;
 
     if (mobile) {
-      if (selected == null) {
-        return _FavoriteListPanel(
-          items: items,
-          selectedId: _selectedId,
-          onSelect: (id) => setState(() => _selectedId = id),
-          onRefresh: () => ref.invalidate(chatFavoriteListProvider),
-        );
-      }
-
-      return Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
+      return _FavoriteListPanel(
+        items: items,
+        selectedId: null,
+        onSelect: (id) {
+          final selectedItem = items.where((e) => e.id == id).firstOrNull;
+          if (selectedItem == null) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => _FavoriteDetailMobilePage(item: selectedItem),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => setState(() => _selectedId = null),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                ),
-                Expanded(
-                  child: Text(
-                    'sidebar_favorites'.tr(),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(child: _FavoriteDetailPanel(item: selected)),
-        ],
+          );
+        },
+        onRefresh: () => ref.invalidate(chatFavoriteListProvider),
       );
     }
 
@@ -168,6 +161,39 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
               : _FavoriteDetailPanel(item: selected),
         ),
       ],
+    );
+  }
+}
+
+class _FavoriteDetailMobilePage extends StatelessWidget {
+  final ChatFavorite item;
+
+  const _FavoriteDetailMobilePage({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final copyText = item.detailText.trim().isNotEmpty
+        ? item.detailText
+        : item.summary;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('chat_favorite'.tr()),
+        actions: [
+          IconButton(
+            tooltip: 'chat_copy'.tr(),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: copyText));
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('chat_copy_success'.tr())),
+              );
+            },
+            icon: const Icon(Icons.copy_rounded),
+          ),
+        ],
+      ),
+      body: _FavoriteDetailPanel(item: item),
     );
   }
 }
@@ -420,7 +446,9 @@ class _FavoriteDetailPanel extends StatelessWidget {
                 : hasRenderableBody
                 ? strategy.buildContent(context, message, cs.onSurface)
                 : SelectableText(
-                    detailFallback.isEmpty ? '[empty]' : detailFallback,
+                    detailFallback.isEmpty
+                        ? 'favorite_empty_placeholder'.tr()
+                        : detailFallback,
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.6,
@@ -482,7 +510,7 @@ class _FavoriteTextDetailCard extends StatelessWidget {
               Icon(Icons.format_quote_rounded, size: 18, color: cs.primary),
               const SizedBox(width: 6),
               Text(
-                'TEXT',
+                'favorite_text_type'.tr(),
                 style: TextStyle(
                   color: cs.primary,
                   fontSize: 11,

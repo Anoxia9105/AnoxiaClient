@@ -415,6 +415,8 @@
   "chat_favorite_success": "收藏成功",
   "chat_favorite_failed": "收藏失败",
   "chat_favorite_error": "收藏操作出错",
+  "favorite_empty_placeholder": "[空内容]",
+  "favorite_text_type": "文本",
   "chat_revoke": "撤回",
   "chat_revoke_success": "消息撤回成功",
   "chat_revoke_failed": "消息撤回失败",

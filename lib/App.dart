@@ -9,9 +9,11 @@ import 'package:window_manager/window_manager.dart';
 
 import 'common/utils/DeviceUtil.dart';
 import 'framework/provider/layout/layout_controller.dart';
+import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
 import 'gen/assets.gen.dart';
+import 'common/utils/NotificationHelper.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -21,6 +23,8 @@ class App extends ConsumerStatefulWidget {
 }
 
 class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
+  ProviderSubscription<int>? _unreadBadgeSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -33,10 +37,22 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       windowManager.addListener(this);
       trayManager.addListener(this);
     }
+
+    if (DeviceUtil.isRealMobile()) {
+      _unreadBadgeSubscription = ref.listenManual<int>(
+        totalUnreadCountProvider,
+        (previous, next) {
+          NotificationHelper().updateAppIconBadge(next);
+        },
+        fireImmediately: true,
+      );
+    }
   }
 
   @override
   void dispose() {
+    _unreadBadgeSubscription?.close();
+
     if (DeviceUtil.isRealDesktop()) {
       windowManager.removeListener(this);
       trayManager.removeListener(this);

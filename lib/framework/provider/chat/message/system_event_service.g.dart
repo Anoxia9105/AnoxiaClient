@@ -45,7 +45,7 @@ final class SystemEventServiceProvider
 }
 
 String _$systemEventServiceHash() =>
-    r'862da7fc62978b062135872d66d437a3a030090e';
+    r'940098a5df11591cf6fa670a42ec9ef021968546';
 
 /// 系统事件服务 - 负责全局监听并分发处理逻辑
 

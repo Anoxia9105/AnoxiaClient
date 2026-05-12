@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../framework/provider/contact/contact_requests_controller.dart';
 import '../../../framework/provider/layout/layout_controller.dart';
+import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/setting/update_check_provider.dart';
 import '../VibratingBadge.dart';
 
@@ -16,7 +17,9 @@ class MobileBottomBar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final hasUpdate = ref.watch(hasAppUpdateProvider);
     final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
+  final totalUnread = ref.watch(totalUnreadCountProvider);
     final settingsIndex = layout.items.length - 1;
+  const chatIndex = 0;
     const contactsIndex = 1;
 
     return BottomNavigationBar(
@@ -36,7 +39,19 @@ class MobileBottomBar extends ConsumerWidget {
           strokeWidth: 1.5,
         );
 
-        if (idx == contactsIndex && pendingRequests > 0) {
+        if (idx == chatIndex && totalUnread > 0) {
+          iconWidget = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              iconWidget,
+              Positioned(
+                right: -8,
+                top: -6,
+                child: VibratingBadge(count: totalUnread),
+              ),
+            ],
+          );
+        } else if (idx == contactsIndex && pendingRequests > 0) {
           iconWidget = Stack(
             clipBehavior: Clip.none,
             children: [

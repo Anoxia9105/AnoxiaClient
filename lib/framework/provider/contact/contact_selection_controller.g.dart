@@ -41,7 +41,7 @@ final class ContactSelectionProvider
   }
 }
 
-String _$contactSelectionHash() => r'63b172a67fe73598ebbd7fcff7ab309220d96b2c';
+String _$contactSelectionHash() => r'6ca18b16512505066f78a7c7d232551bab3d3f1c';
 
 abstract class _$ContactSelection extends $Notifier<ContactSelectionState> {
   ContactSelectionState build();

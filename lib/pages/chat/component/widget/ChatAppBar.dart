@@ -1,8 +1,10 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
+import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -15,6 +17,7 @@ import '../../../../framework/protocol/message/HighMessage.dart';
 import '../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
+import '../../call/MobileCallPage.dart';
 import 'AddMemberDialogWidget.dart';
 
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -28,6 +31,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final currentUser = ref.watch(authControllerProvider).value;
     final currentRoomId = currentRoom?.roomId ?? '';
     final callWindow = ref.watch(callWindowControllerProvider);
+  final mobileCallSession = ref.watch(mobileCallSessionControllerProvider);
 
     final callStatus = ref.watch(roomCallStatusProvider(currentRoomId));
     final isCallingNow = callStatus.calling;
@@ -36,7 +40,10 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     ref.read(callStatusControllerProvider.notifier).ensureLoaded(currentRoomId);
 
     final colorScheme = Theme.of(context).colorScheme;
-    final hasActiveCallWindow = callWindow != null;
+  final hasDesktopCallWindow = callWindow != null;
+  final hasAndroidCallSession =
+    DeviceUtil.isRealMobile() && mobileCallSession != null;
+  final hasActiveCallWindow = hasDesktopCallWindow || hasAndroidCallSession;
 
     final callActionLabel = hasActiveCallWindow
         ? 'appbar_call_back_to_window'.tr()
@@ -137,6 +144,31 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 BotToast.showText(text: 'appbar_connection_lost'.tr());
                 return;
               }
+
+              if (DeviceUtil.isRealDesktop()) {
+                ref.read(callWindowControllerProvider.notifier).openCallWindow(
+                  title: currentRoom?.roomName ?? '',
+                  themeIndex: ref.read(themeIndexProvider),
+                  roomId: currentRoom?.roomId ?? '',
+                );
+                return;
+              }
+
+              if (DeviceUtil.isRealMobile()) {
+                final roomId = currentRoom?.roomId ?? '';
+                final title = currentRoom?.roomName ?? '';
+                ref
+                    .read(mobileCallSessionControllerProvider.notifier)
+                    .start(roomId: roomId, title: title);
+
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MobileCallPage(roomId: roomId, title: title),
+                  ),
+                );
+                return;
+              }
+
               ref.read(callWindowControllerProvider.notifier).openCallWindow(
                 title: currentRoom?.roomName ?? '',
                 themeIndex: ref.read(themeIndexProvider),

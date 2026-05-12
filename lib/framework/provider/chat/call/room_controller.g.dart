@@ -38,7 +38,7 @@ final class RoomControllerProvider
   }) : super(
          retry: null,
          name: r'roomControllerProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -68,7 +68,7 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'5ec0c1e1578be5dbc5b8f652c428f6a61ed84fe0';
+String _$roomControllerHash() => r'be3d4e94bedd3baedbf7fe3820d17928f9796fff';
 
 /// 房间控制器
 /// 负责管理 LiveKit 房间的完整生命周期：
@@ -92,7 +92,7 @@ final class RoomControllerFamily extends $Family
         name: r'roomControllerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   /// 房间控制器

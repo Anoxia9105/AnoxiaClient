@@ -455,6 +455,8 @@
   "chat_favorite_success": "お気に入りに追加しました",
   "chat_favorite_failed": "お気に入りに追加できませんでした",
   "chat_favorite_error": "お気に入り操作エラー",
+  "favorite_empty_placeholder": "[空の内容]",
+  "favorite_text_type": "テキスト",
   "chat_revoke": "撤回する",
   "chat_revoke_success": "メッセージを撤回しました",
   "chat_revoke_failed": "メッセージの撤回に失敗しました",

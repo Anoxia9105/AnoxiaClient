@@ -33,7 +33,7 @@ final class AppInitializerProvider
   AppInitializer create() => AppInitializer();
 }
 
-String _$appInitializerHash() => r'69c534c7fda6a4b37bc0b0f2efd2ef28b7f7dd56';
+String _$appInitializerHash() => r'88a40e80bfe7c7d88f1dce31e478f57e0dc977e1';
 
 abstract class _$AppInitializer extends $AsyncNotifier<bool> {
   FutureOr<bool> build();

@@ -21,7 +21,7 @@ final class ContactListServiceProvider
         argument: null,
         retry: null,
         name: r'contactListServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -35,7 +35,7 @@ final class ContactListServiceProvider
 }
 
 String _$contactListServiceHash() =>
-    r'acb60a1b77ee2f963b4ea4b83a13ecf18e3c1395';
+    r'acda1d2d0e2e11a84e05633e1bf36324c998552a';
 
 abstract class _$ContactListService
     extends $AsyncNotifier<Map<int, ChatContactVO>> {
@@ -84,7 +84,7 @@ final class SortedContactGroupsProvider
         argument: null,
         retry: null,
         name: r'sortedContactGroupsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -105,4 +105,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'a9b7bebfdd2d925e0d3b76b470097d1cdaaef30e';
+    r'e2091c06b5f436da79354bef2b6b5381c034911d';
