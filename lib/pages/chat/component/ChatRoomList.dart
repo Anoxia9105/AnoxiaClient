@@ -20,6 +20,7 @@ import '../../../framework/provider/auth/auth_controller.dart';
 import '../../../framework/provider/chat/room/pinned_rooms_provider.dart';
 import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/chat/room/room_member_service.dart';
+import 'ChatRoomDetail.dart';
 
 class ChatRoomList extends ConsumerStatefulWidget {
   const ChatRoomList({super.key});
@@ -172,17 +173,28 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     final pinnedIds = ref.watch(pinnedRoomsProvider);
 
     if (filteredRooms.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 48, color: Colors.grey[300]),
-            const SizedBox(height: 12),
-            Text(
-              query.isEmpty
-                  ? 'chat_no_conversations'.tr()
-                  : 'chat_no_related_conversations'.tr(),
-              style: const TextStyle(color: Colors.grey),
+      return RefreshIndicator(
+        onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search_off, size: 48, color: Colors.grey[300]),
+                    const SizedBox(height: 12),
+                    Text(
+                      query.isEmpty
+                          ? 'chat_no_conversations'.tr()
+                          : 'chat_no_related_conversations'.tr(),
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -204,6 +216,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     return RefreshIndicator(
       onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         itemCount: sortedRooms.length,
         itemBuilder: (context, index) {
@@ -380,6 +393,14 @@ class _RoomItem extends ConsumerWidget {
         onTap: () {
           if (room.roomId != null) {
             ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
+
+            if (DeviceUtil.isRealMobile()) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ChatRoomDetail(),
+                ),
+              );
+            }
           }
         },
         selected: isSelected,

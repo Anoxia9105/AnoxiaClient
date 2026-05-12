@@ -332,6 +332,8 @@
   "chat_unmute_all": "解除禁言",
   "chat_mute_confirm": "确定要开启全员禁言吗？开启后所有成员都不能发言。",
   "chat_unmute_confirm": "确定要解除全员禁言吗？解除后所有成员都可以发言。",
+  "chat_mute_effect_hint": "群成员将暂时无法发送消息",
+  "chat_unmute_effect_hint": "将恢复群成员消息发送能力",
   "chat_mute_success": "已开启全员禁言",
   "chat_unmute_success": "已解除全员禁言",
   "member_no_contacts": "没有可添加的联系人",

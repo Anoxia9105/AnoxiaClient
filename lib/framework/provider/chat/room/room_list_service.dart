@@ -380,7 +380,13 @@ ChatRoomVO? activeRoom(Ref ref) {
 
   // 3. 自动关联：当列表更新时，这里也会自动返回最新的房间对象
   return roomListAsync.maybeWhen(
-    data: (rooms) => rooms.firstWhere((r) => r.roomId == activeId),
+    data: (rooms) {
+      try {
+        return rooms.firstWhere((r) => r.roomId == activeId);
+      } catch (_) {
+        return null;
+      }
+    },
     orElse: () => null,
   );
 }

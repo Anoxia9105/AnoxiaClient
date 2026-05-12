@@ -279,52 +279,168 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     String roomId,
     bool isMute,
   ) {
+    final cs = Theme.of(context).colorScheme;
+    final isDanger = isMute;
+    final title = isMute ? 'chat_mute_all'.tr() : 'chat_unmute_all'.tr();
+    final description = isMute
+        ? 'chat_mute_confirm'.tr()
+        : 'chat_unmute_confirm'.tr();
+
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(isMute ? 'chat_mute_all'.tr() : 'chat_unmute_all'.tr()),
-        content: Text(
-          isMute ? 'chat_mute_confirm'.tr() : 'chat_unmute_confirm'.tr(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text('dialog_cancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final cancelLoading = BotToast.showLoading();
-              try {
-                final success = await ref
-                    .read(roomListServiceProvider.notifier)
-                    .muteRoom(roomId, isMute);
-                cancelLoading();
-                BotToast.showText(
-                  text: success
-                      ? (isMute
-                          ? 'chat_mute_success'.tr()
-                          : 'chat_unmute_success'.tr())
-                      : 'chat_operation_retry_failed'.tr(),
-                );
-              } catch (e) {
-                cancelLoading();
-                BotToast.showText(
-                  text: 'chat_operation_failed'.tr(args: [e.toString()]),
-                );
-              }
-            },
-            child: Text(
-              'chat_confirm_btn'.tr(),
-              style: TextStyle(
-                color: isMute
-                    ? Theme.of(context).colorScheme.error
-                    : Theme.of(context).colorScheme.primary,
-              ),
+      builder: (dialogContext) {
+        bool submitting = false;
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
+            titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+            contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            title: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: (isDanger ? cs.errorContainer : cs.primaryContainer)
+                        .withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: HugeIcon(
+                    icon: isMute
+                        ? HugeIcons.strokeRoundedVolumeMute02
+                        : HugeIcons.strokeRoundedVolumeHigh,
+                    size: 18,
+                    color: isDanger ? cs.error : cs.primary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.45,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      HugeIcon(
+                        icon: HugeIcons.strokeRoundedAlert02,
+                        size: 14,
+                        color: isDanger ? cs.error : cs.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          isMute
+                              ? 'chat_mute_effect_hint'.tr()
+                              : 'chat_unmute_effect_hint'.tr(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              OutlinedButton(
+                onPressed: submitting
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(),
+                child: Text('dialog_cancel'.tr()),
+              ),
+              FilledButton.icon(
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        setState(() => submitting = true);
+                        final cancelLoading = BotToast.showLoading();
+                        try {
+                          final success = await ref
+                              .read(roomListServiceProvider.notifier)
+                              .muteRoom(roomId, isMute);
+                          cancelLoading();
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                          BotToast.showText(
+                            text: success
+                                ? (isMute
+                                    ? 'chat_mute_success'.tr()
+                                    : 'chat_unmute_success'.tr())
+                                : 'chat_operation_retry_failed'.tr(),
+                          );
+                        } catch (e) {
+                          cancelLoading();
+                          setState(() => submitting = false);
+                          BotToast.showText(
+                            text: 'chat_operation_failed'.tr(args: [e.toString()]),
+                          );
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  backgroundColor: isDanger ? cs.error : cs.primary,
+                  foregroundColor:
+                      isDanger ? cs.onError : cs.onPrimary,
+                ),
+                icon: submitting
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isDanger ? cs.onError : cs.onPrimary,
+                          ),
+                        ),
+                      )
+                    : HugeIcon(
+                        icon: isMute
+                            ? HugeIcons.strokeRoundedVolumeMute02
+                            : HugeIcons.strokeRoundedVolumeHigh,
+                        size: 16,
+                        color: isDanger ? cs.onError : cs.onPrimary,
+                      ),
+                label: Text('chat_confirm_btn'.tr()),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -345,17 +461,32 @@ class _MuteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return IconButton(
       tooltip: isMuted ? 'chat_unmute_tooltip'.tr() : 'chat_mute_tooltip'.tr(),
       onPressed: onTap,
+      style: IconButton.styleFrom(
+        backgroundColor: isMuted
+            ? cs.primaryContainer.withValues(alpha: 0.75)
+            : cs.errorContainer.withValues(alpha: 0.65),
+        side: BorderSide(
+          color: isMuted
+              ? cs.primary.withValues(alpha: 0.35)
+              : cs.error.withValues(alpha: 0.35),
+          width: 0.8,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
       icon: HugeIcon(
         icon: isMuted
-            ? HugeIcons.strokeRoundedVolumeMute02
-            : HugeIcons.strokeRoundedVolumeOff,
+            ? HugeIcons.strokeRoundedVolumeHigh
+            : HugeIcons.strokeRoundedVolumeMute02,
         size: 20,
         color: isMuted
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).colorScheme.onSurface,
+            ? cs.primary
+            : cs.error,
       ),
     );
   }

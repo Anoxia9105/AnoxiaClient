@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/pages/chat/component/widget/ChatAppBar.dart';
@@ -149,12 +150,14 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   }
 
   /// 消息列表的 padding，用于在消息气泡周围添加空白
-  final bodyPadding = 50.00;
+  final bodyPadding = DeviceUtil.isRealMobile() ? 8.00 : 50.00;
 
   @override
   Widget build(BuildContext context) {
     final activeId = ref.watch(activeRoomIdProvider);
-    final entryTask = ref.watch(roomEntryTaskProvider(activeId ?? ''));
+    final entryTask = activeId == null
+        ? const AsyncValue<void>.data(null)
+        : ref.watch(roomEntryTaskProvider(activeId));
     final wsState = ref.watch(wsControllerProvider);
 
     //监听这个房间是否有更多消息
@@ -179,6 +182,17 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
     final room = ref.watch(activeRoomProvider);
     final isRoomBanned = room?.roomStatus == 2;
+  final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    if (activeId == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: AppBar(),
+        body: Center(
+          child: Text('chat_no_conversations'.tr()),
+        ),
+      );
+    }
 
     final contentBody = showInitialSkeleton
         ? const _ChatRoomDetailSkeleton()
@@ -242,6 +256,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           }();
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: showInitialSkeleton ? AppBar() : ChatAppBar(),
       drawerScrimColor: Colors.transparent,
       body: Column(
@@ -263,33 +278,38 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
       bottomNavigationBar: showInitialSkeleton
           ? const _ChatInputSkeleton()
-          : Padding(
-              padding: EdgeInsets.only(
-                left: bodyPadding,
-                right: bodyPadding,
-                bottom: 10,
-              ),
-              child: () {
-                if (room == null) {
-                  return const SizedBox.shrink();
-                }
+          : SafeArea(
+              top: false,
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  left: bodyPadding,
+                  right: bodyPadding,
+                  bottom: (keyboardInset > 0 ? keyboardInset : 0) + 10,
+                ),
+                child: () {
+                  if (room == null) {
+                    return const SizedBox.shrink();
+                  }
 
-                return switch (room.roomStatus) {
-                  0 => ChatInputField(
-                    bottomSheet: () => _scrollToBottom(animated: true),
-                  ),
-                  1 => _bottomRoomStatusTag(
-                    'chat_room_muted'.tr(),
-                    icon: HugeIcons.strokeRoundedVolumeMute01,
-                  ),
-                  2 => const SizedBox.shrink(),
-                  3 => _bottomRoomStatusTag(
-                    'chat_room_dissolved'.tr(),
-                    icon: HugeIcons.strokeRoundedDelete02,
-                  ),
-                  _ => const SizedBox.shrink(),
-                };
-              }(),
+                  return switch (room.roomStatus) {
+                    0 => ChatInputField(
+                      bottomSheet: () => _scrollToBottom(animated: true),
+                    ),
+                    1 => _bottomRoomStatusTag(
+                      'chat_room_muted'.tr(),
+                      icon: HugeIcons.strokeRoundedVolumeMute01,
+                    ),
+                    2 => const SizedBox.shrink(),
+                    3 => _bottomRoomStatusTag(
+                      'chat_room_dissolved'.tr(),
+                      icon: HugeIcons.strokeRoundedDelete02,
+                    ),
+                    _ => const SizedBox.shrink(),
+                  };
+                }(),
+              ),
             ),
     );
   }

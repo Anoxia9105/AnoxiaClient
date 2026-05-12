@@ -2,18 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
+import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
-import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -168,9 +170,10 @@ class ChatInputController extends _$ChatInputController {
     }
 
     // 根据peerId查找对方成员
-    final peerMember = roomMembers.firstWhereOrNull(
-      (member) => member.userId == room.peerId,
-    );
+    final matchedMembers = roomMembers
+        .where((member) => member.userId == room.peerId)
+        .toList();
+    final peerMember = matchedMembers.isEmpty ? null : matchedMembers.first;
 
     if (peerMember == null) return;
 
@@ -269,7 +272,139 @@ class ChatInputController extends _$ChatInputController {
     }
     // 4. 清空输入
     clearInput();
-    ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
+    if(DeviceUtil.isRealDesktop()){
+      ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
+    }
+  }
+
+  /// Android 普通输入框发送纯文本（可带 @mention）
+  void sendPlainTextMessage(String text, {List<int>? mentionIds}) {
+    final room = ref.read(activeRoomProvider);
+    final content = text.trim();
+    if (room == null || content.isEmpty) return;
+
+    final isSingleEmoji =
+        content.characters.length == 1 &&
+        _isEmoji(content.characters.first);
+
+    _doSend(
+      type: MessageType.text,
+      payload: MessagePayload(
+        content: content,
+        mentions: (mentionIds != null && mentionIds.isNotEmpty)
+            ? mentionIds
+            : null,
+        emojiCode: isSingleEmoji ? content.characters.first : null,
+      ),
+    );
+  }
+
+  Future<void> sendPickedImages(List<PlatformFile> files) async {
+    if (files.isEmpty) return;
+
+    final List<Attachment> uploadList = [];
+    for (final file in files.where((f) => f.path != null)) {
+      if (!UploadValidator.validateSingleFile(file)) continue;
+      uploadList.add(
+        Attachment(
+          id: const Uuid().v4(),
+          url: file.path!,
+          name: _basenameWithoutExtension(file.name),
+          size: file.size,
+          type: file.extension ?? 'jpg',
+        ),
+      );
+    }
+    if (uploadList.isEmpty) return;
+
+    final uploader = ref.read(chatImageUploadControllerProvider.notifier);
+    await uploader.uploadImages(uploadList);
+
+    final urlMap = uploader.urlMap;
+    final uploaded = uploadList
+        .where((item) => urlMap[item.id] != null)
+        .map((item) => item.copyWith(url: urlMap[item.id]))
+        .toList();
+
+    if (uploaded.isEmpty) return;
+
+    _doSend(
+      type: MessageType.image,
+      payload: MessagePayload(content: '[图片]'),
+      attachments: uploaded,
+    );
+  }
+
+  Future<void> sendPickedFiles(List<PlatformFile> files) async {
+    if (files.isEmpty) return;
+
+    final List<Attachment> uploadList = [];
+    for (final file in files.where((f) => f.path != null)) {
+      if (!UploadValidator.validateSingleFile(file)) continue;
+      uploadList.add(
+        Attachment(
+          id: const Uuid().v4(),
+          url: file.path!,
+          name: _basenameWithoutExtension(file.name),
+          size: file.size,
+          type: file.extension ?? 'bin',
+        ),
+      );
+    }
+    if (uploadList.isEmpty) return;
+
+    final uploader = ref.read(chatFileUploadControllerProvider.notifier);
+    await uploader.uploadFiles(uploadList);
+
+    final urlMap = uploader.urlMap;
+    final uploaded = uploadList
+        .where((item) => urlMap[item.id] != null)
+        .map((item) => item.copyWith(url: urlMap[item.id]))
+        .toList();
+
+    if (uploaded.isEmpty) return;
+
+    _doSend(
+      type: MessageType.file,
+      payload: MessagePayload(content: '[文件]'),
+      attachments: uploaded,
+    );
+  }
+
+  /// 供 Android 普通输入框复用“正在输入”状态
+  void handlePlainTextChanged(String text) {
+    final hasContent = text.trim().isNotEmpty;
+
+    if (hasContent && !_isTyping) {
+      _isTyping = true;
+      _sendTypingStatus(true);
+    }
+
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 2), () {
+      if (!ref.mounted) return;
+      if (_isTyping) {
+        _isTyping = false;
+        _sendTypingStatus(false);
+      }
+    });
+
+    if (!hasContent && _isTyping) {
+      _isTyping = false;
+      _sendTypingStatus(false);
+    }
+  }
+
+  bool _isEmoji(String char) {
+    final codePoint = char.runes.first;
+    return (codePoint >= 0x1F300 && codePoint <= 0x1FAFF) ||
+        (codePoint >= 0x2600 && codePoint <= 0x27BF);
+  }
+
+  String _basenameWithoutExtension(String fileName) {
+    final dot = fileName.lastIndexOf('.');
+    if (dot <= 0) return fileName;
+    return fileName.substring(0, dot);
   }
 
   void clearInput() {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -7,6 +8,7 @@ import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_cont
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/pages/chat/component/widget/MentionListWidget.dart';
+import 'package:anoxia/pages/chat/component/widget/ChatEmojiWidget.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/ChatQuillToolbar.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/QuillStyleConfig.dart';
@@ -14,6 +16,8 @@ import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillFileB
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillImageBuild.dart';
 import 'package:anoxia/pages/chat/component/widget/quill/embedBuilder/QuillMentionBuild.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -34,14 +38,22 @@ class ChatInputField extends ConsumerStatefulWidget {
 
 class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   final GlobalKey<QuillEditorState> _editorKey = GlobalKey();
+  final TextEditingController _androidTextController = TextEditingController();
   Function? _cancelMentionToast;
+  final Map<String, int> _androidMentionMap = {};
+  String _lastAndroidText = '';
 
   @override
   void initState() {
     super.initState();
-    // 使用监听器处理 Mention 弹窗状态
-    _initMentionListener();
+    if (!_isAndroidMode) {
+      // 使用监听器处理 Mention 弹窗状态
+      _initMentionListener();
+    }
   }
+
+  bool get _isAndroidMode =>
+      DeviceUtil.isRealMobile() && defaultTargetPlatform == TargetPlatform.android;
 
   void _initMentionListener() {
     // 监听 mentionStateProvider 的变化
@@ -60,6 +72,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   @override
   void dispose() {
     _closeMentionList();
+    _androidTextController.dispose();
     super.dispose();
   }
 
@@ -148,6 +161,10 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
     final room = ref.watch(activeRoomProvider);
     if (room == null) return const SizedBox.shrink();
 
+    if (_isAndroidMode) {
+      return _buildAndroidInput(context, room.roomId!);
+    }
+
     final controller = ref.watch(chatInputControllerProvider(room.roomId!));
     final focusNode = ref.watch(chatFocusNodeProvider(room.roomId!));
 
@@ -192,7 +209,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
           spaceShortcutEvents: const [],
           enableSelectionToolbar: false,
           placeholder: "chat_input_placeholder".tr(),
-          autoFocus: true,
+          autoFocus: false,
           padding: const EdgeInsets.all(8),
           customStyles: QuillStyleConfig.get(context),
           onKeyPressed: (event, node) => _handleKeyPress(event, roomId),
@@ -204,6 +221,306 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
         ),
       ),
     );
+  }
+
+  Widget _buildAndroidInput(BuildContext context, String roomId) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final focusNode = ref.watch(chatFocusNodeProvider(roomId));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: _buildBoxDecoration(context),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _androidTextController,
+              focusNode: focusNode,
+              minLines: 1,
+              maxLines: 4,
+              textInputAction: TextInputAction.newline,
+              decoration: InputDecoration(
+                hintText: 'chat_input_placeholder'.tr(),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
+              ),
+              onChanged: (value) => _handleAndroidTextChanged(value, roomId),
+            ),
+          ),
+          IconButton(
+            tooltip: 'toolbar_more'.tr(),
+            onPressed: () => _showAndroidActionSheet(roomId),
+            icon: Icon(
+              Icons.add_circle_outline,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          IconButton(
+            tooltip: 'toolbar_send'.tr(),
+            onPressed: () => _handleAndroidSend(roomId),
+            icon: Icon(Icons.send_rounded, color: colorScheme.primary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAndroidActionSheet(String roomId) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+            child: Wrap(
+              runSpacing: 8,
+              children: [
+                _buildAndroidActionTile(
+                  context,
+                  icon: Icons.emoji_emotions_outlined,
+                  label: 'toolbar_emoji'.tr(),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showAndroidEmojiSheet();
+                  },
+                ),
+                _buildAndroidActionTile(
+                  context,
+                  icon: Icons.image_outlined,
+                  label: 'toolbar_image'.tr(),
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _pickAndSendImages(roomId);
+                  },
+                ),
+                _buildAndroidActionTile(
+                  context,
+                  icon: Icons.insert_drive_file_outlined,
+                  label: 'toolbar_file'.tr(),
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _pickAndSendFiles(roomId);
+                  },
+                ),
+                _buildAndroidActionTile(
+                  context,
+                  icon: Icons.alternate_email,
+                  label: '@',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showAndroidMentionSheet(roomId);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAndroidActionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      onTap: onTap,
+      leading: CircleAvatar(
+        backgroundColor: colorScheme.primaryContainer,
+        child: Icon(icon, color: colorScheme.onPrimaryContainer),
+      ),
+      title: Text(label),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+
+  void _showAndroidEmojiSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: ChatEmojiWidget(
+                closeSelected: () => Navigator.of(ctx).pop(),
+                onEmojiSelected: (emoji) {
+                  _insertAndroidTextAtCursor(emoji);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndSendImages(String roomId) async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.image,
+    );
+    if (result == null || result.files.isEmpty) return;
+    if (!mounted) return;
+
+    await ref
+        .read(chatInputControllerProvider(roomId).notifier)
+        .sendPickedImages(result.files);
+    widget.bottomSheet();
+  }
+
+  Future<void> _pickAndSendFiles(String roomId) async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+    if (result == null || result.files.isEmpty) return;
+    if (!mounted) return;
+
+    await ref
+        .read(chatInputControllerProvider(roomId).notifier)
+        .sendPickedFiles(result.files);
+    widget.bottomSheet();
+  }
+
+  void _handleAndroidTextChanged(String value, String roomId) {
+    ref
+        .read(chatInputControllerProvider(roomId).notifier)
+        .handlePlainTextChanged(value);
+
+    final selection = _androidTextController.selection;
+    final cursor = selection.baseOffset;
+    final isAppend = value.length > _lastAndroidText.length;
+    final typedAt =
+        isAppend &&
+        cursor > 0 &&
+        cursor <= value.length &&
+        value[cursor - 1] == '@';
+
+    _lastAndroidText = value;
+
+    if (typedAt) {
+      _showAndroidMentionSheet(roomId);
+    }
+  }
+
+  void _showAndroidMentionSheet(String roomId) {
+    final currentUser = ref.read(authControllerProvider).value;
+    final roomMembers = ref.read(roomMembersProvider(roomId));
+    final users = roomMembers
+        .where((m) => m.userId != null && m.userId != currentUser?.userId)
+        .map(
+          (m) => MentionUser(
+            id: m.userId!,
+            name: m.nickName ?? 'chat_unknown_user_label'.tr(),
+            avatar: m.avatar,
+          ),
+        )
+        .toList();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: MentionListWidget(
+              users: users,
+              onUserSelected: (user) {
+                Navigator.of(ctx).pop();
+                _insertAndroidMention(user);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _insertAndroidMention(MentionUser user) {
+    final text = _androidTextController.text;
+    final selection = _androidTextController.selection;
+    final cursor = selection.baseOffset < 0 ? text.length : selection.baseOffset;
+    final lookupIndex = cursor > 0 ? cursor - 1 : 0;
+    final atIndex = text.lastIndexOf('@', lookupIndex);
+
+    String newText;
+    int newOffset;
+
+    if (atIndex >= 0 && atIndex <= cursor) {
+      newText = '${text.substring(0, atIndex)}@${user.name} ${text.substring(cursor)}';
+      newOffset = atIndex + user.name.length + 2;
+    } else {
+      newText = '${text.substring(0, cursor)}@${user.name} ${text.substring(cursor)}';
+      newOffset = cursor + user.name.length + 2;
+    }
+
+    _androidTextController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newOffset),
+    );
+    _androidMentionMap[user.name] = user.id;
+    _lastAndroidText = newText;
+  }
+
+  void _insertAndroidTextAtCursor(String insertText) {
+    final text = _androidTextController.text;
+    final selection = _androidTextController.selection;
+    final cursor = selection.baseOffset < 0 ? text.length : selection.baseOffset;
+
+    final newText = '${text.substring(0, cursor)}$insertText${text.substring(cursor)}';
+    final newOffset = cursor + insertText.length;
+
+    _androidTextController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newOffset),
+    );
+    _lastAndroidText = newText;
+  }
+
+  List<int> _extractAndroidMentionIds(String text) {
+    final ids = <int>{};
+    for (final entry in _androidMentionMap.entries) {
+      if (text.contains('@${entry.key}')) {
+        ids.add(entry.value);
+      }
+    }
+    return ids.toList();
+  }
+
+  void _handleAndroidSend(String roomId) {
+    final text = _androidTextController.text.trim();
+    if (text.isEmpty) return;
+
+    final mentionIds = _extractAndroidMentionIds(text);
+    ref
+        .read(chatInputControllerProvider(roomId).notifier)
+        .sendPlainTextMessage(text, mentionIds: mentionIds);
+
+    _androidTextController.clear();
+    _androidMentionMap.clear();
+    _lastAndroidText = '';
+    widget.bottomSheet();
   }
 
   // --- 辅助方法 ---

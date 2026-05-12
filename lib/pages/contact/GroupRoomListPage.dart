@@ -12,33 +12,35 @@ class GroupRoomListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final groups = ref.watch(groupRoomListProvider);
 
-    if (groups.isEmpty) {
-      return Center(child: Text('group_no_groups'.tr()));
-    }
-
-    return ListView.builder(
-      itemCount: groups.length,
-      itemBuilder: (context, index) {
-        final room = groups[index];
-        return ListTile(
-          leading: AvatarWidget(url: room.roomAvatar, name: room.roomName),
-          title: Text(room.roomName ?? 'group_unnamed'.tr()),
-          subtitle: Text(
-            room.lastMessage?.content ?? 'chat_no_messages_in_group'.tr(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: (room.unreadCount ?? 0) > 0
-              ? CircleAvatar(
-                  radius: 10,
-                  child: Text(
-                    room.unreadCount.toString(),
-                    style: const TextStyle(fontSize: 12),
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(title: Text('contact_joined_groups'.tr())),
+      body: groups.isEmpty
+          ? Center(child: Text('group_no_groups'.tr()))
+          : ListView.builder(
+              itemCount: groups.length,
+              itemBuilder: (context, index) {
+                final room = groups[index];
+                return ListTile(
+                  leading: AvatarWidget(url: room.roomAvatar, name: room.roomName),
+                  title: Text(room.roomName ?? 'group_unnamed'.tr()),
+                  subtitle: Text(
+                    room.lastMessage?.content ?? 'chat_no_messages_in_group'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                )
-              : null,
-        );
-      },
+                  trailing: (room.unreadCount ?? 0) > 0
+                      ? CircleAvatar(
+                          radius: 10,
+                          child: Text(
+                            room.unreadCount.toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
     );
   }
 }

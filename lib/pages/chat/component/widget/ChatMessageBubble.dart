@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -38,6 +39,8 @@ class ChatMessageBubble extends ConsumerWidget {
         ? colorScheme.onPrimary
         : colorScheme.onSurfaceVariant;
 
+    final bodyPadding = DeviceUtil.isRealMobile() ? 8.00 : 50.00;
+
     final mentionList = message.payload?.mentions;
     bool isMentionedMe = false;
 
@@ -58,13 +61,13 @@ class ChatMessageBubble extends ConsumerWidget {
     //系统消息 直接渲染
     if (message.messageType == MessageType.system) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 50),
+        padding:  EdgeInsets.symmetric(vertical: 4, horizontal: bodyPadding),
         child: strategy.buildContent(context, message, textColor),
       );
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 50),
+      margin:  EdgeInsets.symmetric(vertical: 6, horizontal: bodyPadding),
       child: Column(
         crossAxisAlignment: isCurrentUser
             ? CrossAxisAlignment.end
@@ -148,7 +151,6 @@ class ChatMessageBubble extends ConsumerWidget {
                           //     color: Theme.of(context).colorScheme.outline,
                           //   ),
                           // ),
-
                           if (isMentionedMe)
                             const Text(
                               "@",

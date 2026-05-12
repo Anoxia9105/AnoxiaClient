@@ -1,8 +1,12 @@
 
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/pages/contact/NewfriendsPage.dart';
+import 'package:anoxia/pages/contact/GroupRoomListPage.dart';
+import 'package:anoxia/pages/contact/component/ContactDetail.dart';
 import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +15,10 @@ import 'package:easy_localization/easy_localization.dart';
 
 class ContactList extends ConsumerWidget {
   const ContactList({super.key});
+
+  void _openMobileDetail(BuildContext context, Widget page) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,8 +38,12 @@ class ContactList extends ConsumerWidget {
             icon: HugeIcons.strokeRoundedAddTeam,
             title: 'contact_new_friends'.tr(),
             isSelected: currentViewType == ContactViewType.newFriends,
-            onTap: () =>
-                ref.read(contactSelectionProvider.notifier).selectNewFriends(),
+            onTap: () {
+              ref.read(contactSelectionProvider.notifier).selectNewFriends();
+              if (DeviceUtil.isRealMobile()) {
+                _openMobileDetail(context, const NewFriendsPage());
+              }
+            },
             trailing: VibratingBadge(
               count: ref.watch(pendingRequestCountProvider).value ?? 0,
             ),
@@ -42,8 +54,12 @@ class ContactList extends ConsumerWidget {
             icon: HugeIcons.strokeRoundedUserGroup03,
             title: 'contact_joined_groups'.tr(),
             isSelected: currentViewType == ContactViewType.groups,
-            onTap: () =>
-                ref.read(contactSelectionProvider.notifier).selectGroups(),
+            onTap: () {
+              ref.read(contactSelectionProvider.notifier).selectGroups();
+              if (DeviceUtil.isRealMobile()) {
+                _openMobileDetail(context, GroupRoomListPage());
+              }
+            },
           ),
           // 联系人标题
           ListTile(
@@ -53,7 +69,15 @@ class ContactList extends ConsumerWidget {
             ),
           ),
 
-          Expanded(child: SortedContactGroupsWidget()),
+          Expanded(
+            child: SortedContactGroupsWidget(
+              onContactTap: () {
+                if (DeviceUtil.isRealMobile()) {
+                  _openMobileDetail(context, const ContactDetail());
+                }
+              },
+            ),
+          ),
         ],
       ),
     );

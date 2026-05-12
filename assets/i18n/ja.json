@@ -361,6 +361,8 @@
   "chat_unmute_all": "ミュート解除",
   "chat_mute_confirm": "全体ミュートを有効にしますか？有効にすると全メンバーが発言できなくなります。",
   "chat_unmute_confirm": "全体ミュートを解除しますか？解除すると全メンバーが発言できるようになります。",
+  "chat_mute_effect_hint": "グループメンバーは一時的にメッセージを送信できなくなります",
+  "chat_unmute_effect_hint": "グループメンバー全員のメッセージ送信が再開されます",
   "chat_mute_success": "全体ミュートを有効にしました",
   "chat_unmute_success": "全体ミュートを解除しました",
 

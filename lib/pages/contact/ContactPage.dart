@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/pages/contact/NewfriendsPage.dart';
 import 'package:anoxia/pages/contact/component/ContactDetail.dart';
 import 'package:anoxia/pages/contact/component/ContactList.dart';
@@ -14,6 +15,10 @@ class ContactPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (DeviceUtil.isRealMobile()) {
+      return const ContactList();
+    }
+
     final selection = ref.watch(
       contactSelectionProvider.select((select) => select.viewType),
     );
