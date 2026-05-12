@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../common/utils/DeviceUtil.dart';
@@ -65,6 +66,28 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
     });
 
     try {
+      if (DeviceUtil.isRealMobile()) {
+        final uri = Uri.tryParse(widget.updateInfo.downloadUrl);
+        if (uri == null) {
+          throw Exception('invalid update url');
+        }
+
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (!launched) {
+          throw Exception('cannot open update url');
+        }
+
+        if (!mounted) return;
+        setState(() {
+          _isDownloading = false;
+          _progress = 0;
+        });
+        return;
+      }
+
       final tempDir = await getApplicationDocumentsDirectory();
       final fileName = widget.updateInfo.downloadUrl.split('/').last;
       final savePath = "${tempDir.path}/$fileName";

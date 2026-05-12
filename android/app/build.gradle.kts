@@ -5,6 +5,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val flutterVersionName =
+    (project.findProperty("flutter.versionName") as String? ?: flutter.versionName)
+        .substringBefore('+')
+val flutterVersionCode =
+    (project.findProperty("flutter.versionCode") as String? ?: flutter.versionCode.toString())
+        .toInt()
+
 android {
     namespace = "cn.anoxia.notepadclient"
     compileSdk = flutter.compileSdkVersion
@@ -29,8 +36,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = flutterVersionCode
+        versionName = flutterVersionName
     }
 
     buildTypes {

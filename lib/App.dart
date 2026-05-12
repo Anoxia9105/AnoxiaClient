@@ -114,7 +114,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   Widget build(BuildContext context) {
     final locale = context.locale;
     return MaterialApp.router(
-      title: '记事本客户端',
+      title: 'Anoxia',
       routerConfig: ref.watch(routerProvider),
       theme: ref.watch(appThemeProvider),
       builder: BotToastInit(),

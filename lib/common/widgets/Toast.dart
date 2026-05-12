@@ -8,8 +8,8 @@ enum ToastType { warning, error, success, info }
 class Toast {
   static const _defaultDuration = Duration(seconds: 3);
   static const _defaultMargin = EdgeInsets.all(15);
-  static const _defaultIconSize = 15.0;
-  static const _defaultRadius = 10.0;
+  static const _defaultIconSize = 13.0;
+  static const _defaultRadius = 9.0;
 
   static bool get _enableBlurEffect {
     if (kIsWeb) return true;
@@ -66,8 +66,9 @@ class Toast {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: white,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          height: 1.2,
         ),
       ),
       leading: (_) => config.icon,
@@ -146,9 +147,9 @@ class Toast {
       duration: duration,
       toastBuilder: (_) {
         final toastBody = Container(
-          constraints: const BoxConstraints(maxWidth: 420),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          margin: const EdgeInsets.all(10),
+          constraints: const BoxConstraints(maxWidth: 380),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: color.withValues(alpha: .92),
             borderRadius: BorderRadius.circular(_defaultRadius),
@@ -168,8 +169,8 @@ class Toast {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 22,
-                height: 22,
+                width: 20,
+                height: 20,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: .22),
@@ -181,17 +182,17 @@ class Toast {
                   size: _defaultIconSize,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               Flexible(
                 child: Text(
                   message,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: Colors.white,
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
+                    height: 1.28,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
