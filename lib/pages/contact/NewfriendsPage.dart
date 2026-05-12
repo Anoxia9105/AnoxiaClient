@@ -18,7 +18,9 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
   Widget build(BuildContext context) {
     final requestAsync = ref.watch(contactRequestsServiceProvider);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: DeviceUtil.isRealDesktop()
+              ? Colors.transparent
+              : Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: Text('contact_new_friends_title'.tr())),
       body: requestAsync.when(
         data: (req) {

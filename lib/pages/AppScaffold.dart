@@ -44,6 +44,9 @@ class AppScaffold extends StatelessWidget {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
+          backgroundColor: DeviceUtil.isRealDesktop()
+              ? Colors.transparent
+              : Theme.of(context).colorScheme.surface,
           appBar: getAppbar(context),
           body: body,
           bottomNavigationBar: bottomNavigationBar,

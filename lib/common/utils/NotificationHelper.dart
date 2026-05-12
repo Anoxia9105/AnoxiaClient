@@ -5,7 +5,7 @@ import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/main.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_app_badger/flutter_app_badger.dart';
+import 'package:flutter_new_badger/flutter_new_badger.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
@@ -242,20 +242,16 @@ class NotificationHelper {
   /// 同步手机桌面 App 图标角标（Android/iOS）
   Future<void> updateAppIconBadge(int count) async {
     if (kIsWeb) return;
-
     final isMobile =
         defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS;
     if (!isMobile) return;
 
     try {
-      final supported = await FlutterAppBadger.isAppBadgeSupported();
-      if (!supported) return;
-
       if (count <= 0) {
-        FlutterAppBadger.removeBadge();
+        await FlutterNewBadger.removeBadge();
       } else {
-        FlutterAppBadger.updateBadgeCount(count);
+        await FlutterNewBadger.setBadge(count);
       }
     } catch (e) {
       log.warning('更新桌面角标失败: $e');

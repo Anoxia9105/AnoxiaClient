@@ -256,7 +256,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           }();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: DeviceUtil.isRealDesktop()
+              ? Colors.transparent
+              : Theme.of(context).colorScheme.surface,
       appBar: showInitialSkeleton ? AppBar() : ChatAppBar(),
       drawerScrimColor: Colors.transparent,
       body: Column(
