@@ -372,7 +372,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   }
 
   Future<void> _pickAndSendImages(String roomId) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
     );
@@ -386,7 +386,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   }
 
   Future<void> _pickAndSendFiles(String roomId) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.any,
     );
