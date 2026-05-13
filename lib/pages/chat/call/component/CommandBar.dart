@@ -42,11 +42,16 @@ class CommandBar extends ConsumerWidget {
         children: [
           MeetingTimer(joinedAt: state.joinedAt),
 
-          const Spacer(),
+          const SizedBox(width: 8),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
               // 麦克风：split button
               Builder(
                 builder: (context) {
@@ -158,8 +163,11 @@ class CommandBar extends ConsumerWidget {
               const SizedBox(width: 8),
 
               // 挂断
-              _buildHangupButton(context, ref, notifier),
-            ],
+                    _buildHangupButton(context, ref, notifier),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

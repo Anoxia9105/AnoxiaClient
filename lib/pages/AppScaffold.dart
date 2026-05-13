@@ -48,7 +48,7 @@ class AppScaffold extends StatelessWidget {
           backgroundColor: DeviceUtil.isRealDesktop()
               ? Colors.transparent
               : Theme.of(context).colorScheme.surface,
-          appBar: getAppbar(context),
+          appBar: getAppbar(context, overlayStyle),
           body: body,
           bottomNavigationBar: bottomNavigationBar,
         ),
@@ -57,7 +57,10 @@ class AppScaffold extends StatelessWidget {
   }
 
   //获取应用栏
-  PreferredSizeWidget? getAppbar(BuildContext context) {
+  PreferredSizeWidget? getAppbar(
+    BuildContext context,
+    SystemUiOverlayStyle overlayStyle,
+  ) {
     if (DeviceUtil.isRealDesktop()) {
       return DesktopAppBar(
         hideAppBarLogo: hideAppBarLogo,
@@ -67,6 +70,10 @@ class AppScaffold extends StatelessWidget {
 
     if (!showMobileAppBar) return null;
 
-    return mobileAppBar ?? AppBar(title: Text(title?.tr() ?? ''));
+    return mobileAppBar ??
+        AppBar(
+          title: Text(title?.tr() ?? ''),
+          systemOverlayStyle: overlayStyle,
+        );
   }
 }

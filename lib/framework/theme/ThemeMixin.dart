@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'AppColors.dart';
 
@@ -288,11 +289,18 @@ mixin ThemeMixin {
     // -------------------------
     // AppBar / BottomNavigationBar / TabBar / Progress / DataTable / Divider
     // -------------------------
-    final appBarTheme = const AppBarTheme(
+    final appBarTheme = AppBarTheme(
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
       backgroundColor: Colors.transparent,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness:
+            brightness == Brightness.dark ? Brightness.dark : Brightness.light,
+      ),
     );
 
     //底部导航栏

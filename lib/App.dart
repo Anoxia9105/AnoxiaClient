@@ -2,6 +2,7 @@ import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -113,10 +114,23 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale;
+    final appTheme = ref.watch(appThemeProvider);
+    final isDark = appTheme.brightness == Brightness.dark;
+
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+      ),
+    );
+
     return MaterialApp.router(
       title: 'Anoxia',
       routerConfig: ref.watch(routerProvider),
-      theme: ref.watch(appThemeProvider),
+      theme: appTheme,
       builder: BotToastInit(),
       debugShowCheckedModeBanner: false,
       locale: locale,

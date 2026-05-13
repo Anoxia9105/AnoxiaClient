@@ -31,15 +31,37 @@ class CallRoomPage extends ConsumerWidget {
 
   Widget _buildLoadingState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(strokeWidth: 3),
-          const SizedBox(height: 24),
-          Text('call_connecting_to_room'.tr(), style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 8),
-          Text('call_please_wait'.tr(), style: const TextStyle(fontSize: 14)),
-        ],
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.ring_volume_rounded, size: 34),
+            const SizedBox(height: 14),
+            Text(
+              'call_connecting_to_room'.tr(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'call_please_wait'.tr(),
+              style: const TextStyle(fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            ),
+          ],
+        ),
       ),
     );
   }

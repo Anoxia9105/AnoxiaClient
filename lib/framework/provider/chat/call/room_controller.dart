@@ -618,8 +618,14 @@ class RoomController extends _$RoomController {
   Future<void> leave() async {
     final currentState = state.value;
     if (currentState != null) {
-      await currentState.room.disconnect();
-      log.info("已离开房间");
+      try {
+        await currentState.room.disconnect().timeout(const Duration(seconds: 2));
+        log.info("已离开房间");
+      } on TimeoutException {
+        log.warning("离开房间超时，转为后台清理");
+      } catch (e) {
+        log.warning("离开房间异常（忽略并继续退出）: $e");
+      }
     }
     ref.invalidateSelf();
   }

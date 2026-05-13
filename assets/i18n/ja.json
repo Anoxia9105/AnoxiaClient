@@ -166,8 +166,8 @@
   
   "chat_send_message": "メッセージを送る",
   "call_waiting_to_join": "参加待ち...",
-  "call_connecting_to_room": "通話ルームに接続中...",
-  "call_please_wait": "お待ちください",
+  "call_connecting_to_room": "発信中...",
+  "call_please_wait": "相手の応答を待っています",
   "call_connection_failed": "接続に失敗しました",
   "sidebar_personal_details": "個人詳細",
   "sidebar_logout": "ログアウト",

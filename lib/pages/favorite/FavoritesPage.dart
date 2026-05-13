@@ -43,7 +43,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     final isMobile = DeviceUtil.isRealMobile();
 
     if (isMobile) {
-      final stillExists = _selectedId != null &&
+      final stillExists =
+          _selectedId != null &&
           items.any((element) => element.id == _selectedId);
       if (stillExists || _selectedId == null) {
         return;
@@ -56,7 +57,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
       return;
     }
 
-    final stillExists = _selectedId != null &&
+    final stillExists =
+        _selectedId != null &&
         items.any((element) => element.id == _selectedId);
     if (stillExists) return;
 
@@ -177,6 +179,9 @@ class _FavoriteDetailMobilePage extends StatelessWidget {
         : item.summary;
 
     return Scaffold(
+      backgroundColor: DeviceUtil.isRealDesktop()
+          ? Colors.transparent
+          : Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text('chat_favorite'.tr()),
         actions: [
@@ -185,9 +190,9 @@ class _FavoriteDetailMobilePage extends StatelessWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: copyText));
               if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('chat_copy_success'.tr())),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('chat_copy_success'.tr())));
             },
             icon: const Icon(Icons.copy_rounded),
           ),
@@ -221,7 +226,9 @@ class _FavoriteListPanel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 14, 8, 12),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: .6)),
+              bottom: BorderSide(
+                color: cs.outlineVariant.withValues(alpha: .6),
+              ),
             ),
           ),
           child: Row(
@@ -233,7 +240,11 @@ class _FavoriteListPanel extends StatelessWidget {
                   color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.bookmark_rounded, color: cs.primary, size: 20),
+                child: Icon(
+                  Icons.bookmark_rounded,
+                  color: cs.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -371,7 +382,7 @@ class _FavoriteDetailPanel extends StatelessWidget {
         (message.payload?.content?.trim().isNotEmpty ?? false) ||
         (message.payload?.quillDelta?.trim().isNotEmpty ?? false) ||
         message.attachments.isNotEmpty;
-  final isRefinedTextDetail = _isRefinedTextDetail(message, detailFallback);
+    final isRefinedTextDetail = _isRefinedTextDetail(message, detailFallback);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +392,9 @@ class _FavoriteDetailPanel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: .6)),
+              bottom: BorderSide(
+                color: cs.outlineVariant.withValues(alpha: .6),
+              ),
             ),
           ),
           child: Wrap(
@@ -391,7 +404,10 @@ class _FavoriteDetailPanel extends StatelessWidget {
             children: [
               Text(
                 'chat_favorite'.tr(),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -520,10 +536,7 @@ class _FavoriteTextDetailCard extends StatelessWidget {
               const Spacer(),
               Text(
                 dateLabel,
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 11,
-                ),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
               ),
             ],
           ),
