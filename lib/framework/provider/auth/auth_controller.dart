@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io' as io;
 
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/CaptchaModel.dart';
@@ -55,6 +57,7 @@ class AuthController extends _$AuthController {
           "password": password,
           "code": code,
           "uuid": uuid,
+          "deviceId": _buildDeviceId(),
         },
         auth: false,
       );
@@ -156,6 +159,24 @@ class AuthController extends _$AuthController {
 
   /// logout mutation action
   static final loginMutation = Mutation<void>();
+
+  String _buildDeviceId() {
+    if (kIsWeb) return 'web';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'android';
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.windows:
+        return 'windows';
+      case TargetPlatform.macOS:
+        return 'macos';
+      case TargetPlatform.linux:
+        return 'linux';
+      default:
+        return io.Platform.operatingSystem;
+    }
+  }
 }
 
 @riverpod

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,7 +23,7 @@ class AppScaffold extends StatelessWidget {
     required this.body,
     this.bottomNavigationBar,
     this.mobileAppBar,
-    this.showMobileAppBar = false, //默认不显示移动端AppBar，除非显式传入mobileAppBar或设置showMobileAppBar为true
+    this.showMobileAppBar = true, //默认显示移动端AppBar，除非显式传入mobileAppBar或设置showMobileAppBar为false
     this.hideAppBarLogo = false,
     this.showDesktopHeaderEnhancements = false,
     this.title,
@@ -66,6 +67,6 @@ class AppScaffold extends StatelessWidget {
 
     if (!showMobileAppBar) return null;
 
-    return mobileAppBar ?? AppBar(title: Text(title ?? ''));
+    return mobileAppBar ?? AppBar(title: Text(title?.tr() ?? ''));
   }
 }
