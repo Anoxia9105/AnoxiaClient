@@ -38,8 +38,8 @@ class AcrylicContainer extends StatelessWidget {
 
     // 自动主题色 overlay
     final Color autoOverlayColor = isDark
-        ? Colors.grey.shade800.withOpacity(0.5)
-        : Colors.grey.shade200.withOpacity(0.5);
+        ? Colors.grey.shade800.withValues(alpha: 0.5)
+        : Colors.grey.shade200.withValues(alpha: 0.5);
 
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.zero,
@@ -48,10 +48,7 @@ class AcrylicContainer extends StatelessWidget {
         children: [
           // 背景层（可点击）
           Positioned.fill(
-            child: GestureDetector(
-              onTap: onBackgroundTap,
-              child: background,
-            ),
+            child: GestureDetector(onTap: onBackgroundTap, child: background),
           ),
 
           // 模糊层

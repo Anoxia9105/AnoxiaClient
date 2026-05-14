@@ -66,7 +66,7 @@ class RoomListService extends _$RoomListService {
                 return ChatRoomVO.fromJson(e);
               } catch (e) {
                 // 单条解析失败，记录日志并返回空，防止整个页面崩溃
-                print("ChatRoomVO 解析异常: $e");
+                log.warning("ChatRoomVO 解析异常: $e");
                 return null;
               }
             })
@@ -227,13 +227,13 @@ class RoomListService extends _$RoomListService {
   // 上报最新 seq 的接口调用
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
-      print("🚀 上报已读状态: 房间 $roomId, Seq $seq");
+      log.info("🚀 上报已读状态: 房间 $roomId, Seq $seq");
       await DioClient().get(
         API.chatReadReport,
         queryParameters: {"roomId": roomId, "seq": seq},
       );
     } catch (e) {
-      print("上报已读失败: $e");
+      log.warning("上报已读失败: $e");
     }
   }
 
@@ -253,13 +253,13 @@ class RoomListService extends _$RoomListService {
 
     // 2. 如果本地找到了，直接返回 roomId
     if (existingRoom != null && existingRoom.roomId != null) {
-      print("✅ 找到现有房间: ${existingRoom.roomId}");
+      log.info("✅ 找到现有房间: ${existingRoom.roomId}");
       return existingRoom.roomId;
     }
 
     // 3. 本地没找到，请求后端创建/获取
     try {
-      print("🚀 正在请求后端创建私聊房间，目标用户: $targetUserId");
+      log.info("🚀 正在请求后端创建私聊房间，目标用户: $targetUserId");
       final res = await DioClient().get(
         API.chatCreatePrivate,
         queryParameters: {"targetId": targetUserId},
@@ -275,7 +275,7 @@ class RoomListService extends _$RoomListService {
 
       return newRoom.roomId;
     } catch (e) {
-      print("❌ 获取/创建房间接口调用失败: $e");
+      log.error("❌ 获取/创建房间接口调用失败", e);
       return null;
     }
   }
@@ -283,7 +283,7 @@ class RoomListService extends _$RoomListService {
   /// 退出房间
   Future<void> leaveRoom(String roomId) async {
     try {
-      print("🚀 正在请求后端删除会话，房间 ID: $roomId");
+      log.info("🚀 正在请求后端删除会话，房间 ID: $roomId");
       final res = await DioClient().get(
         API.chatRoomLeave,
         queryParameters: {"roomId": roomId},
@@ -303,7 +303,7 @@ class RoomListService extends _$RoomListService {
         log.info("✅ 已删除房间 $roomId 的本地消息缓存和状态");
       }
     } catch (e) {
-      print("❌ 删除会话失败: $e");
+      log.error("❌ 删除会话失败", e);
       rethrow;
     }
   }
@@ -321,7 +321,7 @@ class RoomListService extends _$RoomListService {
       // 刷新房间列表
       await refresh(silent: true);
     } catch (e) {
-      print("❌ 解散群聊失败: $e");
+      log.error("❌ 解散群聊失败", e);
       rethrow;
     }
   }

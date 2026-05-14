@@ -28,10 +28,10 @@ class NotificationHelper {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // 2. iOS & macOS
-    final darwin = DarwinInitializationSettings();
+    const darwin = DarwinInitializationSettings();
 
     // 3. Linux
-    final linux = LinuxInitializationSettings(
+    const linux = LinuxInitializationSettings(
       defaultActionName: 'Open notification',
     );
 
@@ -39,7 +39,7 @@ class NotificationHelper {
     try {
       imagePath = await getIconPath();
     } catch (e) {
-      log.error("获取图标失败: $e");
+      log.error('获取图标失败: $e');
     }
     // 注意：guid 建议你自己生成一个唯一的，appName 改成你的应用名
     final windows = WindowsInitializationSettings(
@@ -72,7 +72,8 @@ class NotificationHelper {
   Future<String> getIconPath() async {
     // 获取应用文档目录或临时目录
     final directory = await getApplicationSupportDirectory();
-  final filePath = '${directory.path}${Platform.pathSeparator}notification_icon.png';
+    final filePath =
+        '${directory.path}${Platform.pathSeparator}notification_icon.png';
     final file = File(filePath);
 
     // 如果文件不存在，从 Assets 复制过去
@@ -80,7 +81,7 @@ class NotificationHelper {
       final byteData = await rootBundle.load(Assets.images.appIconPng.path);
       await file.writeAsBytes(byteData.buffer.asUint8List());
     }
-    log.info("获取图标成功: ${file.path}");
+    log.info('获取图标成功: ${file.path}');
     return file.path;
   }
 
@@ -106,11 +107,12 @@ class NotificationHelper {
       // 网络头像：下载到本地，再用 file URI（兼容非 MSIX）
       if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
         final dir = await getApplicationSupportDirectory();
-    final lastDot = uri.path.lastIndexOf('.');
-    final ext =
-      (lastDot != -1 && lastDot < uri.path.length - 1) ? uri.path.substring(lastDot) : '.png';
-    final filePath =
-      '${dir.path}${Platform.pathSeparator}notification_avatar_${avatarUrl.hashCode}$ext';
+        final lastDot = uri.path.lastIndexOf('.');
+        final ext = (lastDot != -1 && lastDot < uri.path.length - 1)
+            ? uri.path.substring(lastDot)
+            : '.png';
+        final filePath =
+            '${dir.path}${Platform.pathSeparator}notification_avatar_${avatarUrl.hashCode}$ext';
         final file = File(filePath);
 
         if (!await file.exists()) {
@@ -163,7 +165,7 @@ class NotificationHelper {
     final String? roomId = response.payload;
 
     if (roomId != null) {
-      log.info("用户点击通知，准备跳转房间: $roomId");
+      log.info('用户点击通知，准备跳转房间: $roomId');
 
       // 直接使用全局容器进行 Provider 操作
       // 1. 设置当前活跃房间
@@ -177,7 +179,7 @@ class NotificationHelper {
     }
   }
 
-  void _ensureWindowActive() async {
+  Future<void> _ensureWindowActive() async {
     try {
       if (await desktop.windowManager.isMinimized()) {
         await desktop.windowManager.restore();
@@ -185,7 +187,7 @@ class NotificationHelper {
       await desktop.windowManager.show();
       await desktop.windowManager.focus();
     } catch (e) {
-      log.error("唤醒窗口失败: $e");
+      log.error('唤醒窗口失败: $e');
     }
   }
 
@@ -224,9 +226,9 @@ class NotificationHelper {
     }
 
     final details = NotificationDetails(
-      android: AndroidNotificationDetails('main_channel', 'Main'),
-      iOS: DarwinNotificationDetails(),
-      macOS: DarwinNotificationDetails(),
+      android: const AndroidNotificationDetails('main_channel', 'Main'),
+      iOS: const DarwinNotificationDetails(),
+      macOS: const DarwinNotificationDetails(),
       windows: windowsDetails,
     );
 

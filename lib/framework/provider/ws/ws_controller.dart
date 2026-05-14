@@ -42,7 +42,9 @@ class WsController extends _$WsController {
 
     // 监听认证状态逻辑优化
     ref.listen(authControllerProvider, (previous, next) {
-      log.info("[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}");
+      log.info(
+        "[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}",
+      );
       next.when(
         data: (user) {
           if (user != null) {
@@ -80,7 +82,7 @@ class WsController extends _$WsController {
   /// 暴露给外部的消息流
   Stream<PacketFrame<IPacket>> get messageStream => _messageController.stream;
 
-  void _initConnection() async {
+  Future<void> _initConnection() async {
     // 保护：如果已经在连接或已连接，跳过
     if (state.status == WsStatus.connecting ||
         state.status == WsStatus.connected) {
@@ -202,7 +204,8 @@ class WsController extends _$WsController {
     if (code == null || code == 0) return true;
 
     final now = DateTime.now();
-    final bool duplicated = _lastAckErrorCode == code &&
+    final bool duplicated =
+        _lastAckErrorCode == code &&
         _lastAckErrorMessage == rawMessage &&
         _lastAckErrorAt != null &&
         now.difference(_lastAckErrorAt!) < const Duration(seconds: 2);
@@ -265,7 +268,7 @@ class WsController extends _$WsController {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
 
-  if (!_reconnectEnabled) return;
+    if (!_reconnectEnabled) return;
 
     final user = ref.read(authControllerProvider).value;
     if (user == null) return;
@@ -285,7 +288,9 @@ class WsController extends _$WsController {
   }
 
   void _disposeAll({bool closeStream = false, bool manual = false}) {
-    log.info("[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}");
+    log.info(
+      "[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}",
+    );
     log.info("[WsController] 断开调用栈: ${StackTrace.current}");
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();

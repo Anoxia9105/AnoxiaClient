@@ -99,6 +99,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
         savePath,
         onReceiveProgress: (received, total) {
           if (total != -1) {
+            if (!mounted) return;
             setState(() {
               _progress = received / total;
             });
@@ -112,7 +113,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
 
       log.info("📦 下载完成，正在唤起安装程序...");
 
-  final result = await OpenFilex.open(savePath);
+      final result = await OpenFilex.open(savePath);
 
       if (result.type == ResultType.done) {
         log.info("✅ 安装程序已启动，执行安全退出序列...");
@@ -129,6 +130,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
       }
     } catch (e) {
       log.error("❌ 更新失败: $e");
+      if (!mounted) return;
       setState(() {
         _isDownloading = false;
         _error = _formatError(e);

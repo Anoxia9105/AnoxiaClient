@@ -47,9 +47,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
       actions: [
         if (showHeaderEnhancements) ...[
-          _HeaderSearchEntry(
-            onTap: () => _openGlobalSearch(context, ref),
-          ),
+          _HeaderSearchEntry(onTap: () => _openGlobalSearch(context, ref)),
           const SizedBox(width: 6),
         ],
         //最小化
@@ -63,6 +61,11 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
             icon: HugeIcons.strokeRoundedSolidLine01,
             // color: widget.iconColor,
             size: 18,
+          ),
+          style: ButtonStyle(
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            ),
           ),
         ),
         //正常/最大化
@@ -110,6 +113,11 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           // color: widget.iconColor,
           size: 18,
         ),
+        style: ButtonStyle(
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          ),
+        ),
       );
     }
     return IconButton(
@@ -122,6 +130,11 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
         // color: widget.iconColor,
         icon: HugeIcons.strokeRoundedSquare,
         size: 16,
+      ),
+      style: ButtonStyle(
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        ),
       ),
     );
   }
@@ -165,20 +178,28 @@ class _GlobalSearchDialogState extends ConsumerState<_GlobalSearchDialog> {
     final q = _query.trim().toLowerCase();
     final roomResults = q.isEmpty
         ? <ChatRoomVO>[]
-        : rooms.where((r) {
-            final roomName = (r.roomName ?? '').toLowerCase();
-            final lastMsg = (r.lastMessage?.content ?? '').toLowerCase();
-            return roomName.contains(q) || lastMsg.contains(q);
-          }).take(8).toList();
+        : rooms
+              .where((r) {
+                final roomName = (r.roomName ?? '').toLowerCase();
+                final lastMsg = (r.lastMessage?.content ?? '').toLowerCase();
+                return roomName.contains(q) || lastMsg.contains(q);
+              })
+              .take(8)
+              .toList();
 
     final contactResults = q.isEmpty
         ? <ChatContactVO>[]
-        : contacts.where((c) {
-            final name = (c.nickName ?? '').toLowerCase();
-            final remark = (c.remark ?? '').toLowerCase();
-            final idText = (c.contactId?.toString() ?? '');
-            return name.contains(q) || remark.contains(q) || idText.contains(q);
-          }).take(8).toList();
+        : contacts
+              .where((c) {
+                final name = (c.nickName ?? '').toLowerCase();
+                final remark = (c.remark ?? '').toLowerCase();
+                final idText = (c.contactId?.toString() ?? '');
+                return name.contains(q) ||
+                    remark.contains(q) ||
+                    idText.contains(q);
+              })
+              .take(8)
+              .toList();
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 120, vertical: 80),
@@ -226,7 +247,9 @@ class _GlobalSearchDialogState extends ConsumerState<_GlobalSearchDialog> {
                               icon: room.roomType == 1
                                   ? Icons.groups_2_outlined
                                   : Icons.person_outline,
-                              title: room.roomName ?? 'chat_unknown_conversation'.tr(),
+                              title:
+                                  room.roomName ??
+                                  'chat_unknown_conversation'.tr(),
                               subtitle: room.lastMessage?.content ?? '',
                               onTap: () {
                                 widget.ref
@@ -251,7 +274,8 @@ class _GlobalSearchDialogState extends ConsumerState<_GlobalSearchDialog> {
                               icon: Icons.badge_outlined,
                               title: contact.remark?.isNotEmpty == true
                                   ? contact.remark!
-                                  : (contact.nickName ?? 'chat_unknown_user'.tr()),
+                                  : (contact.nickName ??
+                                        'chat_unknown_user'.tr()),
                               subtitle:
                                   'ID: ${contact.contactId ?? '-'} · ${contact.nickName ?? ''}',
                               onTap: () {
@@ -286,9 +310,9 @@ class _ResultSectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -331,18 +355,10 @@ class _ResultTile extends StatelessWidget {
     return ListTile(
       dense: true,
       leading: Icon(icon, size: 18),
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: subtitle.isEmpty
           ? null
-          : Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
@@ -368,7 +384,9 @@ class _HeaderSearchEntry extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.8)),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -381,9 +399,9 @@ class _HeaderSearchEntry extends StatelessWidget {
                 '${'search'.tr()}  Ctrl+K',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.outline,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
               ),
             ),
           ],

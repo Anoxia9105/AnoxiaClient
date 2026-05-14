@@ -162,7 +162,9 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                               ? AvatarStatus.online
                               : AvatarStatus.offline,
                         ),
-                        title: Text(contact.nickName ?? 'chat_unknown_user'.tr()),
+                        title: Text(
+                          contact.nickName ?? 'chat_unknown_user'.tr(),
+                        ),
                         trailing: Checkbox(
                           value: isSelected,
                           onChanged: (value) {
@@ -191,7 +193,8 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                   );
                 },
                 loading: () => const _AddMemberListSkeleton(),
-                error: (err, stack) => Center(child: Text('member_load_failed'.tr())),
+                error: (err, stack) =>
+                    Center(child: Text('member_load_failed'.tr())),
               ),
             ),
 
@@ -262,42 +265,26 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                                     selectedContactIds.toList(),
                                   );
 
+                              if (!context.mounted) return;
+
                               // 关闭对话框
                               Navigator.pop(context);
 
                               // 显示结果
-                              Toast.showWidget(
-                                context,
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(10),
-                                        spreadRadius: 0,
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    success ? 'member_add_success'.tr() : 'member_add_failed'.tr(),
-                                    style: TextStyle(
-                                      color: success
-                                          ? Colors.green
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
+                              Toast.showToast(
+                                success
+                                    ? 'member_add_success'.tr()
+                                    : 'member_add_failed'.tr(),
+                                type: success
+                                    ? ToastType.success
+                                    : ToastType.error,
                               );
                             },
-                      child: Text('member_add_count'.tr(args: [selectedContactIds.length.toString()])),
+                      child: Text(
+                        'member_add_count'.tr(
+                          args: [selectedContactIds.length.toString()],
+                        ),
+                      ),
                     ),
                   ),
                 ],

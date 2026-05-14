@@ -125,7 +125,7 @@ class ColorsBox {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "toolbar_reset_color".tr(),
+                      'toolbar_reset_color'.tr(),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -162,7 +162,7 @@ class ColorsBox {
   }
 
   static String colorToHex(Color color) {
-    return color.value.toRadixString(16).padLeft(8, '0').toUpperCase();
+    return color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
   }
 }
 

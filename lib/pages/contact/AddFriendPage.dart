@@ -105,7 +105,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                                 ),
                                 onPressed: () {
                                   _searchController.clear();
-                                  ref.read(userSearchServiceProvider.notifier).clearResults();
+                                  ref
+                                      .read(userSearchServiceProvider.notifier)
+                                      .clearResults();
                                   setState(() {});
                                 },
                                 splashRadius: 18,
@@ -113,7 +115,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             : null,
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                       style: textTheme.bodyMedium?.copyWith(fontSize: 15),
                       onSubmitted: _performSearch,
@@ -153,7 +157,8 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           vertical: 12.0,
                         ),
                         itemCount: searchService.rows.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 10),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final user = searchService.rows[index];
                           final isFriend = contactIds.contains(user.userId);
@@ -183,11 +188,11 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           Container(
                             padding: const EdgeInsets.all(32),
                             decoration: BoxDecoration(
-                              color: colorScheme.surfaceVariant,
+                              color: colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(28),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -196,7 +201,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             child: HugeIcon(
                               icon: HugeIcons.strokeRoundedSearch02,
                               size: 72,
-                              color: colorScheme.outline.withOpacity(0.6),
+                              color: colorScheme.outline.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -226,11 +231,15 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           Container(
                             padding: const EdgeInsets.all(40),
                             decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.08),
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.08,
+                              ),
                               borderRadius: BorderRadius.circular(40),
                               boxShadow: [
                                 BoxShadow(
-                                  color: colorScheme.primary.withOpacity(0.1),
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   blurRadius: 24,
                                   offset: const Offset(0, 8),
                                 ),
@@ -239,7 +248,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             child: HugeIcon(
                               icon: HugeIcons.strokeRoundedUserAdd02,
                               size: 96,
-                              color: colorScheme.primary.withOpacity(0.6),
+                              color: colorScheme.primary.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 28),
@@ -280,7 +289,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+            ),
           ),
           child: Row(
             children: [
@@ -299,11 +310,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                 ),
               ),
               const SizedBox(width: 10),
-              SkeletonBox(
-                width: 62,
-                height: 30,
-                radius: 14,
-              ),
+              SkeletonBox(width: 62, height: 30, radius: 14),
             ],
           ),
         );
@@ -323,7 +330,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -334,11 +343,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                AvatarWidget(
-                  url: user.avatar,
-                  name: user.nickName,
-                  size: 52,
-                ),
+                AvatarWidget(url: user.avatar, name: user.nickName, size: 52),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -382,9 +387,12 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                 const SizedBox(width: 10),
                 isFriend
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -398,13 +406,18 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                     : FilledButton.tonal(
                         onPressed: () => _showAddFriendDialog(user),
                         style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           minimumSize: const Size(60, 32),
                           visualDensity: VisualDensity.compact,
                         ),
                         child: Text(
                           'add_friend_add_btn'.tr(),
-                          style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                          style: textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
               ],
@@ -416,7 +429,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
   }
 
   /// 执行搜索
-  void _performSearch(String keyword) async {
+  Future<void> _performSearch(String keyword) async {
     if (keyword.trim().isEmpty) return;
 
     setState(() {
@@ -473,7 +486,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 28,
                   offset: const Offset(0, 10),
                 ),
@@ -520,7 +533,8 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             Text(
                               'add_friend_username'.tr(args: [user.userName]),
                               style: textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                                color: colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.8),
                                 fontSize: 13,
                               ),
                             ),
@@ -540,10 +554,12 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.7,
+                        ),
                         width: 1,
                       ),
                     ),
@@ -635,7 +651,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.2),
+                              color: colorScheme.primary.withValues(alpha: 0.2),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),

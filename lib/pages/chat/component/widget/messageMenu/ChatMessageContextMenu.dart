@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,23 +39,24 @@ class ChatMessageContextMenu extends StatelessWidget {
 
   // --- 菜单显示逻辑 ---
 
-  void _showMenu(BuildContext context, Offset globalPosition) {
+  Future<void> _showMenu(BuildContext context, Offset globalPosition) async {
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       globalPosition & const Size(40, 40),
       Offset.zero & overlay.size,
     );
 
-    showMenu<String>(
+    final action = await showMenu<String>(
       context: context,
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
       items: _buildMenuItems(context),
       menuPadding: const EdgeInsets.symmetric(vertical: 6),
-    ).then((action) {
-      if (action != null) _handleAction(context, action);
-    });
+    );
+
+    if (!context.mounted || action == null) return;
+    _handleAction(context, action);
   }
 
   List<PopupMenuEntry<String>> _buildMenuItems(BuildContext context) {
@@ -122,10 +124,10 @@ class ChatMessageContextMenu extends StatelessWidget {
         _handleCopy(context);
         break;
       case 'favorite':
-        _handleFavorite(context);
+        unawaited(_handleFavorite(context));
         break;
       case 'revoke':
-        _handleRevoke(context);
+        unawaited(_handleRevoke(context));
         break;
     }
   }
@@ -176,7 +178,7 @@ class ChatMessageContextMenu extends StatelessWidget {
     return "";
   }
 
-  void _handleFavorite(BuildContext context) async {
+  Future<void> _handleFavorite(BuildContext context) async {
     final messageId = message.messageId;
     if (messageId == null) return;
 
@@ -192,12 +194,13 @@ class ChatMessageContextMenu extends StatelessWidget {
         );
       }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _showSnackBar(context, "chat_favorite_error".tr(), isError: true);
+      }
     }
   }
 
-  void _handleRevoke(BuildContext context) async {
+  Future<void> _handleRevoke(BuildContext context) async {
     final messageId = message.messageId;
     if (messageId == null) return;
 
@@ -213,8 +216,9 @@ class ChatMessageContextMenu extends StatelessWidget {
         );
       }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         _showSnackBar(context, "chat_revoke_error".tr(), isError: true);
+      }
     }
   }
 

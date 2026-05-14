@@ -147,18 +147,18 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isHighlighted
-            ? colorScheme.primary.withOpacity(0.08)
+            ? colorScheme.primary.withValues(alpha: 0.08)
             : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isHighlighted
-              ? colorScheme.primary.withOpacity(0.3)
-              : colorScheme.outlineVariant.withOpacity(0.3),
+              ? colorScheme.primary.withValues(alpha: 0.3)
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
           width: isHighlighted ? 1.5 : 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -206,7 +206,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                       Text(
                         _formatTime(chatMessage.timestamp),
                         style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.outline.withOpacity(0.7),
+                          color: colorScheme.outline.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -223,7 +223,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.15),
+                  color: colorScheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: HugeIcon(
@@ -271,7 +271,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
@@ -301,7 +301,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
         return Text(
           'search_image_placeholder'.tr(),
           style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.6),
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
             fontStyle: FontStyle.italic,
           ),
         );
@@ -488,7 +488,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                                   ),
                                 ),
                               )
-                            : HugeIcon(
+                            : const HugeIcon(
                                 icon: HugeIcons.strokeRoundedSearch01,
                                 size: 20,
                               ),
@@ -508,10 +508,10 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.08),
+                color: colorScheme.primary.withValues(alpha: 0.08),
                 border: Border(
                   bottom: BorderSide(
-                    color: colorScheme.primary.withOpacity(0.2),
+                    color: colorScheme.primary.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -561,13 +561,14 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                         Container(
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: colorScheme.surfaceVariant.withOpacity(0.5),
+                            color: colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(32),
                           ),
                           child: HugeIcon(
                             icon: HugeIcons.strokeRoundedSearch02,
                             size: 64,
-                            color: colorScheme.outline.withOpacity(0.4),
+                            color: colorScheme.outline.withValues(alpha: 0.4),
                           ),
                         ),
                         const SizedBox(height: 24),

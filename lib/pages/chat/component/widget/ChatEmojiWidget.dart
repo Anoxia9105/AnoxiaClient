@@ -23,7 +23,6 @@ class ChatEmojiWidget extends StatelessWidget {
           closeSelected!();
         }
         onEmojiSelected(emoji.emoji);
-        print("Emoji selected: ${emoji.emoji}");
       },
       config: Config(
         locale: context.locale,
@@ -40,8 +39,9 @@ class ChatEmojiWidget extends StatelessWidget {
           middle: EmojiPickerItem.searchBar,
           bottom: EmojiPickerItem.emojiView,
         ),
-        skinToneConfig:  SkinToneConfig(
-          dialogBackgroundColor: Theme.of(context).brightness == Brightness.light
+        skinToneConfig: SkinToneConfig(
+          dialogBackgroundColor:
+              Theme.of(context).brightness == Brightness.light
               ? Colors.white
               : Colors.black87,
         ),

@@ -27,6 +27,8 @@ analyzer:
     - lib/pages/call_window/room_layout/LiveKitCarouselLayout.dart
     - lib/pages/call_window/room_layout/LiveKitFocusLayout.dart
 
+    
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
@@ -41,6 +43,15 @@ linter:
   rules:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # --- 强力推荐开启 ---
+    prefer_const_constructors: true        # 性能优化：强制使用 const
+    prefer_const_literals_to_create_immutables: true # 集合也尽量 const
+    always_declare_return_types: true      # 代码可读性：必须写返回值类型
+    avoid_void_async: true                 # 健壮性：避免写 void async，应写 Future<void>
+
+    # --- 根据个人习惯调整 ---
+    prefer_single_quotes: true             # 强制单引号，让代码风格统一
+    avoid_print: true                      # 提醒你不要把测试日志留在发布的代码里
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

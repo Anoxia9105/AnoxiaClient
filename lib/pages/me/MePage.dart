@@ -260,10 +260,11 @@ class _MyPageState extends ConsumerState<MyPage>
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: cs.onPrimary,
         unselectedLabelColor: cs.onSurfaceVariant,
-        labelStyle:
-            const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-        unselectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
         tabs: [
           Tab(
             child: Row(
@@ -318,10 +319,9 @@ class _MyPageState extends ConsumerState<MyPage>
                   label: 'me_profile_nickname'.tr(),
                   icon: Icons.badge_outlined,
                 ),
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty
-                        ? 'me_profile_nickname_required'.tr()
-                        : null,
+                validator: (v) => (v ?? '').trim().isEmpty
+                    ? 'me_profile_nickname_required'.tr()
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -343,7 +343,7 @@ class _MyPageState extends ConsumerState<MyPage>
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _sex,
+                initialValue: _sex,
                 decoration: _inputDeco(
                   context,
                   label: 'me_profile_gender'.tr(),
@@ -412,13 +412,10 @@ class _MyPageState extends ConsumerState<MyPage>
                   context,
                   label: 'me_password_old'.tr(),
                   visible: _showOldPwd,
-                  onToggle: () =>
-                      setState(() => _showOldPwd = !_showOldPwd),
+                  onToggle: () => setState(() => _showOldPwd = !_showOldPwd),
                 ),
                 validator: (v) =>
-                    (v ?? '').isEmpty
-                        ? 'me_password_old_required'.tr()
-                        : null,
+                    (v ?? '').isEmpty ? 'me_password_old_required'.tr() : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -428,8 +425,7 @@ class _MyPageState extends ConsumerState<MyPage>
                   context,
                   label: 'me_password_new'.tr(),
                   visible: _showNewPwd,
-                  onToggle: () =>
-                      setState(() => _showNewPwd = !_showNewPwd),
+                  onToggle: () => setState(() => _showNewPwd = !_showNewPwd),
                 ),
                 validator: (v) {
                   if ((v ?? '').isEmpty) {
@@ -506,15 +502,13 @@ class _MyPageState extends ConsumerState<MyPage>
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide:
-            BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: cs.primary, width: 1.8),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }
 
@@ -532,9 +526,7 @@ class _MyPageState extends ConsumerState<MyPage>
       suffixIcon: IconButton(
         onPressed: onToggle,
         icon: Icon(
-          visible
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined,
+          visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
           size: 18,
         ),
       ),
@@ -608,10 +600,7 @@ class _MyPageState extends ConsumerState<MyPage>
         );
       }
     } catch (_) {
-      Toast.showToast(
-        'me_password_update_failed'.tr(),
-        type: ToastType.error,
-      );
+      Toast.showToast('me_password_update_failed'.tr(), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _updatingPwd = false);
     }

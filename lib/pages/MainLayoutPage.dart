@@ -18,8 +18,6 @@ class MainLayoutPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print("🛠️ MainLayoutPage 开始构建: ${DateTime.now().millisecond}ms");
-
     final layout = ref.watch(layoutControllerProvider);
     final safeIndex = layout.currentIndex.clamp(0, layout.items.length - 1);
 
@@ -57,7 +55,7 @@ class MainLayoutPage extends ConsumerWidget {
               body: IndexedStack(
                 key: ValueKey(context.locale.languageCode),
                 index: safeIndex,
-                children: [
+                children: const [
                   ChatPage(),
                   ContactPage(),
                   FavoritesPage(),
@@ -72,7 +70,7 @@ class MainLayoutPage extends ConsumerWidget {
 
       //如果是移动设备，显示底部导航栏
       bottomNavigationBar: DeviceUtil.isMobile(context)
-          ? MobileBottomBar()
+          ? const MobileBottomBar()
           : null,
     );
   }

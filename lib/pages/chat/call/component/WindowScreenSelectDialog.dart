@@ -274,7 +274,7 @@ class ThumbnailWidget extends StatelessWidget {
                 border: Border.all(
                   color: selected
                       ? Theme.of(context).primaryColor
-                      : Colors.grey.withOpacity(0.2),
+                      : Colors.grey.withValues(alpha: 0.2),
                   width: selected ? 3 : 1,
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -283,7 +283,7 @@ class ThumbnailWidget extends StatelessWidget {
                         BoxShadow(
                           color: Theme.of(
                             context,
-                          ).primaryColor.withOpacity(0.3),
+                          ).primaryColor.withValues(alpha: 0.3),
                           blurRadius: 8,
                         ),
                       ]

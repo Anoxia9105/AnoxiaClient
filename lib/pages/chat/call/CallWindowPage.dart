@@ -35,7 +35,7 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
     super.initState();
     windowManager.setPreventClose(true);
     windowManager.addListener(this);
-    print("初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}");
+    log.info("初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}");
 
     final args = jsonDecode(widget.controller.arguments);
     _themeIndex = args['themeIndex'] ?? 0;
@@ -70,7 +70,7 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
       try {
         await Channel.callChannel.invokeMethod("on_call_window_close");
       } catch (e) {
-        print("发送关闭消息失败: $e");
+        log.error("发送关闭消息失败", e);
       }
       await windowManager.setPreventClose(false);
 

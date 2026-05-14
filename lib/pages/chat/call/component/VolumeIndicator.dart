@@ -4,11 +4,7 @@ class VolumeIndicator extends StatelessWidget {
   final double volume; // 0.0 - 1.0
   final int barCount;
 
-  const VolumeIndicator({
-    super.key,
-    required this.volume,
-    this.barCount = 12,
-  });
+  const VolumeIndicator({super.key, required this.volume, this.barCount = 12});
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +25,8 @@ class VolumeIndicator extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
             color: active
-                ? Color.lerp(
-                    Colors.greenAccent,
-                    Colors.redAccent,
-                    i / barCount,
-                  )
-                : Colors.white.withOpacity(0.15),
+                ? Color.lerp(Colors.greenAccent, Colors.redAccent, i / barCount)
+                : Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(1),
           ),
         );
