@@ -41,7 +41,7 @@ final class PinnedRoomsProvider
   }
 }
 
-String _$pinnedRoomsHash() => r'996359125741ac5312bfc5d5c4c30dc85e77f019';
+String _$pinnedRoomsHash() => r'318943ab586a3e7c670f652f6b2170310dd25c20';
 
 abstract class _$PinnedRooms extends $Notifier<Set<String>> {
   Set<String> build();

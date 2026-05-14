@@ -49,7 +49,7 @@ final class ThemeIndexProvider extends $NotifierProvider<ThemeIndex, int> {
   }
 }
 
-String _$themeIndexHash() => r'57ebe4c465fe7f7bce721e330b2b09345606eba9';
+String _$themeIndexHash() => r'91d573d8dda1ecdf9caeefa57fa88c28b94f8dbc';
 
 /// 主题索引 Provider
 ///

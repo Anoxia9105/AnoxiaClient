@@ -4,861 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anoxia IM - 功能演示</title>
-    <meta name="description" content="Anoxia IM 功能演示 - 实时消息、音视频通话、富文本消息">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #f5f5f5;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f8f8f8;
-            --accent-cyan: #00d4ff;
-            --accent-blue: #2563eb;
-            --text-primary: #1a1a1a;
-            --text-secondary: #6b7280;
-            --text-muted: #9ca3af;
-            --border-color: #e5e7eb;
-            --nav-bg: rgba(255, 255, 255, 0.95);
-            --card-bg: #ffffff;
-            --sent-bg: #2563eb;
-            --sent-text: #ffffff;
-            --received-bg: #e5e7eb;
-            --received-text: #1a1a1a;
-        }
-
-        [data-theme="dark"] {
             --bg-primary: #0a0a0f;
             --bg-secondary: #12121a;
             --bg-tertiary: #1a1a25;
+            --accent-cyan: #00d4ff;
+            --accent-purple: #8b5cf6;
             --text-primary: #ffffff;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --border-color: rgba(255, 255, 255, 0.08);
-            --nav-bg: rgba(10, 10, 15, 0.95);
-            --card-bg: var(--bg-secondary);
-            --sent-bg: #3b82f6;
-            --sent-text: #ffffff;
-            --received-bg: #252535;
-            --received-text: #ffffff;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0, 0, 0, 0.08);
         }
 
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; transition: all 0.3s; }
+        h1, h2, h3 { font-family: 'Syne', sans-serif; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
 
         nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 16px 0;
-            background: var(--nav-bg);
-            backdrop-filter: blur(20px);
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 20px 0; background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
         }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: 16px;
-            color: white;
-        }
-
-        .logo-text {
-            font-family: 'Syne', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--accent-blue);
-        }
-
+        [data-theme="light"] nav { background: rgba(255, 255, 255, 0.9); }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: white; }
+        .logo-text { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 15px; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--accent-cyan); }
         .theme-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--bg-tertiary);
+            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+            background: var(--bg-tertiary); border: 1px solid var(--border-color);
+            border-radius: 20px; cursor: pointer; transition: all 0.3s; font-size: 14px; color: var(--text-secondary);
+        }
+
+        .hero { padding: 140px 0 80px; text-align: center; }
+        .hero h1 { font-size: 48px; margin-bottom: 16px; background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 50%, var(--accent-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero p { font-size: 18px; color: var(--text-secondary); margin-bottom: 40px; }
+        .back-btn { color: var(--accent-cyan); text-decoration: none; }
+
+        .screenshots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 40px;
+            padding-bottom: 80px;
+        }
+
+        .screenshot-card {
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .theme-toggle:hover {
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
-        }
-
-        .hero {
-            padding: 120px 0 60px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 42px;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-
-        .hero p {
-            font-size: 17px;
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--accent-blue);
-            text-decoration: none;
-            margin-bottom: 32px;
-            transition: all 0.3s;
-        }
-
-        .back-btn:hover {
-            gap: 12px;
-        }
-
-        .demo-tabs {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
-
-        .demo-tab {
-            padding: 12px 24px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-
-        .demo-tab:hover {
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
-        }
-
-        .demo-tab.active {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(0, 212, 255, 0.1));
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
-        }
-
-        .demo-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
             overflow: hidden;
-            min-height: 550px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
         }
 
-        .demo-content {
-            display: none;
-            padding: 0;
+        .screenshot-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
-        .demo-content.active {
+        .screenshot-preview {
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screenshot-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             display: block;
         }
 
-        /* Chat Demo - Three-column layout */
-        .chat-demo {
-            display: grid;
-            grid-template-columns: 60px 260px 1fr;
-            height: 550px;
-        }
-
-        .chat-sidebar-left {
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .sidebar-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .sidebar-icon:hover,
-        .sidebar-icon.active {
-            background: var(--accent-blue);
-            color: white;
-        }
-
-        .sidebar-icon.user {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            color: white;
-        }
-
-        .sidebar-icon.divider {
-            height: 1px;
-            width: 30px;
-            background: var(--border-color);
-            cursor: default;
-        }
-
-        .chat-sidebar {
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .search-box {
-            width: 100%;
-            padding: 10px 14px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            color: var(--text-primary);
-            outline: none;
-        }
-
-        .search-box:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-        }
-
-        .chat-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .chat-item:hover,
-        .chat-item.active {
-            background: var(--bg-tertiary);
-        }
-
-        .chat-item-avatar {
-            width: 44px;
-            height: 44px;
-            background: var(--bg-tertiary);
-            border-radius: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            position: relative;
-        }
-
-        .chat-item-avatar.online::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 10px;
-            height: 10px;
-            background: #22c55e;
-            border-radius: 50%;
-            border: 2px solid var(--bg-secondary);
-        }
-
-        .chat-item-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .chat-item-name {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-            color: var(--text-primary);
-        }
-
-        .chat-item-preview {
-            font-size: 12px;
-            color: var(--text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chat-item-time {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .chat-item-badge {
-            font-size: 11px;
-            padding: 2px 6px;
-            background: var(--accent-blue);
-            color: white;
-            border-radius: 10px;
-        }
-
-        .chat-item.type-group .chat-item-avatar {
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-            color: white;
-            font-weight: 700;
-        }
-
-        .chat-item.type-group .chat-item-name {
-            color: var(--text-primary);
-        }
-
-        .chat-main {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            background: var(--bg-secondary);
-        }
-
-        .chat-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .chat-header-right {
-            display: flex;
-            gap: 12px;
-        }
-
-        .header-btn {
-            width: 36px;
-            height: 36px;
-            background: var(--bg-tertiary);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .header-btn:hover {
-            background: var(--border-color);
-        }
-
-        .header-btn.call {
-            color: #22c55e;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .message {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            max-width: 70%;
-        }
-
-        .message.received {
-            align-self: flex-start;
-        }
-
-        .message.sent {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 34px;
-            height: 34px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            flex-shrink: 0;
-        }
-
-        .message-bubble {
-            padding: 12px 16px;
-            border-radius: 14px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .message.received .message-bubble {
-            background: var(--received-bg);
-            color: var(--received-text);
-            border-bottom-left-radius: 4px;
-        }
-
-        .message.sent .message-bubble {
-            background: var(--sent-bg);
-            color: var(--sent-text);
-            border-bottom-right-radius: 4px;
-        }
-
-        .message-time {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .message.sent .message-time {
-            text-align: right;
-        }
-
-        .message.system {
-            align-self: center;
-            max-width: 100%;
-        }
-
-        .message.system .message-bubble {
-            background: transparent;
-            padding: 8px 16px;
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-
-        .chat-input-area {
-            padding: 12px 20px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-        }
-
-        .input-toolbar {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-
-        .toolbar-btn {
-            width: 32px;
-            height: 32px;
-            background: var(--bg-tertiary);
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .toolbar-btn:hover {
-            background: var(--border-color);
-        }
-
-        .chat-input-wrapper {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-size: 14px;
-            outline: none;
-            resize: none;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
-        .chat-input:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .chat-send-btn {
-            width: 40px;
-            height: 40px;
-            background: var(--accent-blue);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .chat-send-btn:hover {
-            background: #1d4ed8;
-            transform: scale(1.05);
-        }
-
-        /* Voice/Video Call Demo */
-        .call-demo {
-            display: flex;
-            flex-direction: column;
-            height: 550px;
-            background: var(--bg-secondary);
-        }
-
-        .call-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .call-header-left {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .call-header-center {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .call-main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: var(--bg-primary);
-        }
-
-        .call-avatar {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 50px;
-            color: white;
-        }
-
-        .call-controls {
-            padding: 20px;
-            background: var(--bg-secondary);
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-        }
-
-        .call-btn {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s;
-        }
-
-        .call-btn:hover {
-            background: var(--border-color);
-        }
-
-        .call-btn.end {
-            background: #ef4444;
-            border-color: #ef4444;
-            color: white;
-        }
-
-        .call-btn.active {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            color: white;
-        }
-
-        /* Emoji Picker Demo */
-        .emoji-demo {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            height: 550px;
-        }
-
-        .emoji-chat-list {
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .emoji-chat-list .sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .emoji-chat-list .chat-list {
-            flex: 1;
-        }
-
-        .emoji-chat-main {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .emoji-chat-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .emoji-chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .emoji-input-area {
-            padding: 12px 20px;
-            border-top: 1px solid var(--border-color);
-            background: var(--bg-tertiary);
-        }
-
-        .emoji-picker {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .emoji-categories {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .emoji-category {
-            width: 36px;
-            height: 36px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .emoji-category:hover,
-        .emoji-category.active {
-            border-color: var(--accent-blue);
-            background: rgba(37, 99, 235, 0.1);
-        }
-
-        .emoji-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 8px;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-
-        .emoji-item {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .emoji-item:hover {
-            background: var(--border-color);
-            transform: scale(1.1);
-        }
-
-        /* Features Section */
-        .features-section {
-            padding: 60px 0;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 32px;
-        }
-
-        .feature-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 28px;
-            transition: all 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent-blue);
-        }
-
-        .feature-icon {
-            font-size: 36px;
-            margin-bottom: 16px;
-        }
-
-        .feature-card h3 {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: var(--text-primary);
-        }
-
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        footer {
-            padding: 32px 0;
-            border-top: 1px solid var(--border-color);
+        .placeholder-content {
             text-align: center;
-            color: var(--text-muted);
-            font-size: 13px;
+            padding: 40px;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .chat-demo {
-                grid-template-columns: 60px 220px 1fr;
-            }
-            .features-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .placeholder-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
         }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .screenshot-info {
+            padding: 24px;
+        }
+
+        .platform-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+        }
+
+        .screenshot-info h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .screenshot-info p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        footer { padding: 40px 0; border-top: 1px solid var(--border-color); text-align: center; color: var(--text-muted); font-size: 14px; }
 
         @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 32px;
-            }
-            .chat-demo {
-                grid-template-columns: 1fr;
-            }
-            .chat-sidebar-left,
-            .chat-sidebar {
-                display: none;
-            }
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            .nav-links {
-                display: none;
-            }
+            .hero h1 { font-size: 32px; }
+            .screenshots { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
         }
     </style>
 </head>
@@ -873,10 +161,8 @@
                 <a href="index.html#features">功能特性</a>
                 <a href="index.html#download">下载</a>
                 <button class="theme-toggle" onclick="toggleTheme()">
-                    <span class="icon">🌙</span>
-                    <span class="text">暗色</span>
+                    <span class="icon">☀️</span>
                 </button>
-                <a href="index.html#download" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">立即下载</a>
             </div>
         </div>
     </nav>
@@ -884,368 +170,80 @@
     <section class="hero">
         <div class="container">
             <a href="index.html" class="back-btn">← 返回主页</a>
-            <h1>体验 Anoxia IM</h1>
-            <p>探索我们的核心功能，感受无缝通讯体验</p>
+            <h1>功能截图</h1>
+            <p>了解 Anoxia IM 在各平台上的出色体验</p>
         </div>
     </section>
 
-    <section class="demo-section">
+    <section>
         <div class="container">
-            <div class="demo-tabs">
-                <div class="demo-tab active" onclick="showDemo('chat')">💬 实时消息</div>
-                <div class="demo-tab" onclick="showDemo('call')">📞 音视频通话</div>
-                <div class="demo-tab" onclick="showDemo('emoji')">😊 表情选择</div>
-            </div>
-
-            <div class="demo-container">
-                <!-- Chat Demo -->
-                <div class="demo-content active" id="chat-demo">
-                    <div class="chat-demo">
-                        <div class="chat-sidebar-left">
-                            <div class="sidebar-icon user">👤</div>
-                            <div class="sidebar-icon active">💬</div>
-                            <div class="sidebar-icon">👥</div>
-                            <div class="sidebar-icon divider"></div>
-                            <div class="sidebar-icon">❤️</div>
-                            <div class="sidebar-icon">👤</div>
-                            <div class="sidebar-icon divider"></div>
-                            <div class="sidebar-icon">⚙️</div>
+            <div class="screenshots">
+                <!-- Windows / macOS / Linux -->
+                <div class="screenshot-card">
+                    <div class="screenshot-preview">
+                        <img src="screenshots/desktop.png" alt="桌面端截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="placeholder-content" style="display: none;">
+                            <div class="placeholder-icon">🖥️</div>
+                            <div class="placeholder-text">桌面端截图</div>
+                            <div class="placeholder-text" style="margin-top: 8px;">screenshots/desktop.png</div>
                         </div>
-                        <div class="chat-sidebar">
-                            <div class="sidebar-header">
-                                <input type="text" class="search-box" placeholder="搜索会话...">
-                            </div>
-                            <div class="chat-list">
-                                <div class="chat-item active">
-                                    <div class="chat-item-avatar online">高</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">高聖勋</div>
-                                        <div class="chat-item-preview">9090</div>
-                                    </div>
-                                    <div class="chat-item-time">10:22</div>
-                                </div>
-                                <div class="chat-item">
-                                    <div class="chat-item-avatar online">娜</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">娜娜</div>
-                                        <div class="chat-item-preview">想吃啥</div>
-                                    </div>
-                                    <div class="chat-item-time">05-13</div>
-                                </div>
-                                <div class="chat-item type-group">
-                                    <div class="chat-item-avatar">4</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">456</div>
-                                        <div class="chat-item-preview">[图片]</div>
-                                    </div>
-                                    <div class="chat-item-badge">2</div>
-                                </div>
-                                <div class="chat-item type-group">
-                                    <div class="chat-item-avatar">1</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">123</div>
-                                        <div class="chat-item-preview">群聊消息</div>
-                                    </div>
-                                    <div class="chat-item-time">05-12</div>
-                                </div>
-                                <div class="chat-item">
-                                    <div class="chat-item-avatar">K</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">KKCC</div>
-                                        <div class="chat-item-preview">最近好吗</div>
-                                    </div>
-                                    <div class="chat-item-time">05-12</div>
-                                </div>
-                                <div class="chat-item">
-                                    <div class="chat-item-avatar">L</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">li_ph-1</div>
-                                        <div class="chat-item-preview">收到</div>
-                                    </div>
-                                    <div class="chat-item-time">05-09</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chat-main">
-                            <div class="chat-header">
-                                <div class="chat-header-left">
-                                    <div class="chat-item-avatar online">高</div>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 15px;">高聖勋</div>
-                                        <div style="font-size: 12px; color: var(--text-muted);">在线</div>
-                                    </div>
-                                </div>
-                                <div class="chat-header-right">
-                                    <button class="header-btn call">📞</button>
-                                    <button class="header-btn">🔍</button>
-                                    <button class="header-btn">👥</button>
-                                </div>
-                            </div>
-                            <div class="chat-messages" id="chat-messages">
-                                <div class="message system">
-                                    <div class="message-bubble">会议已结束 03:08 13:03</div>
-                                </div>
-                                <div class="message received">
-                                    <div class="message-avatar">高</div>
-                                    <div>
-                                        <div class="message-bubble">fgh</div>
-                                        <div class="message-time">昨天 12:59</div>
-                                    </div>
-                                </div>
-                                <div class="message received">
-                                    <div class="message-avatar">高</div>
-                                    <div>
-                                        <div class="message-bubble">sdfgh</div>
-                                        <div class="message-time">昨天 12:59</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">经典</div>
-                                        <div class="message-time">昨天 17:43</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">eeee</div>
-                                        <div class="message-time">昨天 17:43</div>
-                                    </div>
-                                </div>
-                                <div class="message received">
-                                    <div class="message-avatar">高</div>
-                                    <div>
-                                        <div class="message-bubble">cffgh</div>
-                                        <div class="message-time">昨天 17:43</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">f</div>
-                                        <div class="message-time">昨天</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">123</div>
-                                        <div class="message-time">昨天</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">9090</div>
-                                        <div class="message-time">10:22</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="chat-input-area">
-                                <div class="input-toolbar">
-                                    <button class="toolbar-btn">B</button>
-                                    <button class="toolbar-btn">I</button>
-                                    <button class="toolbar-btn">U</button>
-                                    <button class="toolbar-btn">S</button>
-                                    <button class="toolbar-btn">₁₁</button>
-                                    <button class="toolbar-btn">₁₂</button>
-                                    <button class="toolbar-btn">😊</button>
-                                    <button class="toolbar-btn">@</button>
-                                </div>
-                                <div class="chat-input-wrapper">
-                                    <textarea class="chat-input" id="chat-input" placeholder="输入消息..." rows="1"></textarea>
-                                    <button class="chat-send-btn" onclick="sendMessage()">➤</button>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
+                    <div class="screenshot-info">
+                        <div class="platform-badge">🖥️ 桌面端</div>
+                        <h3>Windows / macOS / Linux</h3>
+                        <p>支持 Windows、macOS、Linux 三大桌面平台，功能完整，体验一致</p>
                     </div>
                 </div>
 
-                <!-- Call Demo -->
-                <div class="demo-content" id="call-demo">
-                    <div class="call-demo">
-                        <div class="call-header">
-                            <div class="call-header-left">00:03</div>
-                            <div class="call-header-center">高聖勋</div>
-                            <div class="call-header-right">
-                                <button class="call-btn">🔊</button>
-                                <button class="call-btn active">🔔</button>
-                                <button class="call-btn">📹</button>
-                                <button class="call-btn">📱</button>
-                                <button class="call-btn">🖥️</button>
-                                <button class="call-btn">📄</button>
-                                <button class="call-btn">🎤</button>
-                                <button class="call-btn end">🔴</button>
-                            </div>
+                <!-- Android -->
+                <div class="screenshot-card">
+                    <div class="screenshot-preview">
+                        <img src="screenshots/android.png" alt="Android 截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="placeholder-content" style="display: none;">
+                            <div class="placeholder-icon">📱</div>
+                            <div class="placeholder-text">Android 截图</div>
+                            <div class="placeholder-text" style="margin-top: 8px;">screenshots/android.png</div>
                         </div>
-                        <div class="call-main">
-                            <div class="call-avatar">高</div>
-                        </div>
-                        <div class="call-controls">
-                            <button class="call-btn">🔇</button>
-                            <button class="call-btn">🎤</button>
-                            <button class="call-btn">📹</button>
-                            <button class="call-btn">⬜</button>
-                            <button class="call-btn">👤</button>
-                            <button class="call-btn end">📞</button>
-                        </div>
+                    </div>
+                    <div class="screenshot-info">
+                        <div class="platform-badge">📱 Android</div>
+                        <h3>Android</h3>
+                        <p>专为移动端优化，支持消息、语音、视频通话等功能</p>
                     </div>
                 </div>
 
-                <!-- Emoji Demo -->
-                <div class="demo-content" id="emoji-demo">
-                    <div class="emoji-demo">
-                        <div class="emoji-chat-list">
-                            <div class="sidebar-header">
-                                <input type="text" class="search-box" placeholder="搜索会话...">
-                            </div>
-                            <div class="chat-list">
-                                <div class="chat-item active">
-                                    <div class="chat-item-avatar online">高</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">高聖勋</div>
-                                        <div class="chat-item-preview">cffgh</div>
-                                    </div>
-                                    <div class="chat-item-time">10:22</div>
-                                </div>
-                                <div class="chat-item">
-                                    <div class="chat-item-avatar">娜</div>
-                                    <div class="chat-item-info">
-                                        <div class="chat-item-name">娜娜</div>
-                                        <div class="chat-item-preview">想吃啥</div>
-                                    </div>
-                                    <div class="chat-item-time">05-13</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="emoji-chat-main">
-                            <div class="emoji-chat-header">
-                                <div class="chat-header-left">
-                                    <div class="chat-item-avatar online">高</div>
-                                    <div>
-                                        <div style="font-weight: 600;">高聖勋</div>
-                                        <div style="font-size: 12px; color: var(--text-muted);">在线</div>
-                                    </div>
-                                </div>
-                                <div class="chat-header-right">
-                                    <button class="header-btn">🔍</button>
-                                    <button class="header-btn">👥</button>
-                                </div>
-                            </div>
-                            <div class="emoji-chat-messages">
-                                <div class="message received">
-                                    <div class="message-avatar">高</div>
-                                    <div>
-                                        <div class="message-bubble">fgh</div>
-                                        <div class="message-time">昨天 12:59</div>
-                                    </div>
-                                </div>
-                                <div class="message received">
-                                    <div class="message-avatar">高</div>
-                                    <div>
-                                        <div class="message-bubble">sdfgh</div>
-                                        <div class="message-time">昨天 12:59</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">经典</div>
-                                        <div class="message-time">昨天 17:43</div>
-                                    </div>
-                                </div>
-                                <div class="message sent">
-                                    <div class="message-avatar">👤</div>
-                                    <div>
-                                        <div class="message-bubble">eeee</div>
-                                        <div class="message-time">昨天 17:43</div>
-                                    </div>
-                                </div>
-                                <div class="message received">
-                                    <div class="message-avatar">高</div>
-                                    <div>
-                                        <div class="message-bubble">cffgh</div>
-                                        <div class="message-time">昨天 17:43</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="emoji-input-area">
-                                <div class="emoji-picker">
-                                    <div class="emoji-categories">
-                                        <button class="emoji-category active">😀</button>
-                                        <button class="emoji-category">❤️</button>
-                                        <button class="emoji-category">🎉</button>
-                                        <button class="emoji-category">🐶</button>
-                                        <button class="emoji-category">🍎</button>
-                                        <button class="emoji-category">🚀</button>
-                                        <button class="emoji-category">⚽</button>
-                                        <button class="emoji-category">🏠</button>
-                                    </div>
-                                    <div class="emoji-grid" id="emoji-grid">
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😀</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😃</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😄</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😁</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😆</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😅</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤣</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😂</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🙂</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😊</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😇</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🥰</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😍</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤩</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😘</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😗</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😚</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😙</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🥲</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😋</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😛</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😜</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤪</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😝</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤑</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤗</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤭</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤫</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤔</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤐</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">🤨</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😐</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😑</div>
-                                        <div class="emoji-item" onclick="addEmoji(this.textContent)">😶</div>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- iOS -->
+                <div class="screenshot-card">
+                    <div class="screenshot-preview">
+                        <img src="screenshots/ios.png" alt="iOS 截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="placeholder-content" style="display: none;">
+                            <div class="placeholder-icon">🍎</div>
+                            <div class="placeholder-text">iOS 截图</div>
+                            <div class="placeholder-text" style="margin-top: 8px;">screenshots/ios.png</div>
                         </div>
                     </div>
+                    <div class="screenshot-info">
+                        <div class="platform-badge">🍎 iOS</div>
+                        <h3>iOS</h3>
+                        <p>适配 iPhone 和 iPad，支持深色模式与系统特性</p>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="features-section">
-        <div class="container">
-            <h2 style="text-align: center; font-size: 32px; margin-bottom: 8px;">更多功能</h2>
-            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 16px;">Anoxia IM 提供全方位通讯解决方案</p>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🌙</div>
-                    <h3>深色主题</h3>
-                    <p>支持深色与浅色主题切换，保护您的眼睛</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🌐</div>
-                    <h3>多语言</h3>
-                    <p>支持中文、英文等多种语言界面</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3>全平台</h3>
-                    <p>Windows、macOS、Linux、iOS、Android</p>
+                <!-- Web -->
+                <div class="screenshot-card">
+                    <div class="screenshot-preview">
+                        <img src="screenshots/web.png" alt="Web 截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="placeholder-content" style="display: none;">
+                            <div class="placeholder-icon">🌐</div>
+                            <div class="placeholder-text">Web 截图</div>
+                            <div class="placeholder-text" style="margin-top: 8px;">screenshots/web.png</div>
+                        </div>
+                    </div>
+                    <div class="screenshot-info">
+                        <div class="platform-badge">🌐 Web</div>
+                        <h3>Web</h3>
+                        <p>无需下载，通过浏览器即可使用，随时随地访问</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1262,95 +260,17 @@
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            updateThemeToggle(newTheme);
+            const icon = document.querySelector('.theme-toggle .icon');
+            icon.textContent = newTheme === 'light' ? '🌙' : '☀️';
         }
 
-        function updateThemeToggle(theme) {
-            const toggle = document.querySelector('.theme-toggle');
-            const icon = toggle.querySelector('.icon');
-            const text = toggle.querySelector('.text');
-            
-            if (theme === 'light') {
-                icon.textContent = '☀️';
-                text.textContent = '亮色';
-            } else {
-                icon.textContent = '🌙';
-                text.textContent = '暗色';
-            }
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.querySelector('.theme-toggle .icon').textContent = '🌙';
         }
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme', theme);
-            updateThemeToggle(theme);
-        }
-
-        function showDemo(demoId) {
-            document.querySelectorAll('.demo-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.demo-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(demoId + '-demo').classList.add('active');
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const messagesContainer = document.getElementById('chat-messages');
-            const newMessage = document.createElement('div');
-            newMessage.className = 'message sent';
-            newMessage.innerHTML = `
-                <div class="message-avatar">👤</div>
-                <div>
-                    <div class="message-bubble">${text}</div>
-                    <div class="message-time">刚刚</div>
-                </div>
-            `;
-            messagesContainer.appendChild(newMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            input.value = '';
-
-            setTimeout(() => {
-                const replies = ['好的', '收到', '明白', '嗯嗯', '太棒了！', '👍'];
-                const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                const replyMessage = document.createElement('div');
-                replyMessage.className = 'message received';
-                replyMessage.innerHTML = `
-                    <div class="message-avatar">高</div>
-                    <div>
-                        <div class="message-bubble">${randomReply}</div>
-                        <div class="message-time">刚刚</div>
-                    </div>
-                `;
-                messagesContainer.appendChild(replyMessage);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }, 1000);
-        }
-
-        function addEmoji(emoji) {
-            const messagesContainer = document.getElementById('emoji-grid').parentElement.parentElement.parentElement.querySelector('.emoji-chat-messages');
-            const newMessage = document.createElement('div');
-            newMessage.className = 'message sent';
-            newMessage.innerHTML = `
-                <div class="message-avatar">👤</div>
-                <div>
-                    <div class="message-bubble">${emoji}</div>
-                    <div class="message-time">刚刚</div>
-                </div>
-            `;
-            messagesContainer.appendChild(newMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        initTheme();
     </script>
 </body>
 </html>
