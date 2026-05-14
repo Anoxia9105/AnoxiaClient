@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/pages/chat/component/widget/messageRender/detail/ImageViewer.dart';
-import 'package:anoxia/pages/contact/AddFriendPage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -150,9 +150,6 @@ class AddFriendRoute extends GoRouteData with $AddFriendRoute {
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
-    return MaterialPage(
-      key: state.pageKey,
-      child: const AddFriendPage(),
-    );
+    return MaterialPage(key: state.pageKey, child: const AddFriendPage());
   }
 }

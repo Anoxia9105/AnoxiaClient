@@ -1,14 +1,14 @@
+import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/pages/contact/NewfriendsPage.dart';
-import 'package:anoxia/pages/contact/component/ContactDetail.dart';
+import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
+import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/pages/contact/component/ContactList.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../common/widgets/Welcome.dart';
-import 'GroupRoomListPage.dart';
 
 class ContactPage extends ConsumerWidget {
   const ContactPage({super.key});
@@ -24,7 +24,7 @@ class ContactPage extends ConsumerWidget {
     );
     return Row(
       children: [
-        SizedBox(width: 100.w, child: ContactList()),
+        SizedBox(width: 100.w, child: const ContactList()),
         Expanded(child: _buildRightContent(selection)),
       ],
     );
@@ -36,11 +36,11 @@ class ContactPage extends ConsumerWidget {
         return const NewFriendsPage();
       case ContactViewType.contactDetail:
         // 将选中的联系人传给详情页
-        return ContactDetail();
+        return const ContactDetail();
       case ContactViewType.groups:
-        return GroupRoomListPage();
+        return const GroupRoomListPage();
       case ContactViewType.none:
-        return Welcome();
+        return const Welcome();
     }
   }
 }

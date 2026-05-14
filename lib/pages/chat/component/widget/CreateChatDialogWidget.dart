@@ -1,6 +1,6 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.dart';
+import 'package:anoxia/features/contact/presentation/widgets/sorted_contact_groups_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';

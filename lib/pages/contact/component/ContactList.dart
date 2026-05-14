@@ -1,13 +1,12 @@
-
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
-import 'package:anoxia/pages/contact/NewfriendsPage.dart';
-import 'package:anoxia/pages/contact/GroupRoomListPage.dart';
-import 'package:anoxia/pages/contact/component/ContactDetail.dart';
-import 'package:anoxia/pages/contact/component/widget/sortedContactGroupsWidget.dart';
+import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
+import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
+import 'package:anoxia/features/contact/presentation/widgets/sorted_contact_groups_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -57,7 +56,7 @@ class ContactList extends ConsumerWidget {
             onTap: () {
               ref.read(contactSelectionProvider.notifier).selectGroups();
               if (DeviceUtil.isRealMobile()) {
-                _openMobileDetail(context, GroupRoomListPage());
+                _openMobileDetail(context, const GroupRoomListPage());
               }
             },
           ),

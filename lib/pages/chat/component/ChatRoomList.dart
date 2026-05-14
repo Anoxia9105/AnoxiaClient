@@ -1,10 +1,10 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/pages/chat/component/widget/CreateChatDialogWidget.dart';
-import 'package:anoxia/pages/contact/AddFriendPage.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -395,11 +395,9 @@ class _RoomItem extends ConsumerWidget {
             ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
 
             if (DeviceUtil.isRealMobile()) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ChatRoomDetail(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ChatRoomDetail()));
             }
           }
         },

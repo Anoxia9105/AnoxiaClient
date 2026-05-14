@@ -26,7 +26,7 @@ import 'framework/network/TokenManager.dart';
 import 'framework/provider/core/AppUpdateInfo.dart';
 import 'framework/protocol/PacketType.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'pages/update/UpdatePage.dart';
+import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
