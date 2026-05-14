@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anoxia IM - 跨平台即时通讯客户端</title>
+    <meta name="description" content="Anoxia IM 是一个基于 Flutter 的跨平台即时通讯客户端，支持聊天、联系人、收藏、音视频通话、桌面多窗口与富文本输入。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div class="gradient-bg"></div>
+    
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1"/>
+                            <stop offset="100%" style="stop-color:#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="20" cy="20" r="18" stroke="url(#logoGradient)" stroke-width="2.5" fill="none"/>
+                    <path d="M12 20L18 26L28 14" stroke="url(#logoGradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="logo-text">Anoxia IM</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">功能</a>
+                <a href="#screenshots">预览</a>
+                <a href="#download">下载</a>
+                <a href="https://github.com/anoxia-im" target="_blank" class="nav-github">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    跨平台即时通讯
+                </div>
+                <h1 class="hero-title">
+                    <span class="title-line">重新定义</span>
+                    <span class="title-line gradient-text">即时通讯体验</span>
+                </h1>
+                <p class="hero-description">
+                    基于 Flutter 构建的高性能跨平台即时通讯客户端。<br>
+                    支持 Android、iOS、Windows、macOS 多平台，提供流畅的消息传递与音视频通话体验。
+                </p>
+                <div class="hero-actions">
+                    <a href="#download" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        立即下载
+                    </a>
+                    <a href="#features" class="btn btn-secondary">
+                        了解更多
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="version-display">--</span>
+                        <span class="stat-label">最新版本</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value">5+</span>
+                        <span class="stat-label">支持平台</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value">100%</span>
+                        <span class="stat-label">开源免费</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="device-mockup">
+                    <div class="device-frame desktop">
+                        <div class="device-screen">
+                            <div class="app-preview">
+                                <div class="app-sidebar">
+                                    <div class="sidebar-avatar"></div>
+                                    <div class="sidebar-icons">
+                                        <div class="sidebar-icon active"></div>
+                                        <div class="sidebar-icon"></div>
+                                        <div class="sidebar-icon"></div>
+                                        <div class="sidebar-icon"></div>
+                                    </div>
+                                </div>
+                                <div class="app-content">
+                                    <div class="chat-list">
+                                        <div class="chat-item active">
+                                            <div class="chat-avatar"></div>
+                                            <div class="chat-info">
+                                                <div class="chat-name">产品团队</div>
+                                                <div class="chat-preview">新版本已发布 🎉</div>
+                                            </div>
+                                            <div class="chat-time">刚刚</div>
+                                        </div>
+                                        <div class="chat-item">
+                                            <div class="chat-avatar"></div>
+                                            <div class="chat-info">
+                                                <div class="chat-name">技术讨论组</div>
+                                                <div class="chat-preview">API 接口已更新</div>
+                                            </div>
+                                            <div class="chat-time">10:30</div>
+                                        </div>
+                                        <div class="chat-item">
+                                            <div class="chat-avatar"></div>
+                                            <div class="chat-info">
+                                                <div class="chat-name">李明</div>
+                                                <div class="chat-preview">好的，我看看</div>
+                                            </div>
+                                            <div class="chat-time">昨天</div>
+                                        </div>
+                                    </div>
+                                    <div class="chat-main">
+                                        <div class="chat-header">
+                                            <div class="header-avatar"></div>
+                                            <div class="header-info">
+                                                <div class="header-name">产品团队</div>
+                                                <div class="header-status">5 位成员在线</div>
+                                            </div>
+                                        </div>
+                                        <div class="chat-messages">
+                                            <div class="message received">
+                                                <div class="message-bubble">新版本已经准备好了，大家可以测试一下</div>
+                                            </div>
+                                            <div class="message sent">
+                                                <div class="message-bubble">好的，我现在就下载试试 👍</div>
+                                            </div>
+                                            <div class="message received">
+                                                <div class="message-bubble">新版本已发布 🎉</div>
+                                            </div>
+                                        </div>
+                                        <div class="chat-input">
+                                            <div class="input-placeholder">输入消息...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-frame mobile">
+                        <div class="device-screen mobile-screen">
+                            <div class="mobile-preview">
+                                <div class="mobile-header">
+                                    <div class="mobile-title">消息</div>
+                                </div>
+                                <div class="mobile-chat-list">
+                                    <div class="mobile-chat-item">
+                                        <div class="mobile-avatar"></div>
+                                        <div class="mobile-info">
+                                            <div class="mobile-name">产品团队</div>
+                                            <div class="mobile-preview-text">新版本已发布</div>
+                                        </div>
+                                    </div>
+                                    <div class="mobile-chat-item">
+                                        <div class="mobile-avatar"></div>
+                                        <div class="mobile-info">
+                                            <div class="mobile-name">技术讨论组</div>
+                                            <div class="mobile-preview-text">API 接口已更新</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-elements">
+                    <div class="float-card card-1">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                        </svg>
+                    </div>
+                    <div class="float-card card-2">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                        </svg>
+                    </div>
+                    <div class="float-card card-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polygon points="10 8 16 12 10 16 10 8"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">功能特性</span>
+                <h2 class="section-title">为现代通讯而生</h2>
+                <p class="section-description">强大的功能集，满足您所有的即时通讯需求</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">即时消息</h3>
+                    <p class="feature-desc">房间会话、消息搜索、系统事件、消息状态管理，让沟通更高效</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M15.05 5A5 5 0 0119 8.95M15.05 1A9 9 0 0123 8.94m-1 7.98v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">音视频通话</h3>
+                    <p class="feature-desc">基于 LiveKit / WebRTC 的实时通话能力，高清流畅</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">桌面增强</h3>
+                    <p class="feature-desc">托盘、窗口控制、多窗口通话页，专为桌面优化的体验</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">富文本输入</h3>
+                    <p class="feature-desc">Flutter Quill + 自定义消息渲染策略，表达更丰富</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 010 7.75"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">联系人与群组</h3>
+                    <p class="feature-desc">检索、申请、好友关系与成员管理，社交更便捷</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">设置中心</h3>
+                    <p class="feature-desc">主题、语言、版本更新检查、用户反馈、开源许可查看</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="screenshots" class="screenshots">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">应用预览</span>
+                <h2 class="section-title">界面展示</h2>
+                <p class="section-description">精心设计的用户界面，带来极致的使用体验</p>
+            </div>
+            <div class="screenshots-container">
+                <div class="screenshot-tabs">
+                    <button class="screenshot-tab active" data-tab="desktop">桌面端</button>
+                    <button class="screenshot-tab" data-tab="mobile">移动端</button>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-panel active" id="desktop-panel">
+                        <div class="screenshot-grid">
+                            <div class="screenshot-item large">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>聊天界面截图</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                            <div class="screenshot-item">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>联系人列表</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                            <div class="screenshot-item">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>设置页面</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                            <div class="screenshot-item">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>音视频通话</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="screenshot-panel" id="mobile-panel">
+                        <div class="screenshot-grid mobile-grid">
+                            <div class="screenshot-item mobile-item">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>移动端聊天</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                            <div class="screenshot-item mobile-item">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>移动端联系人</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                            <div class="screenshot-item mobile-item">
+                                <div class="screenshot-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>移动端设置</span>
+                                    <small>请替换为实际截图</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">立即下载</span>
+                <h2 class="section-title">选择您的平台</h2>
+                <p class="section-description">支持多平台，随时随地保持连接</p>
+            </div>
+            <div class="download-grid">
+                <div class="download-card" data-platform="windows">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+                        </svg>
+                    </div>
+                    <h3 class="download-title">Windows</h3>
+                    <p class="download-version" id="windows-version">加载中...</p>
+                    <p class="download-notes" id="windows-notes"></p>
+                    <a href="#" class="download-btn" id="windows-download">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        下载 .exe
+                    </a>
+                </div>
+                <div class="download-card" data-platform="macos">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                    </div>
+                    <h3 class="download-title">macOS</h3>
+                    <p class="download-version" id="macos-version">加载中...</p>
+                    <p class="download-notes" id="macos-notes"></p>
+                    <a href="#" class="download-btn" id="macos-download">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        下载 .dmg
+                    </a>
+                </div>
+                <div class="download-card" data-platform="android">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.523 15.341c-.5 0-.906-.406-.906-.906s.406-.906.906-.906.906.406.906.906-.406.906-.906.906m-11.046 0c-.5 0-.906-.406-.906-.906s.406-.906.906-.906.906.406.906.906-.406.906-.906.906m11.405-6.02l1.997-3.46a.416.416 0 00-.721-.416l-2.023 3.505A12.16 12.16 0 0012 7.734c-1.786 0-3.467.39-4.985 1.082L4.992 5.31a.416.416 0 00-.721.416l1.997 3.46C3.066 11.09 1 14.133 1 17.634h22c0-3.5-2.066-6.544-5.118-8.313"/>
+                        </svg>
+                    </div>
+                    <h3 class="download-title">Android</h3>
+                    <p class="download-version" id="android-version">加载中...</p>
+                    <p class="download-notes" id="android-notes"></p>
+                    <a href="#" class="download-btn" id="android-download">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        下载 .apk
+                    </a>
+                </div>
+                <div class="download-card" data-platform="ios">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                    </div>
+                    <h3 class="download-title">iOS</h3>
+                    <p class="download-version" id="ios-version">加载中...</p>
+                    <p class="download-notes" id="ios-notes"></p>
+                    <a href="#" class="download-btn" id="ios-download">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        App Store
+                    </a>
+                </div>
+                <div class="download-card disabled" data-platform="linux">
+                    <div class="download-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.173v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.365 1.212-2.439 1.603-2.777.39-.338.336-.467.18-.467-.154 0-.363.135-.602.333-.3.268-.66.6-.945.867-.06.065-.12.135-.18.2-.06.066-.12.135-.18.2-.3.334-.6.734-.825 1.07-.225.335-.363.6-.39.668v.002a.086.086 0 01-.005-.067c.015-.135.09-.334.18-.534.09-.2.195-.4.3-.534.105-.135.21-.267.315-.334.105-.066.18-.135.255-.135.075 0 .135.067.135.2 0 .135-.06.334-.165.534-.105.2-.24.4-.39.534-.15.135-.3.2-.42.2-.12 0-.21-.065-.255-.2-.045-.135-.045-.334 0-.534.045-.2.12-.4.21-.534.09-.135.18-.2.27-.2.09 0 .165.065.21.2.045.135.06.334.03.534-.03.2-.09.4-.165.534-.075.135-.165.2-.255.2-.09 0-.18-.065-.255-.2-.075-.135-.135-.334-.165-.534-.03-.2-.015-.4.03-.534.045-.135.12-.2.21-.2.09 0 .18.065.255.2.075.135.135.334.165.534.03.2.015.4-.03.534-.045.135-.12.2-.21.2-.09 0-.18-.065-.255-.2-.075-.135-.135-.334-.165-.534-.03-.2-.015-.4.03-.534.045-.135.12-.2.21-.2h.003z"/>
+                        </svg>
+                    </div>
+                    <h3 class="download-title">Linux</h3>
+                    <p class="download-version">即将推出</p>
+                    <p class="download-notes">敬请期待</p>
+                    <button class="download-btn disabled" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                        </svg>
+                        暂不可用
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tech-stack">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">技术栈</span>
+                <h2 class="section-title">构建于现代技术之上</h2>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-icon flutter">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14.314 0L2.3 12 6 15.7 21.684.013h-7.357zm.014 11.072L7.857 17.53l6.47 6.47H21.7l-6.46-6.468 6.46-6.46h-7.37z"/>
+                        </svg>
+                    </div>
+                    <span>Flutter</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon dart">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4.105 4.105S9.158 1.58 11.684.604c23.983 7.537 16.485 19.335 16.485 19.335s-2.632 4.061-5.263 4.061c-7.895 0-18.801-20.895-18.801-19.895z"/>
+                        </svg>
+                    </div>
+                    <span>Dart</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon riverpod">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                    </div>
+                    <span>Riverpod</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon webrtc">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span>WebRTC</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                            <circle cx="20" cy="20" r="18" stroke="url(#logoGradient)" stroke-width="2.5" fill="none"/>
+                            <path d="M12 20L18 26L28 14" stroke="url(#logoGradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Anoxia IM</span>
+                    </a>
+                    <p class="footer-desc">基于 Flutter 的跨平台即时通讯客户端</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>产品</h4>
+                        <a href="#features">功能特性</a>
+                        <a href="#download">下载</a>
+                        <a href="#screenshots">预览</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>开发</h4>
+                        <a href="https://github.com/anoxia-im" target="_blank">GitHub</a>
+                        <a href="#">文档</a>
+                        <a href="#">更新日志</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>社区</h4>
+                        <a href="#">反馈</a>
+                        <a href="#">开源许可</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Anoxia IM. 基于 MIT 许可证开源。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

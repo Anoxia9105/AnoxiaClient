@@ -15,7 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SortedContactGroupsWidget extends ConsumerWidget {
   /// 自定义联系人项构建器（可选）
   final Widget Function(ChatContactVO vo)? itemBuilder;
-  
+
   /// 联系人点击回调（可选）
   final VoidCallback? onContactTap;
 
@@ -251,7 +251,7 @@ class _ContactGroupsSkeleton extends StatelessWidget {
 class ContactItemTile extends ConsumerWidget {
   /// 联系人对象
   final ChatContactVO contact;
-  
+
   /// 点击回调（可选）
   final VoidCallback? onTap;
 
@@ -280,16 +280,13 @@ class ContactItemTile extends ConsumerWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
         selected: isSelected,
         selectedColor: colorScheme.primary,
-        leading: SizedBox(
-          width: 40,
-          height: 40,
-          child: AvatarWidget(
-            url: contact.avatar,
-            name: contact.nickName,
-            status: contact.onlineStatus ?? false
-                ? AvatarStatus.online
-                : AvatarStatus.offline,
-          ),
+        leading: AvatarWidget(
+          size: 34,
+          url: contact.avatar,
+          name: contact.nickName,
+          status: contact.onlineStatus ?? false
+              ? AvatarStatus.online
+              : AvatarStatus.offline,
         ),
         title: Text(
           contact.nickName ?? '',
