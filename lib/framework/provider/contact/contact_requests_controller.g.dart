@@ -8,16 +8,31 @@ part of 'contact_requests_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 好友申请列表服务
+///
+/// 管理所有收到的好友请求，支持请求处理和列表刷新。
+///
+/// 采用 keepAlive 模式，确保请求列表在全局共享。
 
 @ProviderFor(ContactRequestsService)
 const contactRequestsServiceProvider = ContactRequestsServiceProvider._();
 
+/// 好友申请列表服务
+///
+/// 管理所有收到的好友请求，支持请求处理和列表刷新。
+///
+/// 采用 keepAlive 模式，确保请求列表在全局共享。
 final class ContactRequestsServiceProvider
     extends
         $AsyncNotifierProvider<
           ContactRequestsService,
           List<ChatContactRequestVO>
         > {
+  /// 好友申请列表服务
+  ///
+  /// 管理所有收到的好友请求，支持请求处理和列表刷新。
+  ///
+  /// 采用 keepAlive 模式，确保请求列表在全局共享。
   const ContactRequestsServiceProvider._()
     : super(
         from: null,
@@ -39,6 +54,12 @@ final class ContactRequestsServiceProvider
 
 String _$contactRequestsServiceHash() =>
     r'6bee6e02a44768e7b79f535bf5cd25e5aedaa93a';
+
+/// 好友申请列表服务
+///
+/// 管理所有收到的好友请求，支持请求处理和列表刷新。
+///
+/// 采用 keepAlive 模式，确保请求列表在全局共享。
 
 abstract class _$ContactRequestsService
     extends $AsyncNotifier<List<ChatContactRequestVO>> {
@@ -68,17 +89,23 @@ abstract class _$ContactRequestsService
   }
 }
 
-/// 统计待处理的数量
+/// 待处理好友申请数量
+///
+/// 仅统计状态为 0（待处理）的请求数
 
 @ProviderFor(pendingRequestCount)
 const pendingRequestCountProvider = PendingRequestCountProvider._();
 
-/// 统计待处理的数量
+/// 待处理好友申请数量
+///
+/// 仅统计状态为 0（待处理）的请求数
 
 final class PendingRequestCountProvider
     extends $FunctionalProvider<AsyncValue<int>, int, FutureOr<int>>
     with $FutureModifier<int>, $FutureProvider<int> {
-  /// 统计待处理的数量
+  /// 待处理好友申请数量
+  ///
+  /// 仅统计状态为 0（待处理）的请求数
   const PendingRequestCountProvider._()
     : super(
         from: null,

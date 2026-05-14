@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// 轻量骨架块（不依赖第三方包）
+/// 骨架屏加载占位块
+///
+/// 用于内容加载中时的占位展示，通过闪烁动画模拟加载效果。
+/// 支持矩形、圆形、自定义尺寸和边距。
 class SkeletonBox extends StatefulWidget {
+  /// 宽度（null 时自适应）
   final double? width;
+
+  /// 高度（null 时自适应）
   final double? height;
+
+  /// 圆角半径
   final double radius;
+
+  /// 是否为圆形
   final bool circle;
+
+  /// 外边距
   final EdgeInsetsGeometry? margin;
 
   const SkeletonBox({
@@ -81,17 +93,24 @@ class _SkeletonBoxState extends State<SkeletonBox>
 
     return widget.margin == null
         ? child
-        : Container(
-            margin: widget.margin,
-            child: child,
-          );
+        : Container(margin: widget.margin, child: child);
   }
 }
 
+/// 骨架屏线条组件
+///
+/// 简化的骨架块，专用于文本行的占位展示。
 class SkeletonLine extends StatelessWidget {
+  /// 宽度
   final double width;
+
+  /// 高度
   final double height;
+
+  /// 圆角半径
   final double radius;
+
+  /// 外边距
   final EdgeInsetsGeometry? margin;
 
   const SkeletonLine({

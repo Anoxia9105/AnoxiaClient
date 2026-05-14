@@ -3,17 +3,16 @@ import 'package:flutter/material.dart';
 
 /// 设备类型工具类
 ///
-/// 作者: anoxia
-///
-/// 版本: 2.0.0
-///
-/// 创建时间: 2025-09-26
+/// 根据屏幕宽度和运行平台判断当前设备类型，
+/// 用于实现响应式布局和平台适配。
 class DeviceUtil {
-  /// 断点定义，可以按需调整
-  static const double mobileMaxWidth = 600;   // 手机最大宽度
-  static const double tabletMaxWidth = 1024;  // 平板最大宽度
+  /// 手机最大宽度阈值
+  static const double mobileMaxWidth = 600;
 
-  /// 是否是 Web
+  /// 平板最大宽度阈值
+  static const double tabletMaxWidth = 1024;
+
+  /// 是否为 Web 环境
   static bool get isWeb => kIsWeb;
 
   /// 根据屏幕宽度判断设备类型
@@ -29,35 +28,35 @@ class DeviceUtil {
     }
   }
 
-  /// 判断是否是手机
+  /// 判断是否为手机
   static bool isMobile(BuildContext context) =>
       getDeviceType(context) == DeviceType.mobile;
 
-  /// 判断是否是平板
+  /// 判断是否为平板
   static bool isTablet(BuildContext context) =>
       getDeviceType(context) == DeviceType.tablet;
 
-  /// 判断是否是桌面
+  /// 判断是否为桌面端
   static bool isDesktop(BuildContext context) =>
       getDeviceType(context) == DeviceType.desktop;
 
-
-  ///真实的桌面环境 不是web
-  static bool isRealDesktop() =>!kIsWeb &&
+  /// 判断是否为真实桌面环境（不包括 Web）
+  static bool isRealDesktop() => !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.windows ||
           defaultTargetPlatform == TargetPlatform.linux ||
           defaultTargetPlatform == TargetPlatform.macOS);
 
-  ///真实手机环境
+  /// 判断是否为真实移动设备（不包括 Web）
   static bool isRealMobile() =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
-  ///真实web环境
+  /// 判断是否为真实 Web 环境
   static bool isRealWeb() => kIsWeb;
 }
 
+/// 设备类型枚举
 enum DeviceType {
   desktop,
   tablet,

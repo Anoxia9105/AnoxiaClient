@@ -5,16 +5,40 @@ import '../protocol/message/MessageEunm.dart';
 import '../protocol/message/MessagePayload.dart';
 import 'ChatMessage.dart';
 
+/// 收藏消息模型
+///
+/// 表示用户收藏的单条消息，包含原始消息内容和元数据。
+/// 支持从多种数据格式（snake_case/camelCase、嵌套 JSON）自动解析，
+/// 并可转换为标准 [ChatMessage] 格式进行展示。
 class ChatFavorite {
+  /// 收藏记录主键ID
   final int id;
+
+  /// 对应消息ID
   final String msgId;
+
+  /// 消息类型标识
   final String favoriteType;
+
+  /// 发送者用户ID
   final int? senderId;
+
+  /// 发送者昵称
   final String senderName;
+
+  /// 发送者头像
   final String senderAvatar;
+
+  /// 消息文本内容
   final String content;
+
+  /// 消息负载（JSON 字符串，可能包含 Quill Delta 等结构化数据）
   final String payload;
+
+  /// 附件列表（JSON 字符串）
   final String attachments;
+
+  /// 收藏时间
   final DateTime? createdAt;
 
   const ChatFavorite({
@@ -30,6 +54,9 @@ class ChatFavorite {
     required this.createdAt,
   });
 
+  /// 从 JSON 数据构造 [ChatFavorite] 实例
+  ///
+  /// 自动兼容多种命名风格（snake_case、camelCase）和数据类型（String/Map/List）
   factory ChatFavorite.fromJson(Map<String, dynamic> json) {
     final senderInfo = _extractSenderInfo(json);
 
@@ -52,10 +79,14 @@ class ChatFavorite {
     );
   }
 
+  /// 获取消息类型的显示标签
   String get typeLabel {
     return messageType.name.toUpperCase();
   }
 
+  /// 获取发送者显示名称
+  ///
+  /// 优先级：昵称 > "User #userId" > 空字符串
   String get senderDisplayName {
     final text = senderName.trim();
     if (text.isNotEmpty) return text;
@@ -63,6 +94,9 @@ class ChatFavorite {
     return '';
   }
 
+  /// 解析消息类型
+  ///
+  /// 按以下优先级推断：显式类型标识 > Payload 推断 > 附件推断 > 默认文本类型
   MessageType get messageType {
     final raw = favoriteType.trim();
     final explicitType = _parseType(raw);
@@ -89,6 +123,7 @@ class ChatFavorite {
     return MessageType.text;
   }
 
+  /// 从类型字符串解析 [MessageType]
   MessageType? _parseType(String raw) {
     if (raw.isEmpty) return null;
 
@@ -105,6 +140,7 @@ class ChatFavorite {
     return null;
   }
 
+  /// 从 Payload 内容推断消息类型
   MessageType? _inferPayloadType() {
     final payloadRaw = payload.trim();
     if (payloadRaw.isNotEmpty) {
@@ -123,6 +159,7 @@ class ChatFavorite {
     return null;
   }
 
+  /// 检查解码后的数据是否包含 Quill Delta 格式
   bool _containsQuillDelta(dynamic decoded) {
     if (decoded is List) {
       return decoded.any((e) => e is Map && e.containsKey('insert'));
@@ -140,6 +177,9 @@ class ChatFavorite {
     return false;
   }
 
+  /// 获取收藏内容的摘要文本
+  ///
+  /// 优先级：content > payload 文本 > 附件类型标签 > "[empty]"
   String get summary {
     final text = content.trim();
     if (text.isNotEmpty) return text;
@@ -154,11 +194,13 @@ class ChatFavorite {
     return '[empty]';
   }
 
+  /// 获取收藏内容的完整详情文本
+  ///
+  /// 与 [summary] 的区别：此方法优先展示信息量更完整的长文本
   String get detailText {
     final text = content.trim();
     final payloadText = _extractPayloadText();
 
-    // 详情页优先展示信息量更完整的文本，避免仅显示被截断的 content。
     if (payloadText.isNotEmpty && payloadText.length > text.length) {
       return payloadText;
     }
@@ -172,6 +214,7 @@ class ChatFavorite {
     return '';
   }
 
+  /// 从 Payload 中提取可读的文本内容
   String _extractPayloadText() {
     if (payload.trim().isEmpty) return '';
 
@@ -204,12 +247,15 @@ class ChatFavorite {
         if (joined.isNotEmpty) return joined;
       }
     } catch (_) {
-      // ignore parse errors and fallback to raw payload
+      // 解析失败时降级返回空字符串
     }
 
     return '';
   }
 
+  /// 转换为标准 [ChatMessage] 格式
+  ///
+  /// 用于在消息详情页或转发场景中复用消息渲染逻辑
   ChatMessage toChatMessage() {
     final resolvedType = messageType;
     final resolvedPayload = _buildPayload(resolvedType);
@@ -227,6 +273,7 @@ class ChatFavorite {
     );
   }
 
+  /// 根据消息类型构建 [MessagePayload]
   MessagePayload _buildPayload(MessageType type) {
     final raw = payload.trim();
     if (raw.isEmpty) {
@@ -267,12 +314,13 @@ class ChatFavorite {
         );
       }
     } catch (_) {
-      // ignore parse errors and fallback below
+      // 解析失败时降级构建基础 Payload
     }
 
     return MessagePayload(content: content.trim());
   }
 
+  /// 从 Map 中提取 Quill Delta 字符串
   String? _extractQuillDeltaString(Map<String, dynamic> decoded) {
     final candidates = [decoded['quillDelta'], decoded['delta'], decoded['ops']];
     for (final candidate in candidates) {
@@ -285,6 +333,9 @@ class ChatFavorite {
     return null;
   }
 
+  /// 构建附件列表
+  ///
+  /// 优先从 attachments 字段解析，失败时从 payload 中提取
   List<Attachment> _buildAttachments() {
     final raw = attachments.trim();
     if (raw.isNotEmpty) {
@@ -301,6 +352,9 @@ class ChatFavorite {
     return const [];
   }
 
+  /// 递归尝试将字符串解码为 JSON 对象
+  ///
+  /// 最多尝试 3 次，支持嵌套的 JSON 字符串
   dynamic _decodeMaybeJson(dynamic source) {
     dynamic current = source;
     for (var i = 0; i < 3; i++) {
@@ -317,6 +371,7 @@ class ChatFavorite {
     return current;
   }
 
+  /// 动态解析附件列表
   List<Attachment> _parseAttachmentsDynamic(dynamic decoded) {
     if (decoded is List) {
       return decoded
@@ -353,6 +408,9 @@ class ChatFavorite {
     return const [];
   }
 
+  /// 从 JSON 中提取发送者信息
+  ///
+  /// 兼容多种字段命名风格，优先取顶层字段，其次从 payload 中查找
   static _SenderInfo _extractSenderInfo(Map<String, dynamic> json) {
     final senderId = _readInt(
       json,
@@ -438,6 +496,7 @@ class ChatFavorite {
     );
   }
 
+  /// 从多个候选键中读取整数值的辅助方法
   static int? _readInt(Map<String, dynamic> source, {required List<String> keys}) {
     for (final key in keys) {
       final value = source[key];
@@ -448,6 +507,7 @@ class ChatFavorite {
     return null;
   }
 
+  /// 从多个候选键中读取字符串值的辅助方法
   static String _readString(Map<String, dynamic> source, {required List<String> keys}) {
     for (final key in keys) {
       final value = source[key]?.toString().trim() ?? '';
@@ -456,6 +516,7 @@ class ChatFavorite {
     return '';
   }
 
+  /// 静态版本的 JSON 解码方法
   static dynamic _decodeStatic(dynamic source) {
     dynamic current = source;
     for (var i = 0; i < 3; i++) {
@@ -473,6 +534,9 @@ class ChatFavorite {
   }
 }
 
+/// 发送者信息的内部封装类
+///
+/// 仅用于 [ChatFavorite] 内部数据解析，不对外暴露
 class _SenderInfo {
   final int? senderId;
   final String senderName;

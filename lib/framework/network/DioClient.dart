@@ -10,45 +10,50 @@ import 'package:anoxia/main.dart';
 import '../logs/talker.dart';
 import 'DioConfig.dart';
 
+/// HTTP 客户端封装
+///
+/// 基于 Dio 封装，提供统一的 RESTful API 调用能力。
+/// 支持自动 Token 注入、401 自动登出、文件上传下载等常用功能。
 class DioClient {
-  // 单例
+  /// 单例模式：全局共享一个 DioClient 实例
   DioClient._internal() : _dio = DioConfig().createDio() {
     _dio.interceptors.add(
       InterceptorsWrapper(
-        // 请求拦截器：添加鉴权 token
+        /// 请求拦截器：注入鉴权 Token
         onRequest: (options, handler) async {
           log.info('Dio request -> ${options.method} ${options.uri}');
-          // 默认需要鉴权，除非显式 auth=false
+          // 默认需要鉴权，除非显式指定 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
-            // 优先从内存缓存获取 token
+            // 优先从内存缓存获取 Token（减少频繁读取本地存储）
             String? token = globalContainer.read(tokenCacheProvider);
-            
-            // 如果内存中没有，尝试从 TokenManager 恢复（仅用于自动登录场景）
+
+            // 内存中没有时，尝试从 TokenManager 恢复（用于冷启动自动登录场景）
             if (token == null || token.isEmpty) {
               token = await TokenManager.instance.getToken();
               if (token != null && token.isNotEmpty) {
-                // 恢复到内存缓存
                 globalContainer.read(tokenCacheProvider.notifier).setToken(token);
               }
             }
-            
+
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
           }
           return handler.next(options);
         },
+
+        /// 响应拦截器：处理业务状态码
         onResponse: (response, handler) async {
           log.info(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
 
+            // 401 鉴权失败：触发登出并跳转登录页（排除 logout 接口自身）
             if (bizCode == 401) {
               final requestPath = response.requestOptions.path;
               final isLogoutApi = requestPath.contains('/logout');
 
-              // 鉴权失败，跳转登录（避免 logout 自身再触发 logout）
               if (!isLogoutApi) {
                 unawaited(
                   globalContainer.read(authControllerProvider.notifier).logout(),
@@ -65,14 +70,17 @@ class DioClient {
                 ),
               );
             }
+
+            // 非 200 状态码：记录错误日志
             if (bizCode != HttpStatus.ok) {
               final String? errorMsg = response.data['msg']?.toString();
-              //记录日志
               log.error("请求错误: $errorMsg, 业务码: $bizCode");
             }
           }
           return handler.next(response);
         },
+
+        /// 错误拦截器：记录错误信息
         onError: (e, handler) async {
           final uri = e.requestOptions.uri;
           log.error(
@@ -86,10 +94,12 @@ class DioClient {
 
   static final DioClient _instance = DioClient._internal();
 
+  /// 获取单例实例
   factory DioClient() => _instance;
 
   final Dio _dio;
 
+  /// GET 请求
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -109,6 +119,7 @@ class DioClient {
     }
   }
 
+  /// POST 请求
   Future<Response> post(
     String path, {
     dynamic data,
@@ -128,6 +139,7 @@ class DioClient {
     }
   }
 
+  /// PUT 请求
   Future<Response> put(
     String path, {
     dynamic data,
@@ -147,6 +159,7 @@ class DioClient {
     }
   }
 
+  /// DELETE 请求
   Future<Response> delete(
     String path, {
     dynamic data,
@@ -166,7 +179,10 @@ class DioClient {
     }
   }
 
-  /// 上传文件（支持单文件）
+  /// 单文件上传
+  ///
+  /// [file] 要上传的文件
+  /// [fileField] 服务端接收的字段名，默认为 "file"
   Future<Response> uploadFile(
     String path, {
     required File file,
@@ -198,7 +214,10 @@ class DioClient {
     }
   }
 
-  /// 多文件上传（支持 `files: List<File>`）
+  /// 多文件上传
+  ///
+  /// [files] 要上传的文件列表
+  /// [fileField] 服务端接收的字段名，默认为 "files"
   Future<Response> uploadFiles(
     String path, {
     required List<File> files,
@@ -237,6 +256,10 @@ class DioClient {
     }
   }
 
+  /// 文件下载
+  ///
+  /// [urlPath] 下载路径
+  /// [savePath] 本地保存路径
   Future<Response> download(
     String urlPath,
     savePath, {
@@ -261,13 +284,16 @@ class DioClient {
         options: _mergeOptions(
           options,
           auth: false,
-        ), // Updates usually don't need auth
+        ),
       );
     } on DioException catch (_) {
       rethrow;
     }
   }
 
+  /// 合并请求选项
+  ///
+  /// 将 auth 标志注入到 options.extra 中，供拦截器读取
   Options _mergeOptions(Options? options, {required bool auth}) {
     final extra = Map<String, dynamic>.from(options?.extra ?? {});
     extra['auth'] = auth;

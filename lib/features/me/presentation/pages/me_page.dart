@@ -8,6 +8,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 个人中心页面
+///
+/// 支持用户查看和编辑个人信息、修改密码等功能
 class MyPage extends ConsumerStatefulWidget {
   const MyPage({super.key});
 
@@ -17,24 +20,40 @@ class MyPage extends ConsumerStatefulWidget {
 
 class _MyPageState extends ConsumerState<MyPage>
     with SingleTickerProviderStateMixin {
+  /// 个人资料表单 Key
   final _profileFormKey = GlobalKey<FormState>();
+  /// 密码修改表单 Key
   final _pwdFormKey = GlobalKey<FormState>();
 
+  /// 昵称编辑控制器
   final _nickController = TextEditingController();
+  /// 邮箱编辑控制器
   final _emailController = TextEditingController();
+  /// 手机号编辑控制器
   final _phoneController = TextEditingController();
 
+  /// 旧密码编辑控制器
   final _oldPwdController = TextEditingController();
+  /// 新密码编辑控制器
   final _newPwdController = TextEditingController();
+  /// 确认密码编辑控制器
   final _confirmPwdController = TextEditingController();
 
+  /// 性别（0=男，1=女，2=未知）
   String _sex = '2';
+  /// 用户信息快照（用于检测变化）
   String? _boundUserSnapshot;
+  /// 是否正在保存个人资料
   bool _savingProfile = false;
+  /// 是否正在更新密码
   bool _updatingPwd = false;
+  /// 是否显示旧密码
   bool _showOldPwd = false;
+  /// 是否显示新密码
   bool _showNewPwd = false;
+  /// 是否显示确认密码
   bool _showConfirmPwd = false;
+  /// Tab 控制器
   late TabController _tabController;
 
   @override

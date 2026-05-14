@@ -11,12 +11,11 @@ class PinnedRooms extends _$PinnedRooms {
 
   @override
   Set<String> build() {
-    // 同步加载初始数据（如果 SPUtil 支持同步获取）
-    final list = SPUtil.instance.get<List<dynamic>>(
+    final list = SPUtil.instance.getStringList(
       _storageKey,
       defValue: const <String>[],
     );
-    return (list?.cast<String>() ?? const <String>[]).toSet();
+    return (list ?? const <String>[]).toSet();
   }
 
   Future<void> toggle(String roomId) async {
@@ -31,7 +30,7 @@ class PinnedRooms extends _$PinnedRooms {
     state = next;
 
     // 保存到本地
-    await SPUtil.instance.set<List<String>>(_storageKey, state.toList());
+    await SPUtil.instance.setStringList(_storageKey, state.toList());
   }
 
   // 辅助方法：判断是否置顶

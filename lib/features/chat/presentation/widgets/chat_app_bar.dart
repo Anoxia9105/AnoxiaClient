@@ -20,6 +20,10 @@ import '../../../../framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/add_member_dialog_widget.dart';
 
+/// 聊天房间 AppBar 组件
+///
+/// 显示房间信息、通话按钮、搜索按钮、成员管理等功能
+/// 实现了 [PreferredSizeWidget] 接口，可以在 Scaffold 中作为 AppBar 使用
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const ChatAppBar({super.key});
 
@@ -261,7 +265,15 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  /// 踢出成员确认弹窗
+  /// 处理踢出成员操作
+  ///
+  /// 显示确认弹窗，确认后执行踢出操作
+  ///
+  /// [context] 上下文
+  /// [ref] WidgetRef 用于访问 Provider
+  /// [roomId] 房间 ID
+  /// [targetUserId] 目标用户 ID
+  /// [targetUserName] 目标用户名
   void _handleKickMember(
     BuildContext context,
     WidgetRef ref,
@@ -310,7 +322,14 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  /// 全体禁言/解除禁言确认弹窗
+  /// 处理全体禁言/解除禁言操作
+  ///
+  /// 显示确认弹窗，确认后执行禁言/解除禁言操作
+  ///
+  /// [context] 上下文
+  /// [ref] WidgetRef 用于访问 Provider
+  /// [roomId] 房间 ID
+  /// [isMute] true 表示禁言，false 表示解除禁言
   void _handleMuteRoom(
     BuildContext context,
     WidgetRef ref,
@@ -487,13 +506,14 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-// ──────────────────────────────────────────
-// 抽离子组件：禁言按钮
-// 避免在 AppBar.actions 里嵌套过多 Builder
-// ──────────────────────────────────────────
-
+/// 禁言/解除禁言按钮组件
+///
+/// 避免在 AppBar.actions 里嵌套过多 Builder
 class _MuteButton extends StatelessWidget {
+  /// 是否已禁言
   final bool isMuted;
+  
+  /// 点击回调
   final VoidCallback onTap;
 
   const _MuteButton({required this.isMuted, required this.onTap});
@@ -527,15 +547,21 @@ class _MuteButton extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────
-// 抽离子组件：成员列表按钮 + 弹出面板
-// ──────────────────────────────────────────
-
+/// 成员列表按钮 + 弹出面板组件
 class _MemberListButton extends StatelessWidget {
+  /// 房间成员列表
   final List<ChatRoomMemberVO> members;
+  
+  /// 当前用户 ID
   final int? currentUserId;
+  
+  /// 当前用户是否为管理员
   final bool isAdmin;
+  
+  /// 房间 ID
   final String roomId;
+  
+  /// 踢出成员回调函数
   final void Function(ChatRoomMemberVO member) onKick;
 
   const _MemberListButton({
@@ -633,9 +659,14 @@ class _MemberListButton extends StatelessWidget {
   }
 
   /// 构建每行右侧的操作区域
-  ///   - 管理员：显示"管理员"标签
-  ///   - 我是管理员 且 当前行不是我：显示踢出按钮
-  ///   - 其他情况：空
+  ///
+  /// - 管理员：显示"管理员"标签
+  /// - 我是管理员且当前行不是我：显示踢出按钮
+  /// - 其他情况：空
+  ///
+  /// [context] 上下文
+  /// [m] 成员对象
+  /// 返回 操作区域 Widget
   Widget _buildTrailing(BuildContext context, ChatRoomMemberVO m) {
     // 当前行是管理员，显示标签
     if (m.roleId == 0) {

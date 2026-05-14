@@ -30,9 +30,12 @@ import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
-// 创建全局 Riverpod 容器（所有窗口共享）
+/// 全局 Riverpod 容器（所有窗口共享，实现状态同步）
+///
+/// 使用 [UncontrolledProviderScope] 挂载到各个窗口，
+/// 确保主窗口、子窗口、更新窗口共享同一套状态。
 final ProviderContainer globalContainer = ProviderContainer(
-  // 可按需开启观察者
+  // 可按需开启观察者，用于调试 Provider 生命周期
   // observers: [
   //   TalkerRiverpodObserver(
   //     talker: log,
@@ -41,33 +44,43 @@ final ProviderContainer globalContainer = ProviderContainer(
   // ],
 );
 
+/// SharedPreferences 存储 Key：蓝牙权限是否已申请
 const String _kBluetoothPermissionRequestedKey =
     'bluetooth_permission_requested_v1';
 
+/// 检查并请求蓝牙权限（仅 Android）
+///
+/// 为音视频通话做准备，仅首次启动时请求，
+/// 若被永久拒绝则引导用户前往系统设置开启。
 Future<void> _checkBluetoothPermissions() async {
-  // 仅 Android 需要在运行时申请蓝牙权限
+  // Web 和非 Android 平台无需处理
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
 
+  // 检查是否已请求过，避免重复弹窗
   final requested =
-      SPUtil.instance.get<bool>(_kBluetoothPermissionRequestedKey) ?? false;
+    SPUtil.instance.getBool(_kBluetoothPermissionRequestedKey) ?? false;
   if (requested) return;
 
   bool hasPermanentlyDenied = false;
 
+  // 请求蓝牙权限
   var status = await Permission.bluetooth.request();
   if (status.isPermanentlyDenied) {
     log.warning('Bluetooth Permission disabled');
     hasPermanentlyDenied = true;
   }
 
+  // 请求蓝牙连接权限
   status = await Permission.bluetoothConnect.request();
   if (status.isPermanentlyDenied) {
     log.warning('Bluetooth Connect Permission disabled');
     hasPermanentlyDenied = true;
   }
 
-  await SPUtil.instance.set(_kBluetoothPermissionRequestedKey, true);
+  // 记录已请求状态
+  await SPUtil.instance.setBool(_kBluetoothPermissionRequestedKey, true);
 
+  // 若有永久拒绝，引导用户去设置
   if (hasPermanentlyDenied) {
     await openAppSettings();
   }
@@ -97,7 +110,7 @@ Future<void> main(List<String> args) async {
     // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
     await Future.wait([
       EasyLocalization.ensureInitialized(), // 多语言初始化
-      SPUtil.init(), // 本地存储初始化
+      SPUtil.instance.init(), // 本地存储初始化
     ]);
 
     // Android 蓝牙耳机权限（首次启动会触发系统弹窗）

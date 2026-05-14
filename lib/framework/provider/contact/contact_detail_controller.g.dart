@@ -8,9 +8,16 @@ part of 'contact_detail_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 获取联系人详情
+///
+/// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
 
 @ProviderFor(contactDetailData)
 const contactDetailDataProvider = ContactDetailDataFamily._();
+
+/// 获取联系人详情
+///
+/// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
 
 final class ContactDetailDataProvider
     extends
@@ -22,6 +29,9 @@ final class ContactDetailDataProvider
     with
         $FutureModifier<ChatContactDetailVO>,
         $FutureProvider<ChatContactDetailVO> {
+  /// 获取联系人详情
+  ///
+  /// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
   const ContactDetailDataProvider._({
     required ContactDetailDataFamily super.from,
     required int super.argument,
@@ -68,6 +78,10 @@ final class ContactDetailDataProvider
 
 String _$contactDetailDataHash() => r'f93acf54fc456d3f0479bbd3adf6b7dd6692d384';
 
+/// 获取联系人详情
+///
+/// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
+
 final class ContactDetailDataFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ChatContactDetailVO>, int> {
   const ContactDetailDataFamily._()
@@ -79,6 +93,10 @@ final class ContactDetailDataFamily extends $Family
         isAutoDispose: false,
       );
 
+  /// 获取联系人详情
+  ///
+  /// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
+
   ContactDetailDataProvider call(int userId) =>
       ContactDetailDataProvider._(argument: userId, from: this);
 
@@ -86,11 +104,21 @@ final class ContactDetailDataFamily extends $Family
   String toString() => r'contactDetailDataProvider';
 }
 
+/// 联系人聊天按钮加载状态
+///
+/// 控制"发消息"按钮的加载状态，防止重复点击
+
 @ProviderFor(ContactChatLoading)
 const contactChatLoadingProvider = ContactChatLoadingProvider._();
 
+/// 联系人聊天按钮加载状态
+///
+/// 控制"发消息"按钮的加载状态，防止重复点击
 final class ContactChatLoadingProvider
     extends $NotifierProvider<ContactChatLoading, bool> {
+  /// 联系人聊天按钮加载状态
+  ///
+  /// 控制"发消息"按钮的加载状态，防止重复点击
   const ContactChatLoadingProvider._()
     : super(
         from: null,
@@ -120,6 +148,10 @@ final class ContactChatLoadingProvider
 
 String _$contactChatLoadingHash() =>
     r'5c569831999b4543ad3278ab1d999cbcf9aa99c4';
+
+/// 联系人聊天按钮加载状态
+///
+/// 控制"发消息"按钮的加载状态，防止重复点击
 
 abstract class _$ContactChatLoading extends $Notifier<bool> {
   bool build();

@@ -4,13 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'settings_provider.dart';
 
-// ── 版本号比较工具 ─────────────────────────────────────────────
-// 将 "1.2.3" 转为可比较整数列表，忽略 build number（+xxx）
+/// 解析版本号字符串
+///
+/// 将 "1.2.3" 转为可比较整数列表，忽略 build number（+xxx）
 List<int> _parseVersion(String v) {
   final clean = v.split('+').first.trim();
   return clean.split('.').map((s) => int.tryParse(s.trim()) ?? 0).toList();
 }
 
+/// 比较版本号
+///
 /// 返回 true 表示 a < b
 bool _versionLessThan(String a, String b) {
   if (a.isEmpty || b.isEmpty) return false;
@@ -26,14 +29,17 @@ bool _versionLessThan(String a, String b) {
   return false;
 }
 
-/// 后台定时版本检查 Provider
+/// 应用更新检查器
 ///
-/// - 应用启动后立即发起第一次检查
-/// - 之后每 30 分钟自动重新检查一次
-/// - 保持 keepAlive（无 autoDispose），贯穿整个应用生命周期
-/// - 外部可调用 [forceCheck] 手动触发检查
-/// - 外部可调用 [syncResult] 在手动检查后同步结果（避免重复请求）
-/// - 外部可调用 [dismiss] 清除红点（用户已知晓更新后可调用）
+/// 功能：
+/// - 应用启动后延迟 3 秒发起首次检查
+/// - 之后每 30 分钟自动重新检查
+/// - 保持 keepAlive，贯穿整个应用生命周期
+///
+/// 支持外部调用：
+/// - [forceCheck] 手动触发检查
+/// - [syncResult] 同步外部检查结果（避免重复请求）
+/// - [dismiss] 清除更新红点
 class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
   Timer? _timer;
 
@@ -52,6 +58,7 @@ class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
     return null;
   }
 
+  /// 执行版本检查
   Future<void> _check() async {
     try {
       final currentVersion = await ref.read(appVersionProvider.future);
@@ -85,10 +92,13 @@ class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
     }
   }
 
-  /// 手动触发一次检查（SettingsPage 手动检查后调用）
+  /// 手动触发一次检查
   Future<void> forceCheck() => _check();
 
-  /// 将外部检查结果同步进来（避免 SettingsPage 手动检查后重复请求）
+  /// 同步外部检查结果
+  ///
+  /// [raw] 外部检查的结果
+  /// [currentVersion] 当前版本号
   void syncResult(AppUpdateInfo? raw, {String currentVersion = ''}) {
     if (raw == null || !raw.hasUpdate) {
       state = null;
@@ -116,12 +126,13 @@ class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
   void dismiss() => state = null;
 }
 
+/// 版本检查 Provider
 final appUpdateCheckerProvider =
     NotifierProvider<AppUpdateCheckerNotifier, AppUpdateInfo?>(
       AppUpdateCheckerNotifier.new,
     );
 
-/// 便捷 Provider：是否有新版本（用于 badge 判断）
+/// 是否有新版本（用于 badge 判断）
 final hasAppUpdateProvider = Provider<bool>(
   (ref) => ref.watch(appUpdateCheckerProvider) != null,
 );

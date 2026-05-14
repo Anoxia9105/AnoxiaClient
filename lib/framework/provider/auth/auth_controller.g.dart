@@ -8,12 +8,24 @@ part of 'auth_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 认证状态管理器
+///
+/// 负责用户登录、登出和会话恢复的核心 Provider。
+/// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
 
 @ProviderFor(AuthController)
 const authControllerProvider = AuthControllerProvider._();
 
+/// 认证状态管理器
+///
+/// 负责用户登录、登出和会话恢复的核心 Provider。
+/// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
 final class AuthControllerProvider
     extends $AsyncNotifierProvider<AuthController, UserInfo?> {
+  /// 认证状态管理器
+  ///
+  /// 负责用户登录、登出和会话恢复的核心 Provider。
+  /// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
   const AuthControllerProvider._()
     : super(
         from: null,
@@ -33,7 +45,12 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'e81d334c77af7cbf7a3fca2384c76c8492b65238';
+String _$authControllerHash() => r'b16d8c2bc0589d1a1c5deccf20ccea08f30033cf';
+
+/// 认证状态管理器
+///
+/// 负责用户登录、登出和会话恢复的核心 Provider。
+/// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
 
 abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
   FutureOr<UserInfo?> build();
@@ -55,11 +72,15 @@ abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
 }
 
 /// 获取验证码
+///
+/// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
 
 @ProviderFor(getCaptcha)
 const getCaptchaProvider = GetCaptchaProvider._();
 
 /// 获取验证码
+///
+/// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
 
 final class GetCaptchaProvider
     extends
@@ -70,6 +91,8 @@ final class GetCaptchaProvider
         >
     with $FutureModifier<CaptchaModel>, $FutureProvider<CaptchaModel> {
   /// 获取验证码
+  ///
+  /// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
   const GetCaptchaProvider._()
     : super(
         from: null,

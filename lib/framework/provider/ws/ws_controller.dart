@@ -19,6 +19,10 @@ import 'ws_state.dart';
 
 part 'ws_controller.g.dart';
 
+/// WebSocket 连接控制器
+///
+/// 负责 WebSocket 连接的建立、心跳维护、自动重连和消息分发。
+/// 采用 keepAlive 模式，确保全局只有一个连接实例。
 @Riverpod(keepAlive: true)
 class WsController extends _$WsController {
   WebSocketChannel? _channel;
@@ -30,17 +34,15 @@ class WsController extends _$WsController {
   String? _lastAckErrorMessage;
   DateTime? _lastAckErrorAt;
 
-  // 使用延迟初始化，确保每次 build 时或是需要时它是新鲜的
   late final StreamController<PacketFrame<IPacket>> _messageController;
 
   @override
   WsState build() {
     log.info("🌐 WsController 构建中...");
 
-    // 初始化消息流控制器
     _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
 
-    // 监听认证状态逻辑优化
+    // 监听认证状态变化：登录时连接，登出时断开
     ref.listen(authControllerProvider, (previous, next) {
       log.info(
         "[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}",
@@ -54,7 +56,7 @@ class WsController extends _$WsController {
           } else {
             log.info("[WsController] 检测到用户退出，断开连接...");
             _reconnectEnabled = false;
-            _disposeAll(closeStream: false, manual: true); // 登出不断流，只断开网络
+            _disposeAll(closeStream: false, manual: true);
           }
         },
         error: (err, _) {
@@ -79,9 +81,10 @@ class WsController extends _$WsController {
     return WsState(status: WsStatus.disconnected);
   }
 
-  /// 暴露给外部的消息流
+  /// 消息流，供外部监听 WebSocket 消息
   Stream<PacketFrame<IPacket>> get messageStream => _messageController.stream;
 
+  /// 初始化连接
   Future<void> _initConnection() async {
     // 保护：如果已经在连接或已连接，跳过
     if (state.status == WsStatus.connecting ||
@@ -97,6 +100,9 @@ class WsController extends _$WsController {
     }
   }
 
+  /// 建立 WebSocket 连接
+  ///
+  /// [token] 认证令牌，用于建立连接
   Future<void> connect(String token) async {
     if (state.status == WsStatus.connected) {
       return;
@@ -121,7 +127,7 @@ class WsController extends _$WsController {
         );
         _channel = IOWebSocketChannel(socket);
       }
-      await _channel!.ready; // 确保握手成功
+      await _channel!.ready;
 
       _channel!.stream.listen(
         (message) => _handleIncomingMessage(message),
@@ -141,6 +147,7 @@ class WsController extends _$WsController {
     }
   }
 
+  /// 发送消息
   void sendMessage(dynamic msg) {
     if (state.status != WsStatus.connected) {
       log.warning("尝试在未连接状态发送消息");
@@ -155,6 +162,7 @@ class WsController extends _$WsController {
     }
   }
 
+  /// 处理接收到的消息
   void _handleIncomingMessage(dynamic message) {
     log.info("【WS收到消息】,${message.toString()}");
     if (message == 'pong') return;
@@ -189,11 +197,16 @@ class WsController extends _$WsController {
     }
   }
 
+  /// 处理旧格式 ACK 错误
   bool _handleLegacyAckError(Map<String, dynamic> jsonMap) {
     if (jsonMap.containsKey('topic')) return false;
     return _handleAckError(jsonMap);
   }
 
+  /// 处理 ACK 错误
+  ///
+  /// 解析服务器返回的业务错误码，并显示 Toast 提示
+  /// 2 秒内的重复错误不会重复提示（防抖）
   bool _handleAckError(Map<String, dynamic> jsonMap) {
     if (!jsonMap.containsKey('code')) return false;
 
@@ -224,6 +237,7 @@ class WsController extends _$WsController {
     return true;
   }
 
+  /// 解析错误码对应的用户提示
   String _resolveAckErrorMessage(int code, String serverMessage) {
     switch (code) {
       case 2001:
@@ -240,6 +254,9 @@ class WsController extends _$WsController {
     }
   }
 
+  /// 启动心跳定时器
+  ///
+  /// 每 30 秒发送一次 ping，保持连接活跃
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
@@ -251,11 +268,13 @@ class WsController extends _$WsController {
     });
   }
 
+  /// 处理连接错误
   void _handleError(dynamic err) {
     state = WsState(status: WsStatus.error, error: err.toString());
     _retryConnection();
   }
 
+  /// 处理连接关闭
   void _handleDone() {
     final closeCode = _channel?.closeCode;
     final closeReason = _channel?.closeReason;
@@ -264,6 +283,9 @@ class WsController extends _$WsController {
     _retryConnection();
   }
 
+  /// 指数退避重连
+  ///
+  /// 重连间隔：2s, 4s, 8s... 最大 30s
   void _retryConnection() {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
@@ -282,11 +304,16 @@ class WsController extends _$WsController {
     });
   }
 
+  /// 登出时主动断开连接
   Future<void> disconnectForLogout() async {
     _reconnectEnabled = false;
     _disposeAll(closeStream: false, manual: true);
   }
 
+  /// 清理所有资源
+  ///
+  /// [closeStream] 是否关闭消息流（登出时不断流，断开网络连接即可）
+  /// [manual] 是否为手动触发
   void _disposeAll({bool closeStream = false, bool manual = false}) {
     log.info(
       "[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}",
@@ -304,10 +331,11 @@ class WsController extends _$WsController {
   }
 }
 
-// 消息事件总线
+/// WebSocket 消息流 Provider
+///
+/// 供其他 Provider 监听 WebSocket 消息
 @riverpod
 Stream<PacketFrame<IPacket>> wsMessageStream(Ref ref) {
-  // 关键：使用 watch 确保控制器存在
   final wsController = ref.watch(wsControllerProvider.notifier);
   return wsController.messageStream;
 }

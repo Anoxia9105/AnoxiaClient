@@ -15,6 +15,10 @@ import '../../../logs/talker.dart';
 
 part 'room_list_service.g.dart';
 
+/// 聊天室列表服务
+///
+/// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
+/// 采用 keepAlive 模式，确保列表数据全局共享。
 @Riverpod(keepAlive: true)
 class RoomListService extends _$RoomListService {
   /// 已读上报防抖定时器（按房间维度）
@@ -26,7 +30,7 @@ class RoomListService extends _$RoomListService {
   @override
   FutureOr<List<ChatRoomVO>> build() async {
     ref.onDispose(() {
-      // 销毁时：把所有待上报的 seq 立即上报，然后取消定时器
+      // 销毁时：将所有待上报的 seq 立即上报，然后取消定时器
       for (final entry in _pendingReadSeqs.entries) {
         _reportReadSeq(entry.key, entry.value);
       }
@@ -39,12 +43,11 @@ class RoomListService extends _$RoomListService {
     return await fetchRoomList();
   }
 
-
-  
-  void toggleSearch(){
+  /// 切换当前房间的搜索栏展开状态
+  void toggleSearch() {
     state.whenData((rooms) {
       final List<ChatRoomVO> updatedList = rooms.map((room) {
-        if(room.roomId == ref.read(activeRoomIdProvider)){
+        if (room.roomId == ref.read(activeRoomIdProvider)) {
           return room.copyWith(isOpenSearch: !(room.isOpenSearch ?? false));
         }
         return room;
@@ -53,7 +56,7 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-
+  /// 获取聊天室列表
   Future<List<ChatRoomVO>> fetchRoomList() async {
     try {
       final res = await DioClient().get(API.chatRooms);
@@ -65,13 +68,13 @@ class RoomListService extends _$RoomListService {
               try {
                 return ChatRoomVO.fromJson(e);
               } catch (e) {
-                // 单条解析失败，记录日志并返回空，防止整个页面崩溃
+                // 单条解析失败记录日志，防止整个页面崩溃
                 log.warning("ChatRoomVO 解析异常: $e");
                 return null;
               }
             })
             .whereType<ChatRoomVO>()
-            .toList(); // 过滤掉解析失败的空值
+            .toList();
       }
       return [];
     } catch (e) {
@@ -79,13 +82,14 @@ class RoomListService extends _$RoomListService {
     }
   }
 
-  /// 改进的刷新：支持静默刷新，不闪烁
+  /// 刷新聊天室列表
+  ///
+  /// [silent] 为 true 时静默刷新，不触发 loading 状态（避免 UI 闪烁）
   /// 刷新后自动将当前活跃房间的未读数归零，防止服务端数据覆盖本地已读状态
   Future<void> refresh({bool silent = false}) async {
     if (!silent) state = const AsyncValue.loading();
     final newState = await AsyncValue.guard(() => fetchRoomList());
 
-    // 刷新后：将当前活跃房间的未读数归零
     final activeId = ref.read(activeRoomIdProvider);
     if (activeId != null && newState is AsyncData<List<ChatRoomVO>>) {
       final rooms = newState.value;
@@ -101,7 +105,15 @@ class RoomListService extends _$RoomListService {
     state = newState;
   }
 
-  /// 实时更新：计算未读数的逻辑
+  /// 实时更新房间位置和未读数
+  ///
+  /// [newMessage] 新收到的消息
+  /// [activeRoom] 当前正在查看的房间
+  ///
+  /// 处理逻辑：
+  /// - 当前房间：未读数不增加
+  /// - 自己发送的消息：不增加未读数、不发送通知
+  /// - 通话系统消息：不发送通知
   void updateRoomPosition(ChatMessage newMessage, ChatRoomVO? activeRoom) {
     final isCurrentRoom = activeRoom?.roomId == newMessage.roomId;
     final currentUser = ref.read(authControllerProvider).value;
@@ -121,12 +133,12 @@ class RoomListService extends _$RoomListService {
 
         // 当前正在看的房间不增加未读数
         int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
-        // 普通消息：只要不是自己发的、且不是通话系统消息，就尝试发系统通知。
-        // 窗口是否聚焦由 NotificationHelper 内部判断。
-          if (!isSelfMessage && !isCallSystemMessage) {
-            NotificationHelper().show(
-              id: newMessage.roomId.hashCode,
-              title: oldRoom.roomName ?? tr('chat_new_message'),
+
+        // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
+        if (!isSelfMessage && !isCallSystemMessage) {
+          NotificationHelper().show(
+            id: newMessage.roomId.hashCode,
+            title: oldRoom.roomName ?? tr('chat_new_message'),
             body: newMessage.content,
             payload: newMessage.roomId,
             avatarUrl: newMessage.senderAvatar ?? oldRoom.roomAvatar,
@@ -134,7 +146,6 @@ class RoomListService extends _$RoomListService {
         }
 
         // 当前房间收到新消息时，防抖上报已读 seq
-        // 连续收到多条消息只会在最后一条后 2 秒上报一次
         if (isCurrentRoom &&
             !isSelfMessage &&
             newMessage.seq != null &&
@@ -150,13 +161,13 @@ class RoomListService extends _$RoomListService {
         updatedList.insert(0, newRoom);
         state = AsyncValue.data(updatedList);
       }
-      // 注意：这里不再对未知房间自动 refresh，由系统事件服务统一处理
-      // 避免与 system_event_service 中的 refresh 重复调用
     });
   }
 
+  /// 标记房间为已读
+  ///
+  /// 立即冲刷防抖定时器，确保 seq 被上报
   void markAsRead(String roomId) {
-    // 立即冲刷该房间的防抖定时器，确保 seq 被上报
     _readDebounceTimers[roomId]?.cancel();
     _readDebounceTimers.remove(roomId);
     final pendingSeq = _pendingReadSeqs.remove(roomId);
@@ -205,15 +216,15 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-  /// 防抖上报已读 seq：2 秒内连续收到消息只上报最后一次
+  /// 防抖上报已读 seq
+  ///
+  /// 2 秒内连续收到消息只上报最后一次（取最大值）
   void _debouncedReportReadSeq(String roomId, int seq) {
-    // 记录最新的 seq（总是取最大值）
     final currentPending = _pendingReadSeqs[roomId] ?? 0;
     if (seq > currentPending) {
       _pendingReadSeqs[roomId] = seq;
     }
 
-    // 取消旧的定时器，重新计时
     _readDebounceTimers[roomId]?.cancel();
     _readDebounceTimers[roomId] = Timer(const Duration(seconds: 2), () {
       final pendingSeq = _pendingReadSeqs.remove(roomId);
@@ -224,7 +235,7 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-  // 上报最新 seq 的接口调用
+  /// 上报已读 seq 到服务器
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
       log.info("🚀 上报已读状态: 房间 $roomId, Seq $seq");
@@ -237,11 +248,14 @@ class RoomListService extends _$RoomListService {
     }
   }
 
+  /// 获取或创建私聊房间
+  ///
+  /// [targetUserId] 目标用户ID
+  ///
+  /// 优先从本地列表查找已存在的私聊房间，找不到时请求后端创建
   Future<String?> getOrCreateRoom(int targetUserId) async {
     final rooms = state.value ?? [];
 
-    // 1. 尝试从本地列表中寻找已存在的私聊房间
-    // 使用 cast().firstWhereOrNull 需要导入 collection 库，或者用 try-catch 包装
     ChatRoomVO? existingRoom;
     try {
       existingRoom = rooms.firstWhere(
@@ -251,13 +265,11 @@ class RoomListService extends _$RoomListService {
       existingRoom = null;
     }
 
-    // 2. 如果本地找到了，直接返回 roomId
     if (existingRoom != null && existingRoom.roomId != null) {
       log.info("✅ 找到现有房间: ${existingRoom.roomId}");
       return existingRoom.roomId;
     }
 
-    // 3. 本地没找到，请求后端创建/获取
     try {
       log.info("🚀 正在请求后端创建私聊房间，目标用户: $targetUserId");
       final res = await DioClient().get(
@@ -270,7 +282,7 @@ class RoomListService extends _$RoomListService {
       }
       final newRoom = ChatRoomVO.fromJson(res.data["data"]);
 
-      // 4. 静默刷新房间列表，确保 UI 侧边栏能同步看到新房间
+      // 静默刷新房间列表，确保 UI 侧边栏能同步看到新房间
       await refresh(silent: true);
 
       return newRoom.roomId;
@@ -280,7 +292,7 @@ class RoomListService extends _$RoomListService {
     }
   }
 
-  /// 退出房间
+  /// 退出聊天室
   Future<void> leaveRoom(String roomId) async {
     try {
       log.info("🚀 正在请求后端删除会话，房间 ID: $roomId");
@@ -291,7 +303,6 @@ class RoomListService extends _$RoomListService {
 
       if (res.data["code"] == 200) {
         log.info("删除会话成功");
-        // 刷新房间列表
         await refresh(silent: true);
 
         // 删除对应房间缓存的消息
@@ -317,8 +328,6 @@ class RoomListService extends _$RoomListService {
       );
 
       log.info("$res");
-
-      // 刷新房间列表
       await refresh(silent: true);
     } catch (e) {
       log.error("❌ 解散群聊失败", e);
@@ -327,6 +336,9 @@ class RoomListService extends _$RoomListService {
   }
 
   /// 房间禁言/解除禁言
+  ///
+  /// [roomId] 房间ID
+  /// [isMute] true=禁言，false=解除禁言
   Future<bool> muteRoom(String roomId, bool isMute) async {
     try {
       log.info("🚀 正在${isMute ? '禁言' : '解除禁言'}房间 $roomId");
@@ -338,7 +350,6 @@ class RoomListService extends _$RoomListService {
 
       if (res.data["code"] == 200) {
         log.info("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
-        // 刷新房间列表以更新 roomStatus
         await refresh(silent: true);
         return true;
       }
@@ -350,16 +361,18 @@ class RoomListService extends _$RoomListService {
   }
 }
 
-//当前选中房间
+/// 当前选中的聊天室 ID
 @Riverpod(keepAlive: true)
 class ActiveRoomId extends _$ActiveRoomId {
   @override
-  String? build() => null; // 初始没有选中的房间
+  String? build() => null;
 
+  /// 设置当前活跃的房间
+  ///
+  /// 离开旧房间时会自动调用 [RoomListService.markAsRead] 上报已读
   void setActive(String? roomId) {
     if (state == roomId) return;
 
-    // 离开旧房间时：冲刷防抖队列，确保已读 seq 被上报
     final oldRoomId = state;
     if (oldRoomId != null) {
       ref.read(roomListServiceProvider.notifier).markAsRead(oldRoomId);
@@ -369,16 +382,14 @@ class ActiveRoomId extends _$ActiveRoomId {
   }
 }
 
+/// 当前选中的聊天室对象
 @riverpod
 ChatRoomVO? activeRoom(Ref ref) {
-  // 1. 监听当前选中的 ID
   final activeId = ref.watch(activeRoomIdProvider);
   if (activeId == null) return null;
 
-  // 2. 监听 房间列表 的数据变化
   final roomListAsync = ref.watch(roomListServiceProvider);
 
-  // 3. 自动关联：当列表更新时，这里也会自动返回最新的房间对象
   return roomListAsync.maybeWhen(
     data: (rooms) {
       try {
@@ -391,13 +402,14 @@ ChatRoomVO? activeRoom(Ref ref) {
   );
 }
 
+/// 进入房间时的初始化任务
+///
+/// 确保消息和成员数据已同步到本地
 @riverpod
 Future<void> roomEntryTask(Ref ref, String roomId) async {
-  // 1. 确保房间列表已经存在
   final roomListAsync = ref.read(roomListServiceProvider);
   final rooms = roomListAsync.value ?? [];
 
-  // 使用 findFirst 的安全版本
   final room = rooms.firstWhere(
     (r) => r.roomId == roomId,
     orElse: () => throw Exception("尚未加载房间信息"),
@@ -413,18 +425,20 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
   ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
 }
 
+/// 群聊房间列表（房间类型为 GROUP）
 @riverpod
 List<ChatRoomVO> groupRoomList(Ref ref) {
   final roomListAsync = ref.watch(roomListServiceProvider);
 
   return roomListAsync.maybeWhen(
     data: (rooms) => rooms
-        .where((r) => r.roomType == 1) // GROUP
+        .where((r) => r.roomType == 1)
         .toList(),
     orElse: () => const [],
   );
 }
 
+/// 房间搜索关键词
 @riverpod
 class RoomSearchQuery extends _$RoomSearchQuery {
   @override
@@ -433,19 +447,18 @@ class RoomSearchQuery extends _$RoomSearchQuery {
   void update(String query) => state = query;
 }
 
-// 2. 核心：根据关键词过滤房间列表
+/// 根据关键词过滤后的聊天室列表
+///
+/// 匹配规则：房间名称 或 最后一条消息内容
 @riverpod
 List<ChatRoomVO> filteredRoomList(Ref ref) {
-  // 监听原始列表
   final roomListAsync = ref.watch(roomListServiceProvider);
-  // 监听搜索词
   final query = ref.watch(roomSearchQueryProvider).trim().toLowerCase();
 
   return roomListAsync.maybeWhen(
     data: (rooms) {
       if (query.isEmpty) return rooms;
 
-      // 搜索规则：匹配房间名 或 最后一条消息内容
       return rooms.where((room) {
         final nameMatch = (room.roomName ?? "").toLowerCase().contains(query);
         final msgMatch = (room.lastMessage?.content ?? "")
@@ -458,15 +471,15 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
   );
 }
 
+/// 总未读消息数
+///
+/// 排除当前正在查看的房间
 @riverpod
 int totalUnreadCount(Ref ref) {
-  //  监听房间列表的状态变化
   final roomList = ref.watch(roomListServiceProvider);
-  //  排除当前正在查看的房间
   final activeId = ref.watch(activeRoomIdProvider);
 
   if (roomList.value != null) {
-    //  累加所有房间的未读数（排除当前活跃房间）
     return roomList.value!.fold(0, (sum, room) {
       if (room.roomId == activeId) return sum;
       return sum + (room.unreadCount ?? 0);

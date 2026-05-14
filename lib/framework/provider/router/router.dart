@@ -20,16 +20,24 @@ part 'router.g.dart';
 
 final _routerKey = GlobalKey<NavigatorState>(debugLabel: 'routerKey');
 
-// 定义一个简单的代理类
+/// 路由刷新通知器
+///
+/// 用于监听认证状态变化并触发路由重定向检查
 class RouterRefreshNotifier extends ChangeNotifier {
   void notify() => notifyListeners();
 }
 
+/// 应用路由配置
+///
+/// 基于 GoRouter 的声明式路由，支持：
+/// - 认证状态驱动的重定向
+/// - 嵌套路由
+/// - 路由守卫
 @riverpod
 GoRouter router(Ref ref) {
   final refreshNotifier = RouterRefreshNotifier();
 
-  // 监听两个核心状态的变化
+  // 监听两个核心状态的变化：应用初始化、认证状态
   ref.listen(appInitializerProvider, (_, _) => refreshNotifier.notify());
   ref.listen(authControllerProvider, (_, _) => refreshNotifier.notify());
   ref.onDispose(refreshNotifier.dispose);
@@ -49,14 +57,13 @@ GoRouter router(Ref ref) {
       final isSplash = location == const SplashRoute().location;
       final isLogin = location == const InitLoginRoute().location;
 
-      // 如果初始化出错，可以跳到 Error 页
+      // 初始化出错时跳转到错误页
       if (initStatus.hasError && location != const ErrorRoute().location) {
         return ErrorRoute(message: initStatus.error.toString()).location;
       }
 
       if (!initStatus.hasValue) {
         // 已认证用户在 re-init（重新登录后重跑初始化）期间，不打回 Splash
-        // 直接放行到首页，让业务 provider 在后台完成加载
         final isAuthenticated =
             authStatus is AsyncData && authStatus.value != null;
         if (isAuthenticated) {
@@ -65,6 +72,7 @@ GoRouter router(Ref ref) {
         return isSplash ? null : const SplashRoute().location;
       }
 
+      // 根据认证状态重定向
       switch (authStatus) {
         case AsyncError():
           return const InitLoginRoute().location;
@@ -76,7 +84,6 @@ GoRouter router(Ref ref) {
         case AsyncData(value: UserInfo _):
           if (isSplash) return const HomeRoute().location;
           if (isLogin) return const HomeRoute().location;
-
           return null;
       }
     },
@@ -90,6 +97,7 @@ GoRouter router(Ref ref) {
   return router;
 }
 
+/// 登录页路由
 @TypedGoRoute<InitLoginRoute>(path: '/login')
 class InitLoginRoute extends GoRouteData with $InitLoginRoute {
   const InitLoginRoute();
@@ -98,6 +106,7 @@ class InitLoginRoute extends GoRouteData with $InitLoginRoute {
   Widget build(BuildContext context, GoRouterState state) => const LoginPage();
 }
 
+/// 首页/主布局路由
 @TypedGoRoute<HomeRoute>(path: '/')
 class HomeRoute extends GoRouteData with $HomeRoute {
   const HomeRoute();
@@ -107,6 +116,7 @@ class HomeRoute extends GoRouteData with $HomeRoute {
       const MainLayoutPage();
 }
 
+/// 启动页路由
 @TypedGoRoute<SplashRoute>(path: '/splash')
 class SplashRoute extends GoRouteData with $SplashRoute {
   const SplashRoute();
@@ -115,9 +125,10 @@ class SplashRoute extends GoRouteData with $SplashRoute {
   Widget build(BuildContext context, GoRouterState state) => const SplashPage();
 }
 
+/// 错误页路由
 @TypedGoRoute<ErrorRoute>(path: '/error')
 class ErrorRoute extends GoRouteData with $ErrorRoute {
-  final String? message; // 错误信息
+  final String? message;
   const ErrorRoute({this.message});
 
   @override
@@ -125,6 +136,7 @@ class ErrorRoute extends GoRouteData with $ErrorRoute {
       ErrorPage(message: message);
 }
 
+/// 图片预览路由
 @TypedGoRoute<ImageMessageDetailRoute>(path: '/imageView')
 class ImageMessageDetailRoute extends GoRouteData
     with $ImageMessageDetailRoute {
@@ -140,6 +152,7 @@ class ImageMessageDetailRoute extends GoRouteData
       ImageViewer(attachment: attachment, heroTag: heroTag);
 }
 
+/// 添加好友页路由
 @TypedGoRoute<AddFriendRoute>(path: '/add-friend')
 class AddFriendRoute extends GoRouteData with $AddFriendRoute {
   const AddFriendRoute();

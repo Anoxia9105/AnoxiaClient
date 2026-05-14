@@ -8,12 +8,24 @@ part of 'room_list_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 聊天室列表服务
+///
+/// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
+/// 采用 keepAlive 模式，确保列表数据全局共享。
 
 @ProviderFor(RoomListService)
 const roomListServiceProvider = RoomListServiceProvider._();
 
+/// 聊天室列表服务
+///
+/// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
+/// 采用 keepAlive 模式，确保列表数据全局共享。
 final class RoomListServiceProvider
     extends $AsyncNotifierProvider<RoomListService, List<ChatRoomVO>> {
+  /// 聊天室列表服务
+  ///
+  /// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
+  /// 采用 keepAlive 模式，确保列表数据全局共享。
   const RoomListServiceProvider._()
     : super(
         from: null,
@@ -33,7 +45,12 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'0e6b65fa514d1fff976b3e69cc1a95d2d6c48ee4';
+String _$roomListServiceHash() => r'c5769ccc67a10c54a23dcea5886d2e600e1939b9';
+
+/// 聊天室列表服务
+///
+/// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
+/// 采用 keepAlive 模式，确保列表数据全局共享。
 
 abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   FutureOr<List<ChatRoomVO>> build();
@@ -55,11 +72,15 @@ abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   }
 }
 
+/// 当前选中的聊天室 ID
+
 @ProviderFor(ActiveRoomId)
 const activeRoomIdProvider = ActiveRoomIdProvider._();
 
+/// 当前选中的聊天室 ID
 final class ActiveRoomIdProvider
     extends $NotifierProvider<ActiveRoomId, String?> {
+  /// 当前选中的聊天室 ID
   const ActiveRoomIdProvider._()
     : super(
         from: null,
@@ -89,6 +110,8 @@ final class ActiveRoomIdProvider
 
 String _$activeRoomIdHash() => r'43d29da720d77afeb50534e806ca9ef3559e690b';
 
+/// 当前选中的聊天室 ID
+
 abstract class _$ActiveRoomId extends $Notifier<String?> {
   String? build();
   @$mustCallSuper
@@ -108,12 +131,17 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
   }
 }
 
+/// 当前选中的聊天室对象
+
 @ProviderFor(activeRoom)
 const activeRoomProvider = ActiveRoomProvider._();
+
+/// 当前选中的聊天室对象
 
 final class ActiveRoomProvider
     extends $FunctionalProvider<ChatRoomVO?, ChatRoomVO?, ChatRoomVO?>
     with $Provider<ChatRoomVO?> {
+  /// 当前选中的聊天室对象
   const ActiveRoomProvider._()
     : super(
         from: null,
@@ -149,12 +177,23 @@ final class ActiveRoomProvider
 
 String _$activeRoomHash() => r'0a582900eac84bf2f437acd5bed3bcc0a1a9118f';
 
+/// 进入房间时的初始化任务
+///
+/// 确保消息和成员数据已同步到本地
+
 @ProviderFor(roomEntryTask)
 const roomEntryTaskProvider = RoomEntryTaskFamily._();
+
+/// 进入房间时的初始化任务
+///
+/// 确保消息和成员数据已同步到本地
 
 final class RoomEntryTaskProvider
     extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
     with $FutureModifier<void>, $FutureProvider<void> {
+  /// 进入房间时的初始化任务
+  ///
+  /// 确保消息和成员数据已同步到本地
   const RoomEntryTaskProvider._({
     required RoomEntryTaskFamily super.from,
     required String super.argument,
@@ -200,6 +239,10 @@ final class RoomEntryTaskProvider
 
 String _$roomEntryTaskHash() => r'09ad97b9caff9a0a0b592986b833b18387775a38';
 
+/// 进入房间时的初始化任务
+///
+/// 确保消息和成员数据已同步到本地
+
 final class RoomEntryTaskFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<void>, String> {
   const RoomEntryTaskFamily._()
@@ -211,6 +254,10 @@ final class RoomEntryTaskFamily extends $Family
         isAutoDispose: true,
       );
 
+  /// 进入房间时的初始化任务
+  ///
+  /// 确保消息和成员数据已同步到本地
+
   RoomEntryTaskProvider call(String roomId) =>
       RoomEntryTaskProvider._(argument: roomId, from: this);
 
@@ -218,8 +265,12 @@ final class RoomEntryTaskFamily extends $Family
   String toString() => r'roomEntryTaskProvider';
 }
 
+/// 群聊房间列表（房间类型为 GROUP）
+
 @ProviderFor(groupRoomList)
 const groupRoomListProvider = GroupRoomListProvider._();
+
+/// 群聊房间列表（房间类型为 GROUP）
 
 final class GroupRoomListProvider
     extends
@@ -229,6 +280,7 @@ final class GroupRoomListProvider
           List<ChatRoomVO>
         >
     with $Provider<List<ChatRoomVO>> {
+  /// 群聊房间列表（房间类型为 GROUP）
   const GroupRoomListProvider._()
     : super(
         from: null,
@@ -264,11 +316,15 @@ final class GroupRoomListProvider
 
 String _$groupRoomListHash() => r'373c92ffd3b679c6e790c49fa982dbb404c91904';
 
+/// 房间搜索关键词
+
 @ProviderFor(RoomSearchQuery)
 const roomSearchQueryProvider = RoomSearchQueryProvider._();
 
+/// 房间搜索关键词
 final class RoomSearchQueryProvider
     extends $NotifierProvider<RoomSearchQuery, String> {
+  /// 房间搜索关键词
   const RoomSearchQueryProvider._()
     : super(
         from: null,
@@ -298,6 +354,8 @@ final class RoomSearchQueryProvider
 
 String _$roomSearchQueryHash() => r'71a63adfba4648949d69a3486f1852e4e2acfb36';
 
+/// 房间搜索关键词
+
 abstract class _$RoomSearchQuery extends $Notifier<String> {
   String build();
   @$mustCallSuper
@@ -317,8 +375,16 @@ abstract class _$RoomSearchQuery extends $Notifier<String> {
   }
 }
 
+/// 根据关键词过滤后的聊天室列表
+///
+/// 匹配规则：房间名称 或 最后一条消息内容
+
 @ProviderFor(filteredRoomList)
 const filteredRoomListProvider = FilteredRoomListProvider._();
+
+/// 根据关键词过滤后的聊天室列表
+///
+/// 匹配规则：房间名称 或 最后一条消息内容
 
 final class FilteredRoomListProvider
     extends
@@ -328,6 +394,9 @@ final class FilteredRoomListProvider
           List<ChatRoomVO>
         >
     with $Provider<List<ChatRoomVO>> {
+  /// 根据关键词过滤后的聊天室列表
+  ///
+  /// 匹配规则：房间名称 或 最后一条消息内容
   const FilteredRoomListProvider._()
     : super(
         from: null,
@@ -363,11 +432,22 @@ final class FilteredRoomListProvider
 
 String _$filteredRoomListHash() => r'631b1bd63b8bd90c6ea639950a9d46da8f09b624';
 
+/// 总未读消息数
+///
+/// 排除当前正在查看的房间
+
 @ProviderFor(totalUnreadCount)
 const totalUnreadCountProvider = TotalUnreadCountProvider._();
 
+/// 总未读消息数
+///
+/// 排除当前正在查看的房间
+
 final class TotalUnreadCountProvider extends $FunctionalProvider<int, int, int>
     with $Provider<int> {
+  /// 总未读消息数
+  ///
+  /// 排除当前正在查看的房间
   const TotalUnreadCountProvider._()
     : super(
         from: null,

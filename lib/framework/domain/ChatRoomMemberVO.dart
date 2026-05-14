@@ -1,20 +1,40 @@
 import 'package:intl/intl.dart';
 
+/// 聊天室成员视图对象
+///
+/// 表示聊天室中的单个成员，包含用户资料、角色权限和在线状态。
 class ChatRoomMemberVO {
+  /// 所属聊天室ID
   final String? roomId;
+
+  /// 用户ID
   final int? userId;
-  final int? roleId; // 0=管理员 1=普通成员
+
+  /// 角色ID：0=管理员，1=普通成员
+  final int? roleId;
+
+  /// 加入聊天室的时间
   final DateTime? joinTime;
 
-  // 用户个人信息
+  /// 用户昵称
   final String? nickName;
+
+  /// 头像 URL
   final String? avatar;
-  final String? sex; // 0男 1女 2未知
+
+  /// 性别：0=男，1=女，2=未知
+  final String? sex;
+
+  /// 手机号码
   final String? phoneNumber;
-  final String? status; // 0正常 1停用
+
+  /// 账号状态：0=正常，1=停用
+  final String? status;
+
+  /// 最后登录时间
   final DateTime? loginDate;
 
-  // IM 扩展字段
+  /// 在线状态：true=在线，false=离线
   final bool? onlineStatus;
 
   ChatRoomMemberVO({
@@ -31,7 +51,9 @@ class ChatRoomMemberVO {
     this.onlineStatus,
   });
 
-  /// 从 JSON 映射
+  /// 从 JSON 数据构造 [ChatRoomMemberVO] 实例
+  ///
+  /// 兼容后端 snake_case 字段命名和多种日期格式
   factory ChatRoomMemberVO.fromJson(Map<String, dynamic> json) {
     return ChatRoomMemberVO(
       roomId: json['roomId']?.toString(),
@@ -41,7 +63,7 @@ class ChatRoomMemberVO {
       roleId: json['roleId'] is int
           ? json['roleId']
           : int.tryParse(json['roleId']?.toString() ?? ''),
-      // 处理后端 pattern = "yyyy-MM-dd HH:mm:ss" 的字符串
+      // 兼容后端 yyyy-MM-dd HH:mm:ss 格式的日期字符串
       joinTime: _parseDate(json['joinTime']),
       nickName: json['nickName'],
       avatar: json['avatar'],
@@ -53,18 +75,19 @@ class ChatRoomMemberVO {
     );
   }
 
-  /// 辅助日期解析
+  /// 解析日期字符串
+  ///
+  /// 优先尝试标准格式，失败后尝试 ISO 格式
   static DateTime? _parseDate(dynamic date) {
     if (date == null) return null;
     try {
-      // 如果后端传的是标准的 ISO 字符串或自定义格式
       return DateFormat("yyyy-MM-dd HH:mm:ss").parse(date);
     } catch (e) {
       return DateTime.tryParse(date.toString());
     }
   }
 
-  /// 转换回 JSON (如果需要发送给后端)
+  /// 将当前实例转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {
       'roomId': roomId,
@@ -79,7 +102,9 @@ class ChatRoomMemberVO {
     };
   }
 
-  /// 拷贝方法，用于 Riverpod 局部更新状态
+  /// 创建当前实例的变体副本
+  ///
+  /// 用于响应式状态管理中的局部更新（如在线状态变更）
   ChatRoomMemberVO copyWith({bool? onlineStatus, String? nickName}) {
     return ChatRoomMemberVO(
       roomId: roomId,

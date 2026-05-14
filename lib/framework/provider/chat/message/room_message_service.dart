@@ -15,37 +15,44 @@ import '../../ws/ws_controller.dart';
 
 part 'room_message_service.g.dart';
 
-/// 存储每个房间的消息列表
-/// key = roomId, value = `List<ChatMessage>`
+/// 聊天消息存储器
+///
+/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
+/// 采用 keepAlive 模式，确保消息缓存在全局共享。
 @Riverpod(keepAlive: true)
 class ChatMessages extends _$ChatMessages {
+  /// 每次加载历史的页大小
   final int _pageSize = 50;
-  // 是否正在拉取历史消息
+
+  /// 是否正在拉取历史消息（防止并发请求）
   bool _isFetchingHistory = false;
-  // 定义一个内部变量记录已同步的房间
+
+  /// 已同步过的房间 ID 集合，用于判断是否需要增量拉取
   final Set<String> _syncedRoomIds = {};
 
   @override
   Map<String, List<ChatMessage>> build() {
-    // 1️ 获取 WebSocket 消息流
+    // 订阅 WebSocket 消息流，只处理普通消息类型
     final stream = ref.watch(wsControllerProvider.notifier).messageStream;
 
-    // 2️ 订阅消息流，只关注 PacketType.message 类型
     final subscription = stream
         .where((frame) => frame.topic == PacketType.message)
         .map((frame) => frame.data as RoomMessage)
         .listen(_handleRoomMessage);
 
-    // 3️ 当 Provider 销毁时取消订阅，防止内存泄漏
+    // Provider 销毁时取消订阅，防止内存泄漏
     ref.onDispose(() {
       log.info("聊天消息服务销毁，取消订阅");
       subscription.cancel();
     });
 
-    return {}; // 初始状态为空 Map
+    return {};
   }
 
-  /// 内部处理 RoomMessage 并转换为 ChatMessage
+  /// 处理 WebSocket 推送的房间消息
+  ///
+  /// 将协议层的 [RoomMessage] 转换为领域层的 [ChatMessage]，
+  /// 并同步更新通话状态、房间状态和房间列表。
   void _handleRoomMessage(RoomMessage msg) {
     final chatMessage = ChatMessage(
       messageId: msg.messageId,
@@ -74,6 +81,9 @@ class ChatMessages extends _$ChatMessages {
         .updateRoomPosition(chatMessage, ref.read(activeRoomProvider));
   }
 
+  /// 根据系统消息同步房间状态
+  ///
+  /// 处理禁言、解散等房间级别的系统消息
   void _syncRoomStatusBySystemMessage(ChatMessage msg) {
     if (msg.messageType != MessageType.system) return;
 
@@ -86,17 +96,14 @@ class ChatMessages extends _$ChatMessages {
     int? nextStatus;
     switch (action) {
       case 'ROOM_MUTED':
-        // isMute=true → 禁言(1), isMute=false → 正常(0)
         final isMute = msg.extra['isMute'] == true;
         nextStatus = isMute ? 1 : 0;
         break;
       case 'ROOM_DISSOLVED':
-        // type=ban → 封禁(2)，其它 → 解散(3)
         final dissolveType = msg.extra['type']?.toString().toLowerCase();
         nextStatus = dissolveType == 'ban' ? 2 : 3;
         break;
       case 'ROOM_CREATED':
-        // type=unban → 解封，恢复正常(0)
         final createdType = msg.extra['type']?.toString().toLowerCase();
         if (createdType == 'unban') {
           nextStatus = 0;
@@ -114,6 +121,9 @@ class ChatMessages extends _$ChatMessages {
     }
   }
 
+  /// 根据系统消息同步通话状态
+  ///
+  /// 处理通话开始、通话结束等事件
   void _syncCallStatusBySystemMessage(ChatMessage msg) {
     if (msg.messageType != MessageType.system) return;
 
@@ -139,6 +149,7 @@ class ChatMessages extends _$ChatMessages {
     }
   }
 
+  /// 发送通话事件的桌面通知
   void _notifyCallEvent(ChatMessage msg, String roomId, String action) {
     final rooms =
         ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
@@ -175,32 +186,35 @@ class ChatMessages extends _$ChatMessages {
     );
   }
 
-  /// 核心：通过 clientMsgId 找到本地消息并替换
+  /// 插入或更新消息
+  ///
+  /// 优先通过 clientMsgId 匹配（本地发送中的消息），
+  /// 匹配失败则通过 messageId 匹配（服务端推送的消息），
+  /// 都找不到则作为新消息追加。
   void upsertMessage(ChatMessage msg) {
     final roomId = msg.roomId ?? "system";
     final currentList = state[roomId] ?? [];
     List<ChatMessage> newList = [...currentList];
 
-    // 找“暗号”
     int index = -1;
     if (msg.clientMsgId != null) {
       index = newList.indexWhere((m) => m.clientMsgId == msg.clientMsgId);
     }
-    //  补丁：如果 clientMsgId 没找到，尝试用真正的 messageId 找（防止 WS 跑得比本地快）
+    // 兼容 WebSocket 消息比本地发送回调更快到达的场景
     if (index == -1 && msg.messageId != null) {
       index = newList.indexWhere((m) => m.messageId == msg.messageId);
     }
 
     if (index != -1) {
-      // 【替换逻辑】用服务器回传的真数据（messageId, seq）覆盖本地假数据
+      // 用服务器回传的真数据（messageId, seq）覆盖本地假数据
       newList[index] = msg;
     } else {
-      // 【新增逻辑】如果是别人发的，或者没匹配到，去重后插入
+      // 去重后插入新消息
       if (newList.any((m) => m.messageId == msg.messageId)) return;
       newList.add(msg);
     }
 
-    // 排序：保证发送中的(seq=0)在最后，其他的按 seq 排
+    // 排序：发送中的消息(seq=0)在最后，其他按 seq 升序
     newList.sort((a, b) {
       if ((a.seq ?? 0) == 0 || (b.seq ?? 0) == 0) {
         return (a.timestamp ?? 0).compareTo(b.timestamp ?? 0);
@@ -211,10 +225,12 @@ class ChatMessages extends _$ChatMessages {
     state = {...state, roomId: newList};
   }
 
+  /// 处理消息发送超时
+  ///
+  /// 将发送状态从 sending 改为 failed（UI 显示红色感叹号）
   void handleTimeout(String roomId, String clientMsgId) {
     final list = state[roomId] ?? [];
     final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
-    // 如果还在转圈，就变红感叹号
     if (idx != -1 && list[idx].deliveryStatus == DeliveryStatus.sending) {
       final newList = [...list];
       newList[idx] = newList[idx].copyWith(
@@ -224,17 +240,19 @@ class ChatMessages extends _$ChatMessages {
     }
   }
 
-  /// 核心：加载或同步房间消息
+  /// 同步/加载房间消息
+  ///
+  /// [roomId] 目标房间
+  /// [serverLastSeq] 服务端记录的最新消息 seq，用于判断增量
+  ///
+  /// 已同步过的房间在 seq 未增加时会跳过拉取
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
-    // 获取当前内存中的消息
     final currentList = state[roomId] ?? [];
     int localMaxSeq = currentList.isEmpty ? 0 : (currentList.last.seq ?? 0);
 
-    // ---  拦截逻辑 ---
-    // 如果已经同步过，且本地消息已经是最新的（或者服务端没给新 seq），直接返回
+    // 已同步且本地已是最新，直接返回
     if (_syncedRoomIds.contains(roomId)) {
       if (serverLastSeq == null || localMaxSeq >= serverLastSeq) {
-        // 只有当服务端明确给出了更大的 seq 时才继续往下跑拉取逻辑
         return;
       }
     }
@@ -254,7 +272,7 @@ class ChatMessages extends _$ChatMessages {
 
       final data = res.data["data"];
 
-      // 无论数据是否为空，只要请求成功就标记为已同步
+      // 请求成功即标记为已同步（即使数据为空）
       _syncedRoomIds.add(roomId);
 
       if (data is! List) return;
@@ -263,17 +281,17 @@ class ChatMessages extends _$ChatMessages {
           .map((e) => ChatMessage.fromJson(e))
           .toList();
 
-      // 如果第一次拿到的数据就少于一页，说明根本没有历史消息了
+      // 数据少于页大小时，说明没有更多历史了
       if (history.length < _pageSize) {
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
       } else {
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, true);
       }
-      // 3. 合并与去重
+
+      // 合并与去重：正在发送的消息用 clientMsgId/messageId 做 key
       final Map<String, ChatMessage> mergeMap = {};
 
       for (var m in currentList) {
-        // 正在发送的消息没有 seq，用 clientMsgId 或 messageId 当 key
         final key = (m.seq != null && m.seq != 0)
             ? m.seq.toString()
             : m.messageId;
@@ -284,36 +302,35 @@ class ChatMessages extends _$ChatMessages {
         final key = m.seq?.toString() ?? m.messageId;
         if (key != null) mergeMap[key] = m;
       }
-      // 排序
+
       final sortedList = mergeMap.values.toList()
         ..sort((a, b) => a.seq!.compareTo(b.seq!));
 
-      // 更新状态
       state = {...state, roomId: sortedList};
       log.info("房间 $roomId 同步完成，当前消息数: ${sortedList.length}");
     } catch (e) {
       log.error("同步房间 $roomId 失败: $e");
-      // 如果失败了，不需要 add 到 _syncedRoomIds，这样下次切换还能重试
     }
   }
 
+  /// 加载更多历史消息
+  ///
+  /// 从当前列表最旧的消息向前分页拉取
   Future<void> loadMoreHistory(String roomId) async {
     if (_isFetchingHistory) return;
 
-    // 先检查一下是否还有更多，如果没有，直接返回
     final hasMore = ref.read(chatHasMoreProvider)[roomId] ?? true;
     if (!hasMore) return;
 
     final currentList = state[roomId] ?? [];
     if (currentList.isEmpty) return;
 
-    // 找到当前本地最早的一条消息的 seq
-    // 你的列表是按 seq 从小到大排的，所以第一条就是最早的
+    // 列表按 seq 升序排列，第一条是最早的消息
     final int? oldestSeq = currentList.first.seq;
     if (oldestSeq == null || oldestSeq <= 1) {
       log.info("已经到头了 不请求了");
       return;
-    } // 已经到头了
+    }
 
     _isFetchingHistory = true;
     log.info("开始拉取房间 $roomId 的历史消息，起始 seq: $oldestSeq");
@@ -323,11 +340,12 @@ class ChatMessages extends _$ChatMessages {
         API.chatHistory,
         queryParameters: {
           "roomId": roomId,
-          "lastSeq": oldestSeq, // 告诉服务器从哪条开始往前找
-          "pageSize": _pageSize, // 分页大小
-          "direction": 0, // 0 通常代表向旧的消息方向（向上）拉取
+          "lastSeq": oldestSeq,
+          "pageSize": _pageSize,
+          "direction": 0,
         },
       );
+
       final data = res.data["data"];
       if (data is! List || data.isEmpty) {
         log.info("没有更多历史消息了");
@@ -341,12 +359,11 @@ class ChatMessages extends _$ChatMessages {
       if (history.length < _pageSize) {
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
       } else {
-        // 也可以显式设为 true，防止之前被误设为 false
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, true);
       }
 
       if (history.isNotEmpty) {
-        // 2. 合并数据并去重
+        // 按 seq 去重合并
         final Map<int, ChatMessage> mergeMap = {
           for (var m in history)
             if (m.seq != null) m.seq!: m,
@@ -354,11 +371,9 @@ class ChatMessages extends _$ChatMessages {
             if (m.seq != null) m.seq!: m,
         };
 
-        // 3. 排序（保持 seq 从小到大）
         final sortedList = mergeMap.values.toList()
           ..sort((a, b) => a.seq!.compareTo(b.seq!));
 
-        // 4. 更新状态
         state = {...state, roomId: sortedList};
         log.info("历史消息加载成功，新增 ${history.length} 条");
       }
@@ -369,26 +384,20 @@ class ChatMessages extends _$ChatMessages {
     }
   }
 
-  /// 清空某个房间消息
+  /// 清空某个房间的消息（退出会话时调用）
   void clearRoom(String roomId) {
     _syncedRoomIds.remove(roomId);
     state = {...state, roomId: []};
   }
 
-  /// 标记房间需要重新同步（断线重连后使用）
-  /// 只清除同步标记，不清空消息，下次进入房间时会增量拉取
+  /// 标记房间需要重新同步（断线重连后调用）
   void markNeedResync(String roomId) {
     _syncedRoomIds.remove(roomId);
   }
 
-  /// 标记所有房间需要重新同步（断线重连后使用）
+  /// 标记所有房间需要重新同步
   void markAllNeedResync() {
     _syncedRoomIds.clear();
-  }
-
-  /// 获取总消息数量，用于调试或内存监控
-  int get totalMessageCount {
-    return state.values.fold(0, (sum, list) => sum + list.length);
   }
 
   /// 撤回消息
@@ -400,7 +409,6 @@ class ChatMessages extends _$ChatMessages {
       );
 
       if (res.data["code"] == 200) {
-        // 撤回成功后，从消息列表中移除该消息
         removeMessage(messageId, roomId);
         return true;
       } else {
@@ -417,7 +425,6 @@ class ChatMessages extends _$ChatMessages {
   Future<bool> addFavorite(String messageId) async {
     try {
       final res = await DioClient().post('${API.chatFavoriteAdd}/$messageId');
-
       return res.data["code"] == 200;
     } catch (e) {
       log.error("收藏消息失败: $e");
@@ -425,7 +432,7 @@ class ChatMessages extends _$ChatMessages {
     }
   }
 
-  /// 从消息列表中移除消息
+  /// 从消息列表中移除消息（撤回时使用）
   void removeMessage(String messageId, String roomId) {
     final currentList = state[roomId] ?? [];
     final newList = currentList
@@ -439,16 +446,13 @@ class ChatMessages extends _$ChatMessages {
   }
 }
 
-// 存储每个房间的"加载更多"状态
-// key: roomId, value: 是否还有更多
+/// 房间是否还有更多历史消息的状态
 @riverpod
 class ChatHasMore extends _$ChatHasMore {
   @override
-  Map<String, bool> build() {
-    return {}; // 默认不确定，或者可以在 syncRoomMessages 时初始化
-  }
+  Map<String, bool> build() => {};
 
-  // 设置某个房间的状态
+  /// 设置某个房间的加载更多状态
   void setHasMore(String roomId, bool hasMore) {
     state = {...state, roomId: hasMore};
   }

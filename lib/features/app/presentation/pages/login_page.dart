@@ -9,6 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 登录页面
+///
+/// 提供用户登录功能，包含用户名、密码和验证码输入。
+/// 使用淡入动画提升用户体验，表单验证确保输入格式正确。
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -18,15 +22,28 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage>
     with SingleTickerProviderStateMixin {
+  /// 表单验证 Key
   final _formKey = GlobalKey<FormState>();
+
+  /// 用户名输入控制器
   final _usernameCtrl = TextEditingController();
+
+  /// 密码输入控制器
   final _passwordCtrl = TextEditingController();
+
+  /// 验证码输入控制器
   final _codeCtrl = TextEditingController();
 
+  /// 是否隐藏密码
   bool _obscurePassword = true;
+
+  /// 是否正在执行登录操作
   bool _isLoading = false;
 
+  /// 淡入动画控制器
   late final AnimationController _fadeController;
+
+  /// 淡入动画值
   late final Animation<double> _fadeAnimation;
 
   @override

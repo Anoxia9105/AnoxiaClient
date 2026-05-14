@@ -1,20 +1,24 @@
+/// 消息负载模型
+///
+/// 用于承载消息的扩展信息，支持富文本、引用回复、@提及等功能。
+/// 与纯文本 [ChatMessage.content] 的区别：此模型支持结构化的多媒体内容。
 class MessagePayload {
-  /// 文本内容
+  /// 文本内容（纯文本或 Markdown）
   final String? content;
 
-  /// Quill 富文本 Delta
+  /// Quill 富文本 Delta 格式的 JSON 字符串
   final String? quillDelta;
 
-  /// 引用的消息 ID
+  /// 被回复消息的 ID（用于引用功能）
   final String? replyTo;
 
-  /// @ 的用户 ID 列表
+  /// @ 提及的用户 ID 列表
   final List<int>? mentions;
 
-  /// Markdown 内容
+  /// Markdown 格式的内容
   final String? markdown;
 
-  /// emoji 编码
+  /// emoji 统一码（用于 emoji  реакции）
   final String? emojiCode;
 
   const MessagePayload({
@@ -26,7 +30,7 @@ class MessagePayload {
     this.emojiCode,
   });
 
-  /// JSON -> Dart
+  /// 从 JSON 数据构造 [MessagePayload] 实例
   factory MessagePayload.fromJson(Map<String, dynamic> json) {
     return MessagePayload(
       content: json['content'] as String?,
@@ -40,7 +44,7 @@ class MessagePayload {
     );
   }
 
-  /// Dart -> JSON
+  /// 将当前实例转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {
       'content': content,
@@ -52,7 +56,7 @@ class MessagePayload {
     };
   }
 
-  /// 拷贝构造（状态更新用）
+  /// 创建当前实例的变体副本
   MessagePayload copyWith({
     String? content,
     String? quillDelta,
@@ -100,6 +104,7 @@ class MessagePayload {
   int get hashCode =>
       Object.hash(content, quillDelta, replyTo, mentions, markdown, emojiCode);
 
+  /// 比较两个列表是否相等
   static bool _listEquals(List<int>? a, List<int>? b) {
     if (identical(a, b)) return true;
     if (a == null || b == null) return false;

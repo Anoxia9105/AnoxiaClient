@@ -18,6 +18,10 @@ import 'token_provider.dart';
 
 part 'auth_controller.g.dart';
 
+/// 认证状态管理器
+///
+/// 负责用户登录、登出和会话恢复的核心 Provider。
+/// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
 @riverpod
 class AuthController extends _$AuthController {
   @override
@@ -40,7 +44,14 @@ class AuthController extends _$AuthController {
     }
   }
 
-  /// 手动登录：调用后会把 state 设为 AsyncData(user)
+  /// 用户登录
+  ///
+  /// [username] 用户名
+  /// [password] 密码
+  /// [code] 图形验证码
+  /// [uuid] 验证码 UUID
+  ///
+  /// 登录成功后自动恢复会话，并触发 [AppInitializer] 重置。
   Future<void> login(
     String username,
     String password,
@@ -66,11 +77,11 @@ class AuthController extends _$AuthController {
         return null;
       }
       String token = res.data["token"];
-      
+
       // 同时保存到 TokenManager 和内存缓存
       await TokenManager.instance.setToken(token);
       ref.read(tokenCacheProvider.notifier).setToken(token);
-      
+
       return await _fetchUserInfo();
     });
 
@@ -81,13 +92,15 @@ class AuthController extends _$AuthController {
     }
   }
 
-  /// 手动登出：调用后会把 state 设为 AsyncData(null)
-  /// 1. 调用后端 logout API
+  /// 用户登出
+  ///
+  /// 执行以下清理操作：
+  /// 1. 调用后端 logout API（异步，不阻塞）
   /// 2. 清除本地存储的 Token
   /// 3. 清除内存中的 Token
-  /// 4. 【关键步骤】：重置所有业务 Provider
-  ///    - invalidate 会强制销毁当前 Provider 实例，下次使用时重新执行 build()
-  ///    - 这里重置了 roomListServiceProvider 和 activeRoomIdProvider
+  /// 4. 重置 [appInitializerProvider]（强制销毁并重建）
+  ///
+  /// 注意：无需手动断开 WebSocket，[WsController] 通过监听认证状态自动处理
   bool _isLoggingOut = false;
 
   Future<void> logout() async {
@@ -98,7 +111,7 @@ class AuthController extends _$AuthController {
     final token = ref.read(tokenCacheProvider);
 
     // 后端登出改为异步通知，不阻塞本地退出速度
-    unawaited(() async {
+    unawaited((() async {
       try {
         await DioClient()
             .post(
@@ -115,7 +128,7 @@ class AuthController extends _$AuthController {
       } catch (e) {
         log.warning("[AuthController] 后端登出请求失败（忽略）: $e");
       }
-    }());
+    })());
 
     try {
       // 1. 清除本地存储的 Token
@@ -124,7 +137,7 @@ class AuthController extends _$AuthController {
       // 2. 清除内存中的 Token
       ref.read(tokenCacheProvider.notifier).clearToken();
 
-      // 3. 先切换认证态，触发路由回到登录页。
+      // 3. 切换认证态，触发路由回到登录页。
       //    WsController 自身已通过 ref.listen(authControllerProvider) 监听此变化，
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
       state = const AsyncData(null);
@@ -139,13 +152,15 @@ class AuthController extends _$AuthController {
     }
   }
 
-  // 内部辅助方法
+  /// 获取用户信息
   Future<UserInfo?> _fetchUserInfo() async {
     final res = await DioClient().get(API.getInfo);
     return UserInfo.fromJson(res.data["data"]);
   }
 
-  /// 刷新当前登录用户信息（用于资料更新后同步 UI）
+  /// 刷新当前登录用户信息
+  ///
+  /// 用于用户资料更新后同步 UI 展示
   Future<void> refreshUserInfo() async {
     final current = state.value;
     if (current == null) return;
@@ -154,12 +169,15 @@ class AuthController extends _$AuthController {
     state = AsyncData(next);
   }
 
-  /// logout mutation action
+  /// 登出操作（Mutation 预留）
   static final logoutMutation = Mutation<void>();
 
-  /// logout mutation action
+  /// 登录操作（Mutation 预留）
   static final loginMutation = Mutation<void>();
 
+  /// 构建设备标识
+  ///
+  /// 用于后端识别客户端类型和平台
   String _buildDeviceId() {
     if (kIsWeb) return 'web';
     switch (defaultTargetPlatform) {
@@ -179,8 +197,10 @@ class AuthController extends _$AuthController {
   }
 }
 
-@riverpod
 /// 获取验证码
+///
+/// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
+@riverpod
 Future<CaptchaModel> getCaptcha(Ref ref) async {
   final res = await DioClient().get(API.captchaImage, auth: false);
   return CaptchaModel(uuid: res.data["uuid"], imgBase64: res.data["img"]);

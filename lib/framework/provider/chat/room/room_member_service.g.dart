@@ -8,16 +8,12 @@ part of 'room_member_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 获取指定房间的成员列表（List）
-/// 用法：ref.watch(roomMembersProvider('roomId'))
-/// 当该房间成员变化时才重建，其他房间变化不影响
+/// 获取指定房间的成员列表
 
 @ProviderFor(roomMembers)
 const roomMembersProvider = RoomMembersFamily._();
 
-/// 获取指定房间的成员列表（List）
-/// 用法：ref.watch(roomMembersProvider('roomId'))
-/// 当该房间成员变化时才重建，其他房间变化不影响
+/// 获取指定房间的成员列表
 
 final class RoomMembersProvider
     extends
@@ -27,9 +23,7 @@ final class RoomMembersProvider
           List<ChatRoomMemberVO>
         >
     with $Provider<List<ChatRoomMemberVO>> {
-  /// 获取指定房间的成员列表（List）
-  /// 用法：ref.watch(roomMembersProvider('roomId'))
-  /// 当该房间成员变化时才重建，其他房间变化不影响
+  /// 获取指定房间的成员列表
   const RoomMembersProvider._({
     required RoomMembersFamily super.from,
     required String super.argument,
@@ -84,9 +78,7 @@ final class RoomMembersProvider
 
 String _$roomMembersHash() => r'2a790f6413245bf6a6921b0dbbf7365b59827693';
 
-/// 获取指定房间的成员列表（List）
-/// 用法：ref.watch(roomMembersProvider('roomId'))
-/// 当该房间成员变化时才重建，其他房间变化不影响
+/// 获取指定房间的成员列表
 
 final class RoomMembersFamily extends $Family
     with $FunctionalFamilyOverride<List<ChatRoomMemberVO>, String> {
@@ -99,9 +91,7 @@ final class RoomMembersFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 获取指定房间的成员列表（List）
-  /// 用法：ref.watch(roomMembersProvider('roomId'))
-  /// 当该房间成员变化时才重建，其他房间变化不影响
+  /// 获取指定房间的成员列表
 
   RoomMembersProvider call(String roomId) =>
       RoomMembersProvider._(argument: roomId, from: this);
@@ -111,18 +101,15 @@ final class RoomMembersFamily extends $Family
 }
 
 /// 获取指定房间的成员数量
-/// 用法：ref.watch(roomMemberCountProvider('roomId'))
 
 @ProviderFor(roomMemberCount)
 const roomMemberCountProvider = RoomMemberCountFamily._();
 
 /// 获取指定房间的成员数量
-/// 用法：ref.watch(roomMemberCountProvider('roomId'))
 
 final class RoomMemberCountProvider extends $FunctionalProvider<int, int, int>
     with $Provider<int> {
   /// 获取指定房间的成员数量
-  /// 用法：ref.watch(roomMemberCountProvider('roomId'))
   const RoomMemberCountProvider._({
     required RoomMemberCountFamily super.from,
     required String super.argument,
@@ -177,7 +164,6 @@ final class RoomMemberCountProvider extends $FunctionalProvider<int, int, int>
 String _$roomMemberCountHash() => r'ff9f358dec5bcee6e22a07a79f937f701a5fb1e8';
 
 /// 获取指定房间的成员数量
-/// 用法：ref.watch(roomMemberCountProvider('roomId'))
 
 final class RoomMemberCountFamily extends $Family
     with $FunctionalFamilyOverride<int, String> {
@@ -191,7 +177,6 @@ final class RoomMemberCountFamily extends $Family
       );
 
   /// 获取指定房间的成员数量
-  /// 用法：ref.watch(roomMemberCountProvider('roomId'))
 
   RoomMemberCountProvider call(String roomId) =>
       RoomMemberCountProvider._(argument: roomId, from: this);
@@ -201,15 +186,15 @@ final class RoomMemberCountFamily extends $Family
 }
 
 /// 获取指定房间内某个用户的成员信息
-/// 用法：ref.watch(roomMemberProvider(('roomId', userId)))
-/// 用 Record 作为参数避免定义额外的参数类
+///
+/// 使用 Record 作为参数避免定义额外的参数类
 
 @ProviderFor(roomMember)
 const roomMemberProvider = RoomMemberFamily._();
 
 /// 获取指定房间内某个用户的成员信息
-/// 用法：ref.watch(roomMemberProvider(('roomId', userId)))
-/// 用 Record 作为参数避免定义额外的参数类
+///
+/// 使用 Record 作为参数避免定义额外的参数类
 
 final class RoomMemberProvider
     extends
@@ -220,8 +205,8 @@ final class RoomMemberProvider
         >
     with $Provider<ChatRoomMemberVO?> {
   /// 获取指定房间内某个用户的成员信息
-  /// 用法：ref.watch(roomMemberProvider(('roomId', userId)))
-  /// 用 Record 作为参数避免定义额外的参数类
+  ///
+  /// 使用 Record 作为参数避免定义额外的参数类
   const RoomMemberProvider._({
     required RoomMemberFamily super.from,
     required (String, int) super.argument,
@@ -277,8 +262,8 @@ final class RoomMemberProvider
 String _$roomMemberHash() => r'79d84765f3664983b0827033dda8b48ac50404cc';
 
 /// 获取指定房间内某个用户的成员信息
-/// 用法：ref.watch(roomMemberProvider(('roomId', userId)))
-/// 用 Record 作为参数避免定义额外的参数类
+///
+/// 使用 Record 作为参数避免定义额外的参数类
 
 final class RoomMemberFamily extends $Family
     with $FunctionalFamilyOverride<ChatRoomMemberVO?, (String, int)> {
@@ -292,8 +277,8 @@ final class RoomMemberFamily extends $Family
       );
 
   /// 获取指定房间内某个用户的成员信息
-  /// 用法：ref.watch(roomMemberProvider(('roomId', userId)))
-  /// 用 Record 作为参数避免定义额外的参数类
+  ///
+  /// 使用 Record 作为参数避免定义额外的参数类
 
   RoomMemberProvider call((String, int) args) =>
       RoomMemberProvider._(argument: args, from: this);
@@ -302,19 +287,16 @@ final class RoomMemberFamily extends $Family
   String toString() => r'roomMemberProvider';
 }
 
-/// 判断指定用户在某房间是否是管理员（roleId == 0）
-/// 用法：ref.watch(isRoomAdminProvider(('roomId', userId)))
+/// 判断指定用户在某房间是否是管理员
 
 @ProviderFor(isRoomAdmin)
 const isRoomAdminProvider = IsRoomAdminFamily._();
 
-/// 判断指定用户在某房间是否是管理员（roleId == 0）
-/// 用法：ref.watch(isRoomAdminProvider(('roomId', userId)))
+/// 判断指定用户在某房间是否是管理员
 
 final class IsRoomAdminProvider extends $FunctionalProvider<bool, bool, bool>
     with $Provider<bool> {
-  /// 判断指定用户在某房间是否是管理员（roleId == 0）
-  /// 用法：ref.watch(isRoomAdminProvider(('roomId', userId)))
+  /// 判断指定用户在某房间是否是管理员
   const IsRoomAdminProvider._({
     required IsRoomAdminFamily super.from,
     required (String, int) super.argument,
@@ -368,8 +350,7 @@ final class IsRoomAdminProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$isRoomAdminHash() => r'bc2285b2e86695677d130a56a88db97849f2c537';
 
-/// 判断指定用户在某房间是否是管理员（roleId == 0）
-/// 用法：ref.watch(isRoomAdminProvider(('roomId', userId)))
+/// 判断指定用户在某房间是否是管理员
 
 final class IsRoomAdminFamily extends $Family
     with $FunctionalFamilyOverride<bool, (String, int)> {
@@ -382,8 +363,7 @@ final class IsRoomAdminFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 判断指定用户在某房间是否是管理员（roleId == 0）
-  /// 用法：ref.watch(isRoomAdminProvider(('roomId', userId)))
+  /// 判断指定用户在某房间是否是管理员
 
   IsRoomAdminProvider call((String, int) args) =>
       IsRoomAdminProvider._(argument: args, from: this);
@@ -395,9 +375,9 @@ final class IsRoomAdminFamily extends $Family
 /// 房间成员服务
 ///
 /// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
-/// 用双层 Map 实现 O(1) 按房间、按用户 ID 查询
+/// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
-/// keepAlive: true — 跨页面保持缓存，避免重复拉取
+/// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
 
 @ProviderFor(RoomMemberService)
 const roomMemberServiceProvider = RoomMemberServiceProvider._();
@@ -405,9 +385,9 @@ const roomMemberServiceProvider = RoomMemberServiceProvider._();
 /// 房间成员服务
 ///
 /// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
-/// 用双层 Map 实现 O(1) 按房间、按用户 ID 查询
+/// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
-/// keepAlive: true — 跨页面保持缓存，避免重复拉取
+/// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
 final class RoomMemberServiceProvider
     extends
         $NotifierProvider<
@@ -417,9 +397,9 @@ final class RoomMemberServiceProvider
   /// 房间成员服务
   ///
   /// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
-  /// 用双层 Map 实现 O(1) 按房间、按用户 ID 查询
+  /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
   ///
-  /// keepAlive: true — 跨页面保持缓存，避免重复拉取
+  /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
   const RoomMemberServiceProvider._()
     : super(
         from: null,
@@ -448,14 +428,14 @@ final class RoomMemberServiceProvider
   }
 }
 
-String _$roomMemberServiceHash() => r'6638c6b1cfa4b8c60e6877068e27620a401f5864';
+String _$roomMemberServiceHash() => r'af27d283debf8fb65018789a95b479c42333e0b7';
 
 /// 房间成员服务
 ///
 /// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
-/// 用双层 Map 实现 O(1) 按房间、按用户 ID 查询
+/// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
-/// keepAlive: true — 跨页面保持缓存，避免重复拉取
+/// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
 
 abstract class _$RoomMemberService
     extends $Notifier<Map<String, Map<int, ChatRoomMemberVO>>> {

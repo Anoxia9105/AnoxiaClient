@@ -1,25 +1,37 @@
 /// 用户视图对象
+///
+/// 用于展示用户的精简信息，包含登录信息和基础资料。
 class UserVO {
   /// 用户ID
   final int userId;
-  /// 用户名
+
+  /// 用户账号（登录名）
   final String userName;
+
   /// 昵称
   final String nickName;
-  /// 邮箱
+
+  /// 电子邮箱
   final String? email;
-  /// 手机号
+
+  /// 手机号码
   final String? phonenumber;
-  /// 性别
+
+  /// 性别：0=男，1=女，2=未知
   final String? sex;
-  /// 头像
+
+  /// 头像 URL
   final String? avatar;
-  /// 状态
+
+  /// 账号状态
   final String? status;
-  /// 登录IP
+
+  /// 最后登录 IP
   final String? loginIp;
-  /// 登录时间
+
+  /// 最后登录时间
   final String? loginDate;
+
   /// 是否为管理员
   final bool? admin;
 
@@ -37,7 +49,7 @@ class UserVO {
     this.admin,
   });
 
-  /// 从 JSON 构造对象
+  /// 从 JSON 数据构造 [UserVO] 实例
   factory UserVO.fromJson(Map<String, dynamic> json) {
     return UserVO(
       userId: json['userId'],
@@ -54,7 +66,7 @@ class UserVO {
     );
   }
 
-  /// 转换为 JSON
+  /// 将当前实例转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,

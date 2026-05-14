@@ -1,20 +1,34 @@
 import 'package:intl/intl.dart';
 
+/// 日期时间工具类
+///
+/// 提供常用的日期时间格式化和解析方法。
+/// 支持微信风格的聊天气泡时间分隔显示。
 class DateUtil {
+  /// 将 DateTime 转为 ISO 8601 字符串
   static String formatIso8601(DateTime dt) => dt.toIso8601String();
 
+  /// 解析 ISO 8601 字符串为 DateTime
   static DateTime parseIso8601(String s) => DateTime.parse(s);
 
+  /// 判断两个日期是否为同一天
   static bool isSameDay(DateTime d1, DateTime d2) {
     return d1.year == d2.year && d1.month == d2.month && d1.day == d2.day;
   }
 
+  /// 将时间戳格式化为 HH:mm
   static String formatTimestampToTime(int? timestamp) {
     if (timestamp == null) return "";
     DateTime date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     return DateFormat('HH:mm').format(date);
   }
 
+  /// 格式化时间戳
+  ///
+  /// 规则：
+  /// - 今天：HH:mm
+  /// - 今年：MM-dd
+  /// - 跨年：yyyy/MM/dd
   static String formatTime(int? timestamp) {
     if (timestamp == null) return "";
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
@@ -24,13 +38,12 @@ class DateUtil {
     return DateFormat('yyyy/MM/dd').format(date);
   }
 
-  /// =========================
   /// 微信风格时间分隔格式化
-  /// =========================
+  ///
   /// [timestamp] 毫秒级时间戳
   /// [locale] 当前语言环境的 languageCode，如 'zh', 'en', 'ja'
   ///
-  /// 规则（与微信一致）:
+  /// 规则：
   /// - 今天：HH:mm
   /// - 昨天：昨天 HH:mm
   /// - 本周（2~6天前）：星期X HH:mm
@@ -44,27 +57,22 @@ class DateUtil {
     final diffDays = today.difference(msgDay).inDays;
     final time = DateFormat('HH:mm').format(date);
 
-    // 今天
     if (diffDays == 0 && msgDay == today) {
       return time;
     }
 
-    // 昨天
     if (diffDays == 1) {
       return '${_yesterdayLabel(locale)} $time';
     }
 
-    // 本周内（2~6天前）且不跨年
     if (diffDays >= 2 && diffDays <= 6 && date.year == now.year) {
       return '${_weekdayLabel(date.weekday, locale)} $time';
     }
 
-    // 今年
     if (date.year == now.year) {
       return '${_monthDayLabel(date, locale)} $time';
     }
 
-    // 跨年
     return '${_fullDateLabel(date, locale)} $time';
   }
 
@@ -94,7 +102,7 @@ class DateUtil {
     ];
     const ja = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
 
-    final index = weekday - 1; // DateTime.weekday: 1=Monday ... 7=Sunday
+    final index = weekday - 1;
     switch (locale) {
       case 'ja':
         return ja[index];
@@ -113,7 +121,7 @@ class DateUtil {
       case 'zh':
         return '${date.month}月${date.day}日';
       default:
-        return DateFormat('MMM d').format(date); // "Apr 10"
+        return DateFormat('MMM d').format(date);
     }
   }
 
@@ -125,23 +133,23 @@ class DateUtil {
       case 'zh':
         return '${date.year}年${date.month}月${date.day}日';
       default:
-        return DateFormat('MMM d, yyyy').format(date); // "Apr 10, 2025"
+        return DateFormat('MMM d, yyyy').format(date);
     }
   }
 
   /// 将字符串日期转为指定格式
-  /// [dateStr] 输入的日期字符串，例如 "2025-09-28 16:45:00"
-  /// [inputPattern] 输入字符串的格式，例如 "yyyy-MM-dd HH:mm:ss"
-  /// [outputPattern] 输出想要的格式，例如 "yyyy/MM/dd HH:mm"
+  ///
+  /// [isoString] 输入的 ISO 8601 日期字符串
+  /// [pattern] 输出格式，默认 "yyyy-MM-dd HH:mm:ss"
   static String formatIsoDate(
     String isoString, {
     String pattern = "yyyy-MM-dd HH:mm:ss",
   }) {
     try {
-      final dateTime = DateTime.parse(isoString); // 直接解析 ISO 8601
+      final dateTime = DateTime.parse(isoString);
       return DateFormat(pattern).format(dateTime);
     } catch (e) {
-      return isoString; // 解析失败时返回原字符串
+      return isoString;
     }
   }
 }

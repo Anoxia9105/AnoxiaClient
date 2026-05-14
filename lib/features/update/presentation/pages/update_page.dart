@@ -16,7 +16,11 @@ import '../../../../framework/provider/layout/layout_controller.dart';
 import '../../../../common/widgets/app/app_scaffold.dart';
 import '../widgets/update_sections.dart';
 
+/// 应用更新页面
+///
+/// 显示应用更新信息、下载进度，并支持更新安装
 class UpdatePage extends ConsumerStatefulWidget {
+  /// 更新信息对象
   final AppUpdateInfo updateInfo;
 
   const UpdatePage({super.key, required this.updateInfo});
@@ -26,11 +30,16 @@ class UpdatePage extends ConsumerStatefulWidget {
 }
 
 class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
+  /// 下载进度（0-1）
   double _progress = 0;
+  /// 是否正在下载
   bool _isDownloading = false;
+  /// 是否已经开始下载
   bool _hasStarted = false;
+  /// 错误信息
   String? _error;
 
+  /// 是否为强制更新
   bool get _isForceUpdate => widget.updateInfo.forceUpdate;
 
   @override

@@ -4,20 +4,38 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+/// 反馈提交结果
 class FeedbackSubmitResult {
+  /// 是否提交成功
   final bool success;
+
+  /// 结果消息
   final String? message;
 
   const FeedbackSubmitResult({required this.success, this.message});
 }
 
+/// 应用更新信息
 class AppUpdateInfo {
+  /// 是否有可用更新
   final bool hasUpdate;
+
+  /// 是否为强制更新
   final bool forceUpdate;
+
+  /// 最新版本号
   final String latestVersion;
+
+  /// 当前版本号
   final String currentVersion;
+
+  /// 下载链接
   final String downloadUrl;
+
+  /// 更新日志
   final String releaseNotes;
+
+  /// 最低支持版本
   final String minSupportVersion;
 
   const AppUpdateInfo({
@@ -31,7 +49,11 @@ class AppUpdateInfo {
   });
 }
 
+/// 设置仓储层
+///
+/// 封装设置相关的网络请求，包括反馈提交和应用更新检查。
 class SettingsRepository {
+  /// 提交用户反馈
   Future<FeedbackSubmitResult> submitFeedback({
     required String title,
     required String content,
@@ -59,6 +81,7 @@ class SettingsRepository {
     }
   }
 
+  /// 检查应用更新
   Future<AppUpdateInfo> checkForUpdate({
     required String currentVersion,
     required String clientType,
@@ -105,6 +128,7 @@ class SettingsRepository {
   }
 }
 
+/// 获取应用版本号
 final appVersionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();
   final version = info.version.trim();
@@ -113,10 +137,14 @@ final appVersionProvider = FutureProvider<String>((ref) async {
   return '$version+$buildNumber';
 });
 
+/// 设置仓储层 Provider
 final settingsRepositoryProvider = Provider<SettingsRepository>(
   (ref) => SettingsRepository(),
 );
 
+/// 解析客户端类型标识
+///
+/// 根据当前运行平台返回对应的类型字符串
 String resolveUpdateClientType() {
   if (kIsWeb) return 'web';
   switch (defaultTargetPlatform) {

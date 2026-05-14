@@ -8,11 +8,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'user_search_service.g.dart';
 
 /// 用户搜索服务
+///
+/// 支持按用户名/昵称搜索用户，并发送好友申请。
 @Riverpod(keepAlive: true)
 class UserSearchService extends _$UserSearchService {
   @override
   UserSearchResponse build() {
-    // 初始状态为空
     return UserSearchResponse(total: 0, rows: [], code: 200, msg: "");
   }
 
@@ -22,6 +23,7 @@ class UserSearchService extends _$UserSearchService {
   }
 
   /// 搜索用户
+  ///
   /// [name] 搜索关键词
   /// [pageNum] 当前页码
   /// [pageSize] 每页大小
@@ -59,8 +61,9 @@ class UserSearchService extends _$UserSearchService {
   }
 
   /// 发送好友申请
-  /// [toUserId] 接收人ID
-  /// [remark] 申请备注
+  ///
+  /// [toUserId] 接收人用户ID
+  /// [remark] 申请附言
   Future<bool> sendContactRequest(int toUserId, String? remark) async {
     try {
       final request = ContactRequest(toUserId: toUserId, remark: remark);

@@ -1,11 +1,22 @@
 import 'package:flutter/foundation.dart';
 
+/// 文件附件模型
+///
+/// 表示聊天消息中附带的文件信息，支持 JSON 序列化/反序列化。
+/// 设计为不可变对象（[immutable]），通过 [copyWith] 创建变体。
 @immutable
 class Attachment {
-  final String url; // 文件URL
-  final String name; // 文件名
-  final int size; // 文件大小（字节）
-  final String type; // 文件类型（mime / 自定义）
+  /// 文件的远程访问地址
+  final String url;
+
+  /// 文件显示名称
+  final String name;
+
+  /// 文件大小（单位：字节）
+  final int size;
+
+  /// 文件 MIME 类型或自定义类型标识
+  final String type;
 
   const Attachment({
     required this.url,
@@ -14,7 +25,9 @@ class Attachment {
     required this.type,
   });
 
-  /// JSON -> Dart
+  /// 从 JSON 数据构造 [Attachment] 实例
+  ///
+  /// [json] 需包含 url、name、size、type 四个必填字段
   factory Attachment.fromJson(Map<String, dynamic> json) {
     return Attachment(
       url: json['url'] as String,
@@ -24,12 +37,12 @@ class Attachment {
     );
   }
 
-  /// Dart -> JSON
+  /// 将当前实例转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {'url': url, 'name': name, 'size': size, 'type': type};
   }
 
-  /// 不可变对象的“修改方式”
+  /// 创建当前实例的变体副本
   Attachment copyWith({String? url, String? name, int? size, String? type}) {
     return Attachment(
       url: url ?? this.url,

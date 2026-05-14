@@ -17,6 +17,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/utils/DeviceUtil.dart';
 import '../../../../framework/provider/core/AppUpdateInfo.dart' as core;
 
+/// 设置页面
+///
+/// 提供主题切换、语言设置、关于支持、反馈意见等功能
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -25,9 +28,13 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  /// 反馈表单 Key
   final _feedbackFormKey = GlobalKey<FormState>();
+  /// 反馈标题编辑控制器
   final _feedbackTitleController = TextEditingController();
+  /// 反馈内容编辑控制器
   final _feedbackContentController = TextEditingController();
+  /// 反馈联系方式编辑控制器
   final _feedbackContactController = TextEditingController();
 
   @override

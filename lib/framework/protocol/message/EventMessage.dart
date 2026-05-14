@@ -1,22 +1,9 @@
 import '../IPacket.dart';
 
-
-
-
-
-//  USER_ONLINE(0, "用户上线", false),
-//     USER_OFFLINE(1, "用户下线", false),
-//     USER_JOINED(2, "用户加入聊天室", true),
-//     USER_LEFT(3, "用户离开聊天室", true),
-//     ROOM_CREATED(4, "创建房间", true),
-//     ROOM_CREATED_GROUP(5, "创建房间-群聊", true),
-//     ROOM_CLOSED(6, "房间注销", true),
-//     ROOM_UPDATED(7, "房间信息更新", true),
-//     ROOM_MUTED(8, "房间禁言", true),
-//     USER_KICKED(9, "用户被踢出", true),
-//     USER_ROLE_CHANGED(10, "用户权限变更", true);
-
-/// 系统事件类型枚举 (对应 Java 的 SystemEventType)
+/// 系统事件类型枚举
+///
+/// 对应后端 Java SystemEventType 枚举，
+/// 包含用户状态变更、房间状态变更、通话状态等事件。
 enum SystemEventType {
   userOnline(0),
   userOffline(1),
@@ -35,67 +22,83 @@ enum SystemEventType {
   contactUpdated(14),
   contactRequest(15);
 
+  /// 事件对应的数字编码
   final int code;
+
   const SystemEventType(this.code);
 
-  // 根据 code 反序列化枚举
+  /// 从数字编码反序列化枚举
   static SystemEventType fromCode(int code) {
     return SystemEventType.values.firstWhere(
-          (e) => e.code == code,
-      orElse: () => SystemEventType.userOnline, // 默认值
+      (e) => e.code == code,
+      orElse: () => SystemEventType.userOnline,
     );
   }
 }
 
-
-class EventMessage implements IPacket{
+/// 系统事件消息
+///
+/// 通过 WebSocket 推送，用于通知客户端各类系统事件。
+class EventMessage implements IPacket {
+  /// 事件类型
   final SystemEventType eventType;
-  final int operatorId; // Flutter 中建议用 String 处理 Long 以防溢出，或使用 int
+
+  /// 操作者用户ID
+  final int operatorId;
+
+  /// 事件内容（JSON 字符串或纯文本）
   final String? content;
+
+  /// 事件发生时间戳（毫秒）
   final int timestamp;
-  final Map<String, dynamic>? extra; // 新增：额外字段
+
+  /// 扩展字段（用于传递事件相关的额外数据）
+  final Map<String, dynamic>? extra;
 
   EventMessage({
     required this.eventType,
     required this.operatorId,
     this.content,
     required this.timestamp,
-    this.extra, // 新增：初始化 extra
+    this.extra,
   });
 
-  /// 从 Map (JSON) 构造对象
+  /// 从 JSON 构造 [EventMessage] 实例
+  ///
+  /// 自动兼容后端传来的数字编码或字符串名称
   factory EventMessage.fromJson(Map<String, dynamic> json) {
     return EventMessage(
-      // 这里假设后端传的是枚举名字符串或者是 code
-      // 如果传的是 code: SystemEventType.fromCode(json['eventType'])
       eventType: _parseEventType(json['eventType']),
       operatorId: int.tryParse(json['operatorId']?.toString() ?? '') ?? 0,
       content: json['content'],
       timestamp:
           int.tryParse(json['timestamp']?.toString() ?? '') ??
           DateTime.now().millisecondsSinceEpoch,
-      extra: (json['extra'] as Map?)?.cast<String, dynamic>(), // 新增：解析 extra
+      extra: (json['extra'] as Map?)?.cast<String, dynamic>(),
     );
   }
 
-  /// 转为 Map (JSON)
+  /// 序列化为 JSON
   @override
   Map<String, dynamic> toJson() {
     return {
-      'eventType': eventType.name, // 或者用 eventType.code
+      'eventType': eventType.name,
       'operatorId': operatorId,
       'content': content,
       'timestamp': timestamp,
-      'extra': extra, // 新增：序列化 extra
+      'extra': extra,
     };
   }
 
+  /// 解析事件类型
+  ///
+  /// 支持数字编码、字符串名称，以及历史别名（如 roomClosed -> roomDissolved）
   static SystemEventType _parseEventType(dynamic value) {
     if (value is int) return SystemEventType.fromCode(value);
     if (value is String) {
       final normalized = value.toLowerCase().replaceAll('_', '');
 
-      // 兼容后端历史/别名事件名
+      // 兼容后端历史别名
       if (normalized == 'roomclosed' || normalized == 'roomdissolved') {
         return SystemEventType.roomDissolved;
       }
@@ -109,7 +112,7 @@ class EventMessage implements IPacket{
       }
     }
     return SystemEventType.values.firstWhere(
-          (e) => e.name == value,
+      (e) => e.name == value,
       orElse: () => SystemEventType.userOnline,
     );
   }

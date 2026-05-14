@@ -1,4 +1,6 @@
-/// 消息类型
+/// 消息类型枚举
+///
+/// 定义聊天消息的内容类型。
 enum MessageType {
   quill(0),
   image(1),
@@ -8,13 +10,17 @@ enum MessageType {
   text(5),
   system(6);
 
+  /// 数字编码（与后端一致）
   final int code;
+
   const MessageType(this.code);
 
+  /// 从动态值解析枚举
+  ///
+  /// 支持后端传来的字符串（如 "TEXT"）或数字（如 5）
   static MessageType fromCode(dynamic value) {
     if (value == null) return MessageType.text;
 
-    // 1. 处理后端传来的字符串（如 "TEXT"）
     if (value is String) {
       return MessageType.values.firstWhere(
         (e) => e.name.toUpperCase() == value.toUpperCase(),
@@ -22,7 +28,6 @@ enum MessageType {
       );
     }
 
-    // 2. 处理后端传来的数字（如 5）
     if (value is int) {
       return MessageType.values.firstWhere(
         (e) => e.code == value,
@@ -34,13 +39,15 @@ enum MessageType {
   }
 }
 
-/// 消息状态
+/// 消息状态枚举
+///
+/// 表示消息的当前状态，影响 UI 展示。
 enum MessageState {
-  active, // 默认：正常显示
-  recalled, // 撤回：UI 需显示“对方撤回了一条消息”
-  edited; // 已编辑：UI 需在内容旁标注“已编辑”
+  active,
+  recalled,
+  edited;
 
-  /// 从后端字符串 / 数值安全解析
+  /// 从动态值安全解析枚举
   static MessageState from(dynamic value) {
     if (value == null) return MessageState.active;
 
@@ -60,16 +67,19 @@ enum MessageState {
     return MessageState.active;
   }
 
-  /// 序列化给后端（字符串，更稳定）
+  /// 序列化为字符串传给后端
   String toJson() => name.toUpperCase();
 }
 
-/// 链路状态
+/// 消息投递状态枚举
+///
+/// 表示消息在客户端的发送状态，影响 UI 展示。
 enum DeliveryStatus {
-  sending, // 本地：发送中（转圈）
-  failed, // 本地：发送失败（红感叹号）
-  sent; // 成功：服务器已收到（单勾）
+  sending,
+  failed,
+  sent;
 
+  /// 从动态值解析枚举
   static DeliveryStatus from(dynamic value) {
     if (value == null) return DeliveryStatus.sending;
 
@@ -89,6 +99,6 @@ enum DeliveryStatus {
     return DeliveryStatus.failed;
   }
 
-  /// 序列化给后端（字符串，更稳定）
+  /// 序列化为字符串传给后端
   String toJson() => name.toUpperCase();
 }

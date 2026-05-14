@@ -3,9 +3,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'layout_controller.g.dart';
 
+/// 布局状态管理器
+///
+/// 控制桌面端的侧边栏状态、当前选中页面索引等。
 @riverpod
 class LayoutController extends _$LayoutController {
-  // 静态配置：作为控制器的私有常量
   static const _menuItems = [
     SidebarItem(name: "sidebar_chat", icon: HugeIcons.strokeRoundedComment01),
     SidebarItem(
@@ -32,6 +34,7 @@ class LayoutController extends _$LayoutController {
     );
   }
 
+  /// 设置当前选中的页面索引
   void setIndex(int index) {
     if (index < 0 || index >= state.items.length) {
       return;
@@ -41,15 +44,22 @@ class LayoutController extends _$LayoutController {
     }
   }
 
+  /// 切换侧边栏展开/收起状态
   void toggleExtended() {
     state = state.copyWith(extendedValue: !state.extendedValue);
   }
 }
 
+/// 布局状态数据类
 class LayoutState {
+  /// 当前选中的页面索引
   final int currentIndex;
+
+  /// 侧边栏是否展开
   final bool extendedValue;
-  final List<SidebarItem> items; // 只存名字索引
+
+  /// 菜单项列表
+  final List<SidebarItem> items;
 
   LayoutState({
     required this.currentIndex,
@@ -66,8 +76,12 @@ class LayoutState {
   }
 }
 
+/// 侧边栏菜单项
 class SidebarItem {
+  /// 国际化 key
   final String name;
+
+  /// 图标数据
   final List<List<dynamic>> icon;
 
   const SidebarItem({required this.name, required this.icon});

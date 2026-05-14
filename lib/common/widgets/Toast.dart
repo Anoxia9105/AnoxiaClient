@@ -1,22 +1,31 @@
 import 'dart:ui';
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// Toast 类型枚举
+///
+/// 用于指定 Toast 的样式主题
 enum ToastType { warning, error, success, info }
 
+/// Toast 工具类
+///
+/// 封装 BotToast 插件，提供统一的提示框功能。
+/// 支持多种显示形式：自定义内容、字符串提示、Widget 等。
 class Toast {
   static const _defaultDuration = Duration(seconds: 3);
   static const _defaultMargin = EdgeInsets.all(15);
   static const _defaultIconSize = 13.0;
   static const _defaultRadius = 9.0;
 
+  /// Windows 桌面端禁用毛玻璃效果，避免兼容性问题
   static bool get _enableBlurEffect {
     if (kIsWeb) return true;
     return defaultTargetPlatform != TargetPlatform.windows;
   }
 
-  /// 通知框 - 自定义内容
+  /// 显示自定义内容的通知框
   static Function showNotification({
     Color color = Colors.blueGrey,
     VoidCallback? onTap,
@@ -41,7 +50,7 @@ class Toast {
     );
   }
 
-  /// 通知框 - 直接显示字符串
+  /// 显示字符串内容的通知框（立即显示）
   static Function showNotificationNow(
     String message, {
     Color? color,
@@ -78,7 +87,7 @@ class Toast {
     );
   }
 
-  /// 提示框
+  /// 显示文本提示框
   static void showToast(
     String message, {
     ToastType type = ToastType.info,
@@ -89,7 +98,7 @@ class Toast {
     _buildToast(message, config.color, config.icon, align, duration);
   }
 
-  /// 根据主题色提示框
+  /// 显示主题色的提示框
   static void showToastTheme(
     BuildContext context,
     String message, {
@@ -104,7 +113,7 @@ class Toast {
     _buildToast(message, config.color, config.icon, align, duration);
   }
 
-  /// 根据 context 显示 Widget
+  /// 显示自定义 Widget（关联 context）
   static Function showWidget(
     BuildContext context, {
     required Widget child,
@@ -119,7 +128,7 @@ class Toast {
     );
   }
 
-  /// 根据 Offset 显示 Widget
+  /// 显示自定义 Widget（关联坐标）
   static Function showWidgetOffset({
     required Offset target,
     PreferDirection direction = PreferDirection.topLeft,
@@ -134,7 +143,7 @@ class Toast {
     );
   }
 
-  /// 内部方法 - 构建 Toast
+  /// 构建 Toast 视图
   static void _buildToast(
     String message,
     Color color,
@@ -215,7 +224,7 @@ class Toast {
     );
   }
 
-  /// 内部方法 - 获取 Toast 配置
+  /// 获取 Toast 配置
   static _ToastConfig _toastConfig(ToastType type, {Color? defaultColor}) {
     switch (type) {
       case ToastType.warning:
@@ -258,8 +267,10 @@ class Toast {
   }
 }
 
+/// Toast 配置内部类
 class _ToastConfig {
   final Color color;
   final Icon icon;
+
   _ToastConfig(this.color, this.icon);
 }

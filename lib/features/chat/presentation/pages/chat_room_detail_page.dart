@@ -19,16 +19,24 @@ import 'package:anoxia/framework/provider/ws/ws_state.dart';
 /// 展平列表的条目类型：时间分隔条 或 消息气泡
 sealed class _ChatListItem {}
 
+/// 时间分隔条条目
 class _TimeDividerItem extends _ChatListItem {
+  /// 时间戳（毫秒）
   final int timestamp;
   _TimeDividerItem(this.timestamp);
 }
 
+/// 消息气泡条目
 class _MessageItem extends _ChatListItem {
+  /// 聊天消息对象
   final ChatMessage message;
   _MessageItem(this.message);
 }
 
+/// 聊天房间详情页面
+///
+/// 显示房间内的消息列表、输入框、房间状态等信息
+/// 支持时间分隔、滚动定位、加载更多历史消息、WebSocket连接状态显示等功能
 class ChatRoomDetail extends ConsumerStatefulWidget {
   const ChatRoomDetail({super.key});
 
@@ -37,15 +45,20 @@ class ChatRoomDetail extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
+  /// FlutterListView 控制器，用于控制列表滚动和定位
   final FlutterListViewController _listViewController =
       FlutterListViewController();
+  
+  /// 是否显示滚动到底部按钮
   bool _showScrollDownButton = false;
 
-  /// =========================
-  /// ✅ 将原始消息列表展平为 [时间分隔条 + 消息] 的混合列表
+  /// 将原始消息列表展平为 [时间分隔条 + 消息] 的混合列表
+  ///
   /// 消息列表按时间升序排列（index 0 = 最旧）
   /// 规则：第一条消息强制插入时间条，之后两条消息间隔 > 30分钟才插入
-  /// =========================
+  ///
+  /// [messages] 原始聊天消息列表
+  /// 返回 包含时间分隔条和消息的混合列表
   List<_ChatListItem> _buildFlatList(List<ChatMessage> messages) {
     final List<_ChatListItem> items = [];
     for (int i = 0; i < messages.length; i++) {
@@ -69,9 +82,11 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     return items;
   }
 
-  /// =========================
-  /// ✅ 微信风格时间分隔 UI
-  /// =========================
+  /// 构建微信风格的时间分隔 UI
+  ///
+  /// [timestamp] 时间戳（毫秒）
+  /// [context] 构建上下文
+  /// 返回 时间分隔条 Widget
   Widget _buildTimeDividerWidget(int timestamp, BuildContext context) {
     final locale = context.locale.languageCode;
     final text = DateUtil.formatWeChatTimeDivider(timestamp, locale);
@@ -150,6 +165,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   }
 
   /// 消息列表的 padding，用于在消息气泡周围添加空白
+  ///
+  /// 移动端：8.0
+  /// 桌面端：50.0
   final bodyPadding = DeviceUtil.isRealMobile() ? 8.00 : 50.00;
 
   @override
@@ -316,6 +334,11 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
+  /// 构建房间状态标签（用于禁言、解散等状态）
+  ///
+  /// [text] 标签文本
+  /// [icon] 标签图标（可选）
+  /// 返回 房间状态标签 Widget
   Widget _bottomRoomStatusTag(String text, {dynamic icon}) {
     final cs = Theme.of(context).colorScheme;
     return Container(
@@ -354,7 +377,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
-  /// 封禁状态：显示图标 + 标题 + 提示语
+  /// 构建封禁状态的内容视图
+  ///
+  /// 显示图标 + 标题 + 提示语
+  /// 返回 封禁状态视图 Widget
   Widget _buildBannedContentView() {
     return Center(
       child: Padding(
@@ -364,7 +390,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
-  /// 封禁状态：显示图标 + 标题 + 提示语
+  /// 构建封禁状态的具体视图内容
+  ///
+  /// 返回 封禁状态视图内容 Widget
   Widget _buildBannedView() {
     final cs = Theme.of(context).colorScheme;
     return Align(
@@ -412,7 +440,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
-  /// 滚动到底部（即 index 0）
+  /// 滚动到底部（即 index 0，因为列表是 reverse 的）
+  ///
+  /// [animated] 是否使用动画，默认为 true
   void _scrollToBottom({bool animated = true}) {
     if (!_listViewController.hasClients) return;
     final activeId = ref.read(activeRoomIdProvider);
@@ -431,7 +461,11 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   }
 }
 
+/// WebSocket 连接状态横幅组件
+///
+/// 显示当前 WebSocket 连接状态（连接中、连接失败、已断开等）
 class _WsConnectionBanner extends StatelessWidget {
+  /// WebSocket 状态对象
   final WsState state;
 
   const _WsConnectionBanner({required this.state});
@@ -503,6 +537,9 @@ class _WsConnectionBanner extends StatelessWidget {
   }
 }
 
+/// 聊天房间详情页面骨架屏
+///
+/// 用于在消息加载过程中显示占位内容
 class _ChatRoomDetailSkeleton extends StatelessWidget {
   const _ChatRoomDetailSkeleton();
 
@@ -558,6 +595,9 @@ class _ChatRoomDetailSkeleton extends StatelessWidget {
   }
 }
 
+/// 聊天输入框骨架屏
+///
+/// 用于在输入框加载过程中显示占位内容
 class _ChatInputSkeleton extends StatelessWidget {
   const _ChatInputSkeleton();
 

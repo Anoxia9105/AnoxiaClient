@@ -8,12 +8,24 @@ part of 'ws_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// WebSocket 连接控制器
+///
+/// 负责 WebSocket 连接的建立、心跳维护、自动重连和消息分发。
+/// 采用 keepAlive 模式，确保全局只有一个连接实例。
 
 @ProviderFor(WsController)
 const wsControllerProvider = WsControllerProvider._();
 
+/// WebSocket 连接控制器
+///
+/// 负责 WebSocket 连接的建立、心跳维护、自动重连和消息分发。
+/// 采用 keepAlive 模式，确保全局只有一个连接实例。
 final class WsControllerProvider
     extends $NotifierProvider<WsController, WsState> {
+  /// WebSocket 连接控制器
+  ///
+  /// 负责 WebSocket 连接的建立、心跳维护、自动重连和消息分发。
+  /// 采用 keepAlive 模式，确保全局只有一个连接实例。
   const WsControllerProvider._()
     : super(
         from: null,
@@ -41,7 +53,12 @@ final class WsControllerProvider
   }
 }
 
-String _$wsControllerHash() => r'bde20ef62aeaf063f41f08cfa0cb0d3ae145ce19';
+String _$wsControllerHash() => r'c248c1e3293c81c077c09543f88be3cdc2372d71';
+
+/// WebSocket 连接控制器
+///
+/// 负责 WebSocket 连接的建立、心跳维护、自动重连和消息分发。
+/// 采用 keepAlive 模式，确保全局只有一个连接实例。
 
 abstract class _$WsController extends $Notifier<WsState> {
   WsState build();
@@ -62,8 +79,16 @@ abstract class _$WsController extends $Notifier<WsState> {
   }
 }
 
+/// WebSocket 消息流 Provider
+///
+/// 供其他 Provider 监听 WebSocket 消息
+
 @ProviderFor(wsMessageStream)
 const wsMessageStreamProvider = WsMessageStreamProvider._();
+
+/// WebSocket 消息流 Provider
+///
+/// 供其他 Provider 监听 WebSocket 消息
 
 final class WsMessageStreamProvider
     extends
@@ -75,6 +100,9 @@ final class WsMessageStreamProvider
     with
         $FutureModifier<PacketFrame<IPacket>>,
         $StreamProvider<PacketFrame<IPacket>> {
+  /// WebSocket 消息流 Provider
+  ///
+  /// 供其他 Provider 监听 WebSocket 消息
   const WsMessageStreamProvider._()
     : super(
         from: null,

@@ -1,55 +1,89 @@
 import 'package:livekit_client/livekit_client.dart';
 
+/// 音视频通话房间状态
+///
+/// 聚合 LiveKit 房间的连接状态、设备状态、参与者信息等，用于 UI 层展示和状态同步。
 class RoomState {
+  /// LiveKit 房间实例
   final Room room;
+
+  /// 加入房间的授权令牌
   final String token;
 
-  // --- 连接状态 ---
+  /// 连接状态
   final ConnectionState connectionState;
+
+  /// 连接错误信息（连接失败时填充）
   final String? connectionError;
 
-  // --- 开关控制状态 ---
+  /// 麦克风开关状态
   final bool micEnabled;
+
+  /// 摄像头开关状态
   final bool cameraEnabled;
+
+  /// 是否正在共享屏幕
   final bool screenSharing;
+
+  /// 扬声器开关状态
   final bool speakerOn;
 
-  // --- 轨道与房间状态 ---
+  /// 屏幕共享的本地视频轨道
   final LocalVideoTrack? screenShareTrack;
+
+  /// 是否处于重连状态
   final bool isReconnecting;
+
+  /// 是否正在录制
   final bool isRecording;
+
+  /// 房间元数据（JSON 字符串）
   final String? roomMetadata;
+
+  /// 当前焦点参与者 ID（用于高亮显示）
   final String? focusedParticipantId;
 
-  // --- 可用设备列表 ---
+  /// 可用的音频输入设备列表（麦克风）
   final List<MediaDevice> audioInputs;
+
+  /// 可用的音频输出设备列表（扬声器）
   final List<MediaDevice> audioOutputs;
+
+  /// 可用的视频输入设备列表（摄像头）
   final List<MediaDevice> videoInputs;
 
-  // --- 当前选中的设备 ---
+  /// 当前选中的音频输入设备
   final MediaDevice? currentAudioInput;
+
+  /// 当前选中的音频输出设备
   final MediaDevice? currentAudioOutput;
+
+  /// 当前选中的视频输入设备
   final MediaDevice? currentVideoInput;
 
-  // --- 参与者 ---
+  /// 远端参与者列表
   final List<RemoteParticipant> remoteParticipants;
 
-  // --- 监控数据 ---
   /// 本地客户端加入房间的时间点
   final DateTime? joinedAt;
 
   /// 每个参与者的连接质量
+  ///
   /// key = participant.identity，value = ConnectionQuality（excellent/good/poor/lost）
   /// 对应官方 ParticipantConnectionQualityUpdatedEvent 事件
   final Map<String, ConnectionQuality>? participantQuality;
 
-  /// 每个参与者的音量等级 (0.0-1.0)，key = participant.identity
+  /// 每个参与者的音量等级 (0.0-1.0)
+  ///
+  /// key = participant.identity
   final Map<String, double>? participantVolumes;
 
-  // 举手状态：key = participant.identity
+  /// 举手状态映射
+  ///
+  /// key = participant.identity，value = 是否举手
   final Map<String, bool>? handRaiseMap;
 
-  // 消息反应列表
+  /// 消息反应列表
   final List<ReactionItem>? reactions;
 
   const RoomState({
@@ -80,6 +114,7 @@ class RoomState {
     this.reactions,
   });
 
+  /// 创建当前实例的变体副本
   RoomState copyWith({
     String? token,
     Room? room,
@@ -141,12 +176,26 @@ class RoomState {
       'RoomState{connectionState: $connectionState, mic: $micEnabled, camera: $cameraEnabled, screen: $screenSharing, reconnecting: $isReconnecting}';
 }
 
+/// 消息反应项
+///
+/// 表示参与者在通话中发送的快捷消息/反应
 class ReactionItem {
+  /// 唯一标识
   final String id;
+
+  /// 反应内容（emoji 或预设文本）
   final String message;
+
+  /// 发送者用户ID
   final String uid;
+
+  /// 发送者昵称
   final String name;
+
+  /// 发送者头像
   final String? avatar;
+
+  /// 发送时间
   final DateTime createdAt;
 
   ReactionItem({

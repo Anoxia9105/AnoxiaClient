@@ -14,6 +14,13 @@ import 'package:window_manager/window_manager.dart' as desktop;
 
 import '../../framework/logs/talker.dart';
 
+/// 通知辅助类
+///
+/// 封装桌面和移动端的本地通知功能，支持：
+/// - 消息推送通知
+/// - 点击通知跳转房间
+/// - 头像显示
+/// - App 图标角标更新
 class NotificationHelper {
   NotificationHelper._internal();
   static final NotificationHelper _instance = NotificationHelper._internal();
@@ -23,14 +30,12 @@ class NotificationHelper {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
+  /// 初始化通知插件
+  ///
+  /// 配置各平台的初始化设置，包括 Android、iOS、macOS、Linux、Windows
   Future<void> init() async {
-    // 1. Android
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    // 2. iOS & macOS
     const darwin = DarwinInitializationSettings();
-
-    // 3. Linux
     const linux = LinuxInitializationSettings(
       defaultActionName: 'Open notification',
     );
@@ -41,7 +46,7 @@ class NotificationHelper {
     } catch (e) {
       log.error('获取图标失败: $e');
     }
-    // 注意：guid 建议你自己生成一个唯一的，appName 改成你的应用名
+
     final windows = WindowsInitializationSettings(
       appName: 'Anoxia',
       appUserModelId: 'com.anoxia.cn',
@@ -69,14 +74,15 @@ class NotificationHelper {
     await init();
   }
 
+  /// 获取通知图标路径
+  ///
+  /// Windows 通知需要本地文件路径，先从 Assets 复制到应用目录
   Future<String> getIconPath() async {
-    // 获取应用文档目录或临时目录
     final directory = await getApplicationSupportDirectory();
     final filePath =
         '${directory.path}${Platform.pathSeparator}notification_icon.png';
     final file = File(filePath);
 
-    // 如果文件不存在，从 Assets 复制过去
     if (!await file.exists()) {
       final byteData = await rootBundle.load(Assets.images.appIconPng.path);
       await file.writeAsBytes(byteData.buffer.asUint8List());
@@ -85,17 +91,18 @@ class NotificationHelper {
     return file.path;
   }
 
+  /// 解析 Windows 通知头像 URI
+  ///
+  /// 支持本地文件、file:// 协议和网络图片（下载到本地）
   Future<Uri?> _resolveWindowsAvatarUri(String? avatarUrl) async {
     if (avatarUrl == null || avatarUrl.isEmpty) return null;
 
     try {
-      // 本地文件
       final asFile = File(avatarUrl);
       if (await asFile.exists()) {
         return Uri.file(asFile.path, windows: true);
       }
 
-      // file:///...
       final uri = Uri.tryParse(avatarUrl);
       if (uri != null && uri.scheme == 'file') {
         final f = File.fromUri(uri);
@@ -104,7 +111,6 @@ class NotificationHelper {
         }
       }
 
-      // 网络头像：下载到本地，再用 file URI（兼容非 MSIX）
       if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
         final dir = await getApplicationSupportDirectory();
         final lastDot = uri.path.lastIndexOf('.');
@@ -143,6 +149,9 @@ class NotificationHelper {
     return null;
   }
 
+  /// 判断是否应该发送通知
+  ///
+  /// 当窗口可见且聚焦时跳过通知，[force] 强制发送
   Future<bool> _shouldNotify({bool force = false}) async {
     if (force) return true;
 
@@ -151,7 +160,6 @@ class NotificationHelper {
       final focused = await windowManager.isFocused();
       final minimized = await windowManager.isMinimized();
 
-      // 只有“可见+聚焦+未最小化”才不通知
       if (visible && focused && !minimized) {
         return false;
       }
@@ -161,24 +169,21 @@ class NotificationHelper {
     return true;
   }
 
+  /// 处理通知点击
   void _onTapNotification(NotificationResponse response) {
     final String? roomId = response.payload;
 
     if (roomId != null) {
       log.info('用户点击通知，准备跳转房间: $roomId');
 
-      // 直接使用全局容器进行 Provider 操作
-      // 1. 设置当前活跃房间
       globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
-
-      // 2. 切换侧边栏/布局索引（假设 layoutControllerProvider 控制主页 Tab）
       globalContainer.read(layoutControllerProvider.notifier).setIndex(0);
 
-      // 3. 桌面端特有：唤醒并聚焦窗口，防止点击了通知但窗口还在后台
       _ensureWindowActive();
     }
   }
 
+  /// 确保窗口处于激活状态
   Future<void> _ensureWindowActive() async {
     try {
       if (await desktop.windowManager.isMinimized()) {
@@ -191,7 +196,14 @@ class NotificationHelper {
     }
   }
 
-  /// 发送通知的方法
+  /// 发送通知
+  ///
+  /// [id] 通知唯一标识
+  /// [title] 通知标题
+  /// [body] 通知内容
+  /// [payload] 携带数据（点击时透传）
+  /// [avatarUrl] 头像 URL（Windows 支持）
+  /// [force] 是否强制发送（忽略窗口焦点状态）
   Future<void> show({
     required int id,
     required String title,
@@ -200,10 +212,8 @@ class NotificationHelper {
     String? avatarUrl,
     bool force = false,
   }) async {
-    // Web 不支持本地通知插件，直接跳过
     if (kIsWeb) return;
 
-    // 统一在 helper 内懒初始化，避免调用方关心平台与初始化时机
     await _ensureInitialized();
 
     if (!await _shouldNotify(force: force)) {
@@ -241,7 +251,9 @@ class NotificationHelper {
     );
   }
 
-  /// 同步手机桌面 App 图标角标（Android/iOS）
+  /// 更新 App 图标角标（Android/iOS）
+  ///
+  /// [count] 角标数量，<=0 时移除角标
   Future<void> updateAppIconBadge(int count) async {
     if (kIsWeb) return;
     final isMobile =

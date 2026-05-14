@@ -12,9 +12,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 联系人列表组件
+///
+/// 显示新朋友、群组列表和联系人分组列表
+/// 支持下拉刷新和移动端/桌面端适配
 class ContactList extends ConsumerWidget {
   const ContactList({super.key});
 
+  /// 在移动端打开详情页面
+  ///
+  /// [context] 上下文
+  /// [page] 要打开的页面 Widget
   void _openMobileDetail(BuildContext context, Widget page) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
@@ -78,6 +86,15 @@ class ContactList extends ConsumerWidget {
     );
   }
 
+  /// 构建功能项 ListTile
+  ///
+  /// [ref] WidgetRef 用于访问主题
+  /// [icon] 图标
+  /// [title] 标题文本
+  /// [isSelected] 是否被选中
+  /// [onTap] 点击回调
+  /// [trailing] 尾部组件（可选）
+  /// 返回 功能项 ListTile Widget
   Widget _buildFunctionTile({
     required WidgetRef ref,
     required List<List<dynamic>> icon,

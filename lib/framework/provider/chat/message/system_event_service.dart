@@ -16,12 +16,15 @@ import '../../../protocol/message/EventMessage.dart';
 
 part 'system_event_service.g.dart';
 
-/// 系统事件服务 - 负责全局监听并分发处理逻辑
+/// 系统事件服务
+///
+/// 负责全局监听并分发处理 WebSocket 推送的系统事件。
+/// 涵盖用户状态变更、房间变动、成员管理、通话状态等。
 @Riverpod(keepAlive: true)
 class SystemEventService extends _$SystemEventService {
   @override
   void build() {
-    // 1. 监听 WebSocket 消息流中的 EVENT 类型
+    // 订阅 WebSocket 消息流中的 EVENT 类型
     final stream = ref.watch(wsControllerProvider.notifier).messageStream;
 
     final subscription = stream
@@ -29,7 +32,7 @@ class SystemEventService extends _$SystemEventService {
         .map((frame) => frame.data as EventMessage)
         .listen(_onEventReceived);
 
-    // 2. 监听 WS 连接状态：断线重连后自动刷新业务数据
+    // 监听 WS 连接状态：断线重连后自动补偿数据
     ref.listen(wsControllerProvider, (previous, next) {
       final wasDisconnected = previous?.status != WsStatus.connected;
       final isNowConnected = next.status == WsStatus.connected;
@@ -40,7 +43,7 @@ class SystemEventService extends _$SystemEventService {
       }
     });
 
-    // 3. 销毁时释放
+    // 销毁时释放订阅
     ref.onDispose(() {
       log.info("系统事件服务销毁");
       subscription.cancel();
@@ -48,17 +51,18 @@ class SystemEventService extends _$SystemEventService {
   }
 
   /// WS 重连成功后的数据补偿
+  ///
+  /// 断线期间可能丢失事件推送，需要重新拉取各模块数据
   Future<void> _onReconnected() async {
-    // 1. 刷新房间列表（补偿断线期间可能错过的：新房间、房间删除、禁言、未读数等）
+    // 刷新房间列表（补偿新房间、删除、禁言、未读数等）
     await ref.read(roomListServiceProvider.notifier).refresh(silent: true);
 
-    // 2. 补偿当前房间的消息和成员
+    // 补偿当前房间的消息和成员
     final activeRoomId = ref.read(activeRoomIdProvider);
     if (activeRoomId != null) {
-      // 2a. 清除同步标记，让当前房间重新拉取消息（增量合并，不清空已有消息）
+      // 清除同步标记，触发增量拉取
       ref.read(chatMessagesProvider.notifier).markNeedResync(activeRoomId);
 
-      // 2b. 触发重新同步：拿刷新后的房间列表中最新的 lastMessage.seq 进行增量拉取
       final rooms = ref.read(roomListServiceProvider).value ?? [];
       ChatRoomVO? activeRoom;
       try {
@@ -70,25 +74,25 @@ class SystemEventService extends _$SystemEventService {
           .read(chatMessagesProvider.notifier)
           .syncRoomMessages(activeRoomId, activeRoom?.lastMessage?.seq);
 
-      // 2c. 刷新成员列表（补偿断线期间可能错过的：成员变动、角色变更等）
+      // 刷新成员列表
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(activeRoomId, force: true);
 
-  // 2d. 补偿当前房间的通话状态
+      // 补偿通话状态
       ref.read(callStatusControllerProvider.notifier).refresh(activeRoomId);
     }
 
-    // 3. 刷新通讯录（补偿断线期间的在线状态变化）
+    // 刷新通讯录和好友申请
     ref.read(contactListServiceProvider.notifier).refresh();
-
-    // 4. 刷新好友申请列表（补偿断线期间可能错过的新申请）
     ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
 
     log.info("✅ 重连数据补偿完成");
   }
 
   /// 核心分发逻辑
+  ///
+  /// 根据 [EventMessage.eventType] 分发到对应的处理函数
   void _onEventReceived(EventMessage event) {
     log.info("收到系统事件: ${event.eventType} 从用户: ${event.operatorId}");
 
@@ -119,11 +123,9 @@ class SystemEventService extends _$SystemEventService {
       case SystemEventType.messageRecall:
         _handleMessageRecall(event);
         break;
-
       case SystemEventType.roomUpdated:
         _handleRoomUpdated(event);
         break;
-
       case SystemEventType.userRoleChanged:
         _handleUserRoleChanged(event);
         break;
@@ -143,17 +145,15 @@ class SystemEventService extends _$SystemEventService {
     }
   }
 
-  // --- 具体处理逻辑 ---
-
-  /// 处理用户上下线
+  /// 处理用户上下线状态变更
   void _handleUserStatusChange(EventMessage event) {
     final isOnline = event.eventType == SystemEventType.userOnline;
 
-    // 1. 更新群聊成员状态 (RoomMemberService)
+    // 更新群聊成员状态
     ref
         .read(roomMemberServiceProvider.notifier)
         .updateGlobalUserStatus(event.operatorId, isOnline);
-    // 2. 更新通讯录联系人状态 (ContactListService)
+    // 更新通讯录联系人状态
     ref
         .read(contactListServiceProvider.notifier)
         .updateOnlineStatus(event.operatorId, isOnline);
@@ -161,7 +161,7 @@ class SystemEventService extends _$SystemEventService {
     log.info("用户 ${event.operatorId} ${isOnline ? '上线' : '下线'}");
   }
 
-  /// 处理被踢出房间
+  /// 处理被踢出房间事件
   void _handleUserKicked(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
     final int? targetId = event.extra?['targetId'];
@@ -200,19 +200,16 @@ class SystemEventService extends _$SystemEventService {
   }
 
   /// 处理房间解散/封禁
-  /// 说明：此状态下保留会话与历史消息，仅把底部输入区切成状态标签
   void _handleRoomDissolved(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
     final dissolveType = event.extra?['type']?.toString().toLowerCase();
 
     if (roomId != null) {
-      // type=ban 视为封禁(2)，其它视为解散(3)
       final nextStatus = dissolveType == 'ban' ? 2 : 3;
       ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, nextStatus);
       log.info("房间 $roomId 已${nextStatus == 2 ? '封禁' : '解散'}，保留历史消息并更新状态");
     }
 
-    // 兜底：静默刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
     log.info("房间状态已更新，兜底刷新房间列表");
   }
@@ -222,14 +219,12 @@ class SystemEventService extends _$SystemEventService {
     final String? roomId = _extractRoomIdFromEvent(event);
 
     if (roomId != null) {
-      // 1. 先刷新成员列表（响应更快）
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
       log.info("用户 ${event.operatorId} 加入房间 $roomId，刷新成员列表");
     }
 
-    // 2. 兜底刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
   }
 
@@ -246,7 +241,7 @@ class SystemEventService extends _$SystemEventService {
     }
   }
 
-  /// 处理房间创建（私聊/群聊被邀请加入）/ 解封
+  /// 处理房间创建（邀请入群/解封场景）
   void _handleRoomCreated(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
     final createdType = event.extra?['type']?.toString().toLowerCase();
@@ -257,7 +252,6 @@ class SystemEventService extends _$SystemEventService {
       log.info("房间 $roomId 已解封，恢复正常状态");
     }
 
-    // 刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
     log.info("房间创建/解封，刷新房间列表");
   }
@@ -269,7 +263,6 @@ class SystemEventService extends _$SystemEventService {
       ref.read(callStatusControllerProvider.notifier).refresh(roomId);
     }
 
-    // 兜底刷新房间列表
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
     log.info("房间信息更新，刷新房间列表");
   }
@@ -308,14 +301,14 @@ class SystemEventService extends _$SystemEventService {
       return;
     }
 
-    // 1. 本地立即更新房间状态（0=正常, 1=禁言）
+    // 本地立即更新房间状态
     final newStatus = isMute ? 1 : 0;
     ref
         .read(roomListServiceProvider.notifier)
         .updateRoomStatus(roomId, newStatus);
     log.info("房间 $roomId ${isMute ? '已禁言' : '已解除禁言'}，本地更新状态");
 
-    // 2. 兜底：静默刷新确保与服务端同步
+    // 兜底：静默刷新确保与服务端同步
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
   }
 
@@ -334,7 +327,6 @@ class SystemEventService extends _$SystemEventService {
 
   /// 从事件中提取房间 ID
   String? _extractRoomIdFromEvent(EventMessage event) {
-    // 从 extra 字段中提取 roomId
     final raw = event.extra?['roomId'];
     if (raw == null) return null;
     final roomId = raw.toString().trim();

@@ -1,22 +1,40 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
-/// 增强版 AcrylicContainer
-/// - 支持亮/暗模式自动配色
-/// - 支持渐变叠加
-/// - 支持点击背景刷新
-/// - 支持阴影
+/// 亚克力容器组件
+///
+/// 支持模糊背景、渐变叠加、主题适配和阴影效果。
 class AcrylicContainer extends StatelessWidget {
-  final Widget background; // 背景（图片/渐变等）
-  final double blurSigma; // 模糊强度
-  final BorderRadius? borderRadius; // 圆角
-  final BoxBorder? border; // 边框
-  final EdgeInsetsGeometry? padding; // 内边距
-  final Widget child; // 内容
-  final VoidCallback? onBackgroundTap; // 点击背景回调
-  final Gradient? overlayGradient; // 渐变叠加
-  final bool autoThemeOverlay; // 是否自动根据主题生成 overlay
-  final BoxShadow? shadow; // 阴影
+  /// 背景组件（图片/渐变等）
+  final Widget background;
+
+  /// 模糊强度
+  final double blurSigma;
+
+  /// 圆角
+  final BorderRadius? borderRadius;
+
+  /// 边框
+  final BoxBorder? border;
+
+  /// 内边距
+  final EdgeInsetsGeometry? padding;
+
+  /// 内容组件
+  final Widget child;
+
+  /// 点击背景回调
+  final VoidCallback? onBackgroundTap;
+
+  /// 渐变叠加层
+  final Gradient? overlayGradient;
+
+  /// 是否自动根据主题生成遮罩
+  final bool autoThemeOverlay;
+
+  /// 阴影
+  final BoxShadow? shadow;
 
   const AcrylicContainer({
     super.key,
@@ -36,7 +54,7 @@ class AcrylicContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 自动主题色 overlay
+    // 自动主题色遮罩
     final Color autoOverlayColor = isDark
         ? Colors.grey.shade800.withValues(alpha: 0.5)
         : Colors.grey.shade200.withValues(alpha: 0.5);
@@ -48,7 +66,10 @@ class AcrylicContainer extends StatelessWidget {
         children: [
           // 背景层（可点击）
           Positioned.fill(
-            child: GestureDetector(onTap: onBackgroundTap, child: background),
+            child: GestureDetector(
+              onTap: onBackgroundTap,
+              child: background,
+            ),
           ),
 
           // 模糊层
@@ -57,7 +78,6 @@ class AcrylicContainer extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
               child: Container(
                 decoration: BoxDecoration(
-                  // 如果有渐变优先用渐变，否则用自动主题色
                   gradient: overlayGradient,
                   color: overlayGradient == null && autoThemeOverlay
                       ? autoOverlayColor

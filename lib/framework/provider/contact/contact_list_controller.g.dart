@@ -8,13 +8,31 @@ part of 'contact_list_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 联系人列表服务
+///
+/// 维护联系人数据的 Map 结构（contactId -> ChatContactVO），
+/// 支持在线状态更新和拼音排序分组。
+///
+/// 采用 keepAlive 模式，确保联系人缓存在全局共享。
 
 @ProviderFor(ContactListService)
 const contactListServiceProvider = ContactListServiceProvider._();
 
+/// 联系人列表服务
+///
+/// 维护联系人数据的 Map 结构（contactId -> ChatContactVO），
+/// 支持在线状态更新和拼音排序分组。
+///
+/// 采用 keepAlive 模式，确保联系人缓存在全局共享。
 final class ContactListServiceProvider
     extends
         $AsyncNotifierProvider<ContactListService, Map<int, ChatContactVO>> {
+  /// 联系人列表服务
+  ///
+  /// 维护联系人数据的 Map 结构（contactId -> ChatContactVO），
+  /// 支持在线状态更新和拼音排序分组。
+  ///
+  /// 采用 keepAlive 模式，确保联系人缓存在全局共享。
   const ContactListServiceProvider._()
     : super(
         from: null,
@@ -36,6 +54,13 @@ final class ContactListServiceProvider
 
 String _$contactListServiceHash() =>
     r'acda1d2d0e2e11a84e05633e1bf36324c998552a';
+
+/// 联系人列表服务
+///
+/// 维护联系人数据的 Map 结构（contactId -> ChatContactVO），
+/// 支持在线状态更新和拼音排序分组。
+///
+/// 采用 keepAlive 模式，确保联系人缓存在全局共享。
 
 abstract class _$ContactListService
     extends $AsyncNotifier<Map<int, ChatContactVO>> {
@@ -65,8 +90,18 @@ abstract class _$ContactListService
   }
 }
 
+/// 联系人拼音排序分组
+///
+/// 按联系人昵称/备注的首字母进行 A-Z 分组，
+/// 中文姓名自动转换为拼音后取首字母。
+
 @ProviderFor(sortedContactGroups)
 const sortedContactGroupsProvider = SortedContactGroupsProvider._();
+
+/// 联系人拼音排序分组
+///
+/// 按联系人昵称/备注的首字母进行 A-Z 分组，
+/// 中文姓名自动转换为拼音后取首字母。
 
 final class SortedContactGroupsProvider
     extends
@@ -78,6 +113,10 @@ final class SortedContactGroupsProvider
     with
         $FutureModifier<Map<String, List<ChatContactVO>>>,
         $FutureProvider<Map<String, List<ChatContactVO>>> {
+  /// 联系人拼音排序分组
+  ///
+  /// 按联系人昵称/备注的首字母进行 A-Z 分组，
+  /// 中文姓名自动转换为拼音后取首字母。
   const SortedContactGroupsProvider._()
     : super(
         from: null,
@@ -105,4 +144,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'e2091c06b5f436da79354bef2b6b5381c034911d';
+    r'dbd8a9ed356bf96f9b79425f6d3d580754b121aa';

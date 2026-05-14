@@ -185,13 +185,32 @@ mixin $AddFriendRoute on GoRouteData {
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 应用路由配置
+///
+/// 基于 GoRouter 的声明式路由，支持：
+/// - 认证状态驱动的重定向
+/// - 嵌套路由
+/// - 路由守卫
 
 @ProviderFor(router)
 const routerProvider = RouterProvider._();
 
+/// 应用路由配置
+///
+/// 基于 GoRouter 的声明式路由，支持：
+/// - 认证状态驱动的重定向
+/// - 嵌套路由
+/// - 路由守卫
+
 final class RouterProvider
     extends $FunctionalProvider<GoRouter, GoRouter, GoRouter>
     with $Provider<GoRouter> {
+  /// 应用路由配置
+  ///
+  /// 基于 GoRouter 的声明式路由，支持：
+  /// - 认证状态驱动的重定向
+  /// - 嵌套路由
+  /// - 路由守卫
   const RouterProvider._()
     : super(
         from: null,
@@ -225,4 +244,4 @@ final class RouterProvider
   }
 }
 
-String _$routerHash() => r'8907963fa7bbb0ec9871564e9672fdaa127b08b4';
+String _$routerHash() => r'c5a7b978b5f179dfa7f9dc8b1f0ba0a4827c21b5';

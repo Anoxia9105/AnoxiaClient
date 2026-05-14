@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// 页面切换动画类型
 enum PageTransitionType {
   fade,
   slideFromRight,
@@ -10,7 +11,16 @@ enum PageTransitionType {
   rotate,
 }
 
+/// 页面切换动画工具
+///
+/// 提供多种页面切换动画效果，支持自定义时长和缓动曲线。
 class PageTransitions {
+  /// 创建带动画的路由
+  ///
+  /// [page] 目标页面组件
+  /// [type] 动画类型，默认为淡入淡出
+  /// [duration] 动画时长，默认为 300 毫秒
+  /// [curve] 缓动曲线，默认为 Curves.easeInOut
   static Route createRoute(
       Widget page, {
         PageTransitionType type = PageTransitionType.fade,

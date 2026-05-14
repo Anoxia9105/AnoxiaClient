@@ -8,8 +8,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 按字母排序的联系人分组组件
+///
+/// 使用 AlphabetListView 实现字母索引功能，支持按姓氏首字母分组显示联系人
+/// 键盘弹出时自动切换为普通列表以避免性能问题
 class SortedContactGroupsWidget extends ConsumerWidget {
+  /// 自定义联系人项构建器（可选）
   final Widget Function(ChatContactVO vo)? itemBuilder;
+  
+  /// 联系人点击回调（可选）
   final VoidCallback? onContactTap;
 
   const SortedContactGroupsWidget({
@@ -141,6 +148,11 @@ class SortedContactGroupsWidget extends ConsumerWidget {
     );
   }
 
+  /// 构建分组标题
+  ///
+  /// [context] 上下文
+  /// [tag] 分组标签（字母）
+  /// 返回 分组标题 Widget
   Widget _buildHeader(BuildContext context, String tag) {
     final safeTag = tag.trim().isEmpty ? '#' : tag.trim();
     return Container(
@@ -156,6 +168,11 @@ class SortedContactGroupsWidget extends ConsumerWidget {
     );
   }
 
+  /// 构建普通分组列表（用于键盘弹出时）
+  ///
+  /// [context] 上下文
+  /// [entries] 分组条目列表
+  /// 返回 普通分组列表 Widget
   Widget _buildPlainGroupedList(
     BuildContext context,
     List<MapEntry<String, List<ChatContactVO>>> entries,
@@ -179,6 +196,9 @@ class SortedContactGroupsWidget extends ConsumerWidget {
   }
 }
 
+/// 联系人分组列表骨架屏
+///
+/// 用于在联系人加载过程中显示占位内容
 class _ContactGroupsSkeleton extends StatelessWidget {
   const _ContactGroupsSkeleton();
 
@@ -225,8 +245,14 @@ class _ContactGroupsSkeleton extends StatelessWidget {
   }
 }
 
+/// 联系人项组件
+///
+/// 显示单个联系人的头像、昵称和在线状态
 class ContactItemTile extends ConsumerWidget {
+  /// 联系人对象
   final ChatContactVO contact;
+  
+  /// 点击回调（可选）
   final VoidCallback? onTap;
 
   const ContactItemTile({super.key, required this.contact, this.onTap});

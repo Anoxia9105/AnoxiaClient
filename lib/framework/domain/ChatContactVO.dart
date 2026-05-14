@@ -1,16 +1,23 @@
-/// 聊天联系人 视图对象
+/// 聊天联系人视图对象
+///
+/// 表示好友列表中的单个联系人，包含基本信息、在线状态和展示名称。
 class ChatContactVO {
-  /// 联系人ID
+  /// 联系人用户ID
   final int? contactId;
-  /// 备注
+
+  /// 好友备注名（优先用于展示）
   final String? remark;
-  /// 昵称
+
+  /// 用户昵称（备注为空时使用）
   final String? nickName;
-  /// 头像
+
+  /// 头像 URL
   final String? avatar;
-  /// 性别
+
+  /// 性别：0=男，1=女，其他=未知
   final String? sex;
-  /// 用户在线状态：true=在线 false=离线
+
+  /// 在线状态：true=在线，false=离线
   final bool? onlineStatus;
 
   ChatContactVO({
@@ -22,7 +29,7 @@ class ChatContactVO {
     this.onlineStatus,
   });
 
-  // 从 JSON 构造对象
+  /// 从 JSON 数据构造 [ChatContactVO] 实例
   factory ChatContactVO.fromJson(Map<String, dynamic> json) {
     return ChatContactVO(
       contactId: json['contactId'],
@@ -34,7 +41,7 @@ class ChatContactVO {
     );
   }
 
-  // 转换为 JSON
+  /// 将当前实例转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {
       'contactId': contactId,
@@ -46,6 +53,9 @@ class ChatContactVO {
     };
   }
 
+  /// 创建当前实例的变体副本
+  ///
+  /// 支持局部更新，用于响应式状态管理中的最小化更新
   ChatContactVO copyWith({
     bool? onlineStatus,
     String? remark,

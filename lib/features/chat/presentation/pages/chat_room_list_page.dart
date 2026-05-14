@@ -21,6 +21,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 聊天房间列表页面
+///
+/// 展示所有聊天会话，支持：
+/// - 搜索过滤
+/// - 置顶/取消置顶
+/// - 标记已读
+/// - 删除/解散房间
+/// - 下拉刷新
 class ChatRoomList extends ConsumerStatefulWidget {
   const ChatRoomList({super.key});
 
@@ -29,6 +37,7 @@ class ChatRoomList extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomListState extends ConsumerState<ChatRoomList> {
+  /// 搜索框控制器
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -57,6 +66,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   decoration: InputDecoration(
                     counterText: '',
                     prefixIcon: const Icon(Icons.search, size: 20),
+                    // 有搜索内容时显示清除按钮
                     suffixIcon: ref.watch(roomSearchQueryProvider).isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.cancel, size: 16),
@@ -81,6 +91,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
               ),
             ),
             const SizedBox(width: 8),
+            // 添加房间/好友按钮
             Builder(
               builder: (context) {
                 return IconButton(
@@ -92,6 +103,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           ],
         ),
       ),
+      // 异步状态处理
       body: roomListAsync.when(
         data: (rooms) => _buildRoomList(context, ref),
         loading: () => const _ChatRoomListSkeleton(),

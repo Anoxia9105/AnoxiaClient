@@ -8,12 +8,21 @@ part of 'layout_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 布局状态管理器
+///
+/// 控制桌面端的侧边栏状态、当前选中页面索引等。
 
 @ProviderFor(LayoutController)
 const layoutControllerProvider = LayoutControllerProvider._();
 
+/// 布局状态管理器
+///
+/// 控制桌面端的侧边栏状态、当前选中页面索引等。
 final class LayoutControllerProvider
     extends $NotifierProvider<LayoutController, LayoutState> {
+  /// 布局状态管理器
+  ///
+  /// 控制桌面端的侧边栏状态、当前选中页面索引等。
   const LayoutControllerProvider._()
     : super(
         from: null,
@@ -42,6 +51,10 @@ final class LayoutControllerProvider
 }
 
 String _$layoutControllerHash() => r'738c475993868425a29c543744049c8164440f0d';
+
+/// 布局状态管理器
+///
+/// 控制桌面端的侧边栏状态、当前选中页面索引等。
 
 abstract class _$LayoutController extends $Notifier<LayoutState> {
   LayoutState build();

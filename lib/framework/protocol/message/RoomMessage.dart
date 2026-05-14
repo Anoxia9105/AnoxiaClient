@@ -4,25 +4,55 @@ import 'MessageEunm.dart';
 import 'MessagePayload.dart';
 import 'package:flutter/foundation.dart';
 
+/// 聊天室消息
+///
+/// 通过 WebSocket 传输的完整消息模型。
+/// 包含消息发送者信息、消息内容、附件和消息状态。
 @immutable
 class RoomMessage implements IPacket {
-  // Room 信息
+  /// 聊天室ID
   final String roomId;
+
+  /// 客户端生成的消息ID
   final String? clientMsgId;
+
+  /// 目标用户ID（单聊时使用）
   final int? targetId;
+
+  /// 消息类型
   final MessageType type;
+
+  /// 消息负载
   final MessagePayload? payload;
+
+  /// 附件列表
   final List<Attachment> attachments;
+
+  /// 扩展字段
   final Map<String, dynamic> extra;
 
-  // RoomMessageData 字段
+  /// 服务器消息ID
   final String messageId;
+
+  /// 发送者用户ID
   final int senderId;
+
+  /// 发送者昵称
   final String senderName;
+
+  /// 发送者头像
   final String senderAvatar;
+
+  /// 消息状态
   final MessageState state;
+
+  /// 投递状态
   final DeliveryStatus status;
+
+  /// 时间戳（毫秒）
   final int timestamp;
+
+  /// 消息序号（用于排序和去重）
   final int seq;
 
   const RoomMessage({
@@ -43,7 +73,7 @@ class RoomMessage implements IPacket {
     required this.seq,
   });
 
-  /// JSON -> RoomMessage
+  /// 从 JSON 构造 [RoomMessage] 实例
   factory RoomMessage.fromJson(Map<String, dynamic> json) {
     return RoomMessage(
       roomId: json['roomId'].toString(),
@@ -59,7 +89,7 @@ class RoomMessage implements IPacket {
           (json['attachments'] as List<dynamic>?)
               ?.map((e) => Attachment.fromJson(e))
               .toList() ??
-          const [],
+              const [],
       extra: (json['extra'] as Map<String, dynamic>?) ?? const {},
       messageId: json['messageId'].toString(),
       senderId: json['senderId'] != null
@@ -76,7 +106,7 @@ class RoomMessage implements IPacket {
     );
   }
 
-  /// RoomMessage -> JSON
+  /// 序列化为 JSON
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -98,7 +128,7 @@ class RoomMessage implements IPacket {
     };
   }
 
-  /// 拷贝更新（不可变对象修改字段用）
+  /// 创建变体副本
   RoomMessage copyWith({
     String? roomId,
     String? clientMsgId,

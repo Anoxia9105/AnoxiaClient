@@ -8,18 +8,24 @@ part of 'room_message_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 存储每个房间的消息列表
-/// key = roomId, value = `List<ChatMessage>`
+/// 聊天消息存储器
+///
+/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
+/// 采用 keepAlive 模式，确保消息缓存在全局共享。
 
 @ProviderFor(ChatMessages)
 const chatMessagesProvider = ChatMessagesProvider._();
 
-/// 存储每个房间的消息列表
-/// key = roomId, value = `List<ChatMessage>`
+/// 聊天消息存储器
+///
+/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
+/// 采用 keepAlive 模式，确保消息缓存在全局共享。
 final class ChatMessagesProvider
     extends $NotifierProvider<ChatMessages, Map<String, List<ChatMessage>>> {
-  /// 存储每个房间的消息列表
-  /// key = roomId, value = `List<ChatMessage>`
+  /// 聊天消息存储器
+  ///
+  /// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
+  /// 采用 keepAlive 模式，确保消息缓存在全局共享。
   const ChatMessagesProvider._()
     : super(
         from: null,
@@ -49,10 +55,12 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'0a5aded796c9af629d344557609f46a63e0a0f1f';
+String _$chatMessagesHash() => r'a62569ff89633c8c79fa524bb8368900b3e582f2';
 
-/// 存储每个房间的消息列表
-/// key = roomId, value = `List<ChatMessage>`
+/// 聊天消息存储器
+///
+/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
+/// 采用 keepAlive 模式，确保消息缓存在全局共享。
 
 abstract class _$ChatMessages
     extends $Notifier<Map<String, List<ChatMessage>>> {
@@ -82,11 +90,15 @@ abstract class _$ChatMessages
   }
 }
 
+/// 房间是否还有更多历史消息的状态
+
 @ProviderFor(ChatHasMore)
 const chatHasMoreProvider = ChatHasMoreProvider._();
 
+/// 房间是否还有更多历史消息的状态
 final class ChatHasMoreProvider
     extends $NotifierProvider<ChatHasMore, Map<String, bool>> {
+  /// 房间是否还有更多历史消息的状态
   const ChatHasMoreProvider._()
     : super(
         from: null,
@@ -114,7 +126,9 @@ final class ChatHasMoreProvider
   }
 }
 
-String _$chatHasMoreHash() => r'9aa732270e60538a0dd1d925aee1ad1e26b78097';
+String _$chatHasMoreHash() => r'7e088105f09d24fbc40ad81a1b224c7ea48b416f';
+
+/// 房间是否还有更多历史消息的状态
 
 abstract class _$ChatHasMore extends $Notifier<Map<String, bool>> {
   Map<String, bool> build();

@@ -2,21 +2,38 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 头像状态枚举
+///
+/// 用于显示头像右下角的在线状态指示器
 enum AvatarStatus { none, online, offline, busy }
 
+/// 头像组件
+///
+/// 展示用户头像，支持网络图片、占位图标和首字母展示。
+/// 提供在线状态指示器、红点/未读数角标等功能。
 class AvatarWidget extends StatelessWidget {
+  /// 头像图片 URL
   final String? url;
+
+  /// 备用显示名称（无图片时显示首字母）
   final String? name;
+
+  /// 头像尺寸
   final double size;
+
+  /// 头像圆角
   final double borderRadius;
 
-  /// 状态（右下角）
+  /// 在线状态指示器
   final AvatarStatus status;
 
-  final bool showBadge; // 是否显示红点/角标
-  final String? badgeText; // 角标显示的文字（如未读数）
+  /// 是否显示右上角红点
+  final bool showBadge;
 
-  /// 自定义状态 Widget（优先级高于 status）
+  /// 红点显示的文字（如未读数）
+  final String? badgeText;
+
+  /// 自定义状态 Widget（优先级高于 [status]）
   final Widget? statusWidget;
 
   const AvatarWidget({
@@ -38,7 +55,7 @@ class AvatarWidget extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        /// 头像主体
+        // 头像主体
         ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
           child: hasUrl
@@ -48,20 +65,14 @@ class AvatarWidget extends StatelessWidget {
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
-
-                  /// 加载中显示默认图标
-                  placeholder: (context, url) {
-                    return _buildPlaceholder(context);
-                  },
-
-                  /// 加载失败显示兜底图标或首字母
+                  placeholder: (context, url) => _buildPlaceholder(context),
                   errorWidget: (context, url, error) =>
                       _buildNameOrPlaceholder(context),
                 )
               : _buildNameOrPlaceholder(context),
         ),
 
-        /// 右下角状态角标
+        // 右下角状态角标
         if (status != AvatarStatus.none || statusWidget != null)
           Positioned(
             right: -2,
@@ -69,7 +80,7 @@ class AvatarWidget extends StatelessWidget {
             child: _buildStatusIndicator(context),
           ),
 
-        /// 右上角：小红点/未读数
+        // 右上角：小红点/未读数
         if (showBadge)
           Positioned(
             right: -size * 0.1,
@@ -80,7 +91,7 @@ class AvatarWidget extends StatelessWidget {
     );
   }
 
-  /// 构建右上角红点
+  /// 构建右上角红点/角标
   Widget _buildRedBadge(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: size * 0.1),
@@ -111,7 +122,7 @@ class AvatarWidget extends StatelessWidget {
     );
   }
 
-  /// 状态角标
+  /// 构建右下角状态指示器
   Widget _buildStatusIndicator(BuildContext context) {
     if (statusWidget != null) return statusWidget!;
 
@@ -133,8 +144,8 @@ class AvatarWidget extends StatelessWidget {
       message: status == AvatarStatus.online
           ? '在线'
           : status == AvatarStatus.offline
-          ? '离线'
-          : '',
+              ? '离线'
+              : '',
       child: Container(
         width: dotSize,
         height: dotSize,
@@ -147,8 +158,7 @@ class AvatarWidget extends StatelessWidget {
     );
   }
 
-  /// 有名字 → 显示首字母
-  /// 无名字 → 显示默认图标
+  /// 构建名字首字母占位或默认图标
   Widget _buildNameOrPlaceholder(BuildContext context) {
     if (name != null && name!.isNotEmpty) {
       final displayText = name!.characters.first.toUpperCase();
@@ -171,7 +181,7 @@ class AvatarWidget extends StatelessWidget {
     return _buildPlaceholder(context);
   }
 
-  /// 默认占位图标（加载中 & 无头像）
+  /// 构建默认占位图标
   Widget _buildPlaceholder(BuildContext context) {
     return Container(
       width: size,

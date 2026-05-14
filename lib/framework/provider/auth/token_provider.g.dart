@@ -8,20 +8,29 @@ part of 'token_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Token Provider - 用于在内存中缓存 token
-/// 登录成功后更新，登出时清空
-/// 避免每次请求都从 TokenManager 读取
+/// Token 内存缓存 Provider
+///
+/// 登录成功后更新，登出时清空。
+/// 采用 keepAlive 保持常驻，避免重复初始化。
+/// 与 [TokenManager] 的区别：此 Provider 提供响应式状态，
+/// [TokenManager] 提供持久化能力。
 
 @ProviderFor(TokenCache)
 const tokenCacheProvider = TokenCacheProvider._();
 
-/// Token Provider - 用于在内存中缓存 token
-/// 登录成功后更新，登出时清空
-/// 避免每次请求都从 TokenManager 读取
+/// Token 内存缓存 Provider
+///
+/// 登录成功后更新，登出时清空。
+/// 采用 keepAlive 保持常驻，避免重复初始化。
+/// 与 [TokenManager] 的区别：此 Provider 提供响应式状态，
+/// [TokenManager] 提供持久化能力。
 final class TokenCacheProvider extends $NotifierProvider<TokenCache, String?> {
-  /// Token Provider - 用于在内存中缓存 token
-  /// 登录成功后更新，登出时清空
-  /// 避免每次请求都从 TokenManager 读取
+  /// Token 内存缓存 Provider
+  ///
+  /// 登录成功后更新，登出时清空。
+  /// 采用 keepAlive 保持常驻，避免重复初始化。
+  /// 与 [TokenManager] 的区别：此 Provider 提供响应式状态，
+  /// [TokenManager] 提供持久化能力。
   const TokenCacheProvider._()
     : super(
         from: null,
@@ -51,9 +60,12 @@ final class TokenCacheProvider extends $NotifierProvider<TokenCache, String?> {
 
 String _$tokenCacheHash() => r'4580de6d96a3cf08d6925ddf92a16c2097987395';
 
-/// Token Provider - 用于在内存中缓存 token
-/// 登录成功后更新，登出时清空
-/// 避免每次请求都从 TokenManager 读取
+/// Token 内存缓存 Provider
+///
+/// 登录成功后更新，登出时清空。
+/// 采用 keepAlive 保持常驻，避免重复初始化。
+/// 与 [TokenManager] 的区别：此 Provider 提供响应式状态，
+/// [TokenManager] 提供持久化能力。
 
 abstract class _$TokenCache extends $Notifier<String?> {
   String? build();

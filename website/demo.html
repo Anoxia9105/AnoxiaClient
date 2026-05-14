@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anoxia IM - 功能演示</title>
+    <meta name="description" content="Anoxia IM 功能演示 - 实时消息、音视频通话、富文本消息">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-cyan: #00d4ff;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glow-cyan: 0 0 40px rgba(0, 212, 255, 0.3);
+            --glow-purple: 0 0 40px rgba(139, 92, 246, 0.3);
+            --nav-bg: rgba(10, 10, 15, 0.8);
+            --card-bg: var(--bg-secondary);
+            --demo-bg: #1a1a25;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --glow-cyan: 0 0 40px rgba(0, 180, 220, 0.2);
+            --glow-purple: 0 0 40px rgba(139, 92, 246, 0.2);
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: #ffffff;
+            --demo-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 0;
+            background: var(--nav-bg);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+            color: white;
+        }
+
+        .logo-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .hero {
+            padding: 140px 0 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            margin-bottom: 40px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            gap: 12px;
+        }
+
+        .demo-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .demo-tab {
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+
+        .demo-tab:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .demo-tab.active {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(139, 92, 246, 0.2));
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .demo-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .demo-content {
+            display: none;
+            padding: 0;
+        }
+
+        .demo-content.active {
+            display: block;
+        }
+
+        /* Chat Demo */
+        .chat-demo {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 600px;
+        }
+
+        .chat-sidebar {
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+        }
+
+        .chat-sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .chat-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .chat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .chat-item:hover,
+        .chat-item.active {
+            background: var(--bg-secondary);
+        }
+
+        .chat-item-avatar {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .chat-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-item-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .chat-item-preview {
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            max-width: 70%;
+        }
+
+        .message.received {
+            align-self: flex-start;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            font-size: 15px;
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .chat-input-area {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .chat-send-btn {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .chat-send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Voice/Video Demo */
+        .call-demo {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            background: var(--demo-bg);
+        }
+
+        .call-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .call-remote {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a25, #252535);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+        }
+
+        .call-self {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 180px;
+            height: 240px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .call-info {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .call-info-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(0, 212, 255, 0); }
+        }
+
+        .call-info-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .call-info-status {
+            color: var(--accent-cyan);
+            font-size: 16px;
+        }
+
+        .call-controls {
+            padding: 24px;
+            background: var(--bg-primary);
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .call-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 22px;
+            transition: all 0.3s;
+        }
+
+        .call-btn:hover {
+            background: var(--bg-secondary);
+            transform: scale(1.05);
+        }
+
+        .call-btn.end {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Rich Text Demo */
+        .richtext-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 600px;
+        }
+
+        .richtext-editor {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .richtext-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .richtext-toolbar-btn {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .richtext-toolbar-btn:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .richtext-area {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .richtext-preview {
+            padding: 24px;
+            background: var(--bg-tertiary);
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        .preview-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+        }
+
+        .preview-content .bold { font-weight: 700; }
+        .preview-content .italic { font-style: italic; }
+        .preview-content .emoji { font-size: 24px; }
+        .preview-content .mention { color: var(--accent-cyan); background: rgba(0, 212, 255, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+        /* Features List */
+        .features-section {
+            padding: 80px 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .chat-demo,
+            .richtext-demo {
+                grid-template-columns: 1fr;
+            }
+            .chat-sidebar {
+                display: none;
+            }
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">A</div>
+                <span class="logo-text">Anoxia</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">功能特性</a>
+                <a href="index.html#download">下载</a>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span class="icon">🌙</span>
+                    <span class="text">暗色</span>
+                </button>
+                <a href="index.html#download" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">立即下载</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <a href="index.html" class="back-btn">← 返回主页</a>
+            <h1>体验 Anoxia IM</h1>
+            <p>探索我们的核心功能，感受无缝通讯体验</p>
+        </div>
+    </section>
+
+    <section class="demo-section">
+        <div class="container">
+            <div class="demo-tabs">
+                <div class="demo-tab active" onclick="showDemo('chat')">💬 实时消息</div>
+                <div class="demo-tab" onclick="showDemo('call')">🎥 音视频通话</div>
+                <div class="demo-tab" onclick="showDemo('richtext')">✏️ 富文本消息</div>
+            </div>
+
+            <div class="demo-container">
+                <div class="demo-content active" id="chat-demo">
+                    <div class="chat-demo">
+                        <div class="chat-sidebar">
+                            <div class="chat-sidebar-header">
+                                <div class="chat-avatar">👤</div>
+                                <div>
+                                    <div style="font-weight: 600;">我的账号</div>
+                                    <div style="font-size: 13px; color: var(--text-muted);">在线</div>
+                                </div>
+                            </div>
+                            <div class="chat-list">
+                                <div class="chat-item active">
+                                    <div class="chat-item-avatar">👩</div>
+                                    <div class="chat-item-info">
+                                        <div class="chat-item-name">张小花</div>
+                                        <div class="chat-item-preview">今天天气真好！</div>
+                                    </div>
+                                </div>
+                                <div class="chat-item">
+                                    <div class="chat-item-avatar">👨</div>
+                                    <div class="chat-item-info">
+                                        <div class="chat-item-name">李小明</div>
+                                        <div class="chat-item-preview">项目文档我已经发你了</div>
+                                    </div>
+                                </div>
+                                <div class="chat-item">
+                                    <div class="chat-item-avatar">👥</div>
+                                    <div class="chat-item-info">
+                                        <div class="chat-item-name">技术组</div>
+                                        <div class="chat-item-preview">老王：今天开会讨论架构</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-main">
+                            <div class="chat-header">
+                                <div class="chat-item-avatar">👩</div>
+                                <div>
+                                    <div style="font-weight: 600;">张小花</div>
+                                    <div style="font-size: 13px; color: var(--text-muted);">刚刚在线</div>
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="message received">
+                                    <div class="message-avatar">👩</div>
+                                    <div class="message-bubble">嗨！好久不见！</div>
+                                </div>
+                                <div class="message sent">
+                                    <div class="message-avatar">👤</div>
+                                    <div class="message-bubble">是啊！最近怎么样？</div>
+                                </div>
+                                <div class="message received">
+                                    <div class="message-avatar">👩</div>
+                                    <div class="message-bubble">挺好的，刚换了工作！你呢？</div>
+                                </div>
+                            </div>
+                            <div class="chat-input-area">
+                                <input type="text" class="chat-input" id="chat-input" placeholder="输入消息..." onkeypress="handleChatInput(event)">
+                                <button class="chat-send-btn" onclick="sendMessage()">➤</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-content" id="call-demo">
+                    <div class="call-demo">
+                        <div class="call-main">
+                            <div class="call-remote">👩</div>
+                            <div class="call-self">👤</div>
+                            <div class="call-info">
+                                <div class="call-info-avatar">👩</div>
+                                <div class="call-info-name">张小花</div>
+                                <div class="call-info-status" id="call-status">正在呼叫...</div>
+                            </div>
+                        </div>
+                        <div class="call-controls">
+                            <button class="call-btn" title="静音">🔇</button>
+                            <button class="call-btn" title="关闭视频">📹</button>
+                            <button class="call-btn end" title="挂断">📞</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-content" id="richtext-demo">
+                    <div class="richtext-demo">
+                        <div class="richtext-editor">
+                            <div style="margin-bottom: 16px; font-weight: 600;">编辑器</div>
+                            <div class="richtext-toolbar">
+                                <button class="richtext-toolbar-btn" onclick="formatText('bold')">B</button>
+                                <button class="richtext-toolbar-btn" onclick="formatText('italic')">I</button>
+                                <button class="richtext-toolbar-btn" onclick="addEmoji('😊')">😊</button>
+                                <button class="richtext-toolbar-btn" onclick="addEmoji('🎉')">🎉</button>
+                                <button class="richtext-toolbar-btn" onclick="addEmoji('👍')">👍</button>
+                                <button class="richtext-toolbar-btn" onclick="addMention()">@</button>
+                            </div>
+                            <div class="richtext-area" id="richtext-area" contenteditable="true" oninput="updatePreview()">
+                                试试在这里编辑消息吧！
+                            </div>
+                        </div>
+                        <div class="richtext-preview">
+                            <div style="margin-bottom: 16px; font-weight: 600;">预览</div>
+                            <div class="preview-content" id="preview-content">
+                                试试在这里编辑消息吧！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 36px; margin-bottom: 8px;">更多功能</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 16px;">Anoxia IM 提供全方位通讯解决方案</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🌙</div>
+                    <h3>深色主题</h3>
+                    <p>支持深色与浅色主题切换，保护您的眼睛</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>多语言</h3>
+                    <p>支持中文、英文等多种语言界面</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>全平台</h3>
+                    <p>Windows、macOS、Linux、iOS、Android</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Anoxia IM. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggle(newTheme);
+        }
+
+        function updateThemeToggle(theme) {
+            const toggle = document.querySelector('.theme-toggle');
+            const icon = toggle.querySelector('.icon');
+            const text = toggle.querySelector('.text');
+            
+            if (theme === 'light') {
+                icon.textContent = '☀️';
+                text.textContent = '亮色';
+            } else {
+                icon.textContent = '🌙';
+                text.textContent = '暗色';
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeToggle(theme);
+        }
+
+        function showDemo(demoId) {
+            document.querySelectorAll('.demo-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.demo-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(demoId + '-demo').classList.add('active');
+        }
+
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const messagesContainer = document.getElementById('chat-messages');
+            const newMessage = document.createElement('div');
+            newMessage.className = 'message sent';
+            newMessage.innerHTML = `
+                <div class="message-avatar">👤</div>
+                <div class="message-bubble">${text}</div>
+            `;
+            messagesContainer.appendChild(newMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            input.value = '';
+
+            setTimeout(() => {
+                const replies = ['不错！', '好的，收到！', '明白了', '嗯嗯，我知道了', '太棒了！'];
+                const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                const replyMessage = document.createElement('div');
+                replyMessage.className = 'message received';
+                replyMessage.innerHTML = `
+                    <div class="message-avatar">👩</div>
+                    <div class="message-bubble">${randomReply}</div>
+                `;
+                messagesContainer.appendChild(replyMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 1000);
+        }
+
+        function formatText(format) {
+            const area = document.getElementById('richtext-area');
+            area.focus();
+            document.execCommand(format, false, null);
+            updatePreview();
+        }
+
+        function addEmoji(emoji) {
+            const area = document.getElementById('richtext-area');
+            area.focus();
+            document.execCommand('insertText', false, emoji);
+            updatePreview();
+        }
+
+        function addMention() {
+            const area = document.getElementById('richtext-area');
+            area.focus();
+            document.execCommand('insertText', false, '@张小花 ');
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const area = document.getElementById('richtext-area');
+            const preview = document.getElementById('preview-content');
+            preview.innerHTML = area.innerHTML
+                .replace(/<strong>(.*?)<\/strong>/g, '<span class="bold">$1</span>')
+                .replace(/<em>(.*?)<\/em>/g, '<span class="italic">$1</span>')
+                .replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+        }
+
+        let callStatus = 'calling';
+        setTimeout(() => {
+            const statusEl = document.getElementById('call-status');
+            if (statusEl) {
+                statusEl.textContent = '通话中 00:01';
+            }
+        }, 2000);
+
+        initTheme();
+    </script>
+</body>
+</html>

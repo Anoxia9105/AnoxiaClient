@@ -3,9 +3,12 @@ import '../../network/TokenManager.dart';
 
 part 'token_provider.g.dart';
 
-/// Token Provider - 用于在内存中缓存 token
-/// 登录成功后更新，登出时清空
-/// 避免每次请求都从 TokenManager 读取
+/// Token 内存缓存 Provider
+///
+/// 登录成功后更新，登出时清空。
+/// 采用 keepAlive 保持常驻，避免重复初始化。
+/// 与 [TokenManager] 的区别：此 Provider 提供响应式状态，
+/// [TokenManager] 提供持久化能力。
 @Riverpod(keepAlive: true)
 class TokenCache extends _$TokenCache {
   @override
@@ -14,17 +17,23 @@ class TokenCache extends _$TokenCache {
     return null;
   }
 
-  /// 设置 token（登录成功时调用）
+  /// 设置 Token
+  ///
+  /// 登录成功时调用，同时更新内存状态
   void setToken(String token) {
     state = token;
   }
 
-  /// 清除 token（登出时调用）
+  /// 清除 Token
+  ///
+  /// 登出时调用，清空内存缓存
   void clearToken() {
     state = null;
   }
 
-  /// 从 TokenManager 恢复 token（仅在应用启动时调用）
+  /// 从 [TokenManager] 恢复 Token
+  ///
+  /// 仅在应用冷启动时调用一次
   Future<void> restoreToken() async {
     final token = await TokenManager.instance.getToken();
     if (token != null && token.isNotEmpty) {

@@ -16,6 +16,13 @@ import 'framework/provider/chat/message/system_event_service.dart';
 import 'gen/assets.gen.dart';
 import 'common/utils/NotificationHelper.dart';
 
+/// 应用根组件
+///
+/// 负责：
+/// - 初始化系统事件服务
+/// - 桌面端托盘/窗口管理
+/// - 移动端角标监听
+/// - 主题/多语言配置
 class App extends ConsumerStatefulWidget {
   const App({super.key});
 
@@ -24,14 +31,16 @@ class App extends ConsumerStatefulWidget {
 }
 
 class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
+  /// 未读消息角标订阅（仅移动端）
   ProviderSubscription<int>? _unreadBadgeSubscription;
 
   @override
   void initState() {
     super.initState();
-    // 全局启动系统事件监听服务（禁言/封禁/解散等事件分发入口）
+    // 启动系统事件监听服务（禁言/封禁/解散等事件分发入口）
     ref.read(systemEventServiceProvider);
 
+    // 桌面端：初始化托盘和窗口事件监听
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
       windowManager.setPreventClose(true);
@@ -39,6 +48,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       trayManager.addListener(this);
     }
 
+    // 移动端：监听未读数量，更新应用角标
     if (DeviceUtil.isRealMobile()) {
       _unreadBadgeSubscription = ref.listenManual<int>(
         totalUnreadCountProvider,

@@ -11,6 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 收藏页面
+///
+/// 显示用户收藏的消息列表，支持查看详情、复制等功能
+/// 移动端和桌面端采用不同的布局方式
 class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({super.key});
 
@@ -19,6 +23,7 @@ class FavoritesPage extends ConsumerStatefulWidget {
 }
 
 class _FavoritesPageState extends ConsumerState<FavoritesPage> {
+  /// 当前选中的收藏项 ID
   int? _selectedId;
 
   @override
@@ -37,6 +42,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     return body;
   }
 
+  /// 同步选中状态
+  ///
+  /// 确保当前选中的收藏项仍然存在于列表中，否则更新选中状态
+  ///
+  /// [items] 收藏项列表
   void _syncSelection(List<ChatFavorite> items) {
     if (items.isEmpty) return;
 
@@ -68,6 +78,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     });
   }
 
+  /// 构建加载状态界面
+  ///
+  /// [context] 上下文
+  /// 返回 加载状态 Widget
   Widget _buildLoading(BuildContext context) {
     final mobile = DeviceUtil.isRealMobile();
     if (mobile) {
@@ -83,6 +97,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     );
   }
 
+  /// 构建错误状态界面
+  ///
+  /// [context] 上下文
+  /// [message] 错误消息
+  /// 返回 错误状态 Widget
   Widget _buildError(BuildContext context, String message) {
     return Center(
       child: Column(
@@ -115,6 +134,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     );
   }
 
+  /// 构建已加载状态界面
+  ///
+  /// [context] 上下文
+  /// [items] 收藏项列表
+  /// 返回 已加载状态 Widget
   Widget _buildLoaded(BuildContext context, List<ChatFavorite> items) {
     final mobile = DeviceUtil.isRealMobile();
 
@@ -167,7 +191,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   }
 }
 
+/// 收藏详情移动端页面
 class _FavoriteDetailMobilePage extends StatelessWidget {
+  /// 收藏项对象
   final ChatFavorite item;
 
   const _FavoriteDetailMobilePage({required this.item});
@@ -203,10 +229,18 @@ class _FavoriteDetailMobilePage extends StatelessWidget {
   }
 }
 
+/// 收藏列表面板组件
 class _FavoriteListPanel extends StatelessWidget {
+  /// 收藏项列表
   final List<ChatFavorite> items;
+  
+  /// 当前选中的收藏项 ID
   final int? selectedId;
+  
+  /// 选择回调
   final ValueChanged<int> onSelect;
+  
+  /// 刷新回调
   final VoidCallback onRefresh;
 
   const _FavoriteListPanel({
@@ -367,7 +401,9 @@ class _FavoriteListPanel extends StatelessWidget {
   }
 }
 
+/// 收藏详情面板组件
 class _FavoriteDetailPanel extends StatelessWidget {
+  /// 收藏项对象
   final ChatFavorite item;
 
   const _FavoriteDetailPanel({required this.item});

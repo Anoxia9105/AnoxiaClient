@@ -1,14 +1,19 @@
 import 'UserVO.dart';
 
 /// 用户搜索响应模型
+///
+/// 封装分页搜索结果，包含总数、数据列表、状态码和消息。
 class UserSearchResponse {
-  /// 总记录数
+  /// 符合条件的总记录数
   final int total;
-  /// 数据列表
+
+  /// 当前页的数据列表
   final List<UserVO> rows;
-  /// 状态码
+
+  /// 响应状态码
   final int code;
-  /// 消息
+
+  /// 响应消息
   final String msg;
 
   UserSearchResponse({
@@ -18,7 +23,9 @@ class UserSearchResponse {
     required this.msg,
   });
 
-  /// 从 JSON 构造对象
+  /// 从 JSON 数据构造 [UserSearchResponse] 实例
+  ///
+  /// 自动处理数字字段可能为 String 或 num 的兼容场景
   factory UserSearchResponse.fromJson(Map<String, dynamic> json) {
     int toInt(dynamic value, {int fallback = 0}) {
       if (value is int) return value;
@@ -47,7 +54,7 @@ class UserSearchResponse {
     );
   }
 
-  /// 转换为 JSON
+  /// 将当前实例转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {
       'total': total,

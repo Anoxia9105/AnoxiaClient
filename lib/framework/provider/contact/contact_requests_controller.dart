@@ -7,6 +7,11 @@ import 'contact_list_controller.dart';
 
 part 'contact_requests_controller.g.dart';
 
+/// 好友申请列表服务
+///
+/// 管理所有收到的好友请求，支持请求处理和列表刷新。
+///
+/// 采用 keepAlive 模式，确保请求列表在全局共享。
 @Riverpod(keepAlive: true)
 class ContactRequestsService extends _$ContactRequestsService {
   @override
@@ -14,6 +19,9 @@ class ContactRequestsService extends _$ContactRequestsService {
     return _fetchRequests();
   }
 
+  /// 从后端获取好友申请列表
+  ///
+  /// 服务端异常时返回空列表，避免阻塞 UI
   Future<List<ChatContactRequestVO>> _fetchRequests() async {
     try {
       final response = await DioClient().get(API.contactRequest);
@@ -21,46 +29,51 @@ class ContactRequestsService extends _$ContactRequestsService {
           .map((e) => ChatContactRequestVO.fromJson(e))
           .toList();
     } catch (e) {
-      // 服务端异常时返回空列表，避免阻塞UI
       return [];
     }
   }
 
-  /// 同意好友请求的方法
+  /// 处理好友请求
+  ///
+  /// [requestId] 请求记录ID
+  /// [isAccepted] true=同意，false=拒绝
   Future<void> acceptRequest(int requestId, bool isAccepted) async {
     await DioClient().get(
       API.contactAcceptRequest,
       queryParameters: {
         'requestId': requestId,
         "status": isAccepted ? 1 : 2,
-        "source": 0, //来源:0=搜索,1=扫码,2=群聊
+        "source": 0,
       },
     );
-    // 操作成功后，重新获取列表更新 UI
+
+    // 操作成功后刷新列表
     refresh(quiet: true);
 
-    //如果是同意 刷新好友列表
+    // 同意时同时刷新好友列表
     if (isAccepted) {
-      // 只要 invalidate 这个 provider，下游的 sortedContactGroupsProvider 也会自动重新计算
       ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
     }
   }
 
-  /// 手动刷新方法（例如下拉刷新时调用）
+  /// 手动刷新列表
+  ///
+  /// [quiet] 为 true 时静默刷新，不触发 loading 状态
   Future<void> refresh({bool quiet = false}) async {
     if (!quiet) {
-      state = const AsyncValue.loading(); // 先展示加载状态
+      state = const AsyncValue.loading();
     }
     final result = await AsyncValue.guard(() => _fetchRequests());
-    if (!ref.mounted) return; // provider 已被销毁，不再更新 state
+    if (!ref.mounted) return;
     state = result;
   }
 }
 
-/// 统计待处理的数量
+/// 待处理好友申请数量
+///
+/// 仅统计状态为 0（待处理）的请求数
 @Riverpod(keepAlive: true)
 Future<int> pendingRequestCount(Ref ref) async {
-  // 监听整个列表的状态
   final requestsAsync = ref.watch(contactRequestsServiceProvider);
 
   return requestsAsync.maybeWhen(
