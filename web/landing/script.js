@@ -61,6 +61,16 @@ async function fetchLatestVersions() {
 }
 
 /**
+ * 清理URL中的反引号
+ * @param {string} url - 原始URL
+ * @returns {string} 清理后的URL
+ */
+function cleanUrl(url) {
+    if (!url) return null;
+    return url.replace(/`/g, '').trim();
+}
+
+/**
  * 更新版本显示
  * @param {Array} items - 版本信息列表
  */
@@ -71,11 +81,12 @@ function updateVersionDisplay(items) {
         const config = platformConfig[item.clientType];
         if (!config) return;
         
-        if (item.hasRelease && config.versionEl) {
-            const versionEl = document.getElementById(config.versionEl);
-            const notesEl = document.getElementById(config.notesEl);
-            const downloadEl = document.getElementById(config.downloadEl);
-            
+        const versionEl = document.getElementById(config.versionEl);
+        const notesEl = document.getElementById(config.notesEl);
+        const downloadEl = document.getElementById(config.downloadEl);
+        const card = document.querySelector(`.download-card[data-platform="${item.clientType}"]`);
+        
+        if (item.hasRelease && item.latestVersion) {
             if (versionEl) {
                 versionEl.textContent = `v${item.latestVersion}`;
             }
@@ -84,16 +95,26 @@ function updateVersionDisplay(items) {
                 notesEl.textContent = item.releaseNotes;
             }
             
-            if (downloadEl && item.downloadUrl) {
-                downloadEl.href = item.downloadUrl;
+            const cleanedUrl = cleanUrl(item.downloadUrl);
+            if (downloadEl && cleanedUrl) {
+                downloadEl.href = cleanedUrl;
                 downloadEl.classList.remove('disabled');
             }
             
             if (!latestVersion || compareVersions(item.latestVersion, latestVersion) > 0) {
                 latestVersion = item.latestVersion;
             }
-        } else if (!item.hasRelease && config.versionEl) {
-            const card = document.querySelector(`.download-card[data-platform="${item.clientType}"]`);
+        } else {
+            if (versionEl) {
+                versionEl.textContent = '即将推出';
+            }
+            if (notesEl) {
+                notesEl.textContent = '敬请期待';
+            }
+            if (downloadEl) {
+                downloadEl.classList.add('disabled');
+                downloadEl.removeAttribute('href');
+            }
             if (card) {
                 card.classList.add('disabled');
             }
