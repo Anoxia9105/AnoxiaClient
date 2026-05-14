@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import '../gen/assets.gen.dart';
 
 class SplashPage extends StatefulWidget {

@@ -172,10 +172,7 @@ class SortedContactGroupsWidget extends ConsumerWidget {
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, entry.key),
-            ...children,
-          ],
+          children: [_buildHeader(context, entry.key), ...children],
         );
       },
     );
@@ -199,8 +196,8 @@ class _ContactGroupsSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (showHeader)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 6),
                 child: SkeletonLine(width: 16, height: 12),
               ),
             Padding(

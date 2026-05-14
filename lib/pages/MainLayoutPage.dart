@@ -1,7 +1,9 @@
-import 'package:anoxia/pages/AppScaffold.dart';
-import 'package:anoxia/pages/contact/ContactPage.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
+import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
+import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
-import 'package:anoxia/pages/setting/SettingsPage.dart';
+import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +12,6 @@ import '../common/utils/DeviceUtil.dart';
 import '../common/widgets/app/MobileBottomBar.dart';
 import '../common/widgets/desktop/DesktopSidebar.dart';
 import '../framework/provider/layout/layout_controller.dart';
-import 'chat/ChatPage.dart';
-import 'favorite/FavoritesPage.dart';
 
 class MainLayoutPage extends ConsumerWidget {
   const MainLayoutPage({super.key});

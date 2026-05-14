@@ -5,7 +5,7 @@ import 'package:anoxia/framework/domain/ChatFavorite.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
-import 'package:anoxia/pages/chat/component/widget/messageRender/base/MessageRenderFactory.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,11 +71,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   Widget _buildLoading(BuildContext context) {
     final mobile = DeviceUtil.isRealMobile();
     if (mobile) {
-      return _FavoriteListSkeleton();
+      return const _FavoriteListSkeleton();
     }
 
-    return Row(
-      children: const [
+    return const Row(
+      children: [
         SizedBox(width: 340, child: _FavoriteListSkeleton()),
         VerticalDivider(width: 1),
         Expanded(child: _FavoriteDetailSkeleton()),
@@ -608,8 +608,8 @@ class _FavoriteListSkeleton extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-          child: Row(
-            children: const [
+          child: const Row(
+            children: [
               SkeletonBox(width: 34, height: 34, radius: 10),
               SizedBox(width: 10),
               Expanded(
@@ -670,11 +670,11 @@ class _FavoriteDetailSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(18, 16, 18, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           SkeletonLine(width: 110, height: 18),
           SizedBox(height: 12),
           SkeletonLine(width: 80, height: 12),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 
 import '../gen/assets.gen.dart';
 import '../framework/provider/core/app_initializer.dart';

@@ -13,7 +13,7 @@ import '../../../../framework/logs/talker.dart';
 import '../../../../framework/network/DioClient.dart';
 import '../../../../framework/provider/core/AppUpdateInfo.dart';
 import '../../../../framework/provider/layout/layout_controller.dart';
-import '../../../../pages/AppScaffold.dart';
+import '../../../../common/widgets/app/app_scaffold.dart';
 import '../widgets/update_sections.dart';
 
 class UpdatePage extends ConsumerStatefulWidget {

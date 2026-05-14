@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 
 class ErrorPage extends StatelessWidget {
   final String? message;

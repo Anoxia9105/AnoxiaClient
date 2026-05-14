@@ -3,7 +3,7 @@ import 'package:anoxia/framework/provider/contact/contact_selection_controller.d
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
-import 'package:anoxia/pages/contact/component/ContactList.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

@@ -8,8 +8,8 @@ import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 
-import '../../../../pages/chat/call/component/WindowScreenSelectDialog.dart';
 import '../../../domain/RoomState.dart';
 import '../../../network/DioClient.dart';
 
@@ -356,9 +356,7 @@ class RoomController extends _$RoomController {
     log.info("✋ $uid ${raised ? '举手' : '放手'}");
 
     // Toast 提示
-    Toast.showNotificationNow(
-      raised ? '$name 举手了 ✋' : '$name 放手了',
-    );
+    Toast.showNotificationNow(raised ? '$name 举手了 ✋' : '$name 放手了');
   }
 
   /// 处理远端表情/弹幕消息
@@ -619,7 +617,9 @@ class RoomController extends _$RoomController {
     final currentState = state.value;
     if (currentState != null) {
       try {
-        await currentState.room.disconnect().timeout(const Duration(seconds: 2));
+        await currentState.room.disconnect().timeout(
+          const Duration(seconds: 2),
+        );
         log.info("已离开房间");
       } on TimeoutException {
         log.warning("离开房间超时，转为后台清理");
@@ -740,11 +740,7 @@ class RoomController extends _$RoomController {
     final meta = _parseParticipantMeta(current?.room.localParticipant);
     return sendDataEvent(
       topic: 'app-mute-command',
-      payload: {
-        'uid': targetUid,
-        'muted': muted,
-        'senderName': meta.name,
-      },
+      payload: {'uid': targetUid, 'muted': muted, 'senderName': meta.name},
     );
   }
 

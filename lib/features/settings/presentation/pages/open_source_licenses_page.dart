@@ -1,5 +1,5 @@
 import 'package:anoxia/oss_licenses.dart';
-import 'package:anoxia/pages/AppScaffold.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:flutter/material.dart';
 
 class OpenSourceLicensesPage extends StatelessWidget {

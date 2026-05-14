@@ -1,18 +1,18 @@
 import 'dart:convert';
 
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
+import 'package:anoxia/features/app/presentation/pages/error_page.dart';
+import 'package:anoxia/features/app/presentation/pages/login_page.dart';
+import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
+import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
-import 'package:anoxia/pages/chat/component/widget/messageRender/detail/ImageViewer.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anoxia/framework/domain/UserInfo.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/pages/ErrorPage.dart';
-import 'package:anoxia/pages/LoginPage.dart';
-import 'package:anoxia/pages/MainLayoutPage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../pages/SplashPage.dart';
 import '../../logs/talker.dart';
 import '../core/app_initializer.dart';
 
@@ -83,7 +83,7 @@ GoRouter router(Ref ref) {
   );
 
   ref.onDispose(() {
-    log.info("[Router] 路由服务销毁");
+    log.info('[Router] 路由服务销毁');
     router.dispose();
   });
 
