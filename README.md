@@ -13,6 +13,8 @@
 
 **在线访问：** https://github.com/zhang52514/NotePadClient
 
+**官网地址：** https://www.anoxia.cn/
+
 ---
 
 ## ✨ 核心能力
@@ -127,6 +129,7 @@ dart run build_runner watch --delete-conflicting-outputs
 
 你也可以直接通过以下入口参与：
 
+- 官网: https://www.anoxia.cn/
 - Issue: https://github.com/zhang52514/NotePadClient/issues
 - Pull Requests: https://github.com/zhang52514/NotePadClient/pulls
 
