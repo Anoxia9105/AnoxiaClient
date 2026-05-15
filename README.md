@@ -115,15 +115,6 @@ dart run build_runner watch --delete-conflicting-outputs
 
 ---
 
-## 🗺️ 迭代计划（建议）
-
-- [ ] 完善组件级测试与页面级回归测试
-- [ ] 持续将旧页面迁移到 `features/` 分层结构
-- [ ] 增强弱网/重连场景下的消息一致性策略
-- [ ] 完善 CI（analyze + test + build_runner 校验）
-
----
-
 ## 🤝 贡献指南
 
 欢迎提交 Issue / PR。
