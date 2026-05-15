@@ -423,5 +423,13 @@
   "chat_revoke_error": "Revoke operation error",
   "system_msg_recall": "{} recalled a message",
   "system_msg_callstart": "{} started a meeting",
-  "system_msg_callend": "{} ended a meeting"
+  "system_msg_callend": "{} ended a meeting",
+  "common_back": "Back",
+  "settings_open_source_title": "Open-source licenses",
+  "settings_open_source_empty": "No license information available",
+  "settings_open_source_license_unlabeled": "License not labeled",
+  "settings_open_source_version": "Version: {}",
+  "settings_open_source_spdx": "License: {}",
+  "settings_open_source_no_license_text": "No license text provided.",
+  "settings_open_source_package_not_found": "Package information not found"
 }

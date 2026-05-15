@@ -8,14 +8,12 @@ import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart'
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
-import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
-import 'package:anoxia/features/update/presentation/pages/update_page.dart';
+import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../common/utils/DeviceUtil.dart';
-import '../../../../framework/provider/core/AppUpdateInfo.dart' as core;
 
 /// 设置页面
 ///
@@ -45,29 +43,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     super.dispose();
   }
 
-  core.AppUpdateInfo _toCoreUpdateInfo(AppUpdateInfo info) {
-    return core.AppUpdateInfo(
+  void _navigateToUpdatePage(AppUpdateInfo info) {
+    UpdateRoute(
       hasUpdate: info.hasUpdate,
       latestVersion: info.latestVersion,
       downloadUrl: info.downloadUrl,
       releaseNotes: info.releaseNotes,
       forceUpdate: info.forceUpdate,
       minSupportVersion: info.minSupportVersion,
-    );
-  }
-
-  void _navigateToUpdatePage(AppUpdateInfo info) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => UpdatePage(updateInfo: _toCoreUpdateInfo(info)),
-      ),
-    );
+    ).push(context);
   }
 
   void _navigateToOpenSourceLicenses() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const OpenSourceLicensesPage()));
+    const OpenSourceLicensesRoute().push(context);
   }
 
   void _showActionResult(SettingsActionResult result) {

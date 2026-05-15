@@ -463,5 +463,13 @@
   "chat_revoke_error": "撤回操作エラー",
   "system_msg_recall": "{} ニュースを1件撤回した",
   "system_msg_callstart": "{} が会議を開始しました",
-  "system_msg_callend": "{} が会議を終了しました"
+  "system_msg_callend": "{} が会議を終了しました",
+  "common_back": "戻る",
+  "settings_open_source_title": "オープンソースライセンス",
+  "settings_open_source_empty": "表示可能なライセンス情報がありません",
+  "settings_open_source_license_unlabeled": "ライセンス未表記",
+  "settings_open_source_version": "バージョン：{}",
+  "settings_open_source_spdx": "ライセンス：{}",
+  "settings_open_source_no_license_text": "ライセンステキストが提供されていません。",
+  "settings_open_source_package_not_found": "対象パッケージ情報が見つかりません"
 }

@@ -423,6 +423,14 @@
   "chat_revoke_error": "撤回操作出错",
   "system_msg_recall": "{} 撤回了一条消息",
   "system_msg_callstart": "{} 开启了会议",
-  "system_msg_callend": "会议已结束 {}"
+  "system_msg_callend": "会议已结束 {}",
+  "common_back": "返回",
+  "settings_open_source_title": "开源许可",
+  "settings_open_source_empty": "暂无可显示的许可证信息",
+  "settings_open_source_license_unlabeled": "License 未标注",
+  "settings_open_source_version": "版本：{}",
+  "settings_open_source_spdx": "许可证：{}",
+  "settings_open_source_no_license_text": "暂无许可证文本",
+  "settings_open_source_package_not_found": "未找到对应包信息"
 
 }

@@ -13,6 +13,9 @@ List<RouteBase> get $appRoutes => [
   $errorRoute,
   $imageMessageDetailRoute,
   $addFriendRoute,
+  $updateRoute,
+  $openSourceLicensesRoute,
+  $openSourceLicenseDetailRoute,
 ];
 
 RouteBase get $initLoginRoute =>
@@ -164,6 +167,119 @@ mixin $AddFriendRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/add-friend');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $updateRoute =>
+    GoRouteData.$route(path: '/update', factory: $UpdateRoute._fromState);
+
+mixin $UpdateRoute on GoRouteData {
+  static UpdateRoute _fromState(GoRouterState state) => UpdateRoute(
+    hasUpdate: _$boolConverter(state.uri.queryParameters['has-update']!),
+    latestVersion: state.uri.queryParameters['latest-version']!,
+    downloadUrl: state.uri.queryParameters['download-url']!,
+    releaseNotes: state.uri.queryParameters['release-notes']!,
+    forceUpdate: _$boolConverter(state.uri.queryParameters['force-update']!),
+    minSupportVersion: state.uri.queryParameters['min-support-version']!,
+  );
+
+  UpdateRoute get _self => this as UpdateRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/update',
+    queryParams: {
+      'has-update': _self.hasUpdate.toString(),
+      'latest-version': _self.latestVersion,
+      'download-url': _self.downloadUrl,
+      'release-notes': _self.releaseNotes,
+      'force-update': _self.forceUpdate.toString(),
+      'min-support-version': _self.minSupportVersion,
+    },
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+bool _$boolConverter(String value) {
+  switch (value) {
+    case 'true':
+      return true;
+    case 'false':
+      return false;
+    default:
+      throw UnsupportedError('Cannot convert "$value" into a bool.');
+  }
+}
+
+RouteBase get $openSourceLicensesRoute => GoRouteData.$route(
+  path: '/open-source-licenses',
+  factory: $OpenSourceLicensesRoute._fromState,
+);
+
+mixin $OpenSourceLicensesRoute on GoRouteData {
+  static OpenSourceLicensesRoute _fromState(GoRouterState state) =>
+      const OpenSourceLicensesRoute();
+
+  @override
+  String get location => GoRouteData.$location('/open-source-licenses');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $openSourceLicenseDetailRoute => GoRouteData.$route(
+  path: '/open-source-licenses/detail',
+  factory: $OpenSourceLicenseDetailRoute._fromState,
+);
+
+mixin $OpenSourceLicenseDetailRoute on GoRouteData {
+  static OpenSourceLicenseDetailRoute _fromState(GoRouterState state) =>
+      OpenSourceLicenseDetailRoute(
+        packageName: state.uri.queryParameters['package-name']!,
+      );
+
+  OpenSourceLicenseDetailRoute get _self =>
+      this as OpenSourceLicenseDetailRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/open-source-licenses/detail',
+    queryParams: {'package-name': _self.packageName},
+  );
 
   @override
   void go(BuildContext context) => context.go(location);

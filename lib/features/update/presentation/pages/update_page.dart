@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -170,7 +171,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
     final width = MediaQuery.of(context).size.width;
     final isCompact = width < 560;
     final notes = _releaseNoteLines();
-    final canGoBack = Navigator.canPop(context) && !_isForceUpdate;
+    final canGoBack = context.canPop() && !_isForceUpdate;
 
     return AppScaffold(
       body: PopScope(
@@ -193,7 +194,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: () => context.pop(),
                           icon: const Icon(Icons.arrow_back_rounded, size: 18),
                           label: Text('back'.tr()),
                           style: TextButton.styleFrom(

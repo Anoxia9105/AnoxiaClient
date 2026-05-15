@@ -167,6 +167,54 @@ function showVersionError() {
 }
 
 /**
+ * 主题切换功能
+ */
+function initThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    
+    // 从 localStorage 获取保存的主题
+    const savedTheme = localStorage.getItem('theme');
+    
+    // 初始化主题
+    if (savedTheme) {
+        html.setAttribute('data-theme', savedTheme);
+    } else {
+        // 检查系统偏好
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (!prefersDark) {
+            html.setAttribute('data-theme', 'light');
+        }
+    }
+    
+    // 监听系统主题变化
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            if (e.matches) {
+                html.removeAttribute('data-theme');
+            } else {
+                html.setAttribute('data-theme', 'light');
+            }
+        }
+    });
+    
+    // 点击切换主题
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            
+            if (currentTheme === 'light') {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                html.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+}
+
+/**
  * 初始化截图标签切换
  */
 function initScreenshotTabs() {
@@ -239,11 +287,16 @@ function initNavbarScroll() {
     
     window.addEventListener('scroll', () => {
         const currentScrollY = window.scrollY;
+        const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light';
         
         if (currentScrollY > 100) {
-            navbar.style.background = 'rgba(10, 10, 15, 0.95)';
+            navbar.style.background = isLightTheme 
+                ? 'rgba(255, 255, 255, 0.95)' 
+                : 'rgba(10, 10, 15, 0.95)';
         } else {
-            navbar.style.background = 'rgba(10, 10, 15, 0.8)';
+            navbar.style.background = isLightTheme 
+                ? 'rgba(255, 255, 255, 0.8)' 
+                : 'rgba(10, 10, 15, 0.8)';
         }
         
         lastScrollY = currentScrollY;
@@ -256,8 +309,13 @@ function initNavbarScroll() {
 function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
-            e.preventDefault();
             const targetId = this.getAttribute('href');
+            // 只处理有效的锚点链接，跳过下载链接
+            if (!targetId || targetId.length < 2 || !targetId.startsWith('#')) {
+                return;
+            }
+            
+            e.preventDefault();
             const targetElement = document.querySelector(targetId);
             
             if (targetElement) {
@@ -296,6 +354,7 @@ function initMouseFollow() {
  */
 document.addEventListener('DOMContentLoaded', () => {
     addAnimateInStyles();
+    initThemeToggle();
     fetchLatestVersions();
     initScreenshotTabs();
     initScrollAnimations();

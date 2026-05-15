@@ -1,12 +1,15 @@
 import 'dart:convert';
 
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
+import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
 import 'package:anoxia/features/app/presentation/pages/error_page.dart';
 import 'package:anoxia/features/app/presentation/pages/login_page.dart';
 import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
 import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
+import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart' as core;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -165,4 +168,60 @@ class AddFriendRoute extends GoRouteData with $AddFriendRoute {
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return MaterialPage(key: state.pageKey, child: const AddFriendPage());
   }
+}
+
+/// 更新页路由
+@TypedGoRoute<UpdateRoute>(path: '/update')
+class UpdateRoute extends GoRouteData with $UpdateRoute {
+  final bool hasUpdate;
+  final String latestVersion;
+  final String downloadUrl;
+  final String releaseNotes;
+  final bool forceUpdate;
+  final String minSupportVersion;
+
+  const UpdateRoute({
+    required this.hasUpdate,
+    required this.latestVersion,
+    required this.downloadUrl,
+    required this.releaseNotes,
+    required this.forceUpdate,
+    required this.minSupportVersion,
+  });
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => UpdatePage(
+    updateInfo: core.AppUpdateInfo(
+      hasUpdate: hasUpdate,
+      latestVersion: latestVersion,
+      downloadUrl: downloadUrl,
+      releaseNotes: releaseNotes,
+      forceUpdate: forceUpdate,
+      minSupportVersion: minSupportVersion,
+    ),
+  );
+}
+
+/// 开源许可列表页
+@TypedGoRoute<OpenSourceLicensesRoute>(path: '/open-source-licenses')
+class OpenSourceLicensesRoute extends GoRouteData with $OpenSourceLicensesRoute {
+  const OpenSourceLicensesRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const OpenSourceLicensesPage();
+}
+
+/// 开源许可详情页
+@TypedGoRoute<OpenSourceLicenseDetailRoute>(
+  path: '/open-source-licenses/detail',
+)
+class OpenSourceLicenseDetailRoute extends GoRouteData
+    with $OpenSourceLicenseDetailRoute {
+  final String packageName;
+  const OpenSourceLicenseDetailRoute({required this.packageName});
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      OpenSourceLicenseDetailPage(packageName: packageName);
 }
