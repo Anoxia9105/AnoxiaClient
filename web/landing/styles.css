@@ -1490,16 +1490,6 @@ body {
     align-items: center;
 }
 
-.chat-input {
-    flex: 1;
-    padding: 9px 14px;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-    background: #f9f9f9;
-}
 
 .chat-input:focus {
     border-color: #007aff;
