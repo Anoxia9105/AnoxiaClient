@@ -980,5 +980,4 @@ Text('item_count').trplural('other', 10)
 
 ---
 
-*本文档由 Code Wiki Generator 自动生成*
 *最后更新: 2026-05-14*
