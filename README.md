@@ -1,69 +1,74 @@
-# Anoxia IM
+# Anoxia IM (Flutter Client)
 
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
-[![Riverpod](https://img.shields.io/badge/State-Riverpod-55B5FF?style=for-the-badge)](https://riverpod.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![State](https://img.shields.io/badge/State-Riverpod-55B5FF?style=for-the-badge)](https://riverpod.dev)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
 
-Anoxia IM 是一个基于 Flutter 的跨平台即时通讯客户端，支持聊天、联系人、收藏、音视频通话、桌面多窗口与富文本输入。
+`Anoxia IM` 是一个基于 Flutter 的跨平台即时通讯客户端，支持聊天、联系人、富文本输入、桌面增强能力与音视频通话场景。
+
+> 这是客户端仓库目录 `NotePadClient` 的说明文档（可独立开发与运行）。
+
+**仓库地址：** https://github.com/zhang52514/NotePadClient.git
+
+**在线访问：** https://github.com/zhang52514/NotePadClient
 
 ---
 
-## ✨ 功能概览
+## ✨ 核心能力
 
-- 💬 即时消息：房间会话、消息搜索、系统事件、消息状态管理
-- 🎙️ 音视频通话：基于 LiveKit / WebRTC 的实时通话能力
-- 🖥️ 桌面增强：托盘、窗口控制、多窗口通话页
-- 📝 富文本输入：Flutter Quill + 自定义消息渲染策略
-- � 联系人与群组：检索、申请、好友关系与成员管理
-- ⚙️ 设置中心：主题、语言、版本更新检查、用户反馈、开源许可查看
+- 💬 **即时消息**：会话列表、消息状态、系统消息、搜索与常用交互
+- 👥 **联系人与关系链**：联系人检索、申请处理、好友与群相关操作
+- 📝 **富文本输入**：基于 `flutter_quill` 的编辑与展示能力
+- 🎙️ **实时音视频**：`livekit_client` + `flutter_webrtc`
+- 🖥️ **桌面体验增强**：托盘、窗口管理、多窗口能力
+- 🌍 **国际化与主题**：多语言支持、设置中心、版本检查与反馈入口
 
 ---
 
 ## 🧱 技术栈
 
-| 方向 | 技术 |
+| 方向 | 选型 |
 | :-- | :-- |
-| UI 与跨平台 | Flutter 3.x |
-| 语言 | Dart 3.x |
-| 状态管理 | flutter_riverpod + riverpod_generator |
-| 路由 | go_router |
-| 网络通信 | dio + WebSocket |
-| 音视频 | livekit_client + flutter_webrtc |
-| 本地存储 | shared_preferences / flutter_secure_storage / sqflite |
-| 富文本 | flutter_quill |
+| 跨平台框架 | Flutter |
+| 语言 | Dart |
+| 状态管理 | `flutter_riverpod` / `riverpod_generator` |
+| 路由 | `go_router` |
+| 网络 | `dio` / `web_socket_channel` |
+| 音视频 | `livekit_client` / `flutter_webrtc` |
+| 本地存储 | `shared_preferences` / `flutter_secure_storage` |
+| 富文本 | `flutter_quill` |
 
 ---
 
-## � 项目结构（当前）
+## 📁 目录结构（精简）
 
 ```text
-lib/
-  main.dart                 # 入口（主窗口/子窗口/更新窗口启动逻辑）
-  app.dart                  # App 根组件
-  common/                   # 通用常量、工具、基础组件
-  framework/                # 领域模型、网络层、provider、协议与主题
-  pages/                    # 业务页面（chat/contact/me/update 等）
-  features/                 # 新分层模块（已接入 settings）
-    settings/
-      application/          # 页面状态编排（Riverpod）
-      presentation/
-        pages/
-        widgets/
-  oss_licenses.dart         # 生成的开源许可证数据
+NotePadClient/
+  lib/
+    main.dart           # 入口
+    app.dart            # App 根组件
+    common/             # 通用工具、常量、基础组件
+    framework/          # 网络、模型、主题、provider
+    features/           # 业务分层模块
+    gen/                # 生成代码
+    oss_licenses.dart   # 三方开源许可证信息（生成）
+  assets/
+    i18n/               # 多语言资源
+    images/             # 图片资源
+    fonts/              # 字体资源
+  test/                 # 测试
 ```
-
-> 说明：仓库当前处于“渐进式重构”阶段，`features/` 会逐步承接 `pages/` 的页面逻辑，避免一次性迁移带来的功能风险。
 
 ---
 
 ## 🚀 快速开始
 
-### 1) 获取代码
+### 1) 克隆并进入客户端目录
 
 ```bash
-git clone https://github.com/<your-account>/Anoxia-IM.git
-cd Anoxia-IM/NotePadClient
+git clone https://github.com/zhang52514/NotePadClient.git
+cd NotePadClient
 ```
 
 ### 2) 安装依赖
@@ -72,19 +77,19 @@ cd Anoxia-IM/NotePadClient
 flutter pub get
 ```
 
-### 3) 生成代码
+### 3) 生成代码（Riverpod/路由等）
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-### 4) （可选）生成开源许可证数据
+### 4) 生成开源许可证清单（可选）
 
 ```bash
 dart run flutter_oss_licenses:generate
 ```
 
-### 5) 运行
+### 5) 运行应用
 
 ```bash
 flutter run
@@ -92,7 +97,7 @@ flutter run
 
 ---
 
-## 🧪 常用开发命令
+## 🧪 开发常用命令
 
 ```bash
 flutter analyze
@@ -102,7 +107,44 @@ dart run build_runner watch --delete-conflicting-outputs
 
 ---
 
-## � 开源许可
+## 🖥️ 平台支持
 
-- 本项目使用 **MIT License**。
-- App 内可通过：`设置 -> 关于与支持 -> 开源许可` 查看第三方依赖许可证。
+- Mobile：Android / iOS
+- Desktop：Windows / macOS / Linux
+- Web：可按 Flutter Web 方式构建（视业务能力启用）
+
+---
+
+## 🗺️ 迭代计划（建议）
+
+- [ ] 完善组件级测试与页面级回归测试
+- [ ] 持续将旧页面迁移到 `features/` 分层结构
+- [ ] 增强弱网/重连场景下的消息一致性策略
+- [ ] 完善 CI（analyze + test + build_runner 校验）
+
+---
+
+## 🤝 贡献指南
+
+欢迎提交 Issue / PR。
+
+提交前建议执行：
+
+1. `flutter analyze`
+2. `flutter test`
+3. `dart run build_runner build --delete-conflicting-outputs`
+
+你也可以直接通过以下入口参与：
+
+- Issue: https://github.com/zhang52514/NotePadClient/issues
+- Pull Requests: https://github.com/zhang52514/NotePadClient/pulls
+
+---
+
+## 📄 License
+
+本项目基于 **MIT License** 开源发布。
+
+许可证全文见：[`LICENSE`](./LICENSE)
+
+如已集成许可证生成能力，应用内可在“关于与支持”中查看第三方开源许可证。
