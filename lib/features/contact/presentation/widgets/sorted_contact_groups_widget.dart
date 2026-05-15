@@ -289,7 +289,7 @@ class ContactItemTile extends ConsumerWidget {
               : AvatarStatus.offline,
         ),
         title: Text(
-          contact.nickName ?? '',
+          contact.remark ?? contact.nickName ?? '',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

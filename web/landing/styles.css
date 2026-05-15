@@ -1161,6 +1161,22 @@ body {
     color: #333333;
 }
 
+.tech-icon.livekit {
+    color: #4CAF50;
+}
+
+.tech-icon.sqlite {
+    color: #003B57;
+}
+
+.tech-icon.quill {
+    color: #E91E63;
+}
+
+.tech-icon.dio {
+    color: #2196F3;
+}
+
 .tech-item:hover .tech-icon {
     transform: scale(1.1);
     border-color: var(--border-light);

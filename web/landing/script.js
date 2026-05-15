@@ -167,6 +167,27 @@ function showVersionError() {
 }
 
 /**
+ * 更新导航栏背景色
+ */
+function updateNavbarBackground() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    
+    const scrollY = window.scrollY;
+    const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light';
+    
+    if (scrollY > 100) {
+        navbar.style.background = isLightTheme 
+            ? 'rgba(255, 255, 255, 0.95)' 
+            : 'rgba(10, 10, 15, 0.95)';
+    } else {
+        navbar.style.background = isLightTheme 
+            ? 'rgba(255, 255, 255, 0.8)' 
+            : 'rgba(10, 10, 15, 0.8)';
+    }
+}
+
+/**
  * 主题切换功能
  */
 function initThemeToggle() {
@@ -187,6 +208,9 @@ function initThemeToggle() {
         }
     }
     
+    // 初始化导航栏背景
+    updateNavbarBackground();
+    
     // 监听系统主题变化
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         if (!localStorage.getItem('theme')) {
@@ -195,6 +219,7 @@ function initThemeToggle() {
             } else {
                 html.setAttribute('data-theme', 'light');
             }
+            updateNavbarBackground();
         }
     });
     
@@ -210,6 +235,9 @@ function initThemeToggle() {
                 html.setAttribute('data-theme', 'light');
                 localStorage.setItem('theme', 'light');
             }
+            
+            // 立即更新导航栏背景
+            updateNavbarBackground();
         });
     }
 }
@@ -282,25 +310,7 @@ function addAnimateInStyles() {
  * 初始化导航栏滚动效果
  */
 function initNavbarScroll() {
-    const navbar = document.querySelector('.navbar');
-    let lastScrollY = window.scrollY;
-    
-    window.addEventListener('scroll', () => {
-        const currentScrollY = window.scrollY;
-        const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light';
-        
-        if (currentScrollY > 100) {
-            navbar.style.background = isLightTheme 
-                ? 'rgba(255, 255, 255, 0.95)' 
-                : 'rgba(10, 10, 15, 0.95)';
-        } else {
-            navbar.style.background = isLightTheme 
-                ? 'rgba(255, 255, 255, 0.8)' 
-                : 'rgba(10, 10, 15, 0.8)';
-        }
-        
-        lastScrollY = currentScrollY;
-    });
+    window.addEventListener('scroll', updateNavbarBackground);
 }
 
 /**
