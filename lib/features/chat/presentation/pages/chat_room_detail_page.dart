@@ -48,7 +48,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   /// FlutterListView 控制器，用于控制列表滚动和定位
   final FlutterListViewController _listViewController =
       FlutterListViewController();
-  
+
   /// 是否显示滚动到底部按钮
   bool _showScrollDownButton = false;
 
@@ -289,8 +289,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
               height: 35,
               child: IconButton(
                 onPressed: _scrollToBottom,
-                icon: const HugeIcon(
+                icon: HugeIcon(
                   icon: HugeIcons.strokeRoundedCircleArrowDown02,
+                  strokeWidth: 2.0,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             )

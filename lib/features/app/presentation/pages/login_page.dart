@@ -6,6 +6,7 @@ import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,24 +41,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
   /// 是否正在执行登录操作
   bool _isLoading = false;
 
-  /// 淡入动画控制器
-  late final AnimationController _fadeController;
-
-  /// 淡入动画值
-  late final Animation<double> _fadeAnimation;
-
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    );
-    _fadeController.forward();
   }
 
   @override
@@ -65,7 +51,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     _codeCtrl.dispose();
-    _fadeController.dispose();
     super.dispose();
   }
 
@@ -77,57 +62,32 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
     return AppScaffold(
       body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildHeader(colorScheme, textTheme),
-                    const SizedBox(height: 36),
-                    Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.shadow.withValues(alpha: 0.06),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildUsernameField(colorScheme),
-                            const SizedBox(height: 16),
-                            _buildPasswordField(colorScheme),
-                            const SizedBox(height: 16),
-                            _buildCaptchaField(colorScheme),
-                            const SizedBox(height: 28),
-                            _buildLoginButton(colorScheme, loginMutation),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildFooterLinks(colorScheme),
-                  ],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(colorScheme, textTheme),
+                const SizedBox(height: 36),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildUsernameField(colorScheme),
+                      const SizedBox(height: 16),
+                      _buildPasswordField(colorScheme),
+                      const SizedBox(height: 16),
+                      _buildCaptchaField(colorScheme),
+                      const SizedBox(height: 28),
+                      _buildLoginButton(colorScheme, loginMutation),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                _buildFooterLinks(colorScheme),
+              ],
             ),
           ),
         ),
@@ -172,19 +132,21 @@ class _LoginPageState extends ConsumerState<LoginPage>
     return TextFormField(
       controller: _usernameCtrl,
       textInputAction: TextInputAction.next,
+      inputFormatters: [LengthLimitingTextInputFormatter(20)],
       decoration: InputDecoration(
-        labelText: 'login_page_name'.tr(),
+        hintText: 'login_page_name'.tr(),
+        floatingLabelBehavior: FloatingLabelBehavior.never,
         prefixIcon: Icon(
           Icons.person_outline_rounded,
           color: colorScheme.onSurfaceVariant,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
@@ -205,8 +167,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
       controller: _passwordCtrl,
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.next,
+      inputFormatters: [LengthLimitingTextInputFormatter(50)],
+      obscuringCharacter: '*',
       decoration: InputDecoration(
-        labelText: 'login_page_password'.tr(),
+        hintText: 'login_page_password'.tr(),
+        floatingLabelBehavior: FloatingLabelBehavior.never,
         prefixIcon: Icon(
           Icons.lock_outline_rounded,
           color: colorScheme.onSurfaceVariant,
@@ -220,13 +185,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
@@ -251,21 +216,22 @@ class _LoginPageState extends ConsumerState<LoginPage>
             controller: _codeCtrl,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
+            inputFormatters: [LengthLimitingTextInputFormatter(4)],
             decoration: InputDecoration(
-              labelText: 'login_page_captcha'.tr(),
+              hintText: 'login_page_captcha'.tr(),
               prefixIcon: Icon(
                 Icons.shield_outlined,
                 color: colorScheme.onSurfaceVariant,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: colorScheme.outlineVariant),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: colorScheme.primary, width: 2),
               ),
             ),

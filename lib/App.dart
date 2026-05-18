@@ -127,6 +127,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     final appTheme = ref.watch(appThemeProvider);
     final isDark = appTheme.brightness == Brightness.dark;
 
+    /// 手机系统栏适配：根据当前主题调整状态栏和导航栏图标颜色
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
