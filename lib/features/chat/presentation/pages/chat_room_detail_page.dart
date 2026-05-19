@@ -229,8 +229,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const HugeIcon(icon: HugeIcons.strokeRoundedMessage01),
-                    Text('chat_no_messages'.tr()),
+                    const HugeIcon(icon: HugeIcons.strokeRoundedMessage01, size: 40, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    Text('chat_no_messages'.tr(), style: const TextStyle(color: Colors.grey, fontSize: 14)),
                   ],
                 ),
               );

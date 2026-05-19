@@ -18,7 +18,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
     final canGoBack = context.canPop();
 
     return AppScaffold(
-      title: 'settings_open_source_title',
+      // title: 'settings_open_source_title',
       body: Column(
         children: [
           if (canGoBack)

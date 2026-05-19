@@ -1,16 +1,12 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/desktop/DesktopAppBar.dart';
 import 'package:anoxia/framework/theme/AppColors.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AppScaffold extends StatelessWidget {
-  final String? title;
   final Widget body;
   final Widget? bottomNavigationBar;
-  final PreferredSizeWidget? mobileAppBar;
-  final bool showMobileAppBar;
 
   final bool hideAppBarLogo;
   final bool showDesktopHeaderEnhancements;
@@ -19,11 +15,8 @@ class AppScaffold extends StatelessWidget {
     super.key,
     required this.body,
     this.bottomNavigationBar,
-    this.mobileAppBar,
-    this.showMobileAppBar = true,
     this.hideAppBarLogo = false,
     this.showDesktopHeaderEnhancements = false,
-    this.title,
   });
 
   @override
@@ -36,37 +29,25 @@ class AppScaffold extends StatelessWidget {
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     );
-
+    
     return Container(
       decoration: BoxDecoration(gradient: gradient),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
-          appBar: getAppbar(context, overlayStyle),
+          appBar: () {
+            if (DeviceUtil.isRealDesktop()) {
+              return DesktopAppBar(
+                hideAppBarLogo: hideAppBarLogo,
+                showHeaderEnhancements: showDesktopHeaderEnhancements,
+              );
+            }
+            return null;
+          }(),
           body: body,
           bottomNavigationBar: bottomNavigationBar,
         ),
       ),
     );
-  }
-
-  PreferredSizeWidget? getAppbar(
-    BuildContext context,
-    SystemUiOverlayStyle overlayStyle,
-  ) {
-    if (DeviceUtil.isRealDesktop()) {
-      return DesktopAppBar(
-        hideAppBarLogo: hideAppBarLogo,
-        showHeaderEnhancements: showDesktopHeaderEnhancements,
-      );
-    }
-
-    if (!showMobileAppBar) return null;
-
-    return mobileAppBar ??
-        AppBar(
-          title: Text(title?.tr() ?? ''),
-          systemOverlayStyle: overlayStyle,
-        );
   }
 }

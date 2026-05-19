@@ -37,8 +37,8 @@ class MainLayoutPage extends ConsumerWidget {
     }
 
     return AppScaffold(
-      title: layout.items[safeIndex].name,
-      showDesktopHeaderEnhancements: true,
+      // title: layout.items[safeIndex].name,
+      showDesktopHeaderEnhancements: DeviceUtil.isDesktop(context),
       body: Row(
         children: [
           // 桌面端和平板显示侧边栏

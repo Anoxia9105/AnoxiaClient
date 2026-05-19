@@ -61,7 +61,7 @@ class RoomListService extends _$RoomListService {
     try {
       final res = await DioClient().get(API.chatRooms);
 
-      final data = res.data["data"];
+      final data = res.data['data'];
       if (data is List) {
         return data
             .map((e) {
@@ -69,7 +69,7 @@ class RoomListService extends _$RoomListService {
                 return ChatRoomVO.fromJson(e);
               } catch (e) {
                 // 单条解析失败记录日志，防止整个页面崩溃
-                log.warning("ChatRoomVO 解析异常: $e");
+                log.warning('ChatRoomVO 解析异常: $e');
                 return null;
               }
             })
@@ -442,7 +442,7 @@ List<ChatRoomVO> groupRoomList(Ref ref) {
 @riverpod
 class RoomSearchQuery extends _$RoomSearchQuery {
   @override
-  String build() => "";
+  String build() => '';
 
   void update(String query) => state = query;
 }
@@ -460,8 +460,8 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
       if (query.isEmpty) return rooms;
 
       return rooms.where((room) {
-        final nameMatch = (room.roomName ?? "").toLowerCase().contains(query);
-        final msgMatch = (room.lastMessage?.content ?? "")
+        final nameMatch = (room.roomName ?? '').toLowerCase().contains(query);
+        final msgMatch = (room.lastMessage?.content ?? '')
             .toLowerCase()
             .contains(query);
         return nameMatch || msgMatch;

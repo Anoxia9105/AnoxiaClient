@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -216,7 +217,8 @@ class NotificationHelper {
 
     await _ensureInitialized();
 
-    if (!await _shouldNotify(force: force)) {
+    /// 桌面端如果窗口可见且聚焦，且未强制发送，则不显示通知
+    if (DeviceUtil.isRealDesktop() && !await _shouldNotify(force: force)) {
       return;
     }
 
