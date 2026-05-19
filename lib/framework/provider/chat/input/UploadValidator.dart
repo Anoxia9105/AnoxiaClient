@@ -4,6 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
+/// 文件上传校验工具
+///
+/// 校验上传文件的数量和大小限制
 class UploadValidator {
   // 配置常量
   static const int maxTotalCount = 10; // 总附件数限制

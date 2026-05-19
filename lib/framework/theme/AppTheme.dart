@@ -3,9 +3,15 @@ import 'package:flutter/material.dart';
 
 import 'ThemeMixin.dart';
 
+/// 应用主题管理类
+///
+/// 提供多个预定义的亮色和暗色主题，支持主题切换
 class AppTheme with ThemeMixin {
   AppTheme._();
 
+  /// 所有可用主题选项列表
+  ///
+  /// 包含7个亮色主题和12个暗色主题，每个主题都有独特的配色方案
   static final List<ThemeOption> themes = [
     // ==================== 亮色主题系列 ====================
     ThemeOption(
@@ -202,6 +208,10 @@ class AppTheme with ThemeMixin {
     ),
   ];
 
+  /// 获取指定索引的主题数据
+  ///
+  /// [index] 主题索引，若为 null 或越界则使用默认主题
+  /// [overrideFontFamily] 可选，覆盖主题默认字体
   static ThemeData getTheme({int? index, String? overrideFontFamily}) {
     final idx = (index == null || index < 0 || index >= themes.length) ? 0 : index;
     final t = themes[idx];
@@ -214,14 +224,30 @@ class AppTheme with ThemeMixin {
   }
 }
 
+/// 主题选项配置类
+///
+/// 定义单个主题的完整配置信息
 class ThemeOption {
+  /// 主题名称（用于国际化）
   final String name;
+  /// 主题主色调
   final Color? color;
+  /// 主题亮度（亮色/暗色）
   final Brightness brightness;
+  /// 背景渐变
   final LinearGradient gradient;
+  /// 主题字体（可选）
   final String? fontFamily;
 
+  /// 创建主题选项
+  ///
+  /// [name] 主题名称键
+  /// [color] 主题主色调
+  /// [brightness] 亮度模式
+  /// [gradient] 背景渐变
+  /// [fontFamily] 可选字体
   const ThemeOption(this.name, this.color, this.brightness, this.gradient, {this.fontFamily});
 
+  /// 获取本地化的主题名称
   String get localizedName => name.tr();
 }

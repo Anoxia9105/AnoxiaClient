@@ -131,7 +131,7 @@ class RoomListService extends _$RoomListService {
       if (index != -1) {
         final oldRoom = updatedList.removeAt(index);
 
-        // 当前正在看的房间不增加未读数
+        // 当前正在看的房间不增加未读数 
         int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）

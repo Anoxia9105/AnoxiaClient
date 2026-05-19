@@ -173,7 +173,7 @@ class DesktopSidebar extends ConsumerWidget {
   }
 }
 
-//侧边栏按钮
+/// 侧边栏导航按钮
 class SidebarButton extends ConsumerWidget {
   final int index;
   final String name;

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 聊天表情选择器组件
+///
+/// 提供Emoji选择功能，支持搜索和皮肤色调选择
 class ChatEmojiWidget extends StatelessWidget {
   final VoidCallback? closeSelected;
   final Function(String) onEmojiSelected;

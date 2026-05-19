@@ -9,18 +9,18 @@ part 'layout_controller.g.dart';
 @riverpod
 class LayoutController extends _$LayoutController {
   static const _menuItems = [
-    SidebarItem(name: "sidebar_chat", icon: HugeIcons.strokeRoundedComment01),
+    SidebarItem(name: 'sidebar_chat', icon: HugeIcons.strokeRoundedComment01),
     SidebarItem(
-      name: "sidebar_contact",
+      name: 'sidebar_contact',
       icon: HugeIcons.strokeRoundedContact01,
     ),
     SidebarItem(
-      name: "sidebar_favorites",
+      name: 'sidebar_favorites',
       icon: HugeIcons.strokeRoundedFavourite,
     ),
-    SidebarItem(name: "sidebar_my", icon: HugeIcons.strokeRoundedUser),
+    SidebarItem(name: 'sidebar_my', icon: HugeIcons.strokeRoundedUser),
     SidebarItem(
-      name: "sidebar_setting",
+      name: 'sidebar_setting',
       icon: HugeIcons.strokeRoundedSettings01,
     ),
   ];

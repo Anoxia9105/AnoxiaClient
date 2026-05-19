@@ -1,17 +1,24 @@
 import 'package:talker_flutter/talker_flutter.dart';
 
+/// 全局日志记录器
+///
+/// 使用 Talker 库进行日志记录，支持历史记录、控制台输出等功能
+///
+/// 主要功能：
+/// - 记录各种级别的日志（info、warning、error 等）
+/// - 保存日志历史以便查看
+/// - 支持在控制台输出格式化的日志
 final log = Talker(
   settings: TalkerSettings(
-    /// You can enable/disable all talker processes with this field
+    /// 启用/禁用日志功能
     enabled: true,
-    /// You can enable/disable saving logs data in history
+    /// 启用/禁用保存日志历史
     useHistory: true,
-    /// Length of history that saving logs data
+    /// 历史记录最大条数
     maxHistoryItems: 100,
-    /// You can enable/disable console logs
+    /// 启用/禁用控制台日志输出
     useConsoleLogs: true,
   ),
-  /// Setup your implementation of logger
+  /// 日志记录器实现
   logger: TalkerLogger(),
-  ///etc...
 );

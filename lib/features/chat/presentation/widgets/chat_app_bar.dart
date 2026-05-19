@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
+import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
@@ -25,23 +26,23 @@ import 'package:anoxia/features/chat/presentation/widgets/add_member_dialog_widg
 /// 显示房间信息、通话按钮、搜索按钮、成员管理等功能
 /// 实现了 [PreferredSizeWidget] 接口，可以在 Scaffold 中作为 AppBar 使用
 class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  const ChatAppBar({super.key});
+  final ChatRoomVO room;
+  const ChatAppBar({super.key, required this.room});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeId = ref.watch(activeRoomIdProvider);
     final roomListAsync = ref.watch(roomListServiceProvider);
-    final currentRoom = ref.watch(activeRoomProvider);
     final currentUser = ref.watch(authControllerProvider).value;
-    final currentRoomId = currentRoom?.roomId ?? '';
     final callWindow = ref.watch(callWindowControllerProvider);
     final mobileCallSession = ref.watch(mobileCallSessionControllerProvider);
 
-    final callStatus = ref.watch(roomCallStatusProvider(currentRoomId));
+    final callStatus = ref.watch(roomCallStatusProvider(room.roomId ?? ''));
     final isCallingNow = callStatus.calling;
 
     // 首次进入当前房间时拉一次状态（无轮询）
-    ref.read(callStatusControllerProvider.notifier).ensureLoaded(currentRoomId);
+    ref
+        .read(callStatusControllerProvider.notifier)
+        .ensureLoaded(room.roomId ?? '');
 
     final colorScheme = Theme.of(context).colorScheme;
     final hasDesktopCallWindow = callWindow != null;
@@ -74,17 +75,18 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               : colorScheme.onSurfaceVariant);
 
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
-    final members = ref.watch(roomMembersProvider(activeId ?? ''));
+    final members = ref.watch(roomMembersProvider(room.roomId ?? ''));
 
     // 当前用户是否是管理员（用 isRoomAdminProvider，语义清晰）
     final isAdmin = ref.watch(
-      isRoomAdminProvider((activeId ?? '', currentUser?.userId ?? 0)),
+      isRoomAdminProvider((room.roomId ?? '', currentUser?.userId ?? 0)),
     );
 
     final isTyping = ref.watch(
       highMessageServiceProvider.select(
         (state) =>
-            state[activeId]?[HighMessageType.TYPING_STATUS]?.content == 'true',
+            state[room.roomId ?? '']?[HighMessageType.TYPING_STATUS]?.content ==
+            'true',
       ),
     );
 
@@ -119,8 +121,16 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             );
           }
+
+          /// 群聊时候显示成员数量，单聊不显示
+          if (room.roomType == 1) {
+            return Text(
+              '${room.roomName} (${members.length})',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            );
+          }
           return Text(
-            currentRoom?.roomName ?? 'appbar_conversation_detail'.tr(),
+            room.roomName ?? 'appbar_conversation_detail'.tr(),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           );
         },
@@ -129,7 +139,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         // 发起通话按钮（房间正常状态才显示，禁言/封禁/解散不显示）
-        if (currentRoom?.roomStatus == 0)
+        if (room.roomStatus == 0)
           IconButton(
             tooltip: callActionLabel,
             style: IconButton.styleFrom(
@@ -145,25 +155,15 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
             onPressed: () {
-              if ((currentRoom?.roomId ?? '').isEmpty) {
-                BotToast.showText(text: 'appbar_connection_lost'.tr());
+              if ((room.roomId ?? '').isEmpty) {
+                Toast.showToast('appbar_connection_lost'.tr());
                 return;
               }
 
-              if (DeviceUtil.isRealDesktop()) {
-                ref
-                    .read(callWindowControllerProvider.notifier)
-                    .openCallWindow(
-                      title: currentRoom?.roomName ?? '',
-                      themeIndex: ref.read(themeIndexProvider),
-                      roomId: currentRoom?.roomId ?? '',
-                    );
-                return;
-              }
-
+              /// TODO 移动特有通话页面，目前先用桌面通话窗口占位，后续完善移动端体验
               if (DeviceUtil.isRealMobile()) {
-                final roomId = currentRoom?.roomId ?? '';
-                final title = currentRoom?.roomName ?? '';
+                final roomId = room.roomId ?? '';
+                final title = room.roomName ?? '';
                 ref
                     .read(mobileCallSessionControllerProvider.notifier)
                     .start(roomId: roomId, title: title);
@@ -177,12 +177,13 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 return;
               }
 
+              /// 打开通话窗口
               ref
                   .read(callWindowControllerProvider.notifier)
                   .openCallWindow(
-                    title: currentRoom?.roomName ?? '',
+                    title: room.roomName ?? '',
                     themeIndex: ref.read(themeIndexProvider),
-                    roomId: currentRoom?.roomId ?? '',
+                    roomId: room.roomId ?? '',
                   );
             },
             icon: HugeIcon(
@@ -192,7 +193,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
-        if (currentRoom?.roomStatus == 0)
+        if (room.roomStatus == 0)
           Container(
             margin: const EdgeInsets.all(4),
             child: const VerticalDivider(indent: 4, endIndent: 4),
@@ -207,18 +208,15 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
 
         // 添加成员按钮（群聊 + 正常/禁言状态）
-        if (currentRoom != null &&
-            currentRoom.roomType == 1 &&
-            currentRoom.roomStatus != 2 &&
-            currentRoom.roomStatus != 3)
+        if (room.roomType == 1 && room.roomStatus != 2 && room.roomStatus != 3)
           IconButton(
             tooltip: 'appbar_add_member'.tr(),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) => AddMemberDialogWidget(
-                  roomId: currentRoom.roomId!,
-                  roomName: currentRoom.roomName!,
+                  roomId: room.roomId!,
+                  roomName: room.roomName!,
                 ),
               );
             },
@@ -229,33 +227,32 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
 
         // 全体禁言按钮（群聊 + 管理员 + 正常/禁言状态）
-        if (currentRoom != null &&
-            currentRoom.roomType == 1 &&
-            currentRoom.roomStatus != 2 &&
-            currentRoom.roomStatus != 3 &&
+        if (room.roomType == 1 &&
+            room.roomStatus != 2 &&
+            room.roomStatus != 3 &&
             isAdmin)
           _MuteButton(
-            isMuted: currentRoom.roomStatus == 1,
+            isMuted: room.roomStatus == 1,
             onTap: () => _handleMuteRoom(
               context,
               ref,
-              currentRoom.roomId ?? '',
-              currentRoom.roomStatus != 1,
+              room.roomId ?? '',
+              room.roomStatus != 1,
             ),
           ),
 
         // 成员列表按钮（未封禁/未解散才显示）
-        if (currentRoom?.roomStatus != 2 && currentRoom?.roomStatus != 3)
+        if (room.roomStatus != 2 && room.roomStatus != 3)
           Builder(
             builder: (context) => _MemberListButton(
               members: displayMembers,
               currentUserId: currentUser?.userId,
               isAdmin: isAdmin,
-              roomId: currentRoom?.roomId ?? '',
+              roomId: room.roomId ?? '',
               onKick: (m) => _handleKickMember(
                 context,
                 ref,
-                currentRoom?.roomId ?? '',
+                room.roomId ?? '',
                 m.userId ?? 0,
                 m.nickName ?? 'chat_unknown_user'.tr(),
               ),
@@ -512,7 +509,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
 class _MuteButton extends StatelessWidget {
   /// 是否已禁言
   final bool isMuted;
-  
+
   /// 点击回调
   final VoidCallback onTap;
 
@@ -551,16 +548,16 @@ class _MuteButton extends StatelessWidget {
 class _MemberListButton extends StatelessWidget {
   /// 房间成员列表
   final List<ChatRoomMemberVO> members;
-  
+
   /// 当前用户 ID
   final int? currentUserId;
-  
+
   /// 当前用户是否为管理员
   final bool isAdmin;
-  
+
   /// 房间 ID
   final String roomId;
-  
+
   /// 踢出成员回调函数
   final void Function(ChatRoomMemberVO member) onKick;
 

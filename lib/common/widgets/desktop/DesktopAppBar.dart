@@ -12,6 +12,9 @@ import '../../../framework/provider/contact/contact_list_controller.dart';
 import '../../../framework/provider/contact/contact_selection_controller.dart';
 import '../../../gen/assets.gen.dart';
 
+/// 桌面端应用栏
+///
+/// 提供窗口控制（最小化/最大化/关闭）和全局搜索功能
 class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   // 是否隐藏应用栏Logo
   final bool hideAppBarLogo;
@@ -147,6 +150,9 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 }
 
+/// 全局搜索对话框
+///
+/// 支持搜索会话和联系人
 class _GlobalSearchDialog extends ConsumerStatefulWidget {
   final WidgetRef ref;
 
@@ -365,6 +371,7 @@ class _ResultTile extends StatelessWidget {
   }
 }
 
+/// 头部搜索入口
 class _HeaderSearchEntry extends StatelessWidget {
   final VoidCallback onTap;
 

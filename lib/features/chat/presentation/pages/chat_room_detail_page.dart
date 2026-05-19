@@ -1,10 +1,13 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
+import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_input_skeleton.dart';
+import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_input_field.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_message_bubble.dart';
+import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +41,8 @@ class _MessageItem extends _ChatListItem {
 /// 显示房间内的消息列表、输入框、房间状态等信息
 /// 支持时间分隔、滚动定位、加载更多历史消息、WebSocket连接状态显示等功能
 class ChatRoomDetail extends ConsumerStatefulWidget {
-  const ChatRoomDetail({super.key});
+  final ChatRoomVO room;
+  const ChatRoomDetail({super.key, required this.room});
 
   @override
   ConsumerState<ChatRoomDetail> createState() => _ChatRoomDetailState();
@@ -135,10 +139,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         .onPaintItemPositionsCallback = (widgetHeight, positions) {
       if (positions.isEmpty) return;
 
-      final activeId = ref.read(activeRoomIdProvider);
-      if (activeId == null) return;
 
-      final currentMessages = ref.read(chatMessagesProvider)[activeId] ?? [];
+      final currentRoomId = widget.room.roomId;
+      final currentMessages = ref.read(chatMessagesProvider)[currentRoomId] ?? [];
       if (currentMessages.isEmpty) return;
 
       // 构建展平列表以获取实际 item 总数（含时间分隔条）
@@ -151,9 +154,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       }
 
       // 2. 阈值判断：如果滑到了倒数第 5 个 item 附近
-      if (currentMessages.length >= 10 &&
-          maxVisibleIndex >= flatItems.length - 5) {
-        ref.read(chatMessagesProvider.notifier).loadMoreHistory(activeId);
+      if (currentMessages.length >= 10 && maxVisibleIndex >= flatItems.length - 5 && currentRoomId != null && currentRoomId.isNotEmpty) {
+        ref.read(chatMessagesProvider.notifier).loadMoreHistory(currentRoomId);
       }
     };
   }
@@ -172,7 +174,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final activeId = ref.watch(activeRoomIdProvider);
+    final activeId = widget.room.roomId;
     final entryTask = activeId == null
         ? const AsyncValue<void>.data(null)
         : ref.watch(roomEntryTaskProvider(activeId));
@@ -187,6 +189,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       chatMessagesProvider.select((map) => map[activeId] ?? []),
     );
     final hasCachedMessages = messages.isNotEmpty;
+    /// 加载中且没有缓存消息时显示骨架屏
     final showInitialSkeleton = entryTask.isLoading && !hasCachedMessages;
 
     //当房间 ID 改变时，重置滚动按钮状态
@@ -198,8 +201,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       }
     });
 
-    final room = ref.watch(activeRoomProvider);
-    final isRoomBanned = room?.roomStatus == 2;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
 
     if (activeId == null) {
@@ -211,14 +212,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     }
 
     final contentBody = showInitialSkeleton
-        ? const _ChatRoomDetailSkeleton()
+        ? const ChatRoomDetailSkeleton()
         : entryTask.hasError && !hasCachedMessages
         ? Center(
             child: Text(
               '${'chat_initialization_failed'.tr()}: ${entryTask.error}',
             ),
           )
-        : isRoomBanned
+          /// 如果房间状态是封禁，显示封禁提示；否则显示正常的消息列表
+        : widget.room.roomStatus == 2
         ? _buildBannedContentView()
         : () {
             //消息为空
@@ -275,7 +277,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       backgroundColor: DeviceUtil.isRealDesktop()
           ? Colors.transparent
           : Theme.of(context).colorScheme.surface,
-      appBar: showInitialSkeleton ? AppBar() : const ChatAppBar(),
+      appBar: showInitialSkeleton ? AppBar() : ChatAppBar(room: widget.room),
       drawerScrimColor: Colors.transparent,
       body: Column(
         children: [
@@ -299,7 +301,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           : null,
 
       bottomNavigationBar: showInitialSkeleton
-          ? const _ChatInputSkeleton()
+          ? const ChatInputSkeleton()
           : SafeArea(
               top: false,
               child: AnimatedPadding(
@@ -311,11 +313,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                   bottom: (keyboardInset > 0 ? keyboardInset : 0) + 10,
                 ),
                 child: () {
-                  if (room == null) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return switch (room.roomStatus) {
+                  return switch (widget.room.roomStatus) {
                     0 => ChatInputField(
                       bottomSheet: () => _scrollToBottom(animated: true),
                     ),
@@ -534,109 +532,6 @@ class _WsConnectionBanner extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 聊天房间详情页面骨架屏
-///
-/// 用于在消息加载过程中显示占位内容
-class _ChatRoomDetailSkeleton extends StatelessWidget {
-  const _ChatRoomDetailSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      reverse: true,
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
-      itemCount: 14,
-      itemBuilder: (context, index) {
-        final isSelf = index % 2 == 0;
-        final showTime = index % 4 == 0;
-        final bubbleWidth = isSelf
-            ? 120.0 + (index % 3) * 34
-            : 150.0 + (index % 3) * 42;
-        final bubbleHeight = 34.0 + (index % 3) * 12;
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Column(
-            children: [
-              if (showTime)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: SkeletonLine(width: 84, height: 11),
-                ),
-              Row(
-                mainAxisAlignment: isSelf
-                    ? MainAxisAlignment.end
-                    : MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (!isSelf) ...[
-                    const SkeletonBox(width: 30, height: 30, circle: true),
-                    const SizedBox(width: 8),
-                  ],
-                  SkeletonBox(
-                    width: bubbleWidth,
-                    height: bubbleHeight,
-                    radius: 14,
-                  ),
-                  if (isSelf) ...[
-                    const SizedBox(width: 8),
-                    const SkeletonBox(width: 30, height: 30, circle: true),
-                  ],
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 聊天输入框骨架屏
-///
-/// 用于在输入框加载过程中显示占位内容
-class _ChatInputSkeleton extends StatelessWidget {
-  const _ChatInputSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(50, 0, 50, 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            width: 1,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-        ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(child: SkeletonBox(height: 18, radius: 9)),
-                SizedBox(width: 12),
-                SkeletonBox(width: 22, height: 22, circle: true),
-                SizedBox(width: 8),
-                SkeletonBox(width: 22, height: 22, circle: true),
-              ],
-            ),
-            SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SkeletonLine(width: 120, height: 10),
-            ),
-          ],
-        ),
       ),
     );
   }

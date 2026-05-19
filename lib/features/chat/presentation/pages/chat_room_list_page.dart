@@ -395,14 +395,20 @@ class _RoomItem extends ConsumerWidget {
         }
       },
       child: ListTile(
-        onTap: () {
+        onTap: () async {
           if (room.roomId != null) {
             ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
-
+            
             if (DeviceUtil.isRealMobile()) {
-              Navigator.of(
+              await Navigator.of(
                 context,
-              ).push(MaterialPageRoute(builder: (_) => const ChatRoomDetail()));
+              ).push(MaterialPageRoute(builder: (_) => ChatRoomDetail(room: room)));
+
+              // 移动端从详情页返回列表后，清空 active 房间：
+              // 否则该房间会一直被视为“当前房间”，导致未读数不再累加。
+              if (context.mounted) {
+                ref.read(activeRoomIdProvider.notifier).setActive(null);
+              }
             }
           }
         },

@@ -39,7 +39,7 @@ class ChatPage extends ConsumerWidget {
               : Row(
                   children: [
                     // 中间聊天详情
-                    const Expanded(child: ChatRoomDetail()),
+                    Expanded(child: ChatRoomDetail(room: currentRoom)),
                     const VerticalDivider(),
                     // 右侧搜索面板（可选
                     if (currentRoom.isOpenSearch == true)

@@ -5,6 +5,13 @@ import 'package:characters/characters.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'dart:math' as math;
 
+/// Quill Delta 内容处理器
+///
+/// 负责解析和处理富文本编辑器的 [Delta] 数据，包括：
+/// - 提取图片/文件附件
+/// - 提取 @提及用户
+/// - 判断是否是单个Emoji
+/// - 统计文件数量和大小
 class DeltaProcessor {
   final Delta delta;
   final Map<String, String> uploadState;

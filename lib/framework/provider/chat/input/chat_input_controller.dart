@@ -27,6 +27,14 @@ import '../room/room_member_service.dart';
 
 part 'chat_input_controller.g.dart';
 
+/// 聊天输入控制器
+///
+/// 负责管理聊天输入框的状态，包括：
+/// - 富文本编辑（使用 [QuillController]）
+/// - @提及用户功能
+/// - 图片/文件上传
+/// - 正在输入状态发送
+/// - 消息发送逻辑
 @Riverpod(keepAlive: true)
 class ChatInputController extends _$ChatInputController {
   bool _isTyping = false;
@@ -470,7 +478,9 @@ class ChatInputController extends _$ChatInputController {
   }
 }
 
-/// 聊天输入框焦点
+/// 聊天输入框焦点 Provider
+///
+/// 为每个房间独立管理输入框焦点状态
 @riverpod
 FocusNode chatFocusNode(Ref ref, String roomId) {
   final node = FocusNode();
@@ -503,6 +513,9 @@ class MentionState extends _$MentionState {
   }
 }
 
+/// @提及状态数据
+///
+/// 存储提及弹窗的显示状态和相关信息
 class MentionStateData {
   final bool isShowing;
   final int cursorPosition;

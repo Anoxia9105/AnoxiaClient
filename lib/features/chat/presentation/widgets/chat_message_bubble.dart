@@ -18,7 +18,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 
+/// 聊天消息气泡组件
+///
+/// 负责渲染单条聊天消息，包括：
+/// - 消息发送者头像和名称
+/// - 消息内容气泡（支持文本、图片、文件、富文本等多种类型）
+/// - 消息发送状态指示器（发送中、失败、已发送）
+/// - @提及提醒
+/// - 右键菜单/长按菜单
 class ChatMessageBubble extends ConsumerWidget {
+  /// 要显示的消息数据
   final ChatMessage message;
 
   const ChatMessageBubble({super.key, required this.message});

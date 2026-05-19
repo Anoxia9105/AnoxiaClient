@@ -29,6 +29,9 @@ class SelectedContactIds extends _$SelectedContactIds {
   void clear() => state = {};
 }
 
+/// 创建群聊控制器
+///
+/// 负责发起创建群聊的请求和处理结果
 @riverpod
 class CreateGroupController extends _$CreateGroupController {
   @override

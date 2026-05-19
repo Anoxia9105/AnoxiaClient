@@ -15,6 +15,9 @@ import 'package:uuid/uuid.dart';
 
 part 'chat_file_upload_controller.g.dart';
 
+/// 聊天文件上传控制器
+///
+/// 处理文件选择和上传功能
 @Riverpod(keepAlive: true)
 class ChatFileUploadController extends _$ChatFileUploadController {
   @override

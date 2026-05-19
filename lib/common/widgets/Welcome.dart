@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
+
+/// 欢迎页面组件
+///
+/// 用于首次进入或无会话时展示的引导页面，提供友好的欢迎文案和图标。
 class Welcome extends StatelessWidget {
   const Welcome({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w), // 左右留白
@@ -18,7 +21,6 @@ class Welcome extends StatelessWidget {
               HugeIcon(
                 icon: HugeIcons.strokeRoundedChatting01,
                 size: 60,
-                // color: Colors.indigo.withValues(alpha: 0.8),
               ),
               SizedBox(height: 30.h), // 间距
               // 欢迎标题
@@ -37,7 +39,6 @@ class Welcome extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  // color: textColor.withValues(alpha: 0.7), // 副标题颜色稍微浅一些
                   height: 1.5, // 行高
                 ),
               ),

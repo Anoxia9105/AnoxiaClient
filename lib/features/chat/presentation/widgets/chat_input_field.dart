@@ -27,7 +27,17 @@ import 'package:pasteboard/pasteboard.dart';
 import '../../../../framework/extensions/QuillCursorX.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 
+/// 聊天输入框组件
+///
+/// 提供完整的聊天输入功能，包括：
+/// - 富文本编辑器（支持加粗、斜体等格式）
+/// - 图片/文件上传
+/// - @提及用户
+/// - 表情选择
+/// - 粘贴图片支持
+/// - 桌面端/移动端适配（Android 使用简化输入框）
 class ChatInputField extends ConsumerStatefulWidget {
+  /// 底部面板关闭回调
   final VoidCallback bottomSheet;
 
   const ChatInputField({super.key, required this.bottomSheet});

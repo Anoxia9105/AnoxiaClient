@@ -16,6 +16,9 @@ import 'package:uuid/uuid.dart';
 
 part 'chat_image_upload_controller.g.dart';
 
+/// 聊天图片上传控制器
+///
+/// 处理图片选择、粘贴和上传功能
 @Riverpod(keepAlive: true)
 class ChatImageUploadController extends _$ChatImageUploadController {
   @override
