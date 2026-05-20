@@ -296,7 +296,7 @@ mixin ThemeMixin {
       backgroundColor: Colors.transparent,
       titleTextStyle: TextStyle(
         color: colorScheme.onSurface,
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: FontWeight.w600,
       ),
       systemOverlayStyle: SystemUiOverlayStyle(

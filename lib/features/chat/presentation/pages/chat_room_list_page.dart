@@ -42,6 +42,15 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
+        leading: () {
+          /// 如果是移动端 显示菜单按钮 打开个人中心抽屉
+          if (DeviceUtil.isRealMobile()) {
+            return IconButton(
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedMenuTwoLine),
+              onPressed: () {},
+            );
+          }
+        }(),
         title: () {
           /// 如果是桌面 显示搜索框
           if (DeviceUtil.isRealDesktop()) {
@@ -91,6 +100,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                     return IconButton(
                       icon: const HugeIcon(
                         icon: HugeIcons.strokeRoundedLayerAdd,
+                        size: 20,
                       ),
                       onPressed: () =>
                           RoomListDialogMenus.showTopRightDialog(context),
@@ -110,7 +120,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             Builder(
               builder: (context) {
                 return IconButton(
-                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedLayerAdd),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedLayerAdd,
+                    size: 20,
+                  ),
                   onPressed: () =>
                       RoomListDialogMenus.showTopRightDialog(context),
                 );

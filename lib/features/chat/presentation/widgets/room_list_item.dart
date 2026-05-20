@@ -3,7 +3,6 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
-import 'package:anoxia/features/chat/presentation/widgets/room_type_tag.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
