@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 
 /// 应用主布局页面
 ///
@@ -36,36 +37,71 @@ class MainLayoutPage extends ConsumerWidget {
       );
     }
 
-    return AppScaffold(
-      // title: layout.items[safeIndex].name,
-      showDesktopHeaderEnhancements: DeviceUtil.isDesktop(context),
-      body: Row(
-        children: [
-          // 桌面端和平板显示侧边栏
-          if (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context))
-            const DesktopSidebar(),
-          Expanded(
-            child: Scaffold(
-              body: IndexedStack(
-                // 语言切换时重建 IndexedStack，避免缓存旧语言内容
-                key: ValueKey(context.locale.languageCode),
-                index: safeIndex,
-                children: const [
-                  ChatPage(),
-                  ContactPage(),
-                  FavoritesPage(),
-                  MyPage(),
-                  SettingsPage(),
-                ],
+    Widget buildMainContent() {
+      return AppScaffold(
+        showDesktopHeaderEnhancements: DeviceUtil.isDesktop(context),
+        body: Row(
+          children: [
+            if (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context))
+              const DesktopSidebar(),
+            Expanded(
+              child: Scaffold(
+                body: IndexedStack(
+                  key: ValueKey(context.locale.languageCode),
+                  index: safeIndex,
+                  children: const [
+                    ChatPage(),
+                    ContactPage(),
+                    FavoritesPage(),
+                    MyPage(),
+                    SettingsPage(),
+                  ],
+                ),
               ),
             ),
+          ],
+        ),
+        bottomNavigationBar: DeviceUtil.isMobile(context)
+            ? const MobileBottomBar()
+            : null,
+      );
+    }
+
+    if (DeviceUtil.isMobile(context)) {
+      return ZoomDrawer(
+        menuBackgroundColor: Theme.of(context).colorScheme.primary, // 抽屉背景色
+        menuScreen: const MenuPage(), // 左侧抽屉菜单
+        mainScreen: buildMainContent(), // 将带底部导航栏的整体作为主体推走
+        borderRadius: 24.0,
+        showShadow: false,
+        angle: 0.0, // 纯平移
+        slideWidth: size.width * 0.65, // 侧滑宽度 65%
+        menuScreenWidth: size.width * 0.65, // 抽屉宽度 65%
+      );
+    }
+
+    // 桌面端和平板直接返回原生主体，没有任何抽屉干扰
+    return buildMainContent();
+  }
+}
+
+// 示例：左侧抽屉菜单
+class MenuPage extends StatelessWidget {
+  const MenuPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      body: const SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('菜单栏', style: TextStyle(color: Colors.white, fontSize: 24)),
+              // 你的菜单列表项...
+            ],
           ),
-        ],
-      ),
-      // 仅移动端显示底部导航栏
-      bottomNavigationBar: DeviceUtil.isMobile(context)
-          ? const MobileBottomBar()
-          : null,
+        ),
     );
   }
 }

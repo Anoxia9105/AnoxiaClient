@@ -8,6 +8,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 /// 聊天房间列表页面
@@ -47,7 +48,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           if (DeviceUtil.isRealMobile()) {
             return IconButton(
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedMenuTwoLine),
-              onPressed: () {},
+              onPressed: () => ZoomDrawer.of(context)?.toggle(),
             );
           }
         }(),
