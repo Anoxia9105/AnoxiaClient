@@ -471,5 +471,6 @@
   "settings_open_source_version": "バージョン：{}",
   "settings_open_source_spdx": "ライセンス：{}",
   "settings_open_source_no_license_text": "ライセンステキストが提供されていません。",
-  "settings_open_source_package_not_found": "対象パッケージ情報が見つかりません"
+  "settings_open_source_package_not_found": "対象パッケージ情報が見つかりません",
+  "chat_conversation_detail": "会話詳細"
 }

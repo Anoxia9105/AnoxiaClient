@@ -431,5 +431,6 @@
   "settings_open_source_version": "Version: {}",
   "settings_open_source_spdx": "License: {}",
   "settings_open_source_no_license_text": "No license text provided.",
-  "settings_open_source_package_not_found": "Package information not found"
+  "settings_open_source_package_not_found": "Package information not found",
+  "chat_conversation_detail": "Conversation Details"
 }

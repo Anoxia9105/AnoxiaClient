@@ -431,6 +431,6 @@
   "settings_open_source_version": "版本：{}",
   "settings_open_source_spdx": "许可证：{}",
   "settings_open_source_no_license_text": "暂无许可证文本",
-  "settings_open_source_package_not_found": "未找到对应包信息"
-
+  "settings_open_source_package_not_found": "未找到对应包信息",
+  "chat_conversation_detail": "会话详情"
 }

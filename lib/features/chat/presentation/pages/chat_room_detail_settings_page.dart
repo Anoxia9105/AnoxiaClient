@@ -31,7 +31,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
       // 使用更柔和的背景色，衬托卡片区块
       backgroundColor: colorScheme.surfaceContainerLow,
       appBar: AppBar(
-        title: Text("chat_conversation_detail".tr()),
+        title: Text('chat_conversation_detail'.tr()),
         centerTitle: true,
       ),
       body: ListView(
@@ -134,7 +134,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                 icon: HugeIcons.strokeRoundedSearch01,
                 size: 22,
               ),
-              title: Text('chat_search_history'.tr()),
+              title: Text('search_context_title'.tr()),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
                 if (Navigator.of(context).canPop()) {
@@ -167,6 +167,17 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               ),
               title: Text('chat_pin_room'.tr()),
               value: false, // TODO: 绑定状态
+              onChanged: (value) {},
+            ),
+
+            /// 全员禁言
+            SwitchListTile.adaptive(
+              secondary: const HugeIcon(
+                icon: HugeIcons.strokeRoundedVolumeHigh,
+                size: 22,
+              ),
+              title: Text('chat_mute_all'.tr()),
+              value: false,
               onChanged: (value) {},
             ),
           ]),
