@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
+
 import '../protocol/message/Attachment.dart';
 import '../protocol/message/MessageEunm.dart';
 import '../protocol/message/MessagePayload.dart';
@@ -163,6 +165,27 @@ class ChatMessage {
           ? int.tryParse(json['timestamp'].toString())
           : null,
       seq: json['seq'] != null ? int.tryParse(json['seq'].toString()) : null,
+    );
+  }
+
+  /// 从 [RoomMessage] 实例构造 [ChatMessage] 实例
+  static ChatMessage fromRoomMessage(RoomMessage msg) {
+    return ChatMessage(
+      messageId: msg.messageId,
+      clientMsgId: msg.clientMsgId,
+      roomId: msg.roomId,
+      senderId: msg.senderId.toInt(),
+      senderName: msg.senderName,
+      senderAvatar: msg.senderAvatar,
+      messageType: msg.type,
+      content: msg.payload?.content ?? '',
+      payload: msg.payload,
+      attachments: msg.attachments,
+      extra: msg.extra,
+      messageStatus: msg.state,
+      deliveryStatus: msg.status,
+      timestamp: msg.timestamp.toInt(),
+      seq: msg.seq.toInt(),
     );
   }
 }

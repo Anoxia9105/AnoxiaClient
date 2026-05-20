@@ -38,16 +38,13 @@ class SystemEventService extends _$SystemEventService {
       final isNowConnected = next.status == WsStatus.connected;
 
       if (wasDisconnected && isNowConnected) {
-        log.info("🔄 WS 重连成功，刷新业务数据补偿断线期间丢失的事件...");
+        log.info('🔄 WS 重连成功，刷新业务数据补偿断线期间丢失的事件...');
         _onReconnected();
       }
     });
 
     // 销毁时释放订阅
-    ref.onDispose(() {
-      log.info("系统事件服务销毁");
-      subscription.cancel();
-    });
+    ref.onDispose(() => subscription.cancel());
   }
 
   /// WS 重连成功后的数据补偿

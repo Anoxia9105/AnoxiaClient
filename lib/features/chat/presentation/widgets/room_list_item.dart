@@ -1,11 +1,9 @@
-
 import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_type_tag.dart';
-import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
@@ -56,38 +54,48 @@ class RoomListItem extends ConsumerWidget {
 
     bool isOnline = false;
     if (isSingle && room.peerId != null) {
-      isOnline = ref.watch(
-        contactListServiceProvider.select((asyncMap) {
-          final contact = asyncMap.value?[room.peerId];
-          return contact?.onlineStatus ?? false;
-        }),
-      );
+      isOnline = peerContact?.onlineStatus ?? false;
     }
 
     return GestureDetector(
+      /// 右键点击（桌面）或长按（移动端）显示上下文菜单
       onSecondaryTapDown: (details) async {
         if (roomId == null) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
         if (context.mounted) {
-          _showContextMenu(context, ref, details.globalPosition, isPinned);
+          _showContextMenu(
+            context,
+            ref,
+            details.globalPosition,
+            room,
+            isPinned,
+          );
         }
       },
+
+      /// 长按开始时也显示上下文菜单，兼容部分不支持 onSecondaryTapDown 的设备（如部分 Android 机型）
       onLongPressStart: (details) async {
         if (roomId == null) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
         if (context.mounted) {
-          _showContextMenu(context, ref, details.globalPosition, isPinned);
+          _showContextMenu(
+            context,
+            ref,
+            details.globalPosition,
+            room,
+            isPinned,
+          );
         }
       },
       child: ListTile(
         onTap: () async {
           if (room.roomId != null) {
             ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
-            
+
             if (DeviceUtil.isRealMobile()) {
-              await Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => ChatRoomDetail(room: room)));
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ChatRoomDetail(room: room)),
+              );
 
               // 移动端从详情页返回列表后，清空 active 房间：
               // 否则该房间会一直被视为“当前房间”，导致未读数不再累加。
@@ -119,7 +127,14 @@ class RoomListItem extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 6),
-            RoomTypeTag(isSingle: isSingle),
+            HugeIcon(
+              icon: isSingle
+                  ? HugeIcons.strokeRoundedUser02
+                  : HugeIcons.strokeRoundedUserGroup03,
+              size: 16,
+              color: Theme.of(context).colorScheme.outline,
+              strokeWidth: 2,
+            ),
           ],
         ),
         subtitle: Text(
@@ -128,6 +143,8 @@ class RoomListItem extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
+
+        /// 右侧显示最后消息时间和未读数
         trailing: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 120),
           child: Column(
@@ -162,155 +179,110 @@ class RoomListItem extends ConsumerWidget {
     );
   }
 
-  void _showContextMenu(
+  Future<void> _showContextMenu(
     BuildContext context,
     WidgetRef ref,
     Offset globalPosition,
+    ChatRoomVO room,
     bool isPinned,
-  ) {
+  ) async {
     final roomId = room.roomId;
     if (roomId == null) return;
 
-    final RelativeRect position = RelativeRect.fromLTRB(
+    final userId = ref.read(authControllerProvider).value?.userId;
+    final members = ref.read(roomMembersProvider(roomId));
+    final me = members.firstWhere((m) => m.userId == userId);
+    final canDissolve = me.roleId == 0;
+
+    final position = RelativeRect.fromLTRB(
       globalPosition.dx,
       globalPosition.dy,
       globalPosition.dx,
       globalPosition.dy,
     );
 
-    final user = ref.read(authControllerProvider).value;
-    final currentUserId = user?.userId;
+    final items = <PopupMenuEntry<String>>[
+      _buildMenuItem(
+        icon: isPinned
+            ? HugeIcons.strokeRoundedPinOff
+            : HugeIcons.strokeRoundedPin,
+        label: isPinned ? 'chat_unpin'.tr() : 'chat_pin'.tr(),
+        value: 'pin',
+      ),
+      _buildMenuItem(
+        icon: HugeIcons.strokeRoundedCheckmarkBadge01,
+        label: 'chat_mark_as_read'.tr(),
+        value: 'read',
+      ),
+      const PopupMenuDivider(height: 1),
+      if (!canDissolve)
+        _buildMenuItem(
+          icon: HugeIcons.strokeRoundedDelete02,
+          label: 'chat_delete_conversation'.tr(),
+          value: 'hide',
+          color: Theme.of(context).colorScheme.error,
+        ),
+      if (canDissolve)
+        _buildMenuItem(
+          icon: HugeIcons.strokeRoundedDelete02,
+          label: 'chat_dissolve_group'.tr(),
+          value: 'dissolve',
+          color: Theme.of(context).colorScheme.error,
+        ),
+    ];
 
-    final members = ref.read(roomMembersProvider(roomId));
-
-    final ChatRoomMemberVO? me = members
-        .where((m) => m.userId == currentUserId)
-        .firstOrNull;
-    final canDissolve = me?.roleId == 0;
-
-    showMenu<String>(
+    final result = await showMenu<String>(
       context: context,
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       elevation: 4,
-      items: [
-        PopupMenuItem(
-          value: 'pin',
-          height: 36,
-          child: Row(
-            children: [
-              HugeIcon(
-                icon: isPinned
-                    ? HugeIcons.strokeRoundedPinOff
-                    : HugeIcons.strokeRoundedPin,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isPinned ? 'chat_unpin'.tr() : 'chat_pin'.tr(),
-                style: const TextStyle(fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'read',
-          height: 36,
-          child: Row(
-            children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedCheckmarkBadge01,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'chat_mark_as_read'.tr(),
-                style: const TextStyle(fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(height: 1),
-        if (!canDissolve)
-          PopupMenuItem(
-            value: 'hide',
-            height: 36,
-            child: Row(
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedDelete02,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'chat_delete_conversation'.tr(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (canDissolve)
-          PopupMenuItem(
-            value: 'dissolve',
-            height: 36,
-            child: Row(
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedDelete02,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'chat_dissolve_group'.tr(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    ).then((value) async {
-      if (value == null) return;
+      items: items,
+    );
 
-      switch (value) {
-        case 'pin':
-          await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
-          break;
-        case 'read':
-          ref.read(roomListServiceProvider.notifier).markAsRead(roomId);
-          break;
-        case 'hide':
-          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-          final activeId = ref.read(activeRoomIdProvider);
-          if (activeId == roomId) {
-            ref.read(activeRoomIdProvider.notifier).setActive(null);
-          }
-          break;
-        case 'leave':
-          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-          final activeId = ref.read(activeRoomIdProvider);
-          if (activeId == roomId) {
-            ref.read(activeRoomIdProvider.notifier).setActive(null);
-          }
-          break;
-        case 'dissolve':
-          await ref
-              .read(roomListServiceProvider.notifier)
-              .dissolveGroup(roomId);
-          final activeId = ref.read(activeRoomIdProvider);
-          if (activeId == roomId) {
-            ref.read(activeRoomIdProvider.notifier).setActive(null);
-          }
-          break;
-      }
-    });
+    if (result == null) return;
+    final roomList = ref.read(roomListServiceProvider.notifier);
+    final activeRoomId = ref.read(activeRoomIdProvider);
+
+    switch (result) {
+      case 'pin':
+        await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
+        break;
+      case 'read':
+        roomList.markAsRead(roomId);
+        break;
+      case 'hide':
+      case 'leave':
+        await roomList.leaveRoom(roomId);
+        if (activeRoomId == roomId) {
+          ref.read(activeRoomIdProvider.notifier).setActive(null);
+        }
+        break;
+      case 'dissolve':
+        await roomList.dissolveGroup(roomId);
+        if (activeRoomId == roomId) {
+          ref.read(activeRoomIdProvider.notifier).setActive(null);
+        }
+        break;
+    }
+  }
+
+  /// 构建上下文菜单项
+  PopupMenuItem<String> _buildMenuItem({
+    required dynamic icon,
+    required String label,
+    required String value,
+    Color? color,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 36,
+      child: Row(
+        children: [
+          HugeIcon(icon: icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: 13, color: color)),
+        ],
+      ),
+    );
   }
 }

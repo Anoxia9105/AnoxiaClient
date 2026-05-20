@@ -1,10 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_item.dart';
-import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_list_item_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_list_skeleton.dart';
-import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';

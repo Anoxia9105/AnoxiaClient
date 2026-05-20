@@ -45,7 +45,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'c5769ccc67a10c54a23dcea5886d2e600e1939b9';
+String _$roomListServiceHash() => r'333195287e63c6254a1495b5e25dbbdecd221d91';
 
 /// 聊天室列表服务
 ///
@@ -352,7 +352,7 @@ final class RoomSearchQueryProvider
   }
 }
 
-String _$roomSearchQueryHash() => r'71a63adfba4648949d69a3486f1852e4e2acfb36';
+String _$roomSearchQueryHash() => r'a0073b39876b6da2dab28a5a8adbe90398e6116e';
 
 /// 房间搜索关键词
 
@@ -430,7 +430,7 @@ final class FilteredRoomListProvider
   }
 }
 
-String _$filteredRoomListHash() => r'631b1bd63b8bd90c6ea639950a9d46da8f09b624';
+String _$filteredRoomListHash() => r'c7ad2830497d41b750db2301501f76ebc76e3f15';
 
 /// 总未读消息数
 ///

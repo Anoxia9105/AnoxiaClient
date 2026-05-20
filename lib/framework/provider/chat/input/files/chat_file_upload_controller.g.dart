@@ -8,13 +8,22 @@ part of 'chat_file_upload_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 聊天文件上传控制器
+///
+/// 处理文件选择和上传功能
 
 @ProviderFor(ChatFileUploadController)
 const chatFileUploadControllerProvider = ChatFileUploadControllerProvider._();
 
+/// 聊天文件上传控制器
+///
+/// 处理文件选择和上传功能
 final class ChatFileUploadControllerProvider
     extends
         $NotifierProvider<ChatFileUploadController, Map<String, UploadEntry>> {
+  /// 聊天文件上传控制器
+  ///
+  /// 处理文件选择和上传功能
   const ChatFileUploadControllerProvider._()
     : super(
         from: null,
@@ -44,6 +53,10 @@ final class ChatFileUploadControllerProvider
 
 String _$chatFileUploadControllerHash() =>
     r'addf837a31dbb9224a416ea66a1331c6e5175caf';
+
+/// 聊天文件上传控制器
+///
+/// 处理文件选择和上传功能
 
 abstract class _$ChatFileUploadController
     extends $Notifier<Map<String, UploadEntry>> {

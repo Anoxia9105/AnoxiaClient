@@ -8,12 +8,15 @@ part of 'pinned_rooms_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 聊天置顶房间的 Riverpod Provider
 
 @ProviderFor(PinnedRooms)
 const pinnedRoomsProvider = PinnedRoomsProvider._();
 
+/// 聊天置顶房间的 Riverpod Provider
 final class PinnedRoomsProvider
     extends $NotifierProvider<PinnedRooms, Set<String>> {
+  /// 聊天置顶房间的 Riverpod Provider
   const PinnedRoomsProvider._()
     : super(
         from: null,
@@ -42,6 +45,8 @@ final class PinnedRoomsProvider
 }
 
 String _$pinnedRoomsHash() => r'318943ab586a3e7c670f652f6b2170310dd25c20';
+
+/// 聊天置顶房间的 Riverpod Provider
 
 abstract class _$PinnedRooms extends $Notifier<Set<String>> {
   Set<String> build();

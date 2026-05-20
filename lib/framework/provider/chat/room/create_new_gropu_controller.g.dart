@@ -68,11 +68,21 @@ abstract class _$SelectedContactIds extends $Notifier<Set<int>> {
   }
 }
 
+/// 创建群聊控制器
+///
+/// 负责发起创建群聊的请求和处理结果
+
 @ProviderFor(CreateGroupController)
 const createGroupControllerProvider = CreateGroupControllerProvider._();
 
+/// 创建群聊控制器
+///
+/// 负责发起创建群聊的请求和处理结果
 final class CreateGroupControllerProvider
     extends $AsyncNotifierProvider<CreateGroupController, ChatRoomVO?> {
+  /// 创建群聊控制器
+  ///
+  /// 负责发起创建群聊的请求和处理结果
   const CreateGroupControllerProvider._()
     : super(
         from: null,
@@ -94,6 +104,10 @@ final class CreateGroupControllerProvider
 
 String _$createGroupControllerHash() =>
     r'd607555be4da764d4b90d1f83966eda10d9acfec';
+
+/// 创建群聊控制器
+///
+/// 负责发起创建群聊的请求和处理结果
 
 abstract class _$CreateGroupController extends $AsyncNotifier<ChatRoomVO?> {
   FutureOr<ChatRoomVO?> build();

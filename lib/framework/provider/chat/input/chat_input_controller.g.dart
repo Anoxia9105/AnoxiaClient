@@ -8,12 +8,36 @@ part of 'chat_input_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 聊天输入控制器
+///
+/// 负责管理聊天输入框的状态，包括：
+/// - 富文本编辑（使用 [QuillController]）
+/// - @提及用户功能
+/// - 图片/文件上传
+/// - 正在输入状态发送
+/// - 消息发送逻辑
 
 @ProviderFor(ChatInputController)
 const chatInputControllerProvider = ChatInputControllerFamily._();
 
+/// 聊天输入控制器
+///
+/// 负责管理聊天输入框的状态，包括：
+/// - 富文本编辑（使用 [QuillController]）
+/// - @提及用户功能
+/// - 图片/文件上传
+/// - 正在输入状态发送
+/// - 消息发送逻辑
 final class ChatInputControllerProvider
     extends $NotifierProvider<ChatInputController, QuillController> {
+  /// 聊天输入控制器
+  ///
+  /// 负责管理聊天输入框的状态，包括：
+  /// - 富文本编辑（使用 [QuillController]）
+  /// - @提及用户功能
+  /// - 图片/文件上传
+  /// - 正在输入状态发送
+  /// - 消息发送逻辑
   const ChatInputControllerProvider._({
     required ChatInputControllerFamily super.from,
     required String super.argument,
@@ -61,6 +85,15 @@ final class ChatInputControllerProvider
 String _$chatInputControllerHash() =>
     r'225247206843bd6c0326b52ddb812dd76859c2af';
 
+/// 聊天输入控制器
+///
+/// 负责管理聊天输入框的状态，包括：
+/// - 富文本编辑（使用 [QuillController]）
+/// - @提及用户功能
+/// - 图片/文件上传
+/// - 正在输入状态发送
+/// - 消息发送逻辑
+
 final class ChatInputControllerFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -79,12 +112,30 @@ final class ChatInputControllerFamily extends $Family
         isAutoDispose: false,
       );
 
+  /// 聊天输入控制器
+  ///
+  /// 负责管理聊天输入框的状态，包括：
+  /// - 富文本编辑（使用 [QuillController]）
+  /// - @提及用户功能
+  /// - 图片/文件上传
+  /// - 正在输入状态发送
+  /// - 消息发送逻辑
+
   ChatInputControllerProvider call(String roomId) =>
       ChatInputControllerProvider._(argument: roomId, from: this);
 
   @override
   String toString() => r'chatInputControllerProvider';
 }
+
+/// 聊天输入控制器
+///
+/// 负责管理聊天输入框的状态，包括：
+/// - 富文本编辑（使用 [QuillController]）
+/// - @提及用户功能
+/// - 图片/文件上传
+/// - 正在输入状态发送
+/// - 消息发送逻辑
 
 abstract class _$ChatInputController extends $Notifier<QuillController> {
   late final _$args = ref.$arg as String;
@@ -108,17 +159,23 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
   }
 }
 
-/// 聊天输入框焦点
+/// 聊天输入框焦点 Provider
+///
+/// 为每个房间独立管理输入框焦点状态
 
 @ProviderFor(chatFocusNode)
 const chatFocusNodeProvider = ChatFocusNodeFamily._();
 
-/// 聊天输入框焦点
+/// 聊天输入框焦点 Provider
+///
+/// 为每个房间独立管理输入框焦点状态
 
 final class ChatFocusNodeProvider
     extends $FunctionalProvider<FocusNode, FocusNode, FocusNode>
     with $Provider<FocusNode> {
-  /// 聊天输入框焦点
+  /// 聊天输入框焦点 Provider
+  ///
+  /// 为每个房间独立管理输入框焦点状态
   const ChatFocusNodeProvider._({
     required ChatFocusNodeFamily super.from,
     required String super.argument,
@@ -172,7 +229,9 @@ final class ChatFocusNodeProvider
 
 String _$chatFocusNodeHash() => r'4660d1fd2f3c46541ef6c2a8488481cd922b89dc';
 
-/// 聊天输入框焦点
+/// 聊天输入框焦点 Provider
+///
+/// 为每个房间独立管理输入框焦点状态
 
 final class ChatFocusNodeFamily extends $Family
     with $FunctionalFamilyOverride<FocusNode, String> {
@@ -185,7 +244,9 @@ final class ChatFocusNodeFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 聊天输入框焦点
+  /// 聊天输入框焦点 Provider
+  ///
+  /// 为每个房间独立管理输入框焦点状态
 
   ChatFocusNodeProvider call(String roomId) =>
       ChatFocusNodeProvider._(argument: roomId, from: this);

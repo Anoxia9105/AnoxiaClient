@@ -292,8 +292,13 @@ mixin ThemeMixin {
     final appBarTheme = AppBarTheme(
       elevation: 0,
       surfaceTintColor: Colors.transparent,
-      centerTitle: false,
+      centerTitle: true,
       backgroundColor: Colors.transparent,
+      titleTextStyle: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness:

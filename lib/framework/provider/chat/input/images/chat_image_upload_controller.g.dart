@@ -8,13 +8,22 @@ part of 'chat_image_upload_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 聊天图片上传控制器
+///
+/// 处理图片选择、粘贴和上传功能
 
 @ProviderFor(ChatImageUploadController)
 const chatImageUploadControllerProvider = ChatImageUploadControllerProvider._();
 
+/// 聊天图片上传控制器
+///
+/// 处理图片选择、粘贴和上传功能
 final class ChatImageUploadControllerProvider
     extends
         $NotifierProvider<ChatImageUploadController, Map<String, UploadEntry>> {
+  /// 聊天图片上传控制器
+  ///
+  /// 处理图片选择、粘贴和上传功能
   const ChatImageUploadControllerProvider._()
     : super(
         from: null,
@@ -44,6 +53,10 @@ final class ChatImageUploadControllerProvider
 
 String _$chatImageUploadControllerHash() =>
     r'f54cedd000d156b2126c6a4b637e028b8ac9d25c';
+
+/// 聊天图片上传控制器
+///
+/// 处理图片选择、粘贴和上传功能
 
 abstract class _$ChatImageUploadController
     extends $Notifier<Map<String, UploadEntry>> {
