@@ -49,6 +49,8 @@ class RoomListItem extends ConsumerWidget {
 
     final pinnedIds = ref.watch(pinnedRoomsProvider);
     final roomId = room.roomId;
+
+    /// 房间是否被置顶
     final isPinned = roomId != null && pinnedIds.contains(room.roomId);
 
     bool isOnline = false;
@@ -112,29 +114,11 @@ class RoomListItem extends ConsumerWidget {
               ? (isOnline ? AvatarStatus.online : AvatarStatus.offline)
               : AvatarStatus.none,
         ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                displayRoomName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            HugeIcon(
-              icon: isSingle
-                  ? HugeIcons.strokeRoundedUser02
-                  : HugeIcons.strokeRoundedUserGroup03,
-              size: 16,
-              color: Theme.of(context).colorScheme.outline,
-              strokeWidth: 2,
-            ),
-          ],
+        title: Text(
+          displayRoomName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
           room.lastMessage?.content ?? '',
@@ -154,6 +138,18 @@ class RoomListItem extends ConsumerWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  /// 单聊显示个人图标，群聊显示群组图标
+                  HugeIcon(
+                    icon: isSingle
+                        ? HugeIcons.strokeRoundedUser02
+                        : HugeIcons.strokeRoundedUserGroup03,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.outline,
+                    strokeWidth: 2,
+                  ),
+                  const SizedBox(width: 6),
+
+                  /// 如果是置顶聊天，显示置顶图标
                   if (isPinned) ...[
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedPin,

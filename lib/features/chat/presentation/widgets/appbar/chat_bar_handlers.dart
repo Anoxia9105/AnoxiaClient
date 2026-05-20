@@ -219,15 +219,7 @@ class ChatBarHandlers {
     );
   }
 
-  /// 处理踢出成员操作
-  ///
-  /// 显示确认弹窗，确认后执行踢出操作
-  ///
-  /// [context] 上下文
-  /// [ref] WidgetRef 用于访问 Provider
-  /// [roomId] 房间 ID
-  /// [targetUserId] 目标用户 ID
-  /// [targetUserName] 目标用户名
+  /// 显示踢出成员确认 Dialog
   static void showKickMemberDialog(BuildContext context, WidgetRef ref, String roomId, ChatRoomMemberVO member) {
     showDialog(
       context: context,
