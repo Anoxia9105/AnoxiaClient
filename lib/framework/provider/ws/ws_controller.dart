@@ -158,13 +158,13 @@ class WsController extends _$WsController {
       final data = msg is Map ? jsonEncode(msg) : msg;
       _channel?.sink.add(data);
     } catch (e) {
-      log.error("发送消息失败", e);
+      log.error('发送消息失败', e);
     }
   }
 
   /// 处理接收到的消息
   void _handleIncomingMessage(dynamic message) {
-    log.info("【WS收到消息】,${message.toString()}");
+    log.info('WS收到消息:${message.toString()}');
     if (message == 'pong') return;
 
     try {

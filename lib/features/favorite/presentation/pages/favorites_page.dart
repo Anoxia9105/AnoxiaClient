@@ -38,8 +38,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
         return _buildLoaded(context, items);
       },
     );
-
-    return body;
+    return Scaffold(
+      appBar: AppBar(title: Text('sidebar_favorites'.tr())),
+      body: body,
+    );
   }
 
   /// 同步选中状态
@@ -233,13 +235,13 @@ class _FavoriteDetailMobilePage extends StatelessWidget {
 class _FavoriteListPanel extends StatelessWidget {
   /// 收藏项列表
   final List<ChatFavorite> items;
-  
+
   /// 当前选中的收藏项 ID
   final int? selectedId;
-  
+
   /// 选择回调
   final ValueChanged<int> onSelect;
-  
+
   /// 刷新回调
   final VoidCallback onRefresh;
 

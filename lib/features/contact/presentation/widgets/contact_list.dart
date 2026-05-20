@@ -33,55 +33,53 @@ class ContactList extends ConsumerWidget {
       contactSelectionProvider.select((s) => s.viewType),
     );
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        await ref.read(contactListServiceProvider.notifier).refresh();
-      },
-      child: Column(
-        children: [
-          _buildFunctionTile(
-            ref: ref,
-            icon: HugeIcons.strokeRoundedAddTeam,
-            title: 'contact_new_friends'.tr(),
-            isSelected: currentViewType == ContactViewType.newFriends,
-            onTap: () {
-              ref.read(contactSelectionProvider.notifier).selectNewFriends();
-              if (DeviceUtil.isRealMobile()) {
-                _openMobileDetail(context, const NewFriendsPage());
-              }
-            },
-            trailing: VibratingBadge(
-              count: ref.watch(pendingRequestCountProvider).value ?? 0,
-            ),
-          ),
-          _buildFunctionTile(
-            ref: ref,
-            icon: HugeIcons.strokeRoundedUserGroup03,
-            title: 'contact_joined_groups'.tr(),
-            isSelected: currentViewType == ContactViewType.groups,
-            onTap: () {
-              ref.read(contactSelectionProvider.notifier).selectGroups();
-              if (DeviceUtil.isRealMobile()) {
-                _openMobileDetail(context, const GroupRoomListPage());
-              }
-            },
-          ),
-          ListTile(
-            title: Text(
-              'contact_contacts'.tr(),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: SortedContactGroupsWidget(
-              onContactTap: () {
+    return Scaffold(
+      appBar: AppBar(titleSpacing: 16, title: Text('contact_contacts'.tr())),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(contactListServiceProvider.notifier).refresh();
+        },
+        child: Column(
+          children: [
+            _buildFunctionTile(
+              ref: ref,
+              icon: HugeIcons.strokeRoundedAddTeam,
+              title: 'contact_new_friends'.tr(),
+              isSelected: currentViewType == ContactViewType.newFriends,
+              onTap: () {
+                ref.read(contactSelectionProvider.notifier).selectNewFriends();
                 if (DeviceUtil.isRealMobile()) {
-                  _openMobileDetail(context, const ContactDetail());
+                  _openMobileDetail(context, const NewFriendsPage());
+                }
+              },
+              trailing: VibratingBadge(
+                count: ref.watch(pendingRequestCountProvider).value ?? 0,
+              ),
+            ),
+            _buildFunctionTile(
+              ref: ref,
+              icon: HugeIcons.strokeRoundedUserGroup03,
+              title: 'contact_joined_groups'.tr(),
+              isSelected: currentViewType == ContactViewType.groups,
+              onTap: () {
+                ref.read(contactSelectionProvider.notifier).selectGroups();
+                if (DeviceUtil.isRealMobile()) {
+                  _openMobileDetail(context, const GroupRoomListPage());
                 }
               },
             ),
-          ),
-        ],
+            ListTile(title: Text('sidebar_contact'.tr())),
+            Expanded(
+              child: SortedContactGroupsWidget(
+                onContactTap: () {
+                  if (DeviceUtil.isRealMobile()) {
+                    _openMobileDetail(context, const ContactDetail());
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
