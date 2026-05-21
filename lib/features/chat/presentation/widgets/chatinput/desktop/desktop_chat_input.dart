@@ -15,11 +15,11 @@ import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_cont
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/quill/chat_quill_toolbar.dart';
-import 'package:anoxia/features/chat/presentation/widgets/quill/embedBuilder/quill_file_build.dart';
-import 'package:anoxia/features/chat/presentation/widgets/quill/embedBuilder/quill_image_build.dart';
-import 'package:anoxia/features/chat/presentation/widgets/quill/embedBuilder/quill_mention_build.dart';
-import 'package:anoxia/features/chat/presentation/widgets/quill/quill_style_config.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toolbar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 
 class DesktopChatInput extends ConsumerStatefulWidget {
   final String roomId;

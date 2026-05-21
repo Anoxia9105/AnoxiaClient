@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../../../../common/widgets/Toast.dart';
+import '../../../../../../../common/widgets/Toast.dart';
 import 'colors_box.dart';
 
 class ChatQuillToolbar extends ConsumerWidget {

@@ -17,7 +17,6 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (showSkeleton) return const ChatInputSkeleton();
 
-    final bodyPadding = DeviceUtil.isRealMobile() ? 8.00 : 50.00;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return SafeArea(
@@ -26,9 +25,9 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         padding: EdgeInsets.only(
-          left: bodyPadding,
-          right: bodyPadding,
-          bottom: (keyboardInset > 0 ? keyboardInset : 0) + 10,
+          left: DeviceUtil.isRealDesktop() ? 50 : 0,
+          right: DeviceUtil.isRealDesktop() ? 50 : 0,
+          bottom: (keyboardInset > 0 ? keyboardInset : 0),
         ),
         child: switch (roomStatus) {
           0 => ChatInputField(bottomSheet: onFieldTap),

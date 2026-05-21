@@ -140,15 +140,22 @@ class MyCustomSearchViewState extends SearchViewState<MyCustomSearchView> {
               children: [
                 IconButton(
                   onPressed: widget.showEmojiView,
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back, size: 20),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     focusNode: focusNode,
                     onChanged: onTextInputChanged,
+                    style: const TextStyle(fontSize: 14.0),
+
                     decoration: InputDecoration(
+                      isDense: true,
                       hintText: 'emoji_search_hint'.tr(),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical:  8.0,
+                        horizontal: 4.0,
+                      ),
                       border: InputBorder.none,
                     ),
                   ),

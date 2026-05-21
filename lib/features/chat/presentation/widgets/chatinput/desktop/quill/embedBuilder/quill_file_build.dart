@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../../common/utils/fileUtil.dart';
+import '../../../../../../../../common/utils/fileUtil.dart';
 
 class QuillFileBuild implements EmbedBuilder {
   @override
