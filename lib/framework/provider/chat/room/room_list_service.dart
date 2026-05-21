@@ -238,13 +238,13 @@ class RoomListService extends _$RoomListService {
   /// 上报已读 seq 到服务器
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
-      log.info("🚀 上报已读状态: 房间 $roomId, Seq $seq");
+      log.info('🚀 上报已读状态: 房间 $roomId, Seq $seq');
       await DioClient().get(
         API.chatReadReport,
-        queryParameters: {"roomId": roomId, "seq": seq},
+        queryParameters: {'roomId': roomId, 'seq': seq},
       );
     } catch (e) {
-      log.warning("上报已读失败: $e");
+      log.warning('上报已读失败: $e');
     }
   }
 
@@ -266,28 +266,28 @@ class RoomListService extends _$RoomListService {
     }
 
     if (existingRoom != null && existingRoom.roomId != null) {
-      log.info("✅ 找到现有房间: ${existingRoom.roomId}");
+      log.info('✅ 找到现有房间: ${existingRoom.roomId}');
       return existingRoom.roomId;
     }
 
     try {
-      log.info("🚀 正在请求后端创建私聊房间，目标用户: $targetUserId");
+      log.info('🚀 正在请求后端创建私聊房间，目标用户: $targetUserId');
       final res = await DioClient().get(
         API.chatCreatePrivate,
-        queryParameters: {"targetId": targetUserId},
+        queryParameters: {'targetId': targetUserId},
       );
 
-      if (res.data["data"] == null) {
+      if (res.data['data'] == null) {
         return null;
       }
-      final newRoom = ChatRoomVO.fromJson(res.data["data"]);
+      final newRoom = ChatRoomVO.fromJson(res.data['data']);
 
       // 静默刷新房间列表，确保 UI 侧边栏能同步看到新房间
       await refresh(silent: true);
 
       return newRoom.roomId;
     } catch (e) {
-      log.error("❌ 获取/创建房间接口调用失败", e);
+      log.error('❌ 获取/创建房间接口调用失败', e);
       return null;
     }
   }
@@ -295,14 +295,14 @@ class RoomListService extends _$RoomListService {
   /// 退出聊天室
   Future<void> leaveRoom(String roomId) async {
     try {
-      log.info("🚀 正在请求后端删除会话，房间 ID: $roomId");
+      log.info('🚀 正在请求后端删除会话，房间 ID: $roomId');
       final res = await DioClient().get(
         API.chatRoomLeave,
-        queryParameters: {"roomId": roomId},
+        queryParameters: {'roomId': roomId},
       );
 
-      if (res.data["code"] == 200) {
-        log.info("删除会话成功");
+      if (res.data['code'] == 200) {
+        log.info('删除会话成功');
         await refresh(silent: true);
 
         // 删除对应房间缓存的消息
@@ -311,10 +311,10 @@ class RoomListService extends _$RoomListService {
         // 清理加载更多状态
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
 
-        log.info("✅ 已删除房间 $roomId 的本地消息缓存和状态");
+        log.info('✅ 已删除房间 $roomId 的本地消息缓存和状态');
       }
     } catch (e) {
-      log.error("❌ 删除会话失败", e);
+      log.error('❌ 删除会话失败', e);
       rethrow;
     }
   }
@@ -324,13 +324,13 @@ class RoomListService extends _$RoomListService {
     try {
       final res = await DioClient().get(
         API.chatRoomDisband,
-        queryParameters: {"roomId": roomId},
+        queryParameters: {'roomId': roomId},
       );
 
-      log.info("$res");
+      log.info('$res');
       await refresh(silent: true);
     } catch (e) {
-      log.error("❌ 解散群聊失败", e);
+      log.error('❌ 解散群聊失败', e);
       rethrow;
     }
   }
@@ -345,10 +345,10 @@ class RoomListService extends _$RoomListService {
 
       final res = await DioClient().get(
         API.chatRoomMute,
-        queryParameters: {"roomId": roomId, "isMute": isMute},
+        queryParameters: {'roomId': roomId, 'isMute': isMute},
       );
 
-      if (res.data["code"] == 200) {
+      if (res.data['code'] == 200) {
         log.info("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
         await refresh(silent: true);
         return true;
@@ -412,7 +412,7 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
 
   final room = rooms.firstWhere(
     (r) => r.roomId == roomId,
-    orElse: () => throw Exception("尚未加载房间信息"),
+    orElse: () => throw Exception('尚未加载房间信息'),
   );
 
   await Future.wait([
@@ -486,4 +486,17 @@ int totalUnreadCount(Ref ref) {
     });
   }
   return 0;
+}
+
+
+/// 根据房间 ID 获取对应的聊天室对象
+@riverpod
+ChatRoomVO? currentRoom(Ref ref, String roomId) {
+  // 1. 监听整个房间列表的状态
+  final roomListState = ref.watch(roomListServiceProvider);
+  
+  // 2. 从列表中筛选出对应的房间
+  return roomListState.value?.firstWhere(
+    (r) => r.roomId == roomId,
+  );
 }

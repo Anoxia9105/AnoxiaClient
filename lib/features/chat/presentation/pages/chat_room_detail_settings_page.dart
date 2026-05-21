@@ -1,7 +1,9 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -17,9 +19,22 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final currentRoom = ref.watch(currentRoomProvider(room.roomId ?? '')) ?? room;
+
+
+
+
     // 监听房间成员
-    final members = ref.watch(roomMembersProvider(room.roomId ?? ''));
-    final isGroup = room.roomType == 1;
+    final members = ref.watch(roomMembersProvider(currentRoom.roomId ?? ''));
+    final isGroup = currentRoom.roomType == 1;
+
+    /// 当前用户信息
+    final currentUser = ref.watch(authControllerProvider).value;
+
+    // 当前用户是否是管理员
+    final isAdmin = ref.watch(
+      isRoomAdminProvider((currentRoom.roomId ?? '', currentUser?.userId ?? 0)),
+    );
 
     // 计算顶部网格展示逻辑：最多展示 19 人，留 1 个位置给“邀请加号”按钮
     final maxGridItems = isGroup ? 20 : 1;
@@ -60,8 +75,8 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   if (isGroup && index == displayCount) {
                     return _buildActionButton(
                       context,
-                      icon: Icons.add,
-                      label: 'chat_invite'.tr(),
+                      icon: HugeIcons.strokeRoundedAdd01,
+                      label: 'member_add_title'.tr(),
                       onTap: () {
                         /// TODO: 打开选择联系人邀请入群页面
                       },
@@ -160,26 +175,44 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               value: false, // TODO: 绑定状态
               onChanged: (value) {},
             ),
+
             SwitchListTile.adaptive(
               secondary: const HugeIcon(
                 icon: HugeIcons.strokeRoundedPin,
                 size: 22,
               ),
-              title: Text('chat_pin_room'.tr()),
+              title: Text('chat_pin'.tr()),
               value: false, // TODO: 绑定状态
               onChanged: (value) {},
             ),
+            if (isAdmin)
+              /// 全员禁言
+              SwitchListTile.adaptive(
+                secondary: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedVolumeHigh,
+                  size: 22,
+                ),
+                title: Text('chat_mute_all'.tr()),
+                value: currentRoom.roomStatus == 1,
+                onChanged: (value) async {
+                  if (currentRoom.roomId == null) return;
 
-            /// 全员禁言
-            SwitchListTile.adaptive(
-              secondary: const HugeIcon(
-                icon: HugeIcons.strokeRoundedVolumeHigh,
-                size: 22,
+                  final targetMuteState = value;
+
+                  final success = await ref
+                      .read(roomListServiceProvider.notifier)
+                      .muteRoom(currentRoom.roomId!, targetMuteState);
+                  if (success) {
+                    BotToast.showText(
+                      text: targetMuteState
+                          ? 'chat_mute_success'.tr()
+                          : 'chat_unmute_success'.tr(),
+                    );
+                  } else {
+                    BotToast.showText(text: 'chat_operation_retry_failed'.tr());
+                  }
+                },
               ),
-              title: Text('chat_mute_all'.tr()),
-              value: false,
-              onChanged: (value) {},
-            ),
           ]),
 
           // --- 区块 4：危险操作（退出/解散）---
@@ -221,7 +254,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
   /// 快捷构建网格内类似“+”号的虚线/圆圈功能按钮
   Widget _buildActionButton(
     BuildContext context, {
-    required IconData icon,
+    required dynamic icon,
     required String label,
     required VoidCallback onTap,
   }) {
@@ -236,15 +269,24 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
             height: 44,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: colorScheme.onSurfaceVariant, size: 24),
+            child: HugeIcon(
+              icon: icon,
+              color: colorScheme.onSurfaceVariant,
+              size: 18,
+            ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            maxLines: 1,
-            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 11,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
         ],
       ),

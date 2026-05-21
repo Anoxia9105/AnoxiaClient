@@ -45,7 +45,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'333195287e63c6254a1495b5e25dbbdecd221d91';
+String _$roomListServiceHash() => r'd34b3d4884086da24fc056bc40ff834bb09a43e3';
 
 /// 聊天室列表服务
 ///
@@ -237,7 +237,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'09ad97b9caff9a0a0b592986b833b18387775a38';
+String _$roomEntryTaskHash() => r'78570d9ba90ca5661d88ed4e6efe4c792b144e99';
 
 /// 进入房间时的初始化任务
 ///
@@ -482,3 +482,89 @@ final class TotalUnreadCountProvider extends $FunctionalProvider<int, int, int>
 }
 
 String _$totalUnreadCountHash() => r'28ba55bb5ba482ddd0f850e95fd5ebcd14e7bae5';
+
+/// 根据房间 ID 获取对应的聊天室对象
+
+@ProviderFor(currentRoom)
+const currentRoomProvider = CurrentRoomFamily._();
+
+/// 根据房间 ID 获取对应的聊天室对象
+
+final class CurrentRoomProvider
+    extends $FunctionalProvider<ChatRoomVO?, ChatRoomVO?, ChatRoomVO?>
+    with $Provider<ChatRoomVO?> {
+  /// 根据房间 ID 获取对应的聊天室对象
+  const CurrentRoomProvider._({
+    required CurrentRoomFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'currentRoomProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentRoomHash();
+
+  @override
+  String toString() {
+    return r'currentRoomProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<ChatRoomVO?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ChatRoomVO? create(Ref ref) {
+    final argument = this.argument as String;
+    return currentRoom(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ChatRoomVO? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ChatRoomVO?>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CurrentRoomProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$currentRoomHash() => r'5dc9342c5808fab97af18ca98c631a3c9bc6a548';
+
+/// 根据房间 ID 获取对应的聊天室对象
+
+final class CurrentRoomFamily extends $Family
+    with $FunctionalFamilyOverride<ChatRoomVO?, String> {
+  const CurrentRoomFamily._()
+    : super(
+        retry: null,
+        name: r'currentRoomProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// 根据房间 ID 获取对应的聊天室对象
+
+  CurrentRoomProvider call(String roomId) =>
+      CurrentRoomProvider._(argument: roomId, from: this);
+
+  @override
+  String toString() => r'currentRoomProvider';
+}
