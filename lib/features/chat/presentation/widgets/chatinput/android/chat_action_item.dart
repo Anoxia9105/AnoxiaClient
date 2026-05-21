@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 聊天操作项组件
+///
+/// 用于在聊天输入框的更多面板中显示单个操作按钮，
+/// 包含图标和标签文字，支持点击交互
 class ChatActionItem extends StatelessWidget {
+  /// 图标，支持 HugeIcons 的图标类型
   final dynamic icon;
+
+  /// 操作项标签文字
   final String label;
+
+  /// 点击回调
   final VoidCallback onTap;
 
   const ChatActionItem({

@@ -10,11 +10,21 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
-// 引入新抽离的面板
-import 'chat_more_panel.dart'; 
+import 'chat_more_panel.dart';
 
+/// 移动端聊天输入组件
+///
+/// 提供移动端聊天房间的输入功能，包括：
+/// - 文本输入和发送
+/// - @提及成员
+/// - 表情选择
+/// - 图片和文件发送
+/// - 语音输入入口
 class MobileChatInput extends ConsumerStatefulWidget {
+  /// 房间 ID
   final String roomId;
+
+  /// 底部面板关闭回调
   final VoidCallback bottomSheet;
 
   const MobileChatInput({
@@ -28,12 +38,25 @@ class MobileChatInput extends ConsumerStatefulWidget {
 }
 
 class _MobileChatInputState extends ConsumerState<MobileChatInput> {
+  /// 文本输入控制器
   final TextEditingController _textController = TextEditingController();
+
+  /// @提及映射，键为用户名，值为用户 ID
   final Map<String, int> _mentionMap = {};
+
+  /// 上一次文本内容，用于检测输入变化
   String _lastText = '';
+
+  /// 文本是否为空
   bool _isTextEmpty = true;
+
+  /// 是否显示更多操作面板
   bool _showMorePanel = false;
+
+  /// 是否显示表情面板
   bool _showEmojiPanel = false;
+
+  /// 输入框焦点节点
   late final FocusNode _focusNode;
 
   @override
@@ -52,6 +75,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     super.dispose();
   }
 
+  /// 焦点变化处理
+  ///
+  /// 当输入框获得焦点时，关闭所有面板
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
       setState(() {
@@ -61,6 +87,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     }
   }
 
+  /// 文本变化处理
+  ///
+  /// 检测 @ 符号输入并弹出提及成员选择面板
   void _handleTextChanged(String value) {
     if (_isTextEmpty != value.isEmpty) {
       setState(() => _isTextEmpty = value.isEmpty);
@@ -76,6 +105,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     if (typedAt) _showMentionSheet();
   }
 
+  /// 显示 @提及成员选择面板
   void _showMentionSheet() {
     final currentUser = ref.read(authControllerProvider).value;
     final roomMembers = ref.read(roomMembersProvider(widget.roomId));
@@ -107,6 +137,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     );
   }
 
+  /// 插入 @提及文本
+  ///
+  /// 将选中的用户名插入到光标位置，替换已输入的 @ 符号
   void _insertMention(MentionUser user) {
     final text = _textController.text;
     final selection = _textController.selection;
@@ -133,6 +166,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _lastText = newText;
   }
 
+  /// 在光标位置插入文本
   void _insertTextAtCursor(String insertText) {
     final text = _textController.text;
     final selection = _textController.selection;
@@ -148,10 +182,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     if (_isTextEmpty) setState(() => _isTextEmpty = false);
   }
 
+  /// 发送消息
   void _handleSend() {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    // 收集消息中实际包含的 @提及用户 ID
     final mentionIds = <int>{};
     for (final entry in _mentionMap.entries) {
       if (text.contains('@${entry.key}')) mentionIds.add(entry.value);
@@ -166,6 +202,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _closeAllPanels();
   }
 
+  /// 选择并发送文件
+  ///
+  /// [type] 文件类型
+  /// [isImage] 是否为图片
   Future<void> _pickAndSend(FileType type, bool isImage) async {
     final result = await FilePicker.pickFiles(allowMultiple: true, type: type);
     if (result == null || result.files.isEmpty || !mounted) return;
@@ -179,6 +219,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _closeAllPanels();
   }
 
+  /// 切换更多操作面板显示状态
   void _toggleMorePanel() {
     if (_showMorePanel) {
       _focusNode.requestFocus();
@@ -191,6 +232,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     }
   }
 
+  /// 切换表情面板显示状态
   void _toggleEmojiPanel() {
     if (_showEmojiPanel) {
       _focusNode.requestFocus();
@@ -203,6 +245,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     }
   }
 
+  /// 关闭所有面板
   void _closeAllPanels() {
     setState(() {
       _showMorePanel = false;
@@ -211,6 +254,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     widget.bottomSheet();
   }
 
+  /// 构建紧凑型图标按钮
   Widget _buildCompactButton({required String tooltipMessage, required VoidCallback onTap, required dynamic icon, Color? color}) {
     final colorScheme = Theme.of(context).colorScheme;
     return Tooltip(
@@ -316,7 +360,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                     child: IndexedStack(
                       index: _showMorePanel ? 0 : (_showEmojiPanel ? 1 : 0),
                       children: [
-                        // 1. 使用全新抽离的更多操作面板，并传入回调
+                        // 更多操作面板
                         ChatMorePanel(
                           roomId: widget.roomId,
                           onPickFile: _pickAndSend,
@@ -325,7 +369,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                             _showMentionSheet();
                           },
                         ),
-                        // 2. 表情面板保持原样
+                        // 表情面板
                         Padding(
                           padding: const EdgeInsets.all(8),
                           child: ChatEmojiWidget(

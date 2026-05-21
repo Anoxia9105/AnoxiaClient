@@ -15,7 +15,16 @@ import 'package:window_manager/window_manager.dart';
 import 'component/deesktop/call_desktop_app_bar.dart';
 import 'call_room_page.dart';
 
+/// 桌面端通话窗口页面
+///
+/// 作为独立窗口运行，用于桌面端通话功能。
+/// 负责处理：
+/// - 窗口参数解析（主题、标题、房间ID）
+/// - 跨窗口通信（主题切换、语言切换）
+/// - 窗口关闭事件处理
+/// - 房间令牌获取
 class CallWindowPage extends ConsumerStatefulWidget {
+  /// 多窗口控制器
   final WindowController controller;
 
   const CallWindowPage({super.key, required this.controller});
@@ -26,8 +35,13 @@ class CallWindowPage extends ConsumerStatefulWidget {
 
 class _CallWindowPageState extends ConsumerState<CallWindowPage>
     with WindowListener {
+  /// 当前主题索引
   int _themeIndex = 0;
+
+  /// 窗口标题
   String _title = "";
+
+  /// 房间ID
   String _roomId = "";
 
   @override
@@ -41,7 +55,6 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
     _themeIndex = args['themeIndex'] ?? 0;
     _title = args["title"] ?? "";
     _roomId = args["roomId"] ?? "";
-    //获取token
     ref.read(roomTokenProvider(_roomId));
 
     Channel.callChannel.setMethodCallHandler((call) async {
@@ -63,7 +76,6 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
 
   @override
   Future<void> onWindowClose() async {
-    // 1. 获取拦截状态
     bool isPreventClose = await windowManager.isPreventClose();
 
     if (isPreventClose) {

@@ -9,11 +9,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 群聊操作按钮组组件
+///
+/// 显示在群聊房间 AppBar 中的操作按钮集合，包括：
+/// - 添加成员按钮
+/// - 全体禁言/解除禁言按钮（仅管理员可见）
+/// - 成员列表按钮（显示成员数量和详情）
+///
+/// 当房间状态为已解散（2）或已冻结（3）时，不显示任何操作按钮
 class ChatGroupActionButtonsWidget extends ConsumerWidget {
+  /// 当前聊天房间数据
   final ChatRoomVO room;
+
+  /// 房间成员列表
   final List<ChatRoomMemberVO> members;
+
+  /// 当前用户是否为管理员
   final bool isAdmin;
+
+  /// 当前用户 ID
   final int? currentUserId;
+
   const ChatGroupActionButtonsWidget({
     super.key,
     required this.room,
@@ -24,13 +40,11 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    /// 根据房间状态决定是否显示操作按钮
+    // 房间状态为 2（已解散）或 3（已冻结）时，不显示任何操作按钮
     final isDisabledStatus = room.roomStatus == 2 || room.roomStatus == 3;
-
-    /// 房间状态为 2（已解散）或 3（已冻结）时，不显示任何操作按钮
     if (isDisabledStatus) return const SizedBox.shrink();
 
-    // 格式化处理“我”的后缀
+    // 为当前用户添加"我"的后缀标识
     final displayMembers = members
         .map(
           (m) => m.userId == currentUserId
@@ -45,13 +59,13 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 1. 添加成员
+        // 添加成员按钮
         IconButton(
           tooltip: 'appbar_add_member'.tr(),
           onPressed: () => ChatBarHandlers.showAddMemberDialog(context, room),
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedAddTeam, size: 20),
         ),
-        // 2. 全体禁言
+        // 全体禁言按钮（仅管理员可见）
         if (isAdmin)
           _MuteButton(
             isMuted: room.roomStatus == 1,
@@ -62,7 +76,7 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
               room.roomStatus != 1,
             ),
           ),
-        // 3. 成员列表
+        // 成员列表按钮
         _MemberListButton(
           members: displayMembers,
           currentUserId: currentUserId,
@@ -83,6 +97,7 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
 
 /// 禁言/解除禁言按钮组件
 ///
+/// 根据当前禁言状态显示不同的图标和样式，
 /// 避免在 AppBar.actions 里嵌套过多 Builder
 class _MuteButton extends StatelessWidget {
   /// 是否已禁言
@@ -122,7 +137,9 @@ class _MuteButton extends StatelessWidget {
   }
 }
 
-/// 成员列表按钮 + 弹出面板组件
+/// 成员列表按钮及弹出面板组件
+///
+/// 点击后显示成员列表弹窗，支持管理员踢出成员操作
 class _MemberListButton extends StatelessWidget {
   /// 房间成员列表
   final List<ChatRoomMemberVO> members;
@@ -233,15 +250,14 @@ class _MemberListButton extends StatelessWidget {
     );
   }
 
-  /// 构建每行右侧的操作区域
+  /// 构建成员列表项右侧的操作区域
   ///
   /// - 管理员：显示"管理员"标签
   /// - 我是管理员且当前行不是我：显示踢出按钮
-  /// - 其他情况：空
+  /// - 其他情况：返回空组件
   ///
-  /// [context] 上下文
+  /// [context] 构建上下文
   /// [m] 成员对象
-  /// 返回 操作区域 Widget
   Widget _buildTrailing(BuildContext context, ChatRoomMemberVO m) {
     // 当前行是管理员，显示标签
     if (m.roleId == 0) {

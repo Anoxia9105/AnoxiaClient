@@ -1,5 +1,3 @@
-// participant_tile.dart
-
 import 'dart:convert';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
@@ -10,7 +8,13 @@ import 'package:livekit_client/livekit_client.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-// local helper to convert quality/rtt to icon
+/// 根据参与者连接质量构建信号强度图标
+///
+/// 根据不同的连接质量显示不同颜色和信号条数量：
+/// - 优秀/良好：绿色，3格信号
+/// - 较差：橙色，2格信号
+/// - 丢失：红色，1格信号
+/// - 未知：灰色，0格信号
 Widget _buildSignalIconForParticipant(Participant p) {
   final quality = p.connectionQuality;
 
@@ -71,8 +75,21 @@ Widget _buildSignalIconForParticipant(Participant p) {
   );
 }
 
+/// 通话参与者磁贴组件
+///
+/// 显示单个通话参与者的视频画面和信息，包括：
+/// - 视频画面（摄像头或屏幕共享）
+/// - 参与者头像（无视频时显示）
+/// - 参与者昵称
+/// - 静音状态图标
+/// - 网络信号强度
+/// - 举手状态标识
+/// - 操作菜单（静音他人、踢出参与者）
 class ParticipantTile extends StatefulWidget {
+  /// 参与者实例（本地或远端）
   final Participant participant;
+
+  /// 是否举手
   final bool handRaised;
 
   /// 点击"静音"时触发，传入目标参与者 identity
@@ -94,7 +111,7 @@ class ParticipantTile extends StatefulWidget {
 }
 
 class _ParticipantTileState extends State<ParticipantTile> {
-  // 当前应该显示的视频轨道
+  /// 当前应该显示的视频轨道
   VideoTrack? videoTrack;
 
   /// 监听参与者事件，变化时触发 rebuild
@@ -115,6 +132,9 @@ class _ParticipantTileState extends State<ParticipantTile> {
     }
   }
 
+  /// 订阅参与者事件
+  ///
+  /// 监听说话状态、轨道静音/取消静音、轨道发布/取消发布等事件
   void _subscribeParticipant(Participant p) {
     _participantListener = p.createListener();
     _participantListener!
@@ -147,9 +167,10 @@ class _ParticipantTileState extends State<ParticipantTile> {
     super.dispose();
   }
 
-  /// 计算当前应该显示哪个视频轨道 (屏幕共享 > 摄像头)
+  /// 计算当前应该显示哪个视频轨道
+  ///
+  /// 优先级：屏幕共享 > 摄像头
   VideoTrack? _getVisibleVideoTrack() {
-    // 优先找屏幕共享
     final screenPub = widget.participant.videoTrackPublications
         .where((pub) => pub.isScreenShare && !pub.muted && pub.subscribed)
         .firstOrNull;
@@ -157,7 +178,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
     if (screenPub?.track != null && screenPub?.track is VideoTrack) {
       return screenPub!.track as VideoTrack;
     }
-    // 2. 其次找摄像头
+
     final cameraPub = widget.participant.videoTrackPublications
         .where((pub) => !pub.isScreenShare && !pub.muted && pub.subscribed)
         .firstOrNull;
@@ -169,7 +190,9 @@ class _ParticipantTileState extends State<ParticipantTile> {
     return null;
   }
 
-  /// 弹出"更多"操作菜单（静音 / 踢出）
+  /// 弹出"更多"操作菜单
+  ///
+  /// 提供静音和踢出功能（仅对远端参与者显示）
   void _showMoreMenu(BuildContext context, String identity) {
     Function? close;
 
@@ -257,7 +280,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final p = widget.participant;
     final track = _getVisibleVideoTrack();
 
-    // 解析元数据 (头像/昵称)
     Map<String, dynamic> meta = {};
     try {
       if (p.metadata != null && p.metadata!.isNotEmpty) {
@@ -271,13 +293,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final isCurrentUser = p is LocalParticipant;
     final isMuted = p.isMicrophoneEnabled() == false;
 
-    // 检查是否屏幕共享
-    // final isScreenShare = p.videoTrackPublications.any(
-    //   (pub) => pub.isScreenShare && !pub.muted && pub.subscribed,
-    // );
-
-    // 屏幕共享时显示特殊标签
-    // final displayName = isScreenShare ? "$nickName's Screen" : nickName;
     final displayName = nickName;
 
     return Padding(
@@ -306,7 +321,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 使用你的 AvatarWidget
                       AvatarWidget(size: 48, url: avatarUrl, name: nickName),
                     ],
                   ),
@@ -386,15 +400,21 @@ class _ParticipantTileState extends State<ParticipantTile> {
   }
 }
 
-// ──────────────────────────────────────────
-// 内部数据类
-// ──────────────────────────────────────────
-
+/// 更多菜单项数据
 class _MoreMenuItem {
+  /// 图标
   final List<List<dynamic>> icon;
+
+  /// 图标颜色
   final Color? iconColor;
+
+  /// 标签文字
   final String label;
+
+  /// 标签颜色
   final Color? labelColor;
+
+  /// 点击回调
   final VoidCallback onTap;
 
   const _MoreMenuItem({

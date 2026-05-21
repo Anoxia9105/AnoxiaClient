@@ -9,8 +9,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 房间列表对话框菜单工具类
+///
+/// 提供房间列表页面右上角菜单的静态方法，包括：
+/// - 创建群聊
+/// - 添加好友
 class RoomListDialogMenus {
-    /// 显示添加房间/好友的详情菜单
+  /// 显示右上角菜单对话框
+  ///
+  /// 根据设备类型（移动端/桌面端）调整菜单的位置和样式，
+  /// 提供创建群聊和添加好友的入口
+  ///
+  /// [context] 构建上下文
+  /// [ref] 可选的回调函数，用于处理添加好友对话框
   static void showTopRightDialog(BuildContext context, {Function? ref}) {
     Function? close;
     bool isMobile = DeviceUtil.isRealMobile();
@@ -38,6 +49,7 @@ class RoomListDialogMenus {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // 创建群聊按钮
                   SizedBox(
                     width: double.infinity,
                     child: TextButton.icon(
@@ -58,13 +70,13 @@ class RoomListDialogMenus {
                       ),
                     ),
                   ),
+                  // 添加好友按钮
                   SizedBox(
                     width: double.infinity,
                     child: TextButton.icon(
                       onPressed: () {
                         close?.call();
                         if (ref != null) {
-                          // 这里可以回调处理 showAddFriendDialog
                           ref(context);
                         }
                       },
@@ -83,9 +95,12 @@ class RoomListDialogMenus {
       ),
     );
   }
+}
 
-
-  
+/// 显示添加好友对话框
+///
+/// [context] 构建上下文
+/// [ref] Riverpod 的 WidgetRef
 void _showAddFriendDialog(BuildContext context, WidgetRef ref) {
     final isDesktop = DeviceUtil.isRealDesktop();
     final dialogWidth = isDesktop ? 900.0 : 400.0;
@@ -116,4 +131,3 @@ void _showAddFriendDialog(BuildContext context, WidgetRef ref) {
       },
     );
   }
-}

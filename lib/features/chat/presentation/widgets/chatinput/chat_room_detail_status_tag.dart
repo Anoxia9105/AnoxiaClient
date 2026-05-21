@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-/// 房间状态提示标签
+/// 聊天房间详情页状态提示标签组件
+///
+/// 用于显示房间的特殊状态提示，如：
+/// - 全员禁言提示
+/// - 房间已解散提示
 class ChatRoomDetailStatusTag extends StatelessWidget {
+  /// 提示文本内容
   final String text;
+
+  /// 图标，支持 HugeIcons 的图标类型
   final dynamic icon;
+
   const ChatRoomDetailStatusTag({super.key, required this.text, this.icon});
 
   @override

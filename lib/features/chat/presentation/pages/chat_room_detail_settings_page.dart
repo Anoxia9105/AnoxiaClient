@@ -11,8 +11,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 
 /// 聊天房间详情设置页
+///
+/// 展示房间成员列表、搜索聊天记录、消息通知设置等功能。
+/// 群聊还支持全员禁言、退出群聊等操作。
 class ChatRoomDetailSettingsPage extends ConsumerWidget {
+  /// 当前房间信息
   final ChatRoomVO room;
+
   const ChatRoomDetailSettingsPage({super.key, required this.room});
 
   @override
@@ -33,7 +38,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
       isRoomAdminProvider((currentRoom.roomId ?? '', currentUser?.userId ?? 0)),
     );
 
-    // 计算顶部网格展示逻辑：最多展示 19 人，留 1 个位置给“邀请加号”按钮
+    // 计算顶部网格展示逻辑：最多展示 19 人，留 1 个位置给"邀请加号"按钮
     final maxGridItems = isGroup ? 20 : 1;
     final displayCount = members.length > (maxGridItems - 1) && isGroup
         ? (maxGridItems - 1)
@@ -49,18 +54,18 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          // --- 🌟 区块 0：顶部成员网格卡片 ---
+          // 区块 0：顶部成员网格卡片
           _buildSection(context, [
             Padding(
               padding: const EdgeInsets.all(8),
               child: GridView.builder(
-                // 修复关键 1：禁止 GridView 独立滚动，让其跟随外层 ListView
+                // 禁止 GridView 独立滚动，让其跟随外层 ListView
                 physics: const NeverScrollableScrollPhysics(),
-                // 修复关键 2：包裹内容，自动计算网格高度
+                // 包裹内容，自动计算网格高度
                 shrinkWrap: true,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5, // 移动端 5 列视觉更紧凑美观
-                  childAspectRatio: 0.85, // 调大纵横比，为底部名字留出空间，防止文本溢出
+                  childAspectRatio: 0.85, // 为底部名字留出空间，防止文本溢出
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
@@ -68,14 +73,14 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                     ? (displayCount + 1)
                     : displayCount, // +1 是留给加号的
                 itemBuilder: (context, index) {
-                  // 渲染“添加成员”加号按钮
+                  // 渲染"添加成员"加号按钮
                   if (isGroup && index == displayCount) {
                     return _buildActionButton(
                       context,
                       icon: HugeIcons.strokeRoundedAdd01,
                       label: 'member_add_title'.tr(),
                       onTap: () {
-                        /// TODO: 打开选择联系人邀请入群页面
+                        // TODO: 打开选择联系人邀请入群页面
                       },
                     );
                   }
@@ -83,7 +88,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   final member = members[index];
                   return GestureDetector(
                     onTap: () {
-                      /// TODO: 跳转到成员个人主页
+                      // TODO: 跳转到成员个人主页
                     },
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -91,7 +96,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                         AvatarWidget(
                           url: member.avatar,
                           name: member.nickName,
-                          size: 44, // 稍微加大尺寸
+                          size: 44,
                         ),
                         const SizedBox(height: 4),
                         Expanded(
@@ -115,7 +120,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
             ),
           ]),
 
-          // --- 区块 1：群成员管理入口 ---
+          // 区块 1：群成员管理入口
           _buildSection(context, [
             ListTile(
               leading: const HugeIcon(
@@ -134,12 +139,12 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   : null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
-                /// TODO: 跳转到查看完整的群成员列表页面
+                // TODO: 跳转到查看完整的群成员列表页面
               },
             ),
           ]),
 
-          // --- 区块 2：核心功能（搜索与查找）---
+          // 区块 2：核心功能（搜索与查找）
           _buildSection(context, [
             ListTile(
               leading: const HugeIcon(
@@ -161,7 +166,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
             ),
           ]),
 
-          // --- 区块 3：通知与会话设置 ---
+          // 区块 3：通知与会话设置
           _buildSection(context, [
             SwitchListTile.adaptive(
               secondary: const HugeIcon(
@@ -182,8 +187,8 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               value: false, // TODO: 绑定状态
               onChanged: (value) {},
             ),
+            // 全员禁言（仅管理员可见）
             if (isAdmin)
-              /// 全员禁言
               SwitchListTile.adaptive(
                 secondary: const HugeIcon(
                   icon: HugeIcons.strokeRoundedVolumeHigh,
@@ -212,7 +217,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               ),
           ]),
 
-          // --- 区块 4：危险操作（退出/解散）---
+          // 区块 4：危险操作（退出/解散）
           if (isGroup)
             _buildSection(context, [
               ListTile(
@@ -226,7 +231,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   ),
                 ),
                 onTap: () {
-                  /// TODO: 弹出退出群聊确认弹窗
+                  // TODO: 弹出退出群聊确认弹窗
                 },
               ),
             ]),
@@ -235,12 +240,14 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     );
   }
 
-  /// 封装卡片容器（自动适配暗黑模式颜色）
+  /// 封装卡片容器
+  ///
+  /// 自动适配暗黑模式颜色，统一卡片样式
   Widget _buildSection(BuildContext context, List<Widget> children) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        // 修复关键 3：使用 surface 替代纯白，完美适配 Dark Mode
+        // 使用 surface 替代纯白，完美适配 Dark Mode
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
@@ -248,7 +255,9 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     );
   }
 
-  /// 快捷构建网格内类似“+”号的虚线/圆圈功能按钮
+  /// 快捷构建网格内功能按钮
+  ///
+  /// 用于添加成员等操作入口
   Widget _buildActionButton(
     BuildContext context, {
     required dynamic icon,

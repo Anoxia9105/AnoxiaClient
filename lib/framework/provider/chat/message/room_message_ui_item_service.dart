@@ -5,8 +5,14 @@ import 'room_message_service.dart';
 
 part 'room_message_ui_item_service.g.dart';
 
-/// 专门为某个房间计算 [时间条 + 消息] 混合平铺列表的 ViewProvider
-/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息
+/// 聊天 UI 列表计算服务
+///
+/// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
+/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息。
+///
+/// 该服务会自动在消息之间插入时间分隔条，规则如下：
+/// - 第一条消息前显示时间分隔条
+/// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 @riverpod
 List<ChatListItem> chatUiList(Ref ref, String roomId) {
   final messages = ref.watch(chatMessagesProvider.select((state) => state[roomId] ?? []));
@@ -35,6 +41,6 @@ List<ChatListItem> chatUiList(Ref ref, String roomId) {
     items.add(MessageItem(msg));
   }
 
-  // 核心：直接反转列表，使 index 0 对应最新消息，完美适配 reverse: true
+  // 反转列表，使 index 0 对应最新消息，适配 reverse: true 的 ListView
   return items.reversed.toList();
 }

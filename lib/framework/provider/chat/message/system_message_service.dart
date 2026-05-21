@@ -12,8 +12,13 @@ import '../../../logs/talker.dart';
 part 'system_message_service.g.dart';
 
 /// 系统信令消息监听服务
-/// 
-/// 专门拦截 RoomMessage 中的 system 类型，处理通话挂断、禁言、解散、通知等衍生旁路业务
+///
+/// 专门拦截 [RoomMessage] 中的 system 类型消息，处理以下衍生旁路业务：
+/// - 通话状态变更（开始/结束）
+/// - 房间状态变更（禁言/解禁/解散）
+/// - 桌面通知推送
+///
+/// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
 @Riverpod(keepAlive: true)
 class SystemMessageService extends _$SystemMessageService {
   @override
@@ -29,6 +34,9 @@ class SystemMessageService extends _$SystemMessageService {
     ref.onDispose(() => subscription.cancel());
   }
 
+  /// 系统消息接收处理
+  ///
+  /// 解析消息中的 action 字段，分发到对应的处理方法
   void _onSystemMessageReceived(RoomMessage msg) {
     final roomId = msg.roomId;
     final action = msg.extra['action']?.toString().toUpperCase();
@@ -37,7 +45,13 @@ class SystemMessageService extends _$SystemMessageService {
     _processRoomStatusAction(roomId, action, msg.extra);
     _processCallStatusAction(roomId, action, msg);
   }
-  /// 1. 处理房间层面的信令更新
+
+  /// 处理房间层面的信令更新
+  ///
+  /// 根据系统信令更新房间状态：
+  /// - ROOM_MUTED：全员禁言/解除禁言
+  /// - ROOM_DISSOLVED：房间解散/封禁
+  /// - ROOM_CREATED：房间创建/解封
   void _processRoomStatusAction(String roomId, String action, Map<String, dynamic> extra) {
     int? nextStatus;
     switch (action) {
@@ -58,7 +72,10 @@ class SystemMessageService extends _$SystemMessageService {
     }
   }
 
-  /// 2. 处理音视频通话层面的信令与桌面通知
+  /// 处理音视频通话层面的信令与桌面通知
+  ///
+  /// - CALL_STARTED：标记通话开始，发送桌面通知
+  /// - CALL_ENDED：标记通话结束，发送桌面通知
   void _processCallStatusAction(String roomId, String action, RoomMessage msg) {
     final callStatus = ref.read(callStatusControllerProvider.notifier);
     final extra = msg.extra;
@@ -73,7 +90,9 @@ class SystemMessageService extends _$SystemMessageService {
     }
   }
 
-  /// 3. 本地桌面横幅通知投递
+  /// 发送本地桌面横幅通知
+  ///
+  /// 根据通话状态生成通知内容并推送到系统通知栏
   void _sendDesktopNotification(String roomId, String action, RoomMessage msg) {
     final rooms = ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     final room = rooms.firstWhere((r) => r.roomId == roomId, orElse: () => ChatRoomVO());

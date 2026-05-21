@@ -12,8 +12,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// 通话房间页面
+///
+/// 通话功能的核心页面，负责：
+/// - 管理房间连接状态
+/// - 根据布局模式切换显示方式
+/// - 处理重连状态显示
+/// - 显示历史消息面板
 class CallRoomPage extends ConsumerWidget {
+  /// 房间令牌
   final String token;
+
   const CallRoomPage({super.key, required this.token});
 
   @override
@@ -29,6 +38,7 @@ class CallRoomPage extends ConsumerWidget {
     );
   }
 
+  /// 构建加载中状态
   Widget _buildLoadingState() {
     return Center(
       child: Container(
@@ -66,6 +76,7 @@ class CallRoomPage extends ConsumerWidget {
     );
   }
 
+  /// 构建错误状态
   Widget _buildErrorState(String error, WidgetRef ref, String token) {
     return Center(
       child: Padding(
@@ -106,8 +117,14 @@ class CallRoomPage extends ConsumerWidget {
   }
 }
 
+/// 通话房间主体内容
+///
+/// 根据房间状态渲染实际的通话界面
 class _CallRoomBody extends ConsumerWidget {
+  /// 房间状态
   final RoomState roomState;
+
+  /// 房间令牌
   final String token;
 
   const _CallRoomBody({required this.roomState, required this.token});
@@ -136,10 +153,7 @@ class _CallRoomBody extends ConsumerWidget {
 
     final notifier = ref.read(roomControllerProvider(token).notifier);
 
-    // 静音回调：向目标参与者发送静音指令
     void onMute(String identity) => notifier.sendMuteCommand(identity, true);
-
-    // 踢出回调：调用服务端踢出接口
     void onKick(String identity) => notifier.kickParticipant(identity);
 
     return Stack(
@@ -150,7 +164,6 @@ class _CallRoomBody extends ConsumerWidget {
             Expanded(
               child: Row(
                 children: [
-                  // 主视频区域
                   Expanded(
                     child: participants.isEmpty
                         ? Center(child: Text('call_waiting_to_join'.tr()))
@@ -163,7 +176,6 @@ class _CallRoomBody extends ConsumerWidget {
                             onKick: onKick,
                           ),
                   ),
-                  // 历史面板
                   if (showHistory)
                     _HistoryPanel(history: roomState.reactions ?? []),
                 ],
@@ -172,7 +184,6 @@ class _CallRoomBody extends ConsumerWidget {
           ],
         ),
 
-        // 重连遮罩
         if (roomState.isReconnecting)
           Positioned(
             top: kToolbarHeight + 8,
@@ -215,6 +226,7 @@ class _CallRoomBody extends ConsumerWidget {
     );
   }
 
+  /// 根据布局模式构建对应的布局组件
   Widget _buildLayout({
     required LayoutMode mode,
     required List<Participant> participants,
@@ -249,10 +261,13 @@ class _CallRoomBody extends ConsumerWidget {
   }
 }
 
-// ── 历史面板 ──────────────────────────────
-
+/// 历史消息面板
+///
+/// 显示通话过程中的表情反应历史记录
 class _HistoryPanel extends ConsumerWidget {
+  /// 历史消息列表
   final List<ReactionItem> history;
+
   const _HistoryPanel({required this.history});
 
   @override
@@ -268,7 +283,6 @@ class _HistoryPanel extends ConsumerWidget {
       decoration: BoxDecoration(border: Border(left: border)),
       child: Column(
         children: [
-          // 标题栏
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(border: Border(bottom: border)),
@@ -290,7 +304,6 @@ class _HistoryPanel extends ConsumerWidget {
               ],
             ),
           ),
-          // 消息列表
           Expanded(
             child: history.isEmpty
                 ? Center(
@@ -319,8 +332,11 @@ class _HistoryPanel extends ConsumerWidget {
   }
 }
 
+/// 历史消息项
 class _HistoryItem extends StatelessWidget {
+  /// 消息数据
   final ReactionItem item;
+
   const _HistoryItem({required this.item});
 
   @override

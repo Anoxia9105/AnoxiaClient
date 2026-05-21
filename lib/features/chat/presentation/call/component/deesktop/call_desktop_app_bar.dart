@@ -4,7 +4,14 @@ import 'package:anoxia/gen/assets.gen.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// 桌面端通话应用栏组件
+///
+/// 提供通话窗口的标题栏，包含：
+/// - 应用图标和标题
+/// - 窗口控制按钮（最小化、最大化/还原、关闭）
+/// - 可拖拽移动窗口的区域
 class CallDesktopAppbar extends StatefulWidget implements PreferredSizeWidget {
+  /// 标题文字
   final String title;
 
   const CallDesktopAppbar({super.key, required this.title});
@@ -18,6 +25,7 @@ class CallDesktopAppbar extends StatefulWidget implements PreferredSizeWidget {
 
 class _CallDesktopAppbarState extends State<CallDesktopAppbar>
     with WindowListener {
+  /// 窗口是否处于最大化状态
   bool extended = false;
 
   @override
@@ -38,14 +46,11 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
         child: Assets.images.appIconPng.image(
           width: 24,
           height: 24,
-          // fit: BoxFit.cover
         ),
       ),
       elevation: 0,
       actions: [
-        // buildMoreButton(),
-        SizedBox(width: 10),
-        //最小化
+        const SizedBox(width: 10),
         IconButton(
           tooltip: "header_minimize".tr(),
           padding: EdgeInsets.zero,
@@ -54,11 +59,9 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
           },
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedSolidLine01,
-            // color: widget.iconColor,
             size: 18,
           ),
         ),
-        //正常/最大化
         changeScreenMode(extended),
         IconButton(
           tooltip: "header_closure".tr(),
@@ -81,7 +84,6 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedCancel01,
             size: 18,
-            // color: widget.iconColor,
           ),
         ),
         const SizedBox(width: 8),
@@ -90,6 +92,9 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
     );
   }
 
+  /// 构建窗口模式切换按钮
+  ///
+  /// 根据当前窗口状态显示最大化或还原图标
   Widget changeScreenMode(bool mode) {
     if (mode) {
       return IconButton(
@@ -103,7 +108,6 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
         },
         icon: HugeIcon(
           icon: HugeIcons.strokeRoundedChangeScreenMode,
-          // color: widget.iconColor,
           size: 18,
         ),
       );
@@ -118,7 +122,6 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
         });
       },
       icon: HugeIcon(
-        // color: widget.iconColor,
         icon: HugeIcons.strokeRoundedSquare,
         size: 16,
       ),

@@ -2,9 +2,10 @@
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:flutter/material.dart';
 
-/// 聊天输入框骨架屏
+/// 聊天输入框骨架屏组件
 ///
-/// 用于在输入框加载过程中显示占位内容
+/// 用于在聊天输入框加载过程中显示占位内容，
+/// 提供与实际输入框相似的视觉结构
 class ChatInputSkeleton extends StatelessWidget {
   const ChatInputSkeleton({super.key});
 

@@ -7,6 +7,10 @@ import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:anoxia/framework/theme/AppColors.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 屏幕选择对话框
+///
+/// 用于在发起屏幕共享时选择要共享的屏幕或窗口。
+/// 支持选择整个屏幕或单个应用程序窗口，并提供实时缩略图预览。
 class WindowScreenSelectDialog extends StatefulWidget {
   const WindowScreenSelectDialog({super.key});
 
@@ -16,9 +20,16 @@ class WindowScreenSelectDialog extends StatefulWidget {
 }
 
 class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
+  /// 可用的共享源（屏幕和窗口）
   final Map<String, rtc.DesktopCapturerSource> _sources = {};
+
+  /// 当前选中的共享源
   rtc.DesktopCapturerSource? _selectedSource;
+
+  /// 事件订阅列表
   final List<StreamSubscription> _subscriptions = [];
+
+  /// 定时刷新缩略图的计时器
   Timer? _timer;
 
   @override
@@ -26,7 +37,6 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     super.initState();
     _getSources();
 
-    // 监听源的动态增减
     _subscriptions.add(
       rtc.desktopCapturer.onAdded.stream.listen((source) {
         setState(() => _sources[source.id] = source);
@@ -59,9 +69,9 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     super.dispose();
   }
 
+  /// 获取可共享的屏幕和窗口列表
   Future<void> _getSources() async {
     try {
-      // 同时获取屏幕和窗口
       final types = [rtc.SourceType.Screen, rtc.SourceType.Window];
       final sources = await rtc.desktopCapturer.getSources(types: types);
 
@@ -74,7 +84,6 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
 
       _timer?.cancel();
       _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-        // updateSources 会触发 onThumbnailChanged / onAdded / onRemoved 流
         unawaited(rtc.desktopCapturer.updateSources(types: types));
       });
     } catch (e) {
@@ -86,7 +95,6 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
   Widget build(BuildContext context) {
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
 
-    // 将源按类型分类
     final screens = _sources.values
         .where((s) => s.type == rtc.SourceType.Screen)
         .toList();
@@ -111,19 +119,16 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
                 child: CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    // --- 屏幕部分 ---
                     if (screens.isNotEmpty) ...[
                       _buildSectionTitle("call_share_screen".tr()),
                       _buildSourceGrid(screens, crossCount: 2),
                     ],
 
-                    // --- 窗口部分 ---
                     if (windows.isNotEmpty) ...[
                       _buildSectionTitle("call_share_window".tr()),
                       _buildSourceGrid(windows, crossCount: 3),
                     ],
 
-                    // 底部留白
                     const SliverToBoxAdapter(child: SizedBox(height: 20)),
                   ],
                 ),
@@ -136,7 +141,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     );
   }
 
-  // 分组标题
+  /// 构建分组标题
   Widget _buildSectionTitle(String title) {
     return SliverToBoxAdapter(
       child: Padding(
@@ -153,7 +158,10 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     );
   }
 
-  // 网格布局
+  /// 构建共享源网格
+  ///
+  /// [list] 共享源列表
+  /// [crossCount] 网格列数
   Widget _buildSourceGrid(
     List<rtc.DesktopCapturerSource> list, {
     required int crossCount,
@@ -173,7 +181,6 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
             source: source,
             selected: _selectedSource?.id == source.id,
             onTap: (s) => setState(() => _selectedSource = s),
-            // 双击直接开始共享，提升效率
             onDoubleTap: (s) {
               setState(() => _selectedSource = s);
               _onOk();
@@ -184,6 +191,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     );
   }
 
+  /// 构建对话框头部
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -205,6 +213,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     );
   }
 
+  /// 构建对话框底部按钮栏
   Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -242,13 +251,24 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
     );
   }
 
+  /// 确认选择，返回选中的共享源
   void _onOk() => Navigator.pop(context, _selectedSource);
 }
 
+/// 共享源缩略图组件
+///
+/// 显示单个屏幕或窗口的缩略图预览，支持单击选择和双击确认
 class ThumbnailWidget extends StatelessWidget {
+  /// 共享源数据
   final rtc.DesktopCapturerSource source;
+
+  /// 是否选中
   final bool selected;
+
+  /// 单击回调
   final Function(rtc.DesktopCapturerSource) onTap;
+
+  /// 双击回调（直接开始共享）
   final Function(rtc.DesktopCapturerSource) onDoubleTap;
 
   const ThumbnailWidget({

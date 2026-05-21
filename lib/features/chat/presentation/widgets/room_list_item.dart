@@ -14,7 +14,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 房间列表项组件
+///
+/// 显示单个聊天房间的列表项，包括：
+/// - 房间头像和在线状态
+/// - 房间名称（支持备注名优先显示）
+/// - 最后消息预览
+/// - 时间戳
+/// - 未读消息数
+/// - 置顶标识
+///
+/// 支持右键菜单（桌面端）和长按菜单（移动端）
 class RoomListItem extends ConsumerWidget {
+  /// 房间 ID
   final String id;
 
   const RoomListItem({super.key, required this.id});
@@ -30,13 +42,13 @@ class RoomListItem extends ConsumerWidget {
     final isSelected = activeId == room.roomId;
     final isSingle = room.roomType == 0;
 
-    /// 监听联系人状态
+    // 监听联系人状态，用于显示备注名
     final contactMap = ref.watch(contactListServiceProvider).value;
     final peerContact = (isSingle && room.peerId != null && contactMap != null)
         ? contactMap[room.peerId]
         : null;
 
-    /// 计算展示的名字
+    // 计算展示的名字：备注名 > 联系人昵称 > 房间名
     final displayRoomName = isSingle
         ? (() {
             final remark = (peerContact?.remark ?? '').trim();
@@ -54,11 +66,9 @@ class RoomListItem extends ConsumerWidget {
               ? room.roomName!.trim()
               : 'chat_unknown_conversation'.tr());
 
-    /// 置顶与在线状态计算
+    // 置顶与在线状态计算
     final pinnedIds = ref.watch(pinnedRoomsProvider);
     final roomId = room.roomId;
-
-    /// 房间是否被置顶
     final isPinned = roomId != null && pinnedIds.contains(room.roomId);
 
     bool isOnline = false;
@@ -67,7 +77,7 @@ class RoomListItem extends ConsumerWidget {
     }
 
     return GestureDetector(
-      /// 右键点击（桌面）或长按（移动端）显示上下文菜单
+      // 右键点击（桌面端）显示上下文菜单
       onSecondaryTapDown: (details) async {
         if (roomId == null) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
@@ -82,7 +92,7 @@ class RoomListItem extends ConsumerWidget {
         }
       },
 
-      /// 长按开始时也显示上下文菜单，兼容部分不支持 onSecondaryTapDown 的设备（如部分 Android 机型）
+      // 长按（移动端）显示上下文菜单
       onLongPressStart: (details) async {
         if (roomId == null) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
@@ -108,8 +118,7 @@ class RoomListItem extends ConsumerWidget {
                 ),
               );
 
-              // 移动端从详情页返回列表后，清空 active 房间：
-              // 否则该房间会一直被视为“当前房间”，导致未读数不再累加。
+              // 移动端从详情页返回列表后，清空 active 房间
               if (context.mounted) {
                 ref.read(activeRoomIdProvider.notifier).setActive(null);
               }
@@ -136,8 +145,7 @@ class RoomListItem extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-
-        /// 右侧显示最后消息时间和未读数
+        // 右侧显示最后消息时间和未读数
         trailing: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 120),
           child: Column(
@@ -148,7 +156,7 @@ class RoomListItem extends ConsumerWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  /// 单聊显示个人图标，群聊显示群组图标
+                  // 单聊显示个人图标，群聊显示群组图标
                   HugeIcon(
                     icon: isSingle
                         ? HugeIcons.strokeRoundedUser02
@@ -158,8 +166,7 @@ class RoomListItem extends ConsumerWidget {
                     strokeWidth: 2,
                   ),
                   const SizedBox(width: 6),
-
-                  /// 如果是置顶聊天，显示置顶图标
+                  // 置顶图标
                   if (isPinned) ...[
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedPin,
@@ -184,6 +191,9 @@ class RoomListItem extends ConsumerWidget {
     );
   }
 
+  /// 显示上下文菜单
+  ///
+  /// 提供置顶/取消置顶、标记已读、删除会话、解散群聊等操作
   Future<void> _showContextMenu(
     BuildContext context,
     WidgetRef ref,

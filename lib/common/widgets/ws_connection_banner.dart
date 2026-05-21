@@ -4,14 +4,20 @@ import 'package:flutter/material.dart';
 
 /// WebSocket 连接状态横幅组件
 ///
-/// 显示当前 WebSocket 连接状态（连接中、连接失败、已断开等）
+/// 显示当前 WebSocket 连接状态，包括：
+/// - 连接中：显示加载提示
+/// - 连接失败：显示错误提示
+/// - 已断开：显示断开提示
+/// - 已连接：不显示任何内容
 class WsConnectionBanner extends StatelessWidget {
   /// WebSocket 状态对象
   final WsState state;
+
   const WsConnectionBanner({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
+    // 已连接状态不显示横幅
     if (state.status == WsStatus.connected) {
       return const SizedBox.shrink();
     }

@@ -13,9 +13,21 @@ import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart'
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'chat_action_item.dart';
 
+/// 聊天更多操作面板组件
+///
+/// 移动端聊天输入框的扩展面板，提供以下功能：
+/// - 发送图片
+/// - 发送文件
+/// - @提及成员
+/// - 发起/加入通话
 class ChatMorePanel extends ConsumerWidget {
+  /// 房间 ID
   final String roomId;
+
+  /// 文件选择回调，参数为文件类型和是否为图片
   final Function(FileType type, bool isImage) onPickFile;
+
+  /// @提及按钮点击回调
   final VoidCallback onMentionTap;
 
   const ChatMorePanel({
@@ -27,7 +39,7 @@ class ChatMorePanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. 监听通话状态
+    // 监听通话状态
     final callWindow = ref.watch(callWindowControllerProvider);
     final mobileCallSession = ref.watch(mobileCallSessionControllerProvider);
     final callStatus = ref.watch(roomCallStatusProvider(roomId));
@@ -39,7 +51,7 @@ class ChatMorePanel extends ConsumerWidget {
         (DeviceUtil.isRealMobile() && mobileCallSession != null);
     final isCallingNow = callStatus.calling;
 
-    // 2. 动态决定通话按钮的图标和文案
+    // 根据通话状态决定通话按钮的图标和文案
     final dynamic callIcon = hasActiveCall
         ? HugeIcons.strokeRoundedVideoReplay
         : (isCallingNow
@@ -74,7 +86,7 @@ class ChatMorePanel extends ConsumerWidget {
           label: '@',
           onTap: onMentionTap,
         ),
-        // 新增的通话按钮
+        // 通话按钮
         ChatActionItem(
           icon: callIcon,
           label: callLabel,

@@ -15,7 +15,19 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// 通话命令栏组件
+///
+/// 提供通话过程中的控制按钮，包括：
+/// - 麦克风开关及设备选择
+/// - 摄像头开关及设备选择
+/// - 扬声器开关及设备选择
+/// - 举手功能
+/// - 表情反应
+/// - 历史记录面板
+/// - 屏幕共享
+/// - 挂断按钮
 class CommandBar extends ConsumerWidget {
+  /// 房间状态
   final RoomState state;
 
   const CommandBar({super.key, required this.state});
@@ -52,7 +64,6 @@ class CommandBar extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // 麦克风：split button
                     Builder(
                       builder: (context) {
                         return _splitButton(
@@ -70,7 +81,6 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
 
-                    // 摄像头：split button
                     Builder(
                       builder: (context) {
                         return _splitButton(
@@ -88,7 +98,6 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
 
-                    // 扬声器：split button
                     Builder(
                       builder: (context) {
                         return _splitButton(
@@ -108,7 +117,6 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
 
-                    // 握手：solo button
                     _soloButton(
                       context: context,
                       icon: HugeIcons.strokeRoundedHold03,
@@ -127,7 +135,6 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 2),
 
-                    // 表情按钮（点击弹出表情选择）
                     Builder(
                       builder: (context) => _soloButton(
                         context: context,
@@ -139,19 +146,19 @@ class CommandBar extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 2),
-                    //历史记录
+
                     Builder(
                       builder: (context) => _soloButton(
                         context: context,
                         icon: HugeIcons.strokeRoundedTransactionHistory,
                         label: '历史',
-                        active: historyActive, // ← provider 状态
-                        onTap: () => historyNotifier.toggle(), // ← 直接 toggle
+                        active: historyActive,
+                        onTap: () => historyNotifier.toggle(),
                       ),
                     ),
 
                     const SizedBox(width: 2),
-                    // 屏幕共享：solo button
+
                     _soloButton(
                       context: context,
                       icon: state.screenSharing
@@ -163,7 +170,6 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
 
-                    // 挂断
                     _buildHangupButton(context, ref, notifier),
                   ],
                 ),
@@ -175,6 +181,7 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
+  /// 显示表情选择器
   void _showReactionPicker(
     BuildContext context,
     RoomController notifier,
@@ -219,10 +226,10 @@ class CommandBar extends ConsumerWidget {
       ),
     );
   }
-  // ──────────────────────────────────────────
-  // 组合分裂按钮
-  // ──────────────────────────────────────────
 
+  /// 构建分裂按钮（左侧功能按钮 + 右侧下拉箭头）
+  ///
+  /// 用于需要设备选择功能的控制按钮，如麦克风、摄像头、扬声器
   Widget _splitButton({
     required VoidCallback onTap,
     required VoidCallback onArrowTap,
@@ -247,7 +254,6 @@ class CommandBar extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 左半：功能
               Tooltip(
                 message: label,
                 child: InkWell(
@@ -265,9 +271,7 @@ class CommandBar extends ConsumerWidget {
                   ),
                 ),
               ),
-              // 分割线
               VerticalDivider(width: 1, thickness: 0.5, color: dividerColor),
-              // 右半：下拉
               SizedBox(
                 height: double.infinity,
                 child: InkWell(
@@ -289,10 +293,9 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
-  // ──────────────────────────────────────────
-  // 单体按钮（无下拉）
-  // ──────────────────────────────────────────
-
+  /// 构建单体按钮（无下拉菜单）
+  ///
+  /// 用于简单的开关功能，如举手、表情、屏幕共享
   Widget _soloButton({
     required VoidCallback onTap,
     required List<List<dynamic>> icon,
@@ -329,10 +332,9 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
-  // ──────────────────────────────────────────
-  // 挂断按钮
-  // ──────────────────────────────────────────
-
+  /// 构建挂断按钮
+  ///
+  /// 点击后离开房间，桌面端关闭窗口，移动端返回上一页
   Widget _buildHangupButton(
     BuildContext context,
     WidgetRef ref,
@@ -371,10 +373,7 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
-  // ──────────────────────────────────────────
-  // 设备选择菜单（弹出式）
-  // ──────────────────────────────────────────
-
+  /// 显示音频输入设备选择菜单
   void _showAudioInputMenu(
     BuildContext context,
     RoomController notifier,
@@ -397,6 +396,7 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
+  /// 显示视频输入设备选择菜单
   void _showVideoInputMenu(
     BuildContext context,
     RoomController notifier,
@@ -416,6 +416,7 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
+  /// 显示音频输出设备选择菜单
   void _showAudioOutputMenu(
     BuildContext context,
     RoomController notifier,
@@ -435,6 +436,10 @@ class CommandBar extends ConsumerWidget {
     );
   }
 
+  /// 显示设备选择菜单
+  ///
+  /// [items] 设备列表项
+  /// [footer] 底部附加组件（如麦克风音量指示器）
   void _showDeviceMenu({
     required BuildContext context,
     required List<_DeviceMenuItem> items,
@@ -457,14 +462,12 @@ class CommandBar extends ConsumerWidget {
             width: 0.5,
           ),
           contentBuilder: (context) => SizedBox(
-            // 1. 最外层强制固定宽高
             width: 300,
             height: 260,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  // 2. 列表部分占满剩余空间，支持内部滚动
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(8),
                     child: Column(
@@ -506,7 +509,6 @@ class CommandBar extends ConsumerWidget {
                   ),
                 ),
                 if (footer != null) ...[
-                  // 3. Footer 自然固定在底部
                   Divider(
                     height: 1,
                     color: Theme.of(context).colorScheme.outlineVariant,
@@ -522,13 +524,15 @@ class CommandBar extends ConsumerWidget {
   }
 }
 
-// ──────────────────────────────────────────
-// 内部数据类
-// ──────────────────────────────────────────
-
+/// 设备菜单项数据
 class _DeviceMenuItem {
+  /// 设备名称
   final String label;
+
+  /// 是否选中
   final bool selected;
+
+  /// 点击回调
   final VoidCallback onTap;
 
   const _DeviceMenuItem({
@@ -538,12 +542,13 @@ class _DeviceMenuItem {
   });
 }
 
-// ──────────────────────────────────────────
-// 麦克风弹框底部实时音量指示器
-// ──────────────────────────────────────────
-
+/// 本地音量指示器底部组件
+///
+/// 在麦克风设备选择菜单底部显示实时音量
 class _LocalVolumeFooter extends StatefulWidget {
+  /// 本地参与者实例
   final LocalParticipant localParticipant;
+
   const _LocalVolumeFooter({required this.localParticipant});
 
   @override
@@ -594,12 +599,13 @@ class _LocalVolumeFooterState extends State<_LocalVolumeFooter> {
   }
 }
 
-// ──────────────────────────────────────────
-// 会议计时器（不变）
-// ──────────────────────────────────────────
-
+/// 会议计时器组件
+///
+/// 显示当前通话已持续的时间，从加入房间开始计时
 class MeetingTimer extends StatefulWidget {
+  /// 加入房间的时间
   final DateTime? joinedAt;
+
   const MeetingTimer({super.key, required this.joinedAt});
 
   @override
@@ -647,6 +653,9 @@ class _MeetingTimerState extends State<MeetingTimer> {
     super.dispose();
   }
 
+  /// 格式化时长显示
+  ///
+  /// 超过1小时显示 HH:MM:SS，否则显示 MM:SS
   String _fmt(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes % 60;

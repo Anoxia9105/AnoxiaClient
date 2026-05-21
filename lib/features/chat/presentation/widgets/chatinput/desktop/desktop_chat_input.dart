@@ -21,8 +21,18 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 
+/// 桌面端聊天输入组件
+///
+/// 基于 flutter_quill 实现的富文本编辑器，提供以下功能：
+/// - 富文本编辑（加粗、斜体、下划线等）
+/// - 图片和文件插入
+/// - @提及成员
+/// - 键盘快捷键支持（Enter 发送，Ctrl+V 粘贴）
 class DesktopChatInput extends ConsumerStatefulWidget {
+  /// 房间 ID
   final String roomId;
+
+  /// 底部面板关闭回调
   final VoidCallback bottomSheet;
 
   const DesktopChatInput({super.key, required this.roomId, required this.bottomSheet});
@@ -32,7 +42,10 @@ class DesktopChatInput extends ConsumerStatefulWidget {
 }
 
 class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
+  /// Quill 编辑器的 GlobalKey
   final GlobalKey<QuillEditorState> _editorKey = GlobalKey();
+
+  /// @提及弹窗的关闭函数
   Function? _cancelMentionToast;
 
   @override
@@ -41,6 +54,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     _initMentionListener();
   }
 
+  /// 初始化 @提及状态监听器
   void _initMentionListener() {
     ref.listenManual(mentionStateProvider, (previous, next) {
       if (next.isShowing) {
@@ -57,6 +71,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     super.dispose();
   }
 
+  /// 显示 @提及成员选择列表
   void _showMentionList(MentionStateData state) {
     _closeMentionList();
     final offset = _editorKey.getCaretClientPosition();
@@ -83,11 +98,15 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     );
   }
 
+  /// 关闭 @提及成员选择列表
   void _closeMentionList() {
     _cancelMentionToast?.call();
     _cancelMentionToast = null;
   }
 
+  /// 插入 @提及内容
+  ///
+  /// 将选中的用户以 BlockEmbed 形式插入到编辑器中
   void _insertMention(MentionUser user, int atPosition) {
     final controller = ref.read(chatInputControllerProvider(widget.roomId));
     final currentPosition = controller.selection.baseOffset;
@@ -105,6 +124,10 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     ref.read(chatFocusNodeProvider(widget.roomId)).requestFocus();
   }
 
+  /// 处理键盘按键事件
+  ///
+  /// - Enter：发送消息（非 Shift 组合）
+  /// - Ctrl/Cmd + V：处理粘贴操作
   KeyEventResult _handleKeyPress(KeyEvent event, QuillController controller) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.enter &&
@@ -125,6 +148,9 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     return KeyEventResult.ignored;
   }
 
+  /// 处理粘贴操作
+  ///
+  /// 优先处理图片粘贴，其次处理文本粘贴
   Future<void> _handlePaste(QuillController controller) async {
     final imageBytes = await Pasteboard.image;
     if (imageBytes != null) {

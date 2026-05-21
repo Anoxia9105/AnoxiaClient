@@ -6,8 +6,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'call_room_page.dart';
 
+/// 移动端通话页面
+///
+/// 作为移动端通话功能的入口页面，负责：
+/// - 获取房间令牌
+/// - 显示通话房间内容
+/// - 处理加载和错误状态
 class MobileCallPage extends ConsumerStatefulWidget {
+  /// 房间ID
   final String roomId;
+
+  /// 通话标题
   final String title;
 
   const MobileCallPage({super.key, required this.roomId, required this.title});

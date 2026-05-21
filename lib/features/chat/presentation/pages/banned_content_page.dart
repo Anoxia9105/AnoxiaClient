@@ -2,6 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 禁言/封禁内容提示页
+///
+/// 当用户被禁言或封禁时显示的提示页面，
+/// 告知用户当前状态和原因
 class BannedContentPage extends StatelessWidget {
   const BannedContentPage({super.key});
 
@@ -14,6 +18,7 @@ class BannedContentPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 警告图标容器
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(

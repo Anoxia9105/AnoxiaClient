@@ -15,8 +15,23 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 聊天栏操作处理器
+///
+/// 提供聊天房间 AppBar 中各类操作的静态方法，包括：
+/// - 发起/加入通话
+/// - 添加成员
+/// - 全体禁言/解除禁言
+/// - 踢出成员
 class ChatBarHandlers {
-  /// 发起或加入通话事件
+  /// 发起或加入通话
+  ///
+  /// 根据设备类型选择不同的通话方式：
+  /// - 移动端：跳转到 [MobileCallPage] 页面
+  /// - 桌面端：打开独立的通话窗口
+  ///
+  /// [context] 构建上下文
+  /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
+  /// [room] 当前聊天房间数据
   static void onCallPressed(BuildContext context, WidgetRef ref, ChatRoomVO room) {
     if ((room.roomId ?? '').isEmpty) {
       Toast.showToast('appbar_connection_lost'.tr());
@@ -36,7 +51,12 @@ class ChatBarHandlers {
     }
   }
 
-  /// 弹出添加成员 Dialog
+  /// 弹出添加成员对话框
+  ///
+  /// 显示 [AddMemberDialogWidget] 供用户选择要添加的成员
+  ///
+  /// [context] 构建上下文
+  /// [room] 当前聊天房间数据
   static void showAddMemberDialog(BuildContext context, ChatRoomVO room) {
     showDialog(
       context: context,
@@ -44,14 +64,14 @@ class ChatBarHandlers {
     );
   }
 
-  /// 处理全体禁言/解除禁言操作
+  /// 显示全体禁言/解除禁言确认对话框
   ///
-  /// 显示确认弹窗，确认后执行禁言/解除禁言操作
+  /// 弹出确认弹窗，用户确认后执行禁言或解除禁言操作
   ///
-  /// [context] 上下文
-  /// [ref] WidgetRef 用于访问 Provider
+  /// [context] 构建上下文
+  /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
   /// [roomId] 房间 ID
-  /// [isMute] true 表示禁言，false 表示解除禁言
+  /// [isMute] true 表示执行禁言操作，false 表示解除禁言
   static void showMuteRoomDialog(BuildContext context, WidgetRef ref, String roomId, bool isMute) {
     final cs = Theme.of(context).colorScheme;
     final isDanger = isMute;
@@ -219,7 +239,14 @@ class ChatBarHandlers {
     );
   }
 
-  /// 显示踢出成员确认 Dialog
+  /// 显示踢出成员确认对话框
+  ///
+  /// 弹出确认弹窗，用户确认后执行踢出成员操作
+  ///
+  /// [context] 构建上下文
+  /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
+  /// [roomId] 房间 ID
+  /// [member] 要踢出的成员信息
   static void showKickMemberDialog(BuildContext context, WidgetRef ref, String roomId, ChatRoomMemberVO member) {
     showDialog(
       context: context,
