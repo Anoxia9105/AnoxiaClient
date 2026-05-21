@@ -2,12 +2,14 @@ import 'dart:convert';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/android/android_chat_input.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/desktop_chat_input.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/quill/chat_quill_toolbar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/quill/embedBuilder/quill_file_build.dart';
@@ -24,8 +26,8 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pasteboard/pasteboard.dart';
 
-import '../../../../framework/extensions/QuillCursorX.dart';
-import '../../../../framework/provider/chat/room/room_list_service.dart';
+import '../../../../../framework/extensions/QuillCursorX.dart';
+import '../../../../../framework/provider/chat/room/room_list_service.dart';
 
 /// 聊天输入框组件
 ///
@@ -36,6 +38,45 @@ import '../../../../framework/provider/chat/room/room_list_service.dart';
 /// - 表情选择
 /// - 粘贴图片支持
 /// - 桌面端/移动端适配（Android 使用简化输入框）
+///
+///
+class ChatInputField extends ConsumerWidget {
+  final VoidCallback bottomSheet;
+
+  const ChatInputField({super.key, required this.bottomSheet});
+
+  bool get _isAndroidMode =>
+      DeviceUtil.isRealMobile() &&
+      defaultTargetPlatform == TargetPlatform.android;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roomId = ref.watch(activeRoomIdProvider);
+    if (roomId == null) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          width: 1,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: _isAndroidMode
+          ? AndroidChatInput(
+              key: ValueKey('android_$roomId'),
+              roomId: roomId,
+              bottomSheet: bottomSheet,
+            )
+          : DesktopChatInput(
+              key: ValueKey('desktop_$roomId'),
+              roomId: roomId,
+              bottomSheet: bottomSheet,
+            ),
+    );
+  }
+}
+/*
 class ChatInputField extends ConsumerStatefulWidget {
   /// 底部面板关闭回调
   final VoidCallback bottomSheet;
@@ -170,6 +211,7 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   @override
   Widget build(BuildContext context) {
     final room = ref.watch(activeRoomProvider);
+    print("--------------------${room?.roomId}");
     if (room == null) return const SizedBox.shrink();
 
     if (_isAndroidMode) {
@@ -631,3 +673,4 @@ class _ChatInputFieldState extends ConsumerState<ChatInputField> {
     }
   }
 }
+*/

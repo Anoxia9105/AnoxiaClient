@@ -21,9 +21,6 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
 
     final currentRoom = ref.watch(currentRoomProvider(room.roomId ?? '')) ?? room;
 
-
-
-
     // 监听房间成员
     final members = ref.watch(roomMembersProvider(currentRoom.roomId ?? ''));
     final isGroup = currentRoom.roomType == 1;

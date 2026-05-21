@@ -114,8 +114,8 @@ class RoomListService extends _$RoomListService {
   /// - 当前房间：未读数不增加
   /// - 自己发送的消息：不增加未读数、不发送通知
   /// - 通话系统消息：不发送通知
-  void updateRoomPosition(ChatMessage newMessage, ChatRoomVO? activeRoom) {
-    final isCurrentRoom = activeRoom?.roomId == newMessage.roomId;
+  void updateRoomPosition(ChatMessage newMessage, String? roomId) {
+    final isCurrentRoom = roomId == newMessage.roomId;
     final currentUser = ref.read(authControllerProvider).value;
     final isSelfMessage = newMessage.senderId == currentUser?.userId;
 
@@ -361,7 +361,7 @@ class RoomListService extends _$RoomListService {
   }
 }
 
-/// 当前选中的聊天室 ID
+/// 当前选中的聊天室 ID 全局指针
 @Riverpod(keepAlive: true)
 class ActiveRoomId extends _$ActiveRoomId {
   @override
@@ -380,26 +380,6 @@ class ActiveRoomId extends _$ActiveRoomId {
 
     state = roomId;
   }
-}
-
-/// 当前选中的聊天室对象
-@riverpod
-ChatRoomVO? activeRoom(Ref ref) {
-  final activeId = ref.watch(activeRoomIdProvider);
-  if (activeId == null) return null;
-
-  final roomListAsync = ref.watch(roomListServiceProvider);
-
-  return roomListAsync.maybeWhen(
-    data: (rooms) {
-      try {
-        return rooms.firstWhere((r) => r.roomId == activeId);
-      } catch (_) {
-        return null;
-      }
-    },
-    orElse: () => null,
-  );
 }
 
 /// 进入房间时的初始化任务

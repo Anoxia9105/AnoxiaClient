@@ -1,6 +1,6 @@
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:bot_toast/bot_toast.dart';

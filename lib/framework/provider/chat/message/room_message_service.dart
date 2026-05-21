@@ -50,10 +50,13 @@ class ChatMessages extends _$ChatMessages {
     // 1. 更新当前缓存状态
     upsertMessage(chatMessage);
 
-    // 2. 触发房间列表的位置更新（不越权管房间内部状态）
+    // 2. 拿到当前最干净、最轻量的活跃房间 ID 指针
+    final activeRoomId = ref.read(activeRoomIdProvider);
+
+    // 3. 触发房间列表的位置更新（不越权管房间内部状态）
     ref
         .read(roomListServiceProvider.notifier)
-        .updateRoomPosition(chatMessage, ref.read(activeRoomProvider));
+        .updateRoomPosition(chatMessage, activeRoomId);
   }
 
   /// 插入或更新消息（状态机核心）
@@ -268,5 +271,3 @@ class ChatHasMore extends _$ChatHasMore {
     state = {...state, roomId: hasMore};
   }
 }
-
-

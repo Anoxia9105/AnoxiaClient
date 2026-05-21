@@ -247,12 +247,13 @@ class ChatMessageBubble extends ConsumerWidget {
   ) {
     final messageNotifier = ref.read(chatMessagesProvider.notifier);
     final wsNotifier = ref.read(wsControllerProvider.notifier);
-    final room = ref.read(activeRoomProvider);
 
-    if (room == null) {
-      log.warning('重发失败：未找到活跃房间');
+    if (message.roomId == null) {
+      log.warning('重发失败：消息缺少 roomId');
       return;
     }
+
+    final room = ref.watch(currentRoomProvider(message.roomId!));
 
     final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
 
@@ -265,8 +266,8 @@ class ChatMessageBubble extends ConsumerWidget {
       'data': {
         'messageId': message.messageId ?? clientMsgId,
         'clientMsgId': clientMsgId,
-        'roomId': message.roomId ?? room.roomId,
-        'targetId': room.peerId,
+        'roomId': message.roomId,
+        'targetId': room?.peerId,
         'type': message.messageType?.name,
         'payload': message.payload?.toJson(),
         'attachments': message.attachments.map((e) => e.toJson()).toList(),
@@ -278,7 +279,7 @@ class ChatMessageBubble extends ConsumerWidget {
     wsNotifier.sendMessage(jsonEncode(messageData));
 
     Timer(const Duration(seconds: 10), () {
-      messageNotifier.handleTimeout(room.roomId!, clientMsgId);
+      messageNotifier.handleTimeout(message.roomId!, clientMsgId);
     });
   }
 }

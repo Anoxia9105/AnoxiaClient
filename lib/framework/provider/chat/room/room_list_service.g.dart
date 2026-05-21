@@ -72,15 +72,15 @@ abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   }
 }
 
-/// 当前选中的聊天室 ID
+/// 当前选中的聊天室 ID 全局指针
 
 @ProviderFor(ActiveRoomId)
 const activeRoomIdProvider = ActiveRoomIdProvider._();
 
-/// 当前选中的聊天室 ID
+/// 当前选中的聊天室 ID 全局指针
 final class ActiveRoomIdProvider
     extends $NotifierProvider<ActiveRoomId, String?> {
-  /// 当前选中的聊天室 ID
+  /// 当前选中的聊天室 ID 全局指针
   const ActiveRoomIdProvider._()
     : super(
         from: null,
@@ -110,7 +110,7 @@ final class ActiveRoomIdProvider
 
 String _$activeRoomIdHash() => r'43d29da720d77afeb50534e806ca9ef3559e690b';
 
-/// 当前选中的聊天室 ID
+/// 当前选中的聊天室 ID 全局指针
 
 abstract class _$ActiveRoomId extends $Notifier<String?> {
   String? build();
@@ -130,52 +130,6 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
     element.handleValue(ref, created);
   }
 }
-
-/// 当前选中的聊天室对象
-
-@ProviderFor(activeRoom)
-const activeRoomProvider = ActiveRoomProvider._();
-
-/// 当前选中的聊天室对象
-
-final class ActiveRoomProvider
-    extends $FunctionalProvider<ChatRoomVO?, ChatRoomVO?, ChatRoomVO?>
-    with $Provider<ChatRoomVO?> {
-  /// 当前选中的聊天室对象
-  const ActiveRoomProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'activeRoomProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$activeRoomHash();
-
-  @$internal
-  @override
-  $ProviderElement<ChatRoomVO?> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  ChatRoomVO? create(Ref ref) {
-    return activeRoom(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ChatRoomVO? value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<ChatRoomVO?>(value),
-    );
-  }
-}
-
-String _$activeRoomHash() => r'0a582900eac84bf2f437acd5bed3bcc0a1a9118f';
 
 /// 进入房间时的初始化任务
 ///

@@ -58,7 +58,7 @@ class GroupRoomListPage extends ConsumerWidget {
                           if (DeviceUtil.isRealMobile()) {
                             await Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => ChatRoomDetail(room: room),
+                                builder: (_) => ChatRoomDetail(roomId: roomId),
                               ),
                             );
 

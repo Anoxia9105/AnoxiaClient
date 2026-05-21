@@ -25,35 +25,57 @@ class ChatPage extends ConsumerWidget {
     }
 
     // 桌面端三栏布局
-    final currentRoom = ref.watch(activeRoomProvider);
+    final activeRoomId = ref.watch(activeRoomIdProvider);
+
+    if (activeRoomId == null) {
+      return Row(
+        children: [
+          SizedBox(width: 90.w, child: const ChatRoomList()),
+          const VerticalDivider(),
+          const Expanded(child: Center(child: Welcome())),
+        ],
+      );
+    }
+
+    final room = ref.watch(currentRoomProvider(activeRoomId));
+
+    // 如果列表更新导致房间数据还没加载出来或房间已被解散，安全防御展示欢迎页或加载中
+    if (room == null) {
+      return Row(
+        children: [
+          SizedBox(width: 90.w, child: const ChatRoomList()),
+          const VerticalDivider(),
+          const Expanded(child: Center(child: Welcome())),
+        ],
+      );
+    }
 
     return Row(
       children: [
-        // 左侧房间列表（固定宽度
+        // 左侧房间列表（固定宽度）
         SizedBox(width: 90.w, child: const ChatRoomList()),
         const VerticalDivider(),
         Expanded(
-          child: currentRoom == null
-              // 未选择房间时显示欢迎页
-              ? const Center(child: Welcome())
-              : Row(
-                  children: [
-                    // 中间聊天详情
-                    Expanded(child: ChatRoomDetail(room: currentRoom)),
-                    const VerticalDivider(),
-                    // 右侧搜索面板（可选
-                    if (currentRoom.isOpenSearch == true)
-                      SizedBox(
-                        width: 100.w,
-                        child: SearchContextPage(
-                          roomId: currentRoom.roomId!,
-                          roomName:
-                              currentRoom.roomName ??
-                              'appbar_conversation_detail'.tr(),
-                        ),
-                      ),
-                  ],
+          child: Row(
+            children: [
+              // 中间聊天详情（推荐将 ChatRoomDetail 改造为只接收 roomId）
+              Expanded(
+                child: ChatRoomDetail(roomId: activeRoomId),
+              ),
+              
+              // 右侧搜索面板（根据当前房间的搜索开启状态动态挂载）
+              if (room.isOpenSearch == true) ...[
+                const VerticalDivider(),
+                SizedBox(
+                  width: 100.w,
+                  child: SearchContextPage(
+                    roomId: room.roomId!,
+                    roomName: room.roomName ?? 'appbar_conversation_detail'.tr(),
+                  ),
                 ),
+              ],
+            ],
+          ),
         ),
       ],
     );

@@ -164,7 +164,7 @@ class ChatInputController extends _$ChatInputController {
   /// 发送正在输入状态
   void _sendTypingStatus(bool isTyping) {
     if (!ref.mounted) return;
-    final room = ref.read(activeRoomProvider);
+    final room = ref.read(currentRoomProvider(roomId));
     //房间或者接收者是空的不发送  （群聊不发）
     if (room == null || room.peerId == null) return;
 
@@ -173,7 +173,7 @@ class ChatInputController extends _$ChatInputController {
 
     // 4.1 成员列表为空（未同步），不发送
     if (roomMembers.isEmpty) {
-      log.debug("房间${room.roomId}成员列表未同步，暂不发送typing状态");
+      log.debug('房间${room.roomId}成员列表未同步，暂不发送typing状态');
       return;
     }
 
@@ -187,17 +187,17 @@ class ChatInputController extends _$ChatInputController {
 
     // 找不到对方成员 或 对方离线，不发送
     if (peerMember.onlineStatus != true) {
-      log.debug("${peerMember.nickName}离线，不发送typing（isTyping: $isTyping）");
+      log.debug('${peerMember.nickName}离线，不发送typing（isTyping: $isTyping）');
       return;
     }
 
     final msg = {
-      "topic": "HIGH_FREQUENCY",
-      "data": {
-        "targetId": room.peerId,
-        "roomId": room.roomId,
-        "type": "TYPING_STATUS",
-        "content": isTyping.toString(),
+      'topic': 'HIGH_FREQUENCY',
+      'data': {
+        'targetId': room.peerId,
+        'roomId': room.roomId,
+        'type': 'TYPING_STATUS',
+        'content': isTyping.toString(),
       },
     };
 
@@ -206,7 +206,7 @@ class ChatInputController extends _$ChatInputController {
 
   /// 发送消息
   void sendMessage() {
-    final room = ref.read(activeRoomProvider);
+    final room = ref.read(currentRoomProvider(roomId));
     if (room == null || state.document.isEmpty()) return;
 
     final uploadState = {
@@ -280,20 +280,19 @@ class ChatInputController extends _$ChatInputController {
     }
     // 4. 清空输入
     clearInput();
-    if(DeviceUtil.isRealDesktop()){
+    if (DeviceUtil.isRealDesktop()) {
       ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
     }
   }
 
   /// Android 普通输入框发送纯文本（可带 @mention）
   void sendPlainTextMessage(String text, {List<int>? mentionIds}) {
-    final room = ref.read(activeRoomProvider);
+    final room = ref.read(currentRoomProvider(roomId));
     final content = text.trim();
     if (room == null || content.isEmpty) return;
 
     final isSingleEmoji =
-        content.characters.length == 1 &&
-        _isEmoji(content.characters.first);
+        content.characters.length == 1 && _isEmoji(content.characters.first);
 
     _doSend(
       type: MessageType.text,
@@ -427,18 +426,18 @@ class ChatInputController extends _$ChatInputController {
     required MessagePayload payload,
     List<Attachment>? attachments,
   }) {
-    final room = ref.read(activeRoomProvider)!;
+    final room = ref.read(currentRoomProvider(roomId));
     final String clientMsgId = const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      log.error("发送失败: 房间或用户信息缺失");
+      log.error('发送失败: 房间或用户信息缺失');
       return;
     }
 
     final localMsg = ChatMessage(
       messageId: clientMsgId,
       clientMsgId: clientMsgId,
-      roomId: room.roomId,
+      roomId: roomId,
       senderId: user.userId,
       messageType: type,
       content: payload.content ?? '',
@@ -456,8 +455,8 @@ class ChatInputController extends _$ChatInputController {
       "data": {
         "messageId": clientMsgId,
         "clientMsgId": clientMsgId,
-        "roomId": room.roomId,
-        "targetId": room.peerId,
+        "roomId": roomId,
+        "targetId": room?.peerId,
         // 服务端 Java 枚举按名称反序列化，需使用大写（如 TEXT / IMAGE）
         "type": type.name.toUpperCase(),
         "payload": payload.toJson(),
@@ -473,7 +472,7 @@ class ChatInputController extends _$ChatInputController {
     Timer(const Duration(seconds: 10), () {
       ref
           .read(chatMessagesProvider.notifier)
-          .handleTimeout(room.roomId!, clientMsgId);
+          .handleTimeout(roomId, clientMsgId);
     });
   }
 }
@@ -487,7 +486,6 @@ FocusNode chatFocusNode(Ref ref, String roomId) {
   ref.onDispose(() => node.dispose());
   return node;
 }
-
 
 // 在 chat_input_controller.dart 中添加
 @Riverpod(keepAlive: true)

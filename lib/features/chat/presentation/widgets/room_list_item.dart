@@ -15,21 +15,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 class RoomListItem extends ConsumerWidget {
-  final ChatRoomVO room;
+  final String id;
 
-  const RoomListItem({super.key, required this.room});
+  const RoomListItem({super.key, required this.id});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final room = ref.watch(currentRoomProvider(id));
+
+    // 如果房间数据不存在，直接渲染占位结构
+    if (room == null) return const SizedBox.shrink();
+
     final activeId = ref.watch(activeRoomIdProvider);
     final isSelected = activeId == room.roomId;
     final isSingle = room.roomType == 0;
 
+    /// 监听联系人状态
     final contactMap = ref.watch(contactListServiceProvider).value;
     final peerContact = (isSingle && room.peerId != null && contactMap != null)
         ? contactMap[room.peerId]
         : null;
 
+    /// 计算展示的名字
     final displayRoomName = isSingle
         ? (() {
             final remark = (peerContact?.remark ?? '').trim();
@@ -47,6 +54,7 @@ class RoomListItem extends ConsumerWidget {
               ? room.roomName!.trim()
               : 'chat_unknown_conversation'.tr());
 
+    /// 置顶与在线状态计算
     final pinnedIds = ref.watch(pinnedRoomsProvider);
     final roomId = room.roomId;
 
@@ -95,7 +103,9 @@ class RoomListItem extends ConsumerWidget {
 
             if (DeviceUtil.isRealMobile()) {
               await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => ChatRoomDetail(room: room)),
+                MaterialPageRoute(
+                  builder: (_) => ChatRoomDetail(roomId: room.roomId!),
+                ),
               );
 
               // 移动端从详情页返回列表后，清空 active 房间：

@@ -5,11 +5,11 @@ import 'package:anoxia/common/widgets/ws_connection_banner.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/no_conversation_page.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chat_room_detail_bottom_bar.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chat_room_detail_scroll_down_button.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_bottom_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_scroll_down_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/ui_models/message_item.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chat_app_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
@@ -27,8 +27,8 @@ import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 /// 显示房间内的消息列表、输入框、房间状态等信息
 /// 支持时间分隔、滚动定位、加载更多历史消息、WebSocket连接状态显示等功能
 class ChatRoomDetail extends ConsumerStatefulWidget {
-  final ChatRoomVO room;
-  const ChatRoomDetail({super.key, required this.room});
+  final String roomId;
+  const ChatRoomDetail({super.key, required this.roomId});
 
   @override
   ConsumerState<ChatRoomDetail> createState() => _ChatRoomDetailState();
@@ -98,8 +98,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         .sliverController
         .onPaintItemPositionsCallback = (height, positions) {
       if (positions.isEmpty) return;
-      final currentRoomId = widget.room.roomId;
-      if (currentRoomId == null || currentRoomId.isEmpty) return;
+      final currentRoomId = widget.roomId;
+      if (currentRoomId.isEmpty) return;
 
       // 直接看滑动到的 maxVisibleIndex
       int maxVisibleIndex = positions
@@ -120,22 +120,22 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final activeId = widget.room.roomId;
-    if (activeId == null) return const NoConversationPage();
-
+    final currentRoom = ref.watch(currentRoomProvider(widget.roomId));
+    if (currentRoom == null) return const NoConversationPage();
+    
     /// 监听房间详情初始化状态
-    final entryTask = ref.watch(roomEntryTaskProvider(activeId));
+    final entryTask = ref.watch(roomEntryTaskProvider(widget.roomId));
 
     /// 监听 WebSocket 连接状态
     final wsState = ref.watch(wsControllerProvider);
 
     /// 监听这个房间是否有更多消息
     final hasMore = ref.watch(
-      chatHasMoreProvider.select((map) => map[activeId] ?? false),
+      chatHasMoreProvider.select((map) => map[widget.roomId] ?? false),
     );
 
     // 监听清洗平铺后的 UI 专属混合列表
-    final flatItems = ref.watch(chatUiListProvider(activeId));
+    final flatItems = ref.watch(chatUiListProvider(widget.roomId));
 
     /// 加载中且没有缓存消息时显示骨架屏
     final showInitialSkeleton = entryTask.isLoading && flatItems.isEmpty;
@@ -149,7 +149,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       backgroundColor: DeviceUtil.isRealDesktop()
           ? Colors.transparent
           : Theme.of(context).colorScheme.surface,
-      appBar: showInitialSkeleton ? AppBar() : ChatAppBar(room: widget.room),
+      appBar: showInitialSkeleton ? AppBar() : ChatAppBar(room: currentRoom),
       drawerScrimColor: Colors.transparent,
       body: Column(
         children: [
@@ -161,18 +161,23 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
               entryTask: entryTask,
               flatItems: flatItems,
               hasMore: hasMore,
+              currentRoom: currentRoom,
             ),
           ),
         ],
       ),
+
+      /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）
       floatingActionButton: _showScrollDownButton
           ? ChatRoomDetailScrollDownButton(
               onPressed: () => _scrollToBottom(animated: true),
             )
           : null,
+
+      /// 底部输入栏
       bottomNavigationBar: ChatRoomDetailBottomBar(
         showSkeleton: showInitialSkeleton,
-        roomStatus: widget.room.roomStatus,
+        roomStatus: currentRoom.roomStatus,
         onFieldTap: () => _scrollToBottom(animated: true),
       ),
     );
@@ -184,6 +189,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     required AsyncValue<void> entryTask,
     required List<ChatListItem> flatItems,
     required bool hasMore,
+    required ChatRoomVO currentRoom,
   }) {
     if (showInitialSkeleton) return const ChatRoomDetailSkeleton();
     if (entryTask.hasError && flatItems.isEmpty) {
@@ -191,7 +197,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         child: Text('${'chat_initialization_failed'.tr()}: ${entryTask.error}'),
       );
     }
-    if (widget.room.roomStatus == 2) return const BannedContentPage();
+    if (currentRoom.roomStatus == 2) return const BannedContentPage();
     if (flatItems.isEmpty) return const EmptyMessagesPage();
 
     return FlutterListView(
