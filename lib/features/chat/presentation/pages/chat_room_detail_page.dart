@@ -122,7 +122,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   Widget build(BuildContext context) {
     final currentRoom = ref.watch(currentRoomProvider(widget.roomId));
     if (currentRoom == null) return const NoConversationPage();
-    
+
     /// 监听房间详情初始化状态
     final entryTask = ref.watch(roomEntryTaskProvider(widget.roomId));
 
@@ -149,7 +149,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       backgroundColor: DeviceUtil.isRealDesktop()
           ? Colors.transparent
           : Theme.of(context).colorScheme.surface,
-      appBar: showInitialSkeleton ? AppBar() : ChatAppBar(room: currentRoom),
+      appBar: showInitialSkeleton
+          ? AppBar()
+          : ChatAppBar(roomId: widget.roomId),
       drawerScrimColor: Colors.transparent,
       body: Column(
         children: [

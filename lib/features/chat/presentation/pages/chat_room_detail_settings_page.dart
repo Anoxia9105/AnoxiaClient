@@ -1,5 +1,4 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -15,19 +14,26 @@ import 'package:go_router/go_router.dart';
 /// 展示房间成员列表、搜索聊天记录、消息通知设置等功能。
 /// 群聊还支持全员禁言、退出群聊等操作。
 class ChatRoomDetailSettingsPage extends ConsumerWidget {
-  /// 当前房间信息
-  final ChatRoomVO room;
+  /// 统一修改为只接收 roomId
+  final String roomId;
 
-  const ChatRoomDetailSettingsPage({super.key, required this.room});
+  const ChatRoomDetailSettingsPage({super.key, required this.roomId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final currentRoom = ref.watch(currentRoomProvider(room.roomId ?? '')) ?? room;
+    // 1. 实时监听最新的房间数据，如果房间已被解散或移除导致返回 null，则安全返回
+    final currentRoom = ref.watch(currentRoomProvider(roomId));
+    if (currentRoom == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    // 监听房间成员
-    final members = ref.watch(roomMembersProvider(currentRoom.roomId ?? ''));
+    // 2. 监听房间成员及基础状态
+    final members = ref.watch(roomMembersProvider(roomId));
     final isGroup = currentRoom.roomType == 1;
 
     /// 当前用户信息
@@ -35,7 +41,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
 
     // 当前用户是否是管理员
     final isAdmin = ref.watch(
-      isRoomAdminProvider((currentRoom.roomId ?? '', currentUser?.userId ?? 0)),
+      isRoomAdminProvider((roomId, currentUser?.userId ?? 0)),
     );
 
     // 计算顶部网格展示逻辑：最多展示 19 人，留 1 个位置给"邀请加号"按钮
@@ -45,7 +51,6 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
         : members.length;
 
     return Scaffold(
-      // 使用更柔和的背景色，衬托卡片区块
       backgroundColor: colorScheme.surfaceContainerLow,
       appBar: AppBar(
         title: Text('chat_conversation_detail'.tr()),
@@ -59,21 +64,16 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(8),
               child: GridView.builder(
-                // 禁止 GridView 独立滚动，让其跟随外层 ListView
                 physics: const NeverScrollableScrollPhysics(),
-                // 包裹内容，自动计算网格高度
                 shrinkWrap: true,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5, // 移动端 5 列视觉更紧凑美观
-                  childAspectRatio: 0.85, // 为底部名字留出空间，防止文本溢出
+                  crossAxisCount: 5,
+                  childAspectRatio: 0.85,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
-                itemCount: isGroup
-                    ? (displayCount + 1)
-                    : displayCount, // +1 是留给加号的
+                itemCount: isGroup ? (displayCount + 1) : displayCount,
                 itemBuilder: (context, index) {
-                  // 渲染"添加成员"加号按钮
                   if (isGroup && index == displayCount) {
                     return _buildActionButton(
                       context,
@@ -85,7 +85,10 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                     );
                   }
 
+                  // 防御性处理，防止 members 异步更新导致的越界
+                  if (index >= members.length) return const SizedBox.shrink();
                   final member = members[index];
+
                   return GestureDetector(
                     onTap: () {
                       // TODO: 跳转到成员个人主页
@@ -197,13 +200,10 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                 title: Text('chat_mute_all'.tr()),
                 value: currentRoom.roomStatus == 1,
                 onChanged: (value) async {
-                  if (currentRoom.roomId == null) return;
-
                   final targetMuteState = value;
-
                   final success = await ref
                       .read(roomListServiceProvider.notifier)
-                      .muteRoom(currentRoom.roomId!, targetMuteState);
+                      .muteRoom(roomId, targetMuteState);
                   if (success) {
                     BotToast.showText(
                       text: targetMuteState
@@ -240,14 +240,10 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     );
   }
 
-  /// 封装卡片容器
-  ///
-  /// 自动适配暗黑模式颜色，统一卡片样式
   Widget _buildSection(BuildContext context, List<Widget> children) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        // 使用 surface 替代纯白，完美适配 Dark Mode
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
@@ -255,9 +251,6 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     );
   }
 
-  /// 快捷构建网格内功能按钮
-  ///
-  /// 用于添加成员等操作入口
   Widget _buildActionButton(
     BuildContext context, {
     required dynamic icon,
