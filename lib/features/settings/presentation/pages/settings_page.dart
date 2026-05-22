@@ -28,10 +28,13 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   /// 反馈表单 Key
   final _feedbackFormKey = GlobalKey<FormState>();
+
   /// 反馈标题编辑控制器
   final _feedbackTitleController = TextEditingController();
+
   /// 反馈内容编辑控制器
   final _feedbackContentController = TextEditingController();
+
   /// 反馈联系方式编辑控制器
   final _feedbackContactController = TextEditingController();
 
@@ -126,6 +129,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
 
     return Scaffold(
+      backgroundColor: DeviceUtil.isRealDesktop()
+          ? Colors.transparent
+          : Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: Text('settings_page_title'.tr())),
       body: ListView(
         children: [

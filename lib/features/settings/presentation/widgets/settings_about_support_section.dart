@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
@@ -28,13 +29,16 @@ class SettingsAboutSupportSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final updateInfo = pageState.updateInfo;
-
+    final mobile = DeviceUtil.isRealMobile();
     return SettingItemCard(
       title: 'settings_page_about_title'.tr(),
       subtitle: 'settings_page_about_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedLink01,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 30),
+        padding: EdgeInsets.symmetric(
+          vertical: 8,
+          horizontal: mobile ? 4 : 30,
+        ),
         child: Column(
           children: [
             ListTile(

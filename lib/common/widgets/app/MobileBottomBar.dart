@@ -17,9 +17,9 @@ class MobileBottomBar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final hasUpdate = ref.watch(hasAppUpdateProvider);
     final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
-  final totalUnread = ref.watch(totalUnreadCountProvider);
+    final totalUnread = ref.watch(totalUnreadCountProvider);
     final settingsIndex = layout.items.length - 1;
-  const chatIndex = 0;
+    const chatIndex = 0;
     const contactsIndex = 1;
 
     return BottomNavigationBar(
@@ -29,56 +29,66 @@ class MobileBottomBar extends ConsumerWidget {
       onTap: (index) {
         ref.read(layoutControllerProvider.notifier).setIndex(index);
       },
-      items: layout.items.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final item = entry.value;
+      items: layout.items
+          /// 移动端底部导航不展示“设置”项，避免占用有限空间
+          .where((item) => item.name != 'sidebar_setting')
+          .toList()
+          .asMap()
+          .entries
+          .map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
 
-        Widget iconWidget = HugeIcon(
-          icon: item.icon,
-          size: 18,
-          strokeWidth: 1.5,
-        );
+            Widget iconWidget = HugeIcon(
+              icon: item.icon,
+              size: 18,
+              strokeWidth: 1.5,
+            );
 
-        if (idx == chatIndex && totalUnread > 0) {
-          iconWidget = Stack(
-            clipBehavior: Clip.none,
-            children: [
-              iconWidget,
-              Positioned(
-                right: -8,
-                top: -6,
-                child: VibratingBadge(count: totalUnread),
-              ),
-            ],
-          );
-        } else if (idx == contactsIndex && pendingRequests > 0) {
-          iconWidget = Stack(
-            clipBehavior: Clip.none,
-            children: [
-              iconWidget,
-              Positioned(
-                right: -8,
-                top: -6,
-                child: VibratingBadge(count: pendingRequests),
-              ),
-            ],
-          );
-        } else if (idx == settingsIndex && hasUpdate) {
-          iconWidget = Stack(
-            clipBehavior: Clip.none,
-            children: [
-              iconWidget,
-              Positioned(
-                right: -8,
-                top: -6,
-                child: VibratingBadge(isDot: true),
-              ),
-            ],
-          );
-        }
+            if (idx == chatIndex && totalUnread > 0) {
+              iconWidget = Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  iconWidget,
+                  Positioned(
+                    right: -8,
+                    top: -6,
+                    child: VibratingBadge(count: totalUnread),
+                  ),
+                ],
+              );
+            } else if (idx == contactsIndex && pendingRequests > 0) {
+              iconWidget = Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  iconWidget,
+                  Positioned(
+                    right: -8,
+                    top: -6,
+                    child: VibratingBadge(count: pendingRequests),
+                  ),
+                ],
+              );
+            } else if (idx == settingsIndex && hasUpdate) {
+              iconWidget = Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  iconWidget,
+                  const Positioned(
+                    right: -8,
+                    top: -6,
+                    child: VibratingBadge(isDot: true),
+                  ),
+                ],
+              );
+            }
 
-        return BottomNavigationBarItem(icon: iconWidget, label: item.name.tr());
-      }).toList(),
+            return BottomNavigationBarItem(
+              icon: iconWidget,
+              label: item.name.tr(),
+            );
+          })
+          .toList(),
     );
   }
 }

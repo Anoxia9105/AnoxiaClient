@@ -472,5 +472,17 @@
   "settings_open_source_spdx": "ライセンス：{}",
   "settings_open_source_no_license_text": "ライセンステキストが提供されていません。",
   "settings_open_source_package_not_found": "対象パッケージ情報が見つかりません",
-  "chat_conversation_detail": "会話詳細"
+  "chat_conversation_detail": "会話詳細",
+  "chat_group_members": "グループメンバー",
+  "chat_view_profile": "プロフィールを見る",
+  "chat_total_members_count": "メンバー{}人",
+  "chat_group_name": "グループ名",
+  "chat_group_announcement": "グループアナウンス",
+  "chat_group_qr_code": "群のQRコード",
+  "cancel": "キャンセル",
+  "confirm": "確認",
+  "chat_exit_group": "グループを退会",
+  "chat_exit_group_confirm_hint": "このグループから退会してもよろしいですか？",
+  "chat_dissolve_group_confirm_hint": "このグループを解散してもよろしいですか？解散するとすべてのデータが完全に削除されます。",
+  "chat_delete_conversation_confirm_hint": "この会話を削除してもよろしいですか？削除するとすべてのチャット履歴が完全に削除されます。"
 }

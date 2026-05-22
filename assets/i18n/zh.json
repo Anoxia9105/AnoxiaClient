@@ -432,5 +432,17 @@
   "settings_open_source_spdx": "许可证：{}",
   "settings_open_source_no_license_text": "暂无许可证文本",
   "settings_open_source_package_not_found": "未找到对应包信息",
-  "chat_conversation_detail": "会话详情"
+  "chat_conversation_detail": "会话详情",
+  "chat_group_members": "群成员",
+  "chat_view_profile": "查看资料",
+  "chat_total_members_count": "共 {} 名成员",
+  "chat_group_name": "群聊名称",
+  "chat_group_announcement": "群公告",
+  "chat_group_qr_code": "群二维码",
+  "cancel": "取消",
+  "confirm": "确认",
+  "chat_exit_group": "退出群聊",
+  "chat_exit_group_confirm_hint": "确定要退出该群聊吗？",
+  "chat_dissolve_group_confirm_hint": "确认要解散该群聊吗？解散后将清空所有数据。",
+  "chat_delete_conversation_confirm_hint": "确定要删除该会话吗？删除后将清空聊天记录。"
 }

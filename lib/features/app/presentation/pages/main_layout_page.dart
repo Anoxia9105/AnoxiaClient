@@ -6,6 +6,7 @@ import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
+import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -82,26 +83,5 @@ class MainLayoutPage extends ConsumerWidget {
 
     // 桌面端和平板直接返回原生主体，没有任何抽屉干扰
     return buildMainContent();
-  }
-}
-
-// 示例：左侧抽屉菜单
-class MenuPage extends StatelessWidget {
-  const MenuPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      body: const SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('菜单栏', style: TextStyle(color: Colors.white, fontSize: 24)),
-              // 你的菜单列表项...
-            ],
-          ),
-        ),
-    );
   }
 }

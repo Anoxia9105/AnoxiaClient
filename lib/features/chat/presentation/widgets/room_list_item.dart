@@ -204,10 +204,11 @@ class RoomListItem extends ConsumerWidget {
     final roomId = room.roomId;
     if (roomId == null) return;
 
-    final userId = ref.read(authControllerProvider).value?.userId;
-    final members = ref.read(roomMembersProvider(roomId));
-    final me = members.firstWhere((m) => m.userId == userId);
-    final canDissolve = me.roleId == 0;
+    final currentUser = ref.read(authControllerProvider).value;
+    // 当前用户是否是管理员
+    final isAdmin = ref.watch(
+      isRoomAdminProvider((roomId, currentUser?.userId ?? 0)),
+    );
 
     final position = RelativeRect.fromLTRB(
       globalPosition.dx,
@@ -230,18 +231,19 @@ class RoomListItem extends ConsumerWidget {
         value: 'read',
       ),
       const PopupMenuDivider(height: 1),
-      if (!canDissolve)
-        _buildMenuItem(
-          icon: HugeIcons.strokeRoundedDelete02,
-          label: 'chat_delete_conversation'.tr(),
-          value: 'hide',
-          color: Theme.of(context).colorScheme.error,
-        ),
-      if (canDissolve)
+
+      if (isAdmin && room.roomStatus == 0)
         _buildMenuItem(
           icon: HugeIcons.strokeRoundedDelete02,
           label: 'chat_dissolve_group'.tr(),
           value: 'dissolve',
+          color: Theme.of(context).colorScheme.error,
+        )
+      else
+        _buildMenuItem(
+          icon: HugeIcons.strokeRoundedDelete02,
+          label: 'chat_delete_conversation'.tr(),
+          value: 'hide',
           color: Theme.of(context).colorScheme.error,
         ),
     ];
@@ -266,7 +268,6 @@ class RoomListItem extends ConsumerWidget {
         roomList.markAsRead(roomId);
         break;
       case 'hide':
-      case 'leave':
         await roomList.leaveRoom(roomId);
         if (activeRoomId == roomId) {
           ref.read(activeRoomIdProvider.notifier).setActive(null);

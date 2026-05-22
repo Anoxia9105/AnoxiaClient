@@ -1,5 +1,8 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
+import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -23,7 +26,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // 1. 实时监听最新的房间数据，如果房间已被解散或移除导致返回 null，则安全返回
+    // 1. 实时监听最新的房间数据
     final currentRoom = ref.watch(currentRoomProvider(roomId));
     if (currentRoom == null) {
       return Scaffold(
@@ -32,23 +35,11 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
       );
     }
 
-    // 2. 监听房间成员及基础状态
-    final members = ref.watch(roomMembersProvider(roomId));
     final isGroup = currentRoom.roomType == 1;
-
-    /// 当前用户信息
     final currentUser = ref.watch(authControllerProvider).value;
-
-    // 当前用户是否是管理员
     final isAdmin = ref.watch(
       isRoomAdminProvider((roomId, currentUser?.userId ?? 0)),
     );
-
-    // 计算顶部网格展示逻辑：最多展示 19 人，留 1 个位置给"邀请加号"按钮
-    final maxGridItems = isGroup ? 20 : 1;
-    final displayCount = members.length > (maxGridItems - 1) && isGroup
-        ? (maxGridItems - 1)
-        : members.length;
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLow,
@@ -59,97 +50,83 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          // 区块 0：顶部成员网格卡片
-          _buildSection(context, [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  childAspectRatio: 0.85,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+          // 区块 0：群成员头像网格
+          RoomCard(
+            child: MemberGridSection(roomId: roomId, isGroup: isGroup),
+          ),
+
+          // 区块 1：会话/群聊基础资料管理
+          RoomCard(
+            children: [
+              ListTile(
+                leading: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedUserMultiple02,
+                  size: 22,
                 ),
-                itemCount: isGroup ? (displayCount + 1) : displayCount,
-                itemBuilder: (context, index) {
-                  if (isGroup && index == displayCount) {
-                    return _buildActionButton(
-                      context,
-                      icon: HugeIcons.strokeRoundedAdd01,
-                      label: 'member_add_title'.tr(),
-                      onTap: () {
-                        // TODO: 打开选择联系人邀请入群页面
-                      },
-                    );
-                  }
-
-                  // 防御性处理，防止 members 异步更新导致的越界
-                  if (index >= members.length) return const SizedBox.shrink();
-                  final member = members[index];
-
-                  return GestureDetector(
-                    onTap: () {
-                      // TODO: 跳转到成员个人主页
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AvatarWidget(
-                          url: member.avatar,
-                          name: member.nickName,
-                          size: 44,
-                        ),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              member.nickName ?? '未知用户',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                title: Text(
+                  isGroup
+                      ? 'chat_group_members'.tr()
+                      : 'chat_view_profile'.tr(),
+                ),
+                subtitle: isGroup
+                    ? Consumer(
+                        builder: (context, ref, child) {
+                          final members = ref.watch(
+                            roomMembersProvider(roomId),
+                          );
+                          return Text(
+                            'chat_total_members_count'.tr(
+                              args: [members.length.toString()],
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                          );
+                        },
+                      )
+                    : null,
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                onTap: () {
+                  // TODO: 跳转至群成员详情列表
                 },
               ),
-            ),
-          ]),
+              if (isGroup) ...[
+                ListTile(
+                  leading: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedComment01,
+                    size: 22,
+                  ), // 修复图标
+                  title: Text('chat_group_name'.tr()),
+                  subtitle: Text(
+                    currentRoom.roomName ?? currentRoom.roomDescription ?? '',
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedMegaphone01,
+                    size: 22,
+                  ),
+                  title: Text('chat_group_announcement'.tr()),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedQrCode01,
+                    size: 22,
+                  ),
+                  title: Text('chat_group_qr_code'.tr()),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () {
+                    // TODO: 打开二维码展示页
+                  },
+                ),
+              ],
+            ],
+          ),
 
-          // 区块 1：群成员管理入口
-          _buildSection(context, [
-            ListTile(
-              leading: const HugeIcon(
-                icon: HugeIcons.strokeRoundedUserMultiple02,
-                size: 22,
-              ),
-              title: Text(
-                isGroup ? 'chat_group_members'.tr() : 'chat_view_profile'.tr(),
-              ),
-              subtitle: isGroup
-                  ? Text(
-                      'chat_total_members_count'.tr(
-                        args: [members.length.toString()],
-                      ),
-                    )
-                  : null,
-              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-              onTap: () {
-                // TODO: 跳转到查看完整的群成员列表页面
-              },
-            ),
-          ]),
-
-          // 区块 2：核心功能（搜索与查找）
-          _buildSection(context, [
-            ListTile(
+          // 区块 2：核心功能（搜索聊天记录）
+          RoomCard(
+            child: ListTile(
               leading: const HugeIcon(
                 icon: HugeIcons.strokeRoundedSearch01,
                 size: 22,
@@ -157,133 +134,164 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               title: Text('search_context_title'.tr()),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                } else {
-                  context.pop();
-                }
+                context.pop();
                 Future.microtask(() {
                   ref.read(roomListServiceProvider.notifier).toggleSearch();
                 });
               },
             ),
-          ]),
+          ),
 
-          // 区块 3：通知与会话设置
-          _buildSection(context, [
-            SwitchListTile.adaptive(
-              secondary: const HugeIcon(
-                icon: HugeIcons.strokeRoundedNotificationOff01,
-                size: 22,
-              ),
-              title: Text('chat_mute_notifications'.tr()),
-              value: false, // TODO: 绑定状态
-              onChanged: (value) {},
-            ),
-
-            SwitchListTile.adaptive(
-              secondary: const HugeIcon(
-                icon: HugeIcons.strokeRoundedPin,
-                size: 22,
-              ),
-              title: Text('chat_pin'.tr()),
-              value: false, // TODO: 绑定状态
-              onChanged: (value) {},
-            ),
-            // 全员禁言（仅管理员可见）
-            if (isAdmin)
+          // 区块 3：通知与会话常规开关设置
+          RoomCard(
+            children: [
               SwitchListTile.adaptive(
                 secondary: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedVolumeHigh,
+                  icon: HugeIcons.strokeRoundedPin,
                   size: 22,
                 ),
-                title: Text('chat_mute_all'.tr()),
-                value: currentRoom.roomStatus == 1,
+                title: Text('chat_pin'.tr()),
+                value: ref.watch(pinnedRoomsProvider).contains(roomId),
                 onChanged: (value) async {
-                  final targetMuteState = value;
-                  final success = await ref
-                      .read(roomListServiceProvider.notifier)
-                      .muteRoom(roomId, targetMuteState);
-                  if (success) {
-                    BotToast.showText(
-                      text: targetMuteState
-                          ? 'chat_mute_success'.tr()
-                          : 'chat_unmute_success'.tr(),
-                    );
-                  } else {
-                    BotToast.showText(text: 'chat_operation_retry_failed'.tr());
-                  }
+                  await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
                 },
               ),
-          ]),
-
-          // 区块 4：危险操作（退出/解散）
-          if (isGroup)
-            _buildSection(context, [
-              ListTile(
-                title: Center(
-                  child: Text(
-                    'chat_exit_group'.tr(),
-                    style: TextStyle(
-                      color: colorScheme.error,
-                      fontWeight: FontWeight.bold,
-                    ),
+              if (isGroup && isAdmin)
+                SwitchListTile.adaptive(
+                  secondary: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedVolumeHigh,
+                    size: 22,
                   ),
+                  title: Text('chat_mute_all'.tr()),
+                  value: currentRoom.roomStatus == 1,
+                  onChanged: (value) async {
+                    final success = await ref
+                        .read(roomListServiceProvider.notifier)
+                        .muteRoom(roomId, value);
+                    if (success) {
+                      BotToast.showText(
+                        text: value
+                            ? 'chat_mute_success'.tr()
+                            : 'chat_unmute_success'.tr(),
+                      );
+                    } else {
+                      BotToast.showText(
+                        text: 'chat_operation_retry_failed'.tr(),
+                      );
+                    }
+                  },
                 ),
-                onTap: () {
-                  // TODO: 弹出退出群聊确认弹窗
-                },
-              ),
-            ]),
+            ],
+          ),
+
+          // 区块 4：底部危险动作触发卡片
+          _buildDangerActionCard(
+            context,
+            ref,
+            isGroup,
+            isAdmin,
+            currentRoom.roomStatus ?? -1,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSection(BuildContext context, List<Widget> children) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+  /// 构建底部危险操作卡片
+  Widget _buildDangerActionCard(
+    BuildContext context,
+    WidgetRef ref,
+    bool isGroup,
+    bool isAdmin,
+    int roomStatus,
+  ) {
+    final String actionLabel;
+    final VoidCallback onTap;
+
+    if (isGroup && isAdmin && roomStatus == 0) {
+      actionLabel = 'chat_dissolve_group'.tr();
+      onTap = () => _showConfirmDialog(
+        context,
+        title: 'chat_dissolve_group'.tr(),
+        content: 'chat_dissolve_group_confirm_hint'
+            .tr(), // 确认要解散该群聊吗？解散后将清空所有数据。
+        onConfirm: () async {
+          await ref
+              .read(roomListServiceProvider.notifier)
+              .dissolveGroup(roomId);
+          if (context.mounted) context.go('/chat'); // 回到聊天主页
+        },
+      );
+    } else if (isGroup) {
+      actionLabel = 'chat_exit_group'.tr(); // 退出群聊
+      onTap = () => _showConfirmDialog(
+        context,
+        title: 'chat_exit_group'.tr(),
+        content: 'chat_exit_group_confirm_hint'.tr(), // 确定要退出该群聊吗？
+        onConfirm: () async {
+          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
+          if (context.mounted) context.go('/chat');
+        },
+      );
+    } else {
+      actionLabel = 'chat_delete_conversation'.tr();
+      onTap = () => _showConfirmDialog(
+        context,
+        title: 'chat_delete_conversation'.tr(),
+        content: 'chat_delete_conversation_confirm_hint'.tr(), // 确定删除该会话吗？
+        onConfirm: () async {
+          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
+          if (context.mounted) context.go('/chat');
+        },
+      );
+    }
+
+    return RoomCard(
+      child: ListTile(
+        title: Center(
+          child: Text(
+            actionLabel,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        onTap: onTap,
       ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 
-  Widget _buildActionButton(
+  /// 通用二次确认适配弹窗
+  void _showConfirmDialog(
     BuildContext context, {
-    required dynamic icon,
-    required String label,
-    required VoidCallback onTap,
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: HugeIcon(
-              icon: icon,
-              color: colorScheme.onSurfaceVariant,
-              size: 18,
+    showAdaptiveDialog(
+      context: context,
+      builder: (context) => AlertDialog.adaptive(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'cancel'.tr(),
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
             ),
           ),
-          const SizedBox(height: 4),
-          Expanded(
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onConfirm();
+            },
             child: Text(
-              label,
-              maxLines: 1,
+              'confirm'.tr(),
               style: TextStyle(
-                fontSize: 11,
-                color: colorScheme.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
