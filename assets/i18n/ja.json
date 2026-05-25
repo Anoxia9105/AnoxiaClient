@@ -7,10 +7,7 @@
   "header_more_btn_settings": "設定",
   "header_more_btn_help": "ヘルプ",
   "header_more_btn_feedback": "フィードバック",
-
-
   "layout_min_size_error": "申し訳ありませんが、このデバイスはサポートされていません",
-
   "sidebar_chat": "会話",
   "sidebar_contact": "友達",
   "sidebar_documentation": "AI",
@@ -44,7 +41,6 @@
   "me_password_submit": "パスワードを更新",
   "me_password_update_success": "パスワードを更新しました",
   "me_password_update_failed": "パスワードの更新に失敗しました",
-
   "login_page_title": "ログインへようこそ",
   "login_page_name": "ユーザー名を入力してください",
   "login_page_password": "パスワードを入力してください",
@@ -58,8 +54,6 @@
   "login_page_password_validator_regex": "パスワードは5～50文字で入力してください",
   "login_page_captcha_validator_notnull": "認証コードを入力してください",
   "login_page_captcha_validator_regex": "認証コードの長さが要件を満たしていません",
-
-
   "settings_page_title": "設定",
   "settings_page_theme_title": "テーマ設定",
   "settings_page_theme_subtitle": "アプリのテーマを選択",
@@ -81,34 +75,27 @@
   "settings_feedback_submit": "フィードバックを送信",
   "settings_feedback_submit_success": "フィードバックを送信しました。ありがとうございます",
   "settings_feedback_submit_failed": "フィードバックの送信に失敗しました。後でもう一度お試しください",
-
-
-
-  "app_light_themes1":"クラシックインディゴ",
-  "app_light_themes2":"エメラルドグリーン",
-  "app_light_themes3":"桜色ピンク",
-  "app_light_themes4":"ミントティール",
-  "app_light_themes5":"エレガントグレー",
-  "app_light_themes6":"ウォームアンバー",
-  "app_light_themes7":"ラベンダーバイオレット",
-
-  "app_dark_themes8":"静かな星空",
-  "app_dark_themes9":"ネオンパープル",
-  "app_dark_themes10":"フォレストミスト",
-  "app_dark_themes11":"黄金の琥珀",
-  "app_dark_themes12":"溶岩の心",
-  "app_dark_themes13":"深海の青",
-  "app_dark_themes14":"ココアアース",
-  "app_dark_themes15":"アメジスト星雲",
-  "app_dark_themes16":"マトリックスグリーン",
-  "app_dark_themes17":"夕焼けオレンジ",
-  "app_dark_themes18":"冬の氷河",
-  "app_dark_themes19":"インクグラファイト",
-
-
+  "app_light_themes1": "クラシックインディゴ",
+  "app_light_themes2": "エメラルドグリーン",
+  "app_light_themes3": "桜色ピンク",
+  "app_light_themes4": "ミントティール",
+  "app_light_themes5": "エレガントグレー",
+  "app_light_themes6": "ウォームアンバー",
+  "app_light_themes7": "ラベンダーバイオレット",
+  "app_dark_themes8": "静かな星空",
+  "app_dark_themes9": "ネオンパープル",
+  "app_dark_themes10": "フォレストミスト",
+  "app_dark_themes11": "黄金の琥珀",
+  "app_dark_themes12": "溶岩の心",
+  "app_dark_themes13": "深海の青",
+  "app_dark_themes14": "ココアアース",
+  "app_dark_themes15": "アメジスト星雲",
+  "app_dark_themes16": "マトリックスグリーン",
+  "app_dark_themes17": "夕焼けオレンジ",
+  "app_dark_themes18": "冬の氷河",
+  "app_dark_themes19": "インクグラファイト",
   "help_page_title": "ヘルプ",
   "feedback_page_title": "フィードバック",
-  
   "chat_search_placeholder": "会話を検索...",
   "chat_load_failed": "読み込みに失敗しました",
   "chat_create_group": "グルチャ作成",
@@ -125,7 +112,6 @@
   "chat_leave_group": "グループを離れる",
   "chat_delete_conversation": "会話を削除",
   "chat_dissolve_group": "グループを解散",
-  
   "appbar_unknown_user": "未知のユーザー",
   "appbar_conversation_detail": "会話の詳細",
   "appbar_user_typing": "相手が入力中...",
@@ -137,7 +123,6 @@
   "appbar_search_in_chat": "チャット内検索",
   "appbar_add_member": "メンバーを追加",
   "appbar_member_list": "メンバーリスト",
-  
   "contact_select_contact": "連絡先を選択してください",
   "contact_load_failed": "読み込みに失敗しました",
   "contact_status": "ステータス",
@@ -163,7 +148,6 @@
   "contact_male": "男性",
   "contact_female": "女性",
   "contact_unknown_gender": "未知",
-  
   "chat_send_message": "メッセージを送る",
   "call_waiting_to_join": "参加待ち...",
   "call_connecting_to_room": "発信中...",
@@ -213,14 +197,12 @@
   "call_window_room_creation_failed": "ルームの作成に失敗しました",
   "call_window_retry": "再試行",
   "ai_chat_title": "Gemini Chat",
-  
   "search_context_title": "検索コンテキスト",
   "search_context_matches": "一致数",
   "search_context_empty": "検索結果がありません",
   "appbar_enter_search": "検索を入力",
   "appbar_search_hint": "キーワードを入力して検索",
   "search": "検索",
-  
   "discover_group_chat": "グループチャット発見",
   "discover_group_chat_subtitle": "面白いグループや話題を発見",
   "discover_nearby_people": "近くの人",
@@ -249,7 +231,6 @@
   "prejoin_recheck": "再確認",
   "prejoin_cancel": "キャンセル",
   "prejoin_join": "会議に参加",
-
   "file_not_found": "ファイルが見つかりません、場所を特定できません",
   "file_open_dir_failed": "ディレクトリを開けませんでした: {}",
   "file_url_invalid": "ファイルURLが無効です、ダウンロードできません",
@@ -258,7 +239,6 @@
   "file_unknown": "不明なファイル",
   "file_downloading": "{}% ダウンロード中...",
   "file_downloaded_open_location": "ダウンロード済み、クリックして場所を開く",
-
   "chat_me": "自分",
   "chat_unknown_user": "不明なユーザー",
   "chat_message_format_error": "メッセージ形式エラー",
@@ -271,9 +251,7 @@
   "chat_room_banned": "ルームは禁止されています",
   "chat_no_messages": "メッセージはまだありません",
   "chat_no_messages_in_group": "メッセージはまだありません",
-
   "login_failed": "ログインに失敗しました。ユーザー名/パスワード/認証コードを確認してください",
-
   "update_new_version": "新しいバージョンが見つかりました",
   "update_release_notes": "更新内容",
   "update_default_notes": "パフォーマンスの最適化と安定性の向上",
@@ -284,7 +262,6 @@
   "update_error_404": "リモート更新ファイルが見つかりません (404)",
   "update_error_network": "ネットワーク接続に失敗しました。インターネット接続を確認してください",
   "update_error_generic": "ダウンロードエラー: {}",
-
   "add_friend_title": "友達を追加",
   "add_friend_search_hint": "ユーザー名またはニックネームを検索",
   "add_friend_search_btn": "検索",
@@ -303,11 +280,9 @@
   "add_friend_request_sent": "友達リクエストを送信しました",
   "add_friend_request_failed": "リクエストに失敗しました。すでに友達か、リクエスト済みの可能性があります",
   "add_friend_send_failed": "送信に失敗しました、再試行してください",
-
   "contact_accept": "承認",
   "contact_reject": "拒否",
   "group_unnamed": "名前のないグループ",
-
   "toolbar_bold": "太字",
   "toolbar_italic": "斜体",
   "toolbar_underline": "下線",
@@ -323,7 +298,6 @@
   "toolbar_send": "送信",
   "toolbar_reset_color": "色をリセット",
   "toolbar_search_emoji": "絵文字を検索...",
-
   "system_msg_unknown": "不明なシステムメッセージ",
   "system_msg_invite": "{nickName} が [{names}] をルームに招待しました",
   "system_msg_mute_on": "管理者 [全体ミュートを有効にしました]",
@@ -332,7 +306,6 @@
   "system_msg_room_closed": "ルームが解散されました",
   "system_msg_room_banned": "管理者 [この会話をBANしました]",
   "system_msg_room_unbanned": "管理者 [この会話のBANを解除しました]",
-
   "upload_failed": "アップロード失敗",
   "upload_failed_retry": "アップロード失敗、削除して再試行してください",
   "quill_image_plain": "[画像]",
@@ -340,14 +313,12 @@
   "search_unknown": "不明",
   "search_image_placeholder": "[画像]",
   "search_user_prefix": "ユーザー {}",
-
   "feature_coming_soon": "機能開発中、お楽しみに...",
   "error_unknown": "不明なエラーが発生しました",
   "create_group_title": "グループチャットを作成",
   "create_group_name_hint": "グループ名を入力...",
   "create_group_name_empty": "グループ名を入力してください",
   "create_group_success": "グループチャットが作成されました",
-
   "chat_admin": "管理者",
   "chat_kick_member": "メンバーを追放",
   "chat_confirm_kick": "追放の確認",
@@ -365,18 +336,15 @@
   "chat_unmute_effect_hint": "グループメンバー全員のメッセージ送信が再開されます",
   "chat_mute_success": "全体ミュートを有効にしました",
   "chat_unmute_success": "全体ミュートを解除しました",
-
   "member_no_contacts": "追加できる連絡先がありません",
   "member_load_failed": "連絡先の読み込みに失敗しました",
   "member_adding": "メンバーを追加中...",
   "member_add_count": "追加 ({})",
   "member_add_success": "メンバーの追加に成功しました",
   "member_add_failed": "メンバーの追加に失敗しました",
-
   "upload_total_count_exceeded": "メッセージの添付ファイル総数は {} 個を超えることはできません（すでに {} 個あります）",
   "upload_total_size_exceeded": "メッセージの添付ファイル総サイズは {}MBを超えることはできません",
   "upload_single_file_too_large": "ファイル {} が50MBを超えています、スキップしました",
-
   "call_layout_single": "シングル",
   "call_layout_focus": "フォーカス",
   "call_layout_grid": "グリッド",
@@ -414,7 +382,6 @@
   "call_layout_multi": "多人数会議",
   "call_layout_presentation": "プレゼン/ライブ",
   "call_layout_single_focus": "シングルフォーカス",
-
   "chat_me_suffix": "(自分)",
   "chat_unmute_tooltip": "ミュート解除",
   "chat_mute_tooltip": "全体ミュート",
@@ -424,20 +391,14 @@
   "chat_room_dissolved": "ルームは解散されました",
   "chat_unknown_user_label": "不明なユーザー",
   "chat_input_placeholder": "メッセージを入力...",
-
   "member_add_title": "メンバーを追加",
   "member_group_chat": "グループチャット",
-
   "create_group_selected_count": "{} 人を選択",
-
   "ai_chat_hint": "Geminiに聞いてみよう...",
-
   "emoji_search_hint": "絵文字を検索...",
   "emoji_not_found": "一致する絵文字が見つかりません~",
-
   "mention_no_users": "メンションできるユーザーがいません",
   "mention_user_not_found": "\"{}\" に一致するユーザーが見つかりません",
-
   "gender_male": "男性",
   "gender_female": "女性",
   "gender_unknown": "不明",
@@ -448,8 +409,7 @@
   "tray_exit": "終了",
   "taskbar_unread_99plus": "99+ 件の未読",
   "taskbar_unread_count": "{} 件の未読",
-  
-   "chat_copy": "コピー",
+  "chat_copy": "コピー",
   "chat_copy_success": "コピーしました",
   "chat_favorite": "お気に入り",
   "chat_favorite_success": "お気に入りに追加しました",
@@ -484,5 +444,9 @@
   "chat_exit_group": "グループを退会",
   "chat_exit_group_confirm_hint": "このグループから退会してもよろしいですか？",
   "chat_dissolve_group_confirm_hint": "このグループを解散してもよろしいですか？解散するとすべてのデータが完全に削除されます。",
-  "chat_delete_conversation_confirm_hint": "この会話を削除してもよろしいですか？削除するとすべてのチャット履歴が完全に削除されます。"
+  "chat_delete_conversation_confirm_hint": "この会話を削除してもよろしいですか？削除するとすべてのチャット履歴が完全に削除されます。",
+  "status_online": "オンライン",
+  "status_connecting": "接続中...",
+  "status_offline": "接続解除",
+  "status_network_unavailable": "ネットワーク接続不可"
 }

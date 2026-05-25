@@ -10,19 +10,34 @@ part of 'system_message_service.dart';
 // ignore_for_file: type=lint, type=warning
 /// 系统信令消息监听服务
 ///
-/// 专门拦截 RoomMessage 中的 system 类型，处理通话挂断、禁言、解散、通知等衍生旁路业务
+/// 专门拦截 [RoomMessage] 中的 system 类型消息，处理以下衍生旁路业务：
+/// - 通话状态变更（开始/结束）
+/// - 房间状态变更（禁言/解禁/解散）
+/// - 桌面通知推送
+///
+/// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
 
 @ProviderFor(SystemMessageService)
 const systemMessageServiceProvider = SystemMessageServiceProvider._();
 
 /// 系统信令消息监听服务
 ///
-/// 专门拦截 RoomMessage 中的 system 类型，处理通话挂断、禁言、解散、通知等衍生旁路业务
+/// 专门拦截 [RoomMessage] 中的 system 类型消息，处理以下衍生旁路业务：
+/// - 通话状态变更（开始/结束）
+/// - 房间状态变更（禁言/解禁/解散）
+/// - 桌面通知推送
+///
+/// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
 final class SystemMessageServiceProvider
     extends $NotifierProvider<SystemMessageService, void> {
   /// 系统信令消息监听服务
   ///
-  /// 专门拦截 RoomMessage 中的 system 类型，处理通话挂断、禁言、解散、通知等衍生旁路业务
+  /// 专门拦截 [RoomMessage] 中的 system 类型消息，处理以下衍生旁路业务：
+  /// - 通话状态变更（开始/结束）
+  /// - 房间状态变更（禁言/解禁/解散）
+  /// - 桌面通知推送
+  ///
+  /// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
   const SystemMessageServiceProvider._()
     : super(
         from: null,
@@ -55,7 +70,12 @@ String _$systemMessageServiceHash() =>
 
 /// 系统信令消息监听服务
 ///
-/// 专门拦截 RoomMessage 中的 system 类型，处理通话挂断、禁言、解散、通知等衍生旁路业务
+/// 专门拦截 [RoomMessage] 中的 system 类型消息，处理以下衍生旁路业务：
+/// - 通话状态变更（开始/结束）
+/// - 房间状态变更（禁言/解禁/解散）
+/// - 桌面通知推送
+///
+/// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
 
 abstract class _$SystemMessageService extends $Notifier<void> {
   void build();

@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/desktop/ConnectionStatusTag.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +41,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       elevation: 0,
       titleSpacing: 4,
       leading: hideAppBarLogo
-          ? SizedBox.shrink()
+          ? const SizedBox.shrink()
           : Center(
               child: Assets.images.appIconPng.image(
                 width: 24,
@@ -48,6 +49,12 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 // fit: BoxFit.cover
               ),
             ),
+      title: const Row(
+        children: [
+          SizedBox(width: 4),
+          ConnectionStatusTag(),
+        ],
+      ),
       actions: [
         if (showHeaderEnhancements) ...[
           _HeaderSearchEntry(onTap: () => _openGlobalSearch(context, ref)),
@@ -55,12 +62,12 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ],
         //最小化
         IconButton(
-          tooltip: "header_minimize".tr(),
+          tooltip: 'header_minimize'.tr(),
           padding: EdgeInsets.zero,
           onPressed: () {
             windowManager.minimize();
           },
-          icon: HugeIcon(
+          icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedSolidLine01,
             // color: widget.iconColor,
             size: 18,
@@ -74,7 +81,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
         //正常/最大化
         changeScreenMode(extended),
         IconButton(
-          tooltip: "header_closure".tr(),
+          tooltip: 'header_closure'.tr(),
           padding: EdgeInsets.zero,
           hoverColor: Colors.red,
           onPressed: () {
@@ -91,7 +98,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
               return null;
             }),
           ),
-          icon: HugeIcon(
+          icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedCancel01,
             size: 20,
             // color: widget.iconColor,
@@ -103,15 +110,16 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
+  /// 切换窗口最大化/还原
   Widget changeScreenMode(bool mode) {
     if (mode) {
       return IconButton(
-        tooltip: "header_reduction".tr(),
+        tooltip: 'header_reduction'.tr(),
         padding: EdgeInsets.zero,
         onPressed: () {
           windowManager.unmaximize();
         },
-        icon: HugeIcon(
+        icon: const HugeIcon(
           icon: HugeIcons.strokeRoundedChangeScreenMode,
           // color: widget.iconColor,
           size: 18,
@@ -124,12 +132,12 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       );
     }
     return IconButton(
-      tooltip: "header_maximize".tr(),
+      tooltip: 'header_maximize'.tr(),
       padding: EdgeInsets.zero,
       onPressed: () {
         windowManager.maximize();
       },
-      icon: HugeIcon(
+      icon: const HugeIcon(
         // color: widget.iconColor,
         icon: HugeIcons.strokeRoundedSquare,
         size: 16,
@@ -142,6 +150,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
+  /// 打开全局搜索对话框
   void _openGlobalSearch(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
@@ -244,9 +253,9 @@ class _GlobalSearchDialogState extends ConsumerState<_GlobalSearchDialog> {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       children: [
-                        _ResultSectionTitle(title: '会话'),
+                        const _ResultSectionTitle(title: '会话'),
                         if (roomResults.isEmpty)
-                          _ResultEmpty(text: '未找到相关会话')
+                          const _ResultEmpty(text: '未找到相关会话')
                         else
                           ...roomResults.map(
                             (room) => _ResultTile(
@@ -271,9 +280,9 @@ class _GlobalSearchDialogState extends ConsumerState<_GlobalSearchDialog> {
                             ),
                           ),
                         const SizedBox(height: 8),
-                        _ResultSectionTitle(title: '联系人'),
+                        const _ResultSectionTitle(title: '联系人'),
                         if (contactResults.isEmpty)
-                          _ResultEmpty(text: '未找到相关联系人')
+                          const _ResultEmpty(text: '未找到相关联系人')
                         else
                           ...contactResults.map(
                             (contact) => _ResultTile(

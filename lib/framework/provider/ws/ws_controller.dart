@@ -316,9 +316,9 @@ class WsController extends _$WsController {
   /// [manual] 是否为手动触发
   void _disposeAll({bool closeStream = false, bool manual = false}) {
     log.info(
-      "[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}",
+      '[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}',
     );
-    log.info("[WsController] 断开调用栈: ${StackTrace.current}");
+    log.info('[WsController] 断开调用栈: ${StackTrace.current}');
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();

@@ -43,6 +43,7 @@ class MainLayoutPage extends ConsumerWidget {
         showDesktopHeaderEnhancements: DeviceUtil.isDesktop(context),
         body: Row(
           children: [
+            /// 桌面端和平板显示侧边栏，移动端不显示
             if (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context))
               const DesktopSidebar(),
             Expanded(

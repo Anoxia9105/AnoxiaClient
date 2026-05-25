@@ -444,5 +444,9 @@
   "chat_exit_group": "Leave Group",
   "chat_exit_group_confirm_hint": "Are you sure you want to leave this group chat?",
   "chat_dissolve_group_confirm_hint": "Are you sure you want to dissolve this group chat? All data will be permanently deleted.",
-  "chat_delete_conversation_confirm_hint": "Are you sure you want to delete this conversation? All chat history will be permanently deleted."
+  "chat_delete_conversation_confirm_hint": "Are you sure you want to delete this conversation? All chat history will be permanently deleted.",
+  "status_online": "Online",
+  "status_connecting": "Connecting...",
+  "status_offline": "Offline",
+  "status_network_unavailable": "Network Unavailable"
 }

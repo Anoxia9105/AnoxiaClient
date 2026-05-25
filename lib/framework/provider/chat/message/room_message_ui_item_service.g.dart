@@ -8,14 +8,26 @@ part of 'room_message_ui_item_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 专门为某个房间计算 [时间条 + 消息] 混合平铺列表的 ViewProvider
-/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息
+/// 聊天 UI 列表计算服务
+///
+/// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
+/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息。
+///
+/// 该服务会自动在消息之间插入时间分隔条，规则如下：
+/// - 第一条消息前显示时间分隔条
+/// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 
 @ProviderFor(chatUiList)
 const chatUiListProvider = ChatUiListFamily._();
 
-/// 专门为某个房间计算 [时间条 + 消息] 混合平铺列表的 ViewProvider
-/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息
+/// 聊天 UI 列表计算服务
+///
+/// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
+/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息。
+///
+/// 该服务会自动在消息之间插入时间分隔条，规则如下：
+/// - 第一条消息前显示时间分隔条
+/// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 
 final class ChatUiListProvider
     extends
@@ -25,8 +37,14 @@ final class ChatUiListProvider
           List<ChatListItem>
         >
     with $Provider<List<ChatListItem>> {
-  /// 专门为某个房间计算 [时间条 + 消息] 混合平铺列表的 ViewProvider
-  /// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息
+  /// 聊天 UI 列表计算服务
+  ///
+  /// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
+  /// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息。
+  ///
+  /// 该服务会自动在消息之间插入时间分隔条，规则如下：
+  /// - 第一条消息前显示时间分隔条
+  /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
   const ChatUiListProvider._({
     required ChatUiListFamily super.from,
     required String super.argument,
@@ -81,8 +99,14 @@ final class ChatUiListProvider
 
 String _$chatUiListHash() => r'8da3772c757aec55d0e95ec64bd1d1090543819c';
 
-/// 专门为某个房间计算 [时间条 + 消息] 混合平铺列表的 ViewProvider
-/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息
+/// 聊天 UI 列表计算服务
+///
+/// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
+/// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息。
+///
+/// 该服务会自动在消息之间插入时间分隔条，规则如下：
+/// - 第一条消息前显示时间分隔条
+/// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 
 final class ChatUiListFamily extends $Family
     with $FunctionalFamilyOverride<List<ChatListItem>, String> {
@@ -95,8 +119,14 @@ final class ChatUiListFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 专门为某个房间计算 [时间条 + 消息] 混合平铺列表的 ViewProvider
-  /// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息
+  /// 聊天 UI 列表计算服务
+  ///
+  /// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
+  /// 针对反转列表设计：返回的 List 中 index 0 代表最底部最新的消息。
+  ///
+  /// 该服务会自动在消息之间插入时间分隔条，规则如下：
+  /// - 第一条消息前显示时间分隔条
+  /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 
   ChatUiListProvider call(String roomId) =>
       ChatUiListProvider._(argument: roomId, from: this);

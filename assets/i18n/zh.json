@@ -444,5 +444,9 @@
   "chat_exit_group": "退出群聊",
   "chat_exit_group_confirm_hint": "确定要退出该群聊吗？",
   "chat_dissolve_group_confirm_hint": "确认要解散该群聊吗？解散后将清空所有数据。",
-  "chat_delete_conversation_confirm_hint": "确定要删除该会话吗？删除后将清空聊天记录。"
+  "chat_delete_conversation_confirm_hint": "确定要删除该会话吗？删除后将清空聊天记录。",
+  "status_online": "在线",
+  "status_connecting": "连接中...",
+  "status_offline": "连接断开",
+  "status_network_unavailable": "无网络连接"
 }

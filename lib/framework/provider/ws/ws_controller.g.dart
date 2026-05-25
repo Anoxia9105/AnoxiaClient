@@ -53,7 +53,7 @@ final class WsControllerProvider
   }
 }
 
-String _$wsControllerHash() => r'71dd7c3e02e2fcc889203ba750b14c2b6c1a2fb2';
+String _$wsControllerHash() => r'842a8000e4db5427b9a71bca0c3ae64601444217';
 
 /// WebSocket 连接控制器
 ///
