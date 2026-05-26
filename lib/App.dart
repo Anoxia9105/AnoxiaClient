@@ -1,3 +1,5 @@
+import 'package:anoxia/features/chat/presentation/call/mobile/in_app_call_min_window.dart';
+import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:flutter_floating/flutter_floating.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'common/utils/DeviceUtil.dart';
@@ -126,6 +129,36 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     final locale = context.locale;
     final appTheme = ref.watch(appThemeProvider);
     final isDark = appTheme.brightness == Brightness.dark;
+
+    if (DeviceUtil.isAndroid()) {
+      const String floatingKey = "call_min_window";
+
+    //  精准监听 Riverpod 通话状态机的变化
+    ref.listen(mobileCallSessionControllerProvider, (previous, next) {
+      if (next != null && next.minimized) {
+        // ─── 1. 状态变为最小化：检查并创建应用内悬浮窗 ───
+        if (!floatingManager.containsFloating(floatingKey)) {
+          floatingManager.createFloating(
+            floatingKey,
+            FloatingOverlay(
+              const InAppCallMinWindow(), // 你写的极简小窗组件
+              slideType: FloatingEdgeType.onRightAndTop,
+              right: 16,
+              top: 150,
+            ),
+          );
+        }
+        
+        // 💡 源码 getFloating 会返回非空对象，现在安全了
+        floatingManager.getFloating(floatingKey).open(context);
+      } else {
+        // ─── 2. 状态变为全屏或挂断：安全销毁（源码内部会自动 close 并 dispose） ───
+        if (floatingManager.containsFloating(floatingKey)) {
+          floatingManager.disposeFloating(floatingKey);
+        }
+      }
+    });
+    }
 
     /// 手机系统栏适配：根据当前主题调整状态栏和导航栏图标颜色
     SystemChrome.setSystemUIOverlayStyle(

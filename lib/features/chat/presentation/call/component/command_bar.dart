@@ -257,7 +257,7 @@ class CommandBar extends ConsumerWidget {
               Tooltip(
                 message: label,
                 child: InkWell(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
@@ -275,7 +275,7 @@ class CommandBar extends ConsumerWidget {
               SizedBox(
                 height: double.infinity,
                 child: InkWell(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
@@ -351,17 +351,12 @@ class CommandBar extends ConsumerWidget {
           onTap: () async {
             await notifier.leave();
             if (context.mounted) {
-              if (DeviceUtil.isRealDesktop()) {
-                await windowManager.close();
-              } else {
-                ref.read(mobileCallSessionControllerProvider.notifier).end();
-                Navigator.of(context).maybePop();
-              }
+              await windowManager.close();
             }
           },
           borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedCallRinging03,
               size: 18,
@@ -669,14 +664,11 @@ class _MeetingTimerState extends State<MeetingTimer> {
   @override
   Widget build(BuildContext context) {
     if (widget.joinedAt == null) {
-      return Row(
+      return const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
-          const Text(
-            '--:--',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text('--:--', style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       );
     }

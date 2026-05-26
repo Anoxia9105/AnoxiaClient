@@ -65,6 +65,12 @@ class DeviceUtil {
   /// 判断是不是Linux
   static bool isLinux() =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
+  /// 判断是不是Android
+  static bool isAndroid() =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  /// 判断是不是iOS
+  static bool isIOS() =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 }
 
 /// 设备类型枚举

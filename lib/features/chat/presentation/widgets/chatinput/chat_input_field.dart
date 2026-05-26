@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/android/mobile_chat_input.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/mobile_chat_input.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/desktop_chat_input.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';

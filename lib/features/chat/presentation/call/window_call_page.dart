@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/chat/call/Channel.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -13,7 +14,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'component/deesktop/call_desktop_app_bar.dart';
-import 'call_room_page.dart';
 
 /// 桌面端通话窗口页面
 ///
@@ -23,42 +23,42 @@ import 'call_room_page.dart';
 /// - 跨窗口通信（主题切换、语言切换）
 /// - 窗口关闭事件处理
 /// - 房间令牌获取
-class CallWindowPage extends ConsumerStatefulWidget {
+class WindowCallPage extends ConsumerStatefulWidget {
   /// 多窗口控制器
   final WindowController controller;
 
-  const CallWindowPage({super.key, required this.controller});
+  const WindowCallPage({super.key, required this.controller});
 
   @override
   ConsumerState createState() => _CallWindowPageState();
 }
 
-class _CallWindowPageState extends ConsumerState<CallWindowPage>
+class _CallWindowPageState extends ConsumerState<WindowCallPage>
     with WindowListener {
   /// 当前主题索引
   int _themeIndex = 0;
 
   /// 窗口标题
-  String _title = "";
+  String _title = '';
 
   /// 房间ID
-  String _roomId = "";
+  String _roomId = '';
 
   @override
   void initState() {
     super.initState();
     windowManager.setPreventClose(true);
     windowManager.addListener(this);
-    log.info("初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}");
+    log.info('初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}');
 
     final args = jsonDecode(widget.controller.arguments);
     _themeIndex = args['themeIndex'] ?? 0;
-    _title = args["title"] ?? "";
-    _roomId = args["roomId"] ?? "";
+    _title = args['title'] ?? '';
+    _roomId = args['roomId'] ?? '';
     ref.read(roomTokenProvider(_roomId));
 
     Channel.callChannel.setMethodCallHandler((call) async {
-      log.info("CAll|>>> 收到数据$call");
+      log.info('CAll|>>> 收到数据$call');
       if (call.method == Channel.callChannelMethod) {
         final data = call.arguments as Map;
         setState(() {
@@ -80,9 +80,9 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
 
     if (isPreventClose) {
       try {
-        await Channel.callChannel.invokeMethod("on_call_window_close");
+        await Channel.callChannel.invokeMethod('on_call_window_close');
       } catch (e) {
-        log.error("发送关闭消息失败", e);
+        log.error('发送关闭消息失败', e);
       }
       await windowManager.setPreventClose(false);
 
@@ -119,7 +119,7 @@ class _CallWindowPageState extends ConsumerState<CallWindowPage>
           appBar: CallDesktopAppbar(title: _title),
           body: tokenAsync.when(
             data: (token) {
-              log.info("Token 获取成功（开始启动通话）: $token");
+              log.info('Token 获取成功（开始启动通话）: $token');
               return CallRoomPage(token: token);
             },
             error: (err, stack) => Center(

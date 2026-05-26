@@ -32,22 +32,57 @@ class ChatBarHandlers {
   /// [context] 构建上下文
   /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
   /// [room] 当前聊天房间数据
-  static void onCallPressed(BuildContext context, WidgetRef ref, ChatRoomVO room) {
+  static void onCallPressed(
+    BuildContext context,
+    WidgetRef ref,
+    ChatRoomVO room,
+  ) {
     if ((room.roomId ?? '').isEmpty) {
       Toast.showToast('appbar_connection_lost'.tr());
       return;
     }
     if (DeviceUtil.isRealMobile()) {
+      final currentSession = ref.read(mobileCallSessionControllerProvider);
+      if (currentSession != null) {
+        if (currentSession.roomId == room.roomId) {
+          // 如果点击的是同一个房间，直接从应用内小窗切回全屏
+          ref
+              .read(mobileCallSessionControllerProvider.notifier)
+              .enterCallPage();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => MobileCallPage(
+                roomId: currentSession.roomId,
+                title: currentSession.title,
+              ),
+            ),
+          );
+        } else {
+          Toast.showToast('当前正在其他通话中');
+        }
+        return;
+      }
+
+      /// 移动端进入通话页面
       final roomId = room.roomId ?? '';
       final title = room.roomName ?? '';
-      ref.read(mobileCallSessionControllerProvider.notifier).start(roomId: roomId, title: title);
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => MobileCallPage(roomId: roomId, title: title)));
-    } else {
-      ref.read(callWindowControllerProvider.notifier).openCallWindow(
-        title: room.roomName ?? '',
-        themeIndex: ref.read(themeIndexProvider),
-        roomId: room.roomId ?? '',
+      ref
+          .read(mobileCallSessionControllerProvider.notifier)
+          .start(roomId: roomId, title: title);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MobileCallPage(roomId: roomId, title: title),
+        ),
       );
+    } else {
+      /// 桌面端直接打开通话窗口
+      ref
+          .read(callWindowControllerProvider.notifier)
+          .openCallWindow(
+            title: room.roomName ?? '',
+            themeIndex: ref.read(themeIndexProvider),
+            roomId: room.roomId ?? '',
+          );
     }
   }
 
@@ -60,7 +95,8 @@ class ChatBarHandlers {
   static void showAddMemberDialog(BuildContext context, ChatRoomVO room) {
     showDialog(
       context: context,
-      builder: (context) => AddMemberDialogWidget(roomId: room.roomId!, roomName: room.roomName!),
+      builder: (context) =>
+          AddMemberDialogWidget(roomId: room.roomId!, roomName: room.roomName!),
     );
   }
 
@@ -72,7 +108,12 @@ class ChatBarHandlers {
   /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
   /// [roomId] 房间 ID
   /// [isMute] true 表示执行禁言操作，false 表示解除禁言
-  static void showMuteRoomDialog(BuildContext context, WidgetRef ref, String roomId, bool isMute) {
+  static void showMuteRoomDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String roomId,
+    bool isMute,
+  ) {
     final cs = Theme.of(context).colorScheme;
     final isDanger = isMute;
     final title = isMute ? 'chat_mute_all'.tr() : 'chat_unmute_all'.tr();
@@ -247,12 +288,21 @@ class ChatBarHandlers {
   /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
   /// [roomId] 房间 ID
   /// [member] 要踢出的成员信息
-  static void showKickMemberDialog(BuildContext context, WidgetRef ref, String roomId, ChatRoomMemberVO member) {
+  static void showKickMemberDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String roomId,
+    ChatRoomMemberVO member,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text('chat_confirm_kick'.tr()),
-        content: Text('chat_confirm_kick_content'.tr(args: [member.nickName ?? 'chat_unknown_user'.tr()])),
+        content: Text(
+          'chat_confirm_kick_content'.tr(
+            args: [member.nickName ?? 'chat_unknown_user'.tr()],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),

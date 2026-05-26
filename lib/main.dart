@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
-import 'package:anoxia/features/chat/presentation/call/call_window_page.dart';
+import 'package:anoxia/features/chat/presentation/call/desktop/call_window_room_body.dart';
+import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -270,7 +271,7 @@ Future<void> runSubApp(WindowController controller) async {
     runApp(
       UncontrolledProviderScope(
         container: globalContainer,
-        child: _buildAppWrapper(CallWindowPage(controller: controller)),
+        child: _buildAppWrapper(WindowCallPage(controller: controller)),
       ),
     );
   } catch (e, stack) {
