@@ -6,9 +6,7 @@ import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// SharedPreferences 存储 Key：蓝牙权限是否已申请

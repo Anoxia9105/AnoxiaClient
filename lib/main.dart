@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
@@ -55,38 +56,16 @@ Future<void> main(List<String> args) async {
       await hotKeyManager.unregisterAll();
     }
 
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-
-    String appName = packageInfo.appName;
-    String packageName = packageInfo.packageName;
-    String version = packageInfo.version;
-    String buildNumber = packageInfo.buildNumber;
-
-    log.info('=======================================================');
-    log.info(appName);
-    log.info(packageName);
-    log.info(version);
-    log.info(buildNumber);
-    log.info('=======================================================');
-
     // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
     await Future.wait([
       EasyLocalization.ensureInitialized(), // 多语言初始化
       SPUtil.instance.init(), // 本地存储初始化
     ]);
 
-    // 检查更新
-    if (!DeviceUtil.isWeb) {
-      final updateInfo = await _checkUpdate();
-      if (updateInfo != null && updateInfo.forceUpdate) {
-        log.info('检测到强制更新，进入更新页面');
-        await runUpdateApp(updateInfo);
-        return;
-      }
-    }
-
     // 注册协议解析器（全局生效）
     _registerPacketParsers();
+
+    _backgroundAsyncInit();
 
     // 桌面端窗口初始化（区分主/子窗口）
     if (DeviceUtil.isRealDesktop()) {
@@ -100,6 +79,29 @@ Future<void> main(List<String> args) async {
     // 启动失败兜底（显示错误页面）
     runApp(_buildErrorPage('应用启动失败：$e'));
   }
+}
+
+void _backgroundAsyncInit() {
+  scheduleMicrotask(() async {
+    try {
+      // 读包信息即使失败，也不影响用户进 App
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      log.info('App Version: ${packageInfo.version}');
+
+      if (!DeviceUtil.isWeb) {
+        // 查更新设置硬超时，防止卡死
+        final updateInfo = await _checkUpdate().timeout(
+          const Duration(seconds: 5),
+        );
+        if (updateInfo != null && updateInfo.forceUpdate) {
+          log.info('检测到强制更新，切换至更新页面');
+          await runUpdateApp(updateInfo);
+        }
+      }
+    } catch (e) {
+      log.error('后台异步初始化异常: $e');
+    }
+  });
 }
 
 /// 注册协议解析器（抽取为独立函数，便于维护）

@@ -6,7 +6,6 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
-import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_background/flutter_background.dart' as rtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
