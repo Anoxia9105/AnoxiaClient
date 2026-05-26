@@ -14,12 +14,10 @@ class GlobalSearchDialog extends ConsumerWidget {
 
   GlobalSearchDialog({super.key});
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    
     final colorScheme = Theme.of(context).colorScheme;
-  
+
     // 监听注解版 Provider 的状态
     final searchState = ref.watch(desktopSearchControllerProvider);
 
@@ -38,7 +36,9 @@ class GlobalSearchDialog extends ConsumerWidget {
                 controller: _searchController,
                 autofocus: true,
                 // 通过 notifier 更新状态
-                onChanged: (v) => ref.read(desktopSearchControllerProvider.notifier).updateQuery(v),
+                onChanged: (v) => ref
+                    .read(desktopSearchControllerProvider.notifier)
+                    .updateQuery(v),
                 decoration: InputDecoration(
                   hintText: '${'search'.tr()}（会话 / 联系人）',
                   prefixIcon: const Icon(Icons.search_rounded),
@@ -70,12 +70,18 @@ class GlobalSearchDialog extends ConsumerWidget {
                               icon: room.roomType == 1
                                   ? Icons.groups_2_outlined
                                   : Icons.person_outline,
-                              title: room.roomName ?? 'chat_unknown_conversation'.tr(),
+                              title:
+                                  room.roomName ??
+                                  'chat_unknown_conversation'.tr(),
                               subtitle: room.lastMessage?.content ?? '',
                               onTap: () {
-                                ref.read(layoutControllerProvider.notifier).setIndex(0);
+                                ref
+                                    .read(layoutControllerProvider.notifier)
+                                    .setIndex(0);
                                 if (room.roomId != null) {
-                                  ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
+                                  ref
+                                      .read(activeRoomIdProvider.notifier)
+                                      .setActive(room.roomId!);
                                 }
                                 Navigator.of(context).pop();
                               },
@@ -91,11 +97,17 @@ class GlobalSearchDialog extends ConsumerWidget {
                               icon: Icons.badge_outlined,
                               title: contact.remark?.isNotEmpty == true
                                   ? contact.remark!
-                                  : (contact.nickName ?? 'chat_unknown_user'.tr()),
-                              subtitle: 'ID: ${contact.contactId ?? '-'} · ${contact.nickName ?? ''}',
+                                  : (contact.nickName ??
+                                        'chat_unknown_user'.tr()),
+                              subtitle:
+                                  'ID: ${contact.contactId ?? '-'} · ${contact.nickName ?? ''}',
                               onTap: () {
-                                ref.read(layoutControllerProvider.notifier).setIndex(1);
-                                ref.read(contactSelectionProvider.notifier).selectContact(contact);
+                                ref
+                                    .read(layoutControllerProvider.notifier)
+                                    .setIndex(1);
+                                ref
+                                    .read(contactSelectionProvider.notifier)
+                                    .selectContact(contact);
                                 Navigator.of(context).pop();
                               },
                             ),
@@ -109,8 +121,6 @@ class GlobalSearchDialog extends ConsumerWidget {
     );
   }
 }
-
-
 
 class _ResultSectionTitle extends StatelessWidget {
   final String title;

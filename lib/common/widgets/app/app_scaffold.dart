@@ -1,11 +1,11 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/desktop/DesktopAppBar.dart';
 import 'package:anoxia/common/widgets/desktop/GlobalSearchDialog.dart';
+import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/theme/AppColors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-
 
 /// 应用通用 Scaffold 组件
 /// 根据设备类型自动适配：
@@ -41,9 +41,11 @@ class _AppScaffoldState extends State<AppScaffold> {
           ? HotKeyModifier.meta
           : HotKeyModifier.control,
     ],
-    scope: HotKeyScope.system, // 全局系统级作用域
+    scope: HotKeyScope.inapp,
   );
 
+  /// 是否已经打开搜索弹窗，防止重复打开
+  bool _isSearchDialogOpen = false;
   @override
   void initState() {
     super.initState();
@@ -54,12 +56,16 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   /// 注册全局热键
   Future<void> _initGlobalHotKey() async {
-    await hotKeyManager.register(
-      _searchHotKey,
-      keyDownHandler: (hotKey) {
-        _openGlobalSearch();
-      },
-    );
+    try {
+      await hotKeyManager.register(
+        _searchHotKey,
+        keyDownHandler: (hotKey) {
+          _openGlobalSearch();
+        },
+      );
+    } catch (e) {
+      log.error('hotkey_manager: 注册失败，错误信息为: $e');
+    }
   }
 
   /// 触发打开搜索弹窗
@@ -67,7 +73,17 @@ class _AppScaffoldState extends State<AppScaffold> {
     // 检查当前上下文是否还能安全弹窗
     if (!mounted) return;
 
-    showDialog(context: context, builder: (_) => GlobalSearchDialog());
+    /// 如果已经打开搜索弹窗，则不再重复打开，避免多个弹窗叠加
+    if (_isSearchDialogOpen) return;
+    
+    /// 上锁状态，直到弹窗关闭时才允许再次打开
+    _isSearchDialogOpen = true;
+    showDialog(context: context, builder: (_) => GlobalSearchDialog()).then((
+      _,
+    ) {
+      /// 无论弹窗是正常关闭还是通过其他方式关闭，都重置状态，允许下次再次打开
+      _isSearchDialogOpen = false;
+    });
   }
 
   @override
