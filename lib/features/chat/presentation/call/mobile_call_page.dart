@@ -67,18 +67,66 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     // 1. 修改全局状态为最小化（这将驱动应用内悬浮窗 flutter_floating 的展示）
     ref.read(mobileCallSessionControllerProvider.notifier).minimize();
     // 2. 安全退出当前全屏页面
-    Navigator.of(context).pop();
+    Navigator.of(context).maybePop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final tokenAsync = ref.watch(roomTokenProvider(widget.roomId));
+    // 💡 1. 拿到全局的通话会话状态
+    final session = ref.watch(mobileCallSessionControllerProvider);
 
+    // 💡 2. 核心防御：如果全局已经有缓存的 Token 了，直接无缝直出房间，绝不重新拉取
+    if (session != null && session.token != null && session.token!.isNotEmpty) {
+      return _buildScaffoldContent(
+        context,
+        CallRoomPage(token: session.token!),
+      );
+    }
+
+    // 💡 3. 只有全局没有缓存时（第一次进入），才走异步 Provider 流程
+    final tokenAsync = ref.watch(roomTokenProvider(widget.roomId));
+    return tokenAsync.when(
+      data: (token) {
+        // 💡 首次获取成功，赶紧同步到全局状态机中，防止下一次返回再进来时穿透
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(mobileCallSessionControllerProvider.notifier)
+              .updateToken(token);
+        });
+
+        return _buildScaffoldContent(context, CallRoomPage(token: token));
+      },
+      error: (err, stack) => _buildScaffoldContent(
+        context,
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('call_window_room_creation_failed'.tr()),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: () =>
+                    ref.invalidate(roomTokenProvider(widget.roomId)),
+                child: Text('call_window_retry'.tr()),
+              ),
+            ],
+          ),
+        ),
+      ),
+      loading: () => _buildScaffoldContent(
+        context,
+        const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
+  /// 💡 抽离出骨架包裹，避免由于 AsyncValue 切换造成整个 Scaffold 树结构闪烁
+  Widget _buildScaffoldContent(BuildContext context, Widget bodyChild) {
     return PopScope(
-      canPop: false, // 阻止默认的销毁退出
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        _minimizeCall(); // 触发缩小逻辑
+        _minimizeCall();
       },
       child: Scaffold(
         backgroundColor: DeviceUtil.isRealDesktop()
@@ -93,24 +141,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
             onPressed: _minimizeCall,
           ),
         ),
-        body: tokenAsync.when(
-          data: (token) => CallRoomPage(token: token),
-          error: (err, stack) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('call_window_room_creation_failed'.tr()),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () =>
-                      ref.invalidate(roomTokenProvider(widget.roomId)),
-                  child: Text('call_window_retry'.tr()),
-                ),
-              ],
-            ),
-          ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-        ),
+        body: bodyChild,
       ),
     );
   }

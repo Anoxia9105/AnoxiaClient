@@ -1,6 +1,8 @@
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/features/chat/presentation/call/component/volume_indicator.dart';
@@ -349,7 +351,12 @@ class CommandBar extends ConsumerWidget {
           onTap: () async {
             await notifier.leave();
             if (context.mounted) {
-              await windowManager.close();
+              if (DeviceUtil.isRealDesktop()) {
+                await windowManager.close();
+              } else {
+                ref.read(mobileCallSessionControllerProvider.notifier).end();
+                Navigator.of(context).maybePop();
+              }
             }
           },
           borderRadius: BorderRadius.circular(10),
@@ -666,7 +673,10 @@ class _MeetingTimerState extends State<MeetingTimer> {
         mainAxisSize: MainAxisSize.min,
         children: [
           HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
-          Text('--:--', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(
+            '--:--',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ],
       );
     }
