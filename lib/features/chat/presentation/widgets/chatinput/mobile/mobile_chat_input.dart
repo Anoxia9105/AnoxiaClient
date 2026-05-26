@@ -487,7 +487,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     if (_voiceOverlayEntry != null) return;
     _voiceOverlayEntry = OverlayEntry(
       builder: (context) {
-        final colorScheme = Theme.of(context).colorScheme;
         return StatefulBuilder(
           builder: (context, setOverlayState) {
             // 将内部状态暴露给上层手势控制同步刷新

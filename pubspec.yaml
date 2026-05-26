@@ -43,7 +43,7 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   # rtc
   livekit_client: ^2.7.0
-  flutter_webrtc: ^1.4.1
+  # flutter_webrtc: ^1.4.1
   # socket
   web_socket_channel: ^3.0.3
   # win toolbar

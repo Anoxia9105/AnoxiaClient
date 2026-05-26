@@ -1,32 +1,10 @@
-import 'dart:convert';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/mobile_chat_input.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/desktop_chat_input.dart';
-import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
-import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
-import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
-import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toolbar.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:bot_toast/bot_toast.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pasteboard/pasteboard.dart';
 
-import '../../../../../framework/extensions/QuillCursorX.dart';
 import '../../../../../framework/provider/chat/room/room_list_service.dart';
 
 /// 聊天输入框组件

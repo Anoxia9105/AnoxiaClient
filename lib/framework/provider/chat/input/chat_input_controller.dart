@@ -1,3 +1,5 @@
+// ignore_for_file: experimental_member_use
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -51,7 +53,7 @@ class ChatInputController extends _$ChatInputController {
           enableExternalRichPaste: false, // 禁止富文本，防止格式错乱
           // --- 核心修改：对接粘贴板图片 ---
           onImagePaste: (Uint8List imageBytes) async {
-            log.info("检测到图片粘贴，大小: ${imageBytes.lengthInBytes} 字节");
+            log.info('检测到图片粘贴，大小: ${imageBytes.lengthInBytes} 字节');
 
             // 调用 ChatImageUploadController 处理粘贴
             // 逻辑：存临时文件 -> 插入预览 -> 后台静默上传
@@ -65,7 +67,7 @@ class ChatInputController extends _$ChatInputController {
 
           // 处理纯文本粘贴（例如过滤敏感词）
           onPlainTextPaste: (String plainText) async {
-            log.info("检测到TEXT粘贴$plainText");
+            log.info('检测到TEXT粘贴$plainText');
             return plainText;
           },
         ),
@@ -231,7 +233,7 @@ class ChatInputController extends _$ChatInputController {
     if (processor.images.isNotEmpty) {
       _doSend(
         type: MessageType.image,
-        payload: MessagePayload(content: "[图片]"),
+        payload: MessagePayload(content: '[图片]'),
         attachments: processor.images,
       );
     }
@@ -239,7 +241,7 @@ class ChatInputController extends _$ChatInputController {
     if (processor.files.isNotEmpty) {
       _doSend(
         type: MessageType.file,
-        payload: MessagePayload(content: "[文件]"),
+        payload: MessagePayload(content: '[文件]'),
         attachments: processor.files,
       );
     }
@@ -451,20 +453,20 @@ class ChatInputController extends _$ChatInputController {
     ref.read(chatMessagesProvider.notifier).upsertMessage(localMsg);
 
     final messageData = {
-      "topic": "MESSAGE",
-      "data": {
-        "messageId": clientMsgId,
-        "clientMsgId": clientMsgId,
-        "roomId": roomId,
-        "targetId": room?.peerId,
+      'topic': 'MESSAGE',
+      'data': {
+        'messageId': clientMsgId,
+        'clientMsgId': clientMsgId,
+        'roomId': roomId,
+        'targetId': room?.peerId,
         // 服务端 Java 枚举按名称反序列化，需使用大写（如 TEXT / IMAGE）
-        "type": type.name.toUpperCase(),
-        "payload": payload.toJson(),
-        "attachments": attachments?.map((e) => e.toJson()).toList() ?? [],
+        'type': type.name.toUpperCase(),
+        'payload': payload.toJson(),
+        'attachments': attachments?.map((e) => e.toJson()).toList() ?? [],
       },
     };
 
-    log.info("🚀 发送消息 [$type]: ${jsonEncode(messageData)}");
+    log.info('🚀 发送消息 [$type]: ${jsonEncode(messageData)}');
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(jsonEncode(messageData));

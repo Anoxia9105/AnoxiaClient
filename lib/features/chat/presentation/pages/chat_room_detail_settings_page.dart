@@ -1,4 +1,3 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';

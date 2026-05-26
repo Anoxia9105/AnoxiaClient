@@ -7,7 +7,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
