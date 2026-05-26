@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
@@ -92,6 +93,8 @@ Future<void> main(List<String> args) async {
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
+    // 热键管理器初始化（桌面端全局快捷键注册）
+    await hotKeyManager.unregisterAll();
 
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
 

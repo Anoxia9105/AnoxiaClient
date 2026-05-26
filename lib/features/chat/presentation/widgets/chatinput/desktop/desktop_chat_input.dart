@@ -35,7 +35,11 @@ class DesktopChatInput extends ConsumerStatefulWidget {
   /// 底部面板关闭回调
   final VoidCallback bottomSheet;
 
-  const DesktopChatInput({super.key, required this.roomId, required this.bottomSheet});
+  const DesktopChatInput({
+    super.key,
+    required this.roomId,
+    required this.bottomSheet,
+  });
 
   @override
   ConsumerState<DesktopChatInput> createState() => _DesktopChatInputState();
@@ -58,7 +62,9 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
   void _initMentionListener() {
     ref.listenManual(mentionStateProvider, (previous, next) {
       if (next.isShowing) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _showMentionList(next));
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _showMentionList(next),
+        );
       } else {
         _closeMentionList();
       }
@@ -81,11 +87,13 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     final roomMembers = ref.read(roomMembersProvider(widget.roomId));
     final mentionUsers = roomMembers
         .where((m) => m.userId != currentUser?.userId)
-        .map((m) => MentionUser(
-              id: m.userId ?? -1,
-              name: m.nickName ?? 'chat_unknown_user_label'.tr(),
-              avatar: m.avatar,
-            ))
+        .map(
+          (m) => MentionUser(
+            id: m.userId ?? -1,
+            name: m.nickName ?? 'chat_unknown_user_label'.tr(),
+            avatar: m.avatar,
+          ),
+        )
         .toList();
 
     _cancelMentionToast = Toast.showWidgetOffset(
@@ -115,10 +123,16 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     controller.replaceText(atPosition - 1, deleteLength, '', null);
     controller.document.insert(
       atPosition - 1,
-      BlockEmbed('mention', jsonEncode({'userId': user.id, 'userName': user.name})),
+      BlockEmbed(
+        'mention',
+        jsonEncode({'userId': user.id, 'userName': user.name}),
+      ),
     );
     controller.document.insert(atPosition, ' ');
-    controller.updateSelection(TextSelection.collapsed(offset: atPosition + 1), ChangeSource.local);
+    controller.updateSelection(
+      TextSelection.collapsed(offset: atPosition + 1),
+      ChangeSource.local,
+    );
 
     ref.read(mentionStateProvider.notifier).hide();
     ref.read(chatFocusNodeProvider(widget.roomId)).requestFocus();
@@ -132,13 +146,17 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.enter &&
         !HardwareKeyboard.instance.isShiftPressed) {
-      ref.read(chatInputControllerProvider(widget.roomId).notifier).sendMessage();
+      ref
+          .read(chatInputControllerProvider(widget.roomId).notifier)
+          .sendMessage();
       widget.bottomSheet();
       return KeyEventResult.handled;
     }
-    
-    final isPaste = event is KeyDownEvent &&
-        (HardwareKeyboard.instance.isControlPressed || HardwareKeyboard.instance.isMetaPressed) &&
+
+    final isPaste =
+        event is KeyDownEvent &&
+        (HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed) &&
         event.logicalKey == LogicalKeyboardKey.keyV;
 
     if (isPaste) {
@@ -154,7 +172,9 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
   Future<void> _handlePaste(QuillController controller) async {
     final imageBytes = await Pasteboard.image;
     if (imageBytes != null) {
-      ref.read(chatImageUploadControllerProvider.notifier).handlePastedImage(controller, imageBytes);
+      ref
+          .read(chatImageUploadControllerProvider.notifier)
+          .handlePastedImage(controller, imageBytes);
       return;
     }
 
@@ -168,12 +188,21 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         controller.document.insert(controller.document.length - 1, text);
       } else {
         if (!selection.isCollapsed) {
-          controller.replaceText(selection.start, selection.end - selection.start, text, null);
+          controller.replaceText(
+            selection.start,
+            selection.end - selection.start,
+            text,
+            null,
+          );
         } else {
           controller.document.insert(start, text);
         }
-        final newOffset = (selection.isCollapsed ? start : selection.start) + text.length;
-        controller.updateSelection(TextSelection.collapsed(offset: newOffset), ChangeSource.local);
+        final newOffset =
+            (selection.isCollapsed ? start : selection.start) + text.length;
+        controller.updateSelection(
+          TextSelection.collapsed(offset: newOffset),
+          ChangeSource.local,
+        );
       }
     }
   }
@@ -189,28 +218,50 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         ChatQuillToolbar(
           controller: controller,
           onSend: () {
-            ref.read(chatInputControllerProvider(widget.roomId).notifier).sendMessage();
+            ref
+                .read(chatInputControllerProvider(widget.roomId).notifier)
+                .sendMessage();
             widget.bottomSheet();
           },
-          onImagePressed: () => ref.read(chatImageUploadControllerProvider.notifier).selectImages(controller),
-          onFilePressed: () => ref.read(chatFileUploadControllerProvider.notifier).selectFiles(controller),
+          onImagePressed: () => ref
+              .read(chatImageUploadControllerProvider.notifier)
+              .selectImages(controller),
+          onFilePressed: () => ref
+              .read(chatFileUploadControllerProvider.notifier)
+              .selectFiles(controller),
         ),
         ConstrainedBox(
+          /// 限制输入框的最小和最大高度，确保在内容较少时不会过于紧凑，内容较多时不会无限扩展
           constraints: const BoxConstraints(maxHeight: 200, minHeight: 50),
           child: QuillEditor.basic(
             key: _editorKey,
             focusNode: focusNode,
             controller: controller,
             config: QuillEditorConfig(
-              characterShortcutEvents: const [],
-              spaceShortcutEvents: const [],
               enableSelectionToolbar: false,
               placeholder: 'chat_input_placeholder'.tr(),
               autoFocus: false,
               padding: const EdgeInsets.all(8),
               customStyles: QuillStyleConfig.get(context),
+              // ignore: experimental_member_use
               onKeyPressed: (event, node) => _handleKeyPress(event, controller),
-              embedBuilders: [QuillImageBuild(), QuillFileBuild(), QuillMentionBuild()],
+              embedBuilders: [
+                QuillImageBuild(),
+                QuillFileBuild(),
+                QuillMentionBuild(),
+              ],
+              customShortcuts: const {
+                // 关闭 Ctrl+K / Cmd+K
+                SingleActivator(LogicalKeyboardKey.keyK, control: true):
+                    DoNothingIntent(),
+                SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+                    DoNothingIntent(),
+                // 关闭 Ctrl+F / Cmd+F
+                SingleActivator(LogicalKeyboardKey.keyF, control: true):
+                    DoNothingIntent(),
+                SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+                    DoNothingIntent(),
+              },
             ),
           ),
         ),

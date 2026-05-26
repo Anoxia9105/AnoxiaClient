@@ -54,6 +54,17 @@ class DeviceUtil {
 
   /// 判断是否为真实 Web 环境
   static bool isRealWeb() => kIsWeb;
+
+
+  /// 判断是不是macOS
+  static bool isMacOS() =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+  /// 判断是不是Windows
+  static bool isWindows() =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+  /// 判断是不是Linux
+  static bool isLinux() =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
 }
 
 /// 设备类型枚举
