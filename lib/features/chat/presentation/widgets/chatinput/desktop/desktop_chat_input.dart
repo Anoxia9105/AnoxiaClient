@@ -215,6 +215,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        /// 聊天工具栏
         ChatQuillToolbar(
           controller: controller,
           onSend: () {
