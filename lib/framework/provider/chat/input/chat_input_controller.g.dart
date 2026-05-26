@@ -18,7 +18,7 @@ part of 'chat_input_controller.dart';
 /// - 消息发送逻辑
 
 @ProviderFor(ChatInputController)
-const chatInputControllerProvider = ChatInputControllerFamily._();
+final chatInputControllerProvider = ChatInputControllerFamily._();
 
 /// 聊天输入控制器
 ///
@@ -38,7 +38,7 @@ final class ChatInputControllerProvider
   /// - 图片/文件上传
   /// - 正在输入状态发送
   /// - 消息发送逻辑
-  const ChatInputControllerProvider._({
+  ChatInputControllerProvider._({
     required ChatInputControllerFamily super.from,
     required String super.argument,
   }) : super(
@@ -103,7 +103,7 @@ final class ChatInputControllerFamily extends $Family
           QuillController,
           String
         > {
-  const ChatInputControllerFamily._()
+  ChatInputControllerFamily._()
     : super(
         retry: null,
         name: r'chatInputControllerProvider',
@@ -145,7 +145,6 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(_$args);
     final ref = this.ref as $Ref<QuillController, QuillController>;
     final element =
         ref.element
@@ -155,7 +154,7 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, () => build(_$args));
   }
 }
 
@@ -164,7 +163,7 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
 /// 为每个房间独立管理输入框焦点状态
 
 @ProviderFor(chatFocusNode)
-const chatFocusNodeProvider = ChatFocusNodeFamily._();
+final chatFocusNodeProvider = ChatFocusNodeFamily._();
 
 /// 聊天输入框焦点 Provider
 ///
@@ -176,7 +175,7 @@ final class ChatFocusNodeProvider
   /// 聊天输入框焦点 Provider
   ///
   /// 为每个房间独立管理输入框焦点状态
-  const ChatFocusNodeProvider._({
+  ChatFocusNodeProvider._({
     required ChatFocusNodeFamily super.from,
     required String super.argument,
   }) : super(
@@ -235,7 +234,7 @@ String _$chatFocusNodeHash() => r'4660d1fd2f3c46541ef6c2a8488481cd922b89dc';
 
 final class ChatFocusNodeFamily extends $Family
     with $FunctionalFamilyOverride<FocusNode, String> {
-  const ChatFocusNodeFamily._()
+  ChatFocusNodeFamily._()
     : super(
         retry: null,
         name: r'chatFocusNodeProvider',
@@ -256,11 +255,11 @@ final class ChatFocusNodeFamily extends $Family
 }
 
 @ProviderFor(MentionState)
-const mentionStateProvider = MentionStateProvider._();
+final mentionStateProvider = MentionStateProvider._();
 
 final class MentionStateProvider
     extends $NotifierProvider<MentionState, MentionStateData> {
-  const MentionStateProvider._()
+  MentionStateProvider._()
     : super(
         from: null,
         argument: null,
@@ -294,7 +293,6 @@ abstract class _$MentionState extends $Notifier<MentionStateData> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<MentionStateData, MentionStateData>;
     final element =
         ref.element
@@ -304,6 +302,6 @@ abstract class _$MentionState extends $Notifier<MentionStateData> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

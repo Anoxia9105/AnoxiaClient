@@ -18,7 +18,7 @@ part of 'system_message_service.dart';
 /// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
 
 @ProviderFor(SystemMessageService)
-const systemMessageServiceProvider = SystemMessageServiceProvider._();
+final systemMessageServiceProvider = SystemMessageServiceProvider._();
 
 /// 系统信令消息监听服务
 ///
@@ -38,7 +38,7 @@ final class SystemMessageServiceProvider
   /// - 桌面通知推送
   ///
   /// 该服务使用 keepAlive 保持常驻，确保持续监听系统消息
-  const SystemMessageServiceProvider._()
+  SystemMessageServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -82,7 +82,6 @@ abstract class _$SystemMessageService extends $Notifier<void> {
   @$mustCallSuper
   @override
   void runBuild() {
-    build();
     final ref = this.ref as $Ref<void, void>;
     final element =
         ref.element
@@ -92,6 +91,6 @@ abstract class _$SystemMessageService extends $Notifier<void> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, null);
+    element.handleCreate(ref, build);
   }
 }

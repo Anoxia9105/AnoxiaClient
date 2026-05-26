@@ -13,7 +13,7 @@ part of 'contact_detail_controller.dart';
 /// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
 
 @ProviderFor(contactDetailData)
-const contactDetailDataProvider = ContactDetailDataFamily._();
+final contactDetailDataProvider = ContactDetailDataFamily._();
 
 /// 获取联系人详情
 ///
@@ -32,7 +32,7 @@ final class ContactDetailDataProvider
   /// 获取联系人详情
   ///
   /// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
-  const ContactDetailDataProvider._({
+  ContactDetailDataProvider._({
     required ContactDetailDataFamily super.from,
     required int super.argument,
   }) : super(
@@ -84,7 +84,7 @@ String _$contactDetailDataHash() => r'f93acf54fc456d3f0479bbd3adf6b7dd6692d384';
 
 final class ContactDetailDataFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ChatContactDetailVO>, int> {
-  const ContactDetailDataFamily._()
+  ContactDetailDataFamily._()
     : super(
         retry: null,
         name: r'contactDetailDataProvider',
@@ -109,7 +109,7 @@ final class ContactDetailDataFamily extends $Family
 /// 控制"发消息"按钮的加载状态，防止重复点击
 
 @ProviderFor(ContactChatLoading)
-const contactChatLoadingProvider = ContactChatLoadingProvider._();
+final contactChatLoadingProvider = ContactChatLoadingProvider._();
 
 /// 联系人聊天按钮加载状态
 ///
@@ -119,7 +119,7 @@ final class ContactChatLoadingProvider
   /// 联系人聊天按钮加载状态
   ///
   /// 控制"发消息"按钮的加载状态，防止重复点击
-  const ContactChatLoadingProvider._()
+  ContactChatLoadingProvider._()
     : super(
         from: null,
         argument: null,
@@ -158,7 +158,6 @@ abstract class _$ContactChatLoading extends $Notifier<bool> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<bool, bool>;
     final element =
         ref.element
@@ -168,6 +167,6 @@ abstract class _$ContactChatLoading extends $Notifier<bool> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

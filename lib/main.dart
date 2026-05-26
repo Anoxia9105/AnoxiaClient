@@ -59,7 +59,7 @@ Future<void> _checkBluetoothPermissions() async {
 
   // 检查是否已请求过，避免重复弹窗
   final requested =
-    SPUtil.instance.getBool(_kBluetoothPermissionRequestedKey) ?? false;
+      SPUtil.instance.getBool(_kBluetoothPermissionRequestedKey) ?? false;
   if (requested) return;
 
   bool hasPermanentlyDenied = false;
@@ -89,12 +89,14 @@ Future<void> _checkBluetoothPermissions() async {
 
 /// 应用入口
 Future<void> main(List<String> args) async {
-  log.info("程序启动参数：$args");
+  log.info('程序启动参数：$args');
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
-    // 热键管理器初始化（桌面端全局快捷键注册）
-    await hotKeyManager.unregisterAll();
+    if (DeviceUtil.isRealDesktop()) {
+      // 热键管理器初始化（桌面端全局快捷键注册）
+      await hotKeyManager.unregisterAll();
+    }
 
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
@@ -103,12 +105,12 @@ Future<void> main(List<String> args) async {
     String version = packageInfo.version;
     String buildNumber = packageInfo.buildNumber;
 
-    log.info("=======================================================");
+    log.info('=======================================================');
     log.info(appName);
     log.info(packageName);
     log.info(version);
     log.info(buildNumber);
-    log.info("=======================================================");
+    log.info('=======================================================');
 
     // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
     await Future.wait([
@@ -123,7 +125,7 @@ Future<void> main(List<String> args) async {
     if (!DeviceUtil.isWeb) {
       final updateInfo = await _checkUpdate();
       if (updateInfo != null && updateInfo.forceUpdate) {
-        log.info("检测到强制更新，进入更新页面");
+        log.info('检测到强制更新，进入更新页面');
         await runUpdateApp(updateInfo);
         return;
       }
@@ -140,9 +142,9 @@ Future<void> main(List<String> args) async {
       await runMainApp();
     }
   } catch (e, stack) {
-    log.error("应用启动失败", e, stack);
+    log.error('应用启动失败', e, stack);
     // 启动失败兜底（显示错误页面）
-    runApp(_buildErrorPage("应用启动失败：$e"));
+    runApp(_buildErrorPage('应用启动失败：$e'));
   }
 }
 
@@ -160,7 +162,7 @@ void _registerPacketParsers() {
     PacketType.highFrequency,
     (data) => HighMessage.fromJson(data),
   );
-  log.info("协议解析器注册完成");
+  log.info('协议解析器注册完成');
 }
 
 /// 处理桌面端窗口逻辑（主/子窗口区分）
@@ -181,8 +183,8 @@ Future<void> _handleDesktopWindows(List<String> args) async {
       await runMainApp();
     }
   } catch (e, stack) {
-    log.error("桌面窗口初始化失败", e, stack);
-    runApp(_buildErrorPage("窗口初始化失败：$e"));
+    log.error('桌面窗口初始化失败', e, stack);
+    runApp(_buildErrorPage('窗口初始化失败：$e'));
   }
 }
 
@@ -236,8 +238,8 @@ Future<void> runMainApp() async {
       ),
     );
   } catch (e, stack) {
-    log.error("主窗口启动失败", e, stack);
-    runApp(_buildErrorPage("主窗口启动失败：$e"));
+    log.error('主窗口启动失败', e, stack);
+    runApp(_buildErrorPage('主窗口启动失败：$e'));
   }
 }
 
@@ -272,8 +274,8 @@ Future<void> runSubApp(WindowController controller) async {
       ),
     );
   } catch (e, stack) {
-    log.error("子窗口启动失败", e, stack);
-    runApp(_buildErrorPage("子窗口启动失败：$e"));
+    log.error('子窗口启动失败', e, stack);
+    runApp(_buildErrorPage('子窗口启动失败：$e'));
   }
 }
 
@@ -304,8 +306,8 @@ Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
       ),
     );
   } catch (e, stack) {
-    log.error("更新窗口启动失败", e, stack);
-    runApp(_buildErrorPage("更新窗口启动失败：$e"));
+    log.error('更新窗口启动失败', e, stack);
+    runApp(_buildErrorPage('更新窗口启动失败：$e'));
   }
 }
 
@@ -425,7 +427,7 @@ Future<AppUpdateInfo?> _checkUpdate() async {
       return remoteData;
     }
   } catch (e) {
-    log.error("检查更新失败: $e");
+    log.error('检查更新失败: $e');
   }
   return null;
 }

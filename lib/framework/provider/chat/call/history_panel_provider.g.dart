@@ -10,11 +10,11 @@ part of 'history_panel_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(HistoryPanelNotifier)
-const historyPanelProvider = HistoryPanelNotifierProvider._();
+final historyPanelProvider = HistoryPanelNotifierProvider._();
 
 final class HistoryPanelNotifierProvider
     extends $NotifierProvider<HistoryPanelNotifier, bool> {
-  const HistoryPanelNotifierProvider._()
+  HistoryPanelNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -49,7 +49,6 @@ abstract class _$HistoryPanelNotifier extends $Notifier<bool> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<bool, bool>;
     final element =
         ref.element
@@ -59,6 +58,6 @@ abstract class _$HistoryPanelNotifier extends $Notifier<bool> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

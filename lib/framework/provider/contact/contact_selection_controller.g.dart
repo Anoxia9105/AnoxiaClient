@@ -10,11 +10,11 @@ part of 'contact_selection_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(ContactSelection)
-const contactSelectionProvider = ContactSelectionProvider._();
+final contactSelectionProvider = ContactSelectionProvider._();
 
 final class ContactSelectionProvider
     extends $NotifierProvider<ContactSelection, ContactSelectionState> {
-  const ContactSelectionProvider._()
+  ContactSelectionProvider._()
     : super(
         from: null,
         argument: null,
@@ -48,7 +48,6 @@ abstract class _$ContactSelection extends $Notifier<ContactSelectionState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<ContactSelectionState, ContactSelectionState>;
     final element =
         ref.element
@@ -58,6 +57,6 @@ abstract class _$ContactSelection extends $Notifier<ContactSelectionState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

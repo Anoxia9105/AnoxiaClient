@@ -18,7 +18,7 @@ part of 'room_message_ui_item_service.dart';
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 
 @ProviderFor(chatUiList)
-const chatUiListProvider = ChatUiListFamily._();
+final chatUiListProvider = ChatUiListFamily._();
 
 /// 聊天 UI 列表计算服务
 ///
@@ -45,7 +45,7 @@ final class ChatUiListProvider
   /// 该服务会自动在消息之间插入时间分隔条，规则如下：
   /// - 第一条消息前显示时间分隔条
   /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
-  const ChatUiListProvider._({
+  ChatUiListProvider._({
     required ChatUiListFamily super.from,
     required String super.argument,
   }) : super(
@@ -110,7 +110,7 @@ String _$chatUiListHash() => r'8da3772c757aec55d0e95ec64bd1d1090543819c';
 
 final class ChatUiListFamily extends $Family
     with $FunctionalFamilyOverride<List<ChatListItem>, String> {
-  const ChatUiListFamily._()
+  ChatUiListFamily._()
     : super(
         retry: null,
         name: r'chatUiListProvider',

@@ -13,7 +13,7 @@ part of 'user_search_service.dart';
 /// 支持按用户名/昵称搜索用户，并发送好友申请。
 
 @ProviderFor(UserSearchService)
-const userSearchServiceProvider = UserSearchServiceProvider._();
+final userSearchServiceProvider = UserSearchServiceProvider._();
 
 /// 用户搜索服务
 ///
@@ -23,7 +23,7 @@ final class UserSearchServiceProvider
   /// 用户搜索服务
   ///
   /// 支持按用户名/昵称搜索用户，并发送好友申请。
-  const UserSearchServiceProvider._()
+  UserSearchServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -61,7 +61,6 @@ abstract class _$UserSearchService extends $Notifier<UserSearchResponse> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<UserSearchResponse, UserSearchResponse>;
     final element =
         ref.element
@@ -71,6 +70,6 @@ abstract class _$UserSearchService extends $Notifier<UserSearchResponse> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

@@ -10,11 +10,11 @@ part of 'desktop_search_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(DesktopSearchController)
-const desktopSearchControllerProvider = DesktopSearchControllerProvider._();
+final desktopSearchControllerProvider = DesktopSearchControllerProvider._();
 
 final class DesktopSearchControllerProvider
     extends $NotifierProvider<DesktopSearchController, SearchResultState> {
-  const DesktopSearchControllerProvider._()
+  DesktopSearchControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -49,7 +49,6 @@ abstract class _$DesktopSearchController extends $Notifier<SearchResultState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<SearchResultState, SearchResultState>;
     final element =
         ref.element
@@ -59,6 +58,6 @@ abstract class _$DesktopSearchController extends $Notifier<SearchResultState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

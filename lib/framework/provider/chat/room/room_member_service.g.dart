@@ -11,7 +11,7 @@ part of 'room_member_service.dart';
 /// 获取指定房间的成员列表
 
 @ProviderFor(roomMembers)
-const roomMembersProvider = RoomMembersFamily._();
+final roomMembersProvider = RoomMembersFamily._();
 
 /// 获取指定房间的成员列表
 
@@ -24,7 +24,7 @@ final class RoomMembersProvider
         >
     with $Provider<List<ChatRoomMemberVO>> {
   /// 获取指定房间的成员列表
-  const RoomMembersProvider._({
+  RoomMembersProvider._({
     required RoomMembersFamily super.from,
     required String super.argument,
   }) : super(
@@ -82,7 +82,7 @@ String _$roomMembersHash() => r'2a790f6413245bf6a6921b0dbbf7365b59827693';
 
 final class RoomMembersFamily extends $Family
     with $FunctionalFamilyOverride<List<ChatRoomMemberVO>, String> {
-  const RoomMembersFamily._()
+  RoomMembersFamily._()
     : super(
         retry: null,
         name: r'roomMembersProvider',
@@ -103,14 +103,14 @@ final class RoomMembersFamily extends $Family
 /// 获取指定房间的成员数量
 
 @ProviderFor(roomMemberCount)
-const roomMemberCountProvider = RoomMemberCountFamily._();
+final roomMemberCountProvider = RoomMemberCountFamily._();
 
 /// 获取指定房间的成员数量
 
 final class RoomMemberCountProvider extends $FunctionalProvider<int, int, int>
     with $Provider<int> {
   /// 获取指定房间的成员数量
-  const RoomMemberCountProvider._({
+  RoomMemberCountProvider._({
     required RoomMemberCountFamily super.from,
     required String super.argument,
   }) : super(
@@ -167,7 +167,7 @@ String _$roomMemberCountHash() => r'ff9f358dec5bcee6e22a07a79f937f701a5fb1e8';
 
 final class RoomMemberCountFamily extends $Family
     with $FunctionalFamilyOverride<int, String> {
-  const RoomMemberCountFamily._()
+  RoomMemberCountFamily._()
     : super(
         retry: null,
         name: r'roomMemberCountProvider',
@@ -190,7 +190,7 @@ final class RoomMemberCountFamily extends $Family
 /// 使用 Record 作为参数避免定义额外的参数类
 
 @ProviderFor(roomMember)
-const roomMemberProvider = RoomMemberFamily._();
+final roomMemberProvider = RoomMemberFamily._();
 
 /// 获取指定房间内某个用户的成员信息
 ///
@@ -207,7 +207,7 @@ final class RoomMemberProvider
   /// 获取指定房间内某个用户的成员信息
   ///
   /// 使用 Record 作为参数避免定义额外的参数类
-  const RoomMemberProvider._({
+  RoomMemberProvider._({
     required RoomMemberFamily super.from,
     required (String, int) super.argument,
   }) : super(
@@ -267,7 +267,7 @@ String _$roomMemberHash() => r'79d84765f3664983b0827033dda8b48ac50404cc';
 
 final class RoomMemberFamily extends $Family
     with $FunctionalFamilyOverride<ChatRoomMemberVO?, (String, int)> {
-  const RoomMemberFamily._()
+  RoomMemberFamily._()
     : super(
         retry: null,
         name: r'roomMemberProvider',
@@ -290,14 +290,14 @@ final class RoomMemberFamily extends $Family
 /// 判断指定用户在某房间是否是管理员
 
 @ProviderFor(isRoomAdmin)
-const isRoomAdminProvider = IsRoomAdminFamily._();
+final isRoomAdminProvider = IsRoomAdminFamily._();
 
 /// 判断指定用户在某房间是否是管理员
 
 final class IsRoomAdminProvider extends $FunctionalProvider<bool, bool, bool>
     with $Provider<bool> {
   /// 判断指定用户在某房间是否是管理员
-  const IsRoomAdminProvider._({
+  IsRoomAdminProvider._({
     required IsRoomAdminFamily super.from,
     required (String, int) super.argument,
   }) : super(
@@ -354,7 +354,7 @@ String _$isRoomAdminHash() => r'bc2285b2e86695677d130a56a88db97849f2c537';
 
 final class IsRoomAdminFamily extends $Family
     with $FunctionalFamilyOverride<bool, (String, int)> {
-  const IsRoomAdminFamily._()
+  IsRoomAdminFamily._()
     : super(
         retry: null,
         name: r'isRoomAdminProvider',
@@ -380,7 +380,7 @@ final class IsRoomAdminFamily extends $Family
 /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
 
 @ProviderFor(RoomMemberService)
-const roomMemberServiceProvider = RoomMemberServiceProvider._();
+final roomMemberServiceProvider = RoomMemberServiceProvider._();
 
 /// 房间成员服务
 ///
@@ -400,7 +400,7 @@ final class RoomMemberServiceProvider
   /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
   ///
   /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
-  const RoomMemberServiceProvider._()
+  RoomMemberServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -443,7 +443,6 @@ abstract class _$RoomMemberService
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -461,6 +460,6 @@ abstract class _$RoomMemberService
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

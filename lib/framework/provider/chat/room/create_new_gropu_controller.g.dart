@@ -11,13 +11,13 @@ part of 'create_new_gropu_controller.dart';
 /// 多选框选择用
 
 @ProviderFor(SelectedContactIds)
-const selectedContactIdsProvider = SelectedContactIdsProvider._();
+final selectedContactIdsProvider = SelectedContactIdsProvider._();
 
 /// 多选框选择用
 final class SelectedContactIdsProvider
     extends $NotifierProvider<SelectedContactIds, Set<int>> {
   /// 多选框选择用
-  const SelectedContactIdsProvider._()
+  SelectedContactIdsProvider._()
     : super(
         from: null,
         argument: null,
@@ -54,7 +54,6 @@ abstract class _$SelectedContactIds extends $Notifier<Set<int>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<Set<int>, Set<int>>;
     final element =
         ref.element
@@ -64,7 +63,7 @@ abstract class _$SelectedContactIds extends $Notifier<Set<int>> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -73,7 +72,7 @@ abstract class _$SelectedContactIds extends $Notifier<Set<int>> {
 /// 负责发起创建群聊的请求和处理结果
 
 @ProviderFor(CreateGroupController)
-const createGroupControllerProvider = CreateGroupControllerProvider._();
+final createGroupControllerProvider = CreateGroupControllerProvider._();
 
 /// 创建群聊控制器
 ///
@@ -83,7 +82,7 @@ final class CreateGroupControllerProvider
   /// 创建群聊控制器
   ///
   /// 负责发起创建群聊的请求和处理结果
-  const CreateGroupControllerProvider._()
+  CreateGroupControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -114,7 +113,6 @@ abstract class _$CreateGroupController extends $AsyncNotifier<ChatRoomVO?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<ChatRoomVO?>, ChatRoomVO?>;
     final element =
         ref.element
@@ -124,6 +122,6 @@ abstract class _$CreateGroupController extends $AsyncNotifier<ChatRoomVO?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

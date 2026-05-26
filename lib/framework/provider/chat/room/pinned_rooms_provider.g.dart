@@ -11,13 +11,13 @@ part of 'pinned_rooms_provider.dart';
 /// 聊天置顶房间的 Riverpod Provider
 
 @ProviderFor(PinnedRooms)
-const pinnedRoomsProvider = PinnedRoomsProvider._();
+final pinnedRoomsProvider = PinnedRoomsProvider._();
 
 /// 聊天置顶房间的 Riverpod Provider
 final class PinnedRoomsProvider
     extends $NotifierProvider<PinnedRooms, Set<String>> {
   /// 聊天置顶房间的 Riverpod Provider
-  const PinnedRoomsProvider._()
+  PinnedRoomsProvider._()
     : super(
         from: null,
         argument: null,
@@ -53,7 +53,6 @@ abstract class _$PinnedRooms extends $Notifier<Set<String>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<Set<String>, Set<String>>;
     final element =
         ref.element
@@ -63,6 +62,6 @@ abstract class _$PinnedRooms extends $Notifier<Set<String>> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

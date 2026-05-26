@@ -10,12 +10,12 @@ part of 'LayoutMode.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(layoutMode)
-const layoutModeProvider = LayoutModeFamily._();
+final layoutModeProvider = LayoutModeFamily._();
 
 final class LayoutModeProvider
     extends $FunctionalProvider<LayoutMode, LayoutMode, LayoutMode>
     with $Provider<LayoutMode> {
-  const LayoutModeProvider._({
+  LayoutModeProvider._({
     required LayoutModeFamily super.from,
     required RoomState super.argument,
   }) : super(
@@ -70,7 +70,7 @@ String _$layoutModeHash() => r'50f4baa4e1f6e14d38982aa4a7bdc667d600f3c7';
 
 final class LayoutModeFamily extends $Family
     with $FunctionalFamilyOverride<LayoutMode, RoomState> {
-  const LayoutModeFamily._()
+  LayoutModeFamily._()
     : super(
         retry: null,
         name: r'layoutModeProvider',

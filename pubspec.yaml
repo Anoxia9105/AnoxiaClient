@@ -17,7 +17,7 @@ dependencies:
   flutter_screenutil: ^5.9.3
   # Riverpod核心库
   flutter_riverpod: ^3.0.3
-  riverpod_annotation: ^3.0.3
+  riverpod_annotation: ^4.0.2
   # http请求
   dio: ^5.9.0
   # 路由
@@ -28,7 +28,7 @@ dependencies:
   # 本地存储
   shared_preferences: ^2.5.3
   # 密钥存储
-  flutter_secure_storage: ^9.0.0
+  flutter_secure_storage: ^10.3.0
   # 网络检测
   connectivity_plus: ^7.0.0
   # 权限申请（蓝牙耳机连接所需）
@@ -94,7 +94,7 @@ dependencies:
   # Android角标
   flutter_new_badger: ^1.1.1
   # 剪贴板
-  pasteboard: ^0.4.0
+  pasteboard: ^0.5.0
   flutter_staggered_animations: ^1.1.1
   # 卡片动画
   flutter_card_swiper: ^7.0.2
@@ -111,7 +111,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  riverpod_generator: ^3.0.3
+  riverpod_generator: ^4.0.3
   riverpod_lint: ^3.0.3
   build_runner: ^2.10.3
   flutter_gen_runner: ^5.12.0

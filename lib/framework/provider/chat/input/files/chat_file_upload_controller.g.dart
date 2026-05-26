@@ -13,7 +13,7 @@ part of 'chat_file_upload_controller.dart';
 /// 处理文件选择和上传功能
 
 @ProviderFor(ChatFileUploadController)
-const chatFileUploadControllerProvider = ChatFileUploadControllerProvider._();
+final chatFileUploadControllerProvider = ChatFileUploadControllerProvider._();
 
 /// 聊天文件上传控制器
 ///
@@ -24,7 +24,7 @@ final class ChatFileUploadControllerProvider
   /// 聊天文件上传控制器
   ///
   /// 处理文件选择和上传功能
-  const ChatFileUploadControllerProvider._()
+  ChatFileUploadControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -64,7 +64,6 @@ abstract class _$ChatFileUploadController
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<Map<String, UploadEntry>, Map<String, UploadEntry>>;
     final element =
@@ -75,6 +74,6 @@ abstract class _$ChatFileUploadController
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

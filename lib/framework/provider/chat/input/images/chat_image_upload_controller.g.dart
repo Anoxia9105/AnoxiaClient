@@ -13,7 +13,7 @@ part of 'chat_image_upload_controller.dart';
 /// 处理图片选择、粘贴和上传功能
 
 @ProviderFor(ChatImageUploadController)
-const chatImageUploadControllerProvider = ChatImageUploadControllerProvider._();
+final chatImageUploadControllerProvider = ChatImageUploadControllerProvider._();
 
 /// 聊天图片上传控制器
 ///
@@ -24,7 +24,7 @@ final class ChatImageUploadControllerProvider
   /// 聊天图片上传控制器
   ///
   /// 处理图片选择、粘贴和上传功能
-  const ChatImageUploadControllerProvider._()
+  ChatImageUploadControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -64,7 +64,6 @@ abstract class _$ChatImageUploadController
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<Map<String, UploadEntry>, Map<String, UploadEntry>>;
     final element =
@@ -75,6 +74,6 @@ abstract class _$ChatImageUploadController
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

@@ -10,7 +10,7 @@ part of 'high_message_service.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(HighMessageService)
-const highMessageServiceProvider = HighMessageServiceProvider._();
+final highMessageServiceProvider = HighMessageServiceProvider._();
 
 final class HighMessageServiceProvider
     extends
@@ -18,7 +18,7 @@ final class HighMessageServiceProvider
           HighMessageService,
           Map<String, Map<HighMessageType, HighMessage>>
         > {
-  const HighMessageServiceProvider._()
+  HighMessageServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -59,7 +59,6 @@ abstract class _$HighMessageService
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -77,6 +76,6 @@ abstract class _$HighMessageService
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

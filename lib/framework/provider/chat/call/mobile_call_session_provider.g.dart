@@ -10,12 +10,12 @@ part of 'mobile_call_session_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(MobileCallSessionController)
-const mobileCallSessionControllerProvider =
+final mobileCallSessionControllerProvider =
     MobileCallSessionControllerProvider._();
 
 final class MobileCallSessionControllerProvider
     extends $NotifierProvider<MobileCallSessionController, MobileCallSession?> {
-  const MobileCallSessionControllerProvider._()
+  MobileCallSessionControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -51,7 +51,6 @@ abstract class _$MobileCallSessionController
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<MobileCallSession?, MobileCallSession?>;
     final element =
         ref.element
@@ -61,6 +60,6 @@ abstract class _$MobileCallSessionController
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

@@ -15,7 +15,7 @@ part of 'contact_requests_controller.dart';
 /// 采用 keepAlive 模式，确保请求列表在全局共享。
 
 @ProviderFor(ContactRequestsService)
-const contactRequestsServiceProvider = ContactRequestsServiceProvider._();
+final contactRequestsServiceProvider = ContactRequestsServiceProvider._();
 
 /// 好友申请列表服务
 ///
@@ -33,7 +33,7 @@ final class ContactRequestsServiceProvider
   /// 管理所有收到的好友请求，支持请求处理和列表刷新。
   ///
   /// 采用 keepAlive 模式，确保请求列表在全局共享。
-  const ContactRequestsServiceProvider._()
+  ContactRequestsServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -67,7 +67,6 @@ abstract class _$ContactRequestsService
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -85,7 +84,7 @@ abstract class _$ContactRequestsService
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -94,7 +93,7 @@ abstract class _$ContactRequestsService
 /// 仅统计状态为 0（待处理）的请求数
 
 @ProviderFor(pendingRequestCount)
-const pendingRequestCountProvider = PendingRequestCountProvider._();
+final pendingRequestCountProvider = PendingRequestCountProvider._();
 
 /// 待处理好友申请数量
 ///
@@ -106,7 +105,7 @@ final class PendingRequestCountProvider
   /// 待处理好友申请数量
   ///
   /// 仅统计状态为 0（待处理）的请求数
-  const PendingRequestCountProvider._()
+  PendingRequestCountProvider._()
     : super(
         from: null,
         argument: null,

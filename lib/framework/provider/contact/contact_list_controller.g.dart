@@ -16,7 +16,7 @@ part of 'contact_list_controller.dart';
 /// 采用 keepAlive 模式，确保联系人缓存在全局共享。
 
 @ProviderFor(ContactListService)
-const contactListServiceProvider = ContactListServiceProvider._();
+final contactListServiceProvider = ContactListServiceProvider._();
 
 /// 联系人列表服务
 ///
@@ -33,7 +33,7 @@ final class ContactListServiceProvider
   /// 支持在线状态更新和拼音排序分组。
   ///
   /// 采用 keepAlive 模式，确保联系人缓存在全局共享。
-  const ContactListServiceProvider._()
+  ContactListServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -68,7 +68,6 @@ abstract class _$ContactListService
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -86,7 +85,7 @@ abstract class _$ContactListService
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -96,7 +95,7 @@ abstract class _$ContactListService
 /// 中文姓名自动转换为拼音后取首字母。
 
 @ProviderFor(sortedContactGroups)
-const sortedContactGroupsProvider = SortedContactGroupsProvider._();
+final sortedContactGroupsProvider = SortedContactGroupsProvider._();
 
 /// 联系人拼音排序分组
 ///
@@ -117,7 +116,7 @@ final class SortedContactGroupsProvider
   ///
   /// 按联系人昵称/备注的首字母进行 A-Z 分组，
   /// 中文姓名自动转换为拼音后取首字母。
-  const SortedContactGroupsProvider._()
+  SortedContactGroupsProvider._()
     : super(
         from: null,
         argument: null,

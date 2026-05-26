@@ -16,7 +16,7 @@ part of 'token_provider.dart';
 /// [TokenManager] 提供持久化能力。
 
 @ProviderFor(TokenCache)
-const tokenCacheProvider = TokenCacheProvider._();
+final tokenCacheProvider = TokenCacheProvider._();
 
 /// Token 内存缓存 Provider
 ///
@@ -31,7 +31,7 @@ final class TokenCacheProvider extends $NotifierProvider<TokenCache, String?> {
   /// 采用 keepAlive 保持常驻，避免重复初始化。
   /// 与 [TokenManager] 的区别：此 Provider 提供响应式状态，
   /// [TokenManager] 提供持久化能力。
-  const TokenCacheProvider._()
+  TokenCacheProvider._()
     : super(
         from: null,
         argument: null,
@@ -72,7 +72,6 @@ abstract class _$TokenCache extends $Notifier<String?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<String?, String?>;
     final element =
         ref.element
@@ -82,6 +81,6 @@ abstract class _$TokenCache extends $Notifier<String?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

@@ -10,11 +10,11 @@ part of 'call_window_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(CallWindowController)
-const callWindowControllerProvider = CallWindowControllerProvider._();
+final callWindowControllerProvider = CallWindowControllerProvider._();
 
 final class CallWindowControllerProvider
     extends $NotifierProvider<CallWindowController, WindowController?> {
-  const CallWindowControllerProvider._()
+  CallWindowControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -49,7 +49,6 @@ abstract class _$CallWindowController extends $Notifier<WindowController?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<WindowController?, WindowController?>;
     final element =
         ref.element
@@ -59,6 +58,6 @@ abstract class _$CallWindowController extends $Notifier<WindowController?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

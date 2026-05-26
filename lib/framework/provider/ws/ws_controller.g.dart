@@ -14,7 +14,7 @@ part of 'ws_controller.dart';
 /// 采用 keepAlive 模式，确保全局只有一个连接实例。
 
 @ProviderFor(WsController)
-const wsControllerProvider = WsControllerProvider._();
+final wsControllerProvider = WsControllerProvider._();
 
 /// WebSocket 连接控制器
 ///
@@ -26,7 +26,7 @@ final class WsControllerProvider
   ///
   /// 负责 WebSocket 连接的建立、心跳维护、自动重连和消息分发。
   /// 采用 keepAlive 模式，确保全局只有一个连接实例。
-  const WsControllerProvider._()
+  WsControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -65,7 +65,6 @@ abstract class _$WsController extends $Notifier<WsState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<WsState, WsState>;
     final element =
         ref.element
@@ -75,7 +74,7 @@ abstract class _$WsController extends $Notifier<WsState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -84,7 +83,7 @@ abstract class _$WsController extends $Notifier<WsState> {
 /// 供其他 Provider 监听 WebSocket 消息
 
 @ProviderFor(wsMessageStream)
-const wsMessageStreamProvider = WsMessageStreamProvider._();
+final wsMessageStreamProvider = WsMessageStreamProvider._();
 
 /// WebSocket 消息流 Provider
 ///
@@ -103,7 +102,7 @@ final class WsMessageStreamProvider
   /// WebSocket 消息流 Provider
   ///
   /// 供其他 Provider 监听 WebSocket 消息
-  const WsMessageStreamProvider._()
+  WsMessageStreamProvider._()
     : super(
         from: null,
         argument: null,

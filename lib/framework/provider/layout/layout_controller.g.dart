@@ -13,7 +13,7 @@ part of 'layout_controller.dart';
 /// 控制桌面端的侧边栏状态、当前选中页面索引等。
 
 @ProviderFor(LayoutController)
-const layoutControllerProvider = LayoutControllerProvider._();
+final layoutControllerProvider = LayoutControllerProvider._();
 
 /// 布局状态管理器
 ///
@@ -23,7 +23,7 @@ final class LayoutControllerProvider
   /// 布局状态管理器
   ///
   /// 控制桌面端的侧边栏状态、当前选中页面索引等。
-  const LayoutControllerProvider._()
+  LayoutControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -61,7 +61,6 @@ abstract class _$LayoutController extends $Notifier<LayoutState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<LayoutState, LayoutState>;
     final element =
         ref.element
@@ -71,6 +70,6 @@ abstract class _$LayoutController extends $Notifier<LayoutState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

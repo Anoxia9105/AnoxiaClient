@@ -13,7 +13,7 @@ part of 'theme_controller.dart';
 /// 持久化存储用户选择的主题索引（0=浅色，1=深色等）。
 
 @ProviderFor(ThemeIndex)
-const themeIndexProvider = ThemeIndexProvider._();
+final themeIndexProvider = ThemeIndexProvider._();
 
 /// 主题索引 Provider
 ///
@@ -22,7 +22,7 @@ final class ThemeIndexProvider extends $NotifierProvider<ThemeIndex, int> {
   /// 主题索引 Provider
   ///
   /// 持久化存储用户选择的主题索引（0=浅色，1=深色等）。
-  const ThemeIndexProvider._()
+  ThemeIndexProvider._()
     : super(
         from: null,
         argument: null,
@@ -60,7 +60,6 @@ abstract class _$ThemeIndex extends $Notifier<int> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<int, int>;
     final element =
         ref.element
@@ -70,7 +69,7 @@ abstract class _$ThemeIndex extends $Notifier<int> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -79,7 +78,7 @@ abstract class _$ThemeIndex extends $Notifier<int> {
 /// 根据 [ThemeIndex] 动态生成对应的 ThemeData
 
 @ProviderFor(appTheme)
-const appThemeProvider = AppThemeProvider._();
+final appThemeProvider = AppThemeProvider._();
 
 /// 应用主题 Provider
 ///
@@ -91,7 +90,7 @@ final class AppThemeProvider
   /// 应用主题 Provider
   ///
   /// 根据 [ThemeIndex] 动态生成对应的 ThemeData
-  const AppThemeProvider._()
+  AppThemeProvider._()
     : super(
         from: null,
         argument: null,

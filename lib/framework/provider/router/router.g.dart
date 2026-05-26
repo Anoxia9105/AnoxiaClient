@@ -309,7 +309,7 @@ mixin $OpenSourceLicenseDetailRoute on GoRouteData {
 /// - 路由守卫
 
 @ProviderFor(router)
-const routerProvider = RouterProvider._();
+final routerProvider = RouterProvider._();
 
 /// 应用路由配置
 ///
@@ -327,7 +327,7 @@ final class RouterProvider
   /// - 认证状态驱动的重定向
   /// - 嵌套路由
   /// - 路由守卫
-  const RouterProvider._()
+  RouterProvider._()
     : super(
         from: null,
         argument: null,

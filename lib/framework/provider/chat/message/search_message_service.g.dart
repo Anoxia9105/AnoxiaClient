@@ -12,7 +12,7 @@ part of 'search_message_service.dart';
 /// 功能：提供消息搜索、加载更多搜索结果等功能
 
 @ProviderFor(SearchMessageService)
-const searchMessageServiceProvider = SearchMessageServiceProvider._();
+final searchMessageServiceProvider = SearchMessageServiceProvider._();
 
 /// 搜索消息服务
 /// 功能：提供消息搜索、加载更多搜索结果等功能
@@ -20,7 +20,7 @@ final class SearchMessageServiceProvider
     extends $NotifierProvider<SearchMessageService, SearchState> {
   /// 搜索消息服务
   /// 功能：提供消息搜索、加载更多搜索结果等功能
-  const SearchMessageServiceProvider._()
+  SearchMessageServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -58,7 +58,6 @@ abstract class _$SearchMessageService extends $Notifier<SearchState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<SearchState, SearchState>;
     final element =
         ref.element
@@ -68,6 +67,6 @@ abstract class _$SearchMessageService extends $Notifier<SearchState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

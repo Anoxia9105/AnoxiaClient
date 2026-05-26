@@ -14,7 +14,7 @@ part of 'system_event_service.dart';
 /// 涵盖用户状态变更、房间变动、成员管理、通话状态等。
 
 @ProviderFor(SystemEventService)
-const systemEventServiceProvider = SystemEventServiceProvider._();
+final systemEventServiceProvider = SystemEventServiceProvider._();
 
 /// 系统事件服务
 ///
@@ -26,7 +26,7 @@ final class SystemEventServiceProvider
   ///
   /// 负责全局监听并分发处理 WebSocket 推送的系统事件。
   /// 涵盖用户状态变更、房间变动、成员管理、通话状态等。
-  const SystemEventServiceProvider._()
+  SystemEventServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -66,7 +66,6 @@ abstract class _$SystemEventService extends $Notifier<void> {
   @$mustCallSuper
   @override
   void runBuild() {
-    build();
     final ref = this.ref as $Ref<void, void>;
     final element =
         ref.element
@@ -76,6 +75,6 @@ abstract class _$SystemEventService extends $Notifier<void> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, null);
+    element.handleCreate(ref, build);
   }
 }

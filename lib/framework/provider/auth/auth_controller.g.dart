@@ -14,7 +14,7 @@ part of 'auth_controller.dart';
 /// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
 
 @ProviderFor(AuthController)
-const authControllerProvider = AuthControllerProvider._();
+final authControllerProvider = AuthControllerProvider._();
 
 /// 认证状态管理器
 ///
@@ -26,7 +26,7 @@ final class AuthControllerProvider
   ///
   /// 负责用户登录、登出和会话恢复的核心 Provider。
   /// 与 [TokenCache] 配合实现 Token 的内存缓存和持久化存储。
-  const AuthControllerProvider._()
+  AuthControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -57,7 +57,6 @@ abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<UserInfo?>, UserInfo?>;
     final element =
         ref.element
@@ -67,7 +66,7 @@ abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -76,7 +75,7 @@ abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
 /// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
 
 @ProviderFor(getCaptcha)
-const getCaptchaProvider = GetCaptchaProvider._();
+final getCaptchaProvider = GetCaptchaProvider._();
 
 /// 获取验证码
 ///
@@ -93,7 +92,7 @@ final class GetCaptchaProvider
   /// 获取验证码
   ///
   /// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
-  const GetCaptchaProvider._()
+  GetCaptchaProvider._()
     : super(
         from: null,
         argument: null,

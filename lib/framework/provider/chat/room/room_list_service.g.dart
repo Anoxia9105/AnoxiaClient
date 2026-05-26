@@ -14,7 +14,7 @@ part of 'room_list_service.dart';
 /// 采用 keepAlive 模式，确保列表数据全局共享。
 
 @ProviderFor(RoomListService)
-const roomListServiceProvider = RoomListServiceProvider._();
+final roomListServiceProvider = RoomListServiceProvider._();
 
 /// 聊天室列表服务
 ///
@@ -26,7 +26,7 @@ final class RoomListServiceProvider
   ///
   /// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
   /// 采用 keepAlive 模式，确保列表数据全局共享。
-  const RoomListServiceProvider._()
+  RoomListServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -57,7 +57,6 @@ abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<AsyncValue<List<ChatRoomVO>>, List<ChatRoomVO>>;
     final element =
@@ -68,20 +67,20 @@ abstract class _$RoomListService extends $AsyncNotifier<List<ChatRoomVO>> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 /// 当前选中的聊天室 ID 全局指针
 
 @ProviderFor(ActiveRoomId)
-const activeRoomIdProvider = ActiveRoomIdProvider._();
+final activeRoomIdProvider = ActiveRoomIdProvider._();
 
 /// 当前选中的聊天室 ID 全局指针
 final class ActiveRoomIdProvider
     extends $NotifierProvider<ActiveRoomId, String?> {
   /// 当前选中的聊天室 ID 全局指针
-  const ActiveRoomIdProvider._()
+  ActiveRoomIdProvider._()
     : super(
         from: null,
         argument: null,
@@ -117,7 +116,6 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<String?, String?>;
     final element =
         ref.element
@@ -127,7 +125,7 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -136,7 +134,7 @@ abstract class _$ActiveRoomId extends $Notifier<String?> {
 /// 确保消息和成员数据已同步到本地
 
 @ProviderFor(roomEntryTask)
-const roomEntryTaskProvider = RoomEntryTaskFamily._();
+final roomEntryTaskProvider = RoomEntryTaskFamily._();
 
 /// 进入房间时的初始化任务
 ///
@@ -148,7 +146,7 @@ final class RoomEntryTaskProvider
   /// 进入房间时的初始化任务
   ///
   /// 确保消息和成员数据已同步到本地
-  const RoomEntryTaskProvider._({
+  RoomEntryTaskProvider._({
     required RoomEntryTaskFamily super.from,
     required String super.argument,
   }) : super(
@@ -199,7 +197,7 @@ String _$roomEntryTaskHash() => r'78570d9ba90ca5661d88ed4e6efe4c792b144e99';
 
 final class RoomEntryTaskFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<void>, String> {
-  const RoomEntryTaskFamily._()
+  RoomEntryTaskFamily._()
     : super(
         retry: null,
         name: r'roomEntryTaskProvider',
@@ -222,7 +220,7 @@ final class RoomEntryTaskFamily extends $Family
 /// 群聊房间列表（房间类型为 GROUP）
 
 @ProviderFor(groupRoomList)
-const groupRoomListProvider = GroupRoomListProvider._();
+final groupRoomListProvider = GroupRoomListProvider._();
 
 /// 群聊房间列表（房间类型为 GROUP）
 
@@ -235,7 +233,7 @@ final class GroupRoomListProvider
         >
     with $Provider<List<ChatRoomVO>> {
   /// 群聊房间列表（房间类型为 GROUP）
-  const GroupRoomListProvider._()
+  GroupRoomListProvider._()
     : super(
         from: null,
         argument: null,
@@ -273,13 +271,13 @@ String _$groupRoomListHash() => r'373c92ffd3b679c6e790c49fa982dbb404c91904';
 /// 房间搜索关键词
 
 @ProviderFor(RoomSearchQuery)
-const roomSearchQueryProvider = RoomSearchQueryProvider._();
+final roomSearchQueryProvider = RoomSearchQueryProvider._();
 
 /// 房间搜索关键词
 final class RoomSearchQueryProvider
     extends $NotifierProvider<RoomSearchQuery, String> {
   /// 房间搜索关键词
-  const RoomSearchQueryProvider._()
+  RoomSearchQueryProvider._()
     : super(
         from: null,
         argument: null,
@@ -315,7 +313,6 @@ abstract class _$RoomSearchQuery extends $Notifier<String> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<String, String>;
     final element =
         ref.element
@@ -325,7 +322,7 @@ abstract class _$RoomSearchQuery extends $Notifier<String> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -334,7 +331,7 @@ abstract class _$RoomSearchQuery extends $Notifier<String> {
 /// 匹配规则：房间名称 或 最后一条消息内容
 
 @ProviderFor(filteredRoomList)
-const filteredRoomListProvider = FilteredRoomListProvider._();
+final filteredRoomListProvider = FilteredRoomListProvider._();
 
 /// 根据关键词过滤后的聊天室列表
 ///
@@ -351,7 +348,7 @@ final class FilteredRoomListProvider
   /// 根据关键词过滤后的聊天室列表
   ///
   /// 匹配规则：房间名称 或 最后一条消息内容
-  const FilteredRoomListProvider._()
+  FilteredRoomListProvider._()
     : super(
         from: null,
         argument: null,
@@ -391,7 +388,7 @@ String _$filteredRoomListHash() => r'c7ad2830497d41b750db2301501f76ebc76e3f15';
 /// 排除当前正在查看的房间
 
 @ProviderFor(totalUnreadCount)
-const totalUnreadCountProvider = TotalUnreadCountProvider._();
+final totalUnreadCountProvider = TotalUnreadCountProvider._();
 
 /// 总未读消息数
 ///
@@ -402,7 +399,7 @@ final class TotalUnreadCountProvider extends $FunctionalProvider<int, int, int>
   /// 总未读消息数
   ///
   /// 排除当前正在查看的房间
-  const TotalUnreadCountProvider._()
+  TotalUnreadCountProvider._()
     : super(
         from: null,
         argument: null,
@@ -440,7 +437,7 @@ String _$totalUnreadCountHash() => r'28ba55bb5ba482ddd0f850e95fd5ebcd14e7bae5';
 /// 根据房间 ID 获取对应的聊天室对象
 
 @ProviderFor(currentRoom)
-const currentRoomProvider = CurrentRoomFamily._();
+final currentRoomProvider = CurrentRoomFamily._();
 
 /// 根据房间 ID 获取对应的聊天室对象
 
@@ -448,7 +445,7 @@ final class CurrentRoomProvider
     extends $FunctionalProvider<ChatRoomVO?, ChatRoomVO?, ChatRoomVO?>
     with $Provider<ChatRoomVO?> {
   /// 根据房间 ID 获取对应的聊天室对象
-  const CurrentRoomProvider._({
+  CurrentRoomProvider._({
     required CurrentRoomFamily super.from,
     required String super.argument,
   }) : super(
@@ -505,7 +502,7 @@ String _$currentRoomHash() => r'5dc9342c5808fab97af18ca98c631a3c9bc6a548';
 
 final class CurrentRoomFamily extends $Family
     with $FunctionalFamilyOverride<ChatRoomVO?, String> {
-  const CurrentRoomFamily._()
+  CurrentRoomFamily._()
     : super(
         retry: null,
         name: r'currentRoomProvider',

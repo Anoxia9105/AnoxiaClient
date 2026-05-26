@@ -14,7 +14,7 @@ part of 'room_message_service.dart';
 /// 采用 keepAlive 模式，确保消息缓存在全局共享。
 
 @ProviderFor(ChatMessages)
-const chatMessagesProvider = ChatMessagesProvider._();
+final chatMessagesProvider = ChatMessagesProvider._();
 
 /// 聊天消息存储器
 ///
@@ -26,7 +26,7 @@ final class ChatMessagesProvider
   ///
   /// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
   /// 采用 keepAlive 模式，确保消息缓存在全局共享。
-  const ChatMessagesProvider._()
+  ChatMessagesProvider._()
     : super(
         from: null,
         argument: null,
@@ -68,7 +68,6 @@ abstract class _$ChatMessages
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -86,20 +85,20 @@ abstract class _$ChatMessages
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 /// 房间是否还有更多历史消息的状态
 
 @ProviderFor(ChatHasMore)
-const chatHasMoreProvider = ChatHasMoreProvider._();
+final chatHasMoreProvider = ChatHasMoreProvider._();
 
 /// 房间是否还有更多历史消息的状态
 final class ChatHasMoreProvider
     extends $NotifierProvider<ChatHasMore, Map<String, bool>> {
   /// 房间是否还有更多历史消息的状态
-  const ChatHasMoreProvider._()
+  ChatHasMoreProvider._()
     : super(
         from: null,
         argument: null,
@@ -135,7 +134,6 @@ abstract class _$ChatHasMore extends $Notifier<Map<String, bool>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<Map<String, bool>, Map<String, bool>>;
     final element =
         ref.element
@@ -145,6 +143,6 @@ abstract class _$ChatHasMore extends $Notifier<Map<String, bool>> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

@@ -16,7 +16,7 @@ part of 'room_controller.dart';
 ///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
 
 @ProviderFor(RoomController)
-const roomControllerProvider = RoomControllerFamily._();
+final roomControllerProvider = RoomControllerFamily._();
 
 /// 房间控制器
 /// 负责管理 LiveKit 房间的完整生命周期：
@@ -32,7 +32,7 @@ final class RoomControllerProvider
   ///   - 本地媒体（麦克风、摄像头、屏幕共享）
   ///   - 设备切换
   ///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
-  const RoomControllerProvider._({
+  RoomControllerProvider._({
     required RoomControllerFamily super.from,
     required String super.argument,
   }) : super(
@@ -86,7 +86,7 @@ final class RoomControllerFamily extends $Family
           FutureOr<RoomState>,
           String
         > {
-  const RoomControllerFamily._()
+  RoomControllerFamily._()
     : super(
         retry: null,
         name: r'roomControllerProvider',
@@ -124,7 +124,6 @@ abstract class _$RoomController extends $AsyncNotifier<RoomState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(_$args);
     final ref = this.ref as $Ref<AsyncValue<RoomState>, RoomState>;
     final element =
         ref.element
@@ -134,7 +133,7 @@ abstract class _$RoomController extends $AsyncNotifier<RoomState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, () => build(_$args));
   }
 }
 
@@ -142,7 +141,7 @@ abstract class _$RoomController extends $AsyncNotifier<RoomState> {
 /// [roomId] 房间 ID
 
 @ProviderFor(roomToken)
-const roomTokenProvider = RoomTokenFamily._();
+final roomTokenProvider = RoomTokenFamily._();
 
 /// 从服务端获取加入房间的 JWT Token
 /// [roomId] 房间 ID
@@ -152,7 +151,7 @@ final class RoomTokenProvider
     with $FutureModifier<String>, $FutureProvider<String> {
   /// 从服务端获取加入房间的 JWT Token
   /// [roomId] 房间 ID
-  const RoomTokenProvider._({
+  RoomTokenProvider._({
     required RoomTokenFamily super.from,
     required String super.argument,
   }) : super(
@@ -202,7 +201,7 @@ String _$roomTokenHash() => r'b46818769fa412a740fe2451eb85846c663f5b76';
 
 final class RoomTokenFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String>, String> {
-  const RoomTokenFamily._()
+  RoomTokenFamily._()
     : super(
         retry: null,
         name: r'roomTokenProvider',

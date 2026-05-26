@@ -14,7 +14,7 @@ part of 'ai_chat_controller.dart';
 /// 支持发送用户消息并获取 AI 回复。
 
 @ProviderFor(AiChatController)
-const aiChatControllerProvider = AiChatControllerProvider._();
+final aiChatControllerProvider = AiChatControllerProvider._();
 
 /// AI 对话控制器
 ///
@@ -26,7 +26,7 @@ final class AiChatControllerProvider
   ///
   /// 管理 AI 聊天的消息列表和请求状态。
   /// 支持发送用户消息并获取 AI 回复。
-  const AiChatControllerProvider._()
+  AiChatControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -65,7 +65,6 @@ abstract class _$AiChatController extends $Notifier<List<AiChatMessage>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<List<AiChatMessage>, List<AiChatMessage>>;
     final element =
         ref.element
@@ -75,6 +74,6 @@ abstract class _$AiChatController extends $Notifier<List<AiChatMessage>> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

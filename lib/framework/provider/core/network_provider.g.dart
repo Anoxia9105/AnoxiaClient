@@ -10,7 +10,7 @@ part of 'network_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(networkStatus)
-const networkStatusProvider = NetworkStatusProvider._();
+final networkStatusProvider = NetworkStatusProvider._();
 
 final class NetworkStatusProvider
     extends
@@ -22,7 +22,7 @@ final class NetworkStatusProvider
     with
         $FutureModifier<List<ConnectivityResult>>,
         $StreamProvider<List<ConnectivityResult>> {
-  const NetworkStatusProvider._()
+  NetworkStatusProvider._()
     : super(
         from: null,
         argument: null,
