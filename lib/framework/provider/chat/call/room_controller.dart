@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
+import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_background/flutter_background.dart' as rtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -496,21 +499,27 @@ class RoomController extends _$RoomController {
       if (next) {
         // 桌面端弹出窗口/屏幕选择对话框
         String? sourceId;
-        if (lkPlatformIsDesktop()) {
+        if (DeviceUtil.isRealDesktop()) {
           final source = await showDialog<rtc.DesktopCapturerSource?>(
             context: context,
-            builder: (context) => WindowScreenSelectDialog(),
+            builder: (context) => const WindowScreenSelectDialog(),
           );
           // 用户取消选择，不继续
           if (source == null) return;
           sourceId = source.id;
         }
 
+        /// Android 14+ 安全检查：如果用户拒绝或激活失败，直接阻断不往下走
+        if (DeviceUtil.isAndroid()) {
+          final isReady = await _safeActivateAndroidBackground();
+          if (!isReady) return;
+        }
+
         final screenTrack = await LocalVideoTrack.createScreenShareTrack(
           ScreenShareCaptureOptions(
             sourceId: sourceId,
             captureScreenAudio: true,
-            maxFrameRate: 30,
+            maxFrameRate: 15,
             params: VideoParametersPresets.screenShareH1080FPS30,
           ),
         );
@@ -530,6 +539,18 @@ class RoomController extends _$RoomController {
         if (screenPub != null) {
           await localParticipant.removePublishedTrack(screenPub.sid);
         }
+
+        /// 优化：关闭共享时，及时释放 Android 前台保活服务
+        if (DeviceUtil.isAndroid()) {
+          try {
+            if (rtc.FlutterBackground.isBackgroundExecutionEnabled) {
+              await rtc.FlutterBackground.disableBackgroundExecution();
+            }
+          } catch (e) {
+            log.error('关闭 Android 后台服务失败: $e');
+          }
+        }
+
         state = AsyncData(
           currentState.copyWith(screenSharing: false, screenShareTrack: null),
         );
@@ -546,6 +567,42 @@ class RoomController extends _$RoomController {
       }
     } finally {
       _isTogglingScreen = false;
+    }
+  }
+
+  /// 安全激活 Android 14+ 的媒体投影前台服务
+  /// 修改返回值：true 表示成功获取授权并激活，false 表示用户拒绝或失败
+  Future<bool> _safeActivateAndroidBackground() async {
+    try {
+      // 1. 严格按照官方示例：必须先申请媒体投影权限
+      bool hasCapturePermission = await rtc.Helper.requestCapturePermission();
+      if (!hasCapturePermission) {
+        log.warning('用户拒绝了录屏/投影权限');
+        return false;
+      }
+
+      // 2. 用户同意投屏后，再配置并启动前台服务
+      const androidConfig = rtc.FlutterBackgroundAndroidConfig(
+        notificationTitle: '通话中',
+        notificationText: '屏幕共享服务正在后台运行',
+        notificationImportance: rtc.AndroidNotificationImportance.normal,
+        notificationIcon: rtc.AndroidResource(
+          name: 'ic_launcher',
+          defType: 'mipmap',
+        ),
+      );
+
+      bool hasPermissions = await rtc.FlutterBackground.initialize(
+        androidConfig: androidConfig,
+      );
+      if (hasPermissions &&
+          !rtc.FlutterBackground.isBackgroundExecutionEnabled) {
+        await rtc.FlutterBackground.enableBackgroundExecution();
+      }
+      return true;
+    } catch (e) {
+      log.error('Android 14+ 媒体投影前台服务激活失败: $e');
+      return false;
     }
   }
 
