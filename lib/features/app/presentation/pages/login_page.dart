@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// 登录页面
 ///
 /// 提供用户登录功能，包含用户名、密码和验证码输入。
-/// 使用淡入动画提升用户体验，表单验证确保输入格式正确。
+/// 自适应桌面端与移动端屏幕，防止键盘弹起时视图溢出并提供安全的边距填充。
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -42,11 +42,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
   bool _isLoading = false;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void dispose() {
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
@@ -61,36 +56,56 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final loginMutation = ref.watch(AuthController.loginMutation);
 
     return AppScaffold(
-      body: Center(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(colorScheme, textTheme),
-                const SizedBox(height: 36),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildUsernameField(colorScheme),
-                      const SizedBox(height: 16),
-                      _buildPasswordField(colorScheme),
-                      const SizedBox(height: 16),
-                      _buildCaptchaField(colorScheme),
-                      const SizedBox(height: 28),
-                      _buildLoginButton(colorScheme, loginMutation),
-                    ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                // 确保至少和屏幕等高，方便内容少时可以垂直居中
+                minHeight: constraints.maxHeight,
+              ),
+              child: Center(
+                // 确保在滚动视图内部依然整体居中
+                child: Padding(
+                  // 移动端/窄屏时，两边自动留出 24 逻辑像素的内填充，不再紧贴边缘
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  child: ConstrainedBox(
+                    // 限制最大宽度，桌面端/宽屏下保持 400 宽居中
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildHeader(colorScheme, textTheme),
+                        const SizedBox(height: 36),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildUsernameField(colorScheme),
+                              const SizedBox(height: 16),
+                              _buildPasswordField(colorScheme),
+                              const SizedBox(height: 16),
+                              _buildCaptchaField(colorScheme),
+                              const SizedBox(height: 28),
+                              _buildLoginButton(colorScheme, loginMutation),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildFooterLinks(colorScheme),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                _buildFooterLinks(colorScheme),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
