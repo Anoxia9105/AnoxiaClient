@@ -448,5 +448,9 @@
   "status_online": "在线",
   "status_connecting": "连接中...",
   "status_offline": "连接断开",
-  "status_network_unavailable": "无网络连接"
+  "status_network_unavailable": "无网络连接",
+  "toolbar_mic": "麦克风",
+  "toolbar_keyboard": "键盘",
+  "hold_to_talk": "按住说话",
+  "release_to_send": "松开发送"
 }

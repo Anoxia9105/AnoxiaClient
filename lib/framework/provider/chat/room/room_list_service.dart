@@ -6,6 +6,7 @@ import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -80,7 +81,7 @@ class RoomListService extends _$RoomListService {
     } on DioException catch (e) {
       // 处理 401 登录过期错误：在初始化时优雅地返回空列表而不是崩溃
       // DioClient 的拦截器已处理登出逻辑，此处仅需返回空列表
-      if (e.error == "登录过期") {
+      if (e.error == '登录过期') {
         log.warning('登录已过期，返回空列表');
         return [];
       }
@@ -126,7 +127,8 @@ class RoomListService extends _$RoomListService {
     final isSelfMessage = newMessage.senderId == currentUser?.userId;
 
     final action = newMessage.extra['action']?.toString().toUpperCase();
-    final isCallSystemMessage = action == 'CALL_STARTED' || action == 'CALL_ENDED';
+    final isCallSystemMessage =
+        action == 'CALL_STARTED' || action == 'CALL_ENDED';
 
     state.whenData((rooms) {
       final List<ChatRoomVO> updatedList = List.from(rooms);
@@ -137,7 +139,7 @@ class RoomListService extends _$RoomListService {
       if (index != -1) {
         final oldRoom = updatedList.removeAt(index);
 
-        // 当前正在看的房间不增加未读数 
+        // 当前正在看的房间不增加未读数
         int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
@@ -417,9 +419,7 @@ List<ChatRoomVO> groupRoomList(Ref ref) {
   final roomListAsync = ref.watch(roomListServiceProvider);
 
   return roomListAsync.maybeWhen(
-    data: (rooms) => rooms
-        .where((r) => r.roomType == 1)
-        .toList(),
+    data: (rooms) => rooms.where((r) => r.roomType == 1).toList(),
     orElse: () => const [],
   );
 }
@@ -474,15 +474,12 @@ int totalUnreadCount(Ref ref) {
   return 0;
 }
 
-
 /// 根据房间 ID 获取对应的聊天室对象
 @riverpod
 ChatRoomVO? currentRoom(Ref ref, String roomId) {
   // 1. 监听整个房间列表的状态
   final roomListState = ref.watch(roomListServiceProvider);
-  
+
   // 2. 从列表中筛选出对应的房间
-  return roomListState.value?.firstWhere(
-    (r) => r.roomId == roomId,
-  );
+  return roomListState.value?.firstWhere((r) => r.roomId == roomId);
 }

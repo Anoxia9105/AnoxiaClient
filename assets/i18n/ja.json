@@ -448,5 +448,9 @@
   "status_online": "オンライン",
   "status_connecting": "接続中...",
   "status_offline": "接続解除",
-  "status_network_unavailable": "ネットワーク接続不可"
+  "status_network_unavailable": "ネットワーク接続不可",
+  "toolbar_mic": "マイク",
+   "toolbar_keyboard": "キーボード",
+  "hold_to_talk": "話すには長押し",
+  "release_to_send": "送信するには離す"
 }
