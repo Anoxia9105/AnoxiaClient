@@ -77,7 +77,13 @@ class RoomListService extends _$RoomListService {
             .toList();
       }
       return [];
-    } catch (e) {
+    } on DioException catch (e) {
+      // 处理 401 登录过期错误：在初始化时优雅地返回空列表而不是崩溃
+      // DioClient 的拦截器已处理登出逻辑，此处仅需返回空列表
+      if (e.error == "登录过期") {
+        log.warning('登录已过期，返回空列表');
+        return [];
+      }
       rethrow;
     }
   }
