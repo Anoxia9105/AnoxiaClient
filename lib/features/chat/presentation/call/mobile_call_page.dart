@@ -1,5 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/SPUtil.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
+import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,6 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+/// SharedPreferences 存储 Key：蓝牙权限是否已申请
+const String _kBluetoothPermissionRequestedKey =
+    'bluetooth_permission_requested_v1';
 
 /// 移动端通话页面
 ///
@@ -28,6 +35,48 @@ class MobileCallPage extends ConsumerStatefulWidget {
 }
 
 class _MobileCallPageState extends ConsumerState<MobileCallPage> {
+  @override
+  void initState() {
+    super.initState();
+    //  进页面后，异步安全检查并请求蓝牙耳机权限
+    _checkBluetoothPermissions();
+  }
+
+  /// 检查并请求蓝牙权限（仅 Android 移动端）
+  Future<void> _checkBluetoothPermissions() async {
+    // 1. Web 和非 Android 平台直接跳过
+    if (!DeviceUtil.isAndroid()) return;
+
+    // 2. 检查本地缓存，避免每次进房间都无脑弹窗
+    final requested =
+        SPUtil.instance.getBool(_kBluetoothPermissionRequestedKey) ?? false;
+    if (requested) return;
+
+    bool hasPermanentlyDenied = false;
+
+    // 3. 请求蓝牙基础权限
+    var status = await Permission.bluetooth.request();
+    if (status.isPermanentlyDenied) {
+      log.warning('Bluetooth Permission disabled');
+      hasPermanentlyDenied = true;
+    }
+
+    // 4. 请求 Android 12+ 必需的蓝牙连接权限
+    status = await Permission.bluetoothConnect.request();
+    if (status.isPermanentlyDenied) {
+      log.warning('Bluetooth Connect Permission disabled');
+      hasPermanentlyDenied = true;
+    }
+
+    // 5. 记录已请求状态
+    await SPUtil.instance.setBool(_kBluetoothPermissionRequestedKey, true);
+
+    // 6. 若被用户拉黑（永久拒绝），引导用户前往系统设置
+    if (hasPermanentlyDenied) {
+      await openAppSettings();
+    }
+  }
+
   /// 统一处理页面缩小（返回）的逻辑
   void _minimizeCall() {
     // 1. 修改全局状态为最小化（这将驱动应用内悬浮窗 flutter_floating 的展示）

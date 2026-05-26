@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
@@ -45,48 +44,6 @@ final ProviderContainer globalContainer = ProviderContainer(
   // ],
 );
 
-/// SharedPreferences 存储 Key：蓝牙权限是否已申请
-const String _kBluetoothPermissionRequestedKey =
-    'bluetooth_permission_requested_v1';
-
-/// 检查并请求蓝牙权限（仅 Android）
-///
-/// 为音视频通话做准备，仅首次启动时请求，
-/// 若被永久拒绝则引导用户前往系统设置开启。
-Future<void> _checkBluetoothPermissions() async {
-  // Web 和非 Android 平台无需处理
-  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
-
-  // 检查是否已请求过，避免重复弹窗
-  final requested =
-      SPUtil.instance.getBool(_kBluetoothPermissionRequestedKey) ?? false;
-  if (requested) return;
-
-  bool hasPermanentlyDenied = false;
-
-  // 请求蓝牙权限
-  var status = await Permission.bluetooth.request();
-  if (status.isPermanentlyDenied) {
-    log.warning('Bluetooth Permission disabled');
-    hasPermanentlyDenied = true;
-  }
-
-  // 请求蓝牙连接权限
-  status = await Permission.bluetoothConnect.request();
-  if (status.isPermanentlyDenied) {
-    log.warning('Bluetooth Connect Permission disabled');
-    hasPermanentlyDenied = true;
-  }
-
-  // 记录已请求状态
-  await SPUtil.instance.setBool(_kBluetoothPermissionRequestedKey, true);
-
-  // 若有永久拒绝，引导用户去设置
-  if (hasPermanentlyDenied) {
-    await openAppSettings();
-  }
-}
-
 /// 应用入口
 Future<void> main(List<String> args) async {
   log.info('程序启动参数：$args');
@@ -117,9 +74,6 @@ Future<void> main(List<String> args) async {
       EasyLocalization.ensureInitialized(), // 多语言初始化
       SPUtil.instance.init(), // 本地存储初始化
     ]);
-
-    // Android 蓝牙耳机权限（首次启动会触发系统弹窗）
-    await _checkBluetoothPermissions();
 
     // 检查更新
     if (!DeviceUtil.isWeb) {
