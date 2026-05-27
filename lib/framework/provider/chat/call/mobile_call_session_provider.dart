@@ -73,7 +73,13 @@ class MobileCallSessionController extends _$MobileCallSessionController {
 
   void setPipMode(bool inPip) {
     if (state == null) return;
-    state = state!.copyWith(isInPipMode: inPip);
+    if (inPip) {
+      // 进入PiP模式时，保存当前的最小化状态，并关闭悬浮窗
+      _savedMinimizedState = state!.minimized;
+      state = state!.copyWith(isInPipMode: true, minimized: false);
+    } else {
+      state = state!.copyWith(isInPipMode: false);
+    }
   }
 
   void updateToken(String token) {
@@ -118,7 +124,10 @@ class MobileCallSessionController extends _$MobileCallSessionController {
   // 当从系统画中画返回应用时，一键重置状态
   void exitPipMode() {
     if (state == null) return;
-    // 确保回到前台时，既不在系统PiP，也不在应用内小窗，而是直接恢复全屏
-    state = state!.copyWith(isInPipMode: false, minimized: false);
+    // 退出PiP模式时，恢复之前的悬浮窗状态
+    state = state!.copyWith(isInPipMode: false, minimized: _savedMinimizedState);
   }
+
+  // 保存的最小化状态（用于从PiP返回时恢复）
+  bool _savedMinimizedState = false;
 }

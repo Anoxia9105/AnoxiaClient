@@ -31,13 +31,15 @@ class MobileCallPage extends ConsumerStatefulWidget {
   ConsumerState<MobileCallPage> createState() => _MobileCallPageState();
 }
 
-class _MobileCallPageState extends ConsumerState<MobileCallPage> {
+class _MobileCallPageState extends ConsumerState<MobileCallPage> with WidgetsBindingObserver {
   late final Pip _systemPip;
+  bool _isLifecycleHandled = false;
 
   @override
   void initState() {
     super.initState();
     _systemPip = Pip();
+    WidgetsBinding.instance.addObserver(this);
 
     // 异步检查并请求蓝牙外设权限
     _checkBluetoothPermissions();
@@ -46,6 +48,36 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupSystemPiP();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // 监听应用生命周期，在即将进入后台时主动触发 PiP
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _tryEnterPipOnBackground();
+    }
+  }
+
+  /// 从小窗模式进入后台时，尝试主动触发画中画
+  Future<void> _tryEnterPipOnBackground() async {
+    if (_isLifecycleHandled) return;
+
+    final session = ref.read(mobileCallSessionControllerProvider);
+    // 仅在小窗模式下（minimized=true 且未进入系统 PiP）尝试触发
+    if (session == null || !session.minimized || session.isInPipMode) return;
+
+    _isLifecycleHandled = true;
+    try {
+      final isSupported = await _systemPip.isSupported();
+      if (isSupported) {
+        debugPrint('--- [小窗模式触发 PiP] ---');
+        await _systemPip.start();
+      }
+    } catch (e) {
+      debugPrint('--- [手动触发 PiP 失败]: $e ---');
+    }
   }
 
   /// 初始化并绑定系统级画中画 (PiP)
@@ -129,6 +161,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     // 安全断开并销毁系统原生画中画监听
     _systemPip.unregisterStateChangedObserver();
     _systemPip.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -136,6 +169,14 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   Widget build(BuildContext context) {
     final session = ref.watch(mobileCallSessionControllerProvider);
     final token = session?.token;
+
+    // 监听会话状态变化，重置生命周期处理标记
+    ref.listen(mobileCallSessionControllerProvider, (prev, next) {
+      // 当从 PiP 返回或退出小窗时，重置标记以便下次可以正常触发
+      if (next != null && !next.minimized) {
+        _isLifecycleHandled = false;
+      }
+    });
 
     // ─── 状况 A：若全局缓存中已存在有效的 Token，直接交由 LiveKit 渲染 ───
     if (token != null && token.isNotEmpty) {

@@ -14,33 +14,63 @@ class GlobalCallOverlay extends ConsumerStatefulWidget {
   ConsumerState<GlobalCallOverlay> createState() => _GlobalCallOverlayState();
 }
 
-class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
+class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
+    with WidgetsBindingObserver {
   final Pip _pip = Pip();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // 挂载生命周期监听
     _initPipListener();
   }
 
-  /// ─── 监听系统画中画生命周期 ───
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // 卸载生命周期监听
+    _pip.unregisterStateChangedObserver();
+    super.dispose();
+  }
+
+  /// ─── 🚀 核心一：强制初始化全量参数，彻底消灭 Java 拆箱 NPE ───
   Future<void> _initPipListener() async {
     try {
       if (await _pip.isSupported()) {
+        // 首次进入时，必须提供全量参数，确保底层 mPipParams 绝对不为空！
+        await _pip.setup(
+          const PipOptions(
+            autoEnterEnabled: true,
+            aspectRatioX: 9,
+            aspectRatioY: 16,
+            controlStyle: 2,
+            useExternalStateMonitor: false,
+            seamlessResizeEnabled: false,
+          ),
+        );
+
         await _pip.registerStateChangedObserver(
           PipStateChangedObserver(
             onPipStateChanged: (state, error) {
               switch (state) {
                 case PipState.pipStateStarted:
-                  // 系统成功进入画中画
+                  // 保存当前状态（用于退出PiP时恢复悬浮窗）
                   ref.read(mobileCallSessionControllerProvider.notifier).setPipMode(true);
                   break;
                 case PipState.pipStateStopped:
-                  // ─── 核心防御：从画中画点回应用，或者画中画被关闭 ───
+                  // 退出PiP时恢复之前的悬浮窗状态
                   ref.read(mobileCallSessionControllerProvider.notifier).exitPipMode();
+                  // 从画中画恢复全屏后，重置为全屏比例
+                  _pip.setup(
+                    const PipOptions(
+                      autoEnterEnabled: true,
+                      aspectRatioX: 9,
+                      aspectRatioY: 16,
+                      useExternalStateMonitor: false,
+                      seamlessResizeEnabled: false,
+                    ),
+                  );
                   break;
                 case PipState.pipStateFailed:
-                  debugPrint('PiP failed: $error');
                   ref.read(mobileCallSessionControllerProvider.notifier).exitPipMode();
                   break;
               }
@@ -53,11 +83,53 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
     }
   }
 
+  /// ─── 🚀 核心二：应用内小窗模式下，按 Home 键主动强启画中画 ───
   @override
-  void dispose() {
-    // 释放原生监听，防内存泄漏
-    _pip.unregisterStateChangedObserver();
-    super.dispose();
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    final session = ref.read(mobileCallSessionControllerProvider);
+    if (session == null) return;
+
+    if (session.minimized &&
+        (state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.paused)) {
+      try {
+        if (await _pip.isSupported() && !(await _pip.isActived())) {
+          // 强行触发画中画前，再巩固一次参数配置
+          await _pip.setup(
+            const PipOptions(
+              autoEnterEnabled: true,
+              aspectRatioX: 2,
+              aspectRatioY: 3,
+              controlStyle: 2,
+              useExternalStateMonitor: false,
+              seamlessResizeEnabled: false, // 防拆箱崩溃
+            ),
+          );
+          await _pip.start();
+        }
+      } catch (e) {
+        debugPrint('Force start PiP error: $e');
+      }
+    }
+
+    // ⚠️ 关键修复：当应用从后台恢复时，主动检查 PiP 状态
+    // 解决原生层异常导致状态不同步的问题
+    if (state == AppLifecycleState.resumed) {
+      try {
+        if (await _pip.isSupported()) {
+          final isPipActive = await _pip.isActived();
+          debugPrint('--- [生命周期恢复] PiP 状态检测: $isPipActive ---');
+          
+          // 如果当前状态认为在 PiP 中，但实际不在，则重置状态
+          if (session.isInPipMode && !isPipActive) {
+            debugPrint('--- [状态同步修复] 强制退出 PiP 模式 ---');
+            ref.read(mobileCallSessionControllerProvider.notifier).exitPipMode();
+          }
+        }
+      } catch (e) {
+        debugPrint('Error checking PiP state on resume: $e');
+      }
+    }
   }
 
   @override
@@ -69,9 +141,13 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
     final isInPipMode = session.isInPipMode;
     final token = session.token;
 
-    // ─── 🎬 形态 A：系统画中画（切桌面时） ───
+    // ─── 形态 A：系统画中画 ───
     if (isInPipMode && token != null) {
-      return CallRoomPage(token: token);
+      // 💡 加入 Material 包裹，防止部分视频渲染器在独立窗口失去上下文背景
+      return Material(
+        color: Colors.black,
+        child: CallRoomPage(token: token),
+      );
     }
 
     return Positioned.fill(
@@ -80,7 +156,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
           final screenWidth = constraints.maxWidth;
           final screenHeight = constraints.maxHeight;
 
-          // ─── 📱 形态 B：应用内小窗 ───
+          // ─── 形态 B：应用内小窗 ───
           if (isMinimized) {
             return Stack(
               children: [
@@ -94,7 +170,11 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
                     onPanUpdate: (details) {
                       ref
                           .read(mobileCallSessionControllerProvider.notifier)
-                          .updatePosition(details.delta, screenWidth, screenHeight);
+                          .updatePosition(
+                            details.delta,
+                            screenWidth,
+                            screenHeight,
+                          );
                     },
                     onPanEnd: (_) {
                       ref
@@ -102,7 +182,6 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
                           .snapToEdge(screenWidth);
                     },
                     onTap: () {
-                      // 点击小窗恢复全屏：此时不需要重新 setup，全屏默认已允许 PiP
                       ref
                           .read(mobileCallSessionControllerProvider.notifier)
                           .enterCallPage();
@@ -119,7 +198,9 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
                         child: token != null
                             ? CallRoomPage(token: token)
                             : const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                       ),
                     ),
@@ -129,35 +210,37 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay> {
             );
           }
 
-          // ─── 📺 形态 C：正常全屏通话状态 ───
+          // ─── 形态 C：正常全屏通话状态 ───
           return Scaffold(
             backgroundColor: DeviceUtil.isRealDesktop()
                 ? Colors.transparent
                 : Theme.of(context).colorScheme.surface,
             appBar: AppBar(
               title: Text(
-                session.title.isEmpty ? 'appbar_start_meeting'.tr() : session.title,
+                session.title.isEmpty
+                    ? 'appbar_start_meeting'.tr()
+                    : session.title,
               ),
               leading: IconButton(
                 icon: const Icon(Icons.fullscreen_exit, size: 28),
                 onPressed: () async {
-                  // ─── 🚀 解决 Bug 1 的核心：进入应用内小窗时，绝对不能关闭 autoEnterEnabled ───
-                  // 而是应该针对小窗的纵向比例（120x180 => 2:3）重新动态调整系统 PiP 比例
                   try {
                     if (await _pip.isSupported()) {
+                      // 动态设置为小窗比例，依然强制传递布尔值防空指针！
                       await _pip.setup(
                         const PipOptions(
                           autoEnterEnabled: true,
                           aspectRatioX: 2,
-                          aspectRatioY: 3, // 匹配应用内小窗的比例
+                          aspectRatioY: 3,
+                          controlStyle: 2,
+                          useExternalStateMonitor: false, // 必须显式写出
+                          seamlessResizeEnabled: false, // 必须显式写出
                         ),
                       );
                     }
                   } catch (e) {
                     debugPrint('Setup PiP error: $e');
                   }
-                  
-                  // 切换状态机进入小窗形态
                   ref
                       .read(mobileCallSessionControllerProvider.notifier)
                       .minimize();

@@ -259,61 +259,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
         ),
         const SizedBox(width: 12),
-        ref
-            .watch(getCaptchaProvider)
-            .when(
-              data: (captcha) {
-                return Tooltip(
-                  message: 'login_page_captcha'.tr(),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(12),
-                    clipBehavior: Clip.antiAlias,
-                    color: colorScheme.surfaceContainerHigh,
-                    child: InkWell(
-                      onTap: () => ref.invalidate(getCaptchaProvider),
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 120,
-                        height: 40,
-                        child: Image.memory(
-                          base64Decode(captcha.imgBase64),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-              loading: () => Container(
-                width: 120,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-              error: (e, st) => Container(
-                width: 120,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: colorScheme.onErrorContainer,
-                  ),
-                  onPressed: () => ref.invalidate(getCaptchaProvider),
-                ),
-              ),
-            ),
+        // 将验证码图片提取为单独的 widget，避免焦点变化导致重新渲染
+        const _CaptchaImage(),
       ],
     );
   }
@@ -408,5 +355,73 @@ class _LoginPageState extends ConsumerState<LoginPage>
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+}
+
+/// 验证码图片 Widget
+/// 
+/// 使用 Consumer 监听 provider，避免父级重建导致验证码重新渲染
+class _CaptchaImage extends ConsumerWidget {
+  const _CaptchaImage();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ref
+        .watch(getCaptchaProvider)
+        .when(
+          data: (captcha) {
+            return Tooltip(
+              message: 'login_page_captcha'.tr(),
+              child: Material(
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                color: colorScheme.surfaceContainerHigh,
+                child: InkWell(
+                  onTap: () => ref.invalidate(getCaptchaProvider),
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 120,
+                    height: 40,
+                    child: Image.memory(
+                      base64Decode(captcha.imgBase64),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+          loading: () => Container(
+            width: 120,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          error: (e, st) => Container(
+            width: 120,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: colorScheme.onErrorContainer,
+              ),
+              onPressed: () => ref.invalidate(getCaptchaProvider),
+            ),
+          ),
+        );
   }
 }

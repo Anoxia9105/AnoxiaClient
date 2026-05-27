@@ -189,7 +189,7 @@ class AvatarWidget extends StatelessWidget {
       color: Colors.grey.shade300,
       alignment: Alignment.center,
       child: HugeIcon(
-        icon: HugeIcons.strokeRoundedImageNotFound01,
+        icon: HugeIcons.strokeRoundedImage02,
         size: size * 0.6,
         color: Colors.grey.shade600,
       ),

@@ -321,7 +321,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AvatarWidget(size: 48, url: avatarUrl, name: nickName),
+                      AvatarWidget(size: 36, url: avatarUrl, name: nickName),
                     ],
                   ),
                 ),

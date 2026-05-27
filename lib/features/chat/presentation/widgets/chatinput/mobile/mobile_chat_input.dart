@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -315,6 +316,17 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
     final isAnyPanelOpen = _showMorePanel || _showEmojiPanel;
 
+    // 画中画状态下直接熔断输入框渲染，防止窗口挤压崩溃
+    // ─── 🚀 核心防御：处于系统画中画期间，直接隐藏输入框，防止微型窗口挤爆 RenderFlex 导致页面白屏 ───
+    final isInPipMode = ref.watch(
+      mobileCallSessionControllerProvider.select(
+        (s) => s?.isInPipMode ?? false,
+      ),
+    );
+    if (isInPipMode) {
+      return const SizedBox.shrink();
+    }
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
