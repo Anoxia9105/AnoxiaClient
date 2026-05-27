@@ -1,4 +1,3 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/chat/presentation/call/component/command_bar.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_carousel_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_screen_widget.dart';

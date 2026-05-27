@@ -114,4 +114,11 @@ class MobileCallSessionController extends _$MobileCallSessionController {
 
     state = state!.copyWith(position: Offset(targetX, currentY));
   }
+
+  // 当从系统画中画返回应用时，一键重置状态
+  void exitPipMode() {
+    if (state == null) return;
+    // 确保回到前台时，既不在系统PiP，也不在应用内小窗，而是直接恢复全屏
+    state = state!.copyWith(isInPipMode: false, minimized: false);
+  }
 }
