@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
@@ -325,6 +326,8 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     ],
                   ),
                 ),
+
+              /// 举手状态标识
               if (widget.handRaised)
                 Positioned(
                   top: 8,
@@ -338,60 +341,64 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     child: const Text('✋', style: TextStyle(fontSize: 20)),
                   ),
                 ),
-              Positioned(
-                left: 8,
-                bottom: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isMuted)
-                        const HugeIcon(
-                          icon: HugeIcons.strokeRoundedMicOff01,
-                          size: 16,
-                          color: Colors.white,
-                        )
-                      else
-                        const HugeIcon(
-                          icon: HugeIcons.strokeRoundedMic01,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      const SizedBox(width: 4),
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                      _buildSignalIconForParticipant(p),
-                      if (!isCurrentUser)
-                        Builder(
-                          builder: (btnCtx) => IconButton(
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.all(2),
-                            tooltip: "更多",
-                            onPressed: () => _showMoreMenu(btnCtx, p.identity),
-                            icon: const HugeIcon(
-                              icon: HugeIcons.strokeRoundedMoreHorizontal,
-                              size: 16,
-                              color: Colors.white,
-                            ),
+
+              /// 参与者信息和操作菜单（仅桌面显示）
+              if (DeviceUtil.isRealDesktop())
+                Positioned(
+                  left: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isMuted)
+                          const HugeIcon(
+                            icon: HugeIcons.strokeRoundedMicOff01,
+                            size: 16,
+                            color: Colors.white,
+                          )
+                        else
+                          const HugeIcon(
+                            icon: HugeIcons.strokeRoundedMic01,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        const SizedBox(width: 4),
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
                           ),
                         ),
-                    ],
+                        _buildSignalIconForParticipant(p),
+                        if (!isCurrentUser)
+                          Builder(
+                            builder: (btnCtx) => IconButton(
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(2),
+                              tooltip: '更多',
+                              onPressed: () =>
+                                  _showMoreMenu(btnCtx, p.identity),
+                              icon: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedMoreHorizontal,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

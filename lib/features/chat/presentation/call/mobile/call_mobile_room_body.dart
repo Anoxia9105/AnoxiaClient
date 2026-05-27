@@ -48,24 +48,6 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     void onMute(String identity) => notifier.sendMuteCommand(identity, true);
     void onKick(String identity) => notifier.kickParticipant(identity);
 
-    // 订阅会话状态，安全获取 isInPipMode
-    final session = ref.watch(mobileCallSessionControllerProvider);
-    final isInPipMode = session?.isInPipMode ?? false;
-
-    // ─── 🎬 状况 A：画中画模式 ───
-    // 如果处于画中画，直接返回纯视频流
-    if (isInPipMode) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: participants.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : LayoutRoomWidget(
-                participants: participants,
-                handRaiseMap: const {},
-              ),
-      );
-    }
-
     // ─── 📱 状况 B：正常全屏状态 ───
     return SafeArea(
       child: Column(

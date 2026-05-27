@@ -1,7 +1,6 @@
 import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/SPUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
@@ -10,7 +9,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pip/pip.dart';
 
 /// 移动端全屏通话视图组件
 ///
@@ -31,96 +29,12 @@ class MobileCallPage extends ConsumerStatefulWidget {
   ConsumerState<MobileCallPage> createState() => _MobileCallPageState();
 }
 
-class _MobileCallPageState extends ConsumerState<MobileCallPage> with WidgetsBindingObserver {
-  late final Pip _systemPip;
-  bool _isLifecycleHandled = false;
-
+class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   @override
   void initState() {
     super.initState();
-    _systemPip = Pip();
-    WidgetsBinding.instance.addObserver(this);
-
     // 异步检查并请求蓝牙外设权限
     _checkBluetoothPermissions();
-
-    // 💡 核心闭环：在全局常驻浮层内安全初始化系统原生画中画（PiP）监控
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setupSystemPiP();
-    });
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    // 监听应用生命周期，在即将进入后台时主动触发 PiP
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _tryEnterPipOnBackground();
-    }
-  }
-
-  /// 从小窗模式进入后台时，尝试主动触发画中画
-  Future<void> _tryEnterPipOnBackground() async {
-    if (_isLifecycleHandled) return;
-
-    final session = ref.read(mobileCallSessionControllerProvider);
-    // 仅在小窗模式下（minimized=true 且未进入系统 PiP）尝试触发
-    if (session == null || !session.minimized || session.isInPipMode) return;
-
-    _isLifecycleHandled = true;
-    try {
-      final isSupported = await _systemPip.isSupported();
-      if (isSupported) {
-        debugPrint('--- [小窗模式触发 PiP] ---');
-        await _systemPip.start();
-      }
-    } catch (e) {
-      debugPrint('--- [手动触发 PiP 失败]: $e ---');
-    }
-  }
-
-  /// 初始化并绑定系统级画中画 (PiP)
-  Future<void> _setupSystemPiP() async {
-    try {
-      final isSupported = await _systemPip.isSupported();
-      if (isSupported) {
-        await _systemPip.setup(
-          const PipOptions(
-            autoEnterEnabled: true, // 开启按 Home 键自动触发画中画
-            aspectRatioX: 9,
-            aspectRatioY: 16,
-            controlStyle: 2,
-            useExternalStateMonitor: true,
-            externalStateMonitorInterval: 100,
-          ),
-        );
-
-        await _systemPip.registerStateChangedObserver(
-          PipStateChangedObserver(
-            onPipStateChanged: (pipState, error) {
-              final isPipStarted = pipState == PipState.pipStateStarted;
-              if (mounted) {
-                debugPrint('--- [大厂架构 PiP 状态同步]: $pipState ---');
-                // 无缝同步原生画中画开启状态给 Riverpod 状态机
-                ref
-                    .read(mobileCallSessionControllerProvider.notifier)
-                    .setPipMode(isPipStarted);
-              }
-              
-              if (pipState == PipState.pipStateFailed) {
-                debugPrint('--- [PiP 核心回调错误]: $error ---');
-                _systemPip.dispose();
-              }
-            },
-          ),
-        );
-      } else {
-        Toast.showToast('当前设备不支持画中画功能，切后台后将无法继续通话');
-      }
-    } catch (e) {
-      debugPrint('--- [PiP 初始化错误]: $e ---');
-    }
   }
 
   /// 检查并请求蓝牙权限（仅 Android 移动端）
@@ -157,26 +71,9 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> with WidgetsBin
   }
 
   @override
-  void dispose() {
-    // 安全断开并销毁系统原生画中画监听
-    _systemPip.unregisterStateChangedObserver();
-    _systemPip.dispose();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final session = ref.watch(mobileCallSessionControllerProvider);
     final token = session?.token;
-
-    // 监听会话状态变化，重置生命周期处理标记
-    ref.listen(mobileCallSessionControllerProvider, (prev, next) {
-      // 当从 PiP 返回或退出小窗时，重置标记以便下次可以正常触发
-      if (next != null && !next.minimized) {
-        _isLifecycleHandled = false;
-      }
-    });
 
     // ─── 状况 A：若全局缓存中已存在有效的 Token，直接交由 LiveKit 渲染 ───
     if (token != null && token.isNotEmpty) {
@@ -205,16 +102,14 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> with WidgetsBin
             Text('call_window_room_creation_failed'.tr()),
             const SizedBox(height: 8),
             FilledButton(
-              onPressed: () =>
-                  ref.invalidate(roomTokenProvider(widget.roomId)),
+              onPressed: () => ref.invalidate(roomTokenProvider(widget.roomId)),
               child: Text('call_window_retry'.tr()),
             ),
           ],
         ),
       ),
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      ),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }
 }
