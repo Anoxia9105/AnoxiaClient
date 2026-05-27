@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:pip/pip.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// 通话命令栏组件
@@ -338,10 +339,13 @@ class CommandBar extends ConsumerWidget {
             if (DeviceUtil.isRealDesktop()) {
               windowManager.close();
             } else {
-              // ─── 🚀 大厂架构核心优化 ───
-              // 纯状态机驱动：清空全局 Session 状态。
-              // 状态变为空后，外层根节点的 MaterialApp builder 会自动侦测到，
-              // 瞬间从组件树中干净地卸载整个全屏/小窗通话图层。
+              // ─── 🚀 大厂架构核心防御 ───
+              try {
+                // 1. 显式调用插件的释放方法，安全注销原生层的 Home 键拦截与资源占用
+                await Pip().dispose();
+              } catch (e) {
+                debugPrint('PiP dispose error: $e');
+              }
               ref.read(mobileCallSessionControllerProvider.notifier).end();
             }
 
