@@ -149,16 +149,22 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
         /// ⚠️ PiP时不能销毁
         /// 必须保持Widget存活
         ///
-        IgnorePointer(
-          ignoring: session.minimized || session.isInPipMode,
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring:
+            session.minimized ||
+                session.isInPipMode,
 
-          child: AnimatedOpacity(
-            opacity: session.minimized || session.isInPipMode ? 0 : 1,
+            child: AnimatedOpacity(
+              opacity:
+              session.minimized ||
+                  session.isInPipMode
+                  ? 0
+                  : 1,
 
-            duration: const Duration(milliseconds: 200),
-
-            child: Material(
-              color: Theme.of(context).colorScheme.surface,
+              duration: const Duration(
+                milliseconds: 200,
+              ),
 
               child: MobileCallPage(
                 roomId: session.roomId,
