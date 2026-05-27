@@ -1,7 +1,5 @@
-import 'package:anoxia/common/constants/app_key.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/add_member_dialog_widget.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
@@ -11,7 +9,6 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_floating/floating/manager/floating_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -28,7 +25,7 @@ class ChatBarHandlers {
   /// 发起或加入通话
   ///
   /// 根据设备类型选择不同的通话方式：
-  /// - 移动端：跳转到 [MobileCallPage] 页面
+  /// - 移动端：驱动全局大厂 Stack 浮层（GlobalCallOverlay）自适应全屏展现
   /// - 桌面端：打开独立的通话窗口
   ///
   /// [context] 构建上下文
@@ -43,15 +40,12 @@ class ChatBarHandlers {
       Toast.showToast('appbar_connection_lost'.tr());
       return;
     }
+    
     if (DeviceUtil.isRealMobile()) {
       final currentSession = ref.read(mobileCallSessionControllerProvider);
       if (currentSession != null) {
         if (currentSession.roomId == room.roomId) {
-          // 如果点击的是同一个房间，直接从应用内小窗切回全屏
-          // 关闭应用内小窗 UI
-          if (floatingManager.containsFloating(AppKey.floatingKey)) {
-            floatingManager.getFloating(AppKey.floatingKey).close();
-          }
+          // 💡 状态机逻辑回正：点击相同房间，纯状态控制切回全屏
           ref
               .read(mobileCallSessionControllerProvider.notifier)
               .enterCallPage();
@@ -61,17 +55,13 @@ class ChatBarHandlers {
         return;
       }
 
-      // 首次起呼/进入房间
+      // 💡 首次起呼/进入房间：移除了旧的透明路由 push 代码，由全局组件自适应接管
       final roomId = room.roomId ?? '';
       final title = room.roomName ?? '';
       ref
           .read(mobileCallSessionControllerProvider.notifier)
           .start(roomId: roomId, title: title);
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => MobileCallPage(roomId: roomId, title: title),
-        ),
-      );
+          
     } else {
       /// 桌面端直接打开通话窗口
       ref

@@ -13,12 +13,6 @@ import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider
 import 'chat_action_item.dart';
 
 /// 聊天更多操作面板组件
-///
-/// 移动端聊天输入框的扩展面板，提供以下功能：
-/// - 发送图片
-/// - 发送文件
-/// - @提及成员
-/// - 发起/加入通话
 class ChatMorePanel extends ConsumerWidget {
   /// 房间 ID
   final String roomId;
@@ -38,30 +32,27 @@ class ChatMorePanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 监听通话状态
+    // 1. 动态订阅状态（驱动 UI 图标和文案刷新）
     final callWindow = ref.watch(callWindowControllerProvider);
     final mobileCallSession = ref.watch(mobileCallSessionControllerProvider);
     final callStatus = ref.watch(roomCallStatusProvider(roomId));
 
+    // 确保加载房间的通话状态
     ref.read(callStatusControllerProvider.notifier).ensureLoaded(roomId);
 
+    // 💡 判断当前是否存在处于激活状态的通话会话
     final hasActiveCall =
-        callWindow != null ||
-        (DeviceUtil.isRealMobile() && mobileCallSession != null);
+        callWindow != null || (DeviceUtil.isRealMobile() && mobileCallSession != null);
     final isCallingNow = callStatus.calling;
 
-    // 根据通话状态决定通话按钮的图标和文案
+    // 根据状态决定通话按钮的图标和文案
     final dynamic callIcon = hasActiveCall
         ? HugeIcons.strokeRoundedVideoReplay
-        : (isCallingNow
-              ? HugeIcons.strokeRoundedCallRinging03
-              : HugeIcons.strokeRoundedCall02);
+        : (isCallingNow ? HugeIcons.strokeRoundedCallRinging03 : HugeIcons.strokeRoundedCall02);
 
     final String callLabel = hasActiveCall
         ? 'appbar_call_back_to_window'.tr()
-        : (isCallingNow
-              ? 'appbar_call_join'.tr()
-              : 'appbar_start_meeting'.tr());
+        : (isCallingNow ? 'appbar_call_join'.tr() : 'appbar_start_meeting'.tr());
 
     return GridView.count(
       crossAxisCount: 4,
@@ -85,12 +76,20 @@ class ChatMorePanel extends ConsumerWidget {
           label: '@',
           onTap: onMentionTap,
         ),
-        // 通话按钮
+        // 💡 优化后的通话按钮：纯状态驱动，移除了多余的插件依赖
         ChatActionItem(
           icon: callIcon,
           label: callLabel,
           onTap: () {
-            final roomVO = ref.watch(currentRoomProvider(roomId));
+            // ─── 状况 1：当前已经在通话中（小窗/后台状态），点击直接“恢复全屏” ───
+            if (hasActiveCall && DeviceUtil.isRealMobile()) {
+              // 驱使全局状态机回正，让根部的 GlobalCallOverlay 撑满屏幕
+              ref.read(mobileCallSessionControllerProvider.notifier).enterCallPage();
+              return;
+            }
+
+            // ─── 状况 2：正常全新发起/加入通话 ───
+            final roomVO = ref.read(currentRoomProvider(roomId));
             if (roomVO == null) return;
             ChatBarHandlers.onCallPressed(context, ref, roomVO);
           },

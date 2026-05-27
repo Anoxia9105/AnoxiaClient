@@ -68,31 +68,26 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     }
 
     // ─── 📱 状况 B：正常全屏状态 ───
-    return Scaffold(
-      backgroundColor: DeviceUtil.isRealDesktop()
-          ? Colors.transparent
-          : Theme.of(context).colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 中间核心区域：视频排版
-            Expanded(
-              child: participants.isEmpty
-                  ? Center(child: Text('call_waiting_to_join'.tr()))
-                  : _buildLayout(
-                      mode: layoutMode,
-                      participants: participants,
-                      screenSharer: screenSharer,
-                      handRaiseMap: widget.roomState.handRaiseMap ?? {},
-                      onMute: onMute,
-                      onKick: onKick,
-                    ),
-            ),
+    return SafeArea(
+      child: Column(
+        children: [
+          // 中间核心区域：视频排版
+          Expanded(
+            child: participants.isEmpty
+                ? Center(child: Text('call_waiting_to_join'.tr()))
+                : _buildLayout(
+                    mode: layoutMode,
+                    participants: participants,
+                    screenSharer: screenSharer,
+                    handRaiseMap: widget.roomState.handRaiseMap ?? {},
+                    onMute: onMute,
+                    onKick: onKick,
+                  ),
+          ),
 
-            // 💡 底部控制条
-            CommandBar(state: widget.roomState),
-          ],
-        ),
+          // 💡 底部控制条
+          CommandBar(state: widget.roomState),
+        ],
       ),
     );
   }
