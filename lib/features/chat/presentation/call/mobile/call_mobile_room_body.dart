@@ -3,7 +3,6 @@ import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layou
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_screen_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_widget.dart';
 import 'package:anoxia/framework/provider/chat/call/LayoutMode.dart';
-import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:flutter/material.dart';
@@ -92,7 +91,6 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
   Widget build(BuildContext context) {
     // 1. 动态订阅布局模式和聊天记录面板
     final layoutMode = ref.watch(layoutModeProvider(widget.roomState));
-    final showHistory = ref.watch(historyPanelProvider);
 
     // 2. 组装房间成员数据
     final participants = <Participant>[
@@ -173,9 +171,6 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
                               onKick: onKick,
                             ),
                     ),
-                    // 历史面板
-                    if (showHistory)
-                      _HistoryPanel(history: widget.roomState.reactions ?? []),
                   ],
                 ),
               ),
@@ -221,58 +216,5 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
         onKick: onKick,
       ),
     };
-  }
-}
-
-/// ─── 历史记录面板组件桥接 ───
-class _HistoryPanel extends ConsumerWidget {
-  final List<ReactionItem> history;
-  const _HistoryPanel({required this.history});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    return Container(
-      width: 240, // 移动端稍微收窄一点宽度
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
-      ),
-      child: Column(
-        children: [
-          AppBar(
-            title: const Text('聊天记录', style: TextStyle(fontSize: 14)),
-            automaticallyImplyLeading: false,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                onPressed: () =>
-                    ref.read(historyPanelProvider.notifier).close(),
-              ),
-            ],
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: history.length,
-              itemBuilder: (context, index) {
-                final item = history[index];
-                return ListTile(
-                  dense: true,
-                  title: Text(
-                    item.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    item.message,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

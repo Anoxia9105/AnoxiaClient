@@ -3,7 +3,6 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
-import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/features/chat/presentation/call/component/volume_indicator.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -35,8 +34,6 @@ class CommandBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
-    final historyNotifier = ref.read(historyPanelProvider.notifier);
-    final historyActive = ref.watch(historyPanelProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -143,17 +140,6 @@ class CommandBar extends ConsumerWidget {
                         active: false,
                         onTap: () =>
                             _showReactionPicker(context, notifier, state),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-
-                    Builder(
-                      builder: (context) => _soloButton(
-                        context: context,
-                        icon: HugeIcons.strokeRoundedTransactionHistory,
-                        label: '历史',
-                        active: historyActive,
-                        onTap: () => historyNotifier.toggle(),
                       ),
                     ),
 
@@ -673,10 +659,7 @@ class _MeetingTimerState extends State<MeetingTimer> {
         mainAxisSize: MainAxisSize.min,
         children: [
           HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
-          Text(
-            '--:--',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text('--:--', style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       );
     }

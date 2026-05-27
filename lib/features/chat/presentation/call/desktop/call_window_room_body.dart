@@ -4,7 +4,6 @@ import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layou
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_widget.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/provider/chat/call/LayoutMode.dart';
-import 'package:anoxia/framework/provider/chat/call/history_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +30,6 @@ class CallWindowRoomBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final layoutMode = ref.watch(layoutModeProvider(roomState));
-    final showHistory = ref.watch(historyPanelProvider);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (roomState.connectionError == 'token_expired' ||
@@ -61,24 +59,16 @@ class CallWindowRoomBody extends ConsumerWidget {
           children: [
             CommandBar(state: roomState),
             Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: participants.isEmpty
-                        ? Center(child: Text('call_waiting_to_join'.tr()))
-                        : _buildLayout(
-                            mode: layoutMode,
-                            participants: participants,
-                            screenSharer: screenSharer,
-                            handRaiseMap: roomState.handRaiseMap ?? {},
-                            onMute: onMute,
-                            onKick: onKick,
-                          ),
-                  ),
-                  if (showHistory)
-                    _HistoryPanel(history: roomState.reactions ?? []),
-                ],
-              ),
+              child: participants.isEmpty
+                  ? Center(child: Text('call_waiting_to_join'.tr()))
+                  : _buildLayout(
+                      mode: layoutMode,
+                      participants: participants,
+                      screenSharer: screenSharer,
+                      handRaiseMap: roomState.handRaiseMap ?? {},
+                      onMute: onMute,
+                      onKick: onKick,
+                    ),
             ),
           ],
         ),
@@ -157,150 +147,5 @@ class CallWindowRoomBody extends ConsumerWidget {
         onKick: onKick,
       ),
     };
-  }
-}
-
-/// 历史消息面板
-///
-/// 显示通话过程中的表情反应历史记录
-class _HistoryPanel extends ConsumerWidget {
-  /// 历史消息列表
-  final List<ReactionItem> history;
-
-  const _HistoryPanel({required this.history});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final border = BorderSide(
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-      width: 1,
-    );
-
-    return Container(
-      width: 280,
-      decoration: BoxDecoration(border: Border(left: border)),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(border: Border(bottom: border)),
-            child: Row(
-              children: [
-                const Text(
-                  '聊天记录',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-                const Spacer(),
-                InkWell(
-                  borderRadius: BorderRadius.circular(6),
-                  onTap: () => ref.read(historyPanelProvider.notifier).close(),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(Icons.close, size: 16),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: history.isEmpty
-                ? Center(
-                    child: Text(
-                      '暂无消息',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.4,
-                        ),
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    itemCount: history.length,
-                    itemBuilder: (_, i) => _HistoryItem(item: history[i]),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 历史消息项
-class _HistoryItem extends StatelessWidget {
-  /// 消息数据
-  final ReactionItem item;
-
-  const _HistoryItem({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final time =
-        '${item.createdAt.hour.toString().padLeft(2, '0')}:${item.createdAt.minute.toString().padLeft(2, '0')}';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundImage: (item.avatar?.isNotEmpty == true)
-                ? NetworkImage(item.avatar!)
-                : null,
-            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
-            child: (item.avatar?.isNotEmpty == true)
-                ? null
-                : Text(
-                    (item.name.isNotEmpty ? item.name[0] : '?').toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      item.name.isNotEmpty ? item.name : item.uid,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.8,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      time,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(item.message, style: const TextStyle(fontSize: 20)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
