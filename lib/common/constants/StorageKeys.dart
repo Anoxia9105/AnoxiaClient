@@ -8,4 +8,7 @@ class StorageKeys {
   static const String sysUser = 'SYS_USER';
   /// 密钥（用于加密等）
   static const String secret = 'SECRET';
+  /// 蓝牙权限是否已申请（布尔值，true/false）
+  static const String kBluetoothPermissionRequestedKey ='bluetooth_permission_requested_v1';
+    
 }

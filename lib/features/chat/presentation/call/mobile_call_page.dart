@@ -1,17 +1,21 @@
+import 'package:anoxia/common/constants/StorageKeys.dart';
+import 'package:anoxia/common/constants/app_key.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/SPUtil.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_floating/floating/assist/floating_edge_type.dart';
+import 'package:flutter_floating/floating/floating_overlay.dart';
+import 'package:flutter_floating/floating/manager/floating_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-/// SharedPreferences 存储 Key：蓝牙权限是否已申请
-const String _kBluetoothPermissionRequestedKey =
-    'bluetooth_permission_requested_v1';
+import 'package:pip/pip.dart';
 
 /// 移动端通话页面
 ///
@@ -33,11 +37,57 @@ class MobileCallPage extends ConsumerStatefulWidget {
 }
 
 class _MobileCallPageState extends ConsumerState<MobileCallPage> {
+  late final Pip _systemPip;
+
   @override
   void initState() {
     super.initState();
-    //  进页面后，异步安全检查并请求蓝牙耳机权限
+    _systemPip = Pip();
+
     _checkBluetoothPermissions();
+
+    // 💡 核心修复：在外层页面注册系统画中画，保障切桌面时始终有效
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupSystemPiP();
+    });
+  }
+
+  Future<void> _setupSystemPiP() async {
+    try {
+      final isSupported = await _systemPip.isSupported();
+      if (isSupported) {
+        await _systemPip.setup(
+          const PipOptions(
+            autoEnterEnabled: true,
+            aspectRatioX: 9,
+            aspectRatioY: 16,
+            controlStyle: 2,
+            useExternalStateMonitor: true,
+            externalStateMonitorInterval: 100,
+          ),
+        );
+
+        await _systemPip.registerStateChangedObserver(
+          PipStateChangedObserver(
+            onPipStateChanged: (pipState, error) {
+              if (mounted) {
+                ref
+                    .read(mobileCallSessionControllerProvider.notifier)
+                    .setPipMode(pipState == PipState.pipStateStarted);
+              }
+              if (pipState == PipState.pipStateFailed) {
+                debugPrint('--- [PiP 核心回调错误]: $error ---');
+                _systemPip.dispose();
+              }
+            },
+          ),
+        );
+      } else {
+        Toast.showToast('当前设备不支持画中画功能，切后台后将无法继续通话');
+      }
+    } catch (e) {
+      debugPrint('--- [PiP 初始化错误]: $e ---');
+    }
   }
 
   /// 检查并请求蓝牙权限（仅 Android 移动端）
@@ -47,7 +97,8 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
 
     // 2. 检查本地缓存，避免每次进房间都无脑弹窗
     final requested =
-        SPUtil.instance.getBool(_kBluetoothPermissionRequestedKey) ?? false;
+        SPUtil.instance.getBool(StorageKeys.kBluetoothPermissionRequestedKey) ??
+        false;
     if (requested) return;
 
     bool hasPermanentlyDenied = false;
@@ -67,7 +118,10 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     }
 
     // 5. 记录已请求状态
-    await SPUtil.instance.setBool(_kBluetoothPermissionRequestedKey, true);
+    await SPUtil.instance.setBool(
+      StorageKeys.kBluetoothPermissionRequestedKey,
+      true,
+    );
 
     // 6. 若被用户拉黑（永久拒绝），引导用户前往系统设置
     if (hasPermanentlyDenied) {
@@ -77,18 +131,66 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
 
   /// 统一处理页面缩小（返回）的逻辑
   void _minimizeCall() {
-    // 1. 修改全局状态为最小化（这将驱动应用内悬浮窗 flutter_floating 的展示）
+    // 修改全局状态为最小化（这将驱动应用内悬浮窗 flutter_floating 的展示）
     ref.read(mobileCallSessionControllerProvider.notifier).minimize();
-    // 2. 安全退出当前全屏页面
-    Navigator.of(context).maybePop();
+  }
+
+  @override
+  void dispose() {
+    _systemPip.unregisterStateChangedObserver();
+    _systemPip.dispose();
+    super.dispose();
+  }
+
+  /// 💡 核心修复：仅改变全局状态，绝对不调用 Navigator.pop()
+  void _minimizeToInAppFloating() {
+    final session = ref.read(mobileCallSessionControllerProvider);
+    // 防御：若连基本会话都未建立（比如连 Token 都没拿到），直接真正退出
+    if (session == null || session.token == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    // 1. 修改状态改变 UI（骨架页将变为隐形 SizedBox.shrink()）
+    ref.read(mobileCallSessionControllerProvider.notifier).minimize();
+
+    // 2. 唤起应用内悬浮窗
+    if (!floatingManager.containsFloating(AppKey.floatingKey)) {
+      floatingManager.createFloating(
+        AppKey.floatingKey,
+        FloatingOverlay(
+          const Center(
+            child: Icon(Icons.call, color: Colors.greenAccent, size: 32),
+          ),
+          slideType: FloatingEdgeType.onRightAndTop,
+          right: 16,
+          top: 150,
+        ),
+      );
+    }
+    floatingManager.getFloating(AppKey.floatingKey).open(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    // 💡 1. 拿到全局的通话会话状态
+    //  拿到全局的通话会话状态
     final session = ref.watch(mobileCallSessionControllerProvider);
 
-    // 💡 2. 核心防御：如果全局已经有缓存的 Token 了，直接无缝直出房间，绝不重新拉取
+    final isInPipMode = session?.isInPipMode ?? false;
+    // 监视应用内小窗状态
+    final isMinimized = session?.minimized ?? false;
+
+    // ─── 🎬 状况 A：手机点击 Home 键，进入系统画中画模式 ───
+    if (isInPipMode && session?.token != null) {
+      return CallRoomPage(token: session!.token!);
+    }
+    // ─── 📱 状况 B：用户在应用内点击“缩小”，进入应用内小窗 ───
+    if (isMinimized) {
+      // 保持页面活着！返回一个空组件。
+      // 这样页面存活在路由栈中，用户此时按 Home 键，Android 依然能完美捕获信号切入桌面 PiP！
+      return const SizedBox.shrink();
+    }
+    // ─── 📺 状况 C：正常全屏通话状态 ───
     if (session != null && session.token != null && session.token!.isNotEmpty) {
       return _buildScaffoldContent(
         context,
@@ -96,7 +198,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
       );
     }
 
-    // 💡 3. 只有全局没有缓存时（第一次进入），才走异步 Provider 流程
+    // 首次进入拉取 Token 流程
     final tokenAsync = ref.watch(roomTokenProvider(widget.roomId));
     return tokenAsync.when(
       data: (token) {
@@ -133,25 +235,26 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     );
   }
 
-  /// 💡 抽离出骨架包裹，避免由于 AsyncValue 切换造成整个 Scaffold 树结构闪烁
+  ///  抽离出骨架包裹，避免由于 AsyncValue 切换造成整个 Scaffold 树结构闪烁
   Widget _buildScaffoldContent(BuildContext context, Widget bodyChild) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        _minimizeCall();
+        _minimizeToInAppFloating(); // 拦截系统物理返回键或手势返回，同样走应用内缩小
       },
       child: Scaffold(
-        backgroundColor: DeviceUtil.isRealDesktop()
-            ? Colors.transparent
-            : Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.black,
         appBar: AppBar(
           title: Text(
             widget.title.isEmpty ? 'appbar_start_meeting'.tr() : widget.title,
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: _minimizeCall,
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedMinimizeScreen,
+              size: 22,
+            ),
+            onPressed: _minimizeToInAppFloating,
           ),
         ),
         body: bodyChild,

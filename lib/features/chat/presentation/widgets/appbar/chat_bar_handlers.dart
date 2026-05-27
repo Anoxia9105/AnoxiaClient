@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/app_key.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
@@ -10,6 +11,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_floating/floating/manager/floating_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -46,24 +48,20 @@ class ChatBarHandlers {
       if (currentSession != null) {
         if (currentSession.roomId == room.roomId) {
           // 如果点击的是同一个房间，直接从应用内小窗切回全屏
+          // 关闭应用内小窗 UI
+          if (floatingManager.containsFloating(AppKey.floatingKey)) {
+            floatingManager.getFloating(AppKey.floatingKey).close();
+          }
           ref
               .read(mobileCallSessionControllerProvider.notifier)
               .enterCallPage();
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => MobileCallPage(
-                roomId: currentSession.roomId,
-                title: currentSession.title,
-              ),
-            ),
-          );
         } else {
           Toast.showToast('当前正在其他通话中');
         }
         return;
       }
 
-      /// 移动端进入通话页面
+      // 首次起呼/进入房间
       final roomId = room.roomId ?? '';
       final title = room.roomName ?? '';
       ref

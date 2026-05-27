@@ -68,7 +68,7 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'8ff96b69a3134cd3081c3c8e4d7a7eca861fdb64';
+String _$roomControllerHash() => r'a1a3fec0e0969ee1ce47affa1ad92d37fd0926ac';
 
 /// 房间控制器
 /// 负责管理 LiveKit 房间的完整生命周期：
@@ -194,7 +194,7 @@ final class RoomTokenProvider
   }
 }
 
-String _$roomTokenHash() => r'b46818769fa412a740fe2451eb85846c663f5b76';
+String _$roomTokenHash() => r'5e9f7f0e7c03620aeae5d837147b57b23ba73f07';
 
 /// 从服务端获取加入房间的 JWT Token
 /// [roomId] 房间 ID

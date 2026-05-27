@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/app_key.dart' show AppKey;
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
@@ -8,6 +9,7 @@ import 'package:anoxia/features/chat/presentation/call/component/volume_indicato
 import 'package:bot_toast/bot_toast.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_floating/floating/manager/floating_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -335,15 +337,23 @@ class CommandBar extends ConsumerWidget {
         ),
         child: InkWell(
           onTap: () async {
-            await notifier.leave();
-            if (context.mounted) {
-              if (DeviceUtil.isRealDesktop()) {
-                await windowManager.close();
-              } else {
-                ref.read(mobileCallSessionControllerProvider.notifier).end();
-                Navigator.of(context).maybePop();
+            // 提前获取 Navigator，防止稍后 context 丢失
+            final nav = Navigator.of(context);
+            if (DeviceUtil.isRealDesktop()) {
+              windowManager.close();
+            } else {
+              // 确保可能存在的悬浮窗被一起清理
+              if (floatingManager.containsFloating(AppKey.floatingKey)) {
+                floatingManager.disposeFloating(AppKey.floatingKey);
               }
+              // 清理全局 Session
+              ref.read(mobileCallSessionControllerProvider.notifier).end();
+              // 立即退栈
+              nav.maybePop();
             }
+
+            // 💡 3. 后台异步断开房间，不阻塞 UI，不需要 await
+            notifier.leave();
           },
           borderRadius: BorderRadius.circular(10),
           child: const Padding(

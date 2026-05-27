@@ -23,21 +23,19 @@ class CallRoomPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final roomAsync = ref.watch(roomControllerProvider(token));
 
-    return Scaffold(
-      body: roomAsync.when(
-        loading: () => _buildLoadingState(),
-        error: (err, _) => _buildErrorState(err.toString(), ref, token),
-        data: (roomState) {
-          // 💡 2. 在这里根据设备类型进行端隔离分流！
-          if (DeviceUtil.isRealMobile()) {
-            // 移动端：走专门为移动端设计的布局，传入 token 和 roomState
-            return CallMobileRoomBody(roomState: roomState, token: token);
-          } else {
-            // 桌面端：直接走全屏的桌面布局，传入 token 和 roomState
-            return CallWindowRoomBody(roomState: roomState, token: token);
-          }
-        },
-      ),
+    return roomAsync.when(
+      loading: () => _buildLoadingState(),
+      error: (err, _) => _buildErrorState(err.toString(), ref, token),
+      data: (roomState) {
+        // 💡 2. 在这里根据设备类型进行端隔离分流！
+        if (DeviceUtil.isRealMobile()) {
+          // 移动端：走专门为移动端设计的布局，传入 token 和 roomState
+          return CallMobileRoomBody(roomState: roomState, token: token);
+        } else {
+          // 桌面端：直接走全屏的桌面布局，传入 token 和 roomState
+          return CallWindowRoomBody(roomState: roomState, token: token);
+        }
+      },
     );
   }
 

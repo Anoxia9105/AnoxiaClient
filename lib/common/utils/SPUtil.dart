@@ -110,15 +110,3 @@ class SPUtil {
     }
   }
 }
-
-/// 存储键名常量
-class StorageKeys {
-  StorageKeys._();
-
-  static const String accessToken = 'access_token';
-  static const String locale = 'locale';
-  static const String theme = 'theme';
-  static const String chatHistory = 'chat_history';
-  static const String userId = 'userId';
-  static const String lastLoginTime = 'last_login_time';
-}
