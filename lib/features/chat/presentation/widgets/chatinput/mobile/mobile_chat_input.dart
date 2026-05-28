@@ -1,4 +1,7 @@
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/input/input_panel_provider.dart';
+import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -13,8 +16,6 @@ import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.da
 
 import 'chat_more_panel.dart';
 
-/// 移动端聊天输入组件
-/// 支持：文本输入、@提及、表情、图片/文件发送、语音入口
 class MobileChatInput extends ConsumerStatefulWidget {
   final String roomId;
   final VoidCallback bottomSheet;
@@ -34,67 +35,44 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   final Map<String, int> _mentionMap = {};
   String _lastText = '';
   bool _isTextEmpty = true;
-
-  bool _showMorePanel = false;
-  bool _showEmojiPanel = false;
-  bool _isVoiceMode = false; // 语音模式开关
-
-  // --- 语音录制相关变量 ---
-  OverlayEntry? _voiceOverlayEntry;
-  bool _isRecording = false;
-  bool _willCancelVoice = false; // 是否达到了上滑取消的阈值
-  double _startY = 0.0; // 长按起始的 Y 坐标
-  static const double _cancelThreshold = 60.0; // 向上滑动多少距离触发取消逻辑
+  bool _isVoiceMode = false;
 
   late final FocusNode _focusNode;
+  late final MobileTextInputController _inputController;
+  late final VoiceRecordController _voiceController;
 
   @override
   void initState() {
     super.initState();
     _focusNode = ref.read(chatFocusNodeProvider(widget.roomId));
     _focusNode.addListener(_onFocusChange);
+    _inputController = MobileTextInputController();
+    _voiceController = VoiceRecordController();
   }
 
   @override
   void dispose() {
-    _textController.dispose();
+    _inputController.dispose();
+    _voiceController.dispose();
     _focusNode.removeListener(_onFocusChange);
     super.dispose();
   }
 
-  /// 输入框焦点变化处理
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
-      setState(() {
-        _showMorePanel = false;
-        _showEmojiPanel = false;
-      });
+      ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
     }
   }
 
-  /// 文本变化处理
   void _handleTextChanged(String value) {
-    if (_isTextEmpty != value.isEmpty) {
-      setState(() => _isTextEmpty = value.isEmpty);
-    }
+    final triggered = _inputController.checkMentionTrigger(value);
+    _inputController.handleTextChanged(value);
     ref
         .read(chatInputControllerProvider(widget.roomId).notifier)
         .handlePlainTextChanged(value);
-
-    final selection = _textController.selection;
-    final cursor = selection.baseOffset;
-    final isAppend = value.length > _lastText.length;
-    final typedAt =
-        isAppend &&
-        cursor > 0 &&
-        cursor <= value.length &&
-        value[cursor - 1] == '@';
-
-    _lastText = value;
-    if (typedAt) _showMentionSheet();
+    if (triggered) _showMentionSheet();
   }
 
-  /// 显示 @提及选择面板
   void _showMentionSheet() {
     final currentUser = ref.read(authControllerProvider).value;
     final roomMembers = ref.read(roomMembersProvider(widget.roomId));
@@ -131,7 +109,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     );
   }
 
-  /// 插入 @提及文本
   void _insertMention(MentionUser user) {
     final text = _textController.text;
     final selection = _textController.selection;
@@ -140,8 +117,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         : selection.baseOffset;
     final atIndex = text.lastIndexOf('@', cursor - 1 >= 0 ? cursor - 1 : 0);
 
-    String newText;
-    int newOffset;
+    final String newText;
+    final int newOffset;
 
     if (atIndex >= 0 && atIndex <= cursor) {
       newText =
@@ -161,13 +138,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _lastText = newText;
   }
 
-  /// 在光标位置插入文本
   void _insertTextAtCursor(String insertText) {
     final text = _textController.text;
-    final selection = _textController.selection;
-    final cursor = selection.baseOffset < 0
+    final cursor = _textController.selection.baseOffset < 0
         ? text.length
-        : selection.baseOffset;
+        : _textController.selection.baseOffset;
 
     final newText =
         '${text.substring(0, cursor)}$insertText${text.substring(cursor)}';
@@ -176,32 +151,21 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
       selection: TextSelection.collapsed(offset: cursor + insertText.length),
     );
     _lastText = newText;
-
     if (_isTextEmpty) setState(() => _isTextEmpty = false);
   }
 
-  /// 发送消息
   void _handleSend() {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
-
-    final mentionIds = <int>{};
-    for (final entry in _mentionMap.entries) {
-      if (text.contains('@${entry.key}')) mentionIds.add(entry.value);
-    }
+    final data = _inputController.buildSendData();
+    if (data == null) return;
 
     ref
         .read(chatInputControllerProvider(widget.roomId).notifier)
-        .sendPlainTextMessage(text, mentionIds: mentionIds.toList());
+        .sendPlainTextMessage(data.text, mentionIds: data.mentionIds);
 
-    _textController.clear();
-    _mentionMap.clear();
-    _lastText = '';
-    setState(() => _isTextEmpty = true);
+    _inputController.clear();
     _closeAllPanels();
   }
 
-  /// 选择并发送文件
   Future<void> _pickAndSend(FileType type, bool isImage) async {
     final result = await FilePicker.pickFiles(allowMultiple: true, type: type);
     if (result == null || result.files.isEmpty || !mounted) return;
@@ -217,70 +181,20 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _closeAllPanels();
   }
 
-  /// 关闭所有面板
   void _closeAllPanels() {
-    setState(() {
-      _showMorePanel = false;
-      _showEmojiPanel = false;
-    });
+    ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
     widget.bottomSheet();
   }
 
-  /// 切换表情面板
-  Future<void> _toggleEmojiPanel() async {
-    if (_showEmojiPanel) {
-      setState(() => _showEmojiPanel = false);
-      await Future.delayed(const Duration(milliseconds: 50));
-      if (!_isVoiceMode && mounted) _focusNode.requestFocus();
-    } else {
-      if (_focusNode.hasFocus) _focusNode.unfocus();
-      await Future.delayed(const Duration(milliseconds: 250));
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          setState(() {
-            _showEmojiPanel = true;
-            _showMorePanel = false;
-          });
-        });
-      }
-    }
-  }
-
-  /// 切换更多面板
-  Future<void> _toggleMorePanel() async {
-    if (_showMorePanel) {
-      setState(() => _showMorePanel = false);
-      await Future.delayed(const Duration(milliseconds: 50));
-      if (!_isVoiceMode && mounted) _focusNode.requestFocus();
-    } else {
-      if (_focusNode.hasFocus) _focusNode.unfocus();
-      await Future.delayed(const Duration(milliseconds: 250));
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          setState(() {
-            _showMorePanel = true;
-            _showEmojiPanel = false;
-          });
-        });
-      }
-    }
-  }
-
-  /// 切换语音模式
   void _toggleVoiceMode() {
-    setState(() {
-      _isVoiceMode = !_isVoiceMode;
-      if (_isVoiceMode) {
-        _showEmojiPanel = false;
-        _showMorePanel = false;
-        _focusNode.unfocus();
-      } else {
-        _focusNode.requestFocus();
-      }
-    });
+    setState(() => _isVoiceMode = !_isVoiceMode);
+    if (_isVoiceMode) {
+      ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
+    } else {
+      _focusNode.requestFocus();
+    }
   }
 
-  /// 构建紧凑图标按钮
   Widget _buildCompactButton({
     required String tooltipMessage,
     required VoidCallback onTap,
@@ -314,18 +228,15 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
-    final isAnyPanelOpen = _showMorePanel || _showEmojiPanel;
+    final panel = ref.watch(inputPanelProvider);
+    final isAnyPanelOpen = panel != InputPanel.none;
 
-    // 画中画状态下直接熔断输入框渲染，防止窗口挤压崩溃
-    // ─── 🚀 核心防御：处于系统画中画期间，直接隐藏输入框，防止微型窗口挤爆 RenderFlex 导致页面白屏 ───
     final isInPipMode = ref.watch(
       mobileCallSessionControllerProvider.select(
         (s) => s?.isInPipMode ?? false,
       ),
     );
-    if (isInPipMode) {
-      return const SizedBox.shrink();
-    }
+    if (isInPipMode) return const SizedBox.shrink();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -335,7 +246,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // 语音按钮
+              // 语音/键盘切换按钮
               _buildCompactButton(
                 tooltipMessage: _isVoiceMode
                     ? 'toolbar_keyboard'.tr()
@@ -347,32 +258,38 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               ),
               Expanded(
                 child: _isVoiceMode
-                    // 语音模式占位，按住说话按钮
                     ? GestureDetector(
-                        // 绑定长按手势核心监听器
-                        onLongPressStart: _onVoiceRecordStart,
-                        onLongPressMoveUpdate: _onVoiceRecordUpdate,
-                        onLongPressEnd: _onVoiceRecordEnd,
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: _isRecording
-                                ? colorScheme.surfaceContainerHighest
-                                : colorScheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: _isRecording
-                                  ? colorScheme.outline
-                                  : Colors.transparent,
-                              width: 0.5,
+                        onLongPressStart: (d) {
+                          _voiceController.onStart(d);
+                          _voiceController.showOverlay(context);
+                        },
+                        onLongPressMoveUpdate: _voiceController.onUpdate,
+                        onLongPressEnd: (d) {
+                          _voiceController.onEnd(d);
+                          _voiceController.hideOverlay();
+                        },
+                        child: ListenableBuilder(
+                          listenable: _voiceController,
+                          builder: (_, _) => Container(
+                            height: 40,
+                            alignment: Alignment.center,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: _voiceController.isRecording
+                                  ? colorScheme.surfaceContainerHighest
+                                  : colorScheme.surfaceContainer,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: _voiceController.isRecording
+                                    ? colorScheme.outline
+                                    : Colors.transparent,
+                                width: 0.5,
+                              ),
                             ),
+                            child: Text('hold_to_talk'.tr()),
                           ),
-                          child: Text('hold_to_talk'.tr()),
                         ),
                       )
-                    // 文本模式
                     : TextField(
                         controller: _textController,
                         focusNode: focusNode,
@@ -390,11 +307,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         ),
                         onChanged: _handleTextChanged,
                         onTap: () async {
-                          if (_showMorePanel || _showEmojiPanel) {
-                            setState(() {
-                              _showMorePanel = false;
-                              _showEmojiPanel = false;
-                            });
+                          if (panel != InputPanel.none) {
+                            ref
+                                .read(inputPanelProvider.notifier)
+                                .closeAll(_focusNode);
                             await Future.delayed(
                               const Duration(milliseconds: 250),
                             );
@@ -403,50 +319,57 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         },
                       ),
               ),
-              // 表情切换按钮
+              // 表情按钮
               _buildCompactButton(
                 tooltipMessage: 'toolbar_emoji'.tr(),
-                onTap: _toggleEmojiPanel,
-                icon: _showEmojiPanel
+                onTap: () => ref
+                    .read(inputPanelProvider.notifier)
+                    .toggle(InputPanel.emoji, _focusNode),
+                icon: panel == InputPanel.emoji
                     ? HugeIcons.strokeRoundedKeyboard
                     : HugeIcons.strokeRoundedRelieved02,
               ),
               // 发送/更多按钮
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(scale: animation, child: child),
+              ListenableBuilder(
+                listenable: _inputController,
+                builder: (_, _) => AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(scale: animation, child: child),
+                  ),
+                  child: _isTextEmpty
+                      ? Row(
+                          key: const ValueKey('empty_state_buttons'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildCompactButton(
+                              tooltipMessage: 'toolbar_more'.tr(),
+                              onTap: () => ref
+                                  .read(inputPanelProvider.notifier)
+                                  .toggle(InputPanel.more, _focusNode),
+                              icon: HugeIcons.strokeRoundedAddSquare,
+                            ),
+                          ],
+                        )
+                      : Row(
+                          key: const ValueKey('typing_state_button'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildCompactButton(
+                              tooltipMessage: 'toolbar_send'.tr(),
+                              onTap: _handleSend,
+                              icon: HugeIcons.strokeRoundedSent,
+                              color: colorScheme.primary,
+                            ),
+                          ],
+                        ),
                 ),
-                child: _isTextEmpty
-                    ? Row(
-                        key: const ValueKey('empty_state_buttons'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildCompactButton(
-                            tooltipMessage: 'toolbar_more'.tr(),
-                            onTap: _toggleMorePanel,
-                            icon: HugeIcons.strokeRoundedAddSquare,
-                          ),
-                        ],
-                      )
-                    : Row(
-                        key: const ValueKey('typing_state_button'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildCompactButton(
-                            tooltipMessage: 'toolbar_send'.tr(),
-                            onTap: _handleSend,
-                            icon: HugeIcons.strokeRoundedSent,
-                            color: colorScheme.primary,
-                          ),
-                        ],
-                      ),
               ),
             ],
           ),
         ),
-        // 面板分割线
+        // 分割线
         if (isAnyPanelOpen)
           Divider(height: 1, thickness: 0.5, color: colorScheme.outlineVariant),
         // 面板区域
@@ -461,28 +384,24 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             visible: isAnyPanelOpen,
             child: SafeArea(
               top: false,
-              child: Column(
+              child: IndexedStack(
+                index: panel == InputPanel.more ? 0 : 1,
                 children: [
-                  Expanded(
-                    child: IndexedStack(
-                      index: _showMorePanel ? 0 : (_showEmojiPanel ? 1 : 0),
-                      children: [
-                        ChatMorePanel(
-                          roomId: widget.roomId,
-                          onPickFile: _pickAndSend,
-                          onMentionTap: () {
-                            setState(() => _showMorePanel = false);
-                            _showMentionSheet();
-                          },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: ChatEmojiWidget(
-                            closeSelected: _closeAllPanels,
-                            onEmojiSelected: _insertTextAtCursor,
-                          ),
-                        ),
-                      ],
+                  ChatMorePanel(
+                    roomId: widget.roomId,
+                    onPickFile: _pickAndSend,
+                    onMentionTap: () {
+                      ref
+                          .read(inputPanelProvider.notifier)
+                          .closeAll(_focusNode);
+                      _showMentionSheet();
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: ChatEmojiWidget(
+                      closeSelected: _closeAllPanels,
+                      onEmojiSelected: _insertTextAtCursor,
                     ),
                   ),
                 ],
@@ -492,128 +411,5 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         ),
       ],
     );
-  }
-
-  /// 显示全局全屏录音遮罩
-  void _showVoiceOverlay() {
-    if (_voiceOverlayEntry != null) return;
-    _voiceOverlayEntry = OverlayEntry(
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setOverlayState) {
-            // 将内部状态暴露给上层手势控制同步刷新
-            _updateOverlayState = setOverlayState;
-
-            return Material(
-              color: Colors.black.withValues(alpha: 0.5), // 阴影半透明底色
-              child: Center(
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 根据是否达到了取消阈值，切换对应的图标和文字提示
-                      Icon(
-                        _willCancelVoice
-                            ? Icons.undo_rounded
-                            : Icons.mic_rounded,
-                        size: 64,
-                        color: _willCancelVoice
-                            ? Colors.redAccent
-                            : Colors.white,
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _willCancelVoice
-                              ? Colors.redAccent.withValues(alpha: 0.8)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          _willCancelVoice ? '松开手指，取消发送' : '手指上滑，取消发送',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-    Overlay.of(context).insert(_voiceOverlayEntry!);
-  }
-
-  late void Function(void Function()) _updateOverlayState;
-
-  /// 隐藏并销毁全局录音遮罩
-  void _hideVoiceOverlay() {
-    _voiceOverlayEntry?.remove();
-    _voiceOverlayEntry = null;
-  }
-
-  /// 开始长按录音
-  void _onVoiceRecordStart(LongPressStartDetails details) {
-    setState(() {
-      _isRecording = true;
-      _willCancelVoice = false;
-      _startY = details.globalPosition.dy;
-    });
-    _showVoiceOverlay();
-
-    // TODO: 调用原生的录音启动逻辑
-    // ref.read(chatInputControllerProvider(widget.roomId).notifier).startRecording();
-  }
-
-  /// 长按中拖动（上滑检测）
-  void _onVoiceRecordUpdate(LongPressMoveUpdateDetails details) {
-    if (!_isRecording) return;
-
-    // 计算手指向上滑动的相对位移
-    final dragDistance = _startY - details.globalPosition.dy;
-    final shouldCancel = dragDistance > _cancelThreshold;
-
-    if (_willCancelVoice != shouldCancel) {
-      _willCancelVoice = shouldCancel;
-      // 触发 Overlay 的局部刷新保持高性能
-      _updateOverlayState(() {});
-      setState(() {});
-    }
-  }
-
-  /// 长按结束（判断是发送还是取消）
-  void _onVoiceRecordEnd(LongPressEndDetails details) {
-    if (!_isRecording) return;
-
-    _hideVoiceOverlay();
-
-    if (_willCancelVoice) {
-      // 1. 触发取消录音
-      // ref.read(chatInputControllerProvider(widget.roomId).notifier).cancelRecording();
-    } else {
-      // 2. 正常松手，触发停止并发送录音
-      // ref.read(chatInputControllerProvider(widget.roomId).notifier).stopAndSendRecording();
-    }
-
-    setState(() {
-      _isRecording = false;
-      _willCancelVoice = false;
-    });
   }
 }

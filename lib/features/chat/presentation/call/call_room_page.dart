@@ -1,7 +1,6 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/call_window_room_body.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/call_mobile_room_body.dart';
-import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
