@@ -32,11 +32,11 @@ final chatUiListProvider = ChatUiListFamily._();
 final class ChatUiListProvider
     extends
         $FunctionalProvider<
-          List<ChatListItem>,
-          List<ChatListItem>,
-          List<ChatListItem>
+          ChatUiListResult,
+          ChatUiListResult,
+          ChatUiListResult
         >
-    with $Provider<List<ChatListItem>> {
+    with $Provider<ChatUiListResult> {
   /// 聊天 UI 列表计算服务
   ///
   /// 专门为某个房间计算「时间条 + 消息」混合平铺列表的 ViewProvider。
@@ -68,21 +68,20 @@ final class ChatUiListProvider
 
   @$internal
   @override
-  $ProviderElement<List<ChatListItem>> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<ChatUiListResult> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  List<ChatListItem> create(Ref ref) {
+  ChatUiListResult create(Ref ref) {
     final argument = this.argument as String;
     return chatUiList(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<ChatListItem> value) {
+  Override overrideWithValue(ChatUiListResult value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<ChatListItem>>(value),
+      providerOverride: $SyncValueProvider<ChatUiListResult>(value),
     );
   }
 
@@ -97,7 +96,7 @@ final class ChatUiListProvider
   }
 }
 
-String _$chatUiListHash() => r'8da3772c757aec55d0e95ec64bd1d1090543819c';
+String _$chatUiListHash() => r'558243b65b3973247bdae94521e7ef5573d067d6';
 
 /// 聊天 UI 列表计算服务
 ///
@@ -109,7 +108,7 @@ String _$chatUiListHash() => r'8da3772c757aec55d0e95ec64bd1d1090543819c';
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 
 final class ChatUiListFamily extends $Family
-    with $FunctionalFamilyOverride<List<ChatListItem>, String> {
+    with $FunctionalFamilyOverride<ChatUiListResult, String> {
   ChatUiListFamily._()
     : super(
         retry: null,

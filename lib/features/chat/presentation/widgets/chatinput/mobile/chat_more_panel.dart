@@ -42,17 +42,22 @@ class ChatMorePanel extends ConsumerWidget {
 
     // 💡 判断当前是否存在处于激活状态的通话会话
     final hasActiveCall =
-        callWindow != null || (DeviceUtil.isRealMobile() && mobileCallSession != null);
+        callWindow != null ||
+        (DeviceUtil.isRealMobile() && mobileCallSession != null);
     final isCallingNow = callStatus.calling;
 
     // 根据状态决定通话按钮的图标和文案
     final dynamic callIcon = hasActiveCall
         ? HugeIcons.strokeRoundedVideoReplay
-        : (isCallingNow ? HugeIcons.strokeRoundedCallRinging03 : HugeIcons.strokeRoundedCall02);
+        : (isCallingNow
+              ? HugeIcons.strokeRoundedCallRinging03
+              : HugeIcons.strokeRoundedCall02);
 
     final String callLabel = hasActiveCall
         ? 'appbar_call_back_to_window'.tr()
-        : (isCallingNow ? 'appbar_call_join'.tr() : 'appbar_start_meeting'.tr());
+        : (isCallingNow
+              ? 'appbar_call_join'.tr()
+              : 'appbar_start_meeting'.tr());
 
     return GridView.count(
       crossAxisCount: 4,
@@ -76,19 +81,62 @@ class ChatMorePanel extends ConsumerWidget {
           label: '@',
           onTap: onMentionTap,
         ),
-        // 💡 优化后的通话按钮：纯状态驱动，移除了多余的插件依赖
+        //  优化后的通话按钮
         ChatActionItem(
           icon: callIcon,
           label: callLabel,
-          onTap: () {
-            // ─── 状况 1：当前已经在通话中（小窗/后台状态），点击直接“恢复全屏” ───
-            if (hasActiveCall && DeviceUtil.isRealMobile()) {
-              // 驱使全局状态机回正，让根部的 GlobalCallOverlay 撑满屏幕
-              ref.read(mobileCallSessionControllerProvider.notifier).enterCallPage();
+          onTap: () async {
+            // 读取一次 session 与 callWindow（不订阅）
+            final mobileSession = ref.read(mobileCallSessionControllerProvider);
+            final callWindow = ref.read(callWindowControllerProvider);
+
+            final hasActiveCallLocal =
+                callWindow != null ||
+                (DeviceUtil.isRealMobile() && mobileSession != null);
+
+            // 如果存在活跃通话并且是移动端，优先恢复全屏
+            if (hasActiveCallLocal && DeviceUtil.isRealMobile()) {
+              // 如果当前会话就是本房间，直接恢复
+              if (mobileSession != null && mobileSession.roomId == roomId) {
+                ref
+                    .read(mobileCallSessionControllerProvider.notifier)
+                    .enterCallPage();
+                return;
+              }
+
+              // 活跃通话是别的房间，提示用户确认切换
+              final switchConfirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text('call_switch_confirm_title'.tr()),
+                  content: Text('call_switch_confirm_message'.tr()),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text('cancel'.tr()),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: Text('confirm'.tr()),
+                    ),
+                  ],
+                ),
+              );
+
+              // dialog 返回后可能已卸载，先检查
+              if (switchConfirmed != true || !context.mounted) return;
+
+              // 结束当前会话并进入本房间通话（或按你业务选择切换策略）
+              ref.read(mobileCallSessionControllerProvider.notifier).end();
+
+              final roomVO = ref.read(currentRoomProvider(roomId));
+              if (roomVO != null && context.mounted) {
+                ChatBarHandlers.onCallPressed(context, ref, roomVO);
+              }
               return;
             }
 
-            // ─── 状况 2：正常全新发起/加入通话 ───
+            // 否则正常发起/加入通话
             final roomVO = ref.read(currentRoomProvider(roomId));
             if (roomVO == null) return;
             ChatBarHandlers.onCallPressed(context, ref, roomVO);

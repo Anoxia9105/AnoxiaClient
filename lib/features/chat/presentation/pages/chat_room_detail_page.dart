@@ -2,13 +2,13 @@ import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/common/widgets/ws_connection_banner.dart';
+import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/no_conversation_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_bottom_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_scroll_down_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
-import 'package:anoxia/features/chat/ui_models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
@@ -109,6 +109,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       // 通过 Riverpod 异步高效读取平铺列表长度
       final flatItemsLength = ref
           .read(chatUiListProvider(currentRoomId))
+          .items
           .length;
 
       // 触底（反转列表的顶部，即触及历史边界）触发翻页
@@ -135,7 +136,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
 
     // 监听清洗平铺后的 UI 专属混合列表
-    final flatItems = ref.watch(chatUiListProvider(widget.roomId));
+    final chatUiListResult = ref.watch(chatUiListProvider(widget.roomId));
+    final flatItems = chatUiListResult.items;
 
     /// 加载中且没有缓存消息时显示骨架屏
     final showInitialSkeleton = entryTask.isLoading && flatItems.isEmpty;

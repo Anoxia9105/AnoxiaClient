@@ -326,7 +326,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     if (isInPipMode) {
       return const SizedBox.shrink();
     }
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -338,8 +338,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               // 语音按钮
               _buildCompactButton(
                 tooltipMessage: _isVoiceMode
-                    ? 'toolbar_mic'.tr()
-                    : 'toolbar_keyboard'.tr(),
+                    ? 'toolbar_keyboard'.tr()
+                    : 'toolbar_mic'.tr(),
                 onTap: _toggleVoiceMode,
                 icon: _isVoiceMode
                     ? HugeIcons.strokeRoundedKeyboard

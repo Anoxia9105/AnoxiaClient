@@ -151,21 +151,12 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
         ///
         Positioned.fill(
           child: IgnorePointer(
-            ignoring:
-            session.minimized ||
-                session.isInPipMode,
+            ignoring: session.minimized && !session.isInPipMode,
 
             child: AnimatedOpacity(
-              opacity:
-              session.minimized ||
-                  session.isInPipMode
-                  ? 0
-                  : 1,
+              opacity: session.minimized && !session.isInPipMode ? 0 : 1,
 
-              duration: const Duration(
-                milliseconds: 200,
-              ),
-
+              duration: const Duration(milliseconds: 200),
               child: MobileCallPage(
                 roomId: session.roomId,
                 title: session.title,

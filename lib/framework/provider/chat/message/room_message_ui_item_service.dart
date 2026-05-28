@@ -1,4 +1,4 @@
-import 'package:anoxia/features/chat/ui_models/message_item.dart';
+import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'room_message_service.dart';
@@ -14,10 +14,10 @@ part 'room_message_ui_item_service.g.dart';
 /// - 第一条消息前显示时间分隔条
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 @riverpod
-List<ChatListItem> chatUiList(Ref ref, String roomId) {
+ChatUiListResult chatUiList(Ref ref, String roomId) {
   final messages = ref.watch(chatMessagesProvider.select((state) => state[roomId] ?? []));
   
-  if (messages.isEmpty) return const [];
+  if (messages.isEmpty) return ChatUiListResult(const []);
 
   final List<ChatListItem> items = [];
   const int thirtyMinutesMs = 30 * 60 * 1000; 
@@ -42,5 +42,5 @@ List<ChatListItem> chatUiList(Ref ref, String roomId) {
   }
 
   // 反转列表，使 index 0 对应最新消息，适配 reverse: true 的 ListView
-  return items.reversed.toList();
+  return ChatUiListResult(items.reversed.toList());
 }

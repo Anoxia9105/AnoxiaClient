@@ -26,3 +26,13 @@ class MessageItem extends ChatListItem {
 
   MessageItem(this.message);
 }
+
+/// 聊天 UI 列表包装类
+///
+/// 用于解决 Riverpod generator 无法处理 sealed class 列表的问题
+class ChatUiListResult {
+  /// 聊天列表项
+  final List<ChatListItem> items;
+
+  ChatUiListResult(this.items);
+}

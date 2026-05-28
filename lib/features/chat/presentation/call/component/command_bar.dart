@@ -34,6 +34,18 @@ class CommandBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 只监听 isInPipMode 字段，减少重建
+    final inPip = ref.watch(
+      mobileCallSessionControllerProvider.select(
+        (s) => s?.isInPipMode ?? false,
+      ),
+    );
+
+    // PiP 模式下隐藏整个命令栏，避免被 PiP 捕获
+    if (inPip) {
+      return const SizedBox.shrink();
+    }
+
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
 
     return Container(
