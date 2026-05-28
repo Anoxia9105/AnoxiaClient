@@ -573,14 +573,7 @@ class RoomController extends _$RoomController {
   /// 修改返回值：true 表示成功获取授权并激活，false 表示用户拒绝或失败
   Future<bool> _safeActivateAndroidBackground() async {
     try {
-      // 1. 严格按照官方示例：必须先申请媒体投影权限
-      bool hasCapturePermission = await rtc.Helper.requestCapturePermission();
-      if (!hasCapturePermission) {
-        log.warning('用户拒绝了录屏/投影权限');
-        return false;
-      }
-
-      // 2. 用户同意投屏后，再配置并启动前台服务
+      // 1. 先初始化
       const androidConfig = rtc.FlutterBackgroundAndroidConfig(
         notificationTitle: '通话中',
         notificationText: '屏幕共享服务正在后台运行',
@@ -591,16 +584,37 @@ class RoomController extends _$RoomController {
         ),
       );
 
-      bool hasPermissions = await rtc.FlutterBackground.initialize(
+      final hasPermissions = await rtc.FlutterBackground.initialize(
         androidConfig: androidConfig,
       );
-      if (hasPermissions &&
-          !rtc.FlutterBackground.isBackgroundExecutionEnabled) {
+      if (!hasPermissions) {
+        log.warning('flutter_background 权限不足');
+        return false;
+      }
+
+      // 2. 启动前台服务（弹出电池优化对话框）
+      if (!rtc.FlutterBackground.isBackgroundExecutionEnabled) {
         await rtc.FlutterBackground.enableBackgroundExecution();
       }
+
+      // 3. 验证前台服务真的跑起来了
+      if (!rtc.FlutterBackground.isBackgroundExecutionEnabled) {
+        log.warning('用户拒绝了后台运行权限');
+        return false;
+      }
+
+      // 4. 前台服务就绪后，再申请投屏权限
+      final hasCapturePermission = await rtc.Helper.requestCapturePermission();
+      if (!hasCapturePermission) {
+        log.warning('用户拒绝了录屏权限');
+        // 申请失败，关掉已启动的前台服务
+        await rtc.FlutterBackground.disableBackgroundExecution();
+        return false;
+      }
+
       return true;
     } catch (e) {
-      log.error('Android 14+ 媒体投影前台服务激活失败: $e');
+      log.error('Android 媒体投影前台服务激活失败: $e');
       return false;
     }
   }

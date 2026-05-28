@@ -31,10 +31,6 @@ class MobileChatInput extends ConsumerStatefulWidget {
 }
 
 class _MobileChatInputState extends ConsumerState<MobileChatInput> {
-  final TextEditingController _textController = TextEditingController();
-  final Map<String, int> _mentionMap = {};
-  String _lastText = '';
-  bool _isTextEmpty = true;
   bool _isVoiceMode = false;
 
   late final FocusNode _focusNode;
@@ -60,7 +56,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
 
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
-      ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
+      // 只关面板，不 unfocus，否则键盘弹不出来
+      ref.read(inputPanelProvider.notifier).closePanel();
     }
   }
 
@@ -101,57 +98,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             users: users,
             onUserSelected: (user) {
               Navigator.of(ctx).pop();
-              _insertMention(user);
+              _inputController.insertMention(user.id, user.name);
             },
           ),
         ),
       ),
     );
-  }
-
-  void _insertMention(MentionUser user) {
-    final text = _textController.text;
-    final selection = _textController.selection;
-    final cursor = selection.baseOffset < 0
-        ? text.length
-        : selection.baseOffset;
-    final atIndex = text.lastIndexOf('@', cursor - 1 >= 0 ? cursor - 1 : 0);
-
-    final String newText;
-    final int newOffset;
-
-    if (atIndex >= 0 && atIndex <= cursor) {
-      newText =
-          '${text.substring(0, atIndex)}@${user.name} ${text.substring(cursor)}';
-      newOffset = atIndex + user.name.length + 2;
-    } else {
-      newText =
-          '${text.substring(0, cursor)}@${user.name} ${text.substring(cursor)}';
-      newOffset = cursor + user.name.length + 2;
-    }
-
-    _textController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newOffset),
-    );
-    _mentionMap[user.name] = user.id;
-    _lastText = newText;
-  }
-
-  void _insertTextAtCursor(String insertText) {
-    final text = _textController.text;
-    final cursor = _textController.selection.baseOffset < 0
-        ? text.length
-        : _textController.selection.baseOffset;
-
-    final newText =
-        '${text.substring(0, cursor)}$insertText${text.substring(cursor)}';
-    _textController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: cursor + insertText.length),
-    );
-    _lastText = newText;
-    if (_isTextEmpty) setState(() => _isTextEmpty = false);
   }
 
   void _handleSend() {
@@ -291,7 +243,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         ),
                       )
                     : TextField(
-                        controller: _textController,
+                        controller: _inputController.textController,
                         focusNode: focusNode,
                         minLines: 1,
                         maxLines: 4,
@@ -338,7 +290,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                     opacity: animation,
                     child: ScaleTransition(scale: animation, child: child),
                   ),
-                  child: _isTextEmpty
+                  child: _inputController.isEmpty
                       ? Row(
                           key: const ValueKey('empty_state_buttons'),
                           mainAxisSize: MainAxisSize.min,
@@ -401,7 +353,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                     padding: const EdgeInsets.all(8),
                     child: ChatEmojiWidget(
                       closeSelected: _closeAllPanels,
-                      onEmojiSelected: _insertTextAtCursor,
+                      onEmojiSelected: _inputController.insertTextAtCursor,
                     ),
                   ),
                 ],

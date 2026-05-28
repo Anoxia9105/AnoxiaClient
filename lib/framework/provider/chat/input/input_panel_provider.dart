@@ -24,7 +24,13 @@ class InputPanelNotifier extends _$InputPanelNotifier {
     state = panel;
   }
 
+  void closePanel() {
+    // 只关面板，不动焦点——用于"获得焦点时收起面板"
+    state = InputPanel.none;
+  }
+
   void closeAll(FocusNode focusNode) {
+    // 关面板 + 收键盘——用于发送、语音模式切换等主动关闭场景
     state = InputPanel.none;
     focusNode.unfocus();
   }

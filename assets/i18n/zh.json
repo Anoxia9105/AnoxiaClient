@@ -451,6 +451,7 @@
   "status_network_unavailable": "无网络连接",
   "toolbar_mic": "麦克风",
   "toolbar_keyboard": "键盘",
+  "toolbar_more": "更多",
   "hold_to_talk": "按住说话",
   "release_to_send": "松开发送"
 }

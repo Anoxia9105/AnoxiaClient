@@ -450,6 +450,7 @@
   "status_offline": "Offline",
   "status_network_unavailable": "Network Unavailable",
   "toolbar_mic": "Microphone",
+  "toolbar_more": "More",
   "toolbar_keyboard": "Keyboard",
   "hold_to_talk": "Hold to Talk",
   "release_to_send": "Release to Send"
