@@ -42,7 +42,7 @@ final class InputPanelNotifierProvider
 }
 
 String _$inputPanelNotifierHash() =>
-    r'5d0aeddd1faeda85a83bebfb3bfe5db739781267';
+    r'cdb12fb36390728535d7dec89995a68dabbdf6ae';
 
 abstract class _$InputPanelNotifier extends $Notifier<InputPanel> {
   InputPanel build();

@@ -1,21 +1,15 @@
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/domain/ChatFavorite.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-/// 聊天收藏服务
-final chatFavoriteServiceProvider = Provider<ChatFavoriteService>((ref) {
-  return ChatFavoriteService();
-});
+part 'chat_favorite_service.g.dart';
 
 /// 聊天收藏列表 Provider
-///
-/// 支持自动销毁，离开页面时自动清理内存
-final chatFavoriteListProvider =
-    FutureProvider.autoDispose<List<ChatFavorite>>((ref) async {
-      final service = ref.watch(chatFavoriteServiceProvider);
-      return service.listFavorites();
-    });
+@Riverpod(keepAlive: true)
+Future<List<ChatFavorite>> chatFavoriteList(Ref ref) async {
+  return ChatFavoriteService().listFavorites();
+}
 
 /// 聊天收藏服务
 ///
@@ -47,9 +41,7 @@ class ChatFavoriteService {
     list.sort((a, b) {
       final bTime = b.createdAt?.millisecondsSinceEpoch ?? 0;
       final aTime = a.createdAt?.millisecondsSinceEpoch ?? 0;
-      if (bTime != aTime) {
-        return bTime.compareTo(aTime);
-      }
+      if (bTime != aTime) return bTime.compareTo(aTime);
       return b.id.compareTo(a.id);
     });
 
