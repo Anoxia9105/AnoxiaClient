@@ -106,29 +106,22 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    print('AppLifecycleState changed============================>: $state');
+    if (state != AppLifecycleState.hidden) return;
+
     final session = ref.read(mobileCallSessionControllerProvider);
+    if (session == null || session.isInPipMode) return;
 
-    if (session == null) return;
+    try {
+      final supported = await _pip.isSupported();
+      if (!supported) return;
 
-    if (session.isInPipMode) {
-      return;
-    }
+      final active = await _pip.isActived();
+      if (active) return;
 
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
-      try {
-        final supported = await _pip.isSupported();
-
-        if (!supported) return;
-
-        final active = await _pip.isActived();
-
-        if (active) return;
-
-        await _pip.start();
-      } catch (e) {
-        debugPrint('Auto start pip error: $e');
-      }
+      await _pip.start();
+    } catch (e) {
+      debugPrint('Auto start pip error: $e');
     }
   }
 
@@ -155,7 +148,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
             child: AnimatedOpacity(
               opacity: session.minimized && !session.isInPipMode ? 0 : 1,
-
+              curve: Curves.easeInOut,
               duration: const Duration(milliseconds: 200),
               child: MobileCallPage(
                 roomId: session.roomId,
@@ -185,78 +178,67 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                       MediaQuery.of(context).size.height,
                     );
               },
-
               onPanEnd: (_) {
                 ref
                     .read(mobileCallSessionControllerProvider.notifier)
                     .snapToEdge(MediaQuery.of(context).size.width);
               },
-
-              /// 点击恢复全屏
               onTap: () {
                 ref
                     .read(mobileCallSessionControllerProvider.notifier)
                     .enterCallPage();
               },
-
-              child: Material(
-                elevation: 10,
-
-                borderRadius: BorderRadius.circular(14),
-
-                clipBehavior: Clip.antiAlias,
-
-                child: SizedBox(
-                  width: 120,
-                  height: 180,
-
-                  child: Stack(
-                    fit: StackFit.expand,
-
-                    children: [
-                      /// ⚠️ 这里不能新建第二个页面
-                      ///
-                      /// 只做缩略图
-                      ///
-                      Container(color: Colors.black),
-
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-
-                          children: [
-                            const Icon(
-                              Icons.call,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+              // 加层动画
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutBack,
+                builder: (_, value, child) => Transform.scale(
+                  scale: value,
+                  alignment: Alignment.topRight,
+                  child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
+                ),
+                child: Material(
+                  elevation: 10,
+                  borderRadius: BorderRadius.circular(14),
+                  clipBehavior: Clip.antiAlias,
+                  child: SizedBox(
+                    width: 120,
+                    height: 180,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(color: Colors.black),
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.call,
+                                color: Colors.white,
+                                size: 30,
                               ),
-
-                              child: Text(
-                                session.title,
-
-                                maxLines: 2,
-
-                                overflow: TextOverflow.ellipsis,
-
-                                textAlign: TextAlign.center,
-
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                child: Text(
+                                  session.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

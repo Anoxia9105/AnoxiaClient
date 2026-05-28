@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pip/pip.dart';
@@ -25,8 +26,25 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   @override
   void initState() {
     super.initState();
-
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    _keepScreenOn(true);
     _checkBluetoothPermissions();
+  }
+
+  @override
+  void dispose() {
+    // 恢复息屏
+    _keepScreenOn(false);
+    super.dispose();
+  }
+
+  Future<void> _keepScreenOn(bool on) async {
+    try {
+      const channel = MethodChannel('screen_control');
+      await channel.invokeMethod('setKeepScreenOn', on);
+    } catch (e) {
+      debugPrint('setKeepScreenOn error: $e');
+    }
   }
 
   Future<void> _checkBluetoothPermissions() async {
