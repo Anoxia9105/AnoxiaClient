@@ -8,6 +8,18 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:photo_view/photo_view.dart';
 
+/// 图片查看器组件
+///
+/// 提供全屏图片预览功能，支持：
+/// - 手势缩放（双指捏合、鼠标滚轮）
+/// - 放大/缩小按钮
+/// - 重置缩放按钮
+/// - 图片下载功能
+/// - Hero 动画过渡
+/// - 加载状态和错误处理
+///
+/// [attachment] 图片附件信息
+/// [heroTag] Hero 动画标签
 class ImageViewer extends StatefulWidget {
   final Attachment attachment;
   final String heroTag;

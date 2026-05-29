@@ -5,6 +5,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 新好友请求页面
+///
+/// 显示待处理的好友请求列表，支持：
+/// - 展示好友请求（头像、昵称、验证消息、时间）
+/// - 接受好友请求
+/// - 拒绝好友请求
+/// - 加载状态显示
 class NewFriendsPage extends ConsumerStatefulWidget {
   const NewFriendsPage({super.key});
 

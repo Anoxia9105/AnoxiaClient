@@ -11,7 +11,11 @@ import '../image_message_strategy.dart';
 import 'message_render_strategy.dart';
 import '../text_message_strategy.dart';
 
+/// 消息渲染工厂类
+///
+/// 采用策略模式，根据消息类型返回对应的渲染策略
 class MessageRenderFactory {
+  /// 消息类型到渲染策略的映射表
   static final Map<MessageType, MessageRenderStrategy> _strategies = {
     MessageType.text: TextMessageStrategy(),
     MessageType.image: ImageMessageStrategy(),
@@ -21,12 +25,18 @@ class MessageRenderFactory {
     MessageType.audio: AudioMessageStrategy(),
   };
 
+  /// 根据消息类型获取对应的渲染策略
+  ///
+  /// [type] 消息类型
+  /// 返回对应的渲染策略，未知类型返回默认策略
   static MessageRenderStrategy getStrategy(MessageType? type) {
     return _strategies[type] ?? _DefaultMessageStrategy();
   }
 }
 
-// 兜底策略，处理未知类型
+/// 默认消息渲染策略
+///
+/// 当遇到未知消息类型时使用，显示错误提示
 class _DefaultMessageStrategy extends MessageRenderStrategy {
   @override
   Widget buildContent(

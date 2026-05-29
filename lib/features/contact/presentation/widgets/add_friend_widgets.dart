@@ -5,6 +5,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 添加好友页面相关组件集合
+
+/// 搜索栏组件
+///
+/// 提供搜索用户的输入框，支持：
+/// - 搜索输入
+/// - 清除按钮
+/// - 搜索按钮（加载状态显示进度指示器）
 class AddFriendSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final bool isSearching;

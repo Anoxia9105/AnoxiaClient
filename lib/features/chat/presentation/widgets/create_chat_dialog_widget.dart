@@ -8,6 +8,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 创建群聊对话框组件
+///
+/// 提供创建新群聊的界面，支持：
+/// - 输入群聊名称
+/// - 从联系人列表中选择群成员
+/// - 实时预览已选成员
+/// - 显示创建状态（加载中、成功、失败）
 class CreateChatDialogWidget extends ConsumerStatefulWidget {
   const CreateChatDialogWidget({super.key});
 

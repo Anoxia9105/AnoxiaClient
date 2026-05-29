@@ -12,6 +12,14 @@ import '../../../../../framework/domain/ChatMessage.dart';
 import '../../../../../framework/protocol/message/Attachment.dart';
 import 'base/message_render_strategy.dart';
 
+/// 文件消息渲染策略
+///
+/// 处理文件消息的显示和下载，支持：
+/// - 显示文件列表（支持多个文件）
+/// - 文件下载进度显示
+/// - 自动检测已下载文件
+/// - 打开文件所在位置
+/// - 同名文件自动编号避免覆盖
 class FileMessageStrategy extends MessageRenderStrategy {
   @override
   Widget buildContent(

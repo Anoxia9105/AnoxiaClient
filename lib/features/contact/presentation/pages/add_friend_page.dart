@@ -8,6 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
+/// 添加好友页面
+///
+/// 提供搜索用户并发送好友请求的功能，支持：
+/// - 搜索用户（按昵称或用户名）
+/// - 显示搜索结果列表（支持动画效果）
+/// - 区分已添加的好友
+/// - 发送好友请求（可添加验证消息）
 class AddFriendPage extends ConsumerStatefulWidget {
   const AddFriendPage({super.key});
 

@@ -18,14 +18,24 @@ part 'chat_image_upload_controller.g.dart';
 
 /// 聊天图片上传控制器
 ///
-/// 处理图片选择、粘贴和上传功能
+/// 处理图片选择、粘贴和上传功能。采用 keepAlive 模式确保跨页面共享状态。
+///
+/// 核心流程：
+/// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 → 
+/// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
+///
+/// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 @Riverpod(keepAlive: true)
 class ChatImageUploadController extends _$ChatImageUploadController {
   @override
   Map<String, UploadEntry> build() => {};
 
-  // --- 场景 1：粘贴图片 ---
-
+  /// 处理粘贴图片
+  ///
+  /// [controller] Quill 编辑器控制器
+  /// [imageBytes] 粘贴的图片字节数据
+  ///
+  /// 流程：验证 → 保存临时文件 → 创建 Attachment → 标记上传中 → 插入编辑器 → 后台上传
   Future<void> handlePastedImage(
     QuillController controller,
     Uint8List imageBytes,
@@ -66,8 +76,11 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     }
   }
 
-  // --- 场景 2：选择图片 ---
-
+  /// 从相册选择图片
+  ///
+  /// [controller] Quill 编辑器控制器
+  ///
+  /// 弹出文件选择器，允许用户选择多张图片，验证通过后插入编辑器并后台上传
   Future<void> selectImages(QuillController controller) async {
     // final result = await FilePicker.platform.pickFiles(
     final result = await FilePicker.pickFiles(
@@ -106,8 +119,11 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     unawaited(uploadImages(uploadList));
   }
 
-  // --- 核心上传逻辑 ---
-
+  /// 上传图片到服务器
+  ///
+  /// [images] 要上传的图片附件列表
+  ///
+  /// 使用批量上传接口，上传成功后更新状态为成功，失败则标记为失败
   Future<void> uploadImages(List<Attachment> images) async {
     if (images.isEmpty) return;
 
@@ -141,12 +157,12 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     }
   }
 
-  // --- 工具方法 ---
-
+  /// 标记图片为上传中状态
   void _markUploading(List<Attachment> images) {
     state = {...state, for (final i in images) i.id!: UploadEntry.uploading};
   }
 
+  /// 标记图片为上传失败状态
   void _markFailed(List<Attachment> images) {
     state = {...state, for (final i in images) i.id!: UploadEntry.failed};
   }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 设置项卡片组件
+///
+/// 用于展示设置页面中的各个设置项，包含标题、副标题、图标和可选的子内容
 class SettingItemCard extends StatelessWidget {
   final String title;
   final String subtitle;

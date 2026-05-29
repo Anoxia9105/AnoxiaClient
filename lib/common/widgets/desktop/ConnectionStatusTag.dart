@@ -5,8 +5,15 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:hugeicons/hugeicons.dart'; // 确保引入你的图标库
+import 'package:hugeicons/hugeicons.dart';
 
+/// 连接状态标签组件
+///
+/// 显示当前网络连接状态和 WebSocket 连接状态的组合状态：
+/// - 网络类型：无网络 / 以太网 / 移动网络 / WiFi
+/// - WebSocket 状态：在线 / 连接中 / 离线
+/// 
+/// 通过颜色和图标直观展示状态，悬停显示详细提示
 class ConnectionStatusTag extends ConsumerWidget {
   const ConnectionStatusTag({super.key});
 

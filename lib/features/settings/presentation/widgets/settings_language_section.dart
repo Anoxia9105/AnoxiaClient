@@ -4,6 +4,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
+/// 语言设置组件
+///
+/// 提供应用语言选择功能，支持英语、中文、日语等多语言切换
 class SettingsLanguageSection extends StatelessWidget {
   final String selectedLanguageCode;
   final bool isDesktop;

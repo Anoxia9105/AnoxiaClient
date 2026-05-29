@@ -13,6 +13,16 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pip/pip.dart';
 
+/// 移动端通话页面
+///
+/// 提供移动端专属的音视频通话界面，支持：
+/// - 全屏通话模式
+/// - 保持屏幕常亮
+/// - 蓝牙权限检查
+/// - PiP模式适配
+///
+/// [roomId] 通话房间 ID
+/// [title] 通话标题（房间名称或对方昵称）
 class MobileCallPage extends ConsumerStatefulWidget {
   final String roomId;
   final String title;

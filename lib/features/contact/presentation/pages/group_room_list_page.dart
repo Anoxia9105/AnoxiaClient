@@ -9,6 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../framework/provider/chat/room/room_member_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 
+/// 群聊列表页面
+///
+/// 显示用户加入的所有群聊，支持：
+/// - 展示群聊列表（头像、名称、最新消息、成员数、未读数）
+/// - 点击进入群聊
+/// - 桌面端/移动端适配
 class GroupRoomListPage extends ConsumerWidget {
   const GroupRoomListPage({super.key});
 

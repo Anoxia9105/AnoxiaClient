@@ -2,6 +2,13 @@ import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 设置页面状态类
+///
+/// 管理设置页面的各种状态，包括：
+/// - 反馈提交状态
+/// - 更新检查状态
+/// - 更新信息
+/// - 更新错误信息
 class SettingsPageState {
   final bool submittingFeedback;
   final bool checkingUpdate;

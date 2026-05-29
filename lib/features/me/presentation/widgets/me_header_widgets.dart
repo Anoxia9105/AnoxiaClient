@@ -3,6 +3,14 @@ import 'package:anoxia/framework/domain/UserInfo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 个人中心页面头部相关组件集合
+
+/// 个人资料卡片组件
+///
+/// 展示用户的个人资料信息，包括：
+/// - 头像（带边框装饰）
+/// - 昵称和用户名
+/// - 性别、邮箱、手机号标签
 class MeProfileCard extends StatelessWidget {
   final UserInfo user;
 

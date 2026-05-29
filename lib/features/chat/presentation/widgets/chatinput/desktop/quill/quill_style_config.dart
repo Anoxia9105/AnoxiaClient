@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
+/// Quill 编辑器样式配置类
+///
+/// 提供统一的富文本编辑器样式配置，适配应用主题：
+/// - 段落样式
+/// - 占位符样式
+/// - 链接样式
+/// - 代码块样式
 class QuillStyleConfig {
   static DefaultStyles get(BuildContext context, {Color? color}) {
     final theme = Theme.of(context);

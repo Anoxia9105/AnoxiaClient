@@ -12,9 +12,20 @@ import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 
+/// 聊天消息上下文菜单组件
+///
+/// 为消息提供右键菜单（桌面端）和长按菜单（移动端）功能，支持：
+/// - 复制消息内容
+/// - 收藏消息
+/// - 撤回消息（仅自己发送的消息）
 class ChatMessageContextMenu extends StatelessWidget {
+  /// 包裹的子组件
   final Widget child;
+
+  /// 消息数据
   final ChatMessage message;
+
+  /// Riverpod 状态引用
   final WidgetRef ref;
 
   const ChatMessageContextMenu({

@@ -9,6 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Quill 图片嵌入构建器
+///
+/// 实现 Quill 编辑器的图片附件渲染，支持：
+/// - 显示本地图片预览
+/// - 显示上传状态（上传中显示加载指示器、失败显示错误提示）
+/// - 上传失败时显示红色边框和半透明效果
+/// - 支持点击查看大图
 class QuillImageBuild implements EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {

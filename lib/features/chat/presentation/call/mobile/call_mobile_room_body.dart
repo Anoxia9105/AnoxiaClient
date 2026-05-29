@@ -10,6 +10,15 @@ import 'package:livekit_client/livekit_client.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+/// 移动端通话房间主体组件
+///
+/// 负责渲染移动端通话界面的核心布局，支持多种布局模式：
+/// - 网格布局（grid）：参与者均匀分布显示
+/// - 焦点布局（focus）：屏幕共享者全屏显示，其他人小窗
+/// - 轮播布局（carousel）：逐个展示参与者
+///
+/// [roomState] 通话房间状态
+/// [token] 通话令牌
 class CallMobileRoomBody extends ConsumerStatefulWidget {
   final RoomState roomState;
   final String token;

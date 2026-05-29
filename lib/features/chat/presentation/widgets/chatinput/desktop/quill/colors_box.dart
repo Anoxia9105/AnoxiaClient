@@ -1,6 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 颜色选择器工具类
+///
+/// 提供富文本编辑器的颜色选择功能，模拟 Google 文档的色谱布局：
+/// - 8列颜色，每列由深到浅排列
+/// - 支持文本颜色和背景颜色选择
+/// - 提供颜色重置功能
 class ColorsBox {
   static Widget buildColorsWidget(
     Function(String?)? onTap,

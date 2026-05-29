@@ -3,6 +3,11 @@ import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 群聊列表页面相关组件集合
+
+/// 空状态组件
+///
+/// 当用户没有加入任何群聊时显示的提示
 class GroupRoomEmptyState extends StatelessWidget {
   const GroupRoomEmptyState({super.key});
 

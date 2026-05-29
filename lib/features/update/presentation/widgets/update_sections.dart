@@ -1,6 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 更新页面相关组件集合
+
+/// 更新头部卡片组件
+///
+/// 显示新版本信息，包括版本号和是否强制更新标识
 class UpdateHeaderCard extends StatelessWidget {
   final String latestVersion;
   final bool isForceUpdate;
@@ -105,6 +110,9 @@ class UpdateHeaderCard extends StatelessWidget {
   }
 }
 
+/// 更新日志卡片组件
+///
+/// 显示新版本的更新内容列表
 class UpdateReleaseNotesCard extends StatelessWidget {
   final List<String> notes;
 
@@ -207,6 +215,9 @@ class UpdateReleaseNotesCard extends StatelessWidget {
   }
 }
 
+/// 更新操作区域组件
+///
+/// 提供下载按钮和下载进度显示
 class UpdateActionArea extends StatelessWidget {
   final bool isDownloading;
   final bool hasStarted;
@@ -305,6 +316,9 @@ class UpdateActionArea extends StatelessWidget {
   }
 }
 
+/// 更新错误提示卡片组件
+///
+/// 显示更新过程中的错误信息
 class UpdateErrorCard extends StatelessWidget {
   final String message;
 

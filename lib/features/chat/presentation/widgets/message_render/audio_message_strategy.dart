@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import '../../../../../../framework/domain/ChatMessage.dart';
 import 'base/message_render_strategy.dart';
 
+/// 语音消息渲染策略
+///
+/// 处理语音消息的播放和显示，支持播放/暂停控制和进度显示
 class AudioMessageStrategy extends MessageRenderStrategy {
   @override
   Widget buildContent(

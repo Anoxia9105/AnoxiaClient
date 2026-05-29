@@ -10,6 +10,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../../../../common/utils/fileUtil.dart';
 
+/// Quill 文件嵌入构建器
+///
+/// 实现 Quill 编辑器的文件附件渲染，支持：
+/// - 显示文件名和大小
+/// - 根据文件类型显示对应图标
+/// - 显示上传状态（上传中、成功、失败）
+/// - 上传失败时显示红色边框和错误提示
 class QuillFileBuild implements EmbedBuilder {
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {

@@ -4,6 +4,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 新好友请求页面相关组件集合
+
+/// 好友请求列表项组件
+///
+/// 显示单个好友请求，包含头像、昵称、验证消息和时间
 class NewFriendsRequestTile extends StatelessWidget {
   final String avatar;
   final String nickName;

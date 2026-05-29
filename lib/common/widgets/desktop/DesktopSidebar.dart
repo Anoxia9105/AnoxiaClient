@@ -16,6 +16,12 @@ import '../AvatarWidget.dart';
 import '../BubbleDialog.dart';
 import '../Toast.dart';
 
+/// 桌面端侧边栏组件
+///
+/// 提供导航功能，包含：
+/// - 用户头像（显示在线状态）
+/// - 导航按钮（聊天、联系人、设置等）
+/// - 未读消息、好友请求、更新通知徽章
 class DesktopSidebar extends ConsumerWidget {
   const DesktopSidebar({super.key});
 

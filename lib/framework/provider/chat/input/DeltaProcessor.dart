@@ -7,18 +7,31 @@ import 'dart:math' as math;
 
 /// Quill Delta 内容处理器
 ///
-/// 负责解析和处理富文本编辑器的 [Delta] 数据，包括：
-/// - 提取图片/文件附件
-/// - 提取 @提及用户
-/// - 判断是否是单个Emoji
-/// - 统计文件数量和大小
+/// 负责解析和处理富文本编辑器的 [Delta] 数据，是消息发送前的核心处理组件。
+///
+/// 主要功能：
+/// - 提取图片/文件附件（自动替换上传后的服务器 URL）
+/// - 提取 @提及用户 ID 列表
+/// - 判断是否是单个 Emoji（用于特殊展示）
+/// - 统计附件数量和总大小
+/// - 过滤 Delta（保留文本、样式、Mention，剔除图片和文件）
+///
+/// [delta] Quill 编辑器的 Delta 数据
+/// [uploadState] 上传状态映射：文件ID -> 服务器URL
 class DeltaProcessor {
+  /// Quill Delta 数据
   final Delta delta;
+
+  /// 上传状态映射：文件ID -> 服务器URL
   final Map<String, String> uploadState;
 
+  /// 创建 Delta 处理器
   DeltaProcessor(this.delta, this.uploadState);
 
-  // 获取所有附件，并预先替换好 URL
+  /// 获取所有附件，并自动替换为服务器 URL
+  ///
+  /// 从 Delta 中提取所有图片和文件附件，并用 uploadState 中的服务器 URL
+  /// 替换本地路径（如果已上传成功）
   List<Attachment> get _allAttachments {
     return delta
         .toList()
@@ -43,7 +56,10 @@ class DeltaProcessor {
         .toList();
   }
 
-  // 检查是否所有附件都已经拿到了服务器 URL
+  /// 检查是否所有附件都已上传成功
+  ///
+  /// 遍历所有嵌入对象，检查每个附件的 ID 是否在 uploadState 中存在对应的服务器 URL
+  /// 返回 true 表示所有附件都已上传完成，可以发送消息
   bool get isAllUploaded {
     final embeds = delta.toList().where((op) => op.isInsert && op.data is Map);
     for (final op in embeds) {
@@ -177,15 +193,15 @@ class DeltaProcessor {
         (code >= 0x1F018 && code <= 0x1F02F); // 数字符号（🅾️🆑）
   }
 
-  // 分类：图片
+  /// 获取所有图片附件
   List<Attachment> get images =>
       _allAttachments.where((a) => a.isImage).toList();
 
-  // 分类：非图片文件
+  /// 获取所有非图片文件附件
   List<Attachment> get files =>
       _allAttachments.where((a) => !a.isImage).toList();
 
-  // 文字内容
+  /// 提取纯文本内容（去除所有嵌入对象）
   String get plainText => delta
       .toList()
       .where((op) => op.data is String)
@@ -193,12 +209,12 @@ class DeltaProcessor {
       .join()
       .trim();
 
-  // 是否有样式
+  /// 判断 Delta 是否包含样式属性
   bool get hasAttributes => delta.toList().any(
     (op) => op.attributes != null && op.attributes!.isNotEmpty,
   );
 
-  // 纯文本 Delta
+  /// 获取只包含文本的 Delta（剔除所有嵌入对象）
   Delta get textOnlyDelta {
     final newDelta = Delta();
     for (final op in delta.toList()) {
@@ -207,12 +223,16 @@ class DeltaProcessor {
     return newDelta;
   }
 
-  // 2. 统计文件总数
+  /// 获取附件总数
   int get totalCount => _allAttachments.length;
 
-  // 3. 统计总大小（字节）
+  /// 获取所有附件的总大小（字节）
   int get totalSize => _allAttachments.fold(0, (sum, a) => sum + (a.size ?? 0));
 
+  /// 格式化文件大小为可读字符串
+  ///
+  /// [bytes] 字节数
+  /// 返回如 "1.5 MB" 的格式化字符串
   String formattedTotalSize(int bytes) {
     if (bytes <= 0) return "0 B";
     const suffixes = ["B", "KB", "MB", "GB", "TB"];

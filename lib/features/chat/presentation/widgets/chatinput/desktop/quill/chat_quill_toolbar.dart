@@ -15,6 +15,19 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../../../../../common/widgets/Toast.dart';
 import 'colors_box.dart';
 
+/// 富文本编辑器工具栏组件
+///
+/// 提供丰富的文本格式化工具，包括：
+/// - 文本样式：加粗、斜体、下划线、删除线
+/// - 段落格式：引用、代码块
+/// - 颜色设置：文字颜色、背景颜色
+/// - 插入功能：表情、图片、文件
+/// - 发送按钮
+///
+/// [controller] Quill 编辑器控制器
+/// [onSend] 发送按钮点击回调
+/// [onImagePressed] 图片按钮点击回调
+/// [onFilePressed] 文件按钮点击回调
 class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final VoidCallback onSend;

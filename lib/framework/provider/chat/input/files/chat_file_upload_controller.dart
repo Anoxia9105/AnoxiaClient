@@ -17,12 +17,23 @@ part 'chat_file_upload_controller.g.dart';
 
 /// 聊天文件上传控制器
 ///
-/// 处理文件选择和上传功能
+/// 处理文件选择和上传功能。采用 keepAlive 模式确保跨页面共享状态。
+///
+/// 核心流程：
+/// 1. 用户选择文件 → 2. 创建 Attachment 对象 → 3. 标记为上传中 → 
+/// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
+///
+/// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 @Riverpod(keepAlive: true)
 class ChatFileUploadController extends _$ChatFileUploadController {
   @override
   Map<String, UploadEntry> build() => {};
 
+  /// 从本地选择文件
+  ///
+  /// [controller] Quill 编辑器控制器
+  ///
+  /// 弹出文件选择器，允许用户选择多个文件，验证通过后插入编辑器并后台上传
   Future<void> selectFiles(QuillController controller) async {
     // final result = await FilePicker.platform.pickFiles(
     final result = await FilePicker.pickFiles(
@@ -60,6 +71,11 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     unawaited(uploadFiles(uploadList));
   }
 
+  /// 上传文件到服务器
+  ///
+  /// [attachments] 要上传的文件附件列表
+  ///
+  /// 使用批量上传接口，上传成功后更新状态为成功，失败则标记为失败
   Future<void> uploadFiles(List<Attachment> attachments) async {
     if (attachments.isEmpty) return;
 
@@ -88,6 +104,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     }
   }
 
+  /// 标记文件为上传中状态
   void _markUploading(List<Attachment> attachments) {
     state = {
       ...state,
@@ -95,14 +112,17 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     };
   }
 
+  /// 标记文件为上传失败状态
   void _markFailed(List<Attachment> attachments) {
     state = {...state, for (final a in attachments) a.id!: UploadEntry.failed};
   }
 
+  /// 供 DeltaProcessor 使用：只返回上传成功的 id -> url 映射
   Map<String, String> get urlMap => {
     for (final e in state.entries)
       if (e.value.isSuccess) e.key: e.value.serverUrl!,
   };
 
+  /// 消息发送后调用，清理状态
   void clear() => state = {};
 }

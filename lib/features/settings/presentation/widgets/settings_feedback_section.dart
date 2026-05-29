@@ -4,6 +4,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
+/// 反馈意见组件
+///
+/// 提供用户反馈提交表单，包含标题、内容和联系方式字段
 class SettingsFeedbackSection extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController titleController;

@@ -5,6 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pip/pip.dart';
 
+/// 全局通话悬浮层组件
+///
+/// 管理移动端通话界面的全局显示，支持：
+/// - 全屏通话界面
+/// - 悬浮窗模式（可拖拽、自动吸附边缘）
+/// - PiP（画中画）模式支持
+/// - 应用生命周期监听，自动进入/退出PiP模式
 class GlobalCallOverlay extends ConsumerStatefulWidget {
   const GlobalCallOverlay({super.key});
 

@@ -9,6 +9,13 @@ import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/setting/update_check_provider.dart';
 import '../VibratingBadge.dart';
 
+/// 移动端底部导航栏组件
+///
+/// 提供移动端的底部导航功能，支持：
+/// - 聊天室导航（显示未读消息数量红点）
+/// - 联系人导航（显示待处理好友请求数量红点）
+/// - 设置导航（显示更新提示红点）
+/// - 根据布局控制器动态渲染导航项
 class MobileBottomBar extends ConsumerWidget {
   const MobileBottomBar({super.key});
 

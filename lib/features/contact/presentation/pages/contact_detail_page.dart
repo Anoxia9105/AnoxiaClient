@@ -17,6 +17,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 联系人详情页面
+///
+/// 显示联系人的详细信息，支持：
+/// - 查看联系人基本信息（头像、昵称、备注、签名等）
+/// - 在线状态显示
+/// - 编辑备注
+/// - 删除联系人
+/// - 发起聊天
+/// - 发起通话
 class ContactDetail extends ConsumerWidget {
   const ContactDetail({super.key});
 

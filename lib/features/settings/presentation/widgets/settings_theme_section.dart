@@ -5,6 +5,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
+/// 主题设置组件
+///
+/// 提供主题选择功能，支持多个预设主题的切换
 class SettingsThemeSection extends StatelessWidget {
   final int selectedThemeIndex;
   final ValueChanged<int> onThemeChanged;

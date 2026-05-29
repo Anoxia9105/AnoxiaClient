@@ -8,6 +8,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
+/// 关于与支持组件
+///
+/// 显示应用版本信息、检查更新、开源许可等内容
 class SettingsAboutSupportSection extends StatelessWidget {
   final String appVersionText;
   final bool hasAppUpdate;

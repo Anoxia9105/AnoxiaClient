@@ -1,10 +1,17 @@
 import 'package:anoxia/framework/provider/router/router.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // 别忘了引入
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
 import 'base/message_render_strategy.dart';
 
+/// 图片消息渲染策略
+///
+/// 处理图片消息的显示，支持：
+/// - 单张图片显示（大图模式）
+/// - 多张图片显示（九宫格模式）
+/// - 图片预览（点击放大）
+/// - 缓存优化和占位图显示
 class ImageMessageStrategy extends MessageRenderStrategy {
   @override
   Widget buildContent(

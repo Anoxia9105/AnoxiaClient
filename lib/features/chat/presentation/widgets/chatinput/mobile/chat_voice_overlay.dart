@@ -2,6 +2,14 @@ import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dar
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 
+/// 语音录制覆盖层组件
+///
+/// 在语音录制过程中显示的全屏覆盖层，包含：
+/// - 麦克风图标（正常录制）或撤销图标（取消录制）
+/// - 音频波形实时显示
+/// - 操作提示文字（手指上滑取消发送）
+///
+/// [controller] 语音录制控制器
 class ChatVoiceOverlay extends StatelessWidget {
   final VoiceRecordController controller;
   const ChatVoiceOverlay({super.key, required this.controller});

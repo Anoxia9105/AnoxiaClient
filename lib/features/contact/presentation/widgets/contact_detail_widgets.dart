@@ -2,6 +2,11 @@ import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 联系人详情页面相关组件集合
+
+/// 空状态组件
+///
+/// 当未选择联系人时显示的提示
 class ContactDetailEmptyState extends StatelessWidget {
   const ContactDetailEmptyState({super.key});
 

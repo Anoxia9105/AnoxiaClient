@@ -9,8 +9,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+/// 添加群成员对话框组件
+///
+/// 提供从联系人列表中选择成员添加到群聊的界面，支持：
+/// - 显示群聊信息和当前成员
+/// - 过滤已在群中的联系人
+/// - 多选联系人
+/// - 批量添加成员
+/// - 加载状态显示
 class AddMemberDialogWidget extends ConsumerStatefulWidget {
+  /// 群聊 ID
   final String roomId;
+
+  /// 群聊名称
   final String roomName;
 
   const AddMemberDialogWidget({

@@ -16,8 +16,19 @@ import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.da
 
 import 'chat_more_panel.dart';
 
+/// 移动端聊天输入组件
+///
+/// 提供移动端专用的聊天输入界面，支持：
+/// - 文本输入（支持 @提及）
+/// - 语音录制（支持滑动取消）
+/// - 表情选择
+/// - 图片/文件上传
+/// - 文本/语音模式切换
 class MobileChatInput extends ConsumerStatefulWidget {
+  /// 房间 ID
   final String roomId;
+
+  /// 底部面板关闭回调
   final VoidCallback bottomSheet;
 
   const MobileChatInput({

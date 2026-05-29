@@ -8,6 +8,10 @@ import 'Channel.dart';
 
 part 'call_window_controller.g.dart';
 
+/// 桌面端通话窗口控制器
+///
+/// 管理通话窗口的创建、显示和设置更新，支持窗口关闭监听。
+/// 通话窗口是一个独立的子窗口，用于显示音视频通话界面。
 @Riverpod(keepAlive: true)
 class CallWindowController extends _$CallWindowController {
   @override
