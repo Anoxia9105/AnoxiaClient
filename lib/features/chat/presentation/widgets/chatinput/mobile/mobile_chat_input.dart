@@ -106,18 +106,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     );
   }
 
-  void _handleSend() {
-    final data = _inputController.buildSendData();
-    if (data == null) return;
-
-    ref
-        .read(chatInputControllerProvider(widget.roomId).notifier)
-        .sendPlainTextMessage(data.text, mentionIds: data.mentionIds);
-
-    _inputController.clear();
-    _closeAllPanels();
-  }
-
   Future<void> _pickAndSend(FileType type, bool isImage) async {
     final result = await FilePicker.pickFiles(allowMultiple: true, type: type);
     if (result == null || result.files.isEmpty || !mounted) return;
@@ -211,14 +199,28 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               Expanded(
                 child: _isVoiceMode
                     ? GestureDetector(
-                        onLongPressStart: (d) {
-                          _voiceController.onStart(d);
-                          _voiceController.showOverlay(context);
+                        onLongPressStart: (d) async {
+                          await _voiceController.onStart(d);
+                          if (_voiceController.isRecording) {
+                            _voiceController.showOverlay(context);
+                          }
                         },
                         onLongPressMoveUpdate: _voiceController.onUpdate,
-                        onLongPressEnd: (d) {
-                          _voiceController.onEnd(d);
+                        onLongPressEnd: (d) async {
                           _voiceController.hideOverlay();
+                          final result = await _voiceController.onEnd(d);
+                          if (result != null && mounted) {
+                            ref
+                                .read(
+                                  chatInputControllerProvider(
+                                    widget.roomId,
+                                  ).notifier,
+                                )
+                                .sendVoiceMessage(
+                                  filePath: result.filePath,
+                                  duration: result.duration,
+                                );
+                          }
                         },
                         child: ListenableBuilder(
                           listenable: _voiceController,
@@ -230,13 +232,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                               color: _voiceController.isRecording
                                   ? colorScheme.surfaceContainerHighest
                                   : colorScheme.surfaceContainer,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: _voiceController.isRecording
-                                    ? colorScheme.outline
-                                    : Colors.transparent,
-                                width: 0.5,
-                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text('hold_to_talk'.tr()),
                           ),
@@ -310,7 +306,23 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                           children: [
                             _buildCompactButton(
                               tooltipMessage: 'toolbar_send'.tr(),
-                              onTap: _handleSend,
+                              onTap: () {
+                                final data = _inputController.buildSendData();
+                                if (data == null) return;
+
+                                ref
+                                    .read(
+                                      chatInputControllerProvider(
+                                        widget.roomId,
+                                      ).notifier,
+                                    )
+                                    .sendPlainTextMessage(
+                                      data.text,
+                                      mentionIds: data.mentionIds,
+                                    );
+
+                                _inputController.clear();
+                              },
                               icon: HugeIcons.strokeRoundedSent,
                               color: colorScheme.primary,
                             ),

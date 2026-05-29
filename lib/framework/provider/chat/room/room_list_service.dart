@@ -437,7 +437,7 @@ class RoomSearchQuery extends _$RoomSearchQuery {
 ///
 /// 匹配规则：房间名称 或 最后一条消息内容
 @riverpod
-List<ChatRoomVO> filteredRoomList(Ref ref) {
+List<ChatRoomVO>? filteredRoomList(Ref ref) {
   final roomListAsync = ref.watch(roomListServiceProvider);
   final query = ref.watch(roomSearchQueryProvider).trim().toLowerCase();
 
@@ -453,7 +453,7 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
         return nameMatch || msgMatch;
       }).toList();
     },
-    orElse: () => const [],
+    orElse: () => null,
   );
 }
 

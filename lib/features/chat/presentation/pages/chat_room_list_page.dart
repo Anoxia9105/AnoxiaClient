@@ -153,6 +153,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     /// 置顶房间 ID 列表用于将置顶房间排在前面
     final pinnedIds = ref.watch(pinnedRoomsProvider);
 
+    if (filteredRooms == null) {
+      return const ChatRoomListSkeleton();
+    }
+
     /// 如果没有任何房间，显示空状态提示
     if (filteredRooms.isEmpty) {
       return RefreshIndicator(

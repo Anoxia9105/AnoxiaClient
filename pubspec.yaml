@@ -110,6 +110,10 @@ dependencies:
   flutter_background: ^1.3.1
   # 系统浮动窗口 Android/IOS
   pip: ^0.0.3
+  # 音频播放组件
+  just_audio: ^0.10.5
+  # 音频波形组件
+  audio_waveforms: ^2.0.2
 
 dev_dependencies:
   flutter_test:

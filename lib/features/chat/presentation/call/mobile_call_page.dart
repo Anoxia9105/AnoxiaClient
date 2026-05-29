@@ -9,6 +9,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pip/pip.dart';
 
@@ -116,7 +117,11 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
               // 右上角挂断按钮（非 PiP 时显示）
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.call_end, color: Colors.red),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedCallRinging03,
+                    size: 18,
+                    color: Colors.redAccent,
+                  ),
                   onPressed: () async {
                     // 优先释放 PiP 插件，防止原生残留
                     try {

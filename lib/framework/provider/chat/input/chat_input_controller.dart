@@ -2,10 +2,12 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
@@ -401,6 +403,52 @@ class ChatInputController extends _$ChatInputController {
     if (!hasContent && _isTyping) {
       _isTyping = false;
       _sendTypingStatus(false);
+    }
+  }
+
+  /// 发送语音消息
+  Future<void> sendVoiceMessage({
+    required String filePath,
+    required int duration,
+  }) async {
+    final room = ref.read(currentRoomProvider(roomId));
+    if (room == null) return;
+
+    try {
+      // 上传文件
+      final res = await DioClient().uploadFiles(
+        '/file/uploadBatch',
+        files: [File(filePath)],
+      );
+
+      final rawList = res.data is Map ? res.data['data'] : res.data;
+      if (rawList is! List || rawList.isEmpty) {
+        log.warning('语音上传失败：返回数据为空');
+        return;
+      }
+
+      final url = rawList.first.toString();
+
+      _doSend(
+        type: MessageType.audio,
+        payload: MessagePayload(content: '[语音]', audioDuration: duration),
+        attachments: [
+          Attachment(
+            id: const Uuid().v4(),
+            url: url,
+            name: 'voice_message',
+            size: File(filePath).lengthSync(),
+            type: 'm4a',
+          ),
+        ],
+      );
+
+      // 删除本地临时文件
+      try {
+        File(filePath).deleteSync();
+      } catch (_) {}
+    } catch (e) {
+      log.error('语音消息发送失败: $e');
     }
   }
 

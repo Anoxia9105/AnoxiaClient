@@ -21,6 +21,9 @@ class MessagePayload {
   /// emoji 统一码
   final String? emojiCode;
 
+  /// 音频消息时长（秒）
+  final int? audioDuration;
+
   MessagePayload({
     this.content,
     this.quillDelta,
@@ -28,30 +31,33 @@ class MessagePayload {
     this.mentions,
     this.markdown,
     this.emojiCode,
+    this.audioDuration,
   });
 
   /// 从 JSON 构造 [MessagePayload] 实例
   factory MessagePayload.fromJson(Map<String, dynamic> json) => MessagePayload(
-        content: json['content'],
-        quillDelta: json['quillDelta'],
-        replyTo: json['replyTo'],
-        mentions: (json['mentions'] as List?)?.map((e) => e as int).toList(),
-        markdown: json['markdown'],
-        emojiCode: json['emojiCode'],
-      );
+    content: json['content'],
+    quillDelta: json['quillDelta'],
+    replyTo: json['replyTo'],
+    mentions: (json['mentions'] as List?)?.map((e) => e as int).toList(),
+    markdown: json['markdown'],
+    emojiCode: json['emojiCode'],
+    audioDuration: json['audioDuration'],
+  );
 
   /// 序列化为 JSON
   Map<String, dynamic> toJson() => {
-        'content': content,
-        'quillDelta': quillDelta,
-        'replyTo': replyTo,
-        'mentions': mentions,
-        'markdown': markdown,
-        'emojiCode': emojiCode,
-      };
+    'content': content,
+    'quillDelta': quillDelta,
+    'replyTo': replyTo,
+    'mentions': mentions,
+    'markdown': markdown,
+    'emojiCode': emojiCode,
+    'audioDuration': audioDuration,
+  };
 
   @override
   String toString() {
-    return 'MessagePayload{content: $content, quillDelta: $quillDelta, replyTo: $replyTo, mentions: $mentions, markdown: $markdown, emojiCode: $emojiCode}';
+    return 'MessagePayload{content: $content, quillDelta: $quillDelta, replyTo: $replyTo, mentions: $mentions, markdown: $markdown, emojiCode: $emojiCode, audioDuration: $audioDuration}';
   }
 }

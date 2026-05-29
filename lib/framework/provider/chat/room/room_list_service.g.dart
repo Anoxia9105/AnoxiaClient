@@ -340,11 +340,11 @@ final filteredRoomListProvider = FilteredRoomListProvider._();
 final class FilteredRoomListProvider
     extends
         $FunctionalProvider<
-          List<ChatRoomVO>,
-          List<ChatRoomVO>,
-          List<ChatRoomVO>
+          List<ChatRoomVO>?,
+          List<ChatRoomVO>?,
+          List<ChatRoomVO>?
         >
-    with $Provider<List<ChatRoomVO>> {
+    with $Provider<List<ChatRoomVO>?> {
   /// 根据关键词过滤后的聊天室列表
   ///
   /// 匹配规则：房间名称 或 最后一条消息内容
@@ -364,24 +364,25 @@ final class FilteredRoomListProvider
 
   @$internal
   @override
-  $ProviderElement<List<ChatRoomVO>> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<List<ChatRoomVO>?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  List<ChatRoomVO> create(Ref ref) {
+  List<ChatRoomVO>? create(Ref ref) {
     return filteredRoomList(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<ChatRoomVO> value) {
+  Override overrideWithValue(List<ChatRoomVO>? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<ChatRoomVO>>(value),
+      providerOverride: $SyncValueProvider<List<ChatRoomVO>?>(value),
     );
   }
 }
 
-String _$filteredRoomListHash() => r'c7ad2830497d41b750db2301501f76ebc76e3f15';
+String _$filteredRoomListHash() => r'e0a01ef62419852d8a332f7f0255ce6275095820';
 
 /// 总未读消息数
 ///

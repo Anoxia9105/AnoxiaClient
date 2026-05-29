@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/presentation/widgets/message_render/audio_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/quill_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/system_message_strategy.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -17,7 +18,7 @@ class MessageRenderFactory {
     MessageType.file: FileMessageStrategy(),
     MessageType.quill: QuillMessageStrategy(),
     MessageType.system: SystemMessageStrategy(),
-    // 'VOICE': VoiceMessageStrategy(),
+    MessageType.audio: AudioMessageStrategy(),
   };
 
   static MessageRenderStrategy getStrategy(MessageType? type) {
