@@ -110,8 +110,8 @@ class _AudioBubbleState extends State<_AudioBubble> {
 
     /// 动态宽度
     final bubbleWidth =
-        (80.0 + widget.duration * 8.0)
-            .clamp(80.0, 200.0);
+        (40.0 + widget.duration * 8.0)
+            .clamp(40.0, 200.0);
 
     return GestureDetector(
       onTap: _togglePlay,
