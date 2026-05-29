@@ -12,11 +12,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 
 /// 聊天房间详情设置页
-///
-/// 展示房间成员列表、搜索聊天记录、消息通知设置等功能。
-/// 群聊还支持全员禁言、退出群聊等操作。
 class ChatRoomDetailSettingsPage extends ConsumerWidget {
-  /// 统一修改为只接收 roomId
   final String roomId;
 
   const ChatRoomDetailSettingsPage({super.key, required this.roomId});
@@ -25,7 +21,6 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // 1. 实时监听最新的房间数据
     final currentRoom = ref.watch(currentRoomProvider(roomId));
     if (currentRoom == null) {
       return Scaffold(
@@ -57,16 +52,13 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
           // 区块 1：会话/群聊基础资料管理
           RoomCard(
             children: [
-              ListTile(
+              _buildMaterialListTile(
+                context,
                 leading: const HugeIcon(
                   icon: HugeIcons.strokeRoundedUserMultiple02,
                   size: 22,
                 ),
-                title: Text(
-                  isGroup
-                      ? 'chat_group_members'.tr()
-                      : 'chat_view_profile'.tr(),
-                ),
+                title: Text(isGroup ? 'chat_group_members'.tr() : 'chat_contact_info'.tr()),
                 subtitle: isGroup
                     ? Consumer(
                         builder: (context, ref, child) {
@@ -87,11 +79,12 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                 },
               ),
               if (isGroup) ...[
-                ListTile(
+                _buildMaterialListTile(
+                  context,
                   leading: const HugeIcon(
                     icon: HugeIcons.strokeRoundedComment01,
                     size: 22,
-                  ), // 修复图标
+                  ),
                   title: Text('chat_group_name'.tr()),
                   subtitle: Text(
                     currentRoom.roomName ?? currentRoom.roomDescription ?? '',
@@ -99,7 +92,8 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                   onTap: () {},
                 ),
-                ListTile(
+                _buildMaterialListTile(
+                  context,
                   leading: const HugeIcon(
                     icon: HugeIcons.strokeRoundedMegaphone01,
                     size: 22,
@@ -108,16 +102,15 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                   onTap: () {},
                 ),
-                ListTile(
+                _buildMaterialListTile(
+                  context,
                   leading: const HugeIcon(
                     icon: HugeIcons.strokeRoundedQrCode01,
                     size: 22,
                   ),
                   title: Text('chat_group_qr_code'.tr()),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () {
-                    // TODO: 打开二维码展示页
-                  },
+                  onTap: () {},
                 ),
               ],
             ],
@@ -125,7 +118,8 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
 
           // 区块 2：核心功能（搜索聊天记录）
           RoomCard(
-            child: ListTile(
+            child: _buildMaterialListTile(
+              context,
               leading: const HugeIcon(
                 icon: HugeIcons.strokeRoundedSearch01,
                 size: 22,
@@ -196,6 +190,27 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     );
   }
 
+  /// 包一层 Material 的 ListTile
+  Widget _buildMaterialListTile(
+    BuildContext context, {
+    Widget? leading,
+    Widget? title,
+    Widget? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: leading,
+        title: title,
+        subtitle: subtitle,
+        trailing: trailing,
+        onTap: onTap,
+      ),
+    );
+  }
+
   /// 构建底部危险操作卡片
   Widget _buildDangerActionCard(
     BuildContext context,
@@ -210,58 +225,59 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     if (isGroup && isAdmin && roomStatus == 0) {
       actionLabel = 'chat_dissolve_group'.tr();
       onTap = () => _showConfirmDialog(
-        context,
-        title: 'chat_dissolve_group'.tr(),
-        content: 'chat_dissolve_group_confirm_hint'
-            .tr(), // 确认要解散该群聊吗？解散后将清空所有数据。
-        onConfirm: () async {
-          await ref
-              .read(roomListServiceProvider.notifier)
-              .dissolveGroup(roomId);
-          if (context.mounted) context.go('/chat'); // 回到聊天主页
-        },
-      );
+            context,
+            title: 'chat_dissolve_group'.tr(),
+            content: 'chat_dissolve_group_confirm_hint'.tr(),
+            onConfirm: () async {
+              await ref
+                  .read(roomListServiceProvider.notifier)
+                  .dissolveGroup(roomId);
+              if (context.mounted) context.go('/chat');
+            },
+          );
     } else if (isGroup) {
-      actionLabel = 'chat_exit_group'.tr(); // 退出群聊
+      actionLabel = 'chat_exit_group'.tr();
       onTap = () => _showConfirmDialog(
-        context,
-        title: 'chat_exit_group'.tr(),
-        content: 'chat_exit_group_confirm_hint'.tr(), // 确定要退出该群聊吗？
-        onConfirm: () async {
-          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-          if (context.mounted) context.go('/chat');
-        },
-      );
+            context,
+            title: 'chat_exit_group'.tr(),
+            content: 'chat_exit_group_confirm_hint'.tr(),
+            onConfirm: () async {
+              await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
+              if (context.mounted) context.go('/chat');
+            },
+          );
     } else {
       actionLabel = 'chat_delete_conversation'.tr();
       onTap = () => _showConfirmDialog(
-        context,
-        title: 'chat_delete_conversation'.tr(),
-        content: 'chat_delete_conversation_confirm_hint'.tr(), // 确定删除该会话吗？
-        onConfirm: () async {
-          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-          if (context.mounted) context.go('/chat');
-        },
-      );
+            context,
+            title: 'chat_delete_conversation'.tr(),
+            content: 'chat_delete_conversation_confirm_hint'.tr(),
+            onConfirm: () async {
+              await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
+              if (context.mounted) context.go('/chat');
+            },
+          );
     }
 
     return RoomCard(
-      child: ListTile(
-        title: Center(
-          child: Text(
-            actionLabel,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.error,
-              fontWeight: FontWeight.bold,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          title: Center(
+            child: Text(
+              actionLabel,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }
 
-  /// 通用二次确认适配弹窗
   void _showConfirmDialog(
     BuildContext context, {
     required String title,

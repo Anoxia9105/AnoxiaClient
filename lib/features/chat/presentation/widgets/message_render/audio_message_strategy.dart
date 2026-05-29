@@ -1,6 +1,8 @@
 import 'dart:ui';
 
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../framework/domain/ChatMessage.dart';
@@ -16,6 +18,14 @@ class AudioMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
+    /// 语音消息不支持桌面端
+    if (DeviceUtil.isRealDesktop()) {
+      return Text(
+        'audio_message_mobile_only'.tr(),
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      );
+    }
+
     final url = message.attachments.firstOrNull?.url ?? '';
     final duration = message.payload?.audioDuration ?? 0;
 
@@ -61,8 +71,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
     manager.positionStream.listen((position) {
       if (!mounted) return;
 
-      final isCurrent =
-          manager.playingMessageId == widget.messageId;
+      final isCurrent = manager.playingMessageId == widget.messageId;
 
       if (!isCurrent) return;
 
@@ -82,10 +91,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
     if (widget.url.isEmpty) return;
 
     try {
-      await manager.play(
-        messageId: widget.messageId,
-        url: widget.url,
-      );
+      await manager.play(messageId: widget.messageId, url: widget.url);
     } catch (e) {
       debugPrint('播放失败: $e');
     }
@@ -100,21 +106,16 @@ class _AudioBubbleState extends State<_AudioBubble> {
   @override
   Widget build(BuildContext context) {
     /// 当前是否是这条语音
-    final isCurrent =
-        manager.playingMessageId == widget.messageId;
+    final isCurrent = manager.playingMessageId == widget.messageId;
 
     /// 当前是否播放中
-    final isPlaying =
-        isCurrent && manager.isPlaying;
+    final isPlaying = isCurrent && manager.isPlaying;
 
     /// 当前显示秒数
-    final displaySeconds =
-        isPlaying ? _currentSeconds : widget.duration;
+    final displaySeconds = isPlaying ? _currentSeconds : widget.duration;
 
     /// 动态宽度
-    final bubbleWidth =
-        (40.0 + widget.duration * 8.0)
-            .clamp(40.0, 200.0);
+    final bubbleWidth = (40.0 + widget.duration * 8.0).clamp(40.0, 200.0);
 
     return GestureDetector(
       onTap: _togglePlay,
@@ -127,9 +128,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 key: ValueKey(isPlaying),
-                isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
+                isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                 color: widget.textColor,
                 size: 22,
               ),
@@ -142,9 +141,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
               style: TextStyle(
                 fontSize: 13,
                 color: widget.textColor,
-                fontFeatures: const [
-                  FontFeature.tabularFigures(),
-                ],
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ],

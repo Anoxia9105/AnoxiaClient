@@ -453,5 +453,6 @@
   "toolbar_more": "More",
   "toolbar_keyboard": "Keyboard",
   "hold_to_talk": "Hold to Talk",
-  "release_to_send": "Release to Send"
+  "release_to_send": "Release to Send",
+  "audio_message_mobile_only": "Audio messages are only supported on mobile devices"
 }

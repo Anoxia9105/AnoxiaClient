@@ -453,5 +453,6 @@
   "toolbar_keyboard": "键盘",
   "toolbar_more": "更多",
   "hold_to_talk": "按住说话",
-  "release_to_send": "松开发送"
+  "release_to_send": "松开发送",
+  "audio_message_mobile_only": "语音消息请在移动端查看"
 }
