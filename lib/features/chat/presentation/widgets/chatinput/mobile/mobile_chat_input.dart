@@ -147,7 +147,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
 
       /// 申请权限
       _voiceController.requestPermission();
-
     } else {
       _focusNode.requestFocus();
     }
@@ -219,7 +218,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                     ? GestureDetector(
                         onLongPressStart: (d) async {
                           await _voiceController.onStart(d);
-                          if (_voiceController.isRecording) {
+                          if (_voiceController.isRecording && context.mounted) {
                             _voiceController.showOverlay(context);
                           }
                         },
@@ -242,13 +241,13 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         },
                         child: ListenableBuilder(
                           listenable: _voiceController,
-                          builder: (_, __) => Container(
+                          builder: (_, _) => Container(
                             height: 40,
                             alignment: Alignment.center,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
                               color: _voiceController.isRecording
-                                  ? colorScheme.surfaceContainerHighest
+                                  ? colorScheme.primary
                                   : colorScheme.surfaceContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -298,7 +297,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               // 发送/更多按钮
               ListenableBuilder(
                 listenable: _inputController,
-                builder: (_, __) => AnimatedSwitcher(
+                builder: (_, _) => AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   transitionBuilder: (child, animation) => FadeTransition(
                     opacity: animation,
@@ -350,11 +349,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
           ),
         ),
         if (isAnyPanelOpen)
-          Divider(
-            height: 1,
-            thickness: 0.5,
-            color: colorScheme.outlineVariant,
-          ),
+          Divider(height: 1, thickness: 0.5, color: colorScheme.outlineVariant),
         AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.fastOutSlowIn,
