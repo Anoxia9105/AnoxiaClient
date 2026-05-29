@@ -18,6 +18,8 @@ class VoiceRecordController extends ChangeNotifier {
   static const int _maxDurationSeconds = 60;
   final RecorderController waveController = RecorderController();
 
+  bool _disposed = false;
+
   OverlayEntry? _overlayEntry;
   Timer? _maxDurationTimer;
   bool isRecording = false;
@@ -25,6 +27,16 @@ class VoiceRecordController extends ChangeNotifier {
   double _startY = 0.0;
   String? _filePath;
   DateTime? _startTime;
+
+  Future<void> requestPermission() async {
+    if (!waveController.hasPermission) {
+      await waveController.checkPermission();
+      // 请求后再检查一次
+      if (!waveController.hasPermission) {
+        log.warning('用户拒绝了麦克风权限');
+      }
+    }
+  }
 
   VoidCallback? onMaxDurationReached;
   void showOverlay(BuildContext context) {
@@ -43,12 +55,7 @@ class VoiceRecordController extends ChangeNotifier {
   Future<void> onStart(LongPressStartDetails d) async {
     // 先请求权限
     if (!waveController.hasPermission) {
-      await waveController.checkPermission();
-      // 请求后再检查一次
-      if (!waveController.hasPermission) {
-        log.warning('用户拒绝了麦克风权限');
-        return;
-      }
+      return;
     }
 
     final dir = await getTemporaryDirectory();
@@ -79,7 +86,9 @@ class VoiceRecordController extends ChangeNotifier {
       onMaxDurationReached?.call();
     });
 
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
   }
 
   void onUpdate(LongPressMoveUpdateDetails d) {
@@ -88,7 +97,9 @@ class VoiceRecordController extends ChangeNotifier {
     final should = drag > _cancelThreshold;
     if (willCancel != should) {
       willCancel = should;
-      notifyListeners();
+      if (!_disposed) {
+        notifyListeners();
+      }
     }
   }
 
@@ -99,7 +110,9 @@ class VoiceRecordController extends ChangeNotifier {
     final cancelled = willCancel;
     isRecording = false;
     willCancel = false;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
 
     final path = await waveController.stop();
 
@@ -134,7 +147,9 @@ class VoiceRecordController extends ChangeNotifier {
     if (!isRecording) return null;
     isRecording = false;
     willCancel = false;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
 
     final path = await waveController.stop();
     if (path == null) return null;
@@ -146,6 +161,7 @@ class VoiceRecordController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _maxDurationTimer?.cancel(); // ← 取消定时器
     hideOverlay();
     waveController.dispose();

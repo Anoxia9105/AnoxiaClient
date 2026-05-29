@@ -144,6 +144,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     setState(() => _isVoiceMode = !_isVoiceMode);
     if (_isVoiceMode) {
       ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
+
+      /// 申请权限
+      _voiceController.requestPermission();
+
     } else {
       _focusNode.requestFocus();
     }

@@ -39,7 +39,7 @@ class _VoiceIndicator extends StatelessWidget {
           Icon(
             willCancel ? Icons.undo_rounded : Icons.mic_rounded,
             size: 48,
-            color: willCancel ? Theme.of(context).colorScheme.error : null,
+            color: willCancel ? Theme.of(context).colorScheme.error : Colors.white,
           ),
           const SizedBox(height: 12),
 
