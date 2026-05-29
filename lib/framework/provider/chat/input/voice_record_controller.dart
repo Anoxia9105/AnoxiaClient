@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/chat_voice_overlay.dart';
@@ -14,15 +15,18 @@ class VoiceResult {
 
 class VoiceRecordController extends ChangeNotifier {
   static const double _cancelThreshold = 60.0;
+  static const int _maxDurationSeconds = 60;
   final RecorderController waveController = RecorderController();
 
   OverlayEntry? _overlayEntry;
+  Timer? _maxDurationTimer;
   bool isRecording = false;
   bool willCancel = false;
   double _startY = 0.0;
   String? _filePath;
   DateTime? _startTime;
 
+  VoidCallback? onMaxDurationReached;
   void showOverlay(BuildContext context) {
     if (_overlayEntry != null) return;
     _overlayEntry = OverlayEntry(
@@ -69,6 +73,12 @@ class VoiceRecordController extends ChangeNotifier {
     isRecording = true;
     willCancel = false;
     _startY = d.globalPosition.dy;
+
+    _maxDurationTimer = Timer(const Duration(seconds: _maxDurationSeconds), () {
+      log.info('录音达到最长 $_maxDurationSeconds 秒，自动发送');
+      onMaxDurationReached?.call();
+    });
+
     notifyListeners();
   }
 
@@ -83,6 +93,8 @@ class VoiceRecordController extends ChangeNotifier {
   }
 
   Future<VoiceResult?> onEnd(LongPressEndDetails d) async {
+    _maxDurationTimer?.cancel(); // ← 取消定时器
+    _maxDurationTimer = null;
     if (!isRecording) return null;
     final cancelled = willCancel;
     isRecording = false;
@@ -114,8 +126,27 @@ class VoiceRecordController extends ChangeNotifier {
     return VoiceResult(filePath: path, duration: duration);
   }
 
+  /// 强制结束录音（用于超时自动发送）
+  Future<VoiceResult?> forceEnd() async {
+    _maxDurationTimer?.cancel();
+    _maxDurationTimer = null;
+
+    if (!isRecording) return null;
+    isRecording = false;
+    willCancel = false;
+    notifyListeners();
+
+    final path = await waveController.stop();
+    if (path == null) return null;
+
+    final duration = DateTime.now().difference(_startTime!).inSeconds;
+    log.info('语音强制结束: $path, 时长: ${duration}s');
+    return VoiceResult(filePath: path, duration: duration);
+  }
+
   @override
   void dispose() {
+    _maxDurationTimer?.cancel(); // ← 取消定时器
     hideOverlay();
     waveController.dispose();
     super.dispose();

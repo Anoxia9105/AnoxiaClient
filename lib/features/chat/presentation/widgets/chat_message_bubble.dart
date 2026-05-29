@@ -60,10 +60,11 @@ class ChatMessageBubble extends ConsumerWidget {
       isMentionedMe = true;
     }
 
+    /// 某些消息类型需要气泡背景（如文本、富文本），而图片、文件等类型则直接渲染内容，无需气泡
     final bool needsBubble =
         message.messageType == MessageType.quill ||
-        message.messageType == MessageType.text &&
-            message.payload?.emojiCode == null;
+        message.messageType == MessageType.audio ||
+        (message.messageType == MessageType.text && message.payload?.emojiCode == null);
 
     final strategy = MessageRenderFactory.getStrategy(message.messageType);
 

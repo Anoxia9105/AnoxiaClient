@@ -43,7 +43,22 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _focusNode = ref.read(chatFocusNodeProvider(widget.roomId));
     _focusNode.addListener(_onFocusChange);
     _inputController = MobileTextInputController();
-    _voiceController = VoiceRecordController();
+    _voiceController = VoiceRecordController()
+      ..onMaxDurationReached = _onVoiceMaxDuration;
+  }
+
+  void _onVoiceMaxDuration() {
+    _voiceController.hideOverlay();
+    _voiceController.forceEnd().then((result) {
+      if (result != null && mounted) {
+        ref
+            .read(chatInputControllerProvider(widget.roomId).notifier)
+            .sendVoiceMessage(
+              filePath: result.filePath,
+              duration: result.duration,
+            );
+      }
+    });
   }
 
   @override
@@ -56,7 +71,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
 
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
-      // 只关面板，不 unfocus，否则键盘弹不出来
       ref.read(inputPanelProvider.notifier).closePanel();
     }
   }
@@ -224,7 +238,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         },
                         child: ListenableBuilder(
                           listenable: _voiceController,
-                          builder: (_, _) => Container(
+                          builder: (_, __) => Container(
                             height: 40,
                             alignment: Alignment.center,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -280,7 +294,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               // 发送/更多按钮
               ListenableBuilder(
                 listenable: _inputController,
-                builder: (_, _) => AnimatedSwitcher(
+                builder: (_, __) => AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   transitionBuilder: (child, animation) => FadeTransition(
                     opacity: animation,
@@ -309,7 +323,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                               onTap: () {
                                 final data = _inputController.buildSendData();
                                 if (data == null) return;
-
                                 ref
                                     .read(
                                       chatInputControllerProvider(
@@ -320,7 +333,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                                       data.text,
                                       mentionIds: data.mentionIds,
                                     );
-
                                 _inputController.clear();
                               },
                               icon: HugeIcons.strokeRoundedSent,
@@ -333,10 +345,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             ],
           ),
         ),
-        // 分割线
         if (isAnyPanelOpen)
-          Divider(height: 1, thickness: 0.5, color: colorScheme.outlineVariant),
-        // 面板区域
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: colorScheme.outlineVariant,
+          ),
         AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.fastOutSlowIn,

@@ -414,42 +414,137 @@ class ChatInputController extends _$ChatInputController {
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null) return;
 
+    final clientMsgId = const Uuid().v4();
+    final file = File(filePath);
+
+    // 1. 立即插入本地占位消息（状态 sending，url 用本地路径）
+    final localMsg = ChatMessage(
+      messageId: clientMsgId,
+      clientMsgId: clientMsgId,
+      roomId: roomId,
+      senderId: ref.read(authControllerProvider).value?.userId,
+      messageType: MessageType.audio,
+      content: '[语音]',
+      payload: MessagePayload(content: '[语音]', audioDuration: duration),
+      attachments: [
+        Attachment(
+          id: clientMsgId,
+          url: filePath, // 先用本地路径，渲染时可以直接播放本地文件
+          name: 'voice_message',
+          size: file.lengthSync(),
+          type: 'm4a',
+        ),
+      ],
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      deliveryStatus: DeliveryStatus.sending,
+      seq: 0,
+    );
+
+    ref.read(chatMessagesProvider.notifier).upsertMessage(localMsg);
+
     try {
-      // 上传文件
+      // 2. 后台上传
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
-        files: [File(filePath)],
+        files: [file],
       );
 
       final rawList = res.data is Map ? res.data['data'] : res.data;
       if (rawList is! List || rawList.isEmpty) {
+        // 上传失败，更新为 failed 状态
+        ref
+            .read(chatMessagesProvider.notifier)
+            .upsertMessage(
+              localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
+            );
         log.warning('语音上传失败：返回数据为空');
         return;
       }
 
       final url = rawList.first.toString();
 
-      _doSend(
-        type: MessageType.audio,
-        payload: MessagePayload(content: '[语音]', audioDuration: duration),
-        attachments: [
-          Attachment(
-            id: const Uuid().v4(),
-            url: url,
-            name: 'voice_message',
-            size: File(filePath).lengthSync(),
-            type: 'm4a',
-          ),
-        ],
+      // 3. 上传成功，通过 WS 发送真正的消息
+      _doSendVoice(
+        clientMsgId: clientMsgId,
+        url: url,
+        duration: duration,
+        fileSize: file.lengthSync(),
       );
 
-      // 删除本地临时文件
+      // 4. 删除本地临时文件
       try {
-        File(filePath).deleteSync();
+        file.deleteSync();
       } catch (_) {}
     } catch (e) {
+      ref
+          .read(chatMessagesProvider.notifier)
+          .upsertMessage(
+            localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
+          );
       log.error('语音消息发送失败: $e');
     }
+  }
+
+  void _doSendVoice({
+    required String clientMsgId,
+    required String url,
+    required int duration,
+    required int fileSize,
+  }) {
+    final room = ref.read(currentRoomProvider(roomId));
+    final user = ref.read(authControllerProvider).value;
+    if (room == null || user == null) return;
+
+    final payload = MessagePayload(content: '[语音]', audioDuration: duration);
+    final attachments = [
+      Attachment(
+        id: clientMsgId,
+        url: url,
+        name: 'voice_message',
+        size: fileSize,
+        type: 'm4a',
+      ),
+    ];
+
+    // 更新本地消息的 url 为真实 url
+    final updatedMsg = ChatMessage(
+      messageId: clientMsgId,
+      clientMsgId: clientMsgId,
+      roomId: roomId,
+      senderId: user.userId,
+      messageType: MessageType.audio,
+      content: '[语音]',
+      payload: payload,
+      attachments: attachments,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      deliveryStatus: DeliveryStatus.sending,
+      seq: 0,
+    );
+    ref.read(chatMessagesProvider.notifier).upsertMessage(updatedMsg);
+
+    final messageData = {
+      'topic': 'MESSAGE',
+      'data': {
+        'messageId': clientMsgId,
+        'clientMsgId': clientMsgId,
+        'roomId': roomId,
+        'targetId': room.peerId,
+        'type': 'AUDIO',
+        'payload': payload.toJson(),
+        'attachments': attachments.map((e) => e.toJson()).toList(),
+      },
+    };
+
+    log.info('🚀 发送语音消息: ${jsonEncode(messageData)}');
+    ref
+        .read(wsControllerProvider.notifier)
+        .sendMessage(jsonEncode(messageData));
+
+    Timer(const Duration(seconds: 10), () {
+      ref
+          .read(chatMessagesProvider.notifier)
+          .handleTimeout(roomId, clientMsgId);
+    });
   }
 
   bool _isEmoji(String char) {

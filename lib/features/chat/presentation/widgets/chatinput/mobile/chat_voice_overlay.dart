@@ -12,9 +12,7 @@ class ChatVoiceOverlay extends StatelessWidget {
       listenable: controller,
       builder: (_, __) => Material(
         color: Colors.black.withValues(alpha: 0.5),
-        child: Center(
-          child: _VoiceIndicator(controller: controller),
-        ),
+        child: Center(child: _VoiceIndicator(controller: controller)),
       ),
     );
   }
@@ -32,7 +30,7 @@ class _VoiceIndicator extends StatelessWidget {
       width: 220,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.75),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -41,7 +39,7 @@ class _VoiceIndicator extends StatelessWidget {
           Icon(
             willCancel ? Icons.undo_rounded : Icons.mic_rounded,
             size: 48,
-            color: willCancel ? Colors.redAccent : Colors.white,
+            color: willCancel ? Theme.of(context).colorScheme.error : null,
           ),
           const SizedBox(height: 12),
 
@@ -50,8 +48,8 @@ class _VoiceIndicator extends StatelessWidget {
             AudioWaveforms(
               recorderController: controller.waveController,
               size: const Size(180, 40),
-              waveStyle: const WaveStyle(
-                waveColor: Colors.white,
+              waveStyle: WaveStyle(
+                waveColor: Theme.of(context).colorScheme.primary,
                 extendWaveform: true,
                 showMiddleLine: false,
                 spacing: 4.0,
@@ -59,8 +57,7 @@ class _VoiceIndicator extends StatelessWidget {
               ),
             ),
 
-          if (willCancel)
-            const SizedBox(height: 40),
+          if (willCancel) const SizedBox(height: 40),
 
           const SizedBox(height: 12),
 
@@ -69,7 +66,7 @@ class _VoiceIndicator extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: willCancel
-                  ? Colors.redAccent.withValues(alpha: 0.8)
+                  ? Theme.of(context).colorScheme.error.withValues(alpha: 0.8)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
             ),

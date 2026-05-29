@@ -1,6 +1,7 @@
-import 'package:audio_waveforms/audio_waveforms.dart';
+import 'dart:ui';
+
+import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 
 import '../../../../../../framework/domain/ChatMessage.dart';
 import 'base/message_render_strategy.dart';
@@ -14,16 +15,24 @@ class AudioMessageStrategy extends MessageRenderStrategy {
   ) {
     final url = message.attachments.firstOrNull?.url ?? '';
     final duration = message.payload?.audioDuration ?? 0;
-    return _AudioBubble(url: url, duration: duration, textColor: textColor);
+
+    return _AudioBubble(
+      messageId: message.messageId ?? '',
+      url: url,
+      duration: duration,
+      textColor: textColor,
+    );
   }
 }
 
 class _AudioBubble extends StatefulWidget {
+  final String messageId;
   final String url;
   final int duration;
   final Color textColor;
 
   const _AudioBubble({
+    required this.messageId,
     required this.url,
     required this.duration,
     required this.textColor,
@@ -34,132 +43,109 @@ class _AudioBubble extends StatefulWidget {
 }
 
 class _AudioBubbleState extends State<_AudioBubble> {
-  final AudioPlayer _player = AudioPlayer();
-  final PlayerController _waveController = PlayerController();
+  final manager = ChatAudioPlayerManager.instance;
 
-  bool _isPlaying = false;
-  bool _isLoading = false;
   int _currentSeconds = 0;
 
   @override
   void initState() {
     super.initState();
-    _initWave();
 
-    // 播放进度监听
-    _player.positionStream.listen((pos) {
-      if (!mounted) return;
-      setState(() => _currentSeconds = pos.inSeconds);
-    });
+    /// 监听播放器状态刷新 UI
+    manager.addListener(_refresh);
 
-    // 播放结束监听
-    _player.playerStateStream.listen((state) {
+    /// 监听播放进度
+    manager.positionStream.listen((position) {
       if (!mounted) return;
-      if (state.processingState == ProcessingState.completed) {
-        setState(() {
-          _isPlaying = false;
-          _currentSeconds = 0;
-        });
-        _waveController.stopPlayer();
-      }
+
+      final isCurrent =
+          manager.playingMessageId == widget.messageId;
+
+      if (!isCurrent) return;
+
+      setState(() {
+        _currentSeconds = position.inSeconds;
+      });
     });
   }
 
-  Future<void> _initWave() async {
-    try {
-      await _waveController.preparePlayer(
-        path: widget.url,
-        shouldExtractWaveform: true,
-        noOfSamples: 40,
-        volume: 1.0,
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _togglePlay() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    try {
-      if (_isPlaying) {
-        await _player.pause();
-        await _waveController.pausePlayer();
-        setState(() => _isPlaying = false);
-      } else {
-        await _player.setUrl(widget.url);
-        await _player.play();
-        await _waveController.startPlayer();
-        setState(() => _isPlaying = true);
-      }
-    } catch (e) {
-      debugPrint('播放失败: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
-  String _formatDuration(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
+  Future<void> _togglePlay() async {
+    if (widget.url.isEmpty) return;
+
+    try {
+      await manager.play(
+        messageId: widget.messageId,
+        url: widget.url,
+      );
+    } catch (e) {
+      debugPrint('播放失败: $e');
+    }
   }
 
   @override
   void dispose() {
-    _player.dispose();
-    _waveController.dispose();
+    manager.removeListener(_refresh);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final displaySeconds = _isPlaying ? _currentSeconds : widget.duration;
+    /// 当前是否是这条语音
+    final isCurrent =
+        manager.playingMessageId == widget.messageId;
+
+    /// 当前是否播放中
+    final isPlaying =
+        isCurrent && manager.isPlaying;
+
+    /// 当前显示秒数
+    final displaySeconds =
+        isPlaying ? _currentSeconds : widget.duration;
+
+    /// 动态宽度
+    final bubbleWidth =
+        (80.0 + widget.duration * 8.0)
+            .clamp(80.0, 200.0);
 
     return GestureDetector(
       onTap: _togglePlay,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 播放/暂停按钮
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: _isLoading
-                ? Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: widget.textColor,
-                    ),
-                  )
-                : Icon(
-                    _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: widget.textColor,
-                    size: 28,
-                  ),
-          ),
-          const SizedBox(width: 6),
-
-          // 波形
-          AudioFileWaveforms(
-            playerController: _waveController,
-            size: const Size(120, 32),
-            waveformType: WaveformType.fitWidth,
-            playerWaveStyle: PlayerWaveStyle(
-              fixedWaveColor: widget.textColor.withValues(alpha: 0.4),
-              liveWaveColor: widget.textColor,
-              spacing: 4,
-              waveThickness: 2.5,
+      child: SizedBox(
+        width: bubbleWidth,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                key: ValueKey(isPlaying),
+                isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                color: widget.textColor,
+                size: 22,
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
 
-          // 时长
-          Text(
-            _formatDuration(displaySeconds),
-            style: TextStyle(fontSize: 12, color: widget.textColor),
-          ),
-        ],
+            const SizedBox(width: 6),
+
+            Text(
+              '$displaySeconds″',
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.textColor,
+                fontFeatures: const [
+                  FontFeature.tabularFigures(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
