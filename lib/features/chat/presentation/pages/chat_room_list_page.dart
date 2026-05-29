@@ -38,8 +38,6 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
 
   @override
   Widget build(BuildContext context) {
-    final roomListAsync = ref.watch(roomListServiceProvider);
-
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
@@ -134,11 +132,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         ],
       ),
       // 异步状态处理
-      body: roomListAsync.when(
-        data: (rooms) => _buildRoomList(context, ref),
-        loading: () => const ChatRoomListSkeleton(),
-        error: (err, stack) => Center(child: Text('chat_load_failed'.tr())),
-      ),
+      body: _buildRoomList(context, ref),
     );
   }
 
