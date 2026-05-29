@@ -453,6 +453,7 @@ List<ChatRoomVO>? filteredRoomList(Ref ref) {
         return nameMatch || msgMatch;
       }).toList();
     },
+    loading: () => null,
     orElse: () => null,
   );
 }
