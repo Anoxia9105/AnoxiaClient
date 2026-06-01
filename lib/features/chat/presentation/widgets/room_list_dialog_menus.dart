@@ -61,10 +61,9 @@ class RoomListDialogMenus {
                     child: TextButton.icon(
                       onPressed: () {
                         /// 移动端跳转页面，桌面端显示对话框
-                        if (DeviceUtil.isRealMobile()) {
-                          BotToast.closeAllLoading();
-                          return;
-                        }
+                        // if (DeviceUtil.isRealMobile()) {
+                        //   return;
+                        // }
 
                         showDialog(
                           context: context,
