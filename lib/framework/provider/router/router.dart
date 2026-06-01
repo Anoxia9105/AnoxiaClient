@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
@@ -8,6 +9,7 @@ import 'package:anoxia/features/app/presentation/pages/login_page.dart';
 import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
 import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
+import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart' as core;
 import 'package:bot_toast/bot_toast.dart';
@@ -20,8 +22,6 @@ import '../../logs/talker.dart';
 import '../core/app_initializer.dart';
 
 part 'router.g.dart';
-
-final _routerKey = GlobalKey<NavigatorState>(debugLabel: 'routerKey');
 
 /// 路由刷新通知器
 ///
@@ -47,7 +47,7 @@ GoRouter router(Ref ref) {
 
   final router = GoRouter(
     observers: [BotToastNavigatorObserver()],
-    navigatorKey: _routerKey,
+    navigatorKey: appNavigatorKey,
     refreshListenable: refreshNotifier,
     initialLocation: const SplashRoute().location,
     debugLogDiagnostics: true,
@@ -204,7 +204,8 @@ class UpdateRoute extends GoRouteData with $UpdateRoute {
 
 /// 开源许可列表页
 @TypedGoRoute<OpenSourceLicensesRoute>(path: '/open-source-licenses')
-class OpenSourceLicensesRoute extends GoRouteData with $OpenSourceLicensesRoute {
+class OpenSourceLicensesRoute extends GoRouteData
+    with $OpenSourceLicensesRoute {
   const OpenSourceLicensesRoute();
 
   @override

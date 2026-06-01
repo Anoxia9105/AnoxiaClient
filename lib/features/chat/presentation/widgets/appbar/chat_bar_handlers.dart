@@ -74,19 +74,6 @@ class ChatBarHandlers {
     }
   }
 
-  /// 弹出添加成员对话框
-  ///
-  /// 显示 [AddMemberDialogWidget] 供用户选择要添加的成员
-  ///
-  /// [context] 构建上下文
-  /// [room] 当前聊天房间数据
-  static void showAddMemberDialog(BuildContext context, ChatRoomVO room) {
-    showDialog(
-      context: context,
-      builder: (context) =>
-          AddMemberDialogWidget(roomId: room.roomId!, roomName: room.roomName!),
-    );
-  }
 
   /// 显示全体禁言/解除禁言确认对话框
   ///

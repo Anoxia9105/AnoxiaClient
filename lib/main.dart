@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
+import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -31,19 +32,6 @@ import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
-/// 全局 Riverpod 容器（所有窗口共享，实现状态同步）
-///
-/// 使用 [UncontrolledProviderScope] 挂载到各个窗口，
-/// 确保主窗口、子窗口、更新窗口共享同一套状态。
-final ProviderContainer globalContainer = ProviderContainer(
-  // 可按需开启观察者，用于调试 Provider 生命周期
-  // observers: [
-  //   TalkerRiverpodObserver(
-  //     talker: log,
-  //     settings: const TalkerRiverpodLoggerSettings(printProviderDisposed: true),
-  //   ),
-  // ],
-);
 
 /// 应用入口
 Future<void> main(List<String> args) async {

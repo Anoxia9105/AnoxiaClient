@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/features/chat/presentation/widgets/add_member_dialog_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -49,7 +50,8 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
     final displayMembers = members.map((m) {
       return m.userId == currentUserId
           ? m.copyWith(
-              nickName: '${m.nickName ?? 'appbar_unknown_user'.tr()} ${'chat_me_suffix'.tr()}',
+              nickName:
+                  '${m.nickName ?? 'appbar_unknown_user'.tr()} ${'chat_me_suffix'.tr()}',
             )
           : m;
     }).toList();
@@ -60,7 +62,13 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
         // 添加成员按钮
         IconButton(
           tooltip: 'appbar_add_member'.tr(),
-          onPressed: () => ChatBarHandlers.showAddMemberDialog(context, room),
+          onPressed: () => showDialog(
+            context: context,
+            builder: (context) => AddMemberDialogWidget(
+              roomId: room.roomId!,
+              roomName: room.roomName!,
+            ),
+          ),
           icon: const HugeIcon(icon: HugeIcons.strokeRoundedAddTeam, size: 20),
         ),
         // 全体禁言按钮（仅管理员可见）
@@ -80,12 +88,13 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
           currentUserId: currentUserId,
           isAdmin: isAdmin,
           roomId: room.roomId ?? '',
-          onKick: (ChatRoomMemberVO member) => ChatBarHandlers.showKickMemberDialog(
-            context,
-            ref,
-            room.roomId ?? '',
-            member,
-          ),
+          onKick: (ChatRoomMemberVO member) =>
+              ChatBarHandlers.showKickMemberDialog(
+                context,
+                ref,
+                room.roomId ?? '',
+                member,
+              ),
         ),
       ],
     );
@@ -110,13 +119,17 @@ class _MuteButton extends StatelessWidget {
             ? cs.primaryContainer.withValues(alpha: 0.75)
             : cs.errorContainer.withValues(alpha: 0.65),
         side: BorderSide(
-          color: isMuted ? cs.primary.withValues(alpha: 0.35) : cs.error.withValues(alpha: 0.35),
+          color: isMuted
+              ? cs.primary.withValues(alpha: 0.35)
+              : cs.error.withValues(alpha: 0.35),
           width: 0.8,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       icon: HugeIcon(
-        icon: isMuted ? HugeIcons.strokeRoundedVolumeHigh : HugeIcons.strokeRoundedVolumeMute02,
+        icon: isMuted
+            ? HugeIcons.strokeRoundedVolumeHigh
+            : HugeIcons.strokeRoundedVolumeMute02,
         size: 20,
         color: isMuted ? cs.primary : cs.error,
       ),
@@ -163,7 +176,10 @@ class _MemberListButton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     child: Text(
                       '${'appbar_member_list'.tr()} (${members.length})',
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -176,7 +192,8 @@ class _MemberListButton extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const ClampingScrollPhysics(),
                       itemCount: members.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1, indent: 56),
+                      separatorBuilder: (_, _) =>
+                          const Divider(height: 1, indent: 56),
                       itemBuilder: (context, index) {
                         final m = members[index];
                         return ListTile(
@@ -185,7 +202,9 @@ class _MemberListButton extends StatelessWidget {
                             url: m.avatar,
                             name: m.nickName,
                             size: 30,
-                            status: (m.onlineStatus ?? false) ? AvatarStatus.online : AvatarStatus.offline,
+                            status: (m.onlineStatus ?? false)
+                                ? AvatarStatus.online
+                                : AvatarStatus.offline,
                           ),
                           title: Text(m.nickName ?? 'chat_unknown_user'.tr()),
                           trailing: _buildTrailing(context, m),

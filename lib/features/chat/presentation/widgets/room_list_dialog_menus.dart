@@ -1,10 +1,15 @@
+import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
+import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
+import 'package:anoxia/framework/core/app_globals.dart';
+import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 /// 房间列表对话框菜单工具类
@@ -35,14 +40,17 @@ class RoomListDialogMenus {
           padding: const EdgeInsets.only(right: 4),
           child: BubbleWidget(
             arrowDirection: AxisDirection.up,
-            arrowOffset: isMobile ? 180 : 25,
+            arrowOffset: isMobile ? 140 : 25,
             backgroundColor: Theme.of(context).colorScheme.surface,
             border: BorderSide(
               color: Theme.of(context).colorScheme.outlineVariant,
               width: 0.5,
             ),
             contentBuilder: (context) => Container(
-              constraints: BoxConstraints(maxWidth: isMobile ? 200 : 220, maxHeight: 600),
+              constraints: BoxConstraints(
+                maxWidth: isMobile ? 160 : 220,
+                maxHeight: 600,
+              ),
               padding: const EdgeInsets.all(8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -52,6 +60,12 @@ class RoomListDialogMenus {
                     width: double.infinity,
                     child: TextButton.icon(
                       onPressed: () {
+                        /// 移动端跳转页面，桌面端显示对话框
+                        if (DeviceUtil.isRealMobile()) {
+                          BotToast.closeAllLoading();
+                          return;
+                        }
+
                         showDialog(
                           context: context,
                           barrierDismissible: false,
@@ -68,15 +82,27 @@ class RoomListDialogMenus {
                       ),
                     ),
                   ),
+                  const Divider(height: 1),
                   // 添加好友按钮
                   SizedBox(
                     width: double.infinity,
                     child: TextButton.icon(
                       onPressed: () {
-                        close?.call();
-                        if (ref != null) {
-                          ref(context);
+                        /// 移动端跳转页面，桌面端显示对话框
+                        if (DeviceUtil.isRealMobile()) {
+                          const AddFriendRoute().push(
+                            appNavigatorKey.currentContext!,
+                          );
+                          return;
                         }
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) {
+                            return const AddFriendPage();
+                          },
+                        );
+                        close?.call();
                       },
                       label: Text('chat_add_friend'.tr()),
                       icon: const HugeIcon(

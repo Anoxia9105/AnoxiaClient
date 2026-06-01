@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/gen/assets.gen.dart';
-import 'package:anoxia/main.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_new_badger/flutter_new_badger.dart';
 import 'package:flutter/services.dart';

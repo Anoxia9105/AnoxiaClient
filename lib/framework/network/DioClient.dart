@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:dio/dio.dart';
 import 'package:anoxia/framework/network/TokenManager.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
-import 'package:anoxia/main.dart';
 
 import '../logs/talker.dart';
 import 'DioConfig.dart';
