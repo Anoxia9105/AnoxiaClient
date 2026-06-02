@@ -117,6 +117,7 @@ dependencies:
   # 极光推送
   jpush_flutter: ^3.4.5
   firebase_core: ^4.10.0
+  firebase_messaging: ^16.0.2
 
 dev_dependencies:
   flutter_test:
