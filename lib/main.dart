@@ -4,11 +4,13 @@ import 'dart:convert';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
+import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/protocol/message/EventMessage.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,7 +34,6 @@ import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'framework/protocol/message/RoomMessage.dart';
 import 'framework/protocol/register/PacketRegistry.dart';
 
-
 /// 应用入口
 Future<void> main(List<String> args) async {
   log.info('程序启动参数：$args');
@@ -42,6 +43,14 @@ Future<void> main(List<String> args) async {
     if (DeviceUtil.isRealDesktop()) {
       // 热键管理器初始化（桌面端全局快捷键注册）
       await hotKeyManager.unregisterAll();
+    }
+
+    if (DeviceUtil.isRealMobile()) {
+      await Firebase.initializeApp();
+      /// 初始化极光推送（移动端专用，桌面端不使用）
+      await PushManager.instance.init();
+      // final token = await FirebaseMessaging.instance.getToken();
+      // print('FCM Token: $token');
     }
 
     // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）

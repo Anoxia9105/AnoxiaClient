@@ -8,7 +8,7 @@
 PRODUCT_NAME = notepadclient
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = cn.anoxia.notepadclient
+PRODUCT_BUNDLE_IDENTIFIER = cn.anoxia
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 cn.anoxia. All rights reserved.

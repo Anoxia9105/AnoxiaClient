@@ -1,4 +1,4 @@
-package cn.anoxia.notepadclient
+package cn.anoxia
 
 import android.content.res.Configuration
 import android.util.Log

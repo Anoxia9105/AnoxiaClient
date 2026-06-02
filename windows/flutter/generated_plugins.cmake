@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_multi_window
   emoji_picker_flutter
   file_selector_windows
+  firebase_core
   flutter_secure_storage_windows
   flutter_webrtc
   hotkey_manager_windows

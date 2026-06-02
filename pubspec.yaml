@@ -114,6 +114,9 @@ dependencies:
   just_audio: ^0.10.5
   # 音频波形组件
   audio_waveforms: ^2.0.2
+  # 极光推送
+  jpush_flutter: ^3.4.5
+  firebase_core: ^4.10.0
 
 dev_dependencies:
   flutter_test:
