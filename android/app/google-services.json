@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "945356312113",
+    "project_id": "anoxia-a52ff",
+    "storage_bucket": "anoxia-a52ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:945356312113:android:f122b3845285433b704f10",
+        "android_client_info": {
+          "package_name": "cn.anoxia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByKv-CWJOI4pc5b84gqaEbOxktiC65yis"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
