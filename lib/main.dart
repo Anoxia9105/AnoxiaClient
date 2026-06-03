@@ -48,7 +48,11 @@ Future<void> main(List<String> args) async {
     if (DeviceUtil.isRealMobile()) {
       await Firebase.initializeApp();
       /// 初始化极光推送（移动端专用，桌面端不使用）
-      unawaited(PushManager.instance.init());
+      unawaited(
+        PushManager.instance.init().catchError((e, stack) {
+          log.error('PushManager 初始化失败', e, stack);
+        }),
+      );
       // final token = await FirebaseMessaging.instance.getToken();
       // print('FCM Token: $token');
     }

@@ -32,38 +32,43 @@ class PushManager {
 
     _initialized = true;
 
-    _jpush.setup(
-      appKey: 'c524d0a1de4ff5469e1c8298',
-      channel: 'developer-default',
-      production: false,
-      debug: true,
-    );
+    try {
+      _jpush.setup(
+        appKey: 'c524d0a1de4ff5469e1c8298',
+        channel: 'developer-default',
+        production: false,
+        debug: true,
+      );
 
-    // Android 默认维持后台长连接，这里显式设置，避免 ROM/版本差异导致行为不一致。
-    _jpush.setBackgroundEnable(enable: true);
+      // Android 默认维持后台长连接，这里显式设置，避免 ROM/版本差异导致行为不一致。
+      _jpush.setBackgroundEnable(enable: true);
 
-    _jpush.addEventHandler(
-      onConnected: _onConnected,
-      onReceiveNotification: _onReceiveNotification,
-      onOpenNotification: _onOpenNotification,
-      onReceiveMessage: _onReceiveMessage,
-    );
+      _jpush.addEventHandler(
+        onConnected: _onConnected,
+        onReceiveNotification: _onReceiveNotification,
+        onOpenNotification: _onOpenNotification,
+        onReceiveMessage: _onReceiveMessage,
+      );
 
-    await _requestPermission();
+      await _requestPermission();
 
-    await Future.delayed(const Duration(milliseconds: 400));
+      await Future.delayed(const Duration(milliseconds: 400));
 
-    final rid = await getRegistrationId().timeout(
-      _jpushQueryTimeout,
-      onTimeout: () => '',
-    );
+      final rid = await getRegistrationId().timeout(
+        _jpushQueryTimeout,
+        onTimeout: () => '',
+      );
 
-    print('JPush RID => $rid');
-    log.info('JPush RID => $rid');
+      print('JPush RID => $rid');
+      log.info('JPush RID => $rid');
 
-    // FCM 在部分国内机型/网络环境下可能长时间阻塞，这里不阻塞主初始化链路。
-    unawaited(_bindFcmTokenToJPush());
-    unawaited(_logPushHealth());
+      // FCM 在部分国内机型/网络环境下可能长时间阻塞，这里不阻塞主初始化链路。
+      unawaited(_bindFcmTokenToJPush());
+      unawaited(_logPushHealth());
+    } catch (e, stack) {
+      _initialized = false;
+      log.error('PushManager init 失败', e, stack);
+    }
   }
 
   Future<void> _requestPermission() async {
