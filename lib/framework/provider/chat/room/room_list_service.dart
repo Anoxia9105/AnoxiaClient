@@ -200,6 +200,14 @@ class RoomListService extends _$RoomListService {
         }
       }
     });
+
+    _syncBadgeWithTotalUnread();
+  }
+
+  /// 已读后立即同步角标，避免依赖异步监听时序导致角标残留。
+  void _syncBadgeWithTotalUnread() {
+    final totalUnread = ref.read(totalUnreadCountProvider);
+    unawaited(NotificationHelper().updateAppIconBadge(totalUnread));
   }
 
   /// 本地移除房间（被踢/房间关闭等场景）

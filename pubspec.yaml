@@ -116,6 +116,7 @@ dependencies:
   audio_waveforms: ^2.0.2
   # 极光推送
   jpush_flutter: ^3.4.5
+  # fcm google firebase cloud messaging
   firebase_core: ^4.10.0
   firebase_messaging: ^16.0.2
 
