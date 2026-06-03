@@ -11,8 +11,8 @@ class PushManager {
   static final PushManager instance = PushManager._();
 
   final JPushFlutterInterface _jpush = JPush.newJPush();
-  static const Duration _fcmTokenTimeout = Duration(seconds: 4);
-  static const Duration _jpushQueryTimeout = Duration(seconds: 3);
+  static const Duration _fcmTokenTimeout = Duration(seconds: 10);
+  static const Duration _jpushQueryTimeout = Duration(seconds: 5);
 
   bool _initialized = false;
 

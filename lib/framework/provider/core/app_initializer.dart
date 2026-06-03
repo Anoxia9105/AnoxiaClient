@@ -20,7 +20,7 @@ part 'app_initializer.g.dart';
 class AppInitializer extends _$AppInitializer {
   @override
   Future<bool> build() async {
-    log.info("🔄 AppInitializer 开始初始化序列...");
+    log.info('🔄 AppInitializer 开始初始化序列...');
 
     try {
       // 1. 基础服务初始化（如：SharedPreferences、数据库等）
@@ -28,20 +28,20 @@ class AppInitializer extends _$AppInitializer {
 
       // 2. 等待认证模块就绪
       // 确保 AuthController 完成 token 校验和用户信息获取
-      log.info("🔐 等待认证模块就绪...");
+      log.info('🔐 等待认证模块就绪...');
       final user = await ref.read(authControllerProvider.future);
 
       if (user == null) {
-        log.info("👤 用户未登录");
+        log.info('👤 用户未登录');
         return false;
       }
 
       // 3. 业务数据预加载
       await _preloadData();
 
-      log.info("✅ 应用全局初始化序列成功完成");
+      log.info('✅ 应用全局初始化序列成功完成');
     } catch (e, stack) {
-      log.error("❌ 应用初始化崩溃", e, stack);
+      log.error('❌ 应用初始化崩溃', e, stack);
       // 异常会被 Router 捕获并跳转错误页
       rethrow;
     }
@@ -51,19 +51,19 @@ class AppInitializer extends _$AppInitializer {
 
   /// 初始化基础服务
   Future<void> _initializeServices() async {
-    log.info("🛠️ 正在挂载基础服务...");
+    log.info('🛠️ 正在挂载基础服务...');
   }
 
   /// 预加载核心业务数据
   ///
   /// 触发各业务模块的数据加载，确保进入主页面时数据已就绪
   Future<void> _preloadData() async {
-    log.info("📦 正在执行业务预加载...");
+    log.info('📦 正在执行业务预加载...');
     final user = ref.read(authControllerProvider).value;
     if (user != null) {
-      log.info("👤 用户已登录，开始加载核心业务数据...");
+      log.info('👤 用户已登录，开始加载核心业务数据...');
 
-      log.info("💬 正在预加载聊天会话列表...");
+      log.info('💬 正在预加载聊天会话列表...');
       await ref.read(roomListServiceProvider.future);
 
       // 触发消息监听
