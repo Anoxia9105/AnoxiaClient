@@ -3,6 +3,7 @@ import 'dart:io' as io;
 
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:dio/dio.dart';
@@ -35,7 +36,12 @@ class AuthController extends _$AuthController {
     try {
       // 恢复 token 到内存缓存
       ref.read(tokenCacheProvider.notifier).setToken(token);
-      return await _fetchUserInfo();
+      final user = await _fetchUserInfo();
+      if (user != null) {
+        _registerPushTokenRefreshBinding(user);
+        unawaited(_bindPushDevice(user));
+      }
+      return user;
     } catch (e, st) {
       log.error("[AuthController] 自动恢复失败", e, st);
       await TokenManager.instance.clearToken();
@@ -87,6 +93,8 @@ class AuthController extends _$AuthController {
 
     // 登录成功后重新触发 App 初始化（_preloadData 在登出时不会为新 session 重跑）
     if (state is AsyncData && state.value != null) {
+      _registerPushTokenRefreshBinding(state.value!);
+      unawaited(_bindPushDevice(state.value!));
       log.info("[AuthController] 登录成功，重新触发 App 初始化序列...");
       ref.invalidate(appInitializerProvider);
     }
@@ -109,6 +117,9 @@ class AuthController extends _$AuthController {
     _isLoggingOut = true;
 
     final token = ref.read(tokenCacheProvider);
+
+    PushManager.instance.setOnFcmTokenChanged(null);
+    unawaited(_unbindPushDevice(token));
 
     // 后端登出改为异步通知，不阻塞本地退出速度
     unawaited((() async {
@@ -193,6 +204,45 @@ class AuthController extends _$AuthController {
         return 'linux';
       default:
         return io.Platform.operatingSystem;
+    }
+  }
+
+  Future<void> _bindPushDevice(UserInfo user) async {
+    try {
+      final payload = await PushManager.instance.buildDeviceBindPayload(
+        userId: user.userId,
+      );
+      await DioClient().post(API.pushDeviceBind, data: payload);
+      log.info('[AuthController] 推送设备绑定上报成功');
+    } catch (e, st) {
+      log.warning('[AuthController] 推送设备绑定上报失败: $e');
+      log.error('[AuthController] 推送设备绑定上报异常', e, st);
+    }
+  }
+
+  void _registerPushTokenRefreshBinding(UserInfo user) {
+    PushManager.instance.setOnFcmTokenChanged((token) async {
+      log.info('[AuthController] 检测到 FCM token 变更，触发设备绑定刷新');
+      await _bindPushDevice(user);
+    });
+  }
+
+  Future<void> _unbindPushDevice(String? token) async {
+    try {
+      final deviceUid = await PushManager.instance.getOrCreateDeviceUid();
+      await DioClient().delete(
+        '${API.pushDeviceUnbind}?deviceUid=${Uri.encodeQueryComponent(deviceUid)}',
+        auth: false,
+        options: Options(
+          headers: {
+            if (token != null && token.isNotEmpty)
+              'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      log.info('[AuthController] 推送设备解绑上报成功');
+    } catch (e) {
+      log.warning('[AuthController] 推送设备解绑上报失败（忽略）: $e');
     }
   }
 }

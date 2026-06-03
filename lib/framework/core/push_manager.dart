@@ -1,9 +1,14 @@
 import 'dart:async';
 
+import 'package:anoxia/common/utils/SPUtil.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import 'package:jpush_flutter/jpush_interface.dart';
+import 'package:uuid/uuid.dart';
+
+typedef PushTokenChangedCallback = FutureOr<void> Function(String token);
 
 class PushManager {
   PushManager._();
@@ -13,8 +18,14 @@ class PushManager {
   final JPushFlutterInterface _jpush = JPush.newJPush();
   static const Duration _fcmTokenTimeout = Duration(seconds: 10);
   static const Duration _jpushQueryTimeout = Duration(seconds: 5);
+  static const String _appId = 'cn.anoxia';
+  static const int _env = 0;
+  static const String _deviceUidKey = 'push_device_uid';
 
   bool _initialized = false;
+  String? _latestFcmToken;
+  PushTokenChangedCallback? _onFcmTokenChanged;
+  StreamSubscription<String>? _fcmTokenRefreshSub;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -103,13 +114,19 @@ class PushManager {
         return;
       }
 
+      _latestFcmToken = fcmToken;
       _jpush.setThirdToken(token: fcmToken);
       log.info('FCM token 已绑定到极光 third token');
+      _notifyFcmTokenChanged(fcmToken);
 
-      FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+      _fcmTokenRefreshSub ??= FirebaseMessaging.instance.onTokenRefresh.listen((
+        token,
+      ) {
         if (token.isNotEmpty) {
+          _latestFcmToken = token;
           _jpush.setThirdToken(token: token);
           log.info('FCM token 刷新，已重新绑定到极光 third token');
+          _notifyFcmTokenChanged(token);
         }
       });
     } catch (e, stack) {
@@ -137,6 +154,74 @@ class PushManager {
       );
     } catch (e, stack) {
       log.error('读取推送健康状态失败', e, stack);
+    }
+  }
+
+  Future<String> getOrCreateDeviceUid() async {
+    final cached = SPUtil.instance.get(_deviceUidKey);
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    final uid = const Uuid().v4();
+    await SPUtil.instance.set(_deviceUidKey, uid);
+    return uid;
+  }
+
+  Future<Map<String, dynamic>> buildDeviceBindPayload({
+    required int userId,
+  }) async {
+    final rid = await getRegistrationId().timeout(
+      _jpushQueryTimeout,
+      onTimeout: () => '',
+    );
+
+    final token = _latestFcmToken ??
+        await FirebaseMessaging.instance
+            .getToken()
+            .timeout(_fcmTokenTimeout, onTimeout: () => null);
+
+    if (token != null && token.isNotEmpty) {
+      _latestFcmToken = token;
+    }
+
+    return {
+      'appId': _appId,
+      'env': _env,
+      'platform': _platformCode,
+      'userId': userId,
+      'deviceUid': await getOrCreateDeviceUid(),
+      'jpushRid': rid.isEmpty ? null : rid,
+      'fcmToken': _latestFcmToken,
+      'vendorToken': null,
+      'pushEnabled': 1,
+      'status': 1,
+    };
+  }
+
+  void setOnFcmTokenChanged(PushTokenChangedCallback? callback) {
+    _onFcmTokenChanged = callback;
+  }
+
+  void _notifyFcmTokenChanged(String token) {
+    final callback = _onFcmTokenChanged;
+    if (callback == null) return;
+
+    unawaited(
+      Future.sync(() => callback(token)).catchError((error, stackTrace) {
+        log.error('FCM token 变更回调执行失败', error, stackTrace);
+      }),
+    );
+  }
+
+  int get _platformCode {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 1;
+      case TargetPlatform.iOS:
+        return 2;
+      default:
+        return 0;
     }
   }
 }

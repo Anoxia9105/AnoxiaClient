@@ -102,4 +102,10 @@ class API {
   // ======================== AI 聊天接口 ========================
   /// AI 对话接口
   static const String chatGemini = '/chat/gemini';
+
+  // ======================== 推送设备绑定接口 ========================
+  /// 登录后绑定/刷新设备推送标识
+  static const String pushDeviceBind = '/push/device/bind';
+  /// 登出解绑设备
+  static const String pushDeviceUnbind = '/push/device/unbind';
 }
