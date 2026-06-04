@@ -59,6 +59,12 @@ class RoomListService extends _$RoomListService {
 
   /// 获取聊天室列表
   Future<List<ChatRoomVO>> fetchRoomList() async {
+    final currentUser = ref.read(authControllerProvider).value;
+    if (currentUser == null) {
+      log.info('用户未登录，跳过聊天室列表请求');
+      return [];
+    }
+
     try {
       final res = await DioClient().get(API.chatRooms);
 

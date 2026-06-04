@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// 本地存储键值常量
 ///
 /// 集中管理应用本地存储（SharedPreferences）的所有键名

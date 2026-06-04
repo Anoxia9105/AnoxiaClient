@@ -234,6 +234,7 @@ class AuthController extends _$AuthController {
         '${API.pushDeviceUnbind}?deviceUid=${Uri.encodeQueryComponent(deviceUid)}',
         auth: false,
         options: Options(
+          extra: {'skipAuthFailureLogout': true},
           headers: {
             if (token != null && token.isNotEmpty)
               'Authorization': 'Bearer $token',

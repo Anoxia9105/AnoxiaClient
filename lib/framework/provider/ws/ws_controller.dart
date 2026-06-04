@@ -318,7 +318,6 @@ class WsController extends _$WsController {
     log.info(
       '[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}',
     );
-    log.info('[WsController] 断开调用栈: ${StackTrace.current}');
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     _channel?.sink.close();

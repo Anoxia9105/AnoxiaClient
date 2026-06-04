@@ -48,13 +48,19 @@ class DioClient {
           log.info(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
+            final needAuth =
+                response.requestOptions.extra['auth'] as bool? ?? true;
+            final skipAuthFailureLogout =
+                response.requestOptions.extra['skipAuthFailureLogout']
+                    as bool? ??
+                false;
 
             // 401 鉴权失败：触发登出并跳转登录页（排除 logout 接口自身）
             if (bizCode == 401) {
               final requestPath = response.requestOptions.path;
               final isLogoutApi = requestPath.contains('/logout');
 
-              if (!isLogoutApi) {
+              if (needAuth && !skipAuthFailureLogout && !isLogoutApi) {
                 unawaited(
                   globalContainer.read(authControllerProvider.notifier).logout(),
                 );
