@@ -212,7 +212,12 @@ class RoomListService extends _$RoomListService {
 
   /// 已读后立即同步角标，避免依赖异步监听时序导致角标残留。
   void _syncBadgeWithTotalUnread() {
-    final totalUnread = ref.read(totalUnreadCountProvider);
+    final rooms = state.value ?? const <ChatRoomVO>[];
+    final activeId = ref.read(activeRoomIdProvider);
+    final totalUnread = rooms.fold<int>(0, (sum, room) {
+      if (room.roomId == activeId) return sum;
+      return sum + (room.unreadCount ?? 0);
+    });
     unawaited(NotificationHelper().updateAppIconBadge(totalUnread));
   }
 

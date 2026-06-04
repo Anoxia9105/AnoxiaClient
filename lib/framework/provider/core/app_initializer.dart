@@ -1,3 +1,13 @@
+import 'dart:async';
+
+import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/framework/core/push_manager.dart';
+import 'package:anoxia/framework/protocol/PacketType.dart';
+import 'package:anoxia/framework/protocol/message/EventMessage.dart';
+import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
+import 'package:anoxia/framework/protocol/register/PacketRegistry.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -18,6 +28,9 @@ part 'app_initializer.g.dart';
 /// 采用 keepAlive 模式，确保初始化结果在全局共享。
 @Riverpod(keepAlive: true)
 class AppInitializer extends _$AppInitializer {
+  static bool _coreServicesInitialized = false;
+  static bool _packetParsersRegistered = false;
+
   @override
   Future<bool> build() async {
     log.info('🔄 AppInitializer 开始初始化序列...');
@@ -51,7 +64,52 @@ class AppInitializer extends _$AppInitializer {
 
   /// 初始化基础服务
   Future<void> _initializeServices() async {
+    if (_coreServicesInitialized) {
+      log.info('🛠️ 基础服务已初始化，跳过重复挂载');
+      return;
+    }
+
     log.info('🛠️ 正在挂载基础服务...');
+
+    if (DeviceUtil.isRealMobile()) {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+        log.info('🔥 Firebase 初始化完成');
+      }
+
+      unawaited(
+        PushManager.instance.init().catchError((e, stack) {
+          log.error('PushManager 初始化失败', e, stack);
+        }),
+      );
+    }
+
+    _registerPacketParsersOnce();
+
+    _coreServicesInitialized = true;
+    log.info('🛠️ 基础服务挂载完成');
+  }
+
+  void _registerPacketParsersOnce() {
+    if (_packetParsersRegistered) {
+      return;
+    }
+
+    PacketRegistry.register(
+      PacketType.message,
+      (data) => RoomMessage.fromJson(data),
+    );
+    PacketRegistry.register(
+      PacketType.event,
+      (data) => EventMessage.fromJson(data),
+    );
+    PacketRegistry.register(
+      PacketType.highFrequency,
+      (data) => HighMessage.fromJson(data),
+    );
+
+    _packetParsersRegistered = true;
+    log.info('协议解析器注册完成');
   }
 
   /// 预加载核心业务数据

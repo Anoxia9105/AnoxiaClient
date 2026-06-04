@@ -4,13 +4,9 @@ import 'dart:convert';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
-import 'package:anoxia/framework/core/push_manager.dart';
-import 'package:anoxia/framework/protocol/message/EventMessage.dart';
-import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,11 +24,8 @@ import 'framework/logs/talker.dart';
 import 'framework/network/DioClient.dart';
 import 'framework/network/TokenManager.dart';
 import 'framework/provider/core/AppUpdateInfo.dart';
-import 'framework/protocol/PacketType.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
-import 'framework/protocol/message/RoomMessage.dart';
-import 'framework/protocol/register/PacketRegistry.dart';
 
 /// 应用入口
 Future<void> main(List<String> args) async {
@@ -45,26 +38,11 @@ Future<void> main(List<String> args) async {
       await hotKeyManager.unregisterAll();
     }
 
-    if (DeviceUtil.isRealMobile()) {
-      await Firebase.initializeApp();
-      /// 初始化极光推送（移动端专用，桌面端不使用）
-      unawaited(
-        PushManager.instance.init().catchError((e, stack) {
-          log.error('PushManager 初始化失败', e, stack);
-        }),
-      );
-      // final token = await FirebaseMessaging.instance.getToken();
-      // print('FCM Token: $token');
-    }
-
     // 核心资源初始化（所有窗口共用，必须在窗口启动前完成）
     await Future.wait([
       EasyLocalization.ensureInitialized(), // 多语言初始化
       SPUtil.instance.init(), // 本地存储初始化
     ]);
-
-    // 注册协议解析器（全局生效）
-    _registerPacketParsers();
 
     _backgroundAsyncInit();
 
@@ -83,43 +61,30 @@ Future<void> main(List<String> args) async {
 }
 
 void _backgroundAsyncInit() {
-  scheduleMicrotask(() async {
-    try {
-      // 读包信息即使失败，也不影响用户进 App
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      log.info('App Version: ${packageInfo.version}');
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(() async {
+      try {
+        // 读包信息即使失败，也不影响用户进 App
+        PackageInfo packageInfo = await PackageInfo.fromPlatform();
+        log.info('App Version: ${packageInfo.version}');
 
-      if (!DeviceUtil.isWeb) {
-        // 查更新设置硬超时，防止卡死
-        final updateInfo = await _checkUpdate().timeout(
-          const Duration(seconds: 5),
-        );
-        if (updateInfo != null && updateInfo.forceUpdate) {
-          log.info('检测到强制更新，切换至更新页面');
-          await runUpdateApp(updateInfo);
+        if (!DeviceUtil.isWeb) {
+          // 查更新设置硬超时，防止启动阶段等待过久
+          final updateInfo = await _checkUpdate().timeout(
+            const Duration(seconds: 5),
+          );
+          if (updateInfo != null && updateInfo.forceUpdate) {
+            log.info('检测到强制更新，切换至更新页面');
+            await runUpdateApp(updateInfo);
+          }
         }
+      } on TimeoutException {
+        log.warning('后台更新检查超时，已跳过本次检查');
+      } catch (e) {
+        log.error('后台异步初始化异常: $e');
       }
-    } catch (e) {
-      log.error('后台异步初始化异常: $e');
-    }
+    }());
   });
-}
-
-/// 注册协议解析器（抽取为独立函数，便于维护）
-void _registerPacketParsers() {
-  PacketRegistry.register(
-    PacketType.message,
-    (data) => RoomMessage.fromJson(data),
-  );
-  PacketRegistry.register(
-    PacketType.event,
-    (data) => EventMessage.fromJson(data),
-  );
-  PacketRegistry.register(
-    PacketType.highFrequency,
-    (data) => HighMessage.fromJson(data),
-  );
-  log.info('协议解析器注册完成');
 }
 
 /// 处理桌面端窗口逻辑（主/子窗口区分）
