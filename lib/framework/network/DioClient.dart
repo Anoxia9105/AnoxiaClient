@@ -46,7 +46,7 @@ class DioClient {
 
         /// 响应拦截器：处理业务状态码
         onResponse: (response, handler) async {
-          log.info(response.data);
+          // log.info(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
             final needAuth =

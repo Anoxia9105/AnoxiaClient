@@ -15,6 +15,7 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
+import '../chat/room/room_list_service.dart';
 import '../core/app_initializer.dart';
 import '../core/session_reset_service.dart';
 import 'token_provider.dart';
@@ -97,6 +98,8 @@ class AuthController extends _$AuthController {
     if (state is AsyncData && state.value != null) {
       _registerPushTokenRefreshBinding(state.value!);
       unawaited(_bindPushDevice(state.value!));
+      // 清掉未登录阶段可能遗留的空房间列表缓存，避免登录后先闪空态。
+      ref.invalidate(roomListServiceProvider);
       log.info('[AuthController] 登录成功，重新触发 App 初始化序列...');
       ref.invalidate(appInitializerProvider);
     }

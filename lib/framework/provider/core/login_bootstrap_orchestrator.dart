@@ -71,7 +71,9 @@ class LoginBootstrapOrchestrator {
 
   Future<List<ChatRoomVO>> _safeReadRoomList() async {
     try {
-      return await _ref.read(roomListServiceProvider.future);
+      final roomListNotifier = _ref.read(roomListServiceProvider.notifier);
+      await roomListNotifier.refresh(silent: false);
+      return _ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     } catch (e, st) {
       log.error('[Bootstrap] 房间列表预加载失败，降级为空列表', e, st);
       return const <ChatRoomVO>[];

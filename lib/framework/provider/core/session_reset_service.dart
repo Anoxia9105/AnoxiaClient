@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
@@ -39,21 +40,25 @@ class SessionResetService {
     final reasonLabel = reason.name;
     log.info('[SessionReset] 开始重置会话状态, reason=$reasonLabel');
 
+    // 使用全局容器执行失效，避免在 AuthController 的 provider 上下文内
+    // invalidate 依赖到间接依赖 auth 的 provider 时触发环依赖断言。
+    final container = globalContainer;
+
     // 先清理成员缓存，避免保留旧账号的“已同步房间集合”。
-    ref.read(roomMemberServiceProvider.notifier).clearAll();
+    container.read(roomMemberServiceProvider.notifier).clearAll();
 
     // 统一失效账号强相关 Provider。
-    ref.invalidate(roomMemberServiceProvider);
-    ref.invalidate(roomListServiceProvider);
-    ref.invalidate(activeRoomIdProvider);
-    ref.invalidate(chatMessagesProvider);
-    ref.invalidate(chatHasMoreProvider);
-    ref.invalidate(chatInputControllerProvider);
-    ref.invalidate(chatFocusNodeProvider);
-    ref.invalidate(mentionStateProvider);
-    ref.invalidate(chatImageUploadControllerProvider);
-    ref.invalidate(chatFileUploadControllerProvider);
-    ref.invalidate(roomSearchQueryProvider);
+    container.invalidate(roomMemberServiceProvider);
+    container.invalidate(roomListServiceProvider);
+    container.invalidate(activeRoomIdProvider);
+    container.invalidate(chatMessagesProvider);
+    container.invalidate(chatHasMoreProvider);
+    container.invalidate(chatInputControllerProvider);
+    container.invalidate(chatFocusNodeProvider);
+    container.invalidate(mentionStateProvider);
+    container.invalidate(chatImageUploadControllerProvider);
+    container.invalidate(chatFileUploadControllerProvider);
+    container.invalidate(roomSearchQueryProvider);
 
     log.info(
       '[SessionReset] 会话状态重置完成, reason=$reasonLabel, scopes=${managedScopes.length}',
