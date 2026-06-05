@@ -140,6 +140,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Widget _buildRoomList(BuildContext context, WidgetRef ref) {
     /// 获取过滤后的房间列表、搜索查询和置顶房间 ID 列表
     final filteredRooms = ref.watch(filteredRoomListProvider);
+    final roomListAsync = ref.watch(roomListServiceProvider);
 
     /// 搜索查询和置顶房间 ID 列表用于空状态提示和排序逻辑
     final query = ref.watch(roomSearchQueryProvider);
@@ -147,7 +148,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     /// 置顶房间 ID 列表用于将置顶房间排在前面
     final pinnedIds = ref.watch(pinnedRoomsProvider);
 
-    if (filteredRooms == null) {
+    final isInitialLoading = roomListAsync.isLoading && roomListAsync.value == null;
+    if (isInitialLoading) {
       return const ChatRoomListSkeleton();
     }
 

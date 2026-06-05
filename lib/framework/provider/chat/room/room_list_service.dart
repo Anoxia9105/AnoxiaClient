@@ -6,6 +6,7 @@ import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -283,14 +284,10 @@ class RoomListService extends _$RoomListService {
   Future<String?> getOrCreateRoom(int targetUserId) async {
     final rooms = state.value ?? [];
 
-    ChatRoomVO? existingRoom;
-    try {
-      existingRoom = rooms.firstWhere(
-        (r) => r.roomType == 0 && r.peerId == targetUserId,
-      );
-    } catch (_) {
-      existingRoom = null;
-    }
+    final existingRoom = RoomLookupHelper.findPrivateByPeerId(
+      rooms,
+      targetUserId,
+    );
 
     if (existingRoom != null && existingRoom.roomId != null) {
       log.info('✅ 找到现有房间: ${existingRoom.roomId}');
@@ -417,15 +414,13 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
   final roomListAsync = ref.read(roomListServiceProvider);
   final rooms = roomListAsync.value ?? [];
 
-  final room = rooms.firstWhere(
-    (r) => r.roomId == roomId,
-    orElse: () => throw Exception('尚未加载房间信息'),
-  );
+  final room = RoomLookupHelper.findByRoomId(rooms, roomId);
 
   await Future.wait([
-    ref
-        .read(chatMessagesProvider.notifier)
-        .syncRoomMessages(roomId, room.lastMessage?.seq),
+    ref.read(chatMessagesProvider.notifier).syncRoomMessages(
+      roomId,
+      room?.lastMessage?.seq,
+    ),
     ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId),
   ]);
 
@@ -455,8 +450,10 @@ class RoomSearchQuery extends _$RoomSearchQuery {
 /// 根据关键词过滤后的聊天室列表
 ///
 /// 匹配规则：房间名称 或 最后一条消息内容
+///
+/// 防御约束：查询型 Provider 返回空集合而非抛错/空引用。
 @riverpod
-List<ChatRoomVO>? filteredRoomList(Ref ref) {
+List<ChatRoomVO> filteredRoomList(Ref ref) {
   final roomListAsync = ref.watch(roomListServiceProvider);
   final query = ref.watch(roomSearchQueryProvider).trim().toLowerCase();
 
@@ -472,8 +469,8 @@ List<ChatRoomVO>? filteredRoomList(Ref ref) {
         return nameMatch || msgMatch;
       }).toList();
     },
-    loading: () => null,
-    orElse: () => null,
+    loading: () => const [],
+    orElse: () => const [],
   );
 }
 
@@ -501,5 +498,5 @@ ChatRoomVO? currentRoom(Ref ref, String roomId) {
   final roomListState = ref.watch(roomListServiceProvider);
 
   // 2. 从列表中筛选出对应的房间
-  return roomListState.value?.firstWhere((r) => r.roomId == roomId);
+  return RoomLookupHelper.findByRoomId(roomListState.value, roomId);
 }

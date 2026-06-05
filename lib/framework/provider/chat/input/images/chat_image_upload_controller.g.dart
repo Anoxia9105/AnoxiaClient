@@ -10,20 +10,38 @@ part of 'chat_image_upload_controller.dart';
 // ignore_for_file: type=lint, type=warning
 /// 聊天图片上传控制器
 ///
-/// 处理图片选择、粘贴和上传功能
+/// 处理图片选择、粘贴和上传功能。采用 keepAlive 模式确保跨页面共享状态。
+///
+/// 核心流程：
+/// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 →
+/// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
+///
+/// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 
 @ProviderFor(ChatImageUploadController)
 final chatImageUploadControllerProvider = ChatImageUploadControllerProvider._();
 
 /// 聊天图片上传控制器
 ///
-/// 处理图片选择、粘贴和上传功能
+/// 处理图片选择、粘贴和上传功能。采用 keepAlive 模式确保跨页面共享状态。
+///
+/// 核心流程：
+/// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 →
+/// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
+///
+/// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 final class ChatImageUploadControllerProvider
     extends
         $NotifierProvider<ChatImageUploadController, Map<String, UploadEntry>> {
   /// 聊天图片上传控制器
   ///
-  /// 处理图片选择、粘贴和上传功能
+  /// 处理图片选择、粘贴和上传功能。采用 keepAlive 模式确保跨页面共享状态。
+  ///
+  /// 核心流程：
+  /// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 →
+  /// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
+  ///
+  /// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
   ChatImageUploadControllerProvider._()
     : super(
         from: null,
@@ -56,7 +74,13 @@ String _$chatImageUploadControllerHash() =>
 
 /// 聊天图片上传控制器
 ///
-/// 处理图片选择、粘贴和上传功能
+/// 处理图片选择、粘贴和上传功能。采用 keepAlive 模式确保跨页面共享状态。
+///
+/// 核心流程：
+/// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 →
+/// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
+///
+/// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 
 abstract class _$ChatImageUploadController
     extends $Notifier<Map<String, UploadEntry>> {

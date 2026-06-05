@@ -8,16 +8,46 @@ part of 'high_message_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 高优先级消息服务
+///
+/// 处理高频、实时性要求高的消息类型，包括：
+/// - 正在输入状态（TYPING_STATUS）
+/// - 通话邀请/接受/取消/拒绝（CALL_INVITE, CALL_ACCEPT, CALL_CANCEL, CALL_REJECT）
+/// - 通话信令（CALL_CANDIDATE, CALL_MEDIA_CHANGE）
+/// - 消息撤回（MSG_REVOKE）
+/// - 系统踢人（SYSTEM_KICK）
+///
+/// 采用 keepAlive 模式确保全局共享，自动管理定时器和状态清理。
 
 @ProviderFor(HighMessageService)
 final highMessageServiceProvider = HighMessageServiceProvider._();
 
+/// 高优先级消息服务
+///
+/// 处理高频、实时性要求高的消息类型，包括：
+/// - 正在输入状态（TYPING_STATUS）
+/// - 通话邀请/接受/取消/拒绝（CALL_INVITE, CALL_ACCEPT, CALL_CANCEL, CALL_REJECT）
+/// - 通话信令（CALL_CANDIDATE, CALL_MEDIA_CHANGE）
+/// - 消息撤回（MSG_REVOKE）
+/// - 系统踢人（SYSTEM_KICK）
+///
+/// 采用 keepAlive 模式确保全局共享，自动管理定时器和状态清理。
 final class HighMessageServiceProvider
     extends
         $NotifierProvider<
           HighMessageService,
           Map<String, Map<HighMessageType, HighMessage>>
         > {
+  /// 高优先级消息服务
+  ///
+  /// 处理高频、实时性要求高的消息类型，包括：
+  /// - 正在输入状态（TYPING_STATUS）
+  /// - 通话邀请/接受/取消/拒绝（CALL_INVITE, CALL_ACCEPT, CALL_CANCEL, CALL_REJECT）
+  /// - 通话信令（CALL_CANDIDATE, CALL_MEDIA_CHANGE）
+  /// - 消息撤回（MSG_REVOKE）
+  /// - 系统踢人（SYSTEM_KICK）
+  ///
+  /// 采用 keepAlive 模式确保全局共享，自动管理定时器和状态清理。
   HighMessageServiceProvider._()
     : super(
         from: null,
@@ -51,7 +81,18 @@ final class HighMessageServiceProvider
 }
 
 String _$highMessageServiceHash() =>
-    r'5775672969a07cbe49de2e2d40202757a18cd5a2';
+    r'30eeaabf44ee6b437c0fa94b249c16df487a0dd2';
+
+/// 高优先级消息服务
+///
+/// 处理高频、实时性要求高的消息类型，包括：
+/// - 正在输入状态（TYPING_STATUS）
+/// - 通话邀请/接受/取消/拒绝（CALL_INVITE, CALL_ACCEPT, CALL_CANCEL, CALL_REJECT）
+/// - 通话信令（CALL_CANDIDATE, CALL_MEDIA_CHANGE）
+/// - 消息撤回（MSG_REVOKE）
+/// - 系统踢人（SYSTEM_KICK）
+///
+/// 采用 keepAlive 模式确保全局共享，自动管理定时器和状态清理。
 
 abstract class _$HighMessageService
     extends $Notifier<Map<String, Map<HighMessageType, HighMessage>>> {

@@ -3,6 +3,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
@@ -61,12 +62,7 @@ class SystemEventService extends _$SystemEventService {
       ref.read(chatMessagesProvider.notifier).markNeedResync(activeRoomId);
 
       final rooms = ref.read(roomListServiceProvider).value ?? [];
-      ChatRoomVO? activeRoom;
-      try {
-        activeRoom = rooms.firstWhere((r) => r.roomId == activeRoomId);
-      } catch (_) {
-        activeRoom = null;
-      }
+      final activeRoom = RoomLookupHelper.findByRoomId(rooms, activeRoomId);
       ref
           .read(chatMessagesProvider.notifier)
           .syncRoomMessages(activeRoomId, activeRoom?.lastMessage?.seq);

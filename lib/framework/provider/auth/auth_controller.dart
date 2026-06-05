@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
@@ -15,6 +16,7 @@ import '../../domain/UserInfo.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 import '../core/app_initializer.dart';
+import '../core/session_reset_service.dart';
 import 'token_provider.dart';
 
 part 'auth_controller.g.dart';
@@ -27,7 +29,7 @@ part 'auth_controller.g.dart';
 class AuthController extends _$AuthController {
   @override
   Future<UserInfo?> build() async {
-    log.info("🔧 AuthController 初始化完成，尝试自动恢复登录...");
+    log.info('🔧 AuthController 初始化完成，尝试自动恢复登录...');
 
     final token = await TokenManager.instance.getToken();
     log.info("[AuthController] 自动恢复: token ${token != null ? '存在' : '不存在'}");
@@ -43,7 +45,7 @@ class AuthController extends _$AuthController {
       }
       return user;
     } catch (e, st) {
-      log.error("[AuthController] 自动恢复失败", e, st);
+      log.error('[AuthController] 自动恢复失败', e, st);
       await TokenManager.instance.clearToken();
       ref.read(tokenCacheProvider.notifier).clearToken();
       return null;
@@ -70,19 +72,19 @@ class AuthController extends _$AuthController {
       final res = await DioClient().post(
         API.login,
         data: {
-          "username": username,
-          "password": password,
-          "code": code,
-          "uuid": uuid,
-          "deviceId": _buildDeviceId(),
+          'username': username,
+          'password': password,
+          'code': code,
+          'uuid': uuid,
+          'deviceId': _buildDeviceId(),
         },
         auth: false,
       );
-      if (res.data["token"] == null) {
-        Toast.showToast("login_failed".tr(), type: ToastType.error);
+      if (res.data['token'] == null) {
+        Toast.showToast('login_failed'.tr(), type: ToastType.error);
         return null;
       }
-      String token = res.data["token"];
+      String token = res.data['token'];
 
       // 同时保存到 TokenManager 和内存缓存
       await TokenManager.instance.setToken(token);
@@ -95,7 +97,7 @@ class AuthController extends _$AuthController {
     if (state is AsyncData && state.value != null) {
       _registerPushTokenRefreshBinding(state.value!);
       unawaited(_bindPushDevice(state.value!));
-      log.info("[AuthController] 登录成功，重新触发 App 初始化序列...");
+      log.info('[AuthController] 登录成功，重新触发 App 初始化序列...');
       ref.invalidate(appInitializerProvider);
     }
   }
@@ -111,7 +113,10 @@ class AuthController extends _$AuthController {
   /// 注意：无需手动断开 WebSocket，[WsController] 通过监听认证状态自动处理
   bool _isLoggingOut = false;
 
-  Future<void> logout() async {
+  Future<void> logout({
+    SessionResetReason reason = SessionResetReason.logout,
+    bool notifyBackend = true,
+  }) async {
     // 防止递归调用（如 logout 接口本身返回 401 又触发 logout）
     if (_isLoggingOut) return;
     _isLoggingOut = true;
@@ -121,25 +126,27 @@ class AuthController extends _$AuthController {
     PushManager.instance.setOnFcmTokenChanged(null);
     unawaited(_unbindPushDevice(token));
 
-    // 后端登出改为异步通知，不阻塞本地退出速度
-    unawaited((() async {
-      try {
-        await DioClient()
-            .post(
-              API.logout,
-              auth: false,
-              options: Options(
-                headers: {
-                  if (token != null && token.isNotEmpty)
-                    'Authorization': 'Bearer $token',
-                },
-              ),
-            )
-            .timeout(const Duration(seconds: 2));
-      } catch (e) {
-        log.warning("[AuthController] 后端登出请求失败（忽略）: $e");
-      }
-    })());
+    // 手动登出时异步通知后端；鉴权失效触发的本地登出不再重复请求。
+    if (notifyBackend) {
+      unawaited((() async {
+        try {
+          await DioClient()
+              .post(
+                API.logout,
+                auth: false,
+                options: Options(
+                  headers: {
+                    if (token != null && token.isNotEmpty)
+                      'Authorization': 'Bearer $token',
+                  },
+                ),
+              )
+              .timeout(const Duration(seconds: 2));
+        } catch (e) {
+          log.warning('[AuthController] 后端登出请求失败（忽略）: $e');
+        }
+      })());
+    }
 
     try {
       // 1. 清除本地存储的 Token
@@ -153,9 +160,15 @@ class AuthController extends _$AuthController {
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
       state = const AsyncData(null);
 
-      log.info("[AuthController] 登出成功，全部业务缓存已清理");
+      // 4. 统一清理会话级缓存，避免切账号后复用旧会话数据
+      SessionResetService.instance.reset(
+        ref,
+        reason: reason,
+      );
+
+      log.info('[AuthController] 登出成功，全部业务缓存已清理');
     } catch (e, st) {
-      log.error("[AuthController] 登出清理异常", e, st);
+      log.error('[AuthController] 登出清理异常', e, st);
       // 即使出错也强制设为 null，确保用户能回到登录页
       state = const AsyncData(null);
     } finally {
@@ -166,7 +179,7 @@ class AuthController extends _$AuthController {
   /// 获取用户信息
   Future<UserInfo?> _fetchUserInfo() async {
     final res = await DioClient().get(API.getInfo);
-    return UserInfo.fromJson(res.data["data"]);
+    return UserInfo.fromJson(res.data['data']);
   }
 
   /// 刷新当前登录用户信息
@@ -208,6 +221,8 @@ class AuthController extends _$AuthController {
   }
 
   Future<void> _bindPushDevice(UserInfo user) async {
+    if (!_shouldReportPushDevice()) return;
+
     try {
       final payload = await PushManager.instance.buildDeviceBindPayload(
         userId: user.userId,
@@ -221,6 +236,8 @@ class AuthController extends _$AuthController {
   }
 
   void _registerPushTokenRefreshBinding(UserInfo user) {
+    if (!_shouldReportPushDevice()) return;
+
     PushManager.instance.setOnFcmTokenChanged((token) async {
       log.info('[AuthController] 检测到 FCM token 变更，触发设备绑定刷新');
       await _bindPushDevice(user);
@@ -228,6 +245,8 @@ class AuthController extends _$AuthController {
   }
 
   Future<void> _unbindPushDevice(String? token) async {
+    if (!_shouldReportPushDevice()) return;
+
     try {
       final deviceUid = await PushManager.instance.getOrCreateDeviceUid();
       await DioClient().delete(
@@ -246,6 +265,8 @@ class AuthController extends _$AuthController {
       log.warning('[AuthController] 推送设备解绑上报失败（忽略）: $e');
     }
   }
+
+  bool _shouldReportPushDevice() => DeviceUtil.isRealMobile();
 }
 
 /// 获取验证码
@@ -254,5 +275,5 @@ class AuthController extends _$AuthController {
 @riverpod
 Future<CaptchaModel> getCaptcha(Ref ref) async {
   final res = await DioClient().get(API.captchaImage, auth: false);
-  return CaptchaModel(uuid: res.data["uuid"], imgBase64: res.data["img"]);
+  return CaptchaModel(uuid: res.data['uuid'], imgBase64: res.data['img']);
 }

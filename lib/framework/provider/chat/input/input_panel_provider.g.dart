@@ -8,12 +8,21 @@ part of 'input_panel_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 输入面板状态控制器
+///
+/// 管理聊天输入区域的面板显示状态，协调面板切换与焦点管理
 
 @ProviderFor(InputPanelNotifier)
 final inputPanelProvider = InputPanelNotifierProvider._();
 
+/// 输入面板状态控制器
+///
+/// 管理聊天输入区域的面板显示状态，协调面板切换与焦点管理
 final class InputPanelNotifierProvider
     extends $NotifierProvider<InputPanelNotifier, InputPanel> {
+  /// 输入面板状态控制器
+  ///
+  /// 管理聊天输入区域的面板显示状态，协调面板切换与焦点管理
   InputPanelNotifierProvider._()
     : super(
         from: null,
@@ -43,6 +52,10 @@ final class InputPanelNotifierProvider
 
 String _$inputPanelNotifierHash() =>
     r'cdb12fb36390728535d7dec89995a68dabbdf6ae';
+
+/// 输入面板状态控制器
+///
+/// 管理聊天输入区域的面板显示状态，协调面板切换与焦点管理
 
 abstract class _$InputPanelNotifier extends $Notifier<InputPanel> {
   InputPanel build();

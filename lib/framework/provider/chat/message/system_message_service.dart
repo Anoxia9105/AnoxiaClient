@@ -5,6 +5,7 @@ import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../logs/talker.dart';
@@ -95,7 +96,7 @@ class SystemMessageService extends _$SystemMessageService {
   /// 根据通话状态生成通知内容并推送到系统通知栏
   void _sendDesktopNotification(String roomId, String action, RoomMessage msg) {
     final rooms = ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
-    final room = rooms.firstWhere((r) => r.roomId == roomId, orElse: () => ChatRoomVO());
+    final room = RoomLookupHelper.findByRoomId(rooms, roomId) ?? ChatRoomVO();
     final roomName = (room.roomName?.isNotEmpty == true) ? room.roomName! : '通话通知';
 
     final extra = msg.extra;

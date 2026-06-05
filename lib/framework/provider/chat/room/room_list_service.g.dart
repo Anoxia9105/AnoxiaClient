@@ -45,7 +45,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'c8fc66f1c11232f7c4f0c44338bde4cd946c2a6c';
+String _$roomListServiceHash() => r'64e1a16883a9376a1db93d06d403df5cd997ce64';
 
 /// 聊天室列表服务
 ///
@@ -189,7 +189,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'78570d9ba90ca5661d88ed4e6efe4c792b144e99';
+String _$roomEntryTaskHash() => r'9ee43633afe9c8696d5966c08bf7d2581fc6be2f';
 
 /// 进入房间时的初始化任务
 ///
@@ -329,6 +329,8 @@ abstract class _$RoomSearchQuery extends $Notifier<String> {
 /// 根据关键词过滤后的聊天室列表
 ///
 /// 匹配规则：房间名称 或 最后一条消息内容
+///
+/// 防御约束：查询型 Provider 返回空集合而非抛错/空引用。
 
 @ProviderFor(filteredRoomList)
 final filteredRoomListProvider = FilteredRoomListProvider._();
@@ -336,18 +338,22 @@ final filteredRoomListProvider = FilteredRoomListProvider._();
 /// 根据关键词过滤后的聊天室列表
 ///
 /// 匹配规则：房间名称 或 最后一条消息内容
+///
+/// 防御约束：查询型 Provider 返回空集合而非抛错/空引用。
 
 final class FilteredRoomListProvider
     extends
         $FunctionalProvider<
-          List<ChatRoomVO>?,
-          List<ChatRoomVO>?,
-          List<ChatRoomVO>?
+          List<ChatRoomVO>,
+          List<ChatRoomVO>,
+          List<ChatRoomVO>
         >
-    with $Provider<List<ChatRoomVO>?> {
+    with $Provider<List<ChatRoomVO>> {
   /// 根据关键词过滤后的聊天室列表
   ///
   /// 匹配规则：房间名称 或 最后一条消息内容
+  ///
+  /// 防御约束：查询型 Provider 返回空集合而非抛错/空引用。
   FilteredRoomListProvider._()
     : super(
         from: null,
@@ -364,25 +370,24 @@ final class FilteredRoomListProvider
 
   @$internal
   @override
-  $ProviderElement<List<ChatRoomVO>?> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<List<ChatRoomVO>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
-  List<ChatRoomVO>? create(Ref ref) {
+  List<ChatRoomVO> create(Ref ref) {
     return filteredRoomList(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<ChatRoomVO>? value) {
+  Override overrideWithValue(List<ChatRoomVO> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<ChatRoomVO>?>(value),
+      providerOverride: $SyncValueProvider<List<ChatRoomVO>>(value),
     );
   }
 }
 
-String _$filteredRoomListHash() => r'e0a01ef62419852d8a332f7f0255ce6275095820';
+String _$filteredRoomListHash() => r'd7a5059f2c9a0664a8496af0847451044ab7e5d4';
 
 /// 总未读消息数
 ///
@@ -497,7 +502,7 @@ final class CurrentRoomProvider
   }
 }
 
-String _$currentRoomHash() => r'5dc9342c5808fab97af18ca98c631a3c9bc6a548';
+String _$currentRoomHash() => r'9009ae10d2da0a78d42f726b1d12747a1054a025';
 
 /// 根据房间 ID 获取对应的聊天室对象
 

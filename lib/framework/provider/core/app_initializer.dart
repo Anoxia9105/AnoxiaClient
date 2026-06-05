@@ -8,13 +8,10 @@ import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
 import 'package:anoxia/framework/protocol/register/PacketRegistry.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
-import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';
-import '../chat/room/room_list_service.dart';
-import '../chat/message/system_event_service.dart';
 import '../auth/auth_controller.dart';
+import 'login_bootstrap_orchestrator.dart';
 
 part 'app_initializer.g.dart';
 
@@ -119,19 +116,10 @@ class AppInitializer extends _$AppInitializer {
     log.info('📦 正在执行业务预加载...');
     final user = ref.read(authControllerProvider).value;
     if (user != null) {
-      log.info('👤 用户已登录，开始加载核心业务数据...');
-
-      log.info('💬 正在预加载聊天会话列表...');
-      await ref.read(roomListServiceProvider.future);
-
-      // 触发消息监听
-      ref.read(chatMessagesProvider);
-
-      // 触发系统事件监听
-      ref.read(systemEventServiceProvider);
-
-      // 触发后台版本检查（keepAlive，延迟 3s 后自动发起）
-      ref.read(appUpdateCheckerProvider);
+      log.info('👤 用户已登录，委托 BootstrapOrchestrator 执行时序化预加载...');
+      await ref.read(loginBootstrapOrchestratorProvider).run(
+        reason: 'app_initializer',
+      );
     }
   }
 

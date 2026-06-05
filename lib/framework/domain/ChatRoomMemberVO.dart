@@ -81,7 +81,7 @@ class ChatRoomMemberVO {
   static DateTime? _parseDate(dynamic date) {
     if (date == null) return null;
     try {
-      return DateFormat("yyyy-MM-dd HH:mm:ss").parse(date);
+      return DateFormat('yyyy-MM-dd HH:mm:ss').parse(date);
     } catch (e) {
       return DateTime.tryParse(date.toString());
     }
@@ -94,7 +94,7 @@ class ChatRoomMemberVO {
       'userId': userId,
       'roleId': roleId,
       'joinTime': joinTime != null
-          ? DateFormat("yyyy-MM-dd HH:mm:ss").format(joinTime!)
+          ? DateFormat('yyyy-MM-dd HH:mm:ss').format(joinTime!)
           : null,
       'nickName': nickName,
       'avatar': avatar,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/framework/core/app_globals.dart';
+import 'package:anoxia/framework/provider/core/session_reset_service.dart';
 import 'package:dio/dio.dart';
 import 'package:anoxia/framework/network/TokenManager.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -62,9 +63,12 @@ class DioClient {
 
               if (needAuth && !skipAuthFailureLogout && !isLogoutApi) {
                 unawaited(
-                  globalContainer.read(authControllerProvider.notifier).logout(),
+                  globalContainer.read(authControllerProvider.notifier).logout(
+                    reason: SessionResetReason.tokenExpired,
+                    notifyBackend: false,
+                  ),
                 );
-                log.info("鉴权失败，已触发登出并跳转登录页");
+                log.info('鉴权失败，已触发登出并跳转登录页');
               }
 
               return handler.reject(
@@ -72,7 +76,7 @@ class DioClient {
                   requestOptions: response.requestOptions,
                   response: response,
                   type: DioExceptionType.badResponse,
-                  error: "登录过期",
+                  error: '登录过期',
                 ),
               );
             }
@@ -80,7 +84,7 @@ class DioClient {
             // 非 200 状态码：记录错误日志
             if (bizCode != HttpStatus.ok) {
               final String? errorMsg = response.data['msg']?.toString();
-              log.error("请求错误: $errorMsg, 业务码: $bizCode");
+              log.error('请求错误: $errorMsg, 业务码: $bizCode');
             }
           }
           return handler.next(response);
@@ -192,7 +196,7 @@ class DioClient {
   Future<Response> uploadFile(
     String path, {
     required File file,
-    String fileField = "file",
+    String fileField = 'file',
     Map<String, dynamic>? data,
     bool auth = true,
     Options? options,
@@ -227,7 +231,7 @@ class DioClient {
   Future<Response> uploadFiles(
     String path, {
     required List<File> files,
-    String fileField = "files",
+    String fileField = 'files',
     Map<String, dynamic>? data,
     bool auth = true,
     Options? options,
