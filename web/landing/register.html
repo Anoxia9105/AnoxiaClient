@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anoxia IM - 注册</title>
-    <meta name="description" content="Anoxia IM 注册页面">
+    <title id="page-title">Anoxia IM - 注册</title>
+    <meta name="description" id="page-description" content="Anoxia IM 注册页面">
     <link rel="icon" href="app_icon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +138,12 @@
             gap: 10px;
         }
 
+        .email-code-row {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+        }
+
         .captcha-box {
             width: 120px;
             height: 44px;
@@ -156,6 +162,23 @@
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+
+        .send-code-btn {
+            width: 120px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .send-code-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
         .actions {
@@ -219,45 +242,58 @@
     <div class="gradient-bg"></div>
     <main class="card">
         <header class="header">
-            <h1 class="title">注册 Anoxia 账号</h1>
-            <p class="subtitle">注册成功后可一键返回客户端继续登录</p>
+            <h1 class="title" data-i18n="register_title">注册 Anoxia 账号</h1>
+            <p class="subtitle" data-i18n="register_subtitle">注册成功后可一键返回客户端继续登录</p>
         </header>
 
         <form id="register-form">
             <div class="field">
-                <label class="label" for="username">用户名</label>
-                <input id="username" name="username" maxlength="20" autocomplete="username" placeholder="2-20位，字母/数字/下划线，不能数字开头" required>
+                <label class="label" for="username" data-i18n="label_username">用户名</label>
+                <input id="username" name="username" maxlength="20" autocomplete="username" data-i18n-placeholder="placeholder_username" placeholder="2-20位，字母/数字/下划线，不能数字开头" required>
             </div>
 
             <div class="field">
-                <label class="label" for="password">密码</label>
-                <input id="password" name="password" type="password" minlength="5" maxlength="50" autocomplete="new-password" placeholder="请输入 5-50 位密码" required>
+                <label class="label" for="password" data-i18n="label_password">密码</label>
+                <input id="password" name="password" type="password" minlength="5" maxlength="20" autocomplete="new-password" data-i18n-placeholder="placeholder_password" placeholder="请输入 5-20 位密码" required>
             </div>
 
             <div class="field">
-                <label class="label" for="confirmPassword">确认密码</label>
-                <input id="confirmPassword" name="confirmPassword" type="password" minlength="5" maxlength="50" autocomplete="new-password" placeholder="再次输入密码" required>
+                <label class="label" for="confirmPassword" data-i18n="label_confirm_password">确认密码</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" minlength="5" maxlength="20" autocomplete="new-password" data-i18n-placeholder="placeholder_confirm_password" placeholder="再次输入密码" required>
             </div>
 
             <div class="field">
-                <label class="label" for="code">验证码</label>
+                <label class="label" for="email" data-i18n="label_email">邮箱</label>
+                <input id="email" name="email" type="email" maxlength="60" autocomplete="email" data-i18n-placeholder="placeholder_email" placeholder="请输入邮箱" required>
+            </div>
+
+            <div class="field">
+                <label class="label" for="emailCode" data-i18n="label_email_code">邮箱验证码</label>
+                <div class="email-code-row">
+                    <input id="emailCode" name="emailCode" maxlength="6" autocomplete="off" data-i18n-placeholder="placeholder_email_code" placeholder="请输入邮箱验证码" required>
+                    <button class="send-code-btn" id="send-email-code-btn" type="button" data-i18n="btn_send_email_code">发送验证码</button>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="code" data-i18n="label_captcha">验证码</label>
                 <div class="captcha-row">
-                    <input id="code" name="code" maxlength="4" autocomplete="off" placeholder="请输入验证码" required>
-                    <div class="captcha-box" id="captcha-box" title="点击刷新验证码">
+                    <input id="code" name="code" maxlength="4" autocomplete="off" data-i18n-placeholder="placeholder_captcha" placeholder="请输入验证码" required>
+                    <div class="captcha-box" id="captcha-box" data-i18n-title="captcha_title" title="点击刷新验证码">
                         <img id="captcha-img" alt="验证码">
                     </div>
                 </div>
             </div>
 
             <div class="actions">
-                <button class="btn-primary" id="submit-btn" type="submit">完成注册</button>
-                <a class="btn-link btn-secondary" href="index.html">返回官网</a>
+                <button class="btn-primary" id="submit-btn" type="submit" data-i18n="btn_register_submit">完成注册</button>
+                <a class="btn-link btn-secondary" href="index.html" data-i18n="btn_back_home">返回官网</a>
             </div>
         </form>
 
         <div id="status" class="status"></div>
 
-        <div class="footer" id="footer-tip">注册完成后将自动返回客户端登录</div>
+        <div class="footer" id="footer-tip" data-i18n="footer_tip">注册完成后将自动返回客户端登录</div>
     </main>
 
     <script>
@@ -265,15 +301,203 @@
         const params = new URLSearchParams(window.location.search);
         const callback = params.get('callback') || 'anoxia://auth/register-complete';
 
+        const I18N = {
+            zh: {
+                page_title: 'Anoxia IM - 注册',
+                page_description: 'Anoxia IM 注册页面',
+                register_title: '注册 Anoxia 账号',
+                register_subtitle: '注册成功后可一键返回客户端继续登录',
+                label_username: '用户名',
+                label_password: '密码',
+                label_confirm_password: '确认密码',
+                label_email: '邮箱',
+                label_email_code: '邮箱验证码',
+                label_captcha: '验证码',
+                placeholder_username: '2-20位，字母/数字/下划线，不能数字开头',
+                placeholder_password: '请输入 5-20 位密码',
+                placeholder_confirm_password: '再次输入密码',
+                placeholder_email: '请输入邮箱',
+                placeholder_email_code: '请输入邮箱验证码',
+                placeholder_captcha: '请输入验证码',
+                captcha_title: '点击刷新验证码',
+                btn_send_email_code: '发送验证码',
+                btn_send_email_code_sending: '发送中...',
+                btn_register_submit: '完成注册',
+                btn_register_submitting: '提交中...',
+                btn_back_home: '返回官网',
+                footer_tip: '注册完成后将自动返回客户端登录',
+                footer_tip_success: '注册成功，正在尝试返回客户端...',
+                err_captcha_load_retry: '验证码加载失败，请重试',
+                err_captcha_load_network: '验证码加载失败，请检查网络',
+                err_username_format: '用户名格式不正确',
+                err_email_format: '邮箱格式不正确',
+                err_password_len: '密码长度需在 5-20 位之间',
+                err_password_mismatch: '两次密码输入不一致',
+                err_email_code_len: '请输入 6 位邮箱验证码',
+                err_captcha_required: '请输入验证码',
+                err_captcha_not_ready: '验证码未加载完成，请刷新',
+                status_send_email_code_loading: '正在发送邮箱验证码...',
+                err_send_email_code_failed: '发送验证码失败，请稍后重试',
+                status_send_email_code_ok: '验证码已发送，请查收邮箱',
+                status_send_email_code_ok_suffix: '，请重新输入图形验证码后提交注册',
+                err_send_email_code_network: '发送验证码失败，请检查网络后重试',
+                status_register_submitting: '正在提交注册...',
+                err_register_failed: '注册失败，请稍后重试',
+                status_register_success: '注册成功',
+                status_register_success_suffix: '，正在唤起客户端...',
+                err_register_network: '注册失败，请检查网络后重试'
+            },
+            en: {
+                page_title: 'Anoxia IM - Register',
+                page_description: 'Anoxia IM registration page',
+                register_title: 'Create your Anoxia account',
+                register_subtitle: 'After registration, return to the client to sign in',
+                label_username: 'Username',
+                label_password: 'Password',
+                label_confirm_password: 'Confirm password',
+                label_email: 'Email',
+                label_email_code: 'Email code',
+                label_captcha: 'Captcha',
+                placeholder_username: '2-20 chars, letters/numbers/underscore, not starting with a number',
+                placeholder_password: 'Enter a 5-20 character password',
+                placeholder_confirm_password: 'Enter password again',
+                placeholder_email: 'Enter your email',
+                placeholder_email_code: 'Enter email verification code',
+                placeholder_captcha: 'Enter captcha',
+                captcha_title: 'Click to refresh captcha',
+                btn_send_email_code: 'Send code',
+                btn_send_email_code_sending: 'Sending...',
+                btn_register_submit: 'Complete registration',
+                btn_register_submitting: 'Submitting...',
+                btn_back_home: 'Back to home',
+                footer_tip: 'You will be redirected to the client after registration',
+                footer_tip_success: 'Registration successful, trying to open the client...',
+                err_captcha_load_retry: 'Failed to load captcha, please retry',
+                err_captcha_load_network: 'Failed to load captcha, check your network',
+                err_username_format: 'Invalid username format',
+                err_email_format: 'Invalid email format',
+                err_password_len: 'Password length must be 5-20 characters',
+                err_password_mismatch: 'Passwords do not match',
+                err_email_code_len: 'Please enter a 6-digit email code',
+                err_captcha_required: 'Please enter captcha',
+                err_captcha_not_ready: 'Captcha is not ready, please refresh',
+                status_send_email_code_loading: 'Sending email verification code...',
+                err_send_email_code_failed: 'Failed to send code, please try again later',
+                status_send_email_code_ok: 'Verification code sent, please check your email',
+                status_send_email_code_ok_suffix: ', please enter a new captcha before registration',
+                err_send_email_code_network: 'Failed to send code, check your network and retry',
+                status_register_submitting: 'Submitting registration...',
+                err_register_failed: 'Registration failed, please try again later',
+                status_register_success: 'Registration successful',
+                status_register_success_suffix: ', opening client...',
+                err_register_network: 'Registration failed, check your network and retry'
+            },
+            ja: {
+                page_title: 'Anoxia IM - 登録',
+                page_description: 'Anoxia IM 登録ページ',
+                register_title: 'Anoxia アカウント登録',
+                register_subtitle: '登録完了後、クライアントに戻ってログインできます',
+                label_username: 'ユーザー名',
+                label_password: 'パスワード',
+                label_confirm_password: 'パスワード確認',
+                label_email: 'メール',
+                label_email_code: 'メール認証コード',
+                label_captcha: '画像認証',
+                placeholder_username: '2-20文字、英数字/アンダースコア、数字始まり不可',
+                placeholder_password: '5-20文字のパスワードを入力',
+                placeholder_confirm_password: 'もう一度入力してください',
+                placeholder_email: 'メールアドレスを入力',
+                placeholder_email_code: 'メール認証コードを入力',
+                placeholder_captcha: '画像認証を入力',
+                captcha_title: 'クリックして更新',
+                btn_send_email_code: 'コード送信',
+                btn_send_email_code_sending: '送信中...',
+                btn_register_submit: '登録完了',
+                btn_register_submitting: '送信中...',
+                btn_back_home: 'ホームへ戻る',
+                footer_tip: '登録後にクライアントへ自動で戻ります',
+                footer_tip_success: '登録成功、クライアントを起動しています...',
+                err_captcha_load_retry: '画像認証の読み込みに失敗しました。再試行してください',
+                err_captcha_load_network: '画像認証の読み込みに失敗しました。ネットワークを確認してください',
+                err_username_format: 'ユーザー名の形式が正しくありません',
+                err_email_format: 'メール形式が正しくありません',
+                err_password_len: 'パスワードは5〜20文字で入力してください',
+                err_password_mismatch: 'パスワードが一致しません',
+                err_email_code_len: '6桁のメール認証コードを入力してください',
+                err_captcha_required: '画像認証を入力してください',
+                err_captcha_not_ready: '画像認証が未準備です。更新してください',
+                status_send_email_code_loading: 'メール認証コードを送信中...',
+                err_send_email_code_failed: 'コード送信に失敗しました。しばらくして再試行してください',
+                status_send_email_code_ok: '認証コードを送信しました。メールを確認してください',
+                status_send_email_code_ok_suffix: '。登録前に画像認証を再入力してください',
+                err_send_email_code_network: 'コード送信に失敗しました。ネットワークを確認して再試行してください',
+                status_register_submitting: '登録を送信中...',
+                err_register_failed: '登録に失敗しました。しばらくして再試行してください',
+                status_register_success: '登録成功',
+                status_register_success_suffix: '、クライアントを起動しています...',
+                err_register_network: '登録に失敗しました。ネットワークを確認して再試行してください'
+            }
+        };
+
+        function resolveLocale() {
+            const langParam = (params.get('lang') || '').toLowerCase();
+            if (langParam.startsWith('en')) return 'en';
+            if (langParam.startsWith('ja')) return 'ja';
+
+            const browserLang = (navigator.language || 'zh-CN').toLowerCase();
+            if (browserLang.startsWith('en')) return 'en';
+            if (browserLang.startsWith('ja')) return 'ja';
+            return 'zh';
+        }
+
+        const locale = resolveLocale();
+        const dict = I18N[locale] || I18N.zh;
+
+        function t(key) {
+            return dict[key] || I18N.zh[key] || key;
+        }
+
+        function applyI18n() {
+            document.documentElement.lang = locale === 'zh' ? 'zh-CN' : locale;
+
+            document.title = t('page_title');
+            const desc = document.getElementById('page-description');
+            if (desc) desc.setAttribute('content', t('page_description'));
+
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                if (key) {
+                    el.textContent = t(key);
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (key) {
+                    el.setAttribute('placeholder', t(key));
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+                const key = el.getAttribute('data-i18n-title');
+                if (key) {
+                    el.setAttribute('title', t(key));
+                }
+            });
+        }
+
         const form = document.getElementById('register-form');
         const statusBox = document.getElementById('status');
         const submitBtn = document.getElementById('submit-btn');
         const footerTip = document.getElementById('footer-tip');
         const captchaImg = document.getElementById('captcha-img');
         const captchaBox = document.getElementById('captcha-box');
+        const sendEmailCodeBtn = document.getElementById('send-email-code-btn');
 
         let captchaUuid = '';
         let registeredUsername = '';
+        let emailCodeCountdown = 0;
+        let emailCodeTimer = null;
 
         function setStatus(text, type = '') {
             statusBox.textContent = text || '';
@@ -290,30 +514,36 @@
                 captchaUuid = data.uuid || data?.data?.uuid || '';
                 const img = data.img || data?.data?.img || '';
                 if (!captchaUuid || !img) {
-                    setStatus('验证码加载失败，请重试', 'error');
+                    setStatus(t('err_captcha_load_retry'), 'error');
                     return;
                 }
                 captchaImg.src = `data:image/jpeg;base64,${img}`;
             } catch (err) {
-                setStatus('验证码加载失败，请检查网络', 'error');
+                setStatus(t('err_captcha_load_network'), 'error');
             }
         }
 
         function validateForm(payload) {
             if (!/^[a-zA-Z_]\w{1,19}$/.test(payload.username)) {
-                return '用户名格式不正确';
+                return t('err_username_format');
             }
-            if (payload.password.length < 5 || payload.password.length > 50) {
-                return '密码长度需在 5-50 位之间';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+                return t('err_email_format');
+            }
+            if (payload.password.length < 5 || payload.password.length > 20) {
+                return t('err_password_len');
             }
             if (payload.password !== payload.confirmPassword) {
-                return '两次密码输入不一致';
+                return t('err_password_mismatch');
+            }
+            if (!/^\d{6}$/.test(payload.emailCode)) {
+                return t('err_email_code_len');
             }
             if (!payload.code || payload.code.length < 1) {
-                return '请输入验证码';
+                return t('err_captcha_required');
             }
             if (!captchaUuid) {
-                return '验证码未加载完成，请刷新';
+                return t('err_captcha_not_ready');
             }
             return '';
         }
@@ -325,7 +555,7 @@
 
         function onRegisterSuccess(username) {
             registeredUsername = username;
-            footerTip.textContent = '注册成功，正在尝试返回客户端...';
+            footerTip.textContent = t('footer_tip_success');
             setTimeout(() => {
                 window.location.href = buildReturnUri(username);
             }, 650);
@@ -333,7 +563,35 @@
 
         function clearRegisterSuccessState() {
             registeredUsername = '';
-            footerTip.textContent = '注册完成后将自动返回客户端登录';
+            footerTip.textContent = t('footer_tip');
+        }
+
+        function updateSendEmailCodeBtnText() {
+            if (emailCodeCountdown > 0) {
+                sendEmailCodeBtn.textContent = `${emailCodeCountdown}s`;
+            } else {
+                sendEmailCodeBtn.textContent = t('btn_send_email_code');
+            }
+        }
+
+        function startEmailCodeCountdown() {
+            emailCodeCountdown = 60;
+            updateSendEmailCodeBtnText();
+            sendEmailCodeBtn.disabled = true;
+
+            if (emailCodeTimer) {
+                clearInterval(emailCodeTimer);
+            }
+            emailCodeTimer = setInterval(() => {
+                emailCodeCountdown -= 1;
+                if (emailCodeCountdown <= 0) {
+                    clearInterval(emailCodeTimer);
+                    emailCodeTimer = null;
+                    emailCodeCountdown = 0;
+                    sendEmailCodeBtn.disabled = false;
+                }
+                updateSendEmailCodeBtnText();
+            }, 1000);
         }
 
         function normalizeApiResult(raw, fallbackOk = false) {
@@ -360,11 +618,75 @@
             };
         }
 
+        async function sendRegisterEmailCode() {
+            const username = form.username.value.trim();
+            const email = form.email.value.trim();
+            const code = form.code.value.trim();
+
+            if (!/^[a-zA-Z_]\w{1,19}$/.test(username)) {
+                setStatus(t('err_username_format'), 'warn');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                setStatus(t('err_email_format'), 'warn');
+                return;
+            }
+            if (!code) {
+                setStatus(t('err_captcha_required'), 'warn');
+                return;
+            }
+            if (!captchaUuid) {
+                setStatus(t('err_captcha_not_ready'), 'warn');
+                return;
+            }
+
+            sendEmailCodeBtn.disabled = true;
+            sendEmailCodeBtn.textContent = t('btn_send_email_code_sending');
+            setStatus(t('status_send_email_code_loading'), 'warn');
+
+            try {
+                const res = await fetch(`${API_BASE}/register/send-email-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, code, uuid: captchaUuid }),
+                });
+
+                const rawText = await res.text();
+                let data;
+                try {
+                    data = rawText ? JSON.parse(rawText) : {};
+                } catch (_) {
+                    data = rawText;
+                }
+
+                const result = normalizeApiResult(data, res.ok);
+                if (!result.isSuccess) {
+                    setStatus(result.msg || t('err_send_email_code_failed'), 'error');
+                    await loadCaptcha(true);
+                    sendEmailCodeBtn.disabled = false;
+                    sendEmailCodeBtn.textContent = t('btn_send_email_code');
+                    return;
+                }
+
+                setStatus((result.msg || t('status_send_email_code_ok')) + t('status_send_email_code_ok_suffix'), 'success');
+                form.code.value = '';
+                await loadCaptcha(true);
+                startEmailCodeCountdown();
+            } catch (_) {
+                setStatus(t('err_send_email_code_network'), 'error');
+                await loadCaptcha(true);
+                sendEmailCodeBtn.disabled = false;
+                sendEmailCodeBtn.textContent = t('btn_send_email_code');
+            }
+        }
+
         async function submitRegister(evt) {
             evt.preventDefault();
 
             const payload = {
                 username: form.username.value.trim(),
+                email: form.email.value.trim(),
+                emailCode: form.emailCode.value.trim(),
                 password: form.password.value,
                 confirmPassword: form.confirmPassword.value,
                 code: form.code.value.trim(),
@@ -378,8 +700,8 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = '提交中...';
-            setStatus('正在提交注册...', 'warn');
+            submitBtn.textContent = t('btn_register_submitting');
+            setStatus(t('status_register_submitting'), 'warn');
 
             try {
                 const res = await fetch(`${API_BASE}/register`, {
@@ -387,6 +709,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         username: payload.username,
+                        email: payload.email,
+                        emailCode: payload.emailCode,
                         password: payload.password,
                         code: payload.code,
                         uuid: payload.uuid,
@@ -404,29 +728,33 @@
 
                 const result = normalizeApiResult(data, res.ok);
                 if (!result.isSuccess) {
-                    const errorMsg = result.msg || '注册失败，请稍后重试';
+                    const errorMsg = result.msg || t('err_register_failed');
                     clearRegisterSuccessState();
                     setStatus(errorMsg, 'error');
                     await loadCaptcha(true);
                     return;
                 }
 
-                const successMsg = result.msg || '注册成功';
-                setStatus(`${successMsg}，正在唤起客户端...`, 'success');
+                const successMsg = result.msg || t('status_register_success');
+                setStatus(`${successMsg}${t('status_register_success_suffix')}`, 'success');
                 onRegisterSuccess(payload.username);
             } catch (err) {
                 clearRegisterSuccessState();
-                setStatus('注册失败，请检查网络后重试', 'error');
+                setStatus(t('err_register_network'), 'error');
                 await loadCaptcha(true);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = '完成注册';
+                submitBtn.textContent = t('btn_register_submit');
             }
         }
 
         form.addEventListener('submit', submitRegister);
         captchaBox.addEventListener('click', loadCaptcha);
+        sendEmailCodeBtn.addEventListener('click', sendRegisterEmailCode);
 
+        applyI18n();
+        clearRegisterSuccessState();
+        updateSendEmailCodeBtnText();
         loadCaptcha();
     </script>
 </body>
