@@ -110,7 +110,6 @@ class _AppScaffoldState extends State<AppScaffold> {
       decoration: BoxDecoration(gradient: gradient),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
-        // 彻底移除了原先的 CallbackShortcuts 和 Focus 组件
         child: Scaffold(
           appBar: () {
             if (DeviceUtil.isRealDesktop()) {

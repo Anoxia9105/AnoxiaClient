@@ -61,13 +61,10 @@ class VibratingBadge extends StatelessWidget {
     return Container(
       height: size,
       width: isSingleDigit ? size : null,
-      constraints: isSingleDigit
-          ? null
-          : BoxConstraints(minWidth: size),
+      constraints: isSingleDigit ? null : BoxConstraints(minWidth: size),
       padding: isSingleDigit
           ? EdgeInsets.zero
           : const EdgeInsets.symmetric(horizontal: 4),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color,
         shape: isSingleDigit ? BoxShape.circle : BoxShape.rectangle,
@@ -76,15 +73,20 @@ class VibratingBadge extends StatelessWidget {
             ? Border.all(color: borderColor!, width: 1.5)
             : null,
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          height: 1.0,
+      child: Align(
+        alignment: Alignment.center,
+        widthFactor: 1,
+        heightFactor: 1,
+        child: Text(
+          text,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            height: 1.0,
+          ),
+          textAlign: TextAlign.center,
         ),
-        textAlign: TextAlign.center,
       ),
     );
   }

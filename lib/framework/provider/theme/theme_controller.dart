@@ -1,10 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../gen/fonts.gen.dart';
 import '../../../common/utils/SPUtil.dart';
 import '../../theme/AppTheme.dart';
 
 part 'theme_controller.g.dart';
+
+/// 支持的全局字体 key
+class AppFontKeys {
+  AppFontKeys._();
+
+  static const String roboto = 'roboto';
+  static const String inter = 'inter';
+  static const String openSans = 'open_sans';
+  static const String lato = 'lato';
+  static const String montserrat = 'montserrat';
+  static const String poppins = 'poppins';
+  static const String sourceSans3 = 'source_sans_3';
+  static const String nunito = 'nunito';
+  static const String merriweather = 'merriweather';
+  static const String notoSansSc = 'noto_sans_sc';
+  static const String notoSansJp = 'noto_sans_jp';
+  static const String harmonyOS = 'harmony_os';
+}
+
+/// 全局字体配置（含显示名 key）
+class AppFontOption {
+  final String key;
+  final String labelKey;
+
+  const AppFontOption({required this.key, required this.labelKey});
+}
+
+const List<AppFontOption> appFontOptions = [
+  AppFontOption(key: AppFontKeys.roboto, labelKey: 'settings_font_roboto'),
+  AppFontOption(key: AppFontKeys.inter, labelKey: 'settings_font_inter'),
+  AppFontOption(
+    key: AppFontKeys.openSans,
+    labelKey: 'settings_font_open_sans',
+  ),
+  AppFontOption(key: AppFontKeys.lato, labelKey: 'settings_font_lato'),
+  AppFontOption(
+    key: AppFontKeys.montserrat,
+    labelKey: 'settings_font_montserrat',
+  ),
+  AppFontOption(key: AppFontKeys.poppins, labelKey: 'settings_font_poppins'),
+  AppFontOption(
+    key: AppFontKeys.sourceSans3,
+    labelKey: 'settings_font_source_sans_3',
+  ),
+  AppFontOption(key: AppFontKeys.nunito, labelKey: 'settings_font_nunito'),
+  AppFontOption(
+    key: AppFontKeys.merriweather,
+    labelKey: 'settings_font_merriweather',
+  ),
+  AppFontOption(
+    key: AppFontKeys.notoSansSc,
+    labelKey: 'settings_font_noto_sans_sc',
+  ),
+  AppFontOption(
+    key: AppFontKeys.notoSansJp,
+    labelKey: 'settings_font_noto_sans_jp',
+  ),
+  AppFontOption(
+    key: AppFontKeys.harmonyOS,
+    labelKey: 'settings_font_harmony_os',
+  ),
+];
+
+/// 全局字体状态（持久化）
+class AppFontController extends StateNotifier<String> {
+  static const String _storageKey = 'app_font_key';
+
+  AppFontController() : super(_load());
+
+  static String _load() {
+    final saved = SPUtil.instance.get(
+      _storageKey,
+      defValue: AppFontKeys.roboto,
+    );
+
+    if (saved != null && appFontOptions.any((option) => option.key == saved)) {
+      return saved;
+    }
+    return AppFontKeys.roboto;
+  }
+
+  void setFont(String fontKey) {
+    if (state == fontKey) return;
+    state = fontKey;
+    SPUtil.instance.set(_storageKey, fontKey);
+  }
+}
+
+final appFontProvider = StateNotifierProvider<AppFontController, String>((ref) {
+  return AppFontController();
+});
 
 /// 主题索引 Provider
 ///
@@ -32,9 +126,44 @@ class ThemeIndex extends _$ThemeIndex {
 @riverpod
 ThemeData appTheme(Ref ref) {
   final index = ref.watch(themeIndexProvider);
+  final fontKey = ref.watch(appFontProvider);
   ThemeData baseTheme = AppTheme.getTheme(index: index);
+
+  final textTheme = _buildTextTheme(fontKey, baseTheme.textTheme);
+  final primaryTextTheme = _buildTextTheme(fontKey, baseTheme.primaryTextTheme);
+
   return baseTheme.copyWith(
-    textTheme: baseTheme.textTheme.apply(fontFamily: 'HarmonyOS'),
-    primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: 'HarmonyOS'),
+    textTheme: textTheme,
+    primaryTextTheme: primaryTextTheme,
   );
+}
+
+TextTheme _buildTextTheme(String fontKey, TextTheme baseTextTheme) {
+  switch (fontKey) {
+    case AppFontKeys.inter:
+      return GoogleFonts.interTextTheme(baseTextTheme);
+    case AppFontKeys.openSans:
+      return GoogleFonts.openSansTextTheme(baseTextTheme);
+    case AppFontKeys.lato:
+      return GoogleFonts.latoTextTheme(baseTextTheme);
+    case AppFontKeys.montserrat:
+      return GoogleFonts.montserratTextTheme(baseTextTheme);
+    case AppFontKeys.poppins:
+      return GoogleFonts.poppinsTextTheme(baseTextTheme);
+    case AppFontKeys.sourceSans3:
+      return GoogleFonts.sourceSans3TextTheme(baseTextTheme);
+    case AppFontKeys.nunito:
+      return GoogleFonts.nunitoTextTheme(baseTextTheme);
+    case AppFontKeys.merriweather:
+      return GoogleFonts.merriweatherTextTheme(baseTextTheme);
+    case AppFontKeys.notoSansSc:
+      return GoogleFonts.notoSansScTextTheme(baseTextTheme);
+    case AppFontKeys.notoSansJp:
+      return GoogleFonts.notoSansJpTextTheme(baseTextTheme);
+    case AppFontKeys.harmonyOS:
+      return baseTextTheme.apply(fontFamily: FontFamily.harmonyOS);
+    case AppFontKeys.roboto:
+    default:
+      return GoogleFonts.robotoTextTheme(baseTextTheme);
+  }
 }

@@ -153,6 +153,8 @@ class RoomListItem extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 未读消息数
+              VibratingBadge(count: room.unreadCount ?? 0),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -175,6 +177,7 @@ class RoomListItem extends ConsumerWidget {
                     ),
                     const SizedBox(width: 6),
                   ],
+                  // 最后消息时间
                   Text(
                     DateUtil.formatTime(room.lastMessage?.timestamp),
                     style: const TextStyle(fontSize: 12),
@@ -183,7 +186,6 @@ class RoomListItem extends ConsumerWidget {
                   ),
                 ],
               ),
-              VibratingBadge(count: room.unreadCount ?? 0),
             ],
           ),
         ),

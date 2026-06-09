@@ -5,10 +5,12 @@ import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/ChatMessage.dart';
@@ -417,10 +419,9 @@ Future<void> roomEntryTask(Ref ref, String roomId) async {
   final room = RoomLookupHelper.findByRoomId(rooms, roomId);
 
   await Future.wait([
-    ref.read(chatMessagesProvider.notifier).syncRoomMessages(
-      roomId,
-      room?.lastMessage?.seq,
-    ),
+    ref
+        .read(chatMessagesProvider.notifier)
+        .syncRoomMessages(roomId, room?.lastMessage?.seq),
     ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId),
   ]);
 
@@ -473,6 +474,47 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
     orElse: () => const [],
   );
 }
+
+/// 根据关键词过滤并按置顶优先排序后的聊天室列表（保留异步状态）
+///
+/// 供页面直接使用 `when` 处理 loading/error/data。
+final filteredSortedRoomListAsyncProvider =
+    Provider<AsyncValue<List<ChatRoomVO>>>((ref) {
+      final roomListAsync = ref.watch(roomListServiceProvider);
+      final query = ref.watch(roomSearchQueryProvider).trim().toLowerCase();
+      final pinnedIds = ref.watch(pinnedRoomsProvider);
+
+      return roomListAsync.whenData((rooms) {
+        final filteredRooms = query.isEmpty
+            ? rooms
+            : rooms.where((room) {
+                final nameMatch = (room.roomName ?? '').toLowerCase().contains(
+                  query,
+                );
+                final msgMatch = (room.lastMessage?.content ?? '')
+                    .toLowerCase()
+                    .contains(query);
+                return nameMatch || msgMatch;
+              }).toList();
+
+        if (filteredRooms.isEmpty || pinnedIds.isEmpty) {
+          return filteredRooms;
+        }
+
+        final pinnedRooms = <ChatRoomVO>[];
+        final normalRooms = <ChatRoomVO>[];
+        for (final room in filteredRooms) {
+          final id = room.roomId;
+          if (id != null && pinnedIds.contains(id)) {
+            pinnedRooms.add(room);
+          } else {
+            normalRooms.add(room);
+          }
+        }
+
+        return <ChatRoomVO>[...pinnedRooms, ...normalRooms];
+      });
+    });
 
 /// 总未读消息数
 ///

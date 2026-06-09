@@ -59,7 +59,7 @@ class DesktopSidebar extends ConsumerWidget {
               children: List.generate(layout.items.length - 1, (index) {
                 final item = layout.items[index];
                 return SidebarButton(
-                  padding: EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(10),
                   index: index,
                   name: item.name.tr(),
                   icon: item.icon,
@@ -69,7 +69,7 @@ class DesktopSidebar extends ConsumerWidget {
           ),
 
           SidebarButton(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             index: layout.items.length - 1,
             name: layout.items[layout.items.length - 1].name.tr(),
             icon: layout.items[layout.items.length - 1].icon,
@@ -100,7 +100,7 @@ class DesktopSidebar extends ConsumerWidget {
             width: 0.5,
           ),
           contentBuilder: (context) => Container(
-            constraints: BoxConstraints(maxWidth: 220, maxHeight: 600),
+            constraints: const BoxConstraints(maxWidth: 220, maxHeight: 600),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -163,8 +163,8 @@ class DesktopSidebar extends ConsumerWidget {
                       ref.read(authControllerProvider.notifier).logout();
                       close?.call();
                     },
-                    label: Text('sidebar_logout'.tr(), style: TextStyle(color: Colors.red)),
-                    icon: HugeIcon(
+                    label: Text('sidebar_logout'.tr(), style: const TextStyle(color: Colors.red)),
+                    icon: const HugeIcon(
                       icon: HugeIcons.strokeRoundedLogout01,
                       color: Colors.red,
                     ),
@@ -243,8 +243,9 @@ class SidebarButton extends ConsumerWidget {
                         child: VibratingBadge(count: pendingRequests),
                       ),
 
+                    /// 更新通知仅显示红点
                     if (index == settingsIndex && hasUpdate)
-                      Positioned(
+                      const Positioned(
                         right: -8,
                         top: -6,
                         child: VibratingBadge(isDot: true),

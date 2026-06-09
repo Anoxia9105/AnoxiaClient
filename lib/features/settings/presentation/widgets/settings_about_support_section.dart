@@ -175,7 +175,7 @@ class SettingsAboutSupportSection extends StatelessWidget {
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: () => onNavigateToUpdatePage(updateInfo),
-                          icon: const Icon(Icons.download_rounded, size: 18),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01, size: 18),
                           label: Text('update_now'.tr()),
                         ),
                       ),

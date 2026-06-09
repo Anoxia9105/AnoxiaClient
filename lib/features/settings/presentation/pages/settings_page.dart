@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_theme_section.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
@@ -119,6 +120,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final pageState = ref.watch(settingsPageControllerProvider);
     final themeIndex = ref.watch(themeIndexProvider);
+    final fontKey = ref.watch(appFontProvider);
     final callWin = ref.read(callWindowControllerProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
     final hasUpdateBadge = ref.watch(hasAppUpdateProvider);
@@ -156,6 +158,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     .read(callWindowControllerProvider.notifier)
                     .updateSettings(localeCode: localeCode);
               }
+            },
+          ),
+          SettingsFontSection(
+            selectedFontKey: fontKey,
+            isDesktop: DeviceUtil.isDesktop(context),
+            onFontChanged: (selectedFont) {
+              ref.read(appFontProvider.notifier).setFont(selectedFont);
             },
           ),
           SettingsAboutSupportSection(

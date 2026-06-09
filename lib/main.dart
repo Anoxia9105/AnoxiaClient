@@ -264,6 +264,7 @@ Widget _buildAppWrapper(Widget home) {
     path: path,
     fallbackLocale: const Locale('en', 'US'),
     saveLocale: true,
+    /// 通过 ScreenUtilInit 包裹，提供屏幕适配功能
     child: ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,

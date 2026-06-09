@@ -2,8 +2,6 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_item.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_list_skeleton.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
-import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -138,84 +136,123 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
 
   /// 构建房间列表
   Widget _buildRoomList(BuildContext context, WidgetRef ref) {
-    /// 获取过滤后的房间列表、搜索查询和置顶房间 ID 列表
-    final filteredRooms = ref.watch(filteredRoomListProvider);
-    final roomListAsync = ref.watch(roomListServiceProvider);
+    /// 获取过滤并排序后的异步房间列表
+    final filteredRooms = ref.watch(filteredSortedRoomListAsyncProvider);
 
-    /// 搜索查询和置顶房间 ID 列表用于空状态提示和排序逻辑
+    /// 搜索查询用于空状态提示文案
     final query = ref.watch(roomSearchQueryProvider);
 
-    /// 置顶房间 ID 列表用于将置顶房间排在前面
-    final pinnedIds = ref.watch(pinnedRoomsProvider);
+    return filteredRooms.when(
+      loading: () => const ChatRoomListSkeleton(),
+      error: (error, _) => _buildErrorState(context, ref, error),
+      data: (rooms) {
+        if (rooms.isEmpty) {
+          return _buildEmptyState(context, ref, query);
+        }
 
-    final isInitialLoading = roomListAsync.isLoading && roomListAsync.value == null;
-    if (isInitialLoading) {
-      return const ChatRoomListSkeleton();
-    }
+        /// 下拉刷新，调用 RoomListService 的 refresh 方法重新加载房间列表
+        return RefreshIndicator(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          color: Theme.of(context).colorScheme.primary,
+          onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: rooms.length,
+            itemBuilder: (context, index) {
+              return RoomListItem(id: rooms[index].roomId ?? '');
+            },
+            clipBehavior: Clip.hardEdge,
+          ),
+        );
+      },
+    );
+  }
 
-    /// 如果没有任何房间，显示空状态提示
-    if (filteredRooms.isEmpty) {
-      return RefreshIndicator(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        color: Theme.of(context).colorScheme.primary,
-        onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref, String query) {
+    return RefreshIndicator(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      color: Theme.of(context).colorScheme.primary,
+      onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const HugeIcon(
+                    icon: HugeIcons.strokeRoundedComment01,
+                    size: 48,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    query.isEmpty
+                        ? 'chat_no_conversations'.tr()
+                        : 'chat_no_related_conversations'.tr(),
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-        /// 使用 CustomScrollView + SliverFillRemaining 实现下拉刷新和空状态提示的兼容
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
+  Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
+    return RefreshIndicator(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      color: Theme.of(context).colorScheme.primary,
+      onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const HugeIcon(
-                      icon: HugeIcons.strokeRoundedComment01,
+                    const Icon(
+                      Icons.error_outline,
                       size: 48,
                       color: Colors.grey,
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      query.isEmpty
-                          ? 'chat_no_conversations'.tr()
-                          : 'chat_no_related_conversations'.tr(),
+                      'chat_load_failed'.tr(),
                       style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.tonal(
+                      onPressed: () =>
+                          ref.read(roomListServiceProvider.notifier).refresh(),
+                      child: Text('update_retry_download'.tr()),
                     ),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
-      );
-    }
-
-    final pinned = <ChatRoomVO>[];
-    final normal = <ChatRoomVO>[];
-    for (final r in filteredRooms) {
-      final id = r.roomId;
-      if (id != null && pinnedIds.contains(id)) {
-        pinned.add(r);
-      } else {
-        normal.add(r);
-      }
-    }
-    final sortedRooms = <ChatRoomVO>[...pinned, ...normal];
-
-    /// 下拉刷新，调用 RoomListService 的 refresh 方法重新加载房间列表
-    return RefreshIndicator(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      color: Theme.of(context).colorScheme.primary,
-      onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: sortedRooms.length,
-        itemBuilder: (context, index) {
-          return RoomListItem(id: sortedRooms[index].roomId ?? '');
-        },
-        clipBehavior: Clip.hardEdge,
+          ),
+        ],
       ),
     );
   }

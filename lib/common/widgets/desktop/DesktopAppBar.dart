@@ -49,7 +49,9 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 // fit: BoxFit.cover
               ),
             ),
-      title: const Row(children: [SizedBox(width: 4), ConnectionStatusTag()]),
+      title: showHeaderEnhancements
+          ? const Row(children: [SizedBox(width: 4), ConnectionStatusTag()])
+          : null,
       actions: [
         if (showHeaderEnhancements) ...[
           // 点击搜索框入口时，调用回调或直接打开

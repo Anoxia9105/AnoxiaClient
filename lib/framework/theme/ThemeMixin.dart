@@ -301,10 +301,12 @@ mixin ThemeMixin {
       ),
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness:
-            brightness == Brightness.dark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: brightness == Brightness.dark
+            ? Brightness.dark
+            : Brightness.light,
       ),
     );
 
@@ -374,7 +376,7 @@ mixin ThemeMixin {
     // -------------------------
     return ThemeData(
       useMaterial3: true,
-      fontFamily: fontFamily ?? 'HarmonyOS',
+      fontFamily: fontFamily,
       brightness: brightness,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,

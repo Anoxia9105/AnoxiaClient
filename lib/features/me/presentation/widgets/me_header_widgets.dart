@@ -44,20 +44,7 @@ class MeProfileCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.6),
-                width: 2.5,
-              ),
-            ),
-            child: AvatarWidget(
-              url: user.avatar,
-              name: user.nickName,
-              size: 68,
-            ),
-          ),
+          AvatarWidget(url: user.avatar, name: user.nickName, size: 68),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
