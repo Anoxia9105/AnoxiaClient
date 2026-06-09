@@ -105,6 +105,50 @@ class AuthController extends _$AuthController {
     }
   }
 
+  /// 忘记密码：发送邮箱验证码
+  Future<String> forgotPasswordSendCode({
+    required String username,
+    required String captchaCode,
+    required String uuid,
+  }) async {
+    final res = await DioClient().post(
+      API.forgotPasswordSendCode,
+      data: {'username': username, 'captchaCode': captchaCode, 'uuid': uuid},
+      auth: false,
+    );
+
+    final msg = _extractApiMsg(res.data, fallback: '操作成功');
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(msg);
+    }
+    return msg;
+  }
+
+  /// 忘记密码：重置密码
+  Future<String> forgotPasswordReset({
+    required String username,
+    required String emailCode,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    final res = await DioClient().post(
+      API.forgotPasswordReset,
+      data: {
+        'username': username,
+        'emailCode': emailCode,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      },
+      auth: false,
+    );
+
+    final msg = _extractApiMsg(res.data, fallback: '操作成功');
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(msg);
+    }
+    return msg;
+  }
+
   /// 用户登出
   ///
   /// 执行以下清理操作：
@@ -131,24 +175,26 @@ class AuthController extends _$AuthController {
 
     // 手动登出时异步通知后端；鉴权失效触发的本地登出不再重复请求。
     if (notifyBackend) {
-      unawaited((() async {
-        try {
-          await DioClient()
-              .post(
-                API.logout,
-                auth: false,
-                options: Options(
-                  headers: {
-                    if (token != null && token.isNotEmpty)
-                      'Authorization': 'Bearer $token',
-                  },
-                ),
-              )
-              .timeout(const Duration(seconds: 2));
-        } catch (e) {
-          log.warning('[AuthController] 后端登出请求失败（忽略）: $e');
-        }
-      })());
+      unawaited(
+        (() async {
+          try {
+            await DioClient()
+                .post(
+                  API.logout,
+                  auth: false,
+                  options: Options(
+                    headers: {
+                      if (token != null && token.isNotEmpty)
+                        'Authorization': 'Bearer $token',
+                    },
+                  ),
+                )
+                .timeout(const Duration(seconds: 2));
+          } catch (e) {
+            log.warning('[AuthController] 后端登出请求失败（忽略）: $e');
+          }
+        })(),
+      );
     }
 
     try {
@@ -164,10 +210,7 @@ class AuthController extends _$AuthController {
       state = const AsyncData(null);
 
       // 4. 统一清理会话级缓存，避免切账号后复用旧会话数据
-      SessionResetService.instance.reset(
-        ref,
-        reason: reason,
-      );
+      SessionResetService.instance.reset(ref, reason: reason);
 
       log.info('[AuthController] 登出成功，全部业务缓存已清理');
     } catch (e, st) {
@@ -270,6 +313,40 @@ class AuthController extends _$AuthController {
   }
 
   bool _shouldReportPushDevice() => DeviceUtil.isRealMobile();
+
+  bool _isApiSuccess(dynamic body) {
+    if (body is! Map) return true;
+
+    final code = body['code'];
+    if (code is num) return code == 200;
+    if (code is String) return code == '200' || code == '0';
+
+    final nestedData = body['data'];
+    if (nestedData is Map) {
+      final nestedCode = nestedData['code'];
+      if (nestedCode is num) return nestedCode == 200;
+      if (nestedCode is String) return nestedCode == '200' || nestedCode == '0';
+    }
+
+    return true;
+  }
+
+  String _extractApiMsg(dynamic body, {required String fallback}) {
+    if (body is! Map) return fallback;
+
+    final msg = body['msg'];
+    if (msg is String && msg.trim().isNotEmpty) return msg.trim();
+
+    final nestedData = body['data'];
+    if (nestedData is Map) {
+      final nestedMsg = nestedData['msg'];
+      if (nestedMsg is String && nestedMsg.trim().isNotEmpty) {
+        return nestedMsg.trim();
+      }
+    }
+
+    return fallback;
+  }
 }
 
 /// 获取验证码

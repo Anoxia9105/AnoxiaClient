@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -46,15 +47,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   AppLinks? _appLinks;
   StreamSubscription<Uri>? _linkSub;
+  static const MethodChannel _registerReturnChannel = MethodChannel(
+    'anoxia/register_return',
+  );
 
   @override
   void initState() {
     super.initState();
+    _registerReturnChannel.setMethodCallHandler(_handleWindowsRegisterReturn);
     _initRegisterReturnLink();
   }
 
   @override
   void dispose() {
+    _registerReturnChannel.setMethodCallHandler(null);
     _linkSub?.cancel();
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
@@ -313,7 +319,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         TextButton(
-          onPressed: () {},
+          onPressed: _showForgotPasswordDialog,
           child: Text(
             'login_page_forget'.tr(),
             style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
@@ -331,6 +337,19 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
       ],
     );
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+    );
+    if (!mounted) return;
+    if (result != null && result.trim().isNotEmpty) {
+      _usernameCtrl.text = result.trim();
+      _passwordCtrl.clear();
+      _codeCtrl.clear();
+      ref.invalidate(getCaptchaProvider);
+    }
   }
 
   Future<void> _openRegisterPage() async {
@@ -358,6 +377,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
     );
   }
 
+  Future<void> _handleWindowsRegisterReturn(MethodCall call) async {
+    if (call.method != 'onLink') return;
+
+    final raw = call.arguments;
+    if (raw is! String || raw.trim().isEmpty) return;
+
+    final uri = Uri.tryParse(raw.trim());
+    if (uri == null) return;
+    _handleRegisterReturn(uri);
+  }
+
   void _handleRegisterReturn(Uri uri) {
     if (uri.scheme != 'anoxia') return;
     if (uri.host != 'auth' || uri.path != '/register-complete') return;
@@ -371,12 +401,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     ref.invalidate(getCaptchaProvider);
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('账号已回填，请输入密码和验证码后登录'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   Future<void> _handleLogin() async {

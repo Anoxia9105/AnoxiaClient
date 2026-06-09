@@ -29,6 +29,10 @@ class API {
   static const String getInfo = '/getInfo';
   /// 获取图形验证码接口
   static const String captchaImage = '/captchaImage';
+  /// 忘记密码发送验证码
+  static const String forgotPasswordSendCode = '/password/forgot/send-code';
+  /// 忘记密码重置密码
+  static const String forgotPasswordReset = '/password/forgot/reset';
 
   // ======================== 好友/联系人接口 ========================
   /// 获取联系人列表
