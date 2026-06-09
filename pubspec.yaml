@@ -118,6 +118,8 @@ dependencies:
   firebase_messaging: ^16.0.2
   # google fonts
   google_fonts: ^8.1.0
+  # deep link return from web register flow
+  app_links: ^7.1.1
 
 dev_dependencies:
   flutter_test:

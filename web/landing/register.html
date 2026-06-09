@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anoxia IM - 注册</title>
+    <meta name="description" content="Anoxia IM 注册页面">
+    <link rel="icon" href="app_icon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f1b;
+            --panel: rgba(17, 24, 39, 0.86);
+            --card-border: rgba(148, 163, 184, 0.24);
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --primary: #22c55e;
+            --primary-hover: #16a34a;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --input-bg: rgba(15, 23, 42, 0.85);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', 'Space Grotesk', sans-serif;
+            background: radial-gradient(circle at 20% 0%, #1e293b, transparent 35%),
+                        radial-gradient(circle at 80% 100%, #0f766e, transparent 40%),
+                        var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--panel);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        }
+
+        .title {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .subtitle {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        form {
+            padding: 22px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .label {
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: var(--input-bg);
+            color: var(--text);
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        }
+
+        .captcha-row {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 10px;
+        }
+
+        .captcha-box {
+            width: 120px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: #0f172a;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .captcha-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        button,
+        .btn-link {
+            width: 100%;
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #03210f;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.14);
+            color: var(--text);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .status {
+            padding: 0 22px 18px;
+            min-height: 24px;
+            font-size: 13px;
+        }
+
+        .status.error { color: var(--danger); }
+        .status.warn { color: var(--warning); }
+        .status.success { color: #86efac; }
+
+        .success-panel {
+            display: none;
+            padding: 0 22px 22px;
+            gap: 10px;
+        }
+
+        .success-panel.show {
+            display: grid;
+        }
+
+        .tips {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            padding: 0 22px 22px;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <header class="header">
+            <h1 class="title">注册 Anoxia 账号</h1>
+            <p class="subtitle">注册成功后可一键返回客户端继续登录</p>
+        </header>
+
+        <form id="register-form">
+            <div class="field">
+                <label class="label" for="username">用户名</label>
+                <input id="username" name="username" maxlength="20" autocomplete="username" placeholder="2-20位，字母/数字/下划线，不能数字开头" required>
+            </div>
+
+            <div class="field">
+                <label class="label" for="password">密码</label>
+                <input id="password" name="password" type="password" minlength="5" maxlength="50" autocomplete="new-password" placeholder="请输入 5-50 位密码" required>
+            </div>
+
+            <div class="field">
+                <label class="label" for="confirmPassword">确认密码</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" minlength="5" maxlength="50" autocomplete="new-password" placeholder="再次输入密码" required>
+            </div>
+
+            <div class="field">
+                <label class="label" for="code">验证码</label>
+                <div class="captcha-row">
+                    <input id="code" name="code" maxlength="4" autocomplete="off" placeholder="请输入验证码" required>
+                    <div class="captcha-box" id="captcha-box" title="点击刷新验证码">
+                        <img id="captcha-img" alt="验证码">
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-primary" id="submit-btn" type="submit">完成注册</button>
+                <a class="btn-link btn-secondary" href="index.html">返回官网</a>
+            </div>
+        </form>
+
+        <div id="status" class="status"></div>
+
+        <section id="success-panel" class="success-panel">
+            <button class="btn-primary" id="back-app-btn" type="button">返回 Anoxia 客户端</button>
+            <a class="btn-link btn-secondary" id="fallback-login" href="#">打开客户端登录页</a>
+            <p class="tips">如果没有自动唤起客户端，请手动切回客户端，登录页会自动回填注册账号。</p>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE = 'https://chat.anoxia.cn/api';
+        const params = new URLSearchParams(window.location.search);
+        const callback = params.get('callback') || 'anoxia://auth/register-complete';
+
+        const form = document.getElementById('register-form');
+        const statusBox = document.getElementById('status');
+        const submitBtn = document.getElementById('submit-btn');
+        const successPanel = document.getElementById('success-panel');
+        const backAppBtn = document.getElementById('back-app-btn');
+        const fallbackLogin = document.getElementById('fallback-login');
+        const captchaImg = document.getElementById('captcha-img');
+        const captchaBox = document.getElementById('captcha-box');
+
+        let captchaUuid = '';
+        let registeredUsername = '';
+
+        function setStatus(text, type = '') {
+            statusBox.textContent = text || '';
+            statusBox.className = 'status' + (type ? ' ' + type : '');
+        }
+
+        async function loadCaptcha() {
+            try {
+                setStatus('');
+                const res = await fetch(`${API_BASE}/captchaImage`, { method: 'GET' });
+                const data = await res.json();
+                captchaUuid = data.uuid || data?.data?.uuid || '';
+                const img = data.img || data?.data?.img || '';
+                if (!captchaUuid || !img) {
+                    setStatus('验证码加载失败，请重试', 'error');
+                    return;
+                }
+                captchaImg.src = `data:image/jpeg;base64,${img}`;
+            } catch (err) {
+                setStatus('验证码加载失败，请检查网络', 'error');
+            }
+        }
+
+        function validateForm(payload) {
+            if (!/^[a-zA-Z_]\w{1,19}$/.test(payload.username)) {
+                return '用户名格式不正确';
+            }
+            if (payload.password.length < 5 || payload.password.length > 50) {
+                return '密码长度需在 5-50 位之间';
+            }
+            if (payload.password !== payload.confirmPassword) {
+                return '两次密码输入不一致';
+            }
+            if (!payload.code || payload.code.length < 1) {
+                return '请输入验证码';
+            }
+            if (!captchaUuid) {
+                return '验证码未加载完成，请刷新';
+            }
+            return '';
+        }
+
+        function buildReturnUri(username) {
+            const separator = callback.includes('?') ? '&' : '?';
+            return `${callback}${separator}username=${encodeURIComponent(username)}`;
+        }
+
+        function showSuccessActions(username) {
+            registeredUsername = username;
+            successPanel.classList.add('show');
+            const returnUri = buildReturnUri(username);
+            fallbackLogin.href = returnUri;
+        }
+
+        function hideSuccessActions() {
+            successPanel.classList.remove('show');
+            registeredUsername = '';
+        }
+
+        function normalizeApiResult(raw, fallbackOk = false) {
+            if (typeof raw === 'string') {
+                const plain = raw.trim();
+                return {
+                    isSuccess: false,
+                    code: null,
+                    msg: plain,
+                };
+            }
+
+            const codeRaw = raw?.code ?? raw?.data?.code;
+            const msgRaw = raw?.msg ?? raw?.message ?? raw?.data?.msg ?? raw?.data?.message;
+            const code = Number(codeRaw);
+            const isSuccess = Number.isFinite(code)
+                ? code === 200
+                : Boolean(fallbackOk);
+
+            return {
+                isSuccess,
+                code: Number.isFinite(code) ? code : null,
+                msg: (msgRaw ?? '').toString().trim(),
+            };
+        }
+
+        async function submitRegister(evt) {
+            evt.preventDefault();
+
+            const payload = {
+                username: form.username.value.trim(),
+                password: form.password.value,
+                confirmPassword: form.confirmPassword.value,
+                code: form.code.value.trim(),
+                uuid: captchaUuid,
+            };
+
+            const errorMsg = validateForm(payload);
+            if (errorMsg) {
+                setStatus(errorMsg, 'warn');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+            setStatus('正在提交注册...', 'warn');
+
+            try {
+                const res = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: payload.username,
+                        password: payload.password,
+                        code: payload.code,
+                        uuid: payload.uuid,
+                    }),
+                });
+
+                const rawText = await res.text();
+                let data;
+                try {
+                    data = rawText ? JSON.parse(rawText) : {};
+                } catch (_) {
+                    // 非 JSON 响应（例如 500 纯文本）也保留原始错误信息
+                    data = rawText;
+                }
+
+                const result = normalizeApiResult(data, res.ok);
+                if (!result.isSuccess) {
+                    const errorMsg = result.msg || '注册失败，请稍后重试';
+                    hideSuccessActions();
+                    setStatus(errorMsg, 'error');
+                    await loadCaptcha();
+                    return;
+                }
+
+                const successMsg = result.msg || '注册成功';
+                setStatus(`${successMsg}，点击按钮返回客户端登录`, 'success');
+                showSuccessActions(payload.username);
+            } catch (err) {
+                hideSuccessActions();
+                setStatus('注册失败，请检查网络后重试', 'error');
+                await loadCaptcha();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '完成注册';
+            }
+        }
+
+        function goBackToApp() {
+            if (!registeredUsername) {
+                setStatus('请先完成注册', 'warn');
+                return;
+            }
+            const returnUri = buildReturnUri(registeredUsername);
+            window.location.href = returnUri;
+        }
+
+        form.addEventListener('submit', submitRegister);
+        captchaBox.addEventListener('click', loadCaptcha);
+        backAppBtn.addEventListener('click', goBackToApp);
+
+        loadCaptcha();
+    </script>
+</body>
+</html>

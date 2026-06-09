@@ -1,14 +1,17 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
+import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 登录页面
 ///
@@ -41,8 +44,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
   /// 是否正在执行登录操作
   bool _isLoading = false;
 
+  AppLinks? _appLinks;
+  StreamSubscription<Uri>? _linkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRegisterReturnLink();
+  }
+
   @override
   void dispose() {
+    _linkSub?.cancel();
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     _codeCtrl.dispose();
@@ -308,13 +321,61 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
         Text('·', style: TextStyle(color: colorScheme.outline)),
         TextButton(
-          onPressed: () {},
+          onPressed: () {
+            _openRegisterPage();
+          },
           child: Text(
             'login_page_register'.tr(),
             style: TextStyle(color: colorScheme.primary, fontSize: 13),
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _openRegisterPage() async {
+    const callback = 'anoxia://auth/register-complete';
+    final registerUri = Uri.parse(
+      'https://www.anoxia.cn/register.html?callback=${Uri.encodeComponent(callback)}',
+    );
+
+    await launchUrl(registerUri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _initRegisterReturnLink() async {
+    _appLinks = AppLinks();
+
+    try {
+      final initial = await _appLinks!.getInitialLink();
+      if (initial != null) {
+        _handleRegisterReturn(initial);
+      }
+    } catch (_) {}
+
+    _linkSub = _appLinks!.uriLinkStream.listen(
+      _handleRegisterReturn,
+      onError: (_) {},
+    );
+  }
+
+  void _handleRegisterReturn(Uri uri) {
+    if (uri.scheme != 'anoxia') return;
+    if (uri.host != 'auth' || uri.path != '/register-complete') return;
+
+    final username = (uri.queryParameters['username'] ?? '').trim();
+    if (username.isEmpty) return;
+
+    _usernameCtrl.text = username;
+    _passwordCtrl.clear();
+    _codeCtrl.clear();
+    ref.invalidate(getCaptchaProvider);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('账号已回填，请输入密码和验证码后登录'),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -359,7 +420,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 }
 
 /// 验证码图片 Widget
-/// 
+///
 /// 使用 Consumer 监听 provider，避免父级重建导致验证码重新渲染
 class _CaptchaImage extends ConsumerWidget {
   const _CaptchaImage();
