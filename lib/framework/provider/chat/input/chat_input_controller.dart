@@ -44,6 +44,22 @@ class ChatInputController extends _$ChatInputController {
   bool _isTyping = false;
   Timer? _typingTimer;
 
+  int _resolveSendTimeoutSeconds({
+    required MessageType type,
+    List<Attachment>? attachments,
+  }) {
+    final attachmentCount = attachments?.length ?? 0;
+    var timeout = 10 + (attachmentCount * 2);
+
+    if (type == MessageType.audio ||
+        type == MessageType.file ||
+        type == MessageType.video) {
+      timeout += 5;
+    }
+
+    return timeout.clamp(10, 30);
+  }
+
   @override
   QuillController build(String roomId) {
     // 提前定义 controller 变量，以便在闭包中使用
@@ -540,7 +556,11 @@ class ChatInputController extends _$ChatInputController {
         .read(wsControllerProvider.notifier)
         .sendMessage(jsonEncode(messageData));
 
-    Timer(const Duration(seconds: 10), () {
+    final timeoutSeconds = _resolveSendTimeoutSeconds(
+      type: MessageType.audio,
+      attachments: attachments,
+    );
+    Timer(Duration(seconds: timeoutSeconds), () {
       ref
           .read(chatMessagesProvider.notifier)
           .handleTimeout(roomId, clientMsgId);
@@ -614,7 +634,11 @@ class ChatInputController extends _$ChatInputController {
         .read(wsControllerProvider.notifier)
         .sendMessage(jsonEncode(messageData));
     // 4. 设置超时处理
-    Timer(const Duration(seconds: 10), () {
+    final timeoutSeconds = _resolveSendTimeoutSeconds(
+      type: type,
+      attachments: attachments,
+    );
+    Timer(Duration(seconds: timeoutSeconds), () {
       ref
           .read(chatMessagesProvider.notifier)
           .handleTimeout(roomId, clientMsgId);

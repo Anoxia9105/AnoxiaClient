@@ -9,7 +9,6 @@ import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 /// 房间列表对话框菜单工具类
@@ -61,9 +60,13 @@ class RoomListDialogMenus {
                     child: TextButton.icon(
                       onPressed: () {
                         /// 移动端跳转页面，桌面端显示对话框
-                        // if (DeviceUtil.isRealMobile()) {
-                        //   return;
-                        // }
+                        if (DeviceUtil.isRealMobile()) {
+                          const CreateGroupRoute().push(
+                            appNavigatorKey.currentContext!,
+                          );
+                          close?.call();
+                          return;
+                        }
 
                         showDialog(
                           context: context,
@@ -92,6 +95,7 @@ class RoomListDialogMenus {
                           const AddFriendRoute().push(
                             appNavigatorKey.currentContext!,
                           );
+                          close?.call();
                           return;
                         }
                         showDialog(

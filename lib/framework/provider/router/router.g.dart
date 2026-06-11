@@ -13,6 +13,7 @@ List<RouteBase> get $appRoutes => [
   $errorRoute,
   $imageMessageDetailRoute,
   $addFriendRoute,
+  $createGroupRoute,
   $updateRoute,
   $openSourceLicensesRoute,
   $openSourceLicenseDetailRoute,
@@ -167,6 +168,32 @@ mixin $AddFriendRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/add-friend');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $createGroupRoute => GoRouteData.$route(
+  path: '/create-group',
+  factory: $CreateGroupRoute._fromState,
+);
+
+mixin $CreateGroupRoute on GoRouteData {
+  static CreateGroupRoute _fromState(GoRouterState state) =>
+      const CreateGroupRoute();
+
+  @override
+  String get location => GoRouteData.$location('/create-group');
 
   @override
   void go(BuildContext context) => context.go(location);

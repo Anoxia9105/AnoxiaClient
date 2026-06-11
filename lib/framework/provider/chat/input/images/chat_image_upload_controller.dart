@@ -27,6 +27,8 @@ part 'chat_image_upload_controller.g.dart';
 /// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 @Riverpod(keepAlive: true)
 class ChatImageUploadController extends _$ChatImageUploadController {
+  static const int _maxUploadRetries = 3;
+
   @override
   Map<String, UploadEntry> build() => {};
 
@@ -127,33 +129,44 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   Future<void> uploadImages(List<Attachment> images) async {
     if (images.isEmpty) return;
 
-    try {
-      final files = images
-          .where((i) => i.url != null)
-          .map((i) => File(i.url!))
-          .toList();
-      if (files.isEmpty) return;
+    final files = images
+        .where((i) => i.url != null)
+        .map((i) => File(i.url!))
+        .toList();
+    if (files.isEmpty) return;
 
-      final res = await DioClient().uploadFiles(
-        "/file/uploadBatch",
-        files: files,
-      );
+    for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
+      final bool isLastAttempt = attempt == _maxUploadRetries;
+      try {
+        final res = await DioClient().uploadFiles(
+          "/file/uploadBatch",
+          files: files,
+        );
 
-      // 修复：正确解析包装对象
-      final rawList = res.data is Map ? res.data['data'] : res.data;
+        final rawList = res.data is Map ? res.data['data'] : res.data;
+        if (rawList is List && rawList.isNotEmpty) {
+          state = {
+            ...state,
+            for (int i = 0; i < images.length && i < rawList.length; i++)
+              images[i].id!: UploadEntry.success(rawList[i].toString()),
+          };
+          return;
+        }
 
-      if (rawList is List && rawList.isNotEmpty) {
-        state = {
-          ...state,
-          for (int i = 0; i < images.length && i < rawList.length; i++)
-            images[i].id!: UploadEntry.success(rawList[i].toString()),
-        };
-      } else {
-        _markFailed(images);
+        if (isLastAttempt) {
+          _markFailed(images);
+          return;
+        }
+      } catch (e, st) {
+        if (isLastAttempt) {
+          log.error("图片上传失败: $e\n$st");
+          _markFailed(images);
+          return;
+        }
       }
-    } catch (e, st) {
-      log.error("图片上传失败: $e\n$st");
-      _markFailed(images);
+
+      final delayMs = 400 * (1 << (attempt - 1));
+      await Future.delayed(Duration(milliseconds: delayMs));
     }
   }
 

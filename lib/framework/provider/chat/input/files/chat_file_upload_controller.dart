@@ -26,6 +26,8 @@ part 'chat_file_upload_controller.g.dart';
 /// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
 @Riverpod(keepAlive: true)
 class ChatFileUploadController extends _$ChatFileUploadController {
+  static const int _maxUploadRetries = 3;
+
   @override
   Map<String, UploadEntry> build() => {};
 
@@ -79,28 +81,39 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   Future<void> uploadFiles(List<Attachment> attachments) async {
     if (attachments.isEmpty) return;
 
-    try {
-      final files = attachments.map((a) => File(a.url!)).toList();
-      final res = await DioClient().uploadFiles(
-        "/file/uploadBatch",
-        files: files,
-      );
+    final files = attachments.map((a) => File(a.url!)).toList();
+    for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
+      final bool isLastAttempt = attempt == _maxUploadRetries;
+      try {
+        final res = await DioClient().uploadFiles(
+          "/file/uploadBatch",
+          files: files,
+        );
 
-      // 修复：正确解析包装对象（与图片控制器一致）
-      final rawList = res.data is Map ? res.data['data'] : res.data;
+        final rawList = res.data is Map ? res.data['data'] : res.data;
+        if (rawList is List && rawList.isNotEmpty) {
+          state = {
+            ...state,
+            for (int i = 0; i < attachments.length && i < rawList.length; i++)
+              attachments[i].id!: UploadEntry.success(rawList[i].toString()),
+          };
+          return;
+        }
 
-      if (rawList is List && rawList.isNotEmpty) {
-        state = {
-          ...state,
-          for (int i = 0; i < attachments.length && i < rawList.length; i++)
-            attachments[i].id!: UploadEntry.success(rawList[i].toString()),
-        };
-      } else {
-        _markFailed(attachments);
+        if (isLastAttempt) {
+          _markFailed(attachments);
+          return;
+        }
+      } catch (e, st) {
+        if (isLastAttempt) {
+          log.error("文件上传失败: $e\n$st");
+          _markFailed(attachments);
+          return;
+        }
       }
-    } catch (e, st) {
-      log.error("文件上传失败: $e\n$st");
-      _markFailed(attachments);
+
+      final delayMs = 400 * (1 << (attempt - 1));
+      await Future.delayed(Duration(milliseconds: delayMs));
     }
   }
 

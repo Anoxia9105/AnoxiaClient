@@ -14,4 +14,7 @@ class StorageKeys {
   /// 蓝牙权限是否已申请（布尔值，true/false）
   static const String kBluetoothPermissionRequestedKey =
       'bluetooth_permission_requested_v1';
+
+  /// WebSocket 离线消息队列（用于断网与重启后的补发）
+  static const String wsOfflineOutboundQueue = 'ws_offline_outbound_queue_v1';
 }

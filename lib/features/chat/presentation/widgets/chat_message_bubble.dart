@@ -32,6 +32,19 @@ class ChatMessageBubble extends ConsumerWidget {
 
   const ChatMessageBubble({super.key, required this.message});
 
+  int _resolveResendTimeoutSeconds(ChatMessage message) {
+    final attachmentCount = message.attachments.length;
+    var timeout = 10 + (attachmentCount * 2);
+
+    if (message.messageType == MessageType.audio ||
+        message.messageType == MessageType.file ||
+        message.messageType == MessageType.video) {
+      timeout += 5;
+    }
+
+    return timeout.clamp(10, 30);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider.select((v) => v.value));
@@ -269,7 +282,7 @@ class ChatMessageBubble extends ConsumerWidget {
         'clientMsgId': clientMsgId,
         'roomId': message.roomId,
         'targetId': room?.peerId,
-        'type': message.messageType?.name,
+        'type': message.messageType?.name.toUpperCase(),
         'payload': message.payload?.toJson(),
         'attachments': message.attachments.map((e) => e.toJson()).toList(),
       },
@@ -279,7 +292,8 @@ class ChatMessageBubble extends ConsumerWidget {
 
     wsNotifier.sendMessage(jsonEncode(messageData));
 
-    Timer(const Duration(seconds: 10), () {
+    final timeoutSeconds = _resolveResendTimeoutSeconds(message);
+    Timer(Duration(seconds: timeoutSeconds), () {
       messageNotifier.handleTimeout(message.roomId!, clientMsgId);
     });
   }

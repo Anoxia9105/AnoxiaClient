@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contact_groups_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/create_new_gropu_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -16,7 +17,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// - 实时预览已选成员
 /// - 显示创建状态（加载中、成功、失败）
 class CreateChatDialogWidget extends ConsumerStatefulWidget {
-  const CreateChatDialogWidget({super.key});
+  final bool asPage;
+
+  const CreateChatDialogWidget({super.key, this.asPage = false});
 
   @override
   ConsumerState<CreateChatDialogWidget> createState() =>
@@ -52,102 +55,163 @@ class _CreateChatDialogWidgetState
     final createStatus = ref.watch(createGroupControllerProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isMobileLayout =
+        widget.asPage ||
+        DeviceUtil.isRealMobile() ||
+        MediaQuery.of(context).size.width < 760;
+
+    final content = Column(
+      children: [
+        _buildAppBar(context, selectedIds, createStatus),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+          child: TextField(
+            controller: _nameController,
+            style: textTheme.bodyLarge,
+            onTap: () {
+              if (_showNameError) {
+                setState(() => _showNameError = false);
+              }
+            },
+            decoration: InputDecoration(
+              hintText: 'create_group_name_hint'.tr(),
+              errorText: (_showNameError && _isNameEmpty)
+                  ? 'create_group_name_empty'.tr()
+                  : null,
+              helperText: ' ',
+              helperStyle: const TextStyle(height: 0.8),
+              isDense: true,
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.35,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 13,
+              ),
+              prefixIcon: Icon(
+                Icons.edit_note_rounded,
+                color: colorScheme.primary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: colorScheme.primary,
+                  width: 1.2,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: isMobileLayout
+              ? _buildMobileContent(context, ref, selectedIds)
+              : _buildDesktopContent(context, ref, selectedIds),
+        ),
+      ],
+    );
+
+    if (widget.asPage) {
+      return Scaffold(backgroundColor: colorScheme.surface, body: SafeArea(child: content));
+    }
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       backgroundColor: colorScheme.surface,
-      child: SizedBox(
-        width: 900,
-        height: 650,
-        child: Column(
-          children: [
-            _buildAppBar(context, selectedIds, createStatus),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-              child: TextField(
-                controller: _nameController,
-                style: textTheme.bodyLarge,
-                onTap: () {
-                  if (_showNameError) {
-                    setState(() => _showNameError = false);
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: 'create_group_name_hint'.tr(),
-                  errorText: (_showNameError && _isNameEmpty)
-                      ? 'create_group_name_empty'.tr()
-                      : null,
-                  helperText: ' ',
-                  helperStyle: const TextStyle(height: 0.8),
-                  isDense: true,
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.35,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 13,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.edit_note_rounded,
-                    color: colorScheme.primary,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 1.2,
-                    ),
+      child: SizedBox(width: 900, height: 650, child: content),
+    );
+  }
+
+  Widget _buildDesktopContent(
+    BuildContext context,
+    WidgetRef ref,
+    Set<int> selectedIds,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 10, 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.65),
                   ),
                 ),
+                child: _buildContactPicker(ref),
               ),
             ),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 10, 16),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.outlineVariant.withValues(
-                                alpha: 0.65,
-                              ),
-                            ),
-                          ),
-                          child: _buildContactPicker(ref),
-                        ),
-                      ),
-                    ),
-                  ),
-                  VerticalDivider(
-                    width: 1,
-                    thickness: 1,
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: _buildSelectedPreview(context, ref, selectedIds),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        VerticalDivider(
+          width: 1,
+          thickness: 1,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+        Expanded(
+          flex: 2,
+          child: _buildSelectedPreview(context, ref, selectedIds),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileContent(
+    BuildContext context,
+    WidgetRef ref,
+    Set<int> selectedIds,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: _buildContactPicker(ref),
+              ),
+            ),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            'create_group_selected_count'.tr(args: [selectedIds.length.toString()]),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

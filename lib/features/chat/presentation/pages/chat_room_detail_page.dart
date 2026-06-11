@@ -155,22 +155,13 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           ? AppBar()
           : ChatAppBar(roomId: widget.roomId),
       drawerScrimColor: Colors.transparent,
-      body: Column(
-        children: [
-          /// 仅移动端显示 WebSocket 连接状态横幅，桌面端通过更显眼的全局状态提示（标题栏图标）来展示连接状态
-          if (DeviceUtil.isRealMobile()) WsConnectionBanner(state: wsState),
-          Expanded(
-            child: _buildChatBody(
-              showInitialSkeleton: showInitialSkeleton,
-              entryTask: entryTask,
-              flatItems: flatItems,
-              hasMore: hasMore,
-              currentRoom: currentRoom,
-            ),
-          ),
-        ],
+      body: _buildChatBody(
+        showInitialSkeleton: showInitialSkeleton,
+        entryTask: entryTask,
+        flatItems: flatItems,
+        hasMore: hasMore,
+        currentRoom: currentRoom,
       ),
-
       /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）
       floatingActionButton: _showScrollDownButton
           ? ChatRoomDetailScrollDownButton(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:anoxia/common/constants/StorageKeys.dart';
+import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
@@ -167,6 +168,24 @@ class AddFriendRoute extends GoRouteData with $AddFriendRoute {
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return MaterialPage(key: state.pageKey, child: const AddFriendPage());
+  }
+}
+
+/// 创建群聊页路由
+@TypedGoRoute<CreateGroupRoute>(path: '/create-group')
+class CreateGroupRoute extends GoRouteData with $CreateGroupRoute {
+  const CreateGroupRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const CreateChatDialogWidget(asPage: true);
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return MaterialPage(
+      key: state.pageKey,
+      child: const CreateChatDialogWidget(asPage: true),
+    );
   }
 }
 

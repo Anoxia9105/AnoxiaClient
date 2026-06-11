@@ -57,7 +57,7 @@ final class AppInitializerProvider
   AppInitializer create() => AppInitializer();
 }
 
-String _$appInitializerHash() => r'3a54db1cf9b630458e1be33ad3e07216e57c62fc';
+String _$appInitializerHash() => r'6de331384e0c153f87b0e1ed6fa8ec91daa531f7';
 
 /// 应用初始化协调器
 ///

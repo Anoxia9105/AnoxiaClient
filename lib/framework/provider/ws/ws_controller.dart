@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/constants/StorageKeys.dart';
+import 'package:anoxia/common/utils/SPUtil.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/core/network_provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -25,14 +30,25 @@ part 'ws_controller.g.dart';
 /// 采用 keepAlive 模式，确保全局只有一个连接实例。
 @Riverpod(keepAlive: true)
 class WsController extends _$WsController {
+  static const int _maxAutoRetryAttempts = 2;
+  static const int _maxOfflineQueueSize = 200;
+  static const int _offlineFlushBatchSize = 20;
+  static const Duration _offlineFlushBatchInterval = Duration(milliseconds: 50);
+
   WebSocketChannel? _channel;
   Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
+  Timer? _offlineFlushTimer;
   int _reconnectAttempts = 0;
   bool _reconnectEnabled = true;
   int? _lastAckErrorCode;
   String? _lastAckErrorMessage;
   DateTime? _lastAckErrorAt;
+  bool _lastNetworkAvailable = true;
+  bool _isFlushingOfflineOutbounds = false;
+
+  final Map<String, _PendingOutbound> _pendingOutbounds = {};
+  final ListQueue<String> _offlineOutbounds = ListQueue<String>();
 
   late final StreamController<PacketFrame<IPacket>> _messageController;
 
@@ -41,6 +57,7 @@ class WsController extends _$WsController {
     log.info("🌐 WsController 构建中...");
 
     _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
+    _restoreOfflineOutbounds();
 
     // 监听认证状态变化：登录时连接，登出时断开
     ref.listen(authControllerProvider, (previous, next) {
@@ -65,6 +82,21 @@ class WsController extends _$WsController {
         },
         loading: () => {},
       );
+    });
+
+    ref.listen(networkStatusProvider, (previous, next) {
+      final statuses = next.valueOrNull;
+      if (statuses == null || statuses.isEmpty) return;
+
+      final bool available = !statuses.contains(ConnectivityResult.none);
+      final bool recovered = !_lastNetworkAvailable && available;
+      _lastNetworkAvailable = available;
+
+      if (recovered) {
+        log.info('[WsController] 网络已恢复，主动触发连接恢复');
+        _reconnectAttempts = 0;
+        _initConnection();
+      }
     });
 
     // 初始启动检查：如果 build 时已经有用户了，直接触发连接
@@ -141,6 +173,7 @@ class WsController extends _$WsController {
       log.info("✅ WebSocket 连接成功");
 
       _startHeartbeat();
+      _flushOfflineOutbounds();
     } catch (e, st) {
       log.error("❌ WebSocket 连接失败", e, st);
       _handleError(e);
@@ -149,17 +182,152 @@ class WsController extends _$WsController {
 
   /// 发送消息
   void sendMessage(dynamic msg) {
+    final data = msg is Map ? jsonEncode(msg) : msg;
+
     if (state.status != WsStatus.connected) {
-      log.warning("尝试在未连接状态发送消息");
+      if (data is String && data != 'ping') {
+        _enqueueOfflineOutbound(data);
+      }
+      log.warning("尝试在未连接状态发送消息，已进入离线队列");
       return;
     }
 
     try {
-      final data = msg is Map ? jsonEncode(msg) : msg;
+      if (data is String) {
+        _cachePendingOutbound(data);
+      }
       _channel?.sink.add(data);
     } catch (e) {
       log.error('发送消息失败', e);
     }
+  }
+
+  void _cachePendingOutbound(String payload) {
+    final seq = _extractSeqFromPayload(payload);
+    if (seq == null || seq.isEmpty) return;
+
+    _pendingOutbounds[seq] = _PendingOutbound(payload: payload);
+  }
+
+  String? _extractSeqFromPayload(String payload) {
+    try {
+      final dynamic decoded = jsonDecode(payload);
+      if (decoded is! Map<String, dynamic>) return;
+
+      final dynamic rawData = decoded['data'];
+      if (rawData is! Map<String, dynamic>) return;
+
+      final String? seq = rawData['clientMsgId']?.toString().trim().isNotEmpty == true
+          ? rawData['clientMsgId']?.toString()
+          : rawData['messageId']?.toString();
+      if (seq == null || seq.isEmpty) return null;
+      return seq;
+    } catch (_) {
+      // 非标准消息（如 ping）忽略
+      return null;
+    }
+  }
+
+  void _enqueueOfflineOutbound(String payload) {
+    final seq = _extractSeqFromPayload(payload);
+    if (seq != null) {
+      _offlineOutbounds.removeWhere((item) {
+        final existingSeq = _extractSeqFromPayload(item);
+        return existingSeq != null && existingSeq == seq;
+      });
+    }
+
+    if (_offlineOutbounds.length >= _maxOfflineQueueSize) {
+      _offlineOutbounds.removeFirst();
+      log.warning('[WsController] 离线队列已满，丢弃最早的一条消息');
+    }
+    _offlineOutbounds.addLast(payload);
+    unawaited(_persistOfflineOutbounds());
+  }
+
+  void _flushOfflineOutbounds() {
+    if (_isFlushingOfflineOutbounds) return;
+    if (_offlineOutbounds.isEmpty || state.status != WsStatus.connected) {
+      return;
+    }
+
+    log.info('[WsController] 开始回放离线消息，数量=${_offlineOutbounds.length}');
+    _isFlushingOfflineOutbounds = true;
+    _flushNextOfflineBatch();
+  }
+
+  void _flushNextOfflineBatch() {
+    if (_offlineOutbounds.isEmpty || state.status != WsStatus.connected) {
+      _isFlushingOfflineOutbounds = false;
+      return;
+    }
+
+    bool changed = false;
+    int sentCount = 0;
+    while (
+        _offlineOutbounds.isNotEmpty &&
+        state.status == WsStatus.connected &&
+        sentCount < _offlineFlushBatchSize) {
+      final payload = _offlineOutbounds.removeFirst();
+      changed = true;
+      sentCount += 1;
+      try {
+        _cachePendingOutbound(payload);
+        _channel?.sink.add(payload);
+      } catch (e) {
+        _offlineOutbounds.addFirst(payload);
+        log.error('[WsController] 回放离线消息失败，稍后重试', e);
+        break;
+      }
+    }
+
+    if (changed) {
+      unawaited(_persistOfflineOutbounds());
+    }
+
+    if (_offlineOutbounds.isEmpty || state.status != WsStatus.connected) {
+      _isFlushingOfflineOutbounds = false;
+      return;
+    }
+
+    _offlineFlushTimer?.cancel();
+    _offlineFlushTimer = Timer(_offlineFlushBatchInterval, _flushNextOfflineBatch);
+  }
+
+  Future<void> _persistOfflineOutbounds() async {
+    await SPUtil.instance.setStringList(
+      StorageKeys.wsOfflineOutboundQueue,
+      _offlineOutbounds.toList(),
+    );
+  }
+
+  void _restoreOfflineOutbounds() {
+    final cached = SPUtil.instance.getStringList(
+      StorageKeys.wsOfflineOutboundQueue,
+      defValue: const <String>[],
+    );
+    if (cached == null || cached.isEmpty) return;
+
+    _offlineOutbounds.clear();
+    final restored = cached.length > _maxOfflineQueueSize
+        ? cached.sublist(cached.length - _maxOfflineQueueSize)
+        : cached;
+
+    for (final payload in restored) {
+      final seq = _extractSeqFromPayload(payload);
+      if (seq != null) {
+        _offlineOutbounds.removeWhere((item) {
+          final existingSeq = _extractSeqFromPayload(item);
+          return existingSeq != null && existingSeq == seq;
+        });
+      }
+      _offlineOutbounds.addLast(payload);
+    }
+  }
+
+  Future<void> _clearOfflineOutbounds() async {
+    _offlineOutbounds.clear();
+    await SPUtil.instance.delete(StorageKeys.wsOfflineOutboundQueue);
   }
 
   /// 处理接收到的消息
@@ -212,9 +380,25 @@ class WsController extends _$WsController {
 
     final int? code = int.tryParse(jsonMap['code']?.toString() ?? '');
     final String rawMessage = (jsonMap['message']?.toString() ?? '').trim();
+    final String? seq = jsonMap['seq']?.toString();
+    final bool retryable = jsonMap['retryable'] == true ||
+        (jsonMap['retryable']?.toString().toLowerCase() == 'true');
 
     // code=0 代表成功 ACK，静默即可
-    if (code == null || code == 0) return true;
+    if (code == null || code == 0) {
+      if (seq != null && seq.isNotEmpty) {
+        _pendingOutbounds.remove(seq);
+      }
+      return true;
+    }
+
+    if (seq != null && seq.isNotEmpty) {
+      if (retryable) {
+        _retryPendingOutbound(seq);
+      } else {
+        _pendingOutbounds.remove(seq);
+      }
+    }
 
     final now = DateTime.now();
     final bool duplicated =
@@ -235,6 +419,40 @@ class WsController extends _$WsController {
 
     log.warning('[WsController] ACK业务失败: code=$code, message=$rawMessage');
     return true;
+  }
+
+  void _retryPendingOutbound(String seq) {
+    final pending = _pendingOutbounds[seq];
+    if (pending == null) return;
+    if (pending.retryScheduled) return;
+
+    if (pending.attempts >= _maxAutoRetryAttempts) {
+      _pendingOutbounds.remove(seq);
+      log.warning('[WsController] 自动重试超过上限，放弃: seq=$seq');
+      return;
+    }
+
+    pending.attempts += 1;
+    pending.retryScheduled = true;
+    final delay = Duration(milliseconds: 300 * (1 << (pending.attempts - 1)));
+    Future.delayed(delay, () {
+      pending.retryScheduled = false;
+      if (!_pendingOutbounds.containsKey(seq)) return;
+      if (state.status != WsStatus.connected) return;
+
+      if (pending.attempts > _maxAutoRetryAttempts) {
+        _pendingOutbounds.remove(seq);
+        log.warning('[WsController] 自动重试超过上限(延迟触发)，放弃: seq=$seq');
+        return;
+      }
+
+      try {
+        _channel?.sink.add(pending.payload);
+        log.warning('[WsController] 已触发自动重试: seq=$seq, attempt=${pending.attempts}');
+      } catch (e) {
+        log.error('[WsController] 自动重试发送失败: seq=$seq', e);
+      }
+    });
   }
 
   /// 解析错误码对应的用户提示
@@ -320,14 +538,27 @@ class WsController extends _$WsController {
     );
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+    _offlineFlushTimer?.cancel();
     _channel?.sink.close();
     _channel = null;
+    _pendingOutbounds.clear();
+    if (manual && !closeStream) {
+      unawaited(_clearOfflineOutbounds());
+    }
     _reconnectAttempts = 0;
     if (closeStream) {
       _messageController.close();
     }
     state = WsState(status: WsStatus.disconnected);
   }
+}
+
+class _PendingOutbound {
+  _PendingOutbound({required this.payload});
+
+  final String payload;
+  int attempts = 0;
+  bool retryScheduled = false;
 }
 
 /// WebSocket 消息流 Provider
