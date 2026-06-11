@@ -82,6 +82,24 @@ class SystemMessageStrategy extends MessageRenderStrategy {
             ? 'system_msg_room_banned'.tr()
             : 'system_msg_room_closed'.tr(),
       ),
+      'ROOM_UPDATED' when message.extra['field'] == 'announcement' => (
+        HugeIcons.strokeRoundedMegaphone01,
+        'system_msg_room_announcement_updated'.tr(
+          namedArgs: {
+            'nickName': message.extra['nickName'] ?? '--',
+          },
+        ),
+      ),
+      'ROOM_UPDATED' => (
+        HugeIcons.strokeRoundedEdit01,
+        'system_msg_room_updated'.tr(
+          namedArgs: {
+            'nickName': message.extra['nickName'] ?? '--',
+            'oldName': message.extra['oldName'] ?? '--',
+            'newName': message.extra['newName'] ?? '--',
+          },
+        ),
+      ),
       'ROOM_CREATED' when message.extra['type'] == 'unban' => (
         HugeIcons.strokeRoundedHome03,
         'system_msg_room_unbanned'.tr(),

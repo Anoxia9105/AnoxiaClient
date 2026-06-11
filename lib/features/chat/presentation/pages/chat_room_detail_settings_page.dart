@@ -1,9 +1,20 @@
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
+import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/add_member_dialog_widget.dart';
+import 'package:anoxia/features/chat/presentation/pages/add_member_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_member_list_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_page.dart';
+import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +57,35 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
         children: [
           // 区块 0：群成员头像网格
           RoomCard(
-            child: MemberGridSection(roomId: roomId, isGroup: isGroup),
+            child: MemberGridSection(
+              roomId: roomId,
+              isGroup: isGroup,
+              onMemberTap: (member) =>
+                  _openContactDetailByMember(context, ref, member),
+              onAddMemberTap: !isGroup
+                  ? null
+                  : () {
+                      if (DeviceUtil.isRealMobile()) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => AddMemberPage(
+                              roomId: roomId,
+                              roomName: currentRoom.roomName ?? '',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      showDialog(
+                        context: context,
+                        builder: (_) => AddMemberDialogWidget(
+                          roomId: roomId,
+                          roomName: currentRoom.roomName ?? '',
+                        ),
+                      );
+                    },
+            ),
           ),
 
           // 区块 1：会话/群聊基础资料管理
@@ -58,7 +97,11 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                   icon: HugeIcons.strokeRoundedUserMultiple02,
                   size: 22,
                 ),
-                title: Text(isGroup ? 'chat_group_members'.tr() : 'chat_contact_info'.tr()),
+                title: Text(
+                  isGroup
+                      ? 'chat_group_members'.tr()
+                      : 'chat_contact_info'.tr(),
+                ),
                 subtitle: isGroup
                     ? Consumer(
                         builder: (context, ref, child) {
@@ -74,8 +117,49 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                       )
                     : null,
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                onTap: () {
-                  // TODO: 跳转至群成员详情列表
+                onTap: () async {
+                  if (isGroup) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => GroupMemberListPage(
+                          roomId: roomId,
+                          roomName: currentRoom.roomName ?? '',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final peerId = currentRoom.peerId;
+                  if (peerId == null) {
+                    BotToast.showText(text: 'chat_operation_retry_failed'.tr());
+                    return;
+                  }
+
+                  var contactMap = ref.read(contactListServiceProvider).value;
+
+                  if (contactMap == null || !contactMap.containsKey(peerId)) {
+                    await ref
+                        .read(contactListServiceProvider.notifier)
+                        .refresh(quiet: true);
+                    contactMap = ref.read(contactListServiceProvider).value;
+                  }
+
+                  final contact = contactMap?[peerId];
+                  if (contact == null) {
+                    BotToast.showText(text: 'chat_operation_retry_failed'.tr());
+                    return;
+                  }
+
+                  ref
+                      .read(contactSelectionProvider.notifier)
+                      .selectContact(contact);
+
+                  if (DeviceUtil.isRealMobile()) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ContactDetail()),
+                    );
+                  }
                 },
               ),
               if (isGroup) ...[
@@ -90,7 +174,16 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                     currentRoom.roomName ?? currentRoom.roomDescription ?? '',
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => GroupEditNamePage(
+                          roomId: roomId,
+                          initialName: currentRoom.roomName ?? '',
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 _buildMaterialListTile(
                   context,
@@ -99,8 +192,19 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                     size: 22,
                   ),
                   title: Text('chat_group_announcement'.tr()),
+                  subtitle: Text(currentRoom.roomDescription ?? ''),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => GroupEditAnnouncementPage(
+                          roomId: roomId,
+                          initialAnnouncement:
+                              currentRoom.roomDescription ?? '',
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 _buildMaterialListTile(
                   context,
@@ -127,10 +231,35 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               title: Text('search_context_title'.tr()),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
-                context.pop();
-                Future.microtask(() {
-                  ref.read(roomListServiceProvider.notifier).toggleSearch();
-                });
+                if (DeviceUtil.isRealMobile()) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SearchContextPage(
+                        roomId: roomId,
+                        roomName: currentRoom.roomName ?? '',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                showDialog(
+                  context: context,
+                  builder: (_) => Dialog(
+                    insetPadding: const EdgeInsets.symmetric(
+                      horizontal: 80,
+                      vertical: 40,
+                    ),
+                    child: SizedBox(
+                      width: 980,
+                      height: 720,
+                      child: SearchContextPage(
+                        roomId: roomId,
+                        roomName: currentRoom.roomName ?? '',
+                      ),
+                    ),
+                  ),
+                );
               },
             ),
           ),
@@ -199,16 +328,39 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        leading: leading,
-        title: title,
-        subtitle: subtitle,
-        trailing: trailing,
-        onTap: onTap,
-      ),
+    return ListTile(
+      leading: leading,
+      title: title,
+      subtitle: subtitle,
+      trailing: trailing,
+      onTap: onTap,
     );
+  }
+
+  Future<void> _openContactDetailByMember(
+    BuildContext context,
+    WidgetRef ref,
+    ChatRoomMemberVO member,
+  ) async {
+    var contactMap = ref.read(contactListServiceProvider).value;
+
+    if (contactMap == null || !contactMap.containsKey(member.userId)) {
+      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
+      contactMap = ref.read(contactListServiceProvider).value;
+    }
+
+    final contact = contactMap?[member.userId];
+    if (contact == null) {
+      return;
+    }
+
+    ref.read(contactSelectionProvider.notifier).selectContact(contact);
+
+    if (DeviceUtil.isRealMobile() && context.mounted) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const ContactDetail()));
+    }
   }
 
   /// 构建底部危险操作卡片
@@ -225,55 +377,52 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
     if (isGroup && isAdmin && roomStatus == 0) {
       actionLabel = 'chat_dissolve_group'.tr();
       onTap = () => _showConfirmDialog(
-            context,
-            title: 'chat_dissolve_group'.tr(),
-            content: 'chat_dissolve_group_confirm_hint'.tr(),
-            onConfirm: () async {
-              await ref
-                  .read(roomListServiceProvider.notifier)
-                  .dissolveGroup(roomId);
-              if (context.mounted) context.go('/chat');
-            },
-          );
+        context,
+        title: 'chat_dissolve_group'.tr(),
+        content: 'chat_dissolve_group_confirm_hint'.tr(),
+        onConfirm: () async {
+          await ref
+              .read(roomListServiceProvider.notifier)
+              .dissolveGroup(roomId);
+          if (context.mounted) context.go('/chat');
+        },
+      );
     } else if (isGroup) {
       actionLabel = 'chat_exit_group'.tr();
       onTap = () => _showConfirmDialog(
-            context,
-            title: 'chat_exit_group'.tr(),
-            content: 'chat_exit_group_confirm_hint'.tr(),
-            onConfirm: () async {
-              await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-              if (context.mounted) context.go('/chat');
-            },
-          );
+        context,
+        title: 'chat_exit_group'.tr(),
+        content: 'chat_exit_group_confirm_hint'.tr(),
+        onConfirm: () async {
+          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
+          if (context.mounted) context.go('/chat');
+        },
+      );
     } else {
       actionLabel = 'chat_delete_conversation'.tr();
       onTap = () => _showConfirmDialog(
-            context,
-            title: 'chat_delete_conversation'.tr(),
-            content: 'chat_delete_conversation_confirm_hint'.tr(),
-            onConfirm: () async {
-              await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-              if (context.mounted) context.go('/chat');
-            },
-          );
+        context,
+        title: 'chat_delete_conversation'.tr(),
+        content: 'chat_delete_conversation_confirm_hint'.tr(),
+        onConfirm: () async {
+          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
+          if (context.mounted) context.go('/chat');
+        },
+      );
     }
 
     return RoomCard(
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          title: Center(
-            child: Text(
-              actionLabel,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
+      child: ListTile(
+        title: Center(
+          child: Text(
+            actionLabel,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          onTap: onTap,
         ),
+        onTap: onTap,
       ),
     );
   }

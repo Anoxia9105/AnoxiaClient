@@ -11,13 +11,14 @@ class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
+      child: Material(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: children != null
+            ? Column(mainAxisSize: MainAxisSize.min, children: children!)
+            : child,
       ),
-      child: children != null
-          ? Column(mainAxisSize: MainAxisSize.min, children: children!)
-          : child,
     );
   }
 }

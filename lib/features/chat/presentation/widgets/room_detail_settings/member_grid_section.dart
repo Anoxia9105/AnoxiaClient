@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,16 @@ import 'package:hugeicons/hugeicons.dart';
 class MemberGridSection extends ConsumerWidget {
   final String roomId;
   final bool isGroup;
+  final VoidCallback? onAddMemberTap;
+  final void Function(ChatRoomMemberVO member)? onMemberTap;
 
-  const MemberGridSection({super.key, required this.roomId, required this.isGroup});
+  const MemberGridSection({
+    super.key,
+    required this.roomId,
+    required this.isGroup,
+    this.onAddMemberTap,
+    this.onMemberTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,9 +47,7 @@ class MemberGridSection extends ConsumerWidget {
               context,
               icon: HugeIcons.strokeRoundedAddSquare,
               label: 'member_add_title'.tr(),
-              onTap: () {
-                // TODO: 开启联系人选择页
-              },
+              onTap: onAddMemberTap ?? () {},
             );
           }
 
@@ -48,9 +55,7 @@ class MemberGridSection extends ConsumerWidget {
           final member = members[index];
 
           return GestureDetector(
-            onTap: () {
-              // TODO: 跳转用户主页
-            },
+            onTap: onMemberTap == null ? null : () => onMemberTap!(member),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

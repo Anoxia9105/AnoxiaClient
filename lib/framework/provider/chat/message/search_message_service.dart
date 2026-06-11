@@ -12,14 +12,18 @@ part 'search_message_service.g.dart';
 @Riverpod(keepAlive: true)
 class SearchMessageService extends _$SearchMessageService {
   final int _pageSize = 50;
+  final int _pageStep = 30;
+  final int _maxContextSize = 200;
 
   @override
   SearchState build() {
     return SearchState(
       isLoading: false,
+      keyword: '',
       messages: [],
       hasMoreBefore: false,
       hasMoreAfter: false,
+      contextSize: _pageSize,
       minSeq: 0,
       maxSeq: 0,
       firstMatchIndex: -1,
@@ -32,17 +36,33 @@ class SearchMessageService extends _$SearchMessageService {
   /// [roomId] 房间ID
   /// [keyword] 搜索关键词
   Future<void> searchMessages(String roomId, String keyword) async {
+    await _searchMessagesInternal(roomId, keyword, _pageSize);
+  }
+
+  Future<void> _searchMessagesInternal(
+    String roomId,
+    String keyword,
+    int contextSize,
+  ) async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true);
+    final normalizedKeyword = keyword.trim();
+    if (normalizedKeyword.isEmpty) {
+      reset();
+      return;
+    }
+
+    final effectiveContextSize = contextSize.clamp(5, _maxContextSize);
+
+    state = state.copyWith(isLoading: true, keyword: normalizedKeyword);
 
     try {
       final res = await DioClient().get(
         API.chatSearch,
         queryParameters: {
           "roomId": roomId,
-          "keyword": keyword,
-          "contextSize": _pageSize,
+          "keyword": normalizedKeyword,
+          "contextSize": effectiveContextSize,
         },
       );
 
@@ -73,11 +93,13 @@ class SearchMessageService extends _$SearchMessageService {
 
       state = state.copyWith(
         isLoading: false,
+        keyword: normalizedKeyword,
         messages: messages,
         firstMatchIndex: firstMatchIndex,
         lastMatchIndex: lastMatchIndex,
         hasMoreBefore: hasMoreBefore,
         hasMoreAfter: hasMoreAfter,
+        contextSize: effectiveContextSize,
         minSeq: minSeq,
         maxSeq: maxSeq,
         totalMatches: totalMatches,
@@ -89,26 +111,40 @@ class SearchMessageService extends _$SearchMessageService {
   }
 
   /// 加载更多历史搜索结果
-  /// 注意：根据后端接口，暂时不支持分页加载更多历史搜索结果
   Future<void> loadMoreBefore(String roomId, String keyword) async {
-    // 后端接口暂时不支持分页加载更多历史搜索结果
-    log.info("后端接口暂时不支持分页加载更多历史搜索结果");
+    if (state.isLoading || !state.hasMoreBefore) return;
+
+    if (state.contextSize >= _maxContextSize) {
+      state = state.copyWith(hasMoreBefore: false);
+      return;
+    }
+
+    final nextContextSize = state.contextSize + _pageStep;
+    await _searchMessagesInternal(roomId, keyword, nextContextSize);
   }
 
   /// 加载更多新搜索结果
-  /// 注意：根据后端接口，暂时不支持分页加载更多新搜索结果
   Future<void> loadMoreAfter(String roomId, String keyword) async {
-    // 后端接口暂时不支持分页加载更多新搜索结果
-    log.info("后端接口暂时不支持分页加载更多新搜索结果");
+    if (state.isLoading || !state.hasMoreAfter) return;
+
+    if (state.contextSize >= _maxContextSize) {
+      state = state.copyWith(hasMoreAfter: false);
+      return;
+    }
+
+    final nextContextSize = state.contextSize + _pageStep;
+    await _searchMessagesInternal(roomId, keyword, nextContextSize);
   }
 
   /// 重置搜索状态
   void reset() {
     state = SearchState(
       isLoading: false,
+      keyword: '',
       messages: [],
       hasMoreBefore: false,
       hasMoreAfter: false,
+      contextSize: _pageSize,
       minSeq: 0,
       maxSeq: 0,
       firstMatchIndex: -1,
@@ -121,9 +157,11 @@ class SearchMessageService extends _$SearchMessageService {
 /// 搜索状态
 class SearchState {
   final bool isLoading;
+  final String keyword;
   final List<ChatMessage> messages;
   final bool hasMoreBefore;
   final bool hasMoreAfter;
+  final int contextSize;
   final int minSeq;
   final int maxSeq;
   final int firstMatchIndex;
@@ -132,9 +170,11 @@ class SearchState {
 
   SearchState({
     required this.isLoading,
+    required this.keyword,
     required this.messages,
     required this.hasMoreBefore,
     required this.hasMoreAfter,
+    required this.contextSize,
     required this.minSeq,
     required this.maxSeq,
     required this.firstMatchIndex,
@@ -144,9 +184,11 @@ class SearchState {
 
   SearchState copyWith({
     bool? isLoading,
+    String? keyword,
     List<ChatMessage>? messages,
     bool? hasMoreBefore,
     bool? hasMoreAfter,
+    int? contextSize,
     int? minSeq,
     int? maxSeq,
     int? firstMatchIndex,
@@ -155,9 +197,11 @@ class SearchState {
   }) {
     return SearchState(
       isLoading: isLoading ?? this.isLoading,
+      keyword: keyword ?? this.keyword,
       messages: messages ?? this.messages,
       hasMoreBefore: hasMoreBefore ?? this.hasMoreBefore,
       hasMoreAfter: hasMoreAfter ?? this.hasMoreAfter,
+      contextSize: contextSize ?? this.contextSize,
       minSeq: minSeq ?? this.minSeq,
       maxSeq: maxSeq ?? this.maxSeq,
       firstMatchIndex: firstMatchIndex ?? this.firstMatchIndex,

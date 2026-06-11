@@ -74,6 +74,11 @@ class API {
   static const String chatRoomDisband = '/chat/room/disband';
   /// 添加群成员
   static const String chatRoomAddMembers = '/chat/room/addMembers';
+  /// 修改群聊名称
+  static const String chatRoomUpdateName = '/chat/room/updateName';
+  /// 修改群公告
+  static const String chatRoomUpdateAnnouncement =
+      '/chat/room/updateAnnouncement';
   /// 踢出群成员
   static const String chatRoomKickMember = '/chat/room/kickMember';
   /// 禁言/解除禁言群聊

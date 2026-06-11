@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 /// 聊天上下文深度搜索页面
@@ -36,34 +38,28 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
-  /// 滚动控制器，用于监听滚动事件
-  final ScrollController _scrollController = ScrollController();
-
   /// 搜索输入框控制器
   final TextEditingController _searchController = TextEditingController();
 
-  /// 是否正在搜索
-  bool _isSearching = false;
-
-  /// 已保存的搜索关键词（用于高亮）
-  String _savedKeyword = '';
+  /// 边界触发锁，避免停留在顶部/底部时重复触发 loadMore
+  bool _topLoadLatched = false;
+  bool _bottomLoadLatched = false;
 
   @override
   void initState() {
     super.initState();
-    // 添加滚动监听器
-    _scrollController.addListener(_onScroll);
+    // ScrollablePositionedList 不使用 ScrollController，改为监听 item positions
+    _itemPositionsListener.itemPositions.addListener(_onScroll);
     // 页面加载时清空上次的搜索结果
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(searchMessageServiceProvider.notifier).reset();
-      _savedKeyword = '';
       _searchController.clear();
     });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _itemPositionsListener.itemPositions.removeListener(_onScroll);
     _searchController.dispose();
     super.dispose();
   }
@@ -85,24 +81,41 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     // 检测滚动位置，实现触顶/触底加载
     final searchState = ref.read(searchMessageServiceProvider);
     final position = _itemPositionsListener.itemPositions.value;
-    if (position.isNotEmpty) {
-      final firstIndex = position
-          .reduce((a, b) => a.index < b.index ? a : b)
-          .index;
-      final lastIndex = position
-          .reduce((a, b) => a.index > b.index ? a : b)
-          .index;
+    if (position.isEmpty || searchState.messages.isEmpty) return;
 
-      // 触顶加载更多历史消息
-      if (firstIndex == 0 && searchState.hasMoreBefore) {
-        _loadMoreBefore();
-      }
+    final firstIndex = position
+        .reduce((a, b) => a.index < b.index ? a : b)
+        .index;
+    final lastIndex = position
+        .reduce((a, b) => a.index > b.index ? a : b)
+        .index;
 
-      // 触底加载更多新消息
-      if (lastIndex == searchState.messages.length - 1 &&
-          searchState.hasMoreAfter) {
-        _loadMoreAfter();
-      }
+    final atTop = firstIndex == 0;
+    final atBottom = lastIndex == searchState.messages.length - 1;
+
+    if (!atTop) {
+      _topLoadLatched = false;
+    }
+    if (!atBottom) {
+      _bottomLoadLatched = false;
+    }
+
+    // 触顶加载更多历史消息（单次触发，离开边界后才可再次触发）
+    if (atTop &&
+        !_topLoadLatched &&
+        !searchState.isLoading &&
+        searchState.hasMoreBefore) {
+      _topLoadLatched = true;
+      _loadMoreBefore();
+    }
+
+    // 触底加载更多新消息（单次触发，离开边界后才可再次触发）
+    if (atBottom &&
+        !_bottomLoadLatched &&
+        !searchState.isLoading &&
+        searchState.hasMoreAfter) {
+      _bottomLoadLatched = true;
+      _loadMoreAfter();
     }
   }
 
@@ -136,6 +149,14 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
   Widget _buildMessageItem(ChatMessage chatMessage, int index) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final bool isDesktop = DeviceUtil.isRealDesktop();
+    final String displayName =
+      (chatMessage.senderName != null && chatMessage.senderName!.trim().isNotEmpty)
+      ? chatMessage.senderName!.trim()
+      : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr());
+    final String? senderMeta = chatMessage.senderId != null
+      ? 'ID: ${chatMessage.senderId}'
+      : null;
 
     // 判断是否在高亮范围内
     final searchState = ref.read(searchMessageServiceProvider);
@@ -144,7 +165,10 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
         index <= searchState.lastMatchIndex;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 16 : 12,
+        vertical: isDesktop ? 8 : 6,
+      ),
       decoration: BoxDecoration(
         color: isHighlighted
             ? colorScheme.primary.withValues(alpha: 0.08)
@@ -171,10 +195,10 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
           children: [
             // 用户头像
             AvatarWidget(
-              size: 40,
-              url: '',
-              name: chatMessage.senderId?.toString() ?? 'search_unknown'.tr(),
-              borderRadius: 20,
+              size: isDesktop ? 44 : 40,
+              url: chatMessage.senderAvatar,
+              name: displayName,
+              borderRadius: isDesktop ? 22 : 20,
             ),
             const SizedBox(width: 12),
             // 消息内容区域
@@ -188,15 +212,10 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          'search_user_prefix'.tr(
-                            args: [
-                              chatMessage.senderId?.toString() ??
-                                  'search_unknown'.tr(),
-                            ],
-                          ),
+                          displayName,
                           style: textTheme.labelMedium?.copyWith(
                             color: colorScheme.outline,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -212,8 +231,24 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                     ],
                   ),
                   const SizedBox(height: 6),
+                  if (senderMeta != null) ...[
+                    Text(
+                      senderMeta,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.outline.withValues(alpha: 0.75),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                   // 消息内容（根据消息类型显示）
-                  _buildMessageContent(chatMessage, colorScheme, textTheme),
+                  _buildMessageContent(
+                    chatMessage,
+                    colorScheme,
+                    textTheme,
+                    ref.read(searchMessageServiceProvider).keyword,
+                  ),
                 ],
               ),
             ),
@@ -244,10 +279,8 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     ChatMessage chatMessage,
     ColorScheme colorScheme,
     TextTheme textTheme,
+    String keyword,
   ) {
-    // 使用保存的搜索关键词，而不是从搜索框获取
-    final keyword = _savedKeyword;
-
     // 检查消息类型（image: 1）
     if (chatMessage.messageType == MessageType.image ||
         (chatMessage.attachments.isNotEmpty &&
@@ -263,13 +296,14 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 attachment.url ?? '',
-                width: 120,
-                height: 120,
+                width: DeviceUtil.isRealDesktop() ? 160 : 120,
+                height: DeviceUtil.isRealDesktop() ? 160 : 120,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
+                  final size = DeviceUtil.isRealDesktop() ? 160.0 : 120.0;
                   return Container(
-                    width: 120,
-                    height: 120,
+                    width: size,
+                    height: size,
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
@@ -400,33 +434,23 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
   }
 
   /// 执行搜索
-  void _performSearch() {
+  Future<void> _performSearch() async {
     final keyword = _searchController.text.trim();
     if (keyword.isEmpty) return;
 
-    // 保存关键词用于高亮显示
-    _savedKeyword = keyword;
+    _topLoadLatched = false;
+    _bottomLoadLatched = false;
 
-    setState(() => _isSearching = true);
+    await ref
+        .read(searchMessageServiceProvider.notifier)
+        .searchMessages(widget.roomId, keyword);
 
-    // 使用 Future.delayed 来避免在 widget 构建过程中修改 provider
-    Future.delayed(Duration.zero, () {
-      ref
-          .read(searchMessageServiceProvider.notifier)
-          .searchMessages(widget.roomId, keyword)
-          .then((_) {
-            setState(() => _isSearching = false);
-            // 搜索完成后，自动跳转到第一个匹配消息的位置
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final searchState = ref.read(searchMessageServiceProvider);
-              if (searchState.firstMatchIndex >= 0) {
-                _scrollToIndex(searchState.firstMatchIndex);
-              }
-            });
-          })
-          .catchError((_) {
-            setState(() => _isSearching = false);
-          });
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final searchState = ref.read(searchMessageServiceProvider);
+      if (searchState.firstMatchIndex >= 0) {
+        _scrollToIndex(searchState.firstMatchIndex);
+      }
     });
   }
 
@@ -435,19 +459,17 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final searchState = ref.watch(searchMessageServiceProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final bool isDesktop = DeviceUtil.isRealDesktop();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'search_context_title'.tr(),
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: Column(
-        children: [
-          // 搜索输入栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    final content = Column(
+      children: [
+        // 搜索输入栏
+        Padding(
+          padding: EdgeInsets.fromLTRB(isDesktop ? 16 : 8, 8, isDesktop ? 16 : 8, 8),
+          child: Material(
+            color: colorScheme.surface,
+            elevation: isDesktop ? 1 : 0,
+            borderRadius: BorderRadius.circular(14),
             child: TextField(
               controller: _searchController,
               style: textTheme.bodyMedium,
@@ -461,7 +483,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                   color: colorScheme.outline,
                   size: 20,
                 ),
-                suffixIcon: _searchController.text.isNotEmpty && _isSearching
+                suffixIcon: _searchController.text.isNotEmpty && !searchState.isLoading
                     ? IconButton(
                         icon: Icon(
                           Icons.clear_rounded,
@@ -470,14 +492,18 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                         ),
                         onPressed: () {
                           _searchController.clear();
-                          _savedKeyword = '';
+                          _topLoadLatched = false;
+                          _bottomLoadLatched = false;
+                          ref
+                              .read(searchMessageServiceProvider.notifier)
+                              .reset();
                           setState(() {});
                         },
                         splashRadius: 20,
                       )
                     : IconButton(
-                        onPressed: _isSearching ? null : _performSearch,
-                        icon: _isSearching
+                        onPressed: searchState.isLoading ? null : _performSearch,
+                        icon: searchState.isLoading
                             ? SizedBox(
                                 width: 20,
                                 height: 20,
@@ -499,62 +525,78 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                   vertical: 12,
                 ),
               ),
-              onSubmitted: (value) => _performSearch(),
+              onSubmitted: (_) => _performSearch(),
               onChanged: (value) => setState(() {}),
             ),
           ),
-          // 搜索结果信息栏
-          if (searchState.messages.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.08),
-                border: Border(
-                  bottom: BorderSide(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
+        ),
+        // 搜索结果信息栏
+        if (searchState.messages.isNotEmpty)
+          Container(
+            margin: EdgeInsets.fromLTRB(isDesktop ? 16 : 0, 0, isDesktop ? 16 : 0, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.08),
+              borderRadius: isDesktop
+                  ? const BorderRadius.vertical(top: Radius.circular(12))
+                  : BorderRadius.zero,
+              border: Border(
+                bottom: BorderSide(
+                  color: colorScheme.primary.withValues(alpha: 0.2),
+                  width: 1,
                 ),
               ),
-              child: Row(
-                children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedSearch01,
-                    size: 18,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '${'search_context_matches'.tr()}: ${searchState.totalMatches} / ${searchState.messages.length}',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
+            ),
+            child: Row(
+              children: [
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedSearch01,
+                  size: 18,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${'search_context_matches'.tr()}: ${searchState.totalMatches} / ${searchState.messages.length}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          // 消息列表
-          Expanded(
-            child: Stack(
-              children: [
-                if (searchState.isLoading && searchState.messages.isEmpty)
-                  const _SearchContextSkeleton(),
-                if (searchState.messages.isNotEmpty)
-                  ScrollablePositionedList.builder(
-                    itemScrollController: _itemScrollController,
-                    itemPositionsListener: _itemPositionsListener,
-                    itemCount: searchState.messages.length,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemBuilder: (context, index) {
-                      final message = searchState.messages[index];
-                      return _buildMessageItem(message, index);
-                    },
-                  ),
-                if (searchState.messages.isEmpty && !searchState.isLoading)
-                  Center(
+          ),
+        // 消息列表
+        Expanded(
+          child: Stack(
+            children: [
+              if (searchState.isLoading && searchState.messages.isEmpty)
+                const _SearchContextSkeleton(),
+              if (searchState.messages.isNotEmpty)
+                ScrollablePositionedList.builder(
+                  itemScrollController: _itemScrollController,
+                  itemPositionsListener: _itemPositionsListener,
+                  itemCount: searchState.messages.length,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemBuilder: (context, index) {
+                    final message = searchState.messages[index];
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 220),
+                      child: SlideAnimation(
+                        verticalOffset: 18,
+                        child: FadeInAnimation(
+                          child: _buildMessageItem(message, index),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              if (searchState.messages.isEmpty && !searchState.isLoading)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -578,6 +620,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                             color: colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -585,28 +628,51 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                           style: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.outline,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                // 有结果时的增量加载提示：不再遮挡列表
-                if (searchState.isLoading && searchState.messages.isNotEmpty)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LinearProgressIndicator(
-                      minHeight: 2,
-                      color: colorScheme.primary,
-                      backgroundColor: colorScheme.primary.withValues(
-                        alpha: 0.15,
-                      ),
+                ),
+              // 有结果时的增量加载提示：不再遮挡列表
+              if (searchState.isLoading && searchState.messages.isNotEmpty)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    color: colorScheme.primary,
+                    backgroundColor: colorScheme.primary.withValues(
+                      alpha: 0.15,
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-        ],
+        ),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: isDesktop
+          ? colorScheme.surfaceContainerLow
+          : colorScheme.surface,
+      appBar: AppBar(
+        title: Text(
+          'search_context_title'.tr(),
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      body: SafeArea(
+        child: isDesktop
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 980),
+                  child: content,
+                ),
+              )
+            : content,
       ),
     );
   }

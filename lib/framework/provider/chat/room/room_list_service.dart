@@ -385,6 +385,60 @@ class RoomListService extends _$RoomListService {
       return false;
     }
   }
+
+  /// 修改群聊名称
+  Future<bool> updateGroupName(String roomId, String roomName) async {
+    final safeName = roomName.trim();
+    if (roomId.isEmpty || safeName.isEmpty) {
+      return false;
+    }
+
+    try {
+      final res = await DioClient().post(
+        API.chatRoomUpdateName,
+        data: {'roomId': roomId, 'roomName': safeName},
+      );
+
+      if (res.data['code'] == 200) {
+        await refresh(silent: true);
+        return true;
+      }
+      return false;
+    } catch (e, st) {
+      log.error('❌ 修改群聊名称失败', e, st);
+      return false;
+    }
+  }
+
+  /// 修改群公告
+  Future<bool> updateGroupAnnouncement(
+    String roomId,
+    String roomAnnouncement,
+  ) async {
+    final safeAnnouncement = roomAnnouncement.trim();
+    if (roomId.isEmpty) {
+      return false;
+    }
+
+    try {
+      final res = await DioClient().post(
+        API.chatRoomUpdateAnnouncement,
+        data: {
+          'roomId': roomId,
+          'roomAnnouncement': safeAnnouncement,
+        },
+      );
+
+      if (res.data['code'] == 200) {
+        await refresh(silent: true);
+        return true;
+      }
+      return false;
+    } catch (e, st) {
+      log.error('❌ 修改群公告失败', e, st);
+      return false;
+    }
+  }
 }
 
 /// 当前选中的聊天室 ID 全局指针

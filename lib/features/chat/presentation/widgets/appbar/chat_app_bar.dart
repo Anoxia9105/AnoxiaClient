@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_settings_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_call_button_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_group_action_buttons_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -109,8 +110,37 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           // 搜索按钮
           IconButton(
             tooltip: 'appbar_search_in_chat'.tr(),
-            onPressed: () =>
-                ref.read(roomListServiceProvider.notifier).toggleSearch(),
+            onPressed: () {
+              if (DeviceUtil.isRealMobile()) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SearchContextPage(
+                      roomId: roomId,
+                      roomName: room.roomName ?? '',
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              showDialog(
+                context: context,
+                builder: (_) => Dialog(
+                  insetPadding: const EdgeInsets.symmetric(
+                    horizontal: 80,
+                    vertical: 40,
+                  ),
+                  child: SizedBox(
+                    width: 980,
+                    height: 720,
+                    child: SearchContextPage(
+                      roomId: roomId,
+                      roomName: room.roomName ?? '',
+                    ),
+                  ),
+                ),
+              );
+            },
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedSearch01,
               size: 20,
