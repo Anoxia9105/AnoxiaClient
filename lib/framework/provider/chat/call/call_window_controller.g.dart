@@ -65,7 +65,7 @@ abstract class _$CallWindowController extends $Notifier<WindowController?> {
   WindowController? build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<WindowController?, WindowController?>;
     final element =
         ref.element
@@ -75,6 +75,6 @@ abstract class _$CallWindowController extends $Notifier<WindowController?> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

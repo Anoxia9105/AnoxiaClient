@@ -61,7 +61,7 @@ abstract class _$InputPanelNotifier extends $Notifier<InputPanel> {
   InputPanel build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<InputPanel, InputPanel>;
     final element =
         ref.element
@@ -71,6 +71,6 @@ abstract class _$InputPanelNotifier extends $Notifier<InputPanel> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

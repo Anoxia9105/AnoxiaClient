@@ -53,7 +53,7 @@ final class WsControllerProvider
   }
 }
 
-String _$wsControllerHash() => r'885c7a5306c5409ebc39e0b62ccc5300c57de11b';
+String _$wsControllerHash() => r'7393825ac09174810d8ef4519efed231ad05ca7f';
 
 /// WebSocket 连接控制器
 ///
@@ -64,7 +64,7 @@ abstract class _$WsController extends $Notifier<WsState> {
   WsState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<WsState, WsState>;
     final element =
         ref.element
@@ -74,7 +74,7 @@ abstract class _$WsController extends $Notifier<WsState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

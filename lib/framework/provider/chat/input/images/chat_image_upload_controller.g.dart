@@ -70,7 +70,7 @@ final class ChatImageUploadControllerProvider
 }
 
 String _$chatImageUploadControllerHash() =>
-    r'f54cedd000d156b2126c6a4b637e028b8ac9d25c';
+    r'7967bef0c64176923fb0b5ed444d373ddd25ac80';
 
 /// 聊天图片上传控制器
 ///
@@ -87,7 +87,7 @@ abstract class _$ChatImageUploadController
   Map<String, UploadEntry> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<Map<String, UploadEntry>, Map<String, UploadEntry>>;
     final element =
@@ -98,6 +98,6 @@ abstract class _$ChatImageUploadController
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

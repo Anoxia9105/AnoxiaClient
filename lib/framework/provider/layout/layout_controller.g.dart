@@ -60,7 +60,7 @@ abstract class _$LayoutController extends $Notifier<LayoutState> {
   LayoutState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<LayoutState, LayoutState>;
     final element =
         ref.element
@@ -70,6 +70,6 @@ abstract class _$LayoutController extends $Notifier<LayoutState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

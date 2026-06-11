@@ -60,7 +60,7 @@ abstract class _$ContactSelection extends $Notifier<ContactSelectionState> {
   ContactSelectionState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<ContactSelectionState, ContactSelectionState>;
     final element =
         ref.element
@@ -70,6 +70,6 @@ abstract class _$ContactSelection extends $Notifier<ContactSelectionState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

@@ -85,7 +85,7 @@ class WsController extends _$WsController {
     });
 
     ref.listen(networkStatusProvider, (previous, next) {
-      final statuses = next.valueOrNull;
+      final statuses = next.value;
       if (statuses == null || statuses.isEmpty) return;
 
       final bool available = !statuses.contains(ConnectivityResult.none);
@@ -212,10 +212,10 @@ class WsController extends _$WsController {
   String? _extractSeqFromPayload(String payload) {
     try {
       final dynamic decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) return;
+      if (decoded is! Map<String, dynamic>) return null;
 
       final dynamic rawData = decoded['data'];
-      if (rawData is! Map<String, dynamic>) return;
+      if (rawData is! Map<String, dynamic>) return null;
 
       final String? seq = rawData['clientMsgId']?.toString().trim().isNotEmpty == true
           ? rawData['clientMsgId']?.toString()

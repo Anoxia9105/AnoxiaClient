@@ -56,7 +56,7 @@ abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
   FutureOr<UserInfo?> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<UserInfo?>, UserInfo?>;
     final element =
         ref.element
@@ -66,7 +66,7 @@ abstract class _$AuthController extends $AsyncNotifier<UserInfo?> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

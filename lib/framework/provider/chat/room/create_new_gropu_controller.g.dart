@@ -53,7 +53,7 @@ abstract class _$SelectedContactIds extends $Notifier<Set<int>> {
   Set<int> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<Set<int>, Set<int>>;
     final element =
         ref.element
@@ -63,7 +63,7 @@ abstract class _$SelectedContactIds extends $Notifier<Set<int>> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
@@ -112,7 +112,7 @@ abstract class _$CreateGroupController extends $AsyncNotifier<ChatRoomVO?> {
   FutureOr<ChatRoomVO?> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<ChatRoomVO?>, ChatRoomVO?>;
     final element =
         ref.element
@@ -122,6 +122,6 @@ abstract class _$CreateGroupController extends $AsyncNotifier<ChatRoomVO?> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

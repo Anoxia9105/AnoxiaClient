@@ -83,7 +83,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'6cb884db39423b4d9879fa3d6a580f4ab77f91f5';
+    r'1c3d4564a11fbb82862d24cddbaae16e3af4f374';
 
 /// 聊天输入控制器
 ///
@@ -144,7 +144,7 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
   QuillController build(String roomId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<QuillController, QuillController>;
     final element =
         ref.element
@@ -154,7 +154,7 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }
 
@@ -292,7 +292,7 @@ abstract class _$MentionState extends $Notifier<MentionStateData> {
   MentionStateData build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<MentionStateData, MentionStateData>;
     final element =
         ref.element
@@ -302,6 +302,6 @@ abstract class _$MentionState extends $Notifier<MentionStateData> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

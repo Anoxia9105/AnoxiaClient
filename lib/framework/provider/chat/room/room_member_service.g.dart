@@ -442,7 +442,7 @@ abstract class _$RoomMemberService
   Map<String, Map<int, ChatRoomMemberVO>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<
@@ -460,6 +460,6 @@ abstract class _$RoomMemberService
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

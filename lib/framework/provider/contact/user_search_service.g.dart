@@ -60,7 +60,7 @@ abstract class _$UserSearchService extends $Notifier<UserSearchResponse> {
   UserSearchResponse build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<UserSearchResponse, UserSearchResponse>;
     final element =
         ref.element
@@ -70,6 +70,6 @@ abstract class _$UserSearchService extends $Notifier<UserSearchResponse> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
