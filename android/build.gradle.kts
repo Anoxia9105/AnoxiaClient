@@ -3,11 +3,26 @@ plugins {
   id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        // Add the Huawei repository for AGCP plugin
+        maven("https://developer.huawei.com/repo/")
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("com.huawei.agconnect:agcp:1.5.2.300")
+    }
+}
+
 
 allprojects {
     repositories {
         google()
         mavenCentral()
+        // Add the Huawei repository for AGCP plugin
+        maven("https://developer.huawei.com/repo/")
     }
 }
 

@@ -122,6 +122,7 @@
   "chat_load_failed": "読み込みに失敗しました",
   "chat_create_group": "グルチャ作成",
   "chat_add_friend": "友達を追加",
+  "chat_scan_qr_code": "QRコードをスキャン",
   "chat_no_conversations": "データがありません",
   "chat_no_related_conversations": "関連する会話が見つかりません",
   "chat_unknown_conversation": "未知の会話",

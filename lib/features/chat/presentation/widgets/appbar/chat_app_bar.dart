@@ -62,8 +62,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               style: const TextStyle(fontSize: 16),
             );
           }
-
-          // 这里使用的是从 Provider 实时拿到的 room
+          
           final displayTitle = room.roomType == 1
               ? '${room.roomName} (${members.length})'
               : (room.roomName ?? 'appbar_conversation_detail'.tr());

@@ -122,6 +122,7 @@
   "chat_load_failed": "加载失败",
   "chat_create_group": "发起群聊",
   "chat_add_friend": "添加朋友",
+  "chat_scan_qr_code": "扫一扫",
   "chat_no_conversations": "暂无数据",
   "chat_no_related_conversations": "未找到相关会话",
   "chat_unknown_conversation": "未知会话",

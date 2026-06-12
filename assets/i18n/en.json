@@ -122,6 +122,7 @@
   "chat_load_failed": "Load failed",
   "chat_create_group": "Create group chat",
   "chat_add_friend": "Add friend",
+  "chat_scan_qr_code": "Scan QR code",
   "chat_no_conversations": "No data at present",
   "chat_no_related_conversations": "No related conversations found",
   "chat_unknown_conversation": "Unknown conversation",

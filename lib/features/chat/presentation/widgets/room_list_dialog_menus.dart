@@ -114,6 +114,23 @@ class RoomListDialogMenus {
                       ),
                     ),
                   ),
+                  const Divider(height: 1),
+                  // 扫一扫
+                  if(isMobile)
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Toast.showToast('chat_scan_qr_code'.tr());
+                        close?.call();
+                      },
+                      label: Text('chat_scan_qr_code'.tr()),
+                      icon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedScan,
+                        size: 18,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
