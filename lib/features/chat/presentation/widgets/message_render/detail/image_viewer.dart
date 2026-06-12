@@ -1,11 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:photo_view/photo_view.dart';
 
 /// 图片查看器组件
@@ -37,6 +42,7 @@ class ImageViewer extends StatefulWidget {
 class _ImageViewerState extends State<ImageViewer> {
   late final PhotoViewController _controller;
   late final PhotoViewScaleStateController _scaleStateCtrl;
+  bool _downloading = false;
 
   static const double _step = 0.2;
   static const double _minScaleFactor = 0.5;
@@ -86,10 +92,67 @@ class _ImageViewerState extends State<ImageViewer> {
     _controller.scale = target;
   }
 
-  void _downloadImage() {
+  Future<void> _downloadImage() async {
+    if (_downloading) return;
+
+    if (!DeviceUtil.isRealMobile()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('image_download_mobile_only'.tr())),
+      );
+      return;
+    }
+
+    final url = widget.attachment.url;
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('image_load_failed'.tr())));
+      return;
+    }
+
+    setState(() => _downloading = true);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('image_download_started'.tr())));
+
+    try {
+      final response = await Dio().get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('empty bytes');
+      }
+
+      final fileName = 'anoxia_image_${DateTime.now().millisecondsSinceEpoch}';
+      final result = await ImageGallerySaver.saveImage(
+        Uint8List.fromList(bytes),
+        quality: 100,
+        name: fileName,
+      );
+
+      final ok =
+          result is Map &&
+          (result['isSuccess'] == true || result['isSuccess'] == 1);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok ? 'image_download_success'.tr() : 'image_download_failed'.tr(),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('image_download_failed'.tr())));
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
   }
 
   @override
@@ -153,7 +216,7 @@ class _ImageViewerState extends State<ImageViewer> {
               color: Colors.white,
               size: 20,
             ),
-            onPressed: _downloadImage,
+            onPressed: _downloading ? null : _downloadImage,
           ),
           const SizedBox(width: 8),
         ],

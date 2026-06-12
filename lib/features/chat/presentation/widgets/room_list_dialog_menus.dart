@@ -2,6 +2,7 @@ import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/features/chat/presentation/pages/scan_qr_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
@@ -116,21 +117,25 @@ class RoomListDialogMenus {
                   ),
                   const Divider(height: 1),
                   // 扫一扫
-                  if(isMobile)
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        Toast.showToast('chat_scan_qr_code'.tr());
-                        close?.call();
-                      },
-                      label: Text('chat_scan_qr_code'.tr()),
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedScan,
-                        size: 18,
+                  if (isMobile)
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          close?.call();
+                          Navigator.of(appNavigatorKey.currentContext!).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ScanQrPage(),
+                            ),
+                          );
+                        },
+                        label: Text('chat_scan_qr_code'.tr()),
+                        icon: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedScan,
+                          size: 18,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

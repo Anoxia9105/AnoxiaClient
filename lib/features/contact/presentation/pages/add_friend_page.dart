@@ -16,7 +16,9 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 /// - 区分已添加的好友
 /// - 发送好友请求（可添加验证消息）
 class AddFriendPage extends ConsumerStatefulWidget {
-  const AddFriendPage({super.key});
+  const AddFriendPage({super.key, this.initialKeyword});
+
+  final String? initialKeyword;
 
   @override
   ConsumerState<AddFriendPage> createState() => _AddFriendPageState();
@@ -33,6 +35,11 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(userSearchServiceProvider.notifier).clearResults();
+      final keyword = widget.initialKeyword?.trim() ?? '';
+      if (keyword.isNotEmpty) {
+        _searchController.text = keyword;
+        _performSearch(keyword);
+      }
     });
   }
 
