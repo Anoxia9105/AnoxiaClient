@@ -5,8 +5,10 @@ import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart'
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ScanQrPage extends ConsumerStatefulWidget {
   const ScanQrPage({super.key});
@@ -68,12 +70,13 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       return;
     }
 
-    Toast.showToast(
-      '${'chat_scan_result'.tr()}: $raw',
-      type: ToastType.success,
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ScanQrResultPage(rawContent: raw)),
     );
 
-    Navigator.of(context).pop(raw);
+    if (!mounted) return;
+    _handling = false;
+    await _controller.start();
   }
 
   _UserCardPayload? _tryParseUserCard(String raw) {
@@ -104,7 +107,11 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('chat_scan_qr_code'.tr())),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        title: Text('chat_scan_qr_code'.tr()),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -145,6 +152,105 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ScanQrResultPage extends StatelessWidget {
+  const ScanQrResultPage({super.key, required this.rawContent});
+
+  final String rawContent;
+
+  String _prettyContent(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      const encoder = JsonEncoder.withIndent('  ');
+      return encoder.convert(decoded);
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  Uri? _tryParseOpenableUri(String value) {
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null || !uri.hasScheme) return null;
+    final scheme = uri.scheme.toLowerCase();
+    if (scheme == 'http' || scheme == 'https') {
+      return uri;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = _prettyContent(rawContent);
+    final openableUri = _tryParseOpenableUri(rawContent);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(title: Text('chat_scan_result'.tr())),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'chat_scan_content_title'.tr(),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(12),
+                  child: SelectableText(content),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: rawContent));
+                      Toast.showToast(
+                        'chat_scan_content_copied'.tr(),
+                        type: ToastType.success,
+                      );
+                    },
+                    child: Text('chat_scan_copy'.tr()),
+                  ),
+                ),
+                if (openableUri != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () async {
+                        final launched = await launchUrl(
+                          openableUri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                        if (!launched) {
+                          Toast.showToast(
+                            'chat_scan_open_failed'.tr(),
+                            type: ToastType.error,
+                          );
+                        }
+                      },
+                      child: Text('chat_scan_open_link'.tr()),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

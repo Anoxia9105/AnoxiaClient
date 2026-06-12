@@ -78,6 +78,15 @@ class VoiceRecordController extends ChangeNotifier {
   /// 录制开始时间
   DateTime? _startTime;
 
+  /// 底层 stop 正在执行中的任务，避免并发重复 stop 破坏录音器状态。
+  Future<String?>? _stopInFlight;
+
+  /// 手势会话序号：用于解决 onStart/onCancel/onEnd 的异步竞态。
+  int _gestureSession = 0;
+
+  /// 当前有效手势会话。
+  int _activeGestureSession = 0;
+
   /// 最大时长到达回调
   VoidCallback? onMaxDurationReached;
 
@@ -131,9 +140,12 @@ class VoiceRecordController extends ChangeNotifier {
   ///
   /// 在录制结束（无论成功或取消）时调用
   void hideOverlay() {
-    if (!_overlayVisible) return;
+    final hadVisible = _overlayVisible;
+    final hadEntry = _overlayEntry != null;
     _overlayVisible = false;
-    if (!_disposed) {
+    // 直接移除 OverlayEntry，避免残留透明层拦截触摸。
+    _removeOverlayEntry();
+    if (!_disposed && (hadVisible || hadEntry)) {
       notifyListeners();
     }
   }
@@ -147,14 +159,24 @@ class VoiceRecordController extends ChangeNotifier {
   ///
   /// [d] 长按开始事件详情，包含触摸位置信息
   Future<void> onStart(LongPressStartDetails d) async {
+    final session = ++_gestureSession;
+    _activeGestureSession = session;
+
     // 记录手势起点，便于后续立刻响应上滑取消。
     _startY = d.globalPosition.dy;
 
     // 先检查权限，若尚未授权则尝试快速拉起授权（首次录音场景）。
+    if (_stopInFlight != null) {
+      await _stopInFlight;
+      if (session != _activeGestureSession) return;
+    }
+
     if (!waveController.hasPermission) {
       await requestPermission();
+      if (session != _activeGestureSession) return;
       if (!waveController.hasPermission) {
         log.warning('未授予麦克风权限，无法开始录音');
+        hideOverlay();
         return;
       }
     }
@@ -162,6 +184,7 @@ class VoiceRecordController extends ChangeNotifier {
     try {
       // 创建临时文件路径（使用缓存目录以减少卡顿）。
       final tempPath = await _ensureTempDirPath();
+      if (session != _activeGestureSession) return;
       _filePath =
           '$tempPath/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       _startTime = DateTime.now();
@@ -180,6 +203,19 @@ class VoiceRecordController extends ChangeNotifier {
           bitRate: 128000,
         ),
       );
+
+      // 如果手势在异步启动期间已被取消/结束，及时回收本次录音。
+      if (session != _activeGestureSession) {
+        try {
+          final stalePath = await _stopRecorderSafely();
+          if (stalePath != null) {
+            try {
+              File(stalePath).deleteSync();
+            } catch (_) {}
+          }
+        } catch (_) {}
+        return;
+      }
 
       // 更新状态
       isRecording = true;
@@ -204,6 +240,9 @@ class VoiceRecordController extends ChangeNotifier {
       willCancel = false;
       _maxDurationTimer?.cancel();
       _maxDurationTimer = null;
+      if (session == _activeGestureSession) {
+        hideOverlay();
+      }
       if (!_disposed) {
         notifyListeners();
       }
@@ -235,9 +274,15 @@ class VoiceRecordController extends ChangeNotifier {
   ///
   /// 返回录制结果，如果取消或时长过短则返回 null
   Future<VoiceResult?> onEnd(LongPressEndDetails d) async {
+    // 结束当前手势，会使并发中的 onStart 自动失效。
+    _activeGestureSession = ++_gestureSession;
+
     // 取消定时器
     _maxDurationTimer?.cancel();
     _maxDurationTimer = null;
+
+    // 无论是否处于录音中，都强制清理一次遮罩，避免残留透明层。
+    hideOverlay();
 
     // 检查是否正在录制
     if (!isRecording) return null;
@@ -253,7 +298,7 @@ class VoiceRecordController extends ChangeNotifier {
     }
 
     // 停止录制
-    final path = await waveController.stop();
+    final path = await _stopRecorderSafely();
 
     // 处理取消或失败情况
     if (cancelled || path == null) {
@@ -286,9 +331,15 @@ class VoiceRecordController extends ChangeNotifier {
   ///
   /// 在达到最大时长时由定时器触发
   Future<VoiceResult?> forceEnd() async {
+    // 结束当前手势，会使并发中的 onStart 自动失效。
+    _activeGestureSession = ++_gestureSession;
+
     // 取消定时器
     _maxDurationTimer?.cancel();
     _maxDurationTimer = null;
+
+    // 超时收尾时也确保遮罩已清理。
+    hideOverlay();
 
     // 检查是否正在录制
     if (!isRecording) return null;
@@ -301,13 +352,70 @@ class VoiceRecordController extends ChangeNotifier {
     }
 
     // 停止录制
-    final path = await waveController.stop();
+    final path = await _stopRecorderSafely();
     if (path == null) return null;
 
     // 计算时长
     final duration = DateTime.now().difference(_startTime!).inSeconds;
     log.info('语音强制结束: $path, 时长: ${duration}s');
     return VoiceResult(filePath: path, duration: duration);
+  }
+
+  /// 取消当前录音并清理临时文件（用于手势被系统打断或 onLongPressCancel）。
+  Future<void> cancelCurrentRecording() async {
+    // 取消当前手势，会使并发中的 onStart 自动失效。
+    _activeGestureSession = ++_gestureSession;
+
+    _maxDurationTimer?.cancel();
+    _maxDurationTimer = null;
+
+    // 手势取消时优先清理遮罩，避免偶发残留。
+    hideOverlay();
+
+    if (!isRecording) {
+      willCancel = false;
+      if (!_disposed) {
+        notifyListeners();
+      }
+      return;
+    }
+
+    isRecording = false;
+    willCancel = false;
+    if (!_disposed) {
+      notifyListeners();
+    }
+
+    try {
+      final path = await _stopRecorderSafely();
+      if (path != null) {
+        try {
+          File(path).deleteSync();
+        } catch (_) {}
+      }
+      log.info('语音录制已取消并重置');
+    } catch (e, stack) {
+      log.error('取消录音失败', e, stack);
+    }
+  }
+
+  Future<String?> _stopRecorderSafely() {
+    final inFlight = _stopInFlight;
+    if (inFlight != null) return inFlight;
+
+    final future = () async {
+      try {
+        return await waveController.stop();
+      } catch (e, stack) {
+        log.error('停止录音失败', e, stack);
+        return null;
+      } finally {
+        _stopInFlight = null;
+      }
+    }();
+
+    _stopInFlight = future;
+    return future;
   }
 
   /// 释放资源

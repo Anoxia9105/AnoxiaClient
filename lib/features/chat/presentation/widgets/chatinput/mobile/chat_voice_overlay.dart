@@ -18,21 +18,18 @@ class ChatVoiceOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: controller,
-      builder: (_, __) => Material(
-        color: Colors.transparent,
-        child: IgnorePointer(
-          ignoring: !controller.overlayVisible,
-          child: AnimatedOpacity(
-            opacity: controller.overlayVisible ? 1 : 0,
-            duration: const Duration(milliseconds: 120),
-            curve: Curves.easeOut,
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.5),
-              child: Center(child: _VoiceIndicator(controller: controller)),
-            ),
+      builder: (_, __) {
+        if (!controller.overlayVisible) {
+          return const SizedBox.shrink();
+        }
+        return Material(
+          color: Colors.transparent,
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.5),
+            child: Center(child: _VoiceIndicator(controller: controller)),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -274,7 +274,15 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
       _hidePanel();
       return;
     }
+
+    // 面板开启时强制切回文本输入模式，避免保留语音按住说话态。
+    if (_isVoiceMode) {
+      setState(() => _isVoiceMode = false);
+    }
+
+    // 先展开目标面板，再收起键盘，避免输入栏先掉底再顶起。
     _panelController.updatePanelType(ChatBottomPanelType.other, data: type);
+    _focusNode.unfocus();
   }
 
   void _toggleVoiceMode() {
@@ -374,6 +382,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                           if (!mounted) return;
                           setState(() => _isVoicePressing = false);
                           _voiceController.hideOverlay();
+                          unawaited(_voiceController.cancelCurrentRecording());
                         },
                         onLongPressEnd: (d) async {
                           if (mounted) {
@@ -438,10 +447,14 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                           ),
                         ),
                         onChanged: _handleTextChanged,
-                        onTap: () async {
+                        onTap: () {
+                          if (!_focusNode.hasFocus) {
+                            _focusNode.requestFocus();
+                          }
                           _panelController.updatePanelType(
                             ChatBottomPanelType.keyboard,
                           );
+                          widget.bottomSheet();
                         },
                       ),
               ),
@@ -509,7 +522,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             ],
           ),
         ),
-        if (_currentPanelType != ChatBottomPanelType.none)
+        if (_currentPanelType == ChatBottomPanelType.other)
           Divider(height: 1, thickness: 0.5, color: colorScheme.outlineVariant),
         ChatBottomPanelContainer<_MobileBottomPanelType>(
           controller: _panelController,

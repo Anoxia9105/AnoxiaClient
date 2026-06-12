@@ -31,6 +31,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: Text('me_password_title'.tr())),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),

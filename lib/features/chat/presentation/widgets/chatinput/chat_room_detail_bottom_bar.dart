@@ -30,32 +30,38 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
   /// 输入框点击回调
   final VoidCallback onFieldTap;
 
-  const ChatRoomDetailBottomBar({super.key, required this.showSkeleton, this.roomStatus, required this.onFieldTap});
+  const ChatRoomDetailBottomBar({
+    super.key,
+    required this.showSkeleton,
+    this.roomStatus,
+    required this.onFieldTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (showSkeleton) return const ChatInputSkeleton();
 
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-
     return SafeArea(
       top: false,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
+      child: Padding(
         padding: EdgeInsets.only(
           left: DeviceUtil.isRealDesktop() ? 50 : 0,
           right: DeviceUtil.isRealDesktop() ? 50 : 0,
-          bottom: (keyboardInset > 0 ? keyboardInset : 0),
         ),
         child: switch (roomStatus) {
           0 => ChatInputField(bottomSheet: onFieldTap),
           // 全员禁言
-          1 => ChatRoomDetailStatusTag(text: 'chat_room_muted'.tr(), icon: HugeIcons.strokeRoundedVolumeMute01),
+          1 => ChatRoomDetailStatusTag(
+            text: 'chat_room_muted'.tr(),
+            icon: HugeIcons.strokeRoundedVolumeMute01,
+          ),
           // 封禁
           2 => const SizedBox.shrink(),
           // 已解散
-          3 => ChatRoomDetailStatusTag(text: 'chat_room_dissolved'.tr(), icon: HugeIcons.strokeRoundedDelete02),
+          3 => ChatRoomDetailStatusTag(
+            text: 'chat_room_dissolved'.tr(),
+            icon: HugeIcons.strokeRoundedDelete02,
+          ),
           _ => const SizedBox.shrink(),
         },
       ),

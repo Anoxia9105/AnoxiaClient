@@ -134,6 +134,7 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
     });
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: Text('me_my_qr'.tr())),
       body: Center(
         child: Padding(

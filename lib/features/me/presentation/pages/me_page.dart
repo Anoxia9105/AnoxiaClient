@@ -278,6 +278,13 @@ class _MyPageState extends ConsumerState<MyPage> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  '${'me_profile_username'.tr()}: ${user.userName}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
+                ),
               ],
             ),
           ),
