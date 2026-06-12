@@ -28,7 +28,7 @@ class SettingsFontSection extends StatelessWidget {
       icon: HugeIcons.strokeRoundedText,
       child: Row(
         children: [
-          const Expanded(flex: 2, child: SizedBox.shrink()),
+          const Expanded(flex: 1, child: SizedBox.shrink()),
           Expanded(
             flex: isDesktop ? 1 : 2,
             child: Padding(

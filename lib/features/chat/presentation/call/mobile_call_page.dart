@@ -1,8 +1,5 @@
-import 'package:anoxia/common/constants/StorageKeys.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/utils/SPUtil.dart';
+
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
-import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:pip/pip.dart';
 
 /// 移动端通话页面
@@ -39,7 +35,6 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     _keepScreenOn(true);
-    _checkBluetoothPermissions();
   }
 
   @override
@@ -55,43 +50,6 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
       await channel.invokeMethod('setKeepScreenOn', on);
     } catch (e) {
       debugPrint('setKeepScreenOn error: $e');
-    }
-  }
-
-  Future<void> _checkBluetoothPermissions() async {
-    if (!DeviceUtil.isAndroid()) return;
-
-    final requested =
-        SPUtil.instance.getBool(StorageKeys.kBluetoothPermissionRequestedKey) ??
-        false;
-
-    if (requested) return;
-
-    bool hasPermanentlyDenied = false;
-
-    var status = await Permission.bluetooth.request();
-
-    if (status.isPermanentlyDenied) {
-      log.warning('Bluetooth Permission disabled');
-
-      hasPermanentlyDenied = true;
-    }
-
-    status = await Permission.bluetoothConnect.request();
-
-    if (status.isPermanentlyDenied) {
-      log.warning('Bluetooth Connect Permission disabled');
-
-      hasPermanentlyDenied = true;
-    }
-
-    await SPUtil.instance.setBool(
-      StorageKeys.kBluetoothPermissionRequestedKey,
-      true,
-    );
-
-    if (hasPermanentlyDenied) {
-      await openAppSettings();
     }
   }
 

@@ -1,12 +1,14 @@
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/features/me/presentation/widgets/me_header_widgets.dart';
 import 'package:anoxia/framework/domain/UserInfo.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'change_password_page.dart';
+import 'personal_qr_page.dart';
 
 /// 个人中心页面
 ///
@@ -18,59 +20,30 @@ class MyPage extends ConsumerStatefulWidget {
   ConsumerState<MyPage> createState() => _MyPageState();
 }
 
-class _MyPageState extends ConsumerState<MyPage>
-    with SingleTickerProviderStateMixin {
-  /// 个人资料表单 Key
-  final _profileFormKey = GlobalKey<FormState>();
-  /// 密码修改表单 Key
-  final _pwdFormKey = GlobalKey<FormState>();
-
+class _MyPageState extends ConsumerState<MyPage> {
   /// 昵称编辑控制器
   final _nickController = TextEditingController();
+
   /// 邮箱编辑控制器
   final _emailController = TextEditingController();
+
   /// 手机号编辑控制器
   final _phoneController = TextEditingController();
 
-  /// 旧密码编辑控制器
-  final _oldPwdController = TextEditingController();
-  /// 新密码编辑控制器
-  final _newPwdController = TextEditingController();
-  /// 确认密码编辑控制器
-  final _confirmPwdController = TextEditingController();
-
   /// 性别（0=男，1=女，2=未知）
   String _sex = '2';
+
   /// 用户信息快照（用于检测变化）
   String? _boundUserSnapshot;
+
   /// 是否正在保存个人资料
   bool _savingProfile = false;
-  /// 是否正在更新密码
-  bool _updatingPwd = false;
-  /// 是否显示旧密码
-  bool _showOldPwd = false;
-  /// 是否显示新密码
-  bool _showNewPwd = false;
-  /// 是否显示确认密码
-  bool _showConfirmPwd = false;
-  /// Tab 控制器
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _nickController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _oldPwdController.dispose();
-    _newPwdController.dispose();
-    _confirmPwdController.dispose();
     super.dispose();
   }
 
@@ -96,7 +69,28 @@ class _MyPageState extends ConsumerState<MyPage>
     final authAsync = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('me_page_title'.tr())),
+      appBar: AppBar(
+        title: Text('me_page_title'.tr()),
+        actions: [
+          authAsync.maybeWhen(
+            data: (user) {
+              if (user == null) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: '我的二维码',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PersonalQrPage(user: user),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_2_rounded),
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
+      ),
       backgroundColor: Colors.transparent,
       body: authAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -111,30 +105,7 @@ class _MyPageState extends ConsumerState<MyPage>
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 860),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-                      child: Column(
-                        children: [
-                          MeProfileCard(user: user),
-                          const SizedBox(height: 12),
-                          MeTabSwitcher(controller: _tabController),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          _buildProfileForm(context, user),
-                          _buildPasswordForm(context),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                child: _buildProfileForm(context, user),
               ),
             ),
           );
@@ -148,239 +119,303 @@ class _MyPageState extends ConsumerState<MyPage>
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
       children: [
-        Form(
-          key: _profileFormKey,
-          child: Column(
-            children: [
-              TextFormField(
-                initialValue: user.userName,
-                enabled: false,
-                decoration: _inputDeco(
-                  context,
-                  label: 'me_profile_username'.tr(),
-                  icon: Icons.person_outline_rounded,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
+        _buildSectionTitle(context, 'me_profile_edit_title'.tr()),
+        const SizedBox(height: 8),
+        _buildTileSection(
+          context,
+          children: [
+            _buildReadonlyTile(
+              context,
+              title: 'me_profile_username'.tr(),
+              value: user.userName,
+              icon: Icons.person_outline_rounded,
+            ),
+            _buildTileDivider(context),
+            _buildEditableTile(
+              context,
+              title: 'me_profile_nickname'.tr(),
+              value: _nickController.text,
+              icon: Icons.badge_outlined,
+              onTap: () => _editTextField(
+                title: 'me_profile_nickname'.tr(),
                 controller: _nickController,
-                decoration: _inputDeco(
-                  context,
-                  label: 'me_profile_nickname'.tr(),
-                  icon: Icons.badge_outlined,
-                ),
                 validator: (v) => (v ?? '').trim().isEmpty
                     ? 'me_profile_nickname_required'.tr()
                     : null,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
+            ),
+            _buildTileDivider(context),
+            _buildEditableTile(
+              context,
+              title: 'me_profile_email'.tr(),
+              value: _emailController.text,
+              icon: Icons.email_outlined,
+              onTap: () => _editTextField(
+                title: 'me_profile_email'.tr(),
                 controller: _emailController,
-                decoration: _inputDeco(
-                  context,
-                  label: 'me_profile_email'.tr(),
-                  icon: Icons.email_outlined,
-                ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
+            ),
+            _buildTileDivider(context),
+            _buildEditableTile(
+              context,
+              title: 'me_profile_phone'.tr(),
+              value: _phoneController.text,
+              icon: Icons.phone_outlined,
+              onTap: () => _editTextField(
+                title: 'me_profile_phone'.tr(),
                 controller: _phoneController,
-                decoration: _inputDeco(
-                  context,
-                  label: 'me_profile_phone'.tr(),
-                  icon: Icons.phone_outlined,
-                ),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _sex,
-                decoration: _inputDeco(
-                  context,
-                  label: 'me_profile_gender'.tr(),
-                  icon: Icons.wc_outlined,
-                ),
-                items: [
-                  DropdownMenuItem(
-                    value: '0',
-                    child: Text('contact_male'.tr()),
-                  ),
-                  DropdownMenuItem(
-                    value: '1',
-                    child: Text('contact_female'.tr()),
-                  ),
-                  DropdownMenuItem(
-                    value: '2',
-                    child: Text('contact_unknown_gender'.tr()),
-                  ),
-                ],
-                onChanged: (v) {
-                  if (v == null) return;
-                  setState(() => _sex = v);
-                },
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: FilledButton.icon(
-                  onPressed: _savingProfile ? null : _saveProfile,
-                  icon: _savingProfile
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: cs.onPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.save_outlined, size: 18),
-                  label: Text('me_profile_save'.tr()),
-                ),
-              ),
-            ],
+            ),
+            _buildTileDivider(context),
+            _buildEditableTile(
+              context,
+              title: 'me_profile_gender'.tr(),
+              value: _genderLabel(),
+              icon: Icons.wc_outlined,
+              onTap: _selectGender,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildSectionTitle(context, 'me_password_title'.tr()),
+        const SizedBox(height: 8),
+        _buildTileSection(
+          context,
+          children: [
+            _buildEditableTile(
+              context,
+              title: 'me_password_submit'.tr(),
+              value: '前往修改',
+              icon: Icons.lock_outline_rounded,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: FilledButton.icon(
+            onPressed: _savingProfile ? null : _saveProfile,
+            icon: _savingProfile
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: cs.onPrimary,
+                    ),
+                  )
+                : const Icon(Icons.save_outlined, size: 18),
+            label: Text('me_profile_save'.tr()),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPasswordForm(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
-      children: [
-        Form(
-          key: _pwdFormKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _oldPwdController,
-                obscureText: !_showOldPwd,
-                decoration: _pwdDeco(
-                  context,
-                  label: 'me_password_old'.tr(),
-                  visible: _showOldPwd,
-                  onToggle: () => setState(() => _showOldPwd = !_showOldPwd),
-                ),
-                validator: (v) =>
-                    (v ?? '').isEmpty ? 'me_password_old_required'.tr() : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _newPwdController,
-                obscureText: !_showNewPwd,
-                decoration: _pwdDeco(
-                  context,
-                  label: 'me_password_new'.tr(),
-                  visible: _showNewPwd,
-                  onToggle: () => setState(() => _showNewPwd = !_showNewPwd),
-                ),
-                validator: (v) {
-                  if ((v ?? '').isEmpty) {
-                    return 'me_password_new_required'.tr();
-                  }
-                  if ((v ?? '').length < 6) return 'me_password_new_len'.tr();
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _confirmPwdController,
-                obscureText: !_showConfirmPwd,
-                decoration: _pwdDeco(
-                  context,
-                  label: 'me_password_confirm'.tr(),
-                  visible: _showConfirmPwd,
-                  onToggle: () =>
-                      setState(() => _showConfirmPwd = !_showConfirmPwd),
-                ),
-                validator: (v) {
-                  if ((v ?? '').isEmpty) {
-                    return 'me_password_confirm_required'.tr();
-                  }
-                  if (v != _newPwdController.text) {
-                    return 'me_password_confirm_mismatch'.tr();
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: FilledButton.tonalIcon(
-                  onPressed: _updatingPwd ? null : _updatePassword,
-                  icon: _updatingPwd
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: cs.onSecondaryContainer,
-                          ),
-                        )
-                      : const Icon(Icons.lock_reset_outlined, size: 18),
-                  label: Text('me_password_submit'.tr()),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  InputDecoration _inputDeco(
+  Widget _buildTileSection(
     BuildContext context, {
-    required String label,
+    required List<Widget> children,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String text) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: cs.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadonlyTile(
+    BuildContext context, {
+    required String title,
+    required String value,
     required IconData icon,
   }) {
     final cs = Theme.of(context).colorScheme;
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, size: 19),
-      filled: true,
-      fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-      floatingLabelBehavior: FloatingLabelBehavior.auto,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: cs.outlineVariant),
+    return ListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -1),
+      minVerticalPadding: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      leading: Icon(icon, size: 20, color: cs.onSurfaceVariant),
+      title: Text(title, style: const TextStyle(fontSize: 14.5)),
+      trailing: Text(
+        value.isEmpty ? '--' : value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: cs.onSurfaceVariant),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: cs.primary, width: 1.8),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }
 
-  InputDecoration _pwdDeco(
+  Widget _buildEditableTile(
     BuildContext context, {
-    required String label,
-    required bool visible,
-    required VoidCallback onToggle,
+    required String title,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
   }) {
-    return _inputDeco(
-      context,
-      label: label,
-      icon: Icons.lock_outline_rounded,
-    ).copyWith(
-      suffixIcon: IconButton(
-        onPressed: onToggle,
-        icon: Icon(
-          visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          size: 18,
-        ),
+    final cs = Theme.of(context).colorScheme;
+    return ListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -1),
+      minVerticalPadding: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      leading: Icon(icon, size: 20, color: cs.onSurfaceVariant),
+      title: Text(title, style: const TextStyle(fontSize: 14.5)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Text(
+              value.isEmpty ? '--' : value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right_rounded, size: 20, color: cs.outline),
+        ],
       ),
+      onTap: onTap,
     );
+  }
+
+  Widget _buildTileDivider(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Divider(
+      height: 1,
+      indent: 50,
+      endIndent: 14,
+      color: cs.outlineVariant.withValues(alpha: 0.5),
+    );
+  }
+
+  String _genderLabel() {
+    switch (_sex) {
+      case '0':
+        return 'contact_male'.tr();
+      case '1':
+        return 'contact_female'.tr();
+      default:
+        return 'contact_unknown_gender'.tr();
+    }
+  }
+
+  Future<void> _selectGender() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('contact_male'.tr()),
+                onTap: () => Navigator.of(ctx).pop('0'),
+              ),
+              ListTile(
+                title: Text('contact_female'.tr()),
+                onTap: () => Navigator.of(ctx).pop('1'),
+              ),
+              ListTile(
+                title: Text('contact_unknown_gender'.tr()),
+                onTap: () => Navigator.of(ctx).pop('2'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null && mounted) {
+      setState(() => _sex = selected);
+    }
+  }
+
+  Future<void> _editTextField({
+    required String title,
+    required TextEditingController controller,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) async {
+    final temp = TextEditingController(text: controller.text);
+    String? error;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setInnerState) {
+            return AlertDialog(
+              title: Text(title),
+              content: TextField(
+                controller: temp,
+                autofocus: true,
+                obscureText: obscureText,
+                decoration: InputDecoration(errorText: error),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('cancel'.tr()),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final check = validator?.call(temp.text);
+                    if (check != null) {
+                      setInnerState(() => error = check);
+                      return;
+                    }
+                    Navigator.of(ctx).pop(temp.text);
+                  },
+                  child: Text('confirm'.tr()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    temp.dispose();
+
+    if (result != null && mounted) {
+      setState(() => controller.text = result.trim());
+    }
   }
 
   Future<void> _saveProfile() async {
-    if (!_profileFormKey.currentState!.validate()) return;
+    if (_nickController.text.trim().isEmpty) {
+      Toast.showToast(
+        'me_profile_nickname_required'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
     setState(() => _savingProfile = true);
     try {
       final res = await DioClient().put(
@@ -411,42 +446,6 @@ class _MyPageState extends ConsumerState<MyPage>
       Toast.showToast('me_profile_save_failed'.tr(), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _savingProfile = false);
-    }
-  }
-
-  Future<void> _updatePassword() async {
-    if (!_pwdFormKey.currentState!.validate()) return;
-    setState(() => _updatingPwd = true);
-    try {
-      final res = await DioClient().put(
-        API.userProfileUpdatePassword,
-        data: {
-          'oldPassword': _oldPwdController.text,
-          'newPassword': _newPwdController.text,
-          'confirmPassword': _confirmPwdController.text,
-        },
-      );
-      final ok = res.data is Map && res.data['code'] == 200;
-      if (ok) {
-        _oldPwdController.clear();
-        _newPwdController.clear();
-        _confirmPwdController.clear();
-        Toast.showToast(
-          'me_password_update_success'.tr(),
-          type: ToastType.success,
-        );
-      } else {
-        final msg =
-            (res.data is Map ? res.data['msg']?.toString() : null) ?? '';
-        Toast.showToast(
-          msg.isNotEmpty ? msg : 'me_password_update_failed'.tr(),
-          type: ToastType.error,
-        );
-      }
-    } catch (_) {
-      Toast.showToast('me_password_update_failed'.tr(), type: ToastType.error);
-    } finally {
-      if (mounted) setState(() => _updatingPwd = false);
     }
   }
 }

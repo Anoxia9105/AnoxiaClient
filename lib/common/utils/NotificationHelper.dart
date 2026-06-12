@@ -180,7 +180,10 @@ class NotificationHelper {
       globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
       globalContainer.read(layoutControllerProvider.notifier).setIndex(0);
 
-      _ensureWindowActive();
+      // 仅桌面端需要主动唤醒窗口；移动端调用会触发 MissingPluginException。
+      if (DeviceUtil.isRealDesktop()) {
+        _ensureWindowActive();
+      }
     }
   }
 

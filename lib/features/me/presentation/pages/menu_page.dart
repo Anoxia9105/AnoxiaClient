@@ -126,35 +126,47 @@ class MenuPage extends ConsumerWidget {
             Expanded(
               child: ListView(
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _buildMenuTile(
-                    context,
-                    icon: HugeIcons.strokeRoundedUser,
-                    title: 'me_page_title'.tr(), // 资料修改/详情入口
-                    onTap: () {
-                      // 开发意图：点击后跳转至对应的详情页修改
-                    },
-                  ),
-                  const SizedBox(height: 4),
-                  _buildMenuTile(
-                    context,
-                    icon: HugeIcons.strokeRoundedLock,
-                    title: 'me_password_submit'.tr(), // 密码修改
-                    onTap: () {
-                      // 开发意图：点击激活密码表单
-                    },
-                  ),
-                  const SizedBox(height: 4),
-                  _buildMenuTile(
-                    context,
-                    icon: HugeIcons.strokeRoundedSettings01,
-                    title: 'sidebar_setting'.tr(), // 设置页面
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SettingsPage()),
-                      );
-                    },
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedUser,
+                          title: 'me_page_title'.tr(), // 资料修改/详情入口
+                          onTap: () {
+                            // 开发意图：点击后跳转至对应的详情页修改
+                          },
+                        ),
+                        _buildTileDivider(),
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedLock,
+                          title: 'me_password_submit'.tr(), // 密码修改
+                          onTap: () {
+                            // 开发意图：点击激活密码表单
+                          },
+                        ),
+                        _buildTileDivider(),
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedSettings01,
+                          title: 'sidebar_setting'.tr(), // 设置页面
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SettingsPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -244,6 +256,10 @@ class MenuPage extends ConsumerWidget {
         : Colors.white;
 
     return ListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -1),
+      minVerticalPadding: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       horizontalTitleGap: 12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       leading: HugeIcon(
@@ -259,7 +275,21 @@ class MenuPage extends ConsumerWidget {
           fontWeight: isDanger ? FontWeight.w500 : FontWeight.normal,
         ),
       ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 20,
+        color: displayColor.withValues(alpha: 0.65),
+      ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildTileDivider() {
+    return Divider(
+      height: 1,
+      indent: 50,
+      endIndent: 14,
+      color: Colors.white.withValues(alpha: 0.12),
     );
   }
 

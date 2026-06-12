@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
@@ -9,10 +10,12 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
@@ -44,6 +47,15 @@ Future<void> main(List<String> args) async {
       SPUtil.instance.init(), // 本地存储初始化
     ]);
 
+    // 移动端统一权限闸门：启动即申请全部关键权限，拒绝则直接退出。
+    if (DeviceUtil.isRealMobile()) {
+      final granted = await _ensureMobilePermissionsOnStartup();
+      if (!granted) {
+        await _exitAppNow();
+        return;
+      }
+    }
+
     _backgroundAsyncInit();
 
     // 桌面端窗口初始化（区分主/子窗口）
@@ -58,6 +70,39 @@ Future<void> main(List<String> args) async {
     // 启动失败兜底（显示错误页面）
     runApp(_buildErrorPage('应用启动失败：$e'));
   }
+}
+
+Future<bool> _ensureMobilePermissionsOnStartup() async {
+  try {
+    final permissions = <Permission>[
+      Permission.microphone,
+      Permission.camera,
+      Permission.notification,
+      Permission.bluetooth,
+      Permission.bluetoothConnect,
+    ];
+
+    final result = await permissions.request();
+    final allGranted = result.values.every((status) => status.isGranted);
+    if (!allGranted) {
+      log.warning('启动权限申请未全部通过: $result');
+    }
+    return allGranted;
+  } catch (e, stack) {
+    log.error('启动权限申请异常', e, stack);
+    return false;
+  }
+}
+
+Future<void> _exitAppNow() async {
+  try {
+    await SystemNavigator.pop();
+  } catch (_) {
+    // ignored
+  }
+
+  // 兜底强制退出，确保“拒绝即退出”策略生效。
+  exit(0);
 }
 
 void _backgroundAsyncInit() {
@@ -264,6 +309,7 @@ Widget _buildAppWrapper(Widget home) {
     path: path,
     fallbackLocale: const Locale('en', 'US'),
     saveLocale: true,
+
     /// 通过 ScreenUtilInit 包裹，提供屏幕适配功能
     child: ScreenUtilInit(
       designSize: const Size(375, 812),

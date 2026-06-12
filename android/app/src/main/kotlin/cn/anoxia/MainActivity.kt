@@ -71,4 +71,14 @@ class MainActivity : PipActivity() {
             Log.e(TAG, "Failed to notify Flutter PiP state", e)
         }
     }
+
+    override fun onUserLeaveHint() {
+        try {
+            super.onUserLeaveHint()
+        } catch (e: Exception) {
+            // pip 0.0.3 在部分时序下（如系统权限弹窗触发 Activity 暂停）
+            // 会因为内部参数尚未初始化而抛 NPE，这里兜底避免主线程崩溃。
+            Log.e(TAG, "PipActivity onUserLeaveHint error", e)
+        }
+    }
 }

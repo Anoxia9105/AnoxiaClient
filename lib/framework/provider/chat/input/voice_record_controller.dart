@@ -94,9 +94,11 @@ class VoiceRecordController extends ChangeNotifier {
     }
   }
 
-  /// 预热录音依赖（权限 + 临时目录），用于降低首次长按时延。
+  /// 预热录音依赖（仅临时目录），用于降低首次长按时延。
+  ///
+  /// 注意：不要在进入聊天页时主动申请麦克风权限，
+  /// 仅在用户明确触发语音录制时再申请。
   Future<void> warmUp() async {
-    await requestPermission();
     await _ensureTempDirPath();
   }
 
