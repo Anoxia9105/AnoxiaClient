@@ -111,6 +111,8 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       appBar: AppBar(
         title: Text('chat_scan_qr_code'.tr()),
         backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
       ),
       body: Stack(
         fit: StackFit.expand,
