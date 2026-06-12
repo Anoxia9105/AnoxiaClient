@@ -1,3 +1,7 @@
+import com.android.build.gradle.BaseExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
   // Add the dependency for the Google services Gradle plugin
   id("com.google.gms.google-services") version "4.4.4" apply false
@@ -41,6 +45,13 @@ subprojects {
     plugins.withId("com.android.library") {
         val androidExt = extensions.findByName("android") ?: return@withId
 
+        (androidExt as? BaseExtension)?.apply {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
+
         val getNamespace = androidExt.javaClass.methods.firstOrNull {
             it.name == "getNamespace" && it.parameterCount == 0
         }
@@ -55,6 +66,15 @@ subprojects {
                 setNamespace.invoke(androidExt, fallback)
             }
         }
+    }
+
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_17.toString()
     }
 }
 
