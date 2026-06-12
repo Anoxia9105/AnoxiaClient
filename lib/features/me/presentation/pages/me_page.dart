@@ -1,4 +1,5 @@
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/UserInfo.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'change_password_page.dart';
+import 'me_profile_item_edit_page.dart';
 import 'personal_qr_page.dart';
 
 /// 个人中心页面
@@ -69,28 +71,7 @@ class _MyPageState extends ConsumerState<MyPage> {
     final authAsync = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('me_page_title'.tr()),
-        actions: [
-          authAsync.maybeWhen(
-            data: (user) {
-              if (user == null) return const SizedBox.shrink();
-              return IconButton(
-                tooltip: '我的二维码',
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PersonalQrPage(user: user),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.qr_code_2_rounded),
-              );
-            },
-            orElse: () => const SizedBox.shrink(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('me_page_title'.tr())),
       backgroundColor: Colors.transparent,
       body: authAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -119,30 +100,37 @@ class _MyPageState extends ConsumerState<MyPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
       children: [
+        _buildTopProfileRow(context, user),
+        const SizedBox(height: 16),
         _buildSectionTitle(context, 'me_profile_edit_title'.tr()),
         const SizedBox(height: 8),
         _buildTileSection(
           context,
           children: [
-            _buildReadonlyTile(
-              context,
-              title: 'me_profile_username'.tr(),
-              value: user.userName,
-              icon: Icons.person_outline_rounded,
-            ),
-            _buildTileDivider(context),
             _buildEditableTile(
               context,
               title: 'me_profile_nickname'.tr(),
               value: _nickController.text,
               icon: Icons.badge_outlined,
-              onTap: () => _editTextField(
-                title: 'me_profile_nickname'.tr(),
-                controller: _nickController,
-                validator: (v) => (v ?? '').trim().isEmpty
-                    ? 'me_profile_nickname_required'.tr()
-                    : null,
-              ),
+              onTap: () async {
+                final old = _nickController.text;
+                await Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (_) => MeProfileItemEditPage.text(
+                      title: 'me_profile_nickname'.tr(),
+                      initialValue: old,
+                      requiredMessage: 'me_profile_nickname_required'.tr(),
+                      onSave: (value) async {
+                        final ok = await _saveProfile(nickName: value);
+                        if (ok && mounted) {
+                          setState(() => _nickController.text = value);
+                        }
+                        return ok;
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             _buildTileDivider(context),
             _buildEditableTile(
@@ -150,10 +138,25 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_email'.tr(),
               value: _emailController.text,
               icon: Icons.email_outlined,
-              onTap: () => _editTextField(
-                title: 'me_profile_email'.tr(),
-                controller: _emailController,
-              ),
+              onTap: () async {
+                final old = _emailController.text;
+                await Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (_) => MeProfileItemEditPage.text(
+                      title: 'me_profile_email'.tr(),
+                      initialValue: old,
+                      keyboardType: TextInputType.emailAddress,
+                      onSave: (value) async {
+                        final ok = await _saveProfile(email: value);
+                        if (ok && mounted) {
+                          setState(() => _emailController.text = value);
+                        }
+                        return ok;
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             _buildTileDivider(context),
             _buildEditableTile(
@@ -161,10 +164,25 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_phone'.tr(),
               value: _phoneController.text,
               icon: Icons.phone_outlined,
-              onTap: () => _editTextField(
-                title: 'me_profile_phone'.tr(),
-                controller: _phoneController,
-              ),
+              onTap: () async {
+                final old = _phoneController.text;
+                await Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (_) => MeProfileItemEditPage.text(
+                      title: 'me_profile_phone'.tr(),
+                      initialValue: old,
+                      keyboardType: TextInputType.phone,
+                      onSave: (value) async {
+                        final ok = await _saveProfile(phoneNumber: value);
+                        if (ok && mounted) {
+                          setState(() => _phoneController.text = value);
+                        }
+                        return ok;
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             _buildTileDivider(context),
             _buildEditableTile(
@@ -172,7 +190,38 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_gender'.tr(),
               value: _genderLabel(),
               icon: Icons.wc_outlined,
-              onTap: _selectGender,
+              onTap: () async {
+                final old = _sex;
+                await Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (_) => MeProfileItemEditPage.select(
+                      title: 'me_profile_gender'.tr(),
+                      initialValue: old,
+                      options: [
+                        MeProfileEditOption(
+                          value: '0',
+                          label: 'contact_male'.tr(),
+                        ),
+                        MeProfileEditOption(
+                          value: '1',
+                          label: 'contact_female'.tr(),
+                        ),
+                        MeProfileEditOption(
+                          value: '2',
+                          label: 'contact_unknown_gender'.tr(),
+                        ),
+                      ],
+                      onSave: (value) async {
+                        final ok = await _saveProfile(sex: value);
+                        if (ok && mounted) {
+                          setState(() => _sex = value);
+                        }
+                        return ok;
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -185,7 +234,7 @@ class _MyPageState extends ConsumerState<MyPage> {
             _buildEditableTile(
               context,
               title: 'me_password_submit'.tr(),
-              value: '前往修改',
+              value: 'common_go_edit'.tr(),
               icon: Icons.lock_outline_rounded,
               onTap: () {
                 Navigator.of(context).push(
@@ -195,26 +244,55 @@ class _MyPageState extends ConsumerState<MyPage> {
             ),
           ],
         ),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          height: 46,
-          child: FilledButton.icon(
-            onPressed: _savingProfile ? null : _saveProfile,
-            icon: _savingProfile
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: cs.onPrimary,
-                    ),
-                  )
-                : const Icon(Icons.save_outlined, size: 18),
-            label: Text('me_profile_save'.tr()),
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _buildTopProfileRow(BuildContext context, UserInfo user) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          AvatarWidget(
+            url: user.avatar,
+            name: user.nickName,
+            size: 48,
+            borderRadius: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  user.nickName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'me_my_qr'.tr(),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => PersonalQrPage(user: user)),
+              );
+            },
+            icon: const Icon(Icons.qr_code_2_rounded),
+          ),
+        ],
+      ),
     );
   }
 
@@ -223,11 +301,9 @@ class _MyPageState extends ConsumerState<MyPage> {
     required List<Widget> children,
   }) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return Material(
+      color: cs.surfaceContainer,
+      borderRadius: BorderRadius.circular(14),
       child: Column(children: children),
     );
   }
@@ -243,29 +319,6 @@ class _MyPageState extends ConsumerState<MyPage> {
           fontWeight: FontWeight.w600,
           color: cs.onSurfaceVariant,
         ),
-      ),
-    );
-  }
-
-  Widget _buildReadonlyTile(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required IconData icon,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -1),
-      minVerticalPadding: 14,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      leading: Icon(icon, size: 20, color: cs.onSurfaceVariant),
-      title: Text(title, style: const TextStyle(fontSize: 14.5)),
-      trailing: Text(
-        value.isEmpty ? '--' : value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: cs.onSurfaceVariant),
       ),
     );
   }
@@ -326,105 +379,36 @@ class _MyPageState extends ConsumerState<MyPage> {
     }
   }
 
-  Future<void> _selectGender() async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text('contact_male'.tr()),
-                onTap: () => Navigator.of(ctx).pop('0'),
-              ),
-              ListTile(
-                title: Text('contact_female'.tr()),
-                onTap: () => Navigator.of(ctx).pop('1'),
-              ),
-              ListTile(
-                title: Text('contact_unknown_gender'.tr()),
-                onTap: () => Navigator.of(ctx).pop('2'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    if (selected != null && mounted) {
-      setState(() => _sex = selected);
-    }
-  }
-
-  Future<void> _editTextField({
-    required String title,
-    required TextEditingController controller,
-    bool obscureText = false,
-    String? Function(String?)? validator,
+  Future<bool> _saveProfile({
+    String? nickName,
+    String? email,
+    String? phoneNumber,
+    String? sex,
   }) async {
-    final temp = TextEditingController(text: controller.text);
-    String? error;
+    if (_savingProfile) return false;
 
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setInnerState) {
-            return AlertDialog(
-              title: Text(title),
-              content: TextField(
-                controller: temp,
-                autofocus: true,
-                obscureText: obscureText,
-                decoration: InputDecoration(errorText: error),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text('cancel'.tr()),
-                ),
-                TextButton(
-                  onPressed: () {
-                    final check = validator?.call(temp.text);
-                    if (check != null) {
-                      setInnerState(() => error = check);
-                      return;
-                    }
-                    Navigator.of(ctx).pop(temp.text);
-                  },
-                  child: Text('confirm'.tr()),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+    final effectiveNick = (nickName ?? _nickController.text).trim();
+    final effectiveEmail = (email ?? _emailController.text).trim();
+    final effectivePhone = (phoneNumber ?? _phoneController.text).trim();
+    final effectiveSex = sex ?? _sex;
 
-    temp.dispose();
-
-    if (result != null && mounted) {
-      setState(() => controller.text = result.trim());
-    }
-  }
-
-  Future<void> _saveProfile() async {
-    if (_nickController.text.trim().isEmpty) {
+    if (effectiveNick.isEmpty) {
       Toast.showToast(
         'me_profile_nickname_required'.tr(),
         type: ToastType.error,
       );
-      return;
+      return false;
     }
+
     setState(() => _savingProfile = true);
     try {
       final res = await DioClient().put(
         API.userProfileUpdate,
         data: {
-          'nickName': _nickController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phonenumber': _phoneController.text.trim(),
-          'sex': _sex,
+          'nickName': effectiveNick,
+          'email': effectiveEmail,
+          'phonenumber': effectivePhone,
+          'sex': effectiveSex,
         },
       );
       final ok = res.data is Map && res.data['code'] == 200;
@@ -442,8 +426,10 @@ class _MyPageState extends ConsumerState<MyPage> {
           type: ToastType.error,
         );
       }
+      return ok;
     } catch (_) {
       Toast.showToast('me_profile_save_failed'.tr(), type: ToastType.error);
+      return false;
     } finally {
       if (mounted) setState(() => _savingProfile = false);
     }

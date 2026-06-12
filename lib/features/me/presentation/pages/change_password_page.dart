@@ -115,11 +115,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     required List<Widget> children,
   }) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return Material(
+      color: cs.surfaceContainer,
+      borderRadius: BorderRadius.circular(14),
       child: Column(children: children),
     );
   }

@@ -307,7 +307,7 @@ Widget _buildAppWrapper(Widget home) {
   return EasyLocalization(
     supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
     path: path,
-    fallbackLocale: const Locale('en', 'US'),
+    fallbackLocale: const Locale('en'),
     saveLocale: true,
 
     /// 通过 ScreenUtilInit 包裹，提供屏幕适配功能
