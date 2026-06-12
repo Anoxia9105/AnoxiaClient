@@ -20,15 +20,10 @@ class TextMessageStrategy extends MessageRenderStrategy {
       return Text(content, style: const TextStyle(fontSize: 48));
     }
 
-    // 普通文本渲染：支持文本选择
-    return SelectionArea(
-      contextMenuBuilder: (context, selectableRegionState) {
-        return const SizedBox.shrink();
-      },
-      child: Text(
-        content,
-        style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
-      ),
+    // 普通文本渲染：避免 SelectionArea 抢占长按手势，确保整块气泡可触发消息菜单。
+    return Text(
+      content,
+      style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
     );
   }
 }

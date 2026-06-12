@@ -116,20 +116,24 @@ dependencies:
   # fcm google firebase cloud messaging
   firebase_core: ^4.10.0
   firebase_messaging: ^16.0.2
-  # google fonts
+  # 谷歌字体
   google_fonts: ^8.1.0
-  # deep link return from web register flow
+  # 深度链接
   app_links: ^7.1.1
-  # chat input keyboard/panel switch container
+  # 聊天输入键盘/面板切换容器
   chat_bottom_container: ^0.5.0
-  # pop up menu
+  # 可定制的弹出菜单
   custom_pop_up_menu_fork: ^2.0.0
-  # QR code scanner
+  # 二维码扫描
   mobile_scanner: ^7.1.3
-  # QR code generator
+  # 二维码生成
   qr_flutter: ^4.1.0
-  # save images to gallery
-  image_gallery_saver: ^2.0.3
+  # 保存图片到相册
+  image_gallery_saver_plus: ^5.0.0
+  # 图片裁剪
+  image_cropper: ^12.2.1
+  # 图片选择器
+  image_picker: ^1.2.2
 
 dev_dependencies:
   flutter_test:

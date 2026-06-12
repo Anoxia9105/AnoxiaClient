@@ -8,8 +8,9 @@ import 'package:anoxia/framework/domain/UserInfo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -42,6 +43,15 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
   Future<void> _saveToGallery() async {
     if (_saving) return;
 
+    final granted = await _ensureGalleryPermission();
+    if (!granted) {
+      Toast.showToast(
+        'gallery_permission_required'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final bytes = await _captureQrBytes();
@@ -52,7 +62,7 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
 
       final name =
           'anoxia_qr_${widget.user.userId}_${DateTime.now().millisecondsSinceEpoch}';
-      final result = await ImageGallerySaver.saveImage(
+      final result = await ImageGallerySaverPlus.saveImage(
         bytes,
         quality: 100,
         name: name,
@@ -70,6 +80,20 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<bool> _ensureGalleryPermission() async {
+    if (Platform.isIOS) {
+      final status = await Permission.photosAddOnly.request();
+      return status.isGranted || status.isLimited;
+    }
+
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      return status.isGranted;
+    }
+
+    return true;
   }
 
   Future<void> _shareQrImage() async {

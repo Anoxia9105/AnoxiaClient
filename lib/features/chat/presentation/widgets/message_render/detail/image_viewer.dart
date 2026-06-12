@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
@@ -10,7 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 
 /// 图片查看器组件
@@ -110,6 +112,15 @@ class _ImageViewerState extends State<ImageViewer> {
       return;
     }
 
+    final granted = await _ensureGalleryPermission();
+    if (!granted) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('gallery_permission_required'.tr())),
+      );
+      return;
+    }
+
     setState(() => _downloading = true);
     ScaffoldMessenger.of(
       context,
@@ -127,7 +138,7 @@ class _ImageViewerState extends State<ImageViewer> {
       }
 
       final fileName = 'anoxia_image_${DateTime.now().millisecondsSinceEpoch}';
-      final result = await ImageGallerySaver.saveImage(
+      final result = await ImageGallerySaverPlus.saveImage(
         Uint8List.fromList(bytes),
         quality: 100,
         name: fileName,
@@ -153,6 +164,20 @@ class _ImageViewerState extends State<ImageViewer> {
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
+  }
+
+  Future<bool> _ensureGalleryPermission() async {
+    if (Platform.isIOS) {
+      final status = await Permission.photosAddOnly.request();
+      return status.isGranted || status.isLimited;
+    }
+
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      return status.isGranted;
+    }
+
+    return true;
   }
 
   @override

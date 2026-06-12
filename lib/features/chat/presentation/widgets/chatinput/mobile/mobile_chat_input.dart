@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dart';
@@ -9,6 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -138,6 +143,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   }
 
   Future<void> _pickAndSend(FileType type, bool isImage) async {
+    if (isImage && DeviceUtil.isRealMobile()) {
+      await _pickCropAndSendImagesMobile();
+      return;
+    }
+
     final result = await FilePicker.pickFiles(allowMultiple: true, type: type);
     if (result == null || result.files.isEmpty || !mounted) return;
 
@@ -150,6 +160,99 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
       await notifier.sendPickedFiles(result.files);
     }
     _closeAllPanels();
+  }
+
+  Future<void> _pickCropAndSendImagesMobile() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickMultiImage();
+    if (picked.isEmpty || !mounted) return;
+
+    final ratio = await _pickAspectRatioPreset();
+    if (!mounted) return;
+
+    final croppedFiles = <PlatformFile>[];
+    for (final xFile in picked) {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: xFile.path,
+        aspectRatio: ratio,
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 95,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'toolbar_image'.tr(),
+            toolbarWidgetColor: Theme.of(context).colorScheme.onPrimary,
+            toolbarColor: Theme.of(context).colorScheme.primary,
+            activeControlsWidgetColor: Theme.of(context).colorScheme.primary,
+          ),
+          IOSUiSettings(title: 'toolbar_image'.tr()),
+        ],
+      );
+
+      if (cropped == null) {
+        // 用户取消当前图片裁剪时，跳过该图片继续处理其它图片。
+        continue;
+      }
+
+      final file = File(cropped.path);
+      if (!await file.exists()) continue;
+      final size = await file.length();
+      croppedFiles.add(
+        PlatformFile(
+          name: path.basename(cropped.path),
+          path: cropped.path,
+          size: size,
+        ),
+      );
+    }
+
+    if (croppedFiles.isEmpty || !mounted) return;
+
+    await ref
+        .read(chatInputControllerProvider(widget.roomId).notifier)
+        .sendPickedImages(croppedFiles);
+    _closeAllPanels();
+  }
+
+  Future<CropAspectRatio?> _pickAspectRatioPreset() async {
+    final options = <({String label, CropAspectRatio? ratio})>[
+      (label: 'chat_image_ratio_original'.tr(), ratio: null),
+      (label: '1:1', ratio: const CropAspectRatio(ratioX: 1, ratioY: 1)),
+      (label: '3:4', ratio: const CropAspectRatio(ratioX: 3, ratioY: 4)),
+      (label: '4:3', ratio: const CropAspectRatio(ratioX: 4, ratioY: 3)),
+      (label: '16:9', ratio: const CropAspectRatio(ratioX: 16, ratioY: 9)),
+    ];
+
+    final result = await showModalBottomSheet<CropAspectRatio?>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Text(
+                'chat_image_ratio_title'.tr(),
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              ...options.map(
+                (option) => ListTile(
+                  title: Text(option.label),
+                  onTap: () => Navigator.of(ctx).pop(option.ratio),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    // BottomSheet dismissed without selection defaults to original ratio.
+    return result;
   }
 
   void _closeAllPanels() {

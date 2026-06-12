@@ -82,6 +82,13 @@ Future<bool> _ensureMobilePermissionsOnStartup() async {
       Permission.bluetoothConnect,
     ];
 
+    // 相册/存储权限：用于保存图片到系统相册。
+    if (Platform.isIOS) {
+      permissions.addAll([Permission.photosAddOnly, Permission.photos]);
+    } else if (Platform.isAndroid) {
+      permissions.add(Permission.storage);
+    }
+
     final result = await permissions.request();
     final allGranted = result.values.every((status) => status.isGranted);
     if (!allGranted) {
