@@ -94,7 +94,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     // Huawei vendor channel for JPush: keep plugin version aligned with JPush SDK version.
     implementation("cn.jiguang.sdk.plugin:huawei:6.1.0")
-    implementation("com.huawei.hms:push:6.13.0.301")
     implementation("com.huawei.agconnect:agconnect-core:1.5.2.300")
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.14.0"))

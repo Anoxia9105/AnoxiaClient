@@ -10,6 +10,8 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -147,12 +149,25 @@ class RoomListService extends _$RoomListService {
 
       if (index != -1) {
         final oldRoom = updatedList.removeAt(index);
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        final isAppForeground =
+            lifecycle == null ||
+            lifecycle == AppLifecycleState.resumed ||
+            lifecycle == AppLifecycleState.inactive;
+        final isMobile =
+            defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS;
+        final shouldShowLocalNotification =
+            !isSelfMessage &&
+            !isCallSystemMessage &&
+            !isCurrentRoom &&
+            !(isMobile && isAppForeground);
 
         // 当前正在看的房间不增加未读数
         int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
-        if (!isSelfMessage && !isCallSystemMessage) {
+        if (shouldShowLocalNotification) {
           NotificationHelper().show(
             id: newMessage.roomId.hashCode,
             title: oldRoom.roomName ?? tr('chat_new_message'),
@@ -423,10 +438,7 @@ class RoomListService extends _$RoomListService {
     try {
       final res = await DioClient().post(
         API.chatRoomUpdateAnnouncement,
-        data: {
-          'roomId': roomId,
-          'roomAnnouncement': safeAnnouncement,
-        },
+        data: {'roomId': roomId, 'roomAnnouncement': safeAnnouncement},
       );
 
       if (res.data['code'] == 200) {

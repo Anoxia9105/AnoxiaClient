@@ -19,8 +19,19 @@ class ChatVoiceOverlay extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (_, __) => Material(
-        color: Colors.black.withValues(alpha: 0.5),
-        child: Center(child: _VoiceIndicator(controller: controller)),
+        color: Colors.transparent,
+        child: IgnorePointer(
+          ignoring: !controller.overlayVisible,
+          child: AnimatedOpacity(
+            opacity: controller.overlayVisible ? 1 : 0,
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: Center(child: _VoiceIndicator(controller: controller)),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -47,7 +58,9 @@ class _VoiceIndicator extends StatelessWidget {
           Icon(
             willCancel ? Icons.undo_rounded : Icons.mic_rounded,
             size: 48,
-            color: willCancel ? Theme.of(context).colorScheme.error : Colors.white,
+            color: willCancel
+                ? Theme.of(context).colorScheme.error
+                : Colors.white,
           ),
           const SizedBox(height: 12),
 

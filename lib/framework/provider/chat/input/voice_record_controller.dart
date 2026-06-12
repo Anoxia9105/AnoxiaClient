@@ -51,6 +51,9 @@ class VoiceRecordController extends ChangeNotifier {
   /// 录制覆盖层入口
   OverlayEntry? _overlayEntry;
 
+  /// 覆盖层显示状态（复用 OverlayEntry，避免反复创建/销毁）
+  bool _overlayVisible = false;
+
   /// 最大时长定时器
   Timer? _maxDurationTimer;
 
@@ -60,11 +63,17 @@ class VoiceRecordController extends ChangeNotifier {
   /// 是否将要取消（用户滑动超出阈值）
   bool willCancel = false;
 
+  /// 当前录制覆盖层是否可见
+  bool get overlayVisible => _overlayVisible;
+
   /// 录制开始时的 Y 坐标（用于计算滑动距离）
   double _startY = 0.0;
 
   /// 当前录制文件路径
   String? _filePath;
+
+  /// 临时目录路径缓存，减少每次录音前的 I/O 延迟
+  String? _tempDirPath;
 
   /// 录制开始时间
   DateTime? _startTime;
@@ -85,21 +94,49 @@ class VoiceRecordController extends ChangeNotifier {
     }
   }
 
+  /// 预热录音依赖（权限 + 临时目录），用于降低首次长按时延。
+  Future<void> warmUp() async {
+    await requestPermission();
+    await _ensureTempDirPath();
+  }
+
+  Future<String> _ensureTempDirPath() async {
+    if (_tempDirPath != null && _tempDirPath!.isNotEmpty) {
+      return _tempDirPath!;
+    }
+    final dir = await getTemporaryDirectory();
+    _tempDirPath = dir.path;
+    return _tempDirPath!;
+  }
+
   /// 显示录制覆盖层
   ///
   /// 在录制开始时调用，显示录制状态 UI
   void showOverlay(BuildContext context) {
-    if (_overlayEntry != null) return;
-    _overlayEntry = OverlayEntry(
-      builder: (_) => ChatVoiceOverlay(controller: this),
-    );
-    Overlay.of(context).insert(_overlayEntry!);
+    if (_overlayEntry == null) {
+      _overlayEntry = OverlayEntry(
+        builder: (_) => ChatVoiceOverlay(controller: this),
+      );
+      Overlay.of(context).insert(_overlayEntry!);
+    }
+    _overlayVisible = true;
+    if (!_disposed) {
+      notifyListeners();
+    }
   }
 
   /// 隐藏录制覆盖层
   ///
   /// 在录制结束（无论成功或取消）时调用
   void hideOverlay() {
+    if (!_overlayVisible) return;
+    _overlayVisible = false;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  void _removeOverlayEntry() {
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
@@ -108,45 +145,66 @@ class VoiceRecordController extends ChangeNotifier {
   ///
   /// [d] 长按开始事件详情，包含触摸位置信息
   Future<void> onStart(LongPressStartDetails d) async {
-    // 先检查权限
-    if (!waveController.hasPermission) {
-      return;
-    }
-
-    // 创建临时文件路径
-    final dir = await getTemporaryDirectory();
-    _filePath = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    _startTime = DateTime.now();
-
-    // 开始录制
-    await waveController.record(
-      path: _filePath,
-      recorderSettings: const RecorderSettings(
-        androidEncoderSettings: AndroidEncoderSettings(
-          androidEncoder: AndroidEncoder.aacLc,
-        ),
-        iosEncoderSettings: IosEncoderSetting(
-          iosEncoder: IosEncoder.kAudioFormatMPEG4AAC,
-        ),
-        sampleRate: 44100,
-        bitRate: 128000,
-      ),
-    );
-
-    // 更新状态
-    isRecording = true;
-    willCancel = false;
+    // 记录手势起点，便于后续立刻响应上滑取消。
     _startY = d.globalPosition.dy;
 
-    // 设置最大时长定时器
-    _maxDurationTimer = Timer(const Duration(seconds: _maxDurationSeconds), () {
-      log.info('录音达到最长 $_maxDurationSeconds 秒，自动发送');
-      onMaxDurationReached?.call();
-    });
+    // 先检查权限，若尚未授权则尝试快速拉起授权（首次录音场景）。
+    if (!waveController.hasPermission) {
+      await requestPermission();
+      if (!waveController.hasPermission) {
+        log.warning('未授予麦克风权限，无法开始录音');
+        return;
+      }
+    }
 
-    // 通知监听器
-    if (!_disposed) {
-      notifyListeners();
+    try {
+      // 创建临时文件路径（使用缓存目录以减少卡顿）。
+      final tempPath = await _ensureTempDirPath();
+      _filePath =
+          '$tempPath/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      _startTime = DateTime.now();
+
+      // 开始录制
+      await waveController.record(
+        path: _filePath,
+        recorderSettings: const RecorderSettings(
+          androidEncoderSettings: AndroidEncoderSettings(
+            androidEncoder: AndroidEncoder.aacLc,
+          ),
+          iosEncoderSettings: IosEncoderSetting(
+            iosEncoder: IosEncoder.kAudioFormatMPEG4AAC,
+          ),
+          sampleRate: 44100,
+          bitRate: 128000,
+        ),
+      );
+
+      // 更新状态
+      isRecording = true;
+      willCancel = false;
+
+      // 设置最大时长定时器
+      _maxDurationTimer = Timer(
+        const Duration(seconds: _maxDurationSeconds),
+        () {
+          log.info('录音达到最长 $_maxDurationSeconds 秒，自动发送');
+          onMaxDurationReached?.call();
+        },
+      );
+
+      // 通知监听器
+      if (!_disposed) {
+        notifyListeners();
+      }
+    } catch (e, stack) {
+      log.error('开始录音失败', e, stack);
+      isRecording = false;
+      willCancel = false;
+      _maxDurationTimer?.cancel();
+      _maxDurationTimer = null;
+      if (!_disposed) {
+        notifyListeners();
+      }
     }
   }
 
@@ -255,7 +313,8 @@ class VoiceRecordController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _maxDurationTimer?.cancel();
-    hideOverlay();
+    _overlayVisible = false;
+    _removeOverlayEntry();
     waveController.dispose();
     super.dispose();
   }

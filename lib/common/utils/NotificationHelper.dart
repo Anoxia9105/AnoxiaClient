@@ -5,8 +5,8 @@ import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/gen/assets.gen.dart';
+import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_new_badger/flutter_new_badger.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
@@ -264,13 +264,11 @@ class NotificationHelper {
     if (!isMobile) return;
 
     try {
-      if (count <= 0) {
-        await FlutterNewBadger.removeBadge();
-      } else {
-        await FlutterNewBadger.setBadge(count);
-      }
+      final supported = await AppBadgePlus.isSupported();
+      if (!supported) return;
+      await AppBadgePlus.updateBadge(count <= 0 ? 0 : count);
     } catch (e) {
-      log.warning('更新桌面角标失败: $e');
+      log.warning('更新应用角标失败: $e');
     }
   }
 }

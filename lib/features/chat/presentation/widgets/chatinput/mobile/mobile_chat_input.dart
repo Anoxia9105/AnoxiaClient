@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
-import 'package:anoxia/framework/provider/chat/input/input_panel_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dart';
+import 'package:chat_bottom_container/chat_bottom_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -15,6 +17,8 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_w
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'chat_more_panel.dart';
+
+enum _MobileBottomPanelType { emoji, more }
 
 /// 移动端聊天输入组件
 ///
@@ -43,6 +47,13 @@ class MobileChatInput extends ConsumerStatefulWidget {
 
 class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   bool _isVoiceMode = false;
+  bool _isVoicePressing = false;
+  ChatBottomPanelType _currentPanelType = ChatBottomPanelType.none;
+  _MobileBottomPanelType? _currentOtherPanelType;
+
+  final ChatBottomPanelContainerController<_MobileBottomPanelType>
+  _panelController =
+      ChatBottomPanelContainerController<_MobileBottomPanelType>();
 
   late final FocusNode _focusNode;
   late final MobileTextInputController _inputController;
@@ -52,10 +63,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   void initState() {
     super.initState();
     _focusNode = ref.read(chatFocusNodeProvider(widget.roomId));
-    _focusNode.addListener(_onFocusChange);
     _inputController = MobileTextInputController();
     _voiceController = VoiceRecordController()
       ..onMaxDurationReached = _onVoiceMaxDuration;
+
+    // 预热权限与临时目录，降低首次长按录音的启动延迟。
+    unawaited(_voiceController.warmUp());
   }
 
   void _onVoiceMaxDuration() {
@@ -76,14 +89,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   void dispose() {
     _inputController.dispose();
     _voiceController.dispose();
-    _focusNode.removeListener(_onFocusChange);
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (_focusNode.hasFocus) {
-      ref.read(inputPanelProvider.notifier).closePanel();
-    }
   }
 
   void _handleTextChanged(String value) {
@@ -147,14 +153,31 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   }
 
   void _closeAllPanels() {
-    ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
+    _hidePanel();
     widget.bottomSheet();
+  }
+
+  void _hidePanel() {
+    _focusNode.unfocus();
+    if (_panelController.currentPanelType == ChatBottomPanelType.none) return;
+    _panelController.updatePanelType(ChatBottomPanelType.none);
+  }
+
+  void _toggleOtherPanel(_MobileBottomPanelType type) {
+    final isSameOpen =
+        _currentPanelType == ChatBottomPanelType.other &&
+        _currentOtherPanelType == type;
+    if (isSameOpen) {
+      _hidePanel();
+      return;
+    }
+    _panelController.updatePanelType(ChatBottomPanelType.other, data: type);
   }
 
   void _toggleVoiceMode() {
     setState(() => _isVoiceMode = !_isVoiceMode);
     if (_isVoiceMode) {
-      ref.read(inputPanelProvider.notifier).closeAll(_focusNode);
+      _hidePanel();
 
       /// 申请权限
       _voiceController.requestPermission();
@@ -196,8 +219,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
-    final panel = ref.watch(inputPanelProvider);
-    final isAnyPanelOpen = panel != InputPanel.none;
 
     final isInPipMode = ref.watch(
       mobileCallSessionControllerProvider.select(
@@ -227,14 +248,34 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               Expanded(
                 child: _isVoiceMode
                     ? GestureDetector(
+                        onLongPressDown: (_) {
+                          if (!mounted) return;
+                          setState(() => _isVoicePressing = true);
+                        },
                         onLongPressStart: (d) async {
-                          await _voiceController.onStart(d);
-                          if (_voiceController.isRecording && context.mounted) {
+                          if (context.mounted) {
                             _voiceController.showOverlay(context);
                           }
+
+                          unawaited(
+                            _voiceController.onStart(d).then((_) {
+                              // 若启动失败（如权限被拒）则立即收起覆盖层。
+                              if (!_voiceController.isRecording) {
+                                _voiceController.hideOverlay();
+                              }
+                            }),
+                          );
                         },
                         onLongPressMoveUpdate: _voiceController.onUpdate,
+                        onLongPressCancel: () {
+                          if (!mounted) return;
+                          setState(() => _isVoicePressing = false);
+                          _voiceController.hideOverlay();
+                        },
                         onLongPressEnd: (d) async {
+                          if (mounted) {
+                            setState(() => _isVoicePressing = false);
+                          }
                           _voiceController.hideOverlay();
                           final result = await _voiceController.onEnd(d);
                           if (result != null && mounted) {
@@ -256,13 +297,25 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                             height: 40,
                             alignment: Alignment.center,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              color: _voiceController.isRecording
-                                  ? colorScheme.primary
-                                  : colorScheme.surfaceContainer,
-                              borderRadius: BorderRadius.circular(8),
+                            child: AnimatedScale(
+                              scale: _isVoicePressing ? 0.98 : 1.0,
+                              duration: const Duration(milliseconds: 80),
+                              curve: Curves.easeOut,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 80),
+                                curve: Curves.easeOut,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: _voiceController.isRecording
+                                      ? colorScheme.primary
+                                      : _isVoicePressing
+                                      ? colorScheme.surfaceContainerHigh
+                                      : colorScheme.surfaceContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text('hold_to_talk'.tr()),
+                              ),
                             ),
-                            child: Text('hold_to_talk'.tr()),
                           ),
                         ),
                       )
@@ -283,25 +336,19 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         ),
                         onChanged: _handleTextChanged,
                         onTap: () async {
-                          if (panel != InputPanel.none) {
-                            ref
-                                .read(inputPanelProvider.notifier)
-                                .closeAll(_focusNode);
-                            await Future.delayed(
-                              const Duration(milliseconds: 250),
-                            );
-                            if (mounted) _focusNode.requestFocus();
-                          }
+                          _panelController.updatePanelType(
+                            ChatBottomPanelType.keyboard,
+                          );
                         },
                       ),
               ),
               // 表情按钮
               _buildCompactButton(
                 tooltipMessage: 'toolbar_emoji'.tr(),
-                onTap: () => ref
-                    .read(inputPanelProvider.notifier)
-                    .toggle(InputPanel.emoji, _focusNode),
-                icon: panel == InputPanel.emoji
+                onTap: () => _toggleOtherPanel(_MobileBottomPanelType.emoji),
+                icon:
+                    _currentPanelType == ChatBottomPanelType.other &&
+                        _currentOtherPanelType == _MobileBottomPanelType.emoji
                     ? HugeIcons.strokeRoundedKeyboard
                     : HugeIcons.strokeRoundedRelieved02,
               ),
@@ -321,9 +368,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                           children: [
                             _buildCompactButton(
                               tooltipMessage: 'toolbar_more'.tr(),
-                              onTap: () => ref
-                                  .read(inputPanelProvider.notifier)
-                                  .toggle(InputPanel.more, _focusNode),
+                              onTap: () => _toggleOtherPanel(
+                                _MobileBottomPanelType.more,
+                              ),
                               icon: HugeIcons.strokeRoundedAddSquare,
                             ),
                           ],
@@ -359,43 +406,47 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             ],
           ),
         ),
-        if (isAnyPanelOpen)
+        if (_currentPanelType != ChatBottomPanelType.none)
           Divider(height: 1, thickness: 0.5, color: colorScheme.outlineVariant),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.fastOutSlowIn,
-          height: isAnyPanelOpen
-              ? (260.0 + MediaQuery.of(context).padding.bottom)
-              : 0.0,
-          color: colorScheme.surfaceContainerLow,
-          child: Visibility(
-            visible: isAnyPanelOpen,
-            child: SafeArea(
-              top: false,
-              child: IndexedStack(
-                index: panel == InputPanel.more ? 0 : 1,
-                children: [
-                  ChatMorePanel(
+        ChatBottomPanelContainer<_MobileBottomPanelType>(
+          controller: _panelController,
+          inputFocusNode: focusNode,
+          panelBgColor: colorScheme.surfaceContainerLow,
+          onPanelTypeChange: (panelType, data) {
+            if (!mounted) return;
+            setState(() {
+              _currentPanelType = panelType;
+              _currentOtherPanelType = panelType == ChatBottomPanelType.other
+                  ? data
+                  : null;
+            });
+          },
+          otherPanelWidget: (type) {
+            if (type == null) return const SizedBox.shrink();
+            return SizedBox(
+              height: 260.0 + MediaQuery.of(context).padding.bottom,
+              child: SafeArea(
+                top: false,
+                child: switch (type) {
+                  _MobileBottomPanelType.more => ChatMorePanel(
                     roomId: widget.roomId,
                     onPickFile: _pickAndSend,
                     onMentionTap: () {
-                      ref
-                          .read(inputPanelProvider.notifier)
-                          .closeAll(_focusNode);
+                      _hidePanel();
                       _showMentionSheet();
                     },
                   ),
-                  Padding(
+                  _MobileBottomPanelType.emoji => Padding(
                     padding: const EdgeInsets.all(8),
                     child: ChatEmojiWidget(
                       closeSelected: _closeAllPanels,
                       onEmojiSelected: _inputController.insertTextAtCursor,
                     ),
                   ),
-                ],
+                },
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );

@@ -40,6 +40,9 @@ class PushManager {
         debug: true,
       );
 
+      // 前台时不展示系统通知栏，避免用户正在聊天页时被重复打扰。
+      _jpush.setUnShowAtTheForeground(unShow: true);
+
       // Android 默认维持后台长连接，这里显式设置，避免 ROM/版本差异导致行为不一致。
       _jpush.setBackgroundEnable(enable: true);
 
@@ -79,21 +82,15 @@ class PushManager {
     print('极光连接成功 => $event');
   }
 
-  Future<dynamic> _onReceiveNotification(
-    Map<String, dynamic> event,
-  ) async {
+  Future<dynamic> _onReceiveNotification(Map<String, dynamic> event) async {
     print('收到通知 => $event');
   }
 
-  Future<dynamic> _onOpenNotification(
-    Map<String, dynamic> event,
-  ) async {
+  Future<dynamic> _onOpenNotification(Map<String, dynamic> event) async {
     print('点击通知 => $event');
   }
 
-  Future<dynamic> _onReceiveMessage(
-    Map<String, dynamic> event,
-  ) async {
+  Future<dynamic> _onReceiveMessage(Map<String, dynamic> event) async {
     print('收到透传消息 => $event');
   }
 
@@ -111,9 +108,10 @@ class PushManager {
 
   Future<void> _bindFcmTokenToJPush() async {
     try {
-      final fcmToken = await FirebaseMessaging.instance
-          .getToken()
-          .timeout(_fcmTokenTimeout, onTimeout: () => null);
+      final fcmToken = await FirebaseMessaging.instance.getToken().timeout(
+        _fcmTokenTimeout,
+        onTimeout: () => null,
+      );
       if (fcmToken == null || fcmToken.isEmpty) {
         log.warning('FCM token 获取超时或为空，跳过 setThirdToken');
         return;
@@ -181,10 +179,12 @@ class PushManager {
       onTimeout: () => '',
     );
 
-    final token = _latestFcmToken ??
-        await FirebaseMessaging.instance
-            .getToken()
-            .timeout(_fcmTokenTimeout, onTimeout: () => null);
+    final token =
+        _latestFcmToken ??
+        await FirebaseMessaging.instance.getToken().timeout(
+          _fcmTokenTimeout,
+          onTimeout: () => null,
+        );
 
     if (token != null && token.isNotEmpty) {
       _latestFcmToken = token;

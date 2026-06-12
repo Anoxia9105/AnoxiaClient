@@ -148,6 +148,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     });
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: DeviceUtil.isRealDesktop()
           ? Colors.transparent
           : Theme.of(context).colorScheme.surface,
@@ -162,6 +163,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         hasMore: hasMore,
         currentRoom: currentRoom,
       ),
+
       /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）
       floatingActionButton: _showScrollDownButton
           ? ChatRoomDetailScrollDownButton(
