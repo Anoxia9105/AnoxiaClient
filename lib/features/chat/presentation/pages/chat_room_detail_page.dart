@@ -1,7 +1,6 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
-import 'package:anoxia/common/widgets/ws_connection_banner.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
@@ -20,7 +19,6 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
-import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 
 /// 聊天房间详情页面
 ///
@@ -128,7 +126,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final entryTask = ref.watch(roomEntryTaskProvider(widget.roomId));
 
     /// 监听 WebSocket 连接状态
-    final wsState = ref.watch(wsControllerProvider);
+    // final wsState = ref.watch(wsControllerProvider);
 
     /// 监听这个房间是否有更多消息
     final hasMore = ref.watch(

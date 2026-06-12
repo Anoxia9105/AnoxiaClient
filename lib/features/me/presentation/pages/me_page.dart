@@ -96,7 +96,6 @@ class _MyPageState extends ConsumerState<MyPage> {
   }
 
   Widget _buildProfileForm(BuildContext context, UserInfo user) {
-    final cs = Theme.of(context).colorScheme;
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
       children: [

@@ -6,7 +6,6 @@ import 'package:anoxia/framework/provider/chat/room/chat_split_view_provider.dar
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:split_view/split_view.dart';
 
 /// 聊天页面容器

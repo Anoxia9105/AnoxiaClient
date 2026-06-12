@@ -11,7 +11,6 @@ import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../domain/ChatRoomVO.dart';
 import '../../../protocol/PacketType.dart';
 import '../../../protocol/message/EventMessage.dart';
 
