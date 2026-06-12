@@ -10,7 +10,6 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -47,6 +46,11 @@ Future<void> main(List<String> args) async {
       SPUtil.instance.init(), // 本地存储初始化
     ]);
 
+    // 移动端启动时尝试申请关键权限，但不阻断进入 App。
+    if (DeviceUtil.isRealMobile()) {
+      unawaited(_ensureMobilePermissionsOnStartup());
+    }
+
     _backgroundAsyncInit();
 
     // 桌面端窗口初始化（区分主/子窗口）
@@ -76,8 +80,6 @@ Future<bool> _ensureMobilePermissionsOnStartup() async {
     // 相册/存储权限：用于保存图片到系统相册。
     if (Platform.isIOS) {
       permissions.addAll([Permission.photosAddOnly, Permission.photos]);
-    } else if (Platform.isAndroid) {
-      permissions.add(Permission.storage);
     }
 
     final pending = <Permission>[];
@@ -95,46 +97,18 @@ Future<bool> _ensureMobilePermissionsOnStartup() async {
     final result = await pending.request();
     final allGranted = result.values.every(_isPermissionAccepted);
     if (!allGranted) {
-      log.warning('启动权限申请未全部通过: $result');
+      log.info('启动权限申请未全部通过(继续进入应用): $result');
     }
-    return allGranted;
+    return true;
   } catch (e, stack) {
     log.error('启动权限申请异常', e, stack);
-    return false;
+    return true;
   }
 }
 
 bool _isPermissionAccepted(PermissionStatus status) {
   // iOS 的照片权限可能返回 limited，视为可用。
   return status.isGranted || status.isLimited;
-}
-
-List<String> _startupPermissionLabels() {
-  final labels = <String>[
-    '相机（扫码、拍照）',
-    '麦克风（语音消息、通话）',
-    '通知（消息提醒）',
-    '蓝牙（音频设备连接）',
-  ];
-
-  if (Platform.isIOS) {
-    labels.add('相册（保存二维码/图片）');
-  } else if (Platform.isAndroid) {
-    labels.add('存储/媒体（保存二维码/图片）');
-  }
-
-  return labels;
-}
-
-Future<void> _exitAppNow() async {
-  try {
-    await SystemNavigator.pop();
-  } catch (_) {
-    // ignored
-  }
-
-  // 兜底强制退出，确保“拒绝即退出”策略生效。
-  exit(0);
 }
 
 void _backgroundAsyncInit() {
@@ -233,126 +207,12 @@ Future<void> runMainApp() async {
     runApp(
       UncontrolledProviderScope(
         container: globalContainer,
-        child: _buildAppWrapper(
-          DeviceUtil.isRealMobile()
-              ? _StartupPermissionGate(child: const App())
-              : const App(),
-        ),
+        child: _buildAppWrapper(const App()),
       ),
     );
   } catch (e, stack) {
     log.error('主窗口启动失败', e, stack);
     runApp(_buildErrorPage('主窗口启动失败：$e'));
-  }
-}
-
-class _StartupPermissionGate extends StatefulWidget {
-  const _StartupPermissionGate({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_StartupPermissionGate> createState() => _StartupPermissionGateState();
-}
-
-class _StartupPermissionGateState extends State<_StartupPermissionGate> {
-  bool _ready = false;
-  bool _started = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_runGateFlow());
-    });
-  }
-
-  Future<void> _runGateFlow() async {
-    if (_started || !mounted) return;
-    _started = true;
-
-    final agreed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final items = _startupPermissionLabels();
-        return AlertDialog(
-          title: const Text('需要以下权限'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('用于完整功能，请一次授权：'),
-                const SizedBox(height: 10),
-                ...items.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text('• $item'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('退出应用'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('一键同意并继续'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (agreed != true) {
-      await _exitAppNow();
-      return;
-    }
-
-    final granted = await _ensureMobilePermissionsOnStartup();
-    if (!mounted) return;
-
-    if (!granted) {
-      final openSettings = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: const Text('权限未全部开启'),
-          content: const Text('请在系统设置中开启权限后重试。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('退出'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('去设置'),
-            ),
-          ],
-        ),
-      );
-      if (openSettings == true) {
-        await openAppSettings();
-      }
-      await _exitAppNow();
-      return;
-    }
-
-    setState(() {
-      _ready = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_ready) {
-      return widget.child;
-    }
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
