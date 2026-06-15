@@ -54,7 +54,7 @@ class WsController extends _$WsController {
 
   @override
   WsState build() {
-    log.info("🌐 WsController 构建中...");
+    log.info('🌐 WsController 构建中...');
 
     _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
     _restoreOfflineOutbounds();
@@ -62,16 +62,16 @@ class WsController extends _$WsController {
     // 监听认证状态变化：登录时连接，登出时断开
     ref.listen(authControllerProvider, (previous, next) {
       log.info(
-        "[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}",
+        '[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}',
       );
       next.when(
         data: (user) {
           if (user != null) {
-            log.info("[WsController] 检测到用户登录，准备连接...");
+            log.info('[WsController] 检测到用户登录，准备连接...');
             _reconnectEnabled = true;
             _initConnection();
           } else {
-            log.info("[WsController] 检测到用户退出，断开连接...");
+            log.info('[WsController] 检测到用户退出，断开连接...');
             _reconnectEnabled = false;
             _disposeAll(closeStream: false, manual: true);
           }
@@ -128,7 +128,7 @@ class WsController extends _$WsController {
     if (token != null && token.isNotEmpty) {
       await connect(token);
     } else {
-      log.warning("[WsController] 初始化失败：未找到 Token");
+      log.warning('[WsController] 初始化失败：未找到 Token');
     }
   }
 
@@ -146,8 +146,8 @@ class WsController extends _$WsController {
     state = WsState(status: WsStatus.connecting);
 
     try {
-      final url = "${API.wsBaseUrl}$token";
-      log.info("[WsController] 正在尝试建立 WebSocket 连接: $url");
+      final url = '${API.wsBaseUrl}$token';
+      log.info('[WsController] 正在尝试建立 WebSocket 连接: $url');
 
       if (kIsWeb) {
         _channel = WebSocketChannel.connect(Uri.parse(url));
@@ -170,12 +170,12 @@ class WsController extends _$WsController {
 
       _reconnectAttempts = 0;
       state = WsState(status: WsStatus.connected);
-      log.info("✅ WebSocket 连接成功");
+      log.info('✅ WebSocket 连接成功');
 
       _startHeartbeat();
       _flushOfflineOutbounds();
     } catch (e, st) {
-      log.error("❌ WebSocket 连接失败", e, st);
+      log.error('❌ WebSocket 连接失败', e, st);
       _handleError(e);
     }
   }
@@ -188,7 +188,7 @@ class WsController extends _$WsController {
       if (data is String && data != 'ping') {
         _enqueueOfflineOutbound(data);
       }
-      log.warning("尝试在未连接状态发送消息，已进入离线队列");
+      log.warning('尝试在未连接状态发送消息，已进入离线队列');
       return;
     }
 
@@ -361,7 +361,7 @@ class WsController extends _$WsController {
         }
       }
     } catch (e) {
-      log.error("WS 消息解析异常", e);
+      log.error('WS 消息解析异常', e);
     }
   }
 
@@ -496,7 +496,7 @@ class WsController extends _$WsController {
   void _handleDone() {
     final closeCode = _channel?.closeCode;
     final closeReason = _channel?.closeReason;
-    log.info("WebSocket 连接关闭: closeCode=$closeCode, closeReason=$closeReason");
+    log.info('WebSocket 连接关闭: closeCode=$closeCode, closeReason=$closeReason');
     state = WsState(status: WsStatus.disconnected);
     _retryConnection();
   }
@@ -514,7 +514,7 @@ class WsController extends _$WsController {
     if (user == null) return;
 
     int delaySeconds = (1 << _reconnectAttempts).clamp(2, 30);
-    log.warning("将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...");
+    log.warning('将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...');
 
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;

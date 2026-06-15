@@ -116,14 +116,8 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       return IconButton(
         tooltip: 'header_reduction'.tr(),
         padding: EdgeInsets.zero,
-        onPressed: () {
-          windowManager.unmaximize();
-        },
-        icon: const HugeIcon(
-          icon: HugeIcons.strokeRoundedChangeScreenMode,
-          // color: widget.iconColor,
-          size: 18,
-        ),
+        onPressed: () => windowManager.unmaximize(),
+        icon: Icon(Icons.filter_none, size: 16, color: Colors.grey[700]),
         style: ButtonStyle(
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -134,14 +128,8 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return IconButton(
       tooltip: 'header_maximize'.tr(),
       padding: EdgeInsets.zero,
-      onPressed: () {
-        windowManager.maximize();
-      },
-      icon: const HugeIcon(
-        // color: widget.iconColor,
-        icon: HugeIcons.strokeRoundedSquare,
-        size: 16,
-      ),
+      onPressed: () => windowManager.maximize(),
+      icon: Icon(Icons.crop_square, size: 16, color: Colors.grey[700]),
       style: ButtonStyle(
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),

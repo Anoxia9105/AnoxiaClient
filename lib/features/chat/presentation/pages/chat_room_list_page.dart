@@ -160,7 +160,9 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             itemCount: rooms.length,
             itemBuilder: (context, index) {
-              return RoomListItem(id: rooms[index].roomId ?? '');
+              return RoomListItem(
+                key: ValueKey(rooms[index].roomId),
+                id: rooms[index].roomId ?? '');
             },
             clipBehavior: Clip.hardEdge,
           ),
