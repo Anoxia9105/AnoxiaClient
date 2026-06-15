@@ -62,15 +62,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               style: const TextStyle(fontSize: 16),
             );
           }
-          
+
           final displayTitle = room.roomType == 1
               ? '${room.roomName} (${members.length})'
               : (room.roomName ?? 'appbar_conversation_detail'.tr());
 
-          return Text(
-            displayTitle,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          );
+          return Text(displayTitle);
         },
         loading: () => Text('appbar_connecting'.tr()),
         error: (error, stackTrace) => Text('appbar_connection_lost'.tr()),

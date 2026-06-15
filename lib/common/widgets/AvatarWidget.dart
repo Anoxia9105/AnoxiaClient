@@ -6,7 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 /// 头像状态枚举
 enum AvatarStatus { none, online, offline, busy }
 
-/// 头像组件 (已进行高性能优化与固定颜色生成)
+/// 头像组件 (已优化：文字与背景色完美融合)
 class AvatarWidget extends StatelessWidget {
   final String? url;
   final String? name;
@@ -21,38 +21,53 @@ class AvatarWidget extends StatelessWidget {
     super.key,
     this.url,
     this.name,
-    this.size = 40,
-    this.borderRadius = 4,
+    this.size = 36,
+    this.borderRadius = 18,
     this.status = AvatarStatus.none,
     this.statusWidget,
     this.showBadge = false,
     this.badgeText,
   });
 
-  /// 🛠️ 联动你的 AppTheme：只基于第一个字，从系统预设的主题主色里挑颜色
+  /// 🛠️ 核心算法：只基于第一个字，从系统预设的主题主色里挑颜色
   Color _getColorByName(BuildContext context, String? name) {
     if (name == null || name.isEmpty) {
-      // 如果名字为空，直接优雅地退化到当前系统主题的 primary 颜色
       return Theme.of(context).colorScheme.primary;
     }
 
-    // 1. 精准提取第一个字符
     final String firstChar = name.characters.first;
 
     int hash = 0;
-    // 2. 高效哈希
     for (int i = 0; i < firstChar.length; i++) {
       hash = firstChar.codeUnitAt(i) + ((hash << 5) - hash);
     }
 
-    // 3. 核心联动：直接对你 AppTheme 预设的 19 个主题色进行取模！
-    // 这样挑出来的颜色全部都在你设计的色彩大纲里，绝不突兀
     final int themeIndex = hash.abs() % AppTheme.themes.length;
-
-    // 拿到对应主题的配置，如果该主题没配 color，则用系统当前 primary 垫底
     final selectedColor = AppTheme.themes[themeIndex].color;
 
     return selectedColor ?? Theme.of(context).colorScheme.primary;
+  }
+
+  /// 🎨 终极美化：文字颜色100%融入背景，彻底告别死板纯白
+  Color _getTextColor(Color backgroundColor) {
+    // 1. 计算背景色相对亮度
+    final double luminance = backgroundColor.computeLuminance();
+    
+    // 2. 将背景色转为 HSL 颜色空间，准备精准操控
+    final hsl = HSLColor.fromColor(backgroundColor);
+
+    // 情况 A：如果背景色是非常淡的浅色 (亮度 > 0.6)
+    if (luminance > 0.6) {
+      // 文字采用：同色系大幅加深（降亮度）
+      return hsl.withLightness((hsl.lightness - 0.45).clamp(0.0, 1.0)).toColor();
+    }
+
+    // 情况 B：如果背景色是中等或深色 (亮度 <= 0.6)
+    // 🛠️ 核心修改：绝对不用纯白！而是将当前背景色提取后，强行变成“极淡、柔和的同色系字”
+    return hsl
+        .withSaturation((hsl.saturation * 0.3).clamp(0.0, 0.4)) // 降低饱和度，避免变成荧光字
+        .withLightness(0.94) // 强行把亮度拉到 94% 的极亮状态（代替纯白）
+        .toColor();
   }
 
   @override
@@ -67,12 +82,9 @@ class AvatarWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadius),
           child: hasUrl
               ? CachedNetworkImage(
-                  // 性能调优：在 2000 个大列表里，必须强行限制图片的解码缓存大小
-                  // 40 尺寸的头像最大缓存 120 像素足够，这能帮你暴砍 80% 的图片内存占用！
                   maxWidthDiskCache: (size * 3).toInt(),
                   maxHeightDiskCache: (size * 3).toInt(),
-                  filterQuality:
-                      FilterQuality.low, // 列表滚动时低质量滤波，停止时自动变清晰，极大提升滑动帧率
+                  filterQuality: FilterQuality.low,
                   imageUrl: url!,
                   width: size,
                   height: size,
@@ -120,7 +132,7 @@ class AvatarWidget extends StatelessWidget {
       ),
       child: badgeText != null
           ? Center(
-              widthFactor: 1.0, // 避免内部约束引发不必要的二次 Layout 计算
+              widthFactor: 1.0,
               heightFactor: 1.0,
               child: Text(
                 badgeText!,
@@ -128,7 +140,7 @@ class AvatarWidget extends StatelessWidget {
                   color: Colors.white,
                   fontSize: size * 0.25,
                   fontWeight: FontWeight.bold,
-                  height: 1.1, // 微调字体行高，防止文字在圆圈里上下偏离
+                  height: 1.1,
                 ),
               ),
             )
@@ -160,7 +172,6 @@ class AvatarWidget extends StatelessWidget {
           : status == AvatarStatus.offline
           ? '离线'
           : '',
-      // 性能调优：剔除高频滚动时无意义的 Tooltip 动画阻碍，纯展示
       waitDuration: const Duration(milliseconds: 500),
       child: Container(
         width: dotSize,
@@ -178,8 +189,10 @@ class AvatarWidget extends StatelessWidget {
   Widget _buildNameOrPlaceholder(BuildContext context) {
     if (name != null && name!.isNotEmpty) {
       final displayText = name!.characters.first.toUpperCase();
-      // 🛠️ 核心修改：通过算法为不同的名字赋予绝对固定的专属背景色
       final backgroundColor = _getColorByName(context, name);
+
+      // 🛠️ 核心优化：动态获取融合后的文字颜色
+      final textColor = _getTextColor(backgroundColor);
 
       return Container(
         width: size,
@@ -189,8 +202,9 @@ class AvatarWidget extends StatelessWidget {
         child: Text(
           displayText,
           style: TextStyle(
-            fontSize: size * 0.5,
-            color: Colors.white,
+            fontSize: size * 0.45,
+            color: textColor,
+            fontWeight: FontWeight.bold,
           ),
         ),
       );
