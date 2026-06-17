@@ -34,7 +34,11 @@ class ContactList extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(titleSpacing: 16, title: Text('contact_contacts'.tr())),
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isRealMobile(),
+        titleSpacing: 16,
+        title: Text('contact_contacts'.tr()),
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(contactListServiceProvider.notifier).refresh();

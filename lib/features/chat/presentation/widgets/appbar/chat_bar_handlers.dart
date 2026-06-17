@@ -113,8 +113,6 @@ class ChatBarHandlers {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: (isDanger ? cs.errorContainer : cs.primaryContainer)
-                        .withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: HugeIcon(

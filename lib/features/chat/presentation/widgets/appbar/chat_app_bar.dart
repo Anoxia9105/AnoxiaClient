@@ -43,6 +43,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     return AppBar(
+      centerTitle: DeviceUtil.isRealMobile(),
       actionsPadding: const EdgeInsets.all(4),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1.0),
@@ -106,37 +107,29 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           // 搜索按钮
           IconButton(
             tooltip: 'appbar_search_in_chat'.tr(),
-            onPressed: () {
-              if (DeviceUtil.isRealMobile()) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => SearchContextPage(
-                      roomId: roomId,
-                      roomName: room.roomName ?? '',
-                    ),
-                  ),
-                );
-                return;
-              }
-
-              showDialog(
-                context: context,
-                builder: (_) => Dialog(
-                  insetPadding: const EdgeInsets.symmetric(
-                    horizontal: 80,
-                    vertical: 40,
-                  ),
-                  child: SizedBox(
-                    width: 980,
-                    height: 720,
+            onPressed: () => showDialog(
+              context: context,
+              builder: (_) => Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 80,
+                  vertical: 40,
+                ),
+                child: SizedBox(
+                  width: 980,
+                  height: 720,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
                     child: SearchContextPage(
                       roomId: roomId,
                       roomName: room.roomName ?? '',
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+            ),
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedSearch01,
               size: 20,

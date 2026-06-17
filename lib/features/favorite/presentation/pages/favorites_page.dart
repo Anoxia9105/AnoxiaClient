@@ -39,7 +39,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
       },
     );
     return Scaffold(
-      appBar: AppBar(title: Text('sidebar_favorites'.tr())),
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isRealMobile(),
+        title: Text('sidebar_favorites'.tr())),
       body: body,
     );
   }

@@ -15,6 +15,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 /// 使用渐变背景和系统状态栏样式适配，提升整体视觉一致性
 class AppScaffold extends StatefulWidget {
   final Widget body;
+  final Widget? title;
   final Widget? bottomNavigationBar;
   final bool hideAppBarLogo;
   final bool showDesktopHeaderEnhancements;
@@ -22,6 +23,7 @@ class AppScaffold extends StatefulWidget {
   const AppScaffold({
     super.key,
     required this.body,
+    this.title,
     this.bottomNavigationBar,
     this.hideAppBarLogo = false,
     this.showDesktopHeaderEnhancements = false,
@@ -116,6 +118,7 @@ class _AppScaffoldState extends State<AppScaffold> {
               return DesktopAppBar(
                 hideAppBarLogo: widget.hideAppBarLogo,
                 showHeaderEnhancements: widget.showDesktopHeaderEnhancements,
+                title: widget.title,
               );
             }
             return null;

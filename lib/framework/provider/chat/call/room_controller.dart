@@ -382,6 +382,10 @@ class RoomController extends _$RoomController {
 
     final list = List<ReactionItem>.from(current.reactions ?? [])..add(item);
     state = AsyncData(current.copyWith(reactions: list));
+
+    // 3 秒后自动移除远端 ReactionItem
+    _scheduleReactionRemoval(item.id);
+
     log.info('💬 收到消息: $message 来自: $uid');
   }
 
@@ -793,11 +797,34 @@ class RoomController extends _$RoomController {
 
     final list = List<ReactionItem>.from(current.reactions ?? [])..add(item);
     state = AsyncData(current.copyWith(reactions: list));
+
+    // 3 秒后自动移除该 ReactionItem
+    _scheduleReactionRemoval(item.id);
+
     // 广播给其他人
     await sendDataEvent(
       topic: 'app-chat',
-      payload: {'message': message, 'uid': uid},
+      payload: {
+        'message': message,
+        'uid': uid,
+        'name': meta.name,
+        'avatar': meta.avatar,
+      },
     );
+  }
+
+  /// 定时移除 ReactionItem
+  ///
+  /// [itemId] ReactionItem 的唯一标识
+  /// 3 秒后自动从 reactions 列表中移除对应项
+  void _scheduleReactionRemoval(String itemId) {
+    Timer(const Duration(seconds: 3), () {
+      final current = state.value;
+      if (current == null) return;
+      final list = List<ReactionItem>.from(current.reactions ?? [])
+        ..removeWhere((r) => r.id == itemId);
+      state = AsyncData(current.copyWith(reactions: list));
+    });
   }
 
   /// 主持人静音指令

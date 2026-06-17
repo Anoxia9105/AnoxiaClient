@@ -1,13 +1,11 @@
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
-import 'package:anoxia/features/chat/presentation/widgets/add_member_dialog_widget.dart';
 import 'package:anoxia/features/chat/presentation/pages/add_member_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_member_list_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
@@ -22,7 +20,10 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 
+/// !!!!  不适用于桌面端 !!!!
 /// 聊天房间详情设置页
+/// App 中的聊天房间详情设置页，展示群成员、群公告、群设置等。
+/// 移动端展示群成员头像网格，点击头像可查看成员详情。
 class ChatRoomDetailSettingsPage extends ConsumerWidget {
   final String roomId;
 
@@ -65,23 +66,12 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               onAddMemberTap: !isGroup
                   ? null
                   : () {
-                      if (DeviceUtil.isRealMobile()) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => AddMemberPage(
-                              roomId: roomId,
-                              roomName: currentRoom.roomName ?? '',
-                            ),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AddMemberPage(
+                            roomId: roomId,
+                            roomName: currentRoom.roomName ?? '',
                           ),
-                        );
-                        return;
-                      }
-
-                      showDialog(
-                        context: context,
-                        builder: (_) => AddMemberDialogWidget(
-                          roomId: roomId,
-                          roomName: currentRoom.roomName ?? '',
                         ),
                       );
                     },
@@ -155,7 +145,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
                       .read(contactSelectionProvider.notifier)
                       .selectContact(contact);
 
-                  if (DeviceUtil.isRealMobile()) {
+                  if (context.mounted) {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const ContactDetail()),
                     );
@@ -231,32 +221,11 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
               title: Text('search_context_title'.tr()),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
-                if (DeviceUtil.isRealMobile()) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SearchContextPage(
-                        roomId: roomId,
-                        roomName: currentRoom.roomName ?? '',
-                      ),
-                    ),
-                  );
-                  return;
-                }
-
-                showDialog(
-                  context: context,
-                  builder: (_) => Dialog(
-                    insetPadding: const EdgeInsets.symmetric(
-                      horizontal: 80,
-                      vertical: 40,
-                    ),
-                    child: SizedBox(
-                      width: 980,
-                      height: 720,
-                      child: SearchContextPage(
-                        roomId: roomId,
-                        roomName: currentRoom.roomName ?? '',
-                      ),
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SearchContextPage(
+                      roomId: roomId,
+                      roomName: currentRoom.roomName ?? '',
                     ),
                   ),
                 );
@@ -356,7 +325,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
 
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
 
-    if (DeviceUtil.isRealMobile() && context.mounted) {
+    if (context.mounted) {
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (_) => const ContactDetail()));

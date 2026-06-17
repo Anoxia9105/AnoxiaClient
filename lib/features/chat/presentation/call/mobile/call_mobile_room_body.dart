@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/call/component/command_bar.dart';
+import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_carousel_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_screen_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_widget.dart';
@@ -58,24 +59,33 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
 
     // ─── 📱 状况 B：正常全屏状态 ───
     return SafeArea(
-      child: Column(
+      child: Stack(
         children: [
-          // 中间核心区域：视频排版
-          Expanded(
-            child: participants.isEmpty
-                ? Center(child: Text('call_waiting_to_join'.tr()))
-                : _buildLayout(
-                    mode: layoutMode,
-                    participants: participants,
-                    screenSharer: screenSharer,
-                    handRaiseMap: widget.roomState.handRaiseMap ?? {},
-                    onMute: onMute,
-                    onKick: onKick,
-                  ),
+          Column(
+            children: [
+              // 中间核心区域：视频排版
+              Expanded(
+                child: participants.isEmpty
+                    ? Center(child: Text('call_waiting_to_join'.tr()))
+                    : _buildLayout(
+                        mode: layoutMode,
+                        participants: participants,
+                        screenSharer: screenSharer,
+                        handRaiseMap: widget.roomState.handRaiseMap ?? {},
+                        onMute: onMute,
+                        onKick: onKick,
+                      ),
+              ),
+
+              // 底部控制条
+              CommandBar(state: widget.roomState),
+            ],
           ),
 
-          // 底部控制条
-          CommandBar(state: widget.roomState),
+          // 表情反应全屏特效叠加层
+          ReactionOverlay(
+            reactions: widget.roomState.reactions ?? [],
+          ),
         ],
       ),
     );

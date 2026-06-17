@@ -1,4 +1,5 @@
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/UserInfo.dart';
@@ -71,7 +72,10 @@ class _MyPageState extends ConsumerState<MyPage> {
     final authAsync = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('me_page_title'.tr())),
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isRealMobile(),
+        title: Text('me_page_title'.tr()),
+      ),
       backgroundColor: Colors.transparent,
       body: authAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

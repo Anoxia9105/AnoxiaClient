@@ -134,7 +134,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       backgroundColor: DeviceUtil.isRealDesktop()
           ? Colors.transparent
           : Theme.of(context).colorScheme.surface,
-      appBar: AppBar(title: Text('settings_page_title'.tr())),
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isRealMobile(),
+        title: Text('settings_page_title'.tr())),
       body: ListView(
         children: [
           SettingsThemeSection(

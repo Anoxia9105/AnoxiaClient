@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../gen/assets.gen.dart';
@@ -20,12 +21,15 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool showHeaderEnhancements;
   // 提供给外部的搜索回调
   final VoidCallback? onSearchTriggered;
+  // 自定义标题
+  final Widget? title;
 
   const DesktopAppBar({
     super.key,
     this.hideAppBarLogo = false,
     this.showHeaderEnhancements = false,
     this.onSearchTriggered,
+    this.title,
   });
 
   @override
@@ -37,11 +41,16 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       layoutControllerProvider.select((r) => r.extendedValue),
     );
 
+    final canGoBack = context.canPop();
+    print("============$hideAppBarLogo=========$canGoBack===========================");
     return AppBar(
       elevation: 0,
       titleSpacing: 4,
-      leading: hideAppBarLogo
-          ? const SizedBox.shrink()
+      leading: hideAppBarLogo && canGoBack
+          ? IconButton(
+              onPressed: () => context.pop(),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+            )
           : Center(
               child: Assets.images.appIconPng.image(
                 width: 24,
@@ -49,9 +58,14 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 // fit: BoxFit.cover
               ),
             ),
-      title: showHeaderEnhancements
-          ? const Row(children: [SizedBox(width: 4), ConnectionStatusTag()])
-          : null,
+      title: () {
+        if (showHeaderEnhancements) {
+          return const Row(
+            children: [SizedBox(width: 4), ConnectionStatusTag()],
+          );
+        }
+        return title;
+      }(),
       actions: [
         if (showHeaderEnhancements) ...[
           // 点击搜索框入口时，调用回调或直接打开

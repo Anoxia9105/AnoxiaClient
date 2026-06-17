@@ -38,10 +38,7 @@ class SettingsAboutSupportSection extends StatelessWidget {
       subtitle: 'settings_page_about_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedLink01,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: 8,
-          horizontal: mobile ? 4 : 30,
-        ),
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: mobile ? 4 : 30),
         child: Column(
           children: [
             ListTile(
@@ -96,20 +93,14 @@ class SettingsAboutSupportSection extends StatelessWidget {
                       style: const TextStyle(fontSize: 12),
                     )
                   : null,
-              trailing: FilledButton.tonalIcon(
-                onPressed: pageState.checkingUpdate ? null : onCheckUpdate,
-                icon: pageState.checkingUpdate
-                    ? SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      )
-                    : const Icon(Icons.refresh, size: 16),
-                label: Text('settings_update_check'.tr()),
-              ),
+              trailing: pageState.checkingUpdate
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right_rounded, size: 18),
+              onTap: pageState.checkingUpdate ? null : onCheckUpdate,
             ),
             if (pageState.updateErrorKey != null)
               Padding(
@@ -175,7 +166,10 @@ class SettingsAboutSupportSection extends StatelessWidget {
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: () => onNavigateToUpdatePage(updateInfo),
-                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01, size: 18),
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedDownload01,
+                            size: 18,
+                          ),
                           label: Text('update_now'.tr()),
                         ),
                       ),

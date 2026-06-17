@@ -114,24 +114,12 @@ class _MuteButton extends StatelessWidget {
     return IconButton(
       tooltip: isMuted ? 'chat_unmute_tooltip'.tr() : 'chat_mute_tooltip'.tr(),
       onPressed: onTap,
-      style: IconButton.styleFrom(
-        backgroundColor: isMuted
-            ? cs.primaryContainer.withValues(alpha: 0.75)
-            : cs.errorContainer.withValues(alpha: 0.65),
-        side: BorderSide(
-          color: isMuted
-              ? cs.primary.withValues(alpha: 0.35)
-              : cs.error.withValues(alpha: 0.35),
-          width: 0.8,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
       icon: HugeIcon(
         icon: isMuted
             ? HugeIcons.strokeRoundedVolumeHigh
             : HugeIcons.strokeRoundedVolumeMute02,
         size: 20,
-        color: isMuted ? cs.primary : cs.error,
+        // color: isMuted ? cs.primary : cs.error,
       ),
     );
   }

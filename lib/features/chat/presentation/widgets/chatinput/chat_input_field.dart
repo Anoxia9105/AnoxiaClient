@@ -38,7 +38,7 @@ class ChatInputField extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
