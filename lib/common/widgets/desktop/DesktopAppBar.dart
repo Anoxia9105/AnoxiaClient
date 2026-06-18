@@ -42,7 +42,6 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     final canGoBack = context.canPop();
-    print("============$hideAppBarLogo=========$canGoBack===========================");
     return AppBar(
       elevation: 0,
       titleSpacing: 4,
