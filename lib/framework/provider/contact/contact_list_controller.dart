@@ -25,7 +25,7 @@ class ContactListService extends _$ContactListService {
   /// 返回 Map 结构便于 O(1) 按 contactId 查找
   Future<Map<int, ChatContactVO>> _fetchContacts() async {
     final response = await DioClient().get(API.contactList);
-    final list = (response.data["data"] as List)
+    final list = (response.data['data'] as List)
         .map((e) => ChatContactVO.fromJson(e))
         .toList();
 
@@ -73,8 +73,8 @@ Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
   // 按拼音首字母排序
   final sortedList = List<ChatContactVO>.from(contacts)
     ..sort((a, b) {
-      String nameA = PinyinHelper.getPinyin(a.remark ?? a.nickName ?? "#");
-      String nameB = PinyinHelper.getPinyin(b.remark ?? b.nickName ?? "#");
+      String nameA = PinyinHelper.getPinyin(a.remark ?? a.nickName ?? '#');
+      String nameB = PinyinHelper.getPinyin(b.remark ?? b.nickName ?? '#');
       return nameA.compareTo(nameB);
     });
 
@@ -82,19 +82,19 @@ Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
   final Map<String, List<ChatContactVO>> groupMap = {};
 
   for (var contact in sortedList) {
-    String displayName = contact.remark ?? contact.nickName ?? "#";
-    String tag = PinyinHelper.getFirstWordPinyin(displayName)
-        .substring(0, 1)
-        .toUpperCase();
-    if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = "#";
+    String displayName = contact.remark ?? contact.nickName ?? '#';
+    String tag = PinyinHelper.getFirstWordPinyin(
+      displayName,
+    ).substring(0, 1).toUpperCase();
+    if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
     groupMap.putIfAbsent(tag, () => []).add(contact);
   }
 
   // 排序分组键（# 组排在最后）
   final sortedKeys = groupMap.keys.toList()
     ..sort((a, b) {
-      if (a == "#") return 1;
-      if (b == "#") return -1;
+      if (a == '#') return 1;
+      if (b == '#') return -1;
       return a.compareTo(b);
     });
 

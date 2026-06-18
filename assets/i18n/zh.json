@@ -507,5 +507,6 @@
   "toolbar_more": "更多",
   "hold_to_talk": "按住说话",
   "release_to_send": "松开发送",
-  "audio_message_mobile_only": "语音消息请在移动端查看"
+  "audio_message_mobile_only": "语音消息请在移动端查看",
+  "contact_status_summary": "共 {} 位朋友 / {} 人在线"
 }

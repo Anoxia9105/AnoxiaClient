@@ -507,5 +507,6 @@
   "toolbar_keyboard": "キーボード",
   "hold_to_talk": "話すには長押し",
   "release_to_send": "送信するには離す",
-  "audio_message_mobile_only": "音声メッセージはモバイルでのみサポートされています"
+  "audio_message_mobile_only": "音声メッセージはモバイルでのみサポートされています",
+  "contact_status_summary": "友達計 {} 人 / {} 人オンライン"
 }

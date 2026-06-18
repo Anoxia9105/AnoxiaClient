@@ -31,20 +31,40 @@ class SortedContactGroupsWidget extends ConsumerWidget {
 
     return groupsAsync.when(
       data: (groupMap) {
-        final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+        // 过滤空分组
         final normalizedEntries = groupMap.entries.where((e) {
           final tag = e.key.trim();
           return tag.isNotEmpty && e.value.isNotEmpty;
         }).toList();
 
+        // 构建 AlphabetListViewItemGroup 列表
         final items = normalizedEntries.map((e) {
+          final rawChildren = e.value.map((vo) {
+            return itemBuilder != null
+                ? itemBuilder!(vo)
+                : ContactItemTile(contact: vo, onTap: onContactTap);
+          }).toList();
+
+          final List<Widget> separatedChildren = [];
+          for (var i = 0; i < rawChildren.length; i++) {
+            separatedChildren.add(rawChildren[i]);
+
+            // 如果不是当前字母分组的最后一个人，就追加一条绿色线条
+            if (i < rawChildren.length - 1) {
+              separatedChildren.add(
+                Divider(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  height: 1, // 占位高
+                  thickness: 1, // 线条真实粗细
+                  indent: 56, // 可选：让绿线向右缩进56像素，完美对齐昵称文本，不切断头像
+                ),
+              );
+            }
+          }
+
           return AlphabetListViewItemGroup(
             tag: e.key.trim(),
-            children: e.value.map((vo) {
-              return itemBuilder != null
-                  ? itemBuilder!(vo)
-                  : ContactItemTile(contact: vo, onTap: onContactTap);
-            }).toList(),
+            children: separatedChildren, //  将带分割线的列表塞回原组件
           );
         }).toList();
 
@@ -66,12 +86,6 @@ class SortedContactGroupsWidget extends ConsumerWidget {
             ],
           );
         }
-
-        final useSafePlainList = keyboardVisible;
-        if (useSafePlainList) {
-          return _buildPlainGroupedList(context, normalizedEntries);
-        }
-
         return SizedBox.expand(
           child: AlphabetListView(
             items: items,
@@ -79,6 +93,7 @@ class SortedContactGroupsWidget extends ConsumerWidget {
               listOptions: ListOptions(
                 listHeaderBuilder: (context, tag) => _buildHeader(context, tag),
               ),
+              // 自定义字母索引项构建器
               overlayOptions: OverlayOptions(
                 overlayBuilder: (context, symbol) {
                   final safeSymbol = symbol.toString().trim().isEmpty
@@ -86,8 +101,8 @@ class SortedContactGroupsWidget extends ConsumerWidget {
                       : symbol.toString();
                   return Container(
                     alignment: Alignment.center,
-                    width: 80,
-                    height: 80,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
                       color: Theme.of(
                         context,
@@ -105,13 +120,14 @@ class SortedContactGroupsWidget extends ConsumerWidget {
                       safeSymbol,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 40,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   );
                 },
               ),
+              // 自定义滚动条构建器
               scrollbarOptions: ScrollbarOptions(
                 backgroundColor: Colors.transparent,
                 padding: const EdgeInsets.only(right: 4),
@@ -165,33 +181,6 @@ class SortedContactGroupsWidget extends ConsumerWidget {
         safeTag,
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
       ),
-    );
-  }
-
-  /// 构建普通分组列表（用于键盘弹出时）
-  ///
-  /// [context] 上下文
-  /// [entries] 分组条目列表
-  /// 返回 普通分组列表 Widget
-  Widget _buildPlainGroupedList(
-    BuildContext context,
-    List<MapEntry<String, List<ChatContactVO>>> entries,
-  ) {
-    return ListView.builder(
-      itemCount: entries.length,
-      itemBuilder: (context, groupIndex) {
-        final entry = entries[groupIndex];
-        final children = entry.value.map((vo) {
-          return itemBuilder != null
-              ? itemBuilder!(vo)
-              : ContactItemTile(contact: vo, onTap: onContactTap);
-        }).toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildHeader(context, entry.key), ...children],
-        );
-      },
     );
   }
 }
@@ -259,26 +248,15 @@ class ContactItemTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSelected = ref.watch(
-      contactSelectionProvider.select(
-        (s) =>
-            s.viewType == ContactViewType.contactDetail &&
-            s.selectedContact?.contactId == contact.contactId,
-      ),
-    );
-
     final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      color: isSelected
-          ? colorScheme.primaryContainer.withValues(alpha: 0.4)
-          : Colors.transparent,
+      color: Colors.transparent,
       child: ListTile(
         dense: true,
         minLeadingWidth: 40,
         horizontalTitleGap: 10,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        selected: isSelected,
         selectedColor: colorScheme.primary,
         leading: AvatarWidget(
           size: 34,
@@ -292,9 +270,6 @@ class ContactItemTile extends ConsumerWidget {
           contact.remark ?? contact.nickName ?? '',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
         ),
         onTap: () {
           ref.read(contactSelectionProvider.notifier).selectContact(contact);

@@ -29,10 +29,17 @@ class ContactList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentViewType = ref.watch(
-      contactSelectionProvider.select((s) => s.viewType),
-    );
+    final pendingRequests = ref.watch(pendingRequestCountProvider).value ?? 0;
+    final (onlineCount, totalCount) = ref.watch(
+      contactListServiceProvider.select((s) {
+        final contacts = s.value?.values ?? [];
 
+        final total = contacts.length;
+        final online = contacts.where((vo) => vo.onlineStatus == true).length;
+
+        return (online, total); // 返回一个解构元组
+      }),
+    );
     return Scaffold(
       appBar: AppBar(
         centerTitle: DeviceUtil.isRealMobile(),
@@ -45,33 +52,37 @@ class ContactList extends ConsumerWidget {
         },
         child: Column(
           children: [
-            _buildFunctionTile(
-              ref: ref,
-              icon: HugeIcons.strokeRoundedAddTeam,
-              title: 'contact_new_friends'.tr(),
-              isSelected: currentViewType == ContactViewType.newFriends,
+            ListTile(
+              leading: const HugeIcon(icon: HugeIcons.strokeRoundedAddTeam),
+              title: Text('contact_new_friends'.tr()),
               onTap: () {
                 ref.read(contactSelectionProvider.notifier).selectNewFriends();
                 if (DeviceUtil.isRealMobile()) {
                   _openMobileDetail(context, const NewFriendsPage());
                 }
               },
-              trailing: VibratingBadge(
-                count: ref.watch(pendingRequestCountProvider).value ?? 0,
-              ),
+              trailing: pendingRequests > 0
+                  ? VibratingBadge(count: pendingRequests)
+                  : const HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowRight01,
+                      size: 18,
+                    ),
             ),
-            _buildFunctionTile(
-              ref: ref,
-              icon: HugeIcons.strokeRoundedUserGroup03,
-              title: 'contact_joined_groups'.tr(),
-              isSelected: currentViewType == ContactViewType.groups,
+            ListTile(
+              leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup03),
+              title: Text('contact_joined_groups'.tr()),
               onTap: () {
                 ref.read(contactSelectionProvider.notifier).selectGroups();
                 if (DeviceUtil.isRealMobile()) {
                   _openMobileDetail(context, const GroupRoomListPage());
                 }
               },
+              trailing: const HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                size: 18,
+              ),
             ),
+
             ListTile(title: Text('sidebar_contact'.tr())),
             Expanded(
               child: SortedContactGroupsWidget(
@@ -85,46 +96,18 @@ class ContactList extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  /// 构建功能项 ListTile
-  ///
-  /// [ref] WidgetRef 用于访问主题
-  /// [icon] 图标
-  /// [title] 标题文本
-  /// [isSelected] 是否被选中
-  /// [onTap] 点击回调
-  /// [trailing] 尾部组件（可选）
-  /// 返回 功能项 ListTile Widget
-  Widget _buildFunctionTile({
-    required WidgetRef ref,
-    required List<List<dynamic>> icon,
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-    Widget? trailing,
-  }) {
-    final colorScheme = Theme.of(ref.context).colorScheme;
-    return ListTile(
-      selected: isSelected,
-      selectedTileColor: isSelected
-          ? colorScheme.primaryContainer.withValues(alpha: 0.4)
-          : Colors.transparent,
-      leading: HugeIcon(
-        icon: icon,
-        strokeWidth: 2,
-        color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? colorScheme.primary : null,
+      persistentFooterAlignment: AlignmentDirectional.centerStart,
+      persistentFooterButtons: [
+        Text(
+          'contact_status_summary'.tr(
+            args: [totalCount.toString(), onlineCount.toString()],
+          ),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
-      ),
-      onTap: onTap,
-      trailing: trailing,
+      ],
     );
   }
 }

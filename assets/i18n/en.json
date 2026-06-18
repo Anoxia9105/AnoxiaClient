@@ -485,7 +485,7 @@
   "chat_group_members": "Group Members",
   "chat_view_profile": "View Profile",
   "chat_total_members_count": "{} members",
-    "chat_contact_info": "Contact Info",
+  "chat_contact_info": "Contact Info",
   "chat_group_name": "Group Name",
   "chat_group_name_update_success": "Group name updated successfully",
   "chat_group_announcement": "Group Announcement",
@@ -507,5 +507,6 @@
   "toolbar_keyboard": "Keyboard",
   "hold_to_talk": "Hold to Talk",
   "release_to_send": "Release to Send",
-  "audio_message_mobile_only": "Audio messages are only supported on mobile devices"
+  "audio_message_mobile_only": "Audio messages are only supported on mobile devices",
+  "contact_status_summary": "{} friends / {} online"
 }
