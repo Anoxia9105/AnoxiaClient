@@ -48,11 +48,23 @@ class _QuillInternalRenderer extends StatefulWidget {
 class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   QuillController? _controller;
   bool _isError = false;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChanged);
     _initController();
+  }
+
+  void _onFocusChanged() {
+    if (!_focusNode.hasFocus) {
+      _controller?.updateSelection(
+        const TextSelection.collapsed(offset: 0),
+        ChangeSource.local,
+      );
+    }
   }
 
   @override
@@ -83,6 +95,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
+    _focusNode.dispose();
     _controller?.dispose();
     super.dispose();
   }
@@ -106,6 +120,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               QuillEditor.basic(
+                focusNode: _focusNode,
                 controller: _controller!,
                 config: QuillEditorConfig(
                   textSelectionThemeData: TextSelectionThemeData(
