@@ -1,12 +1,13 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'dart:async';
-import 'dart:convert';
+import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
@@ -75,7 +76,7 @@ class ChatMessageBubble extends ConsumerWidget {
 
     /// 某些消息类型需要气泡背景（如文本、富文本），而图片、文件等类型则直接渲染内容，无需气泡
     final bool needsBubble =
-        message.messageType == MessageType.quill ||
+        message.messageType == MessageType.richText ||
         message.messageType == MessageType.audio ||
         (message.messageType == MessageType.text && message.payload?.emojiCode == null);
 
@@ -263,11 +264,10 @@ class ChatMessageBubble extends ConsumerWidget {
     final wsNotifier = ref.read(wsControllerProvider.notifier);
 
     if (message.roomId == null) {
-      log.warning('重发失败：消息缺少 roomId');
+      log.warning('重发失败：消息缺�?roomId');
       return;
     }
 
-    final room = ref.watch(currentRoomProvider(message.roomId!));
 
     final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
 
@@ -275,22 +275,19 @@ class ChatMessageBubble extends ConsumerWidget {
       message.copyWith(deliveryStatus: DeliveryStatus.sending),
     );
 
-    final messageData = {
-      'topic': 'MESSAGE',
-      'data': {
-        'messageId': message.messageId ?? clientMsgId,
-        'clientMsgId': clientMsgId,
-        'roomId': message.roomId,
-        'targetId': room?.peerId,
-        'type': message.messageType?.name.toUpperCase(),
-        'payload': message.payload?.toJson(),
-        'attachments': message.attachments.map((e) => e.toJson()).toList(),
-      },
-    };
+    final protoMsg = RoomMessage(
+      messageId: '',
+      clientMsgId: clientMsgId,
+      roomId: message.roomId!,
+      senderId: message.senderId ?? 0,
+      messageType: message.messageType ?? MessageType.text,
+      payload: message.payload,
+      attachments: message.attachments,
+      clientTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
 
     log.info('🔁 重发消息: $clientMsgId');
-
-    wsNotifier.sendMessage(jsonEncode(messageData));
+    wsNotifier.sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
 
     final timeoutSeconds = _resolveResendTimeoutSeconds(message);
     Timer(Duration(seconds: timeoutSeconds), () {

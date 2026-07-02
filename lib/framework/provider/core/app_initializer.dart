@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
+import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
 import 'package:anoxia/framework/protocol/PacketType.dart';
-import 'package:anoxia/framework/protocol/message/EventMessage.dart';
-import 'package:anoxia/framework/protocol/message/HighMessage.dart';
-import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
 import 'package:anoxia/framework/protocol/register/PacketRegistry.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -92,21 +90,22 @@ class AppInitializer extends _$AppInitializer {
       return;
     }
 
+    // V5 协议：二进制解析器（payload=Uint8List, codecId=int）
     PacketRegistry.register(
       PacketType.message,
-      (data) => RoomMessage.fromJson(data),
+      (payload, codecId) => ImPacketV5.decodeRoomMessage(payload),
     );
     PacketRegistry.register(
       PacketType.event,
-      (data) => EventMessage.fromJson(data),
+      (payload, codecId) => ImPacketV5.decodeEventMessage(payload),
     );
     PacketRegistry.register(
       PacketType.highFrequency,
-      (data) => HighMessage.fromJson(data),
+      (payload, codecId) => ImPacketV5.decodeHighMessage(payload),
     );
 
     _packetParsersRegistered = true;
-    log.info('协议解析器注册完成');
+    log.info('V5 协议解析器注册完成');
   }
 
   /// 预加载核心业务数据

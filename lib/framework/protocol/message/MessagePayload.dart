@@ -1,12 +1,12 @@
-/// 协议层消息负载模型
+/// 协议层消息负载模型（V5 兼容）
 ///
-/// 定义消息的扩展属性，支持富文本、引用、@提及等。
-/// 与领域层的 [domain.MessagePayload] 字段一致，此处用于协议解析。
+/// 保持扁平结构，便于 UI 层直接读取。
+/// 编解码时由 ImPacketV5 负责与 V5 Protobuf 类型互转。
 class MessagePayload {
-  /// 文本内容
+  /// 文本内容（TEXT/纯文本预览）
   final String? content;
 
-  /// Quill 富文本 Delta JSON 字符串
+  /// Quill 富文本 Delta JSON
   final String? quillDelta;
 
   /// 被回复消息的 ID
@@ -18,13 +18,13 @@ class MessagePayload {
   /// Markdown 格式内容
   final String? markdown;
 
-  /// emoji 统一码
+  /// Emoji 统一码
   final String? emojiCode;
 
-  /// 音频消息时长（秒）
+  /// 音频时长（毫秒）
   final int? audioDuration;
 
-  MessagePayload({
+  const MessagePayload({
     this.content,
     this.quillDelta,
     this.replyTo,
@@ -34,7 +34,6 @@ class MessagePayload {
     this.audioDuration,
   });
 
-  /// 从 JSON 构造 [MessagePayload] 实例
   factory MessagePayload.fromJson(Map<String, dynamic> json) => MessagePayload(
     content: json['content'],
     quillDelta: json['quillDelta'],
@@ -45,7 +44,6 @@ class MessagePayload {
     audioDuration: json['audioDuration'],
   );
 
-  /// 序列化为 JSON
   Map<String, dynamic> toJson() => {
     'content': content,
     'quillDelta': quillDelta,
@@ -57,7 +55,8 @@ class MessagePayload {
   };
 
   @override
-  String toString() {
-    return 'MessagePayload{content: $content, quillDelta: $quillDelta, replyTo: $replyTo, mentions: $mentions, markdown: $markdown, emojiCode: $emojiCode, audioDuration: $audioDuration}';
-  }
+  String toString() =>
+      'MessagePayload{content: $content, quillDelta: $quillDelta, '
+      'replyTo: $replyTo, mentions: $mentions, markdown: $markdown, '
+      'emojiCode: $emojiCode, audioDuration: $audioDuration}';
 }

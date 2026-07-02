@@ -20,7 +20,7 @@ class MessageRenderFactory {
     MessageType.text: TextMessageStrategy(),
     MessageType.image: ImageMessageStrategy(),
     MessageType.file: FileMessageStrategy(),
-    MessageType.quill: QuillMessageStrategy(),
+    MessageType.richText: QuillMessageStrategy(),
     MessageType.system: SystemMessageStrategy(),
     MessageType.audio: AudioMessageStrategy(),
   };

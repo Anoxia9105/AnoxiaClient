@@ -24,7 +24,7 @@ class HighMessageService extends _$HighMessageService {
 
   @override
   Map<String, Map<HighMessageType, HighMessage>> build() {
-    final stream = ref.watch(wsControllerProvider.notifier).messageStream;
+    final stream = ref.read(wsControllerProvider.notifier).messageStream;
     final subscription = stream
         .where((frame) => frame.topic == PacketType.highFrequency)
         .map((frame) => frame.data as HighMessage)

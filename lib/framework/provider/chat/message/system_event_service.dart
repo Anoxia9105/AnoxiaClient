@@ -25,7 +25,7 @@ class SystemEventService extends _$SystemEventService {
   @override
   void build() {
     // 订阅 WebSocket 消息流中的 EVENT 类型
-    final stream = ref.watch(wsControllerProvider.notifier).messageStream;
+    final stream = ref.read(wsControllerProvider.notifier).messageStream;
 
     final subscription = stream
         .where((frame) => frame.topic == PacketType.event)

@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:typed_data';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/common/utils/SPUtil.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/core/network_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -14,11 +16,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/API.dart';
+import '../../codec/FrameCodec.dart';
+import '../../codec/v5/ImPacketV5.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 import '../../protocol/IPacket.dart';
 import '../../protocol/PacketFrame.dart';
-import '../../protocol/PacketType.dart';
 import '../../protocol/register/PacketRegistry.dart';
 import 'ws_state.dart';
 
@@ -48,6 +51,7 @@ class WsController extends _$WsController {
   bool _isFlushingOfflineOutbounds = false;
 
   final Map<String, _PendingOutbound> _pendingOutbounds = {};
+  // 离线队列存储 base64 编码的二进制帧，便于持久化到 SharedPreferences
   final ListQueue<String> _offlineOutbounds = ListQueue<String>();
 
   late final StreamController<PacketFrame<IPacket>> _messageController;
@@ -180,50 +184,63 @@ class WsController extends _$WsController {
     }
   }
 
-  /// 发送消息
+  /// 发送二进制消息（V5 协议帧）
   void sendMessage(dynamic msg) {
-    final data = msg is Map ? jsonEncode(msg) : msg;
+    // 统一转换为 Uint8List
+    final Uint8List? bytes = _toBytes(msg);
+    if (bytes == null) return;
+
+    final String b64 = base64.encode(bytes);
 
     if (state.status != WsStatus.connected) {
-      if (data is String && data != 'ping') {
-        _enqueueOfflineOutbound(data);
-      }
+      _enqueueOfflineOutbound(b64);
       log.warning('尝试在未连接状态发送消息，已进入离线队列');
       return;
     }
 
     try {
-      if (data is String) {
-        _cachePendingOutbound(data);
-      }
-      _channel?.sink.add(data);
+      _cachePendingOutbound(b64, bytes);
+      _channel?.sink.add(bytes);
     } catch (e) {
       log.error('发送消息失败', e);
     }
   }
 
-  void _cachePendingOutbound(String payload) {
-    final seq = _extractSeqFromPayload(payload);
-    if (seq == null || seq.isEmpty) return;
-
-    _pendingOutbounds[seq] = _PendingOutbound(payload: payload);
+  static Uint8List? _toBytes(dynamic msg) {
+    if (msg is Uint8List) return msg;
+    if (msg is List<int>) return Uint8List.fromList(msg);
+    // 旧调用兼容（'ping' 等文本）——忽略，心跳已改为二进制帧
+    return null;
   }
 
-  String? _extractSeqFromPayload(String payload) {
+  void _cachePendingOutbound(String b64Payload, Uint8List bytes) {
+    final seq = _extractSeqFromB64(b64Payload);
+    if (seq == null || seq.isEmpty) return;
+    _pendingOutbounds[seq] = _PendingOutbound(
+      payload: b64Payload,
+      bytes: bytes,
+    );
+  }
+
+  /// 从 base64 编码的二进制帧中提取 clientMsgId（用作 seq key）
+  String? _extractSeqFromPayload(String b64Payload) =>
+      _extractSeqFromB64(b64Payload);
+
+  String? _extractSeqFromB64(String b64) {
     try {
-      final dynamic decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) return null;
-
-      final dynamic rawData = decoded['data'];
-      if (rawData is! Map<String, dynamic>) return null;
-
-      final String? seq = rawData['clientMsgId']?.toString().trim().isNotEmpty == true
-          ? rawData['clientMsgId']?.toString()
-          : rawData['messageId']?.toString();
-      if (seq == null || seq.isEmpty) return null;
-      return seq;
+      final bytes = base64.decode(b64);
+      final frame = FrameCodec.parse(Uint8List.fromList(bytes));
+      if (!frame.isProtobuf) return null;
+      final decoded = ImPacketV5.decodeEnvelope(frame.body);
+      if (decoded == null || !decoded.isData) return null;
+      final payload = decoded.payload!;
+      // 只有 RoomMessage 类型才有 clientMsgId
+      if (decoded.codecId == ImPacketV5.codecRoomMessage) {
+        final msg = ImPacketV5.decodeRoomMessage(payload);
+        return msg?.clientMsgId ?? msg?.messageId;
+      }
+      return null;
     } catch (_) {
-      // 非标准消息（如 ping）忽略
       return null;
     }
   }
@@ -264,18 +281,18 @@ class WsController extends _$WsController {
 
     bool changed = false;
     int sentCount = 0;
-    while (
-        _offlineOutbounds.isNotEmpty &&
+    while (_offlineOutbounds.isNotEmpty &&
         state.status == WsStatus.connected &&
         sentCount < _offlineFlushBatchSize) {
-      final payload = _offlineOutbounds.removeFirst();
+      final b64 = _offlineOutbounds.removeFirst();
       changed = true;
       sentCount += 1;
       try {
-        _cachePendingOutbound(payload);
-        _channel?.sink.add(payload);
+        final bytes = Uint8List.fromList(base64.decode(b64));
+        _cachePendingOutbound(b64, bytes);
+        _channel?.sink.add(bytes);
       } catch (e) {
-        _offlineOutbounds.addFirst(payload);
+        _offlineOutbounds.addFirst(b64);
         log.error('[WsController] 回放离线消息失败，稍后重试', e);
         break;
       }
@@ -291,7 +308,10 @@ class WsController extends _$WsController {
     }
 
     _offlineFlushTimer?.cancel();
-    _offlineFlushTimer = Timer(_offlineFlushBatchInterval, _flushNextOfflineBatch);
+    _offlineFlushTimer = Timer(
+      _offlineFlushBatchInterval,
+      _flushNextOfflineBatch,
+    );
   }
 
   Future<void> _persistOfflineOutbounds() async {
@@ -330,76 +350,91 @@ class WsController extends _$WsController {
     await SPUtil.instance.delete(StorageKeys.wsOfflineOutboundQueue);
   }
 
-  /// 处理接收到的消息
+  /// 处理接收到的消息（V5 二进制帧）
   void _handleIncomingMessage(dynamic message) {
-    log.info('[SERVER MESSAGE]:${message.toString()}');
-    if (message == 'pong') return;
+    // 只处理二进制帧
+    if (message is! List<int>) {
+      log.warning('[WsController] 收到非二进制消息，忽略');
+      return;
+    }
+    final bytes = Uint8List.fromList(message);
+    log.info('[SERVER FRAME]: ${bytes.length} bytes');
 
     try {
-      final Map<String, dynamic> jsonMap = jsonDecode(message as String);
+      final decoded = ImPacketV5.decodeFrame(bytes);
+      if (decoded == null) return;
 
-      // 兼容旧格式 ACK：顶层 {code, message, retryable}
-      if (_handleLegacyAckError(jsonMap)) {
+      if (decoded.isPing) {
+        // 服务端 Ping → 回 Pong
+        _channel?.sink.add(FrameCodec.buildPong());
+        return;
+      }
+      if (decoded.isPong) return; // 忽略 Pong
+
+      if (!decoded.isData) return;
+      final payload = decoded.payload!;
+      final topic = decoded.topic!;
+
+      // ACK 帧：特殊处理
+      if (decoded.isAck) {
+        final ack = ImPacketV5.decodeAck(payload);
+        if (ack != null) {
+          // 💡 新增：打印 ACK 详情
+          log.info('[SERVER ACK] 收到确认帧 -> Topic: $topic, ACK内容: $ack');
+          _handleAckV5(ack);
+        }
         return;
       }
 
-      final topic = PacketType.from(jsonMap['topic']);
-      final rawData = jsonMap['data'] as Map<String, dynamic>?;
-
-      if (rawData == null) return;
-
-      // 新格式 ACK：PacketFrame(EVENT, data={code,message,retryable,...})
-      if (_handleAckError(rawData)) {
-        return;
-      }
-
-      final packetData = PacketRegistry.parse(topic, rawData);
+      final packetData = PacketRegistry.parse(topic, payload, decoded.codecId);
       if (packetData != null) {
+        // 💡 新增：打印解析后的具体业务数据内容
+        log.info('[SERVER DATA] 解析成功 -> Topic: $topic, Content: $packetData');
+
         final frame = PacketFrame(topic: topic, data: packetData);
         if (!_messageController.isClosed) {
           _messageController.add(frame);
         }
+      } else {
+        // 💡 新增：兜底日志，防止注册表未识别该 topic
+        log.warning('[SERVER DATA] 解析失败（未知的 Topic 或解析器缺失）-> Topic: $topic');
       }
     } catch (e) {
       log.error('WS 消息解析异常', e);
     }
   }
 
-  /// 处理旧格式 ACK 错误
-  bool _handleLegacyAckError(Map<String, dynamic> jsonMap) {
-    if (jsonMap.containsKey('topic')) return false;
-    return _handleAckError(jsonMap);
-  }
-
-  /// 处理 ACK 错误
-  ///
-  /// 解析服务器返回的业务错误码，并显示 Toast 提示
-  /// 2 秒内的重复错误不会重复提示（防抖）
-  bool _handleAckError(Map<String, dynamic> jsonMap) {
-    if (!jsonMap.containsKey('code')) return false;
-
-    final int? code = int.tryParse(jsonMap['code']?.toString() ?? '');
-    final String rawMessage = (jsonMap['message']?.toString() ?? '').trim();
-    final String? seq = jsonMap['seq']?.toString();
-    final bool retryable = jsonMap['retryable'] == true ||
-        (jsonMap['retryable']?.toString().toLowerCase() == 'true');
-
-    // code=0 代表成功 ACK，静默即可
-    if (code == null || code == 0) {
+  /// 处理 V5 ACK
+  void _handleAckV5(AckV5 ack) {
+    final seq = ack.clientMessageId;
+    if (ack.isSuccess) {
       if (seq != null && seq.isNotEmpty) {
         _pendingOutbounds.remove(seq);
+        ref.read(chatMessagesProvider.notifier).markAcked(
+          clientMsgId: seq,
+          roomId: ack.meta?.roomId,
+          messageId: ack.meta?.messageId,
+          seq: ack.meta?.seq,
+          timestamp: ack.meta?.timestamp,
+        );
       }
-      return true;
+      return;
     }
 
+    // 业务错误
     if (seq != null && seq.isNotEmpty) {
-      if (retryable) {
+      if (ack.retryable) {
         _retryPendingOutbound(seq);
       } else {
         _pendingOutbounds.remove(seq);
+        ref
+            .read(chatMessagesProvider.notifier)
+            .markFailedByClientMsgId(seq);
       }
     }
 
+    final code = ack.code;
+    final rawMessage = ack.message ?? '';
     final now = DateTime.now();
     final bool duplicated =
         _lastAckErrorCode == code &&
@@ -416,9 +451,7 @@ class WsController extends _$WsController {
         type: ToastType.error,
       );
     }
-
     log.warning('[WsController] ACK业务失败: code=$code, message=$rawMessage');
-    return true;
   }
 
   void _retryPendingOutbound(String seq) {
@@ -447,8 +480,10 @@ class WsController extends _$WsController {
       }
 
       try {
-        _channel?.sink.add(pending.payload);
-        log.warning('[WsController] 已触发自动重试: seq=$seq, attempt=${pending.attempts}');
+        _channel?.sink.add(pending.bytes);
+        log.warning(
+          '[WsController] 已触发自动重试: seq=$seq, attempt=${pending.attempts}',
+        );
       } catch (e) {
         log.error('[WsController] 自动重试发送失败: seq=$seq', e);
       }
@@ -479,7 +514,7 @@ class WsController extends _$WsController {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (state.status == WsStatus.connected) {
-        sendMessage('ping');
+        _channel?.sink.add(FrameCodec.buildPing());
       } else {
         timer.cancel();
       }
@@ -554,9 +589,10 @@ class WsController extends _$WsController {
 }
 
 class _PendingOutbound {
-  _PendingOutbound({required this.payload});
+  _PendingOutbound({required this.payload, required this.bytes});
 
-  final String payload;
+  final String payload; // base64 编码，用于离线持久化
+  final Uint8List bytes; // 原始二进制，用于重试发送
   int attempts = 0;
   bool retryScheduled = false;
 }
@@ -566,6 +602,6 @@ class _PendingOutbound {
 /// 供其他 Provider 监听 WebSocket 消息
 @riverpod
 Stream<PacketFrame<IPacket>> wsMessageStream(Ref ref) {
-  final wsController = ref.watch(wsControllerProvider.notifier);
+  final wsController = ref.read(wsControllerProvider.notifier);
   return wsController.messageStream;
 }

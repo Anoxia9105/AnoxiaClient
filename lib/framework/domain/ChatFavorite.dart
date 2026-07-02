@@ -146,7 +146,7 @@ class ChatFavorite {
     if (payloadRaw.isNotEmpty) {
       final decoded = _decodeMaybeJson(payloadRaw);
       if (_containsQuillDelta(decoded)) {
-        return MessageType.quill;
+        return MessageType.richText;
       }
     }
 
@@ -307,7 +307,7 @@ class ChatFavorite {
         );
       }
 
-      if (decoded is List && type == MessageType.quill) {
+      if (decoded is List && type == MessageType.richText) {
         return MessagePayload(
           content: content.trim(),
           quillDelta: jsonEncode(decoded),

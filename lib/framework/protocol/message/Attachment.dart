@@ -1,55 +1,55 @@
 import 'dart:convert';
 
-/// 协议层文件附件模型
-///
-/// 定义消息中附带文件的元数据，用于网络传输。
-/// 与领域层的 [domain.Attachment] 区别：此模型专用于协议解析，
-/// 字段可选性更强，兼容多种数据格式。
+/// 协议层媒体附件模型（V5 MediaAttachmentProtoV5 对齐）
 class Attachment {
-  /// 文件访问 URL
+  final String? id; // attachment_id
   final String? url;
-
-  /// 文件唯一标识（上传时生成的 UUID）
-  final String? id;
-
-  /// 文件显示名称
   final String? name;
+  final String? type; // mime_type
+  final int? size; // size_bytes
+  final String? thumbnailUrl;
+  final int? width;
+  final int? height;
 
-  /// 文件大小（字节）
-  final int? size;
+  const Attachment({
+    this.id,
+    this.url,
+    this.name,
+    this.type,
+    this.size,
+    this.thumbnailUrl,
+    this.width,
+    this.height,
+  });
 
-  /// 文件 MIME 类型
-  final String? type;
-
-  Attachment({this.url, this.id, this.name, this.size, this.type});
-
-  /// 从 JSON 构造 [Attachment] 实例
   factory Attachment.fromJson(Map<String, dynamic> json) => Attachment(
-        url: json['url'],
-        id: json['id'],
-        name: json['name'],
-        size: json['size'],
-        type: json['type'],
-      );
+    id: json['id']?.toString(),
+    url: json['url']?.toString(),
+    name: json['name']?.toString(),
+    type: json['type']?.toString(),
+    size: json['size'] != null ? int.tryParse(json['size'].toString()) : null,
+    thumbnailUrl: json['thumbnailUrl']?.toString(),
+    width: json['width'] != null ? int.tryParse(json['width'].toString()) : null,
+    height: json['height'] != null ? int.tryParse(json['height'].toString()) : null,
+  );
 
-  /// 序列化为 JSON
   Map<String, dynamic> toJson() => {
-        'url': url,
-        'id': id,
-        'name': name,
-        'size': size,
-        'type': type,
-      };
+    'id': id,
+    'url': url,
+    'name': name,
+    'type': type,
+    'size': size,
+    'thumbnailUrl': thumbnailUrl,
+    'width': width,
+    'height': height,
+  };
 
-  /// 从嵌入数据构造附件
-  ///
-  /// 兼容 String（JSON 字符串）或 Map 格式的输入
   static Attachment? fromEmbed(dynamic data) {
     if (data == null) return null;
     Map<String, dynamic> props = {};
     if (data is String) {
       try {
-        props = jsonDecode(data);
+        props = jsonDecode(data) as Map<String, dynamic>;
       } catch (_) {
         props['url'] = data;
       }
@@ -59,35 +59,30 @@ class Attachment {
     return Attachment.fromJson(props);
   }
 
-  /// 创建变体副本
   Attachment copyWith({
-    String? url,
     String? id,
+    String? url,
     String? name,
-    int? size,
     String? type,
-  }) {
-    return Attachment(
-      url: url ?? this.url,
-      id: id ?? this.id,
-      name: name ?? this.name,
-      size: size ?? this.size,
-      type: type ?? this.type,
-    );
-  }
+    int? size,
+    String? thumbnailUrl,
+    int? width,
+    int? height,
+  }) => Attachment(
+    id: id ?? this.id,
+    url: url ?? this.url,
+    name: name ?? this.name,
+    type: type ?? this.type,
+    size: size ?? this.size,
+    thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+    width: width ?? this.width,
+    height: height ?? this.height,
+  );
 
-  /// 是否为图片类型
   bool get isImage {
-    const imageExtensions = {
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'webp',
-      'heic',
-      'bmp',
-    };
-    // 统一转小写比较，避免 .JPG 匹配失败
-    return imageExtensions.contains(type?.toLowerCase());
+    const exts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'};
+    if (exts.contains(type?.toLowerCase())) return true;
+    // 通过 mime type 判断
+    return type?.toLowerCase().startsWith('image/') == true;
   }
 }

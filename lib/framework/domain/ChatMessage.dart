@@ -79,15 +79,19 @@ class ChatMessage {
   /// 专门用于更新消息状态和序号，避免重置其他字段
   ChatMessage copyWith({
     String? messageId,
+    String? clientMsgId,
     DeliveryStatus? deliveryStatus,
     int? seq,
     MessageState? messageStatus,
+    int? timestamp,
   }) {
     return ChatMessage(
       messageId: messageId ?? this.messageId,
-      clientMsgId: clientMsgId,
+      clientMsgId: clientMsgId ?? this.clientMsgId,
       roomId: roomId,
       senderId: senderId,
+      senderName: senderName,
+      senderAvatar: senderAvatar,
       messageType: messageType,
       content: content,
       payload: payload,
@@ -95,7 +99,7 @@ class ChatMessage {
       extra: extra,
       messageStatus: messageStatus ?? this.messageStatus,
       deliveryStatus: deliveryStatus ?? this.deliveryStatus,
-      timestamp: timestamp,
+      timestamp: timestamp ?? this.timestamp,
       seq: seq ?? this.seq,
     );
   }
@@ -168,24 +172,27 @@ class ChatMessage {
     );
   }
 
-  /// 从 [RoomMessage] 实例构造 [ChatMessage] 实例
+  /// 从 [RoomMessage] 实例构造 [ChatMessage] 实例（V5 协议对齐）
+  ///
+  /// V5 协议不再传输 senderName/senderAvatar/state/status（由客户端本地管理）
   static ChatMessage fromRoomMessage(RoomMessage msg) {
     return ChatMessage(
-      messageId: msg.messageId,
+      messageId: msg.messageId.isEmpty ? null : msg.messageId,
       clientMsgId: msg.clientMsgId,
       roomId: msg.roomId,
-      senderId: msg.senderId.toInt(),
-      senderName: msg.senderName,
-      senderAvatar: msg.senderAvatar,
-      messageType: msg.type,
+      senderId: msg.senderId == 0 ? null : msg.senderId,
+      // senderName / senderAvatar 不在 V5 协议中，需从用户缓存补充
+      senderName: null,
+      senderAvatar: null,
+      messageType: msg.messageType,
       content: msg.payload?.content ?? '',
       payload: msg.payload,
       attachments: msg.attachments,
       extra: msg.extra,
-      messageStatus: msg.state,
-      deliveryStatus: msg.status,
-      timestamp: msg.timestamp.toInt(),
-      seq: msg.seq.toInt(),
+      messageStatus: null, // V5 不在消息体中携带状态
+      deliveryStatus: DeliveryStatus.sent,
+      timestamp: msg.timestamp == 0 ? null : msg.timestamp,
+      seq: msg.seq,
     );
   }
 }

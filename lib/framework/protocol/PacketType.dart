@@ -1,47 +1,45 @@
-/// WebSocket 消息主题枚举
+/// WebSocket 消息主题枚举（V5 协议对齐）
 ///
-/// 用于区分不同类型的业务消息，支持数字下标和字符串名称两种序列化方式。
-///
-/// 枚举值对应后端 Java 枚举：
-/// - [message]：普通聊天消息
-/// - [highFrequency]：高频消息（如输入状态、通话信令）
-/// - [event]：系统事件消息
-/// - [unknown]：未知类型（解析失败时的默认值）
+/// 数字码与服务端 CodecConstants.TOPIC_* 保持一致：
+/// - [message]：普通聊天消息（TOPIC_MESSAGE = 1）
+/// - [highFrequency]：高频信令（TOPIC_HIGH_FREQUENCY = 2）
+/// - [event]：系统事件（TOPIC_EVENT = 3）
+/// - [ack]：发送结果 ACK（TOPIC_ACK = 4）
+/// - [unknown]：未知类型
 enum PacketType {
-  message,
-  highFrequency,
-  event,
-  unknown;
+  unknown(0),
+  message(1),
+  highFrequency(2),
+  event(3),
+  ack(4);
 
-  /// 从动态值解析枚举
-  ///
-  /// 支持后端传来的数字下标（0, 1, 2...）或字符串名称（"MESSAGE", "EVENT"）
+  final int code;
+  const PacketType(this.code);
+
+  /// 从 V5 topic 数字码解析枚举
+  static PacketType fromCode(int code) {
+    return PacketType.values.firstWhere(
+      (e) => e.code == code,
+      orElse: () => PacketType.unknown,
+    );
+  }
+
+  /// 兼容旧调用（字符串 "MESSAGE" / 数字 1）
   static PacketType from(dynamic value) {
     if (value == null) return PacketType.unknown;
-
-    // 解析数字下标
-    if (value is int) {
-      if (value >= 0 && value < PacketType.values.length) {
-        return PacketType.values[value];
-      }
-      return PacketType.unknown;
-    }
-
-    // 解析字符串名称
+    if (value is int) return fromCode(value);
     if (value is String) {
-      final normalized = value.toLowerCase().replaceAll('_', '');
-      return PacketType.values.firstWhere(
-        (e) => e.name.toLowerCase() == normalized,
-        orElse: () => PacketType.unknown,
-      );
+      final upper = value.toUpperCase().replaceAll('_', '');
+      const map = {
+        'MESSAGE': PacketType.message,
+        'HIGHFREQUENCY': PacketType.highFrequency,
+        'EVENT': PacketType.event,
+        'ACK': PacketType.ack,
+      };
+      return map[upper] ?? PacketType.unknown;
     }
-
     return PacketType.unknown;
   }
 
-  /// 序列化时的处理
-  ///
-  /// 传给后端数字：packet.index
-  /// 传给后端字符串：packet.name.toUpperCase()
-  dynamic toJson() => index;
+  dynamic toJson() => code;
 }

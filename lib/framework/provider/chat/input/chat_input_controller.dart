@@ -6,11 +6,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
 import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
@@ -211,17 +214,15 @@ class ChatInputController extends _$ChatInputController {
       return;
     }
 
-    final msg = {
-      'topic': 'HIGH_FREQUENCY',
-      'data': {
-        'targetId': room.peerId,
-        'roomId': room.roomId,
-        'type': 'TYPING_STATUS',
-        'content': isTyping.toString(),
-      },
-    };
-
-    ref.read(wsControllerProvider.notifier).sendMessage(jsonEncode(msg));
+    final highMsg = HighMessage(
+      type: HighMessageType.TYPING_STATUS,
+      roomId: room.roomId,
+      targetId: room.peerId,
+      content: isTyping.toString(),
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+    final bytes = ImPacketV5.encodeHighMessageFrame(highMsg);
+    ref.read(wsControllerProvider.notifier).sendMessage(bytes);
   }
 
   /// 发送消息
@@ -287,7 +288,7 @@ class ChatInputController extends _$ChatInputController {
       } else {
         final isRich = processor.hasAttributes || mentionIds.isNotEmpty;
         _doSend(
-          type: isRich ? MessageType.quill : MessageType.text,
+          type: isRich ? MessageType.richText : MessageType.text,
           payload: isRich
               ? MessagePayload(
                   content: processor.plainText.characters.take(100).toString(),
@@ -538,23 +539,21 @@ class ChatInputController extends _$ChatInputController {
     );
     ref.read(chatMessagesProvider.notifier).upsertMessage(updatedMsg);
 
-    final messageData = {
-      'topic': 'MESSAGE',
-      'data': {
-        'messageId': clientMsgId,
-        'clientMsgId': clientMsgId,
-        'roomId': roomId,
-        'targetId': room.peerId,
-        'type': 'AUDIO',
-        'payload': payload.toJson(),
-        'attachments': attachments.map((e) => e.toJson()).toList(),
-      },
-    };
+    final protoMsg = RoomMessage(
+      messageId: '',
+      clientMsgId: clientMsgId,
+      roomId: roomId,
+      senderId: user.userId,
+      messageType: MessageType.audio,
+      payload: payload,
+      attachments: attachments,
+      clientTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
 
-    log.info('🚀 发送语音消息: ${jsonEncode(messageData)}');
+    log.info('🚀 发送语音消息: $clientMsgId');
     ref
         .read(wsControllerProvider.notifier)
-        .sendMessage(jsonEncode(messageData));
+        .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
 
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: MessageType.audio,
@@ -591,11 +590,10 @@ class ChatInputController extends _$ChatInputController {
     required MessagePayload payload,
     List<Attachment>? attachments,
   }) {
-    final room = ref.read(currentRoomProvider(roomId));
     final String clientMsgId = const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      log.error('发送失败: 房间或用户信息缺失');
+      log.error('发送失败: 用户信息缺失');
       return;
     }
 
@@ -615,25 +613,21 @@ class ChatInputController extends _$ChatInputController {
 
     ref.read(chatMessagesProvider.notifier).upsertMessage(localMsg);
 
-    final messageData = {
-      'topic': 'MESSAGE',
-      'data': {
-        'messageId': clientMsgId,
-        'clientMsgId': clientMsgId,
-        'roomId': roomId,
-        'targetId': room?.peerId,
-        // 服务端 Java 枚举按名称反序列化，需使用大写（如 TEXT / IMAGE）
-        'type': type.name.toUpperCase(),
-        'payload': payload.toJson(),
-        'attachments': attachments?.map((e) => e.toJson()).toList() ?? [],
-      },
-    };
+    final protoMsg = RoomMessage(
+      messageId: '',
+      clientMsgId: clientMsgId,
+      roomId: roomId,
+      senderId: user.userId,
+      messageType: type,
+      payload: payload,
+      attachments: attachments ?? const [],
+      clientTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
 
-    log.info('🚀 发送消息 [$type]: ${jsonEncode(messageData)}');
+    log.info('🚀 发送消息 [$type]: clientMsgId=$clientMsgId');
     ref
         .read(wsControllerProvider.notifier)
-        .sendMessage(jsonEncode(messageData));
-    // 4. 设置超时处理
+        .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: type,
       attachments: attachments,

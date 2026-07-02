@@ -1,34 +1,29 @@
+import 'dart:typed_data';
+
 import '../IPacket.dart';
 import '../PacketType.dart';
 
-/// 消息解析器类型定义
-///
-/// 接收 JSON Map，返回对应的 [IPacket] 实例
-typedef PacketParser = IPacket Function(Map<String, dynamic> data);
+/// 二进制数据包解析器类型定义（V5 协议）
+typedef BinaryPacketParser = IPacket? Function(Uint8List payload, int codecId);
 
-/// 数据包解析注册表
+/// 数据包解析注册表（V5 二进制协议版）
 ///
-/// 维护 [PacketType] 到解析器的映射，
-/// 用于根据消息主题动态选择正确的解析逻辑。
+/// 维护 [PacketType] → 解析器的映射，
+/// 根据消息主题动态选择正确的解析逻辑。
 class PacketRegistry {
   PacketRegistry._();
 
-  /// 解析器注册表
-  static final Map<PacketType, PacketParser> _parsers = {};
+  static final Map<PacketType, BinaryPacketParser> _parsers = {};
 
-  /// 注册解析器
-  ///
-  /// 在应用启动时调用，将消息类型与解析器关联
-  static void register(PacketType type, PacketParser parser) {
+  /// 注册二进制解析器
+  static void register(PacketType type, BinaryPacketParser parser) {
     _parsers[type] = parser;
   }
 
-  /// 解析消息
-  ///
-  /// 根据 [type] 查找对应解析器并执行解析
-  static IPacket? parse(PacketType type, Map<String, dynamic> data) {
+  /// 解析消息（V5 二进制格式）
+  static IPacket? parse(PacketType type, Uint8List payload, int codecId) {
     final parser = _parsers[type];
     if (parser == null) return null;
-    return parser(data);
+    return parser(payload, codecId);
   }
 }

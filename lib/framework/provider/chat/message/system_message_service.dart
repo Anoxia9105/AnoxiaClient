@@ -24,7 +24,7 @@ part 'system_message_service.g.dart';
 class SystemMessageService extends _$SystemMessageService {
   @override
   void build() {
-    final stream = ref.watch(wsControllerProvider.notifier).messageStream;
+    final stream = ref.read(wsControllerProvider.notifier).messageStream;
 
     final subscription = stream
         .where((frame) => frame.topic == PacketType.message)
@@ -115,7 +115,7 @@ class SystemMessageService extends _$SystemMessageService {
       title: roomName,
       body: body,
       payload: roomId,
-      avatarUrl: msg.senderAvatar,
+      avatarUrl: null, // V5 协议不在消息体中携带 senderAvatar
       force: true,
     );
   }

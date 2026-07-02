@@ -30,7 +30,7 @@ class ChatMessages extends _$ChatMessages {
   @override
   Map<String, List<ChatMessage>> build() {
     // 订阅 WebSocket 消息流，只处理普通消息类型
-    final stream = ref.watch(wsControllerProvider.notifier).messageStream;
+    final stream = ref.read(wsControllerProvider.notifier).messageStream;
 
     final subscription = stream
         .where((frame) => frame.topic == PacketType.message)
@@ -74,6 +74,10 @@ class ChatMessages extends _$ChatMessages {
     }
 
     if (index != -1) {
+      if (newList[index].deliveryStatus == DeliveryStatus.sending &&
+          msg.deliveryStatus == DeliveryStatus.sent) {
+        msg = msg.copyWith(deliveryStatus: DeliveryStatus.sending);
+      }
       newList[index] = msg;
     } else {
       if (newList.any((m) => m.messageId == msg.messageId)) return;
@@ -105,6 +109,61 @@ class ChatMessages extends _$ChatMessages {
   }
 
   /// 同步房间增量消息
+  /// ACK confirms that the server accepted and sequenced the outbound message.
+  void markAcked({
+    required String clientMsgId,
+    String? roomId,
+    String? messageId,
+    int? seq,
+    int? timestamp,
+  }) {
+    final targetRoomId = roomId ?? _findRoomIdByClientMsgId(clientMsgId);
+    if (targetRoomId == null) return;
+
+    final list = state[targetRoomId] ?? [];
+    final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+    if (idx == -1) return;
+
+    final newList = [...list];
+    newList[idx] = newList[idx].copyWith(
+      messageId: messageId,
+      seq: seq,
+      timestamp: timestamp,
+      deliveryStatus: DeliveryStatus.sent,
+    );
+
+    newList.sort((a, b) {
+      if ((a.seq ?? 0) == 0 || (b.seq ?? 0) == 0) {
+        return (a.timestamp ?? 0).compareTo(b.timestamp ?? 0);
+      }
+      return a.seq!.compareTo(b.seq!);
+    });
+
+    state = {...state, targetRoomId: newList};
+  }
+
+  String? _findRoomIdByClientMsgId(String clientMsgId) {
+    for (final entry in state.entries) {
+      if (entry.value.any((m) => m.clientMsgId == clientMsgId)) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  void markFailedByClientMsgId(String clientMsgId) {
+    final roomId = _findRoomIdByClientMsgId(clientMsgId);
+    if (roomId == null) return;
+
+    final list = state[roomId] ?? [];
+    final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+    if (idx == -1) return;
+
+    final newList = [...list];
+    newList[idx] = newList[idx].copyWith(deliveryStatus: DeliveryStatus.failed);
+    state = {...state, roomId: newList};
+  }
+
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
     final currentList = state[roomId] ?? [];
     int localMaxSeq = currentList.isEmpty ? 0 : (currentList.last.seq ?? 0);

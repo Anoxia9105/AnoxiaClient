@@ -102,7 +102,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     final items = <PopupMenuEntry<String>>[];
 
     if (widget.message.messageType == MessageType.text ||
-        widget.message.messageType == MessageType.quill) {
+        widget.message.messageType == MessageType.richText) {
       items.add(
         _buildDesktopItem(
           'copy',
@@ -160,7 +160,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
 
     final items = <Widget>[
       if (widget.message.messageType == MessageType.text ||
-          widget.message.messageType == MessageType.quill)
+          widget.message.messageType == MessageType.richText)
         _buildMenuItem(
           context,
           action: 'copy',
@@ -263,7 +263,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
       return payload.content ?? '';
     }
 
-    if (widget.message.messageType == MessageType.quill) {
+    if (widget.message.messageType == MessageType.richText) {
       try {
         final deltaJson = jsonDecode(payload.quillDelta ?? '[]');
         final delta = Delta.fromJson(deltaJson);

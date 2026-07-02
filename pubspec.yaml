@@ -134,6 +134,11 @@ dependencies:
   image_cropper: ^12.2.1
   # 图片选择器
   image_picker: ^1.2.2
+  # 聊天UI组件
+  flutter_chat_ui: ^2.11.1
+  # 聊天核心组件
+  flutter_chat_core: ^2.9.0
+
 
 dev_dependencies:
   flutter_test:
