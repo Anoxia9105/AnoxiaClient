@@ -23,6 +23,10 @@ class MessageRenderFactory {
     MessageType.richText: QuillMessageStrategy(),
     MessageType.system: SystemMessageStrategy(),
     MessageType.audio: AudioMessageStrategy(),
+    MessageType.video: FileMessageStrategy(),
+    MessageType.emoji: TextMessageStrategy(),
+    MessageType.location: TextMessageStrategy(),
+    MessageType.card: TextMessageStrategy(),
   };
 
   /// 根据消息类型获取对应的渲染策略

@@ -13,7 +13,7 @@ class TextMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
-    final content = message.payload?.content ?? '';
+    final content = message.payload?.content ?? message.content;
 
     // 大表情渲染逻辑：当消息包含 emojiCode 且有内容时，以大字体显示
     if (message.payload?.emojiCode != null && content.isNotEmpty) {

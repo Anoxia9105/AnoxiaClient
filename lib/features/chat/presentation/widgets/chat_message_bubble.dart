@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
-import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
@@ -75,10 +74,11 @@ class ChatMessageBubble extends ConsumerWidget {
     }
 
     /// 某些消息类型需要气泡背景（如文本、富文本），而图片、文件等类型则直接渲染内容，无需气泡
+    final bool isSingleEmoji = _isSingleEmojiMessage(message);
     final bool needsBubble =
         message.messageType == MessageType.richText ||
         message.messageType == MessageType.audio ||
-        (message.messageType == MessageType.text && message.payload?.emojiCode == null);
+        (message.messageType == MessageType.text && !isSingleEmoji);
 
     final strategy = MessageRenderFactory.getStrategy(message.messageType);
 
@@ -255,6 +255,24 @@ class ChatMessageBubble extends ConsumerWidget {
     }
   }
 
+  bool _isSingleEmojiMessage(ChatMessage message) {
+    if (message.messageType == MessageType.emoji) return true;
+    if (message.payload?.emojiCode != null) return true;
+    if (message.messageType != MessageType.text) return false;
+
+    final text = (message.payload?.content ?? message.content).trim();
+    if (text.isEmpty) return false;
+    final graphemes = text.characters;
+    if (graphemes.length != 1) return false;
+
+    final rune = graphemes.first.runes.firstOrNull;
+    if (rune == null) return false;
+
+    return rune >= 0x1F000 ||
+        (rune >= 0x2600 && rune <= 0x27BF) ||
+        (rune >= 0x2300 && rune <= 0x23FF);
+  }
+
   void _resendMessage(
     BuildContext context,
     WidgetRef ref,
@@ -267,7 +285,6 @@ class ChatMessageBubble extends ConsumerWidget {
       log.warning('重发失败：消息缺�?roomId');
       return;
     }
-
 
     final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
 

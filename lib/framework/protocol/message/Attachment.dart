@@ -23,14 +23,17 @@ class Attachment {
   });
 
   factory Attachment.fromJson(Map<String, dynamic> json) => Attachment(
-    id: json['id']?.toString(),
+    id: (json['id'] ?? json['attachmentId'] ?? json['attachment_id'])
+        ?.toString(),
     url: json['url']?.toString(),
-    name: json['name']?.toString(),
-    type: json['type']?.toString(),
-    size: json['size'] != null ? int.tryParse(json['size'].toString()) : null,
-    thumbnailUrl: json['thumbnailUrl']?.toString(),
-    width: json['width'] != null ? int.tryParse(json['width'].toString()) : null,
-    height: json['height'] != null ? int.tryParse(json['height'].toString()) : null,
+    name: (json['name'] ?? json['fileName'] ?? json['file_name'])?.toString(),
+    type:
+        (json['type'] ?? json['mimeType'] ?? json['mime_type'] ?? json['kind'])
+            ?.toString(),
+    size: _readInt(json['size'] ?? json['sizeBytes'] ?? json['size_bytes']),
+    thumbnailUrl: (json['thumbnailUrl'] ?? json['thumbnail_url'])?.toString(),
+    width: _readInt(json['width']),
+    height: _readInt(json['height']),
   );
 
   Map<String, dynamic> toJson() => {
@@ -85,4 +88,7 @@ class Attachment {
     // 通过 mime type 判断
     return type?.toLowerCase().startsWith('image/') == true;
   }
+
+  static int? _readInt(dynamic value) =>
+      value == null ? null : int.tryParse(value.toString());
 }

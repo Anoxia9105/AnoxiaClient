@@ -109,65 +109,55 @@ class ChatMessage {
   /// 自动处理 payload、attachments、extra 字段可能为 String 或 Map 的兼容场景
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     // 1. 预处理 payload (可能是 String 也可能是 Map)
-    dynamic rawPayload = json['payload'];
+    dynamic rawPayload = _decodeMaybeJson(json['payload']);
     if (rawPayload is String && rawPayload.isNotEmpty) {
-      try {
-        rawPayload = jsonDecode(rawPayload);
-      } catch (_) {
-        rawPayload = null;
-      }
+      rawPayload = null;
     }
 
     // 2. 预处理 attachments (可能是 String 也可能是 List)
-    dynamic rawAttachments = json['attachments'];
+    dynamic rawAttachments = _decodeMaybeJson(json['attachments']);
     if (rawAttachments is String && rawAttachments.isNotEmpty) {
-      try {
-        rawAttachments = jsonDecode(rawAttachments);
-      } catch (_) {
-        rawAttachments = null;
-      }
+      rawAttachments = null;
     }
 
     // 3. 预处理 extra (可能是 String 也可能是 Map)
-    dynamic rawExtra = json['extra'];
+    dynamic rawExtra = _decodeMaybeJson(json['extra'] ?? json['properties']);
     if (rawExtra is String && rawExtra.isNotEmpty) {
-      try {
-        rawExtra = jsonDecode(rawExtra);
-      } catch (_) {
-        rawExtra = null;
-      }
+      rawExtra = null;
     }
+
+    final payload = rawPayload is Map
+        ? MessagePayload.fromJson(Map<String, dynamic>.from(rawPayload))
+        : null;
+    final attachments = _extractAttachments(rawAttachments, rawPayload);
+    final content = _resolveContent(json, payload);
 
     return ChatMessage(
       messageId: json['messageId']?.toString(),
-      clientMsgId: json['clientMsgId']?.toString(),
+      clientMsgId: (json['clientMsgId'] ?? json['clientMessageId'])?.toString(),
       roomId: json['roomId']?.toString(),
       senderId: json['senderId'] != null
           ? int.tryParse(json['senderId'].toString())
           : null,
       senderName: json['senderName']?.toString(),
       senderAvatar: json['senderAvatar']?.toString(),
-      messageType: MessageType.fromCode(json["messageType"] ?? 5),
-      content: json['content']?.toString() ?? '',
+      messageType: MessageType.fromCode(json['messageType']),
+      content: content,
 
       // 使用处理后的 rawPayload
-      payload: rawPayload != null && rawPayload is Map<String, dynamic>
-          ? MessagePayload.fromJson(rawPayload)
-          : null,
+      payload: payload,
 
       // 使用处理后的 rawAttachments
-      attachments: (rawAttachments is List)
-          ? rawAttachments.map((e) => Attachment.fromJson(e)).toList()
-          : [],
+      attachments: attachments,
 
       // 使用处理后的 rawExtra
-      extra: (rawExtra is Map<String, dynamic>) ? rawExtra : {},
+      extra: rawExtra is Map ? Map<String, dynamic>.from(rawExtra) : {},
 
       messageStatus: MessageState.from(json['messageStatus']),
       deliveryStatus: DeliveryStatus.sent,
       timestamp: json['timestamp'] != null
           ? int.tryParse(json['timestamp'].toString())
-          : null,
+          : int.tryParse((json['serverTimestamp'] ?? '').toString()),
       seq: json['seq'] != null ? int.tryParse(json['seq'].toString()) : null,
     );
   }
@@ -194,5 +184,77 @@ class ChatMessage {
       timestamp: msg.timestamp == 0 ? null : msg.timestamp,
       seq: msg.seq,
     );
+  }
+
+  static dynamic _decodeMaybeJson(dynamic source) {
+    dynamic current = source;
+    for (var i = 0; i < 3; i++) {
+      if (current is! String) return current;
+      final text = current.trim();
+      if (text.isEmpty) return null;
+      try {
+        current = jsonDecode(text);
+      } catch (_) {
+        return current;
+      }
+    }
+    return current;
+  }
+
+  static String _resolveContent(
+    Map<String, dynamic> json,
+    MessagePayload? payload,
+  ) {
+    final direct = json['content']?.toString().trim() ?? '';
+    if (direct.isNotEmpty) return direct;
+    return payload?.content ?? '';
+  }
+
+  static List<Attachment> _extractAttachments(
+    dynamic rawAttachments,
+    dynamic rawPayload,
+  ) {
+    final fromTopLevel = _parseAttachments(rawAttachments);
+    if (fromTopLevel.isNotEmpty) return fromTopLevel;
+
+    final fromPayload = _parseAttachments(rawPayload);
+    if (fromPayload.isNotEmpty) return fromPayload;
+
+    return const [];
+  }
+
+  static List<Attachment> _parseAttachments(dynamic value) {
+    final decoded = _decodeMaybeJson(value);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map>()
+          .map((e) => Attachment.fromJson(Map<String, dynamic>.from(e)))
+          .where((e) => e.url?.isNotEmpty == true)
+          .toList();
+    }
+
+    if (decoded is Map) {
+      final map = Map<String, dynamic>.from(decoded);
+      for (final key in const [
+        'attachments',
+        'files',
+        'list',
+        'image',
+        'audio',
+        'video',
+        'file',
+        'emoji',
+        'asset',
+        'cover',
+      ]) {
+        final nested = _parseAttachments(map[key]);
+        if (nested.isNotEmpty) return nested;
+      }
+
+      final hasUrl = map['url']?.toString().trim().isNotEmpty == true;
+      if (hasUrl) return [Attachment.fromJson(map)];
+    }
+
+    return const [];
   }
 }
