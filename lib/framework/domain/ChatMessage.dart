@@ -129,7 +129,9 @@ class ChatMessage {
     final payload = rawPayload is Map
         ? MessagePayload.fromJson(Map<String, dynamic>.from(rawPayload))
         : null;
-    final attachments = _extractAttachments(rawAttachments, rawPayload);
+    final attachments = payload?.mediaAttachments.isNotEmpty == true
+        ? payload!.mediaAttachments
+        : _extractAttachments(rawAttachments, rawPayload);
     final content = _resolveContent(json, payload);
 
     return ChatMessage(
@@ -177,7 +179,7 @@ class ChatMessage {
       messageType: msg.messageType,
       content: msg.payload?.content ?? '',
       payload: msg.payload,
-      attachments: msg.attachments,
+      attachments: msg.payload?.mediaAttachments ?? const [],
       extra: msg.extra,
       messageStatus: null, // V5 不在消息体中携带状态
       deliveryStatus: DeliveryStatus.sent,

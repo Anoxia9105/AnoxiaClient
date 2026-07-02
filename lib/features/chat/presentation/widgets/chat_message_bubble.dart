@@ -299,7 +299,6 @@ class ChatMessageBubble extends ConsumerWidget {
       senderId: message.senderId ?? 0,
       messageType: message.messageType ?? MessageType.text,
       payload: message.payload,
-      attachments: message.attachments,
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 

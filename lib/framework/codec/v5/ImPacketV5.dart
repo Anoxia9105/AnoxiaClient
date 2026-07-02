@@ -11,21 +11,21 @@ import '../../protocol/message/MessagePayload.dart';
 import '../../protocol/message/RoomMessage.dart';
 import '../../protocol/PacketType.dart';
 
-/// IM V5 协议全量编解码器
+/// IM V5 鍗忚鍏ㄩ噺缂栬В鐮佸櫒
 ///
-/// 负责 V5 Protobuf 消息的编码（Dart → 二进制帧）和解码（二进制帧 → Dart）。
-/// 所有方法均为静态方法，无需实例化。
+/// 璐熻矗 V5 Protobuf 娑堟伅鐨勭紪鐮侊紙Dart 鈫?浜岃繘鍒跺抚锛夊拰瑙ｇ爜锛堜簩杩涘埗甯?鈫?Dart锛夈€?
+/// 鎵€鏈夋柟娉曞潎涓洪潤鎬佹柟娉曪紝鏃犻渶瀹炰緥鍖栥€?
 class ImPacketV5 {
   ImPacketV5._();
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 公共常量（与服务端 CodecConstants 对齐）
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 鍏叡甯搁噺锛堜笌鏈嶅姟绔?CodecConstants 瀵归綈锛?
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
   static const int schemaVersion = 5;
   static const int payloadVersion = 1;
 
-  /// Topic 数字码
+  /// Topic 鏁板瓧鐮?
   static const int topicUnknown = 0;
   static const int topicMessage = 1;
   static const int topicHighFrequency = 2;
@@ -38,11 +38,11 @@ class ImPacketV5 {
   static const int codecEventMessage = 3;
   static const int codecAck = 4;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 帧 → 解码结果
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 甯?鈫?瑙ｇ爜缁撴灉
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
-  /// 解析完整的应用层帧，返回 [DecodedFrame]；格式非法时返回 null
+  /// 瑙ｆ瀽瀹屾暣鐨勫簲鐢ㄥ眰甯э紝杩斿洖 [DecodedFrame]锛涙牸寮忛潪娉曟椂杩斿洖 null
   static DecodedFrame? decodeFrame(Uint8List rawBytes) {
     try {
       final frame = FrameCodec.parse(rawBytes);
@@ -56,7 +56,7 @@ class ImPacketV5 {
     }
   }
 
-  /// 解析 Protobuf Envelope，返回 [DecodedFrame]
+  /// 瑙ｆ瀽 Protobuf Envelope锛岃繑鍥?[DecodedFrame]
   static DecodedFrame? decodeEnvelope(Uint8List envelopeBytes) {
     try {
       final env = ProtoReader(envelopeBytes).readAll();
@@ -82,11 +82,11 @@ class ImPacketV5 {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 消息解码（payload bytes → Dart 模型）
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 娑堟伅瑙ｇ爜锛坧ayload bytes 鈫?Dart 妯″瀷锛?
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
-  /// 解码 RoomMessage
+  /// 瑙ｇ爜 RoomMessage
   static RoomMessage? decodeRoomMessage(Uint8List bytes) {
     try {
       final f = ProtoReader(bytes).readAll();
@@ -94,19 +94,16 @@ class ImPacketV5 {
       final payloadBytes = f.getBytes(6); // MessagePayloadProtoV5
 
       MessagePayload? payload;
-      List<Attachment> attachments = const [];
 
       if (payloadBytes.isNotEmpty) {
-        final result = _decodeMessagePayload(payloadBytes, messageType);
-        payload = result.$1;
-        attachments = result.$2;
+        payload = _decodeMessagePayload(payloadBytes, messageType);
       }
 
       // properties: repeated StringPropertyProtoV5 = field 10
       final propsRaw = f.getRepeatedBytes(10);
       final properties = _decodeStringProperties(propsRaw);
 
-      // 系统消息：将 system payload 的 eventCode 注入 properties['action']
+      // 绯荤粺娑堟伅锛氬皢 system payload 鐨?eventCode 娉ㄥ叆 properties['action']
       if (messageType == MessageType.system) {
         final ec = payload?.content;
         if (ec != null && ec.isNotEmpty) {
@@ -121,7 +118,6 @@ class ImPacketV5 {
         senderId: f.getInt64(4),
         messageType: messageType,
         payload: payload,
-        attachments: attachments,
         properties: properties,
         seq: _zeroToNull(f.getInt64(7)),
         serverTimestamp: _zeroToNull(f.getInt64(8)),
@@ -132,7 +128,7 @@ class ImPacketV5 {
     }
   }
 
-  /// 解码 HighMessage
+  /// 瑙ｇ爜 HighMessage
   static HighMessage? decodeHighMessage(Uint8List bytes) {
     try {
       final f = ProtoReader(bytes).readAll();
@@ -151,7 +147,7 @@ class ImPacketV5 {
     }
   }
 
-  /// 解码 EventMessage
+  /// 瑙ｇ爜 EventMessage
   static EventMessage? decodeEventMessage(Uint8List bytes) {
     try {
       final f = ProtoReader(bytes).readAll();
@@ -169,7 +165,7 @@ class ImPacketV5 {
     }
   }
 
-  /// 解码 AckV5
+  /// 瑙ｇ爜 AckV5
   static AckV5? decodeAck(Uint8List bytes) {
     try {
       final f = ProtoReader(bytes).readAll();
@@ -196,11 +192,11 @@ class ImPacketV5 {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 消息编码（Dart 模型 → 完整二进制帧）
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 娑堟伅缂栫爜锛圖art 妯″瀷 鈫?瀹屾暣浜岃繘鍒跺抚锛?
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
-  /// 编码 RoomMessage → 完整二进制帧
+  /// 缂栫爜 RoomMessage 鈫?瀹屾暣浜岃繘鍒跺抚
   static Uint8List encodeRoomMessageFrame(RoomMessage msg) {
     final payloadBytes = _encodeMessagePayload(msg);
     final envelope = _buildEnvelope(
@@ -212,7 +208,7 @@ class ImPacketV5 {
     return FrameCodec.buildProtobuf(envelope);
   }
 
-  /// 编码 HighMessage → 完整二进制帧
+  /// 缂栫爜 HighMessage 鈫?瀹屾暣浜岃繘鍒跺抚
   static Uint8List encodeHighMessageFrame(HighMessage msg) {
     final w = ProtoWriter()
       ..writeString(1, msg.messageId)
@@ -233,11 +229,11 @@ class ImPacketV5 {
     return FrameCodec.buildProtobuf(envelope);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 内部：MessagePayload 编解码
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 鍐呴儴锛歁essagePayload 缂栬В鐮?
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
-  /// 编码 RoomMessage 的 payload bytes（RoomMessageProtoV5）
+  /// 缂栫爜 RoomMessage 鐨?payload bytes锛圧oomMessageProtoV5锛?
   static Uint8List _encodeMessagePayload(RoomMessage msg) {
     final w = ProtoWriter();
     w.writeString(1, msg.messageId.isEmpty ? null : msg.messageId);
@@ -261,10 +257,9 @@ class ImPacketV5 {
     return w.toBytes();
   }
 
-  /// 构建 MessagePayloadProtoV5（oneof body）
+  /// 鏋勫缓 MessagePayloadProtoV5锛坥neof body锛?
   static ProtoWriter _buildMessagePayloadProto(RoomMessage msg) {
     final payload = msg.payload;
-    final attachments = msg.attachments;
     final type = msg.messageType;
     final w = ProtoWriter();
 
@@ -288,8 +283,8 @@ class ImPacketV5 {
       case MessageType.image:
         // ImagePayloadProtoV5: image=1, caption=2, interaction=3
         final iw = ProtoWriter();
-        if (attachments.isNotEmpty) {
-          iw.writeMessage(1, _buildMediaAttachment(attachments.first));
+        if (payload?.image != null) {
+          iw.writeMessage(1, _buildMediaAttachment(payload!.image!));
         }
         iw.writeString(2, payload?.content);
         _writeInteraction(iw, 3, payload?.replyTo, payload?.mentions);
@@ -298,22 +293,26 @@ class ImPacketV5 {
       case MessageType.audio:
         // AudioPayloadProtoV5: audio=1, duration_ms=2, waveform=3
         final aw = ProtoWriter();
-        if (attachments.isNotEmpty) {
-          aw.writeMessage(1, _buildMediaAttachment(attachments.first));
+        if (payload?.audio != null) {
+          aw.writeMessage(1, _buildMediaAttachment(payload!.audio!));
         }
         if (payload?.audioDuration != null) {
           aw.writeInt32(2, payload!.audioDuration!);
         }
+        aw.writeString(3, payload?.waveform);
         w.writeMessage(4, aw); // oneof audio = 4
 
       case MessageType.video:
         // VideoPayloadProtoV5: video=1, cover=2, duration_ms=3, caption=4
         final vw = ProtoWriter();
-        if (attachments.isNotEmpty) {
-          vw.writeMessage(1, _buildMediaAttachment(attachments.first));
+        if (payload?.video != null) {
+          vw.writeMessage(1, _buildMediaAttachment(payload!.video!));
         }
-        if (attachments.length > 1) {
-          vw.writeMessage(2, _buildMediaAttachment(attachments[1]));
+        if (payload?.cover != null) {
+          vw.writeMessage(2, _buildMediaAttachment(payload!.cover!));
+        }
+        if (payload?.audioDuration != null) {
+          vw.writeInt32(3, payload!.audioDuration!);
         }
         vw.writeString(4, payload?.content);
         w.writeMessage(5, vw); // oneof video = 5
@@ -321,8 +320,8 @@ class ImPacketV5 {
       case MessageType.file:
         // FilePayloadProtoV5: file=1, caption=2, interaction=3
         final fw = ProtoWriter();
-        if (attachments.isNotEmpty) {
-          fw.writeMessage(1, _buildMediaAttachment(attachments.first));
+        if (payload?.file != null) {
+          fw.writeMessage(1, _buildMediaAttachment(payload!.file!));
         }
         fw.writeString(2, payload?.content);
         _writeInteraction(fw, 3, payload?.replyTo, payload?.mentions);
@@ -332,6 +331,9 @@ class ImPacketV5 {
         // EmojiPayloadProtoV5: emoji_code=1, asset=2
         final ew = ProtoWriter()
           ..writeString(1, payload?.emojiCode ?? payload?.content);
+        if (payload?.asset != null) {
+          ew.writeMessage(2, _buildMediaAttachment(payload!.asset!));
+        }
         w.writeMessage(7, ew); // oneof emoji = 7
 
       case MessageType.system:
@@ -353,19 +355,14 @@ class ImPacketV5 {
     return w;
   }
 
-  /// 解码 MessagePayloadProtoV5 → (MessagePayload, List<Attachment>)
-  static (MessagePayload?, List<Attachment>) _decodeMessagePayload(
+  /// 瑙ｇ爜 MessagePayloadProtoV5 鈫?(MessagePayload, List<Attachment>)
+  static MessagePayload? _decodeMessagePayload(
     Uint8List bytes,
     MessageType type,
   ) {
     final f = ProtoReader(bytes).readAll();
     MessagePayload? payload;
-    List<Attachment> attachments = const [];
 
-    // oneof body: text=1, rich_text=2, image=3, audio=4, video=5, file=6,
-    //             emoji=7, location=8, card=9, system=10
-
-    // 按照枚举类型决定读取哪个 oneof 字段
     switch (type) {
       case MessageType.text:
         final tb = f.getBytes(1);
@@ -373,7 +370,8 @@ class ImPacketV5 {
           final tf = ProtoReader(tb).readAll();
           final inter = _readInteraction(tf.getBytes(3));
           payload = MessagePayload(
-            content: _emptyToNull(tf.getString(1)) ?? _emptyToNull(tf.getString(2)),
+            content:
+                _emptyToNull(tf.getString(1)) ?? _emptyToNull(tf.getString(2)),
             markdown: _emptyToNull(tf.getString(2)),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
@@ -386,8 +384,8 @@ class ImPacketV5 {
           final rf = ProtoReader(rb).readAll();
           final inter = _readInteraction(rf.getBytes(3));
           payload = MessagePayload(
-            content: _emptyToNull(rf.getString(2)), // plain_text
-            quillDelta: _emptyToNull(rf.getString(1)), // quill_delta
+            content: _emptyToNull(rf.getString(2)),
+            quillDelta: _emptyToNull(rf.getString(1)),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
           );
@@ -396,67 +394,72 @@ class ImPacketV5 {
       case MessageType.image:
         final ib = f.getBytes(3);
         if (ib.isNotEmpty) {
-          final iif = ProtoReader(ib).readAll();
-          final att = _decodeMediaAttachment(iif.getBytes(1));
-          final inter = _readInteraction(iif.getBytes(3));
+          final image = ProtoReader(ib).readAll();
+          final inter = _readInteraction(image.getBytes(3));
+          final att = _decodeMediaAttachment(image.getBytes(1));
           payload = MessagePayload(
-            content: _emptyToNull(iif.getString(2)) ?? '[图片]',
+            content: _emptyToNull(image.getString(2)) ?? '[image]',
+            image: att?.copyWith(kind: 'IMAGE'),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
           );
-          attachments = att != null ? [att] : const [];
         }
 
       case MessageType.audio:
         final ab = f.getBytes(4);
         if (ab.isNotEmpty) {
-          final af = ProtoReader(ab).readAll();
-          final att = _decodeMediaAttachment(af.getBytes(1));
+          final audio = ProtoReader(ab).readAll();
+          final att = _decodeMediaAttachment(audio.getBytes(1));
           payload = MessagePayload(
-            content: '[语音]',
-            audioDuration: _zeroToNull(af.getInt32(2)),
+            content: '[audio]',
+            audioDuration: _zeroToNull(audio.getInt32(2)),
+            audio: att?.copyWith(kind: 'AUDIO'),
+            waveform: _emptyToNull(audio.getString(3)),
           );
-          attachments = att != null ? [att] : const [];
         }
 
       case MessageType.video:
         final vb = f.getBytes(5);
         if (vb.isNotEmpty) {
-          final vf = ProtoReader(vb).readAll();
-          final videoAtt = _decodeMediaAttachment(vf.getBytes(1));
-          final coverAtt = _decodeMediaAttachment(vf.getBytes(2));
-          final inter = _readInteraction(vf.getBytes(5));
+          final video = ProtoReader(vb).readAll();
+          final videoAtt = _decodeMediaAttachment(video.getBytes(1));
+          final coverAtt = _decodeMediaAttachment(video.getBytes(2));
+          final inter = _readInteraction(video.getBytes(5));
           payload = MessagePayload(
-            content: _emptyToNull(vf.getString(4)) ?? '[视频]',
+            content: _emptyToNull(video.getString(4)) ?? '[video]',
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            audioDuration: _zeroToNull(video.getInt32(3)),
+            video: videoAtt?.copyWith(kind: 'VIDEO'),
+            cover: coverAtt?.copyWith(kind: 'IMAGE'),
           );
-          final atts = <Attachment>[];
-          if (videoAtt != null) atts.add(videoAtt);
-          if (coverAtt != null) atts.add(coverAtt);
-          attachments = atts;
         }
 
       case MessageType.file:
         final fb = f.getBytes(6);
         if (fb.isNotEmpty) {
-          final ff = ProtoReader(fb).readAll();
-          final att = _decodeMediaAttachment(ff.getBytes(1));
-          final inter = _readInteraction(ff.getBytes(3));
+          final file = ProtoReader(fb).readAll();
+          final inter = _readInteraction(file.getBytes(3));
+          final att = _decodeMediaAttachment(file.getBytes(1));
           payload = MessagePayload(
-            content: _emptyToNull(ff.getString(2)) ?? '[文件]',
+            content: _emptyToNull(file.getString(2)) ?? '[file]',
+            file: att?.copyWith(kind: 'FILE'),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
           );
-          attachments = att != null ? [att] : const [];
         }
 
       case MessageType.emoji:
         final eb = f.getBytes(7);
         if (eb.isNotEmpty) {
-          final ef = ProtoReader(eb).readAll();
-          final code = _emptyToNull(ef.getString(1));
-          payload = MessagePayload(content: code ?? '', emojiCode: code);
+          final emoji = ProtoReader(eb).readAll();
+          final code = _emptyToNull(emoji.getString(1));
+          final asset = _decodeMediaAttachment(emoji.getBytes(2));
+          payload = MessagePayload(
+            content: code ?? '',
+            emojiCode: code,
+            asset: asset?.copyWith(kind: 'FILE'),
+          );
         }
 
       case MessageType.location:
@@ -464,7 +467,7 @@ class ImPacketV5 {
         if (lb.isNotEmpty) {
           final lf = ProtoReader(lb).readAll();
           payload = MessagePayload(
-            content: _emptyToNull(lf.getString(3)) ?? '[位置]',
+            content: _emptyToNull(lf.getString(3)) ?? '[location]',
           );
         }
 
@@ -473,7 +476,7 @@ class ImPacketV5 {
         if (cb.isNotEmpty) {
           final cf = ProtoReader(cb).readAll();
           payload = MessagePayload(
-            content: _emptyToNull(cf.getString(3)) ?? '[卡片]',
+            content: _emptyToNull(cf.getString(3)) ?? '[card]',
           );
         }
 
@@ -481,27 +484,36 @@ class ImPacketV5 {
         final sb = f.getBytes(10);
         if (sb.isNotEmpty) {
           final sf = ProtoReader(sb).readAll();
-          // event_code → content（用于 system_message_service 读取 action）
           payload = MessagePayload(
-            content: _emptyToNull(sf.getString(1)) ?? _emptyToNull(sf.getString(2)),
+            content:
+                _emptyToNull(sf.getString(1)) ?? _emptyToNull(sf.getString(2)),
           );
         }
     }
 
-    return (payload, attachments);
+    return payload;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 内部：Attachment / MediaAttachment
-  // ═══════════════════════════════════════════════════════════════════════════
-
   static ProtoWriter _buildMediaAttachment(Attachment att) {
-    return ProtoWriter()
+    final w = ProtoWriter()
       ..writeString(1, att.id) // attachment_id
+      ..writeUint32(2, _mediaKindCode(att.kind)) // kind
       ..writeString(3, att.url) // url
       ..writeString(4, att.name) // name
       ..writeString(5, att.type) // mime_type
-      ..writeInt64(6, att.size ?? 0); // size_bytes
+      ..writeInt64(6, att.size ?? 0) // size_bytes
+      ..writeString(7, att.sha256)
+      ..writeInt32(8, att.width ?? 0)
+      ..writeInt32(9, att.height ?? 0)
+      ..writeInt32(10, att.bitrate ?? 0)
+      ..writeString(11, att.thumbnailUrl);
+    for (final entry in att.properties.entries) {
+      final propWriter = ProtoWriter()
+        ..writeString(1, entry.key)
+        ..writeString(2, entry.value);
+      w.writeMessage(12, propWriter);
+    }
+    return w;
   }
 
   static Attachment? _decodeMediaAttachment(Uint8List bytes) {
@@ -511,19 +523,23 @@ class ImPacketV5 {
     if (url.isEmpty) return null;
     return Attachment(
       id: _emptyToNull(f.getString(1)),
+      kind: _decodeMediaKind(f.getUint32(2)),
       url: url,
       name: _emptyToNull(f.getString(4)),
       type: _emptyToNull(f.getString(5)),
       size: _zeroToNull(f.getInt64(6)),
+      sha256: _emptyToNull(f.getString(7)),
       thumbnailUrl: _emptyToNull(f.getString(11)),
       width: _zeroToNull(f.getInt32(8)),
       height: _zeroToNull(f.getInt32(9)),
+      bitrate: _zeroToNull(f.getInt32(10)),
+      properties: _decodeStringProperties(f.getRepeatedBytes(12)),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 内部：Interaction
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 鍐呴儴锛欼nteraction
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
   static void _writeInteraction(
     ProtoWriter w,
@@ -532,7 +548,8 @@ class ImPacketV5 {
     List<int>? mentions,
   ) {
     if ((replyTo == null || replyTo.isEmpty) &&
-        (mentions == null || mentions.isEmpty)) return;
+        (mentions == null || mentions.isEmpty))
+      return;
     final iw = ProtoWriter()
       ..writeString(1, replyTo)
       ..writeRepeatedInt64(2, mentions ?? const []);
@@ -548,9 +565,9 @@ class ImPacketV5 {
     return _Interaction(replyTo, mentions.isEmpty ? null : mentions);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 内部：StringProperty
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 鍐呴儴锛歋tringProperty
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
   static Map<String, String> _decodeStringProperties(List<Uint8List> propsRaw) {
     final result = <String, String>{};
@@ -564,9 +581,9 @@ class ImPacketV5 {
     return result;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 内部：PacketEnvelopeV5 构建
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 鍐呴儴锛歅acketEnvelopeV5 鏋勫缓
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
   static Uint8List _buildEnvelope({
     required int topic,
@@ -584,32 +601,55 @@ class ImPacketV5 {
     return w.toBytes();
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 内部：枚举转换
-  // ═══════════════════════════════════════════════════════════════════════════
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 鍐呴儴锛氭灇涓捐浆鎹?
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
   static PacketType _codeToTopic(int code) => switch (code) {
-        topicMessage => PacketType.message,
-        topicHighFrequency => PacketType.highFrequency,
-        topicEvent => PacketType.event,
-        topicAck => PacketType.ack,
-        _ => PacketType.unknown,
-      };
+    topicMessage => PacketType.message,
+    topicHighFrequency => PacketType.highFrequency,
+    topicEvent => PacketType.event,
+    topicAck => PacketType.ack,
+    _ => PacketType.unknown,
+  };
 
   static int _highMessageTypeCode(HighMessageType? type) {
     if (type == null) return 0;
     return type.code;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 工具方法
-  // ═══════════════════════════════════════════════════════════════════════════
+  static int _mediaKindCode(String? kind) {
+    switch (kind?.toUpperCase()) {
+      case 'IMAGE':
+        return 1;
+      case 'AUDIO':
+        return 2;
+      case 'VIDEO':
+        return 3;
+      case 'FILE':
+        return 4;
+      default:
+        return 0;
+    }
+  }
+
+  static String? _decodeMediaKind(int code) => switch (code) {
+    1 => 'IMAGE',
+    2 => 'AUDIO',
+    3 => 'VIDEO',
+    4 => 'FILE',
+    _ => null,
+  };
+
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+  // 宸ュ叿鏂规硶
+  // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
   static String? _emptyToNull(String s) => s.isEmpty ? null : s;
   static int? _zeroToNull(int v) => v == 0 ? null : v;
 }
 
-// ─── 解码结果 ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ 瑙ｇ爜缁撴灉 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 class DecodedFrame {
   final bool isPing;
@@ -646,7 +686,7 @@ class DecodedFrame {
   bool get isAck => codecId == ImPacketV5.codecAck;
 }
 
-// ─── ACK 模型 ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ ACK 妯″瀷 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 class AckV5 {
   final String? clientMessageId;
@@ -677,7 +717,7 @@ class AckMeta {
   bool get isEmpty => messageId == null && roomId == null && seq == null;
 }
 
-// ─── 交互元数据（内部使用）────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ 浜や簰鍏冩暟鎹紙鍐呴儴浣跨敤锛夆攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 class _Interaction {
   final String? replyTo;

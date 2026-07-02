@@ -1,28 +1,21 @@
-/// 协议层消息负载模型（V5 兼容）
-///
-/// 保持扁平结构，便于 UI 层直接读取。
-/// 编解码时由 ImPacketV5 负责与 V5 Protobuf 类型互转。
+import 'Attachment.dart';
+import 'MessageEunm.dart';
+
 class MessagePayload {
-  /// 文本内容（TEXT/纯文本预览）
   final String? content;
-
-  /// Quill 富文本 Delta JSON
   final String? quillDelta;
-
-  /// 被回复消息的 ID
   final String? replyTo;
-
-  /// @ 提及的用户 ID 列表
   final List<int>? mentions;
-
-  /// Markdown 格式内容
   final String? markdown;
-
-  /// Emoji 统一码
   final String? emojiCode;
-
-  /// 音频时长（毫秒）
   final int? audioDuration;
+  final Attachment? image;
+  final Attachment? audio;
+  final Attachment? video;
+  final Attachment? cover;
+  final Attachment? file;
+  final Attachment? asset;
+  final String? waveform;
 
   const MessagePayload({
     this.content,
@@ -32,25 +25,84 @@ class MessagePayload {
     this.markdown,
     this.emojiCode,
     this.audioDuration,
+    this.image,
+    this.audio,
+    this.video,
+    this.cover,
+    this.file,
+    this.asset,
+    this.waveform,
   });
+
+  List<Attachment> get mediaAttachments {
+    final result = <Attachment>[];
+    for (final item in [image, audio, video, cover, file, asset]) {
+      if (item != null && item.url?.isNotEmpty == true) result.add(item);
+    }
+    return result;
+  }
+
+  MessagePayload withMedia(MessageType type, List<Attachment> attachments) {
+    if (attachments.isEmpty) return this;
+    final first = attachments.first;
+    return switch (type) {
+      MessageType.image => copyWith(image: first.copyWith(kind: 'IMAGE')),
+      MessageType.audio => copyWith(audio: first.copyWith(kind: 'AUDIO')),
+      MessageType.video => copyWith(
+        video: first.copyWith(kind: 'VIDEO'),
+        cover: attachments.length > 1
+            ? attachments[1].copyWith(kind: 'IMAGE')
+            : cover,
+      ),
+      MessageType.file => copyWith(file: first.copyWith(kind: 'FILE')),
+      MessageType.emoji => copyWith(asset: first.copyWith(kind: 'FILE')),
+      _ => this,
+    };
+  }
+
+  MessagePayload copyWith({
+    String? content,
+    String? quillDelta,
+    String? replyTo,
+    List<int>? mentions,
+    String? markdown,
+    String? emojiCode,
+    int? audioDuration,
+    Attachment? image,
+    Attachment? audio,
+    Attachment? video,
+    Attachment? cover,
+    Attachment? file,
+    Attachment? asset,
+    String? waveform,
+  }) => MessagePayload(
+    content: content ?? this.content,
+    quillDelta: quillDelta ?? this.quillDelta,
+    replyTo: replyTo ?? this.replyTo,
+    mentions: mentions ?? this.mentions,
+    markdown: markdown ?? this.markdown,
+    emojiCode: emojiCode ?? this.emojiCode,
+    audioDuration: audioDuration ?? this.audioDuration,
+    image: image ?? this.image,
+    audio: audio ?? this.audio,
+    video: video ?? this.video,
+    cover: cover ?? this.cover,
+    file: file ?? this.file,
+    asset: asset ?? this.asset,
+    waveform: waveform ?? this.waveform,
+  );
 
   factory MessagePayload.fromJson(Map<String, dynamic> json) {
     final text = _asMap(json['text']);
     if (text != null) {
+      final interaction = _asMap(text['interaction']);
       final content = _readString(text, ['text', 'content']);
       final markdown = _readString(text, ['markdown']);
-      final interaction = _asMap(text['interaction']);
       return MessagePayload(
         content: content.isNotEmpty ? content : markdown,
         markdown: markdown.isNotEmpty ? markdown : null,
-        replyTo: _readString(interaction, [
-          'replyToMessageId',
-          'reply_to_message_id',
-          'replyTo',
-        ]),
-        mentions: _readIntList(
-          interaction?['mentionUserIds'] ?? interaction?['mentions'],
-        ),
+        replyTo: _readReplyTo(interaction),
+        mentions: _readMentions(interaction),
       );
     }
 
@@ -65,73 +117,58 @@ class MessagePayload {
           'quillDelta',
           'quill_delta',
         ]),
-        replyTo: _readString(interaction, [
-          'replyToMessageId',
-          'reply_to_message_id',
-          'replyTo',
-        ]),
-        mentions: _readIntList(
-          interaction?['mentionUserIds'] ?? interaction?['mentions'],
-        ),
+        replyTo: _readReplyTo(interaction),
+        mentions: _readMentions(interaction),
       );
     }
 
-    final image = _asMap(json['image']);
-    if (image != null) {
-      final interaction = _asMap(image['interaction']);
+    final imagePayload = _asMap(json['image']);
+    if (imagePayload != null) {
+      final interaction = _asMap(imagePayload['interaction']);
       return MessagePayload(
-        content: _readString(image, ['caption', 'content']),
-        replyTo: _readString(interaction, [
-          'replyToMessageId',
-          'reply_to_message_id',
-          'replyTo',
-        ]),
-        mentions: _readIntList(
-          interaction?['mentionUserIds'] ?? interaction?['mentions'],
-        ),
+        content: _readString(imagePayload, ['caption', 'content']),
+        image: _readAttachment(imagePayload['image'])?.copyWith(kind: 'IMAGE'),
+        replyTo: _readReplyTo(interaction),
+        mentions: _readMentions(interaction),
       );
     }
 
-    final file = _asMap(json['file']);
-    if (file != null) {
-      final interaction = _asMap(file['interaction']);
+    final filePayload = _asMap(json['file']);
+    if (filePayload != null) {
+      final interaction = _asMap(filePayload['interaction']);
       return MessagePayload(
-        content: _readString(file, ['caption', 'content']),
-        replyTo: _readString(interaction, [
-          'replyToMessageId',
-          'reply_to_message_id',
-          'replyTo',
-        ]),
-        mentions: _readIntList(
-          interaction?['mentionUserIds'] ?? interaction?['mentions'],
-        ),
+        content: _readString(filePayload, ['caption', 'content']),
+        file: _readAttachment(filePayload['file'])?.copyWith(kind: 'FILE'),
+        replyTo: _readReplyTo(interaction),
+        mentions: _readMentions(interaction),
       );
     }
 
-    final audio = _asMap(json['audio']);
-    if (audio != null) {
+    final audioPayload = _asMap(json['audio']);
+    if (audioPayload != null) {
       return MessagePayload(
         content: '[audio]',
-        audioDuration: _readInt(audio['durationMs'] ?? audio['duration_ms']),
+        audioDuration: _readInt(
+          audioPayload['durationMs'] ?? audioPayload['duration_ms'],
+        ),
+        audio: _readAttachment(audioPayload['audio'])?.copyWith(kind: 'AUDIO'),
+        waveform: _readString(audioPayload, ['waveform']),
       );
     }
 
-    final video = _asMap(json['video']);
-    if (video != null) {
-      final interaction = _asMap(video['interaction']);
+    final videoPayload = _asMap(json['video']);
+    if (videoPayload != null) {
+      final interaction = _asMap(videoPayload['interaction']);
+      final caption = _readString(videoPayload, ['caption', 'content']);
       return MessagePayload(
-        content: _readString(video, ['caption', 'content']).isNotEmpty
-            ? _readString(video, ['caption', 'content'])
-            : '[video]',
-        replyTo: _readString(interaction, [
-          'replyToMessageId',
-          'reply_to_message_id',
-          'replyTo',
-        ]),
-        mentions: _readIntList(
-          interaction?['mentionUserIds'] ?? interaction?['mentions'],
+        content: caption.isNotEmpty ? caption : '[video]',
+        replyTo: _readReplyTo(interaction),
+        mentions: _readMentions(interaction),
+        audioDuration: _readInt(
+          videoPayload['durationMs'] ?? videoPayload['duration_ms'],
         ),
-        audioDuration: _readInt(video['durationMs'] ?? video['duration_ms']),
+        video: _readAttachment(videoPayload['video'])?.copyWith(kind: 'VIDEO'),
+        cover: _readAttachment(videoPayload['cover'])?.copyWith(kind: 'IMAGE'),
       );
     }
 
@@ -146,6 +183,7 @@ class MessagePayload {
       return MessagePayload(
         content: fallback.isNotEmpty ? fallback : emojiId,
         emojiCode: emojiId.isNotEmpty ? emojiId : fallback,
+        asset: _readAttachment(emoji['asset'])?.copyWith(kind: 'FILE'),
       );
     }
 
@@ -200,6 +238,13 @@ class MessagePayload {
       audioDuration: _readInt(
         json['audioDuration'] ?? json['durationMs'] ?? json['duration_ms'],
       ),
+      image: _readAttachment(json['image'])?.copyWith(kind: 'IMAGE'),
+      audio: _readAttachment(json['audio'])?.copyWith(kind: 'AUDIO'),
+      video: _readAttachment(json['video'])?.copyWith(kind: 'VIDEO'),
+      cover: _readAttachment(json['cover'])?.copyWith(kind: 'IMAGE'),
+      file: _readAttachment(json['file'])?.copyWith(kind: 'FILE'),
+      asset: _readAttachment(json['asset'])?.copyWith(kind: 'FILE'),
+      waveform: _readString(json, ['waveform']),
     );
   }
 
@@ -211,13 +256,21 @@ class MessagePayload {
     'markdown': markdown,
     'emojiCode': emojiCode,
     'audioDuration': audioDuration,
+    'image': image?.toJson(),
+    'audio': audio?.toJson(),
+    'video': video?.toJson(),
+    'cover': cover?.toJson(),
+    'file': file?.toJson(),
+    'asset': asset?.toJson(),
+    'waveform': waveform,
   };
 
   @override
   String toString() =>
       'MessagePayload{content: $content, quillDelta: $quillDelta, '
       'replyTo: $replyTo, mentions: $mentions, markdown: $markdown, '
-      'emojiCode: $emojiCode, audioDuration: $audioDuration}';
+      'emojiCode: $emojiCode, audioDuration: $audioDuration, '
+      'mediaAttachments: ${mediaAttachments.length}}';
 
   static Map<String, dynamic>? _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
@@ -236,6 +289,14 @@ class MessagePayload {
     return '';
   }
 
+  static String _readReplyTo(Map<String, dynamic>? interaction) => _readString(
+    interaction,
+    ['replyToMessageId', 'reply_to_message_id', 'replyTo'],
+  );
+
+  static List<int>? _readMentions(Map<String, dynamic>? interaction) =>
+      _readIntList(interaction?['mentionUserIds'] ?? interaction?['mentions']);
+
   static int? _readInt(dynamic value) =>
       value == null ? null : int.tryParse(value.toString());
 
@@ -246,5 +307,13 @@ class MessagePayload {
         .whereType<int>()
         .toList();
     return result.isEmpty ? null : result;
+  }
+
+  static Attachment? _readAttachment(dynamic value) {
+    final map = _asMap(value);
+    if (map == null) return null;
+    final attachment = Attachment.fromJson(map);
+    if (attachment.url?.isNotEmpty != true) return null;
+    return attachment;
   }
 }

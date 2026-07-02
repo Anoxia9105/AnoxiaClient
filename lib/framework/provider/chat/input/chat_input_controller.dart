@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
@@ -34,14 +35,14 @@ import '../room/room_member_service.dart';
 
 part 'chat_input_controller.g.dart';
 
-/// 聊天输入控制器
+/// 鑱婂ぉ杈撳叆鎺у埗鍣?
 ///
-/// 负责管理聊天输入框的状态，包括：
-/// - 富文本编辑（使用 [QuillController]）
-/// - @提及用户功能
-/// - 图片/文件上传
-/// - 正在输入状态发送
-/// - 消息发送逻辑
+/// 璐熻矗绠＄悊鑱婂ぉ杈撳叆妗嗙殑鐘舵€侊紝鍖呮嫭锛?
+/// - 瀵屾枃鏈紪杈戯紙浣跨敤 [QuillController]锛?
+/// - @鎻愬強鐢ㄦ埛鍔熻兘
+/// - 鍥剧墖/鏂囦欢涓婁紶
+/// - 姝ｅ湪杈撳叆鐘舵€佸彂閫?
+/// - 娑堟伅鍙戦€侀€昏緫
 @Riverpod(keepAlive: true)
 class ChatInputController extends _$ChatInputController {
   bool _isTyping = false;
@@ -65,37 +66,37 @@ class ChatInputController extends _$ChatInputController {
 
   @override
   QuillController build(String roomId) {
-    // 提前定义 controller 变量，以便在闭包中使用
+    // 鎻愬墠瀹氫箟 controller 鍙橀噺锛屼互渚垮湪闂寘涓娇鐢?
     late QuillController controller;
 
     controller = QuillController.basic(
       config: QuillControllerConfig(
         clipboardConfig: QuillClipboardConfig(
-          enableExternalRichPaste: false, // 禁止富文本，防止格式错乱
-          // --- 核心修改：对接粘贴板图片 ---
+          enableExternalRichPaste: false, // 绂佹瀵屾枃鏈紝闃叉鏍煎紡閿欎贡
+          // --- 鏍稿績淇敼锛氬鎺ョ矘璐存澘鍥剧墖 ---
           onImagePaste: (Uint8List imageBytes) async {
-            log.info('检测到图片粘贴，大小: ${imageBytes.lengthInBytes} 字节');
+            log.info('妫€娴嬪埌鍥剧墖绮樿创锛屽ぇ灏? ${imageBytes.lengthInBytes} 瀛楄妭');
 
-            // 调用 ChatImageUploadController 处理粘贴
-            // 逻辑：存临时文件 -> 插入预览 -> 后台静默上传
+            // 璋冪敤 ChatImageUploadController 澶勭悊绮樿创
+            // 閫昏緫锛氬瓨涓存椂鏂囦欢 -> 鎻掑叆棰勮 -> 鍚庡彴闈欓粯涓婁紶
             await ref
                 .read(chatImageUploadControllerProvider.notifier)
                 .handlePastedImage(controller, imageBytes);
 
-            // 返回 null，表示“我已经手动处理了插入，Quill 你不用再管了”
+            // 杩斿洖 null锛岃〃绀衡€滄垜宸茬粡鎵嬪姩澶勭悊浜嗘彃鍏ワ紝Quill 浣犱笉鐢ㄥ啀绠′簡鈥?
             return null;
           },
 
-          // 处理纯文本粘贴（例如过滤敏感词）
+          // 澶勭悊绾枃鏈矘璐达紙渚嬪杩囨护鏁忔劅璇嶏級
           onPlainTextPaste: (String plainText) async {
-            log.info('检测到TEXT粘贴$plainText');
+            log.info('妫€娴嬪埌TEXT绮樿创$plainText');
             return plainText;
           },
         ),
       ),
     );
 
-    // 监听文本变化处理“正在输入”逻辑
+    // 鐩戝惉鏂囨湰鍙樺寲澶勭悊鈥滄鍦ㄨ緭鍏モ€濋€昏緫
     controller.addListener(_onTextChanged);
 
     ref.onDispose(() {
@@ -106,7 +107,7 @@ class ChatInputController extends _$ChatInputController {
     return controller;
   }
 
-  /// 监听文本变化处理
+  /// 鐩戝惉鏂囨湰鍙樺寲澶勭悊
   void _onTextChanged() {
     if (!ref.mounted) return;
     final controller = state;
@@ -126,7 +127,7 @@ class ChatInputController extends _$ChatInputController {
       }
     });
 
-    // 延迟执行，避免在 notifyListeners 期间修改 provider
+    // 寤惰繜鎵ц锛岄伩鍏嶅湪 notifyListeners 鏈熼棿淇敼 provider
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!ref.mounted) return;
 
@@ -136,38 +137,38 @@ class ChatInputController extends _$ChatInputController {
         final plainText = controller.document.toPlainText();
         final cursorPosition = selection.baseOffset;
 
-        // 检查光标前的字符是否是 @
+        // 妫€鏌ュ厜鏍囧墠鐨勫瓧绗︽槸鍚︽槸 @
         if (cursorPosition <= plainText.length &&
             plainText[cursorPosition - 1] == '@') {
           ref.read(mentionStateProvider.notifier).show(cursorPosition, '');
           return;
         }
 
-        // 如果已经在 @ 状态,更新搜索文本
+        // 濡傛灉宸茬粡鍦?@ 鐘舵€?鏇存柊鎼滅储鏂囨湰
         final mentionState = ref.read(mentionStateProvider);
         if (mentionState.isShowing) {
-          // 检查光标是否回退到@符号之前（用户删除了@或退格到@之前）
+          // 妫€鏌ュ厜鏍囨槸鍚﹀洖閫€鍒癅绗﹀彿涔嬪墠锛堢敤鎴峰垹闄や簡@鎴栭€€鏍煎埌@涔嬪墠锛?
           if (cursorPosition < mentionState.cursorPosition) {
             ref.read(mentionStateProvider.notifier).hide();
             return;
           }
 
-          // 检查@符号位置是否还是@符号
+          // 妫€鏌绗﹀彿浣嶇疆鏄惁杩樻槸@绗﹀彿
           if (mentionState.cursorPosition > 0 &&
               mentionState.cursorPosition - 1 < plainText.length &&
               plainText[mentionState.cursorPosition - 1] != '@') {
-            // @符号被删除了
+            // @绗﹀彿琚垹闄や簡
             ref.read(mentionStateProvider.notifier).hide();
             return;
           }
 
-          // 提取 @ 后的文本
+          // 鎻愬彇 @ 鍚庣殑鏂囨湰
           final textAfterAt = plainText.substring(
             mentionState.cursorPosition,
             cursorPosition.clamp(mentionState.cursorPosition, plainText.length),
           );
 
-          // 如果遇到空格或换行,关闭弹窗
+          // 濡傛灉閬囧埌绌烘牸鎴栨崲琛?鍏抽棴寮圭獥
           if (textAfterAt.contains(' ') || textAfterAt.contains('\n')) {
             ref.read(mentionStateProvider.notifier).hide();
           } else {
@@ -175,7 +176,7 @@ class ChatInputController extends _$ChatInputController {
           }
         }
       } else {
-        // 光标在开头，如果弹窗正在显示则关闭
+        // 鍏夋爣鍦ㄥ紑澶达紝濡傛灉寮圭獥姝ｅ湪鏄剧ず鍒欏叧闂?
         final mentionState = ref.read(mentionStateProvider);
         if (mentionState.isShowing) {
           ref.read(mentionStateProvider.notifier).hide();
@@ -184,23 +185,23 @@ class ChatInputController extends _$ChatInputController {
     });
   }
 
-  /// 发送正在输入状态
+  /// 鍙戦€佹鍦ㄨ緭鍏ョ姸鎬?
   void _sendTypingStatus(bool isTyping) {
     if (!ref.mounted) return;
     final room = ref.read(currentRoomProvider(roomId));
-    //房间或者接收者是空的不发送  （群聊不发）
+    //鎴块棿鎴栬€呮帴鏀惰€呮槸绌虹殑涓嶅彂閫? 锛堢兢鑱婁笉鍙戯級
     if (room == null || room.peerId == null) return;
 
-    //用户在线发送 TYPING_STATUS 不在线不发送
+    //鐢ㄦ埛鍦ㄧ嚎鍙戦€?TYPING_STATUS 涓嶅湪绾夸笉鍙戦€?
     final roomMembers = ref.read(roomMembersProvider(room.roomId!));
 
-    // 4.1 成员列表为空（未同步），不发送
+    // 4.1 鎴愬憳鍒楄〃涓虹┖锛堟湭鍚屾锛夛紝涓嶅彂閫?
     if (roomMembers.isEmpty) {
-      log.debug('房间${room.roomId}成员列表未同步，暂不发送typing状态');
+      log.debug('room ${room.roomId} members not synced, skip typing');
       return;
     }
 
-    // 根据peerId查找对方成员
+    // 鏍规嵁peerId鏌ユ壘瀵规柟鎴愬憳
     final matchedMembers = roomMembers
         .where((member) => member.userId == room.peerId)
         .toList();
@@ -208,9 +209,9 @@ class ChatInputController extends _$ChatInputController {
 
     if (peerMember == null) return;
 
-    // 找不到对方成员 或 对方离线，不发送
+    // 鎵句笉鍒板鏂规垚鍛?鎴?瀵规柟绂荤嚎锛屼笉鍙戦€?
     if (peerMember.onlineStatus != true) {
-      log.debug('${peerMember.nickName}离线，不发送typing（isTyping: $isTyping）');
+      log.debug('${peerMember.nickName} offline, skip typing: $isTyping');
       return;
     }
 
@@ -225,7 +226,7 @@ class ChatInputController extends _$ChatInputController {
     ref.read(wsControllerProvider.notifier).sendMessage(bytes);
   }
 
-  /// 发送消息
+  /// 鍙戦€佹秷鎭?
   void sendMessage() {
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null || state.document.isEmpty()) return;
@@ -236,7 +237,7 @@ class ChatInputController extends _$ChatInputController {
     };
     final processor = DeltaProcessor(state.document.toDelta(), uploadState);
     final mentionIds = processor.mentionedUserIds;
-    // 拦截：正在上传中
+    // 鎷︽埅锛氭鍦ㄤ笂浼犱腑
     final imageState = ref.read(chatImageUploadControllerProvider);
     final fileState = ref.read(chatFileUploadControllerProvider);
     final allEntries = [...imageState.values, ...fileState.values];
@@ -244,36 +245,36 @@ class ChatInputController extends _$ChatInputController {
     if (allEntries.any((e) => e.isUploading)) return;
     if (allEntries.any((e) => e.isFailed)) return;
 
-    // 拦截：检查是否有失败/未上传的文件
+    // 鎷︽埅锛氭鏌ユ槸鍚︽湁澶辫触/鏈笂浼犵殑鏂囦欢
     if (!processor.isAllUploaded) {
       return;
     }
-    // --- 策略：拆分发送 ---
+    // --- 绛栫暐锛氭媶鍒嗗彂閫?---
     if (processor.images.isNotEmpty) {
       _doSend(
         type: MessageType.image,
-        payload: MessagePayload(content: '[图片]'),
+        payload: MessagePayload(content: '[鍥剧墖]'),
         attachments: processor.images,
       );
     }
-    // 发送文件
+    // 鍙戦€佹枃浠?
     if (processor.files.isNotEmpty) {
       _doSend(
         type: MessageType.file,
-        payload: MessagePayload(content: '[文件]'),
+        payload: MessagePayload(content: '[鏂囦欢]'),
         attachments: processor.files,
       );
     }
-    // 发送文字/Emoji (包含富文本样式)
+    // 鍙戦€佹枃瀛?Emoji (鍖呭惈瀵屾枃鏈牱寮?
     if (processor.plainText.isNotEmpty ||
         processor.mentionedUserIds.isNotEmpty) {
       final cleanDelta = processor.filteredDelta;
-      // 再次检查清理后的 Delta 是否有效（避免只发了一个换行符）
+      // 鍐嶆妫€鏌ユ竻鐞嗗悗鐨?Delta 鏄惁鏈夋晥锛堥伩鍏嶅彧鍙戜簡涓€涓崲琛岀锛?
       if (cleanDelta.length == 0 ||
           (cleanDelta.length == 1 &&
               cleanDelta.first.data == '\n' &&
               processor.mentionedUserIds.isEmpty)) {
-        // 如果清理完图片后只剩空换行，且没有 @，则不发送
+        // 濡傛灉娓呯悊瀹屽浘鐗囧悗鍙墿绌烘崲琛岋紝涓旀病鏈?@锛屽垯涓嶅彂閫?
         return;
       }
 
@@ -281,7 +282,7 @@ class ChatInputController extends _$ChatInputController {
         _doSend(
           type: MessageType.text,
           payload: MessagePayload(
-            content: processor.plainText, // emoji内容
+            content: processor.plainText, // emoji鍐呭
             emojiCode: processor.plainText.characters.first,
           ),
         );
@@ -299,14 +300,14 @@ class ChatInputController extends _$ChatInputController {
         );
       }
     }
-    // 4. 清空输入
+    // 4. 娓呯┖杈撳叆
     clearInput();
     if (DeviceUtil.isRealDesktop()) {
       ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
     }
   }
 
-  /// Android 普通输入框发送纯文本（可带 @mention）
+  /// Android 鏅€氳緭鍏ユ鍙戦€佺函鏂囨湰锛堝彲甯?@mention锛?
   void sendPlainTextMessage(String text, {List<int>? mentionIds}) {
     final room = ref.read(currentRoomProvider(roomId));
     final content = text.trim();
@@ -333,13 +334,17 @@ class ChatInputController extends _$ChatInputController {
     final List<Attachment> uploadList = [];
     for (final file in files.where((f) => f.path != null)) {
       if (!UploadValidator.validateSingleFile(file)) continue;
+      final imageSize = await _readImageSizeFromFile(file.path!);
       uploadList.add(
         Attachment(
           id: const Uuid().v4(),
+          kind: 'IMAGE',
           url: file.path!,
           name: _basenameWithoutExtension(file.name),
           size: file.size,
-          type: file.extension ?? 'jpg',
+          type: _imageMimeType(file.extension),
+          width: imageSize.$1,
+          height: imageSize.$2,
         ),
       );
     }
@@ -358,7 +363,7 @@ class ChatInputController extends _$ChatInputController {
 
     _doSend(
       type: MessageType.image,
-      payload: MessagePayload(content: '[图片]'),
+      payload: MessagePayload(content: '[鍥剧墖]'),
       attachments: uploaded,
     );
   }
@@ -372,6 +377,7 @@ class ChatInputController extends _$ChatInputController {
       uploadList.add(
         Attachment(
           id: const Uuid().v4(),
+          kind: 'FILE',
           url: file.path!,
           name: _basenameWithoutExtension(file.name),
           size: file.size,
@@ -394,12 +400,12 @@ class ChatInputController extends _$ChatInputController {
 
     _doSend(
       type: MessageType.file,
-      payload: MessagePayload(content: '[文件]'),
+      payload: MessagePayload(content: '[鏂囦欢]'),
       attachments: uploaded,
     );
   }
 
-  /// 供 Android 普通输入框复用“正在输入”状态
+  /// 渚?Android 鏅€氳緭鍏ユ澶嶇敤鈥滄鍦ㄨ緭鍏モ€濈姸鎬?
   void handlePlainTextChanged(String text) {
     final hasContent = text.trim().isNotEmpty;
 
@@ -423,7 +429,7 @@ class ChatInputController extends _$ChatInputController {
     }
   }
 
-  /// 发送语音消息
+  /// 鍙戦€佽闊虫秷鎭?
   Future<void> sendVoiceMessage({
     required String filePath,
     required int duration,
@@ -434,22 +440,23 @@ class ChatInputController extends _$ChatInputController {
     final clientMsgId = const Uuid().v4();
     final file = File(filePath);
 
-    // 1. 立即插入本地占位消息（状态 sending，url 用本地路径）
+    // 1. 绔嬪嵆鎻掑叆鏈湴鍗犱綅娑堟伅锛堢姸鎬?sending锛寀rl 鐢ㄦ湰鍦拌矾寰勶級
     final localMsg = ChatMessage(
       messageId: clientMsgId,
       clientMsgId: clientMsgId,
       roomId: roomId,
       senderId: ref.read(authControllerProvider).value?.userId,
       messageType: MessageType.audio,
-      content: '[语音]',
-      payload: MessagePayload(content: '[语音]', audioDuration: duration),
+      content: '[璇煶]',
+      payload: MessagePayload(content: '[璇煶]', audioDuration: duration),
       attachments: [
         Attachment(
           id: clientMsgId,
-          url: filePath, // 先用本地路径，渲染时可以直接播放本地文件
+          kind: 'AUDIO',
+          url: filePath, // 鍏堢敤鏈湴璺緞锛屾覆鏌撴椂鍙互鐩存帴鎾斁鏈湴鏂囦欢
           name: 'voice_message',
           size: file.lengthSync(),
-          type: 'm4a',
+          type: 'audio/m4a',
         ),
       ],
       timestamp: DateTime.now().millisecondsSinceEpoch,
@@ -460,7 +467,7 @@ class ChatInputController extends _$ChatInputController {
     ref.read(chatMessagesProvider.notifier).upsertMessage(localMsg);
 
     try {
-      // 2. 后台上传
+      // 2. 鍚庡彴涓婁紶
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
         files: [file],
@@ -468,19 +475,19 @@ class ChatInputController extends _$ChatInputController {
 
       final rawList = res.data is Map ? res.data['data'] : res.data;
       if (rawList is! List || rawList.isEmpty) {
-        // 上传失败，更新为 failed 状态
+        // 涓婁紶澶辫触锛屾洿鏂颁负 failed 鐘舵€?
         ref
             .read(chatMessagesProvider.notifier)
             .upsertMessage(
               localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
             );
-        log.warning('语音上传失败：返回数据为空');
+        log.warning('voice upload failed: empty response');
         return;
       }
 
       final url = rawList.first.toString();
 
-      // 3. 上传成功，通过 WS 发送真正的消息
+      // 3. 涓婁紶鎴愬姛锛岄€氳繃 WS 鍙戦€佺湡姝ｇ殑娑堟伅
       _doSendVoice(
         clientMsgId: clientMsgId,
         url: url,
@@ -488,7 +495,7 @@ class ChatInputController extends _$ChatInputController {
         fileSize: file.lengthSync(),
       );
 
-      // 4. 删除本地临时文件
+      // 4. 鍒犻櫎鏈湴涓存椂鏂囦欢
       try {
         file.deleteSync();
       } catch (_) {}
@@ -498,7 +505,7 @@ class ChatInputController extends _$ChatInputController {
           .upsertMessage(
             localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
           );
-      log.error('语音消息发送失败: $e');
+      log.error('璇煶娑堟伅鍙戦€佸け璐? $e');
     }
   }
 
@@ -512,25 +519,29 @@ class ChatInputController extends _$ChatInputController {
     final user = ref.read(authControllerProvider).value;
     if (room == null || user == null) return;
 
-    final payload = MessagePayload(content: '[语音]', audioDuration: duration);
     final attachments = [
       Attachment(
         id: clientMsgId,
+        kind: 'AUDIO',
         url: url,
         name: 'voice_message',
         size: fileSize,
-        type: 'm4a',
+        type: 'audio/m4a',
       ),
     ];
+    final payload = MessagePayload(
+      content: '[audio]',
+      audioDuration: duration,
+    ).withMedia(MessageType.audio, attachments);
 
-    // 更新本地消息的 url 为真实 url
+    // 鏇存柊鏈湴娑堟伅鐨?url 涓虹湡瀹?url
     final updatedMsg = ChatMessage(
       messageId: clientMsgId,
       clientMsgId: clientMsgId,
       roomId: roomId,
       senderId: user.userId,
       messageType: MessageType.audio,
-      content: '[语音]',
+      content: '[璇煶]',
       payload: payload,
       attachments: attachments,
       timestamp: DateTime.now().millisecondsSinceEpoch,
@@ -546,11 +557,10 @@ class ChatInputController extends _$ChatInputController {
       senderId: user.userId,
       messageType: MessageType.audio,
       payload: payload,
-      attachments: attachments,
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('🚀 发送语音消息: $clientMsgId');
+    log.info('馃殌 鍙戦€佽闊虫秷鎭? $clientMsgId');
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
@@ -578,13 +588,35 @@ class ChatInputController extends _$ChatInputController {
     return fileName.substring(0, dot);
   }
 
+  Future<(int?, int?)> _readImageSizeFromFile(String path) async {
+    try {
+      final bytes = await File(path).readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final size = (image.width, image.height);
+      image.dispose();
+      codec.dispose();
+      return size;
+    } catch (_) {
+      return (null, null);
+    }
+  }
+
+  String _imageMimeType(String? extension) {
+    final ext = extension?.toLowerCase();
+    if (ext == null || ext.isEmpty) return 'image/jpeg';
+    if (ext == 'jpg') return 'image/jpeg';
+    return 'image/$ext';
+  }
+
   void clearInput() {
     state.clear();
     _isTyping = false;
     ref.read(mentionStateProvider.notifier).hide();
   }
 
-  // 统一的内部发送方法
+  // 缁熶竴鐨勫唴閮ㄥ彂閫佹柟娉?
   void _doSend({
     required MessageType type,
     required MessagePayload payload,
@@ -593,9 +625,11 @@ class ChatInputController extends _$ChatInputController {
     final String clientMsgId = const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      log.error('发送失败: 用户信息缺失');
+      log.error('鍙戦€佸け璐? 鐢ㄦ埛淇℃伅缂哄け');
       return;
     }
+    final payloadWithMedia = payload.withMedia(type, attachments ?? const []);
+    final derivedAttachments = payloadWithMedia.mediaAttachments;
 
     final localMsg = ChatMessage(
       messageId: clientMsgId,
@@ -603,9 +637,9 @@ class ChatInputController extends _$ChatInputController {
       roomId: roomId,
       senderId: user.userId,
       messageType: type,
-      content: payload.content ?? '',
-      payload: payload,
-      attachments: attachments ?? [],
+      content: payloadWithMedia.content ?? '',
+      payload: payloadWithMedia,
+      attachments: derivedAttachments,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       deliveryStatus: DeliveryStatus.sending,
       seq: 0,
@@ -619,18 +653,17 @@ class ChatInputController extends _$ChatInputController {
       roomId: roomId,
       senderId: user.userId,
       messageType: type,
-      payload: payload,
-      attachments: attachments ?? const [],
+      payload: payloadWithMedia,
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('🚀 发送消息 [$type]: clientMsgId=$clientMsgId');
+    log.info('馃殌 鍙戦€佹秷鎭?[$type]: clientMsgId=$clientMsgId');
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: type,
-      attachments: attachments,
+      attachments: derivedAttachments,
     );
     Timer(Duration(seconds: timeoutSeconds), () {
       ref
@@ -640,9 +673,9 @@ class ChatInputController extends _$ChatInputController {
   }
 }
 
-/// 聊天输入框焦点 Provider
+/// 鑱婂ぉ杈撳叆妗嗙劍鐐?Provider
 ///
-/// 为每个房间独立管理输入框焦点状态
+/// 涓烘瘡涓埧闂寸嫭绔嬬鐞嗚緭鍏ユ鐒︾偣鐘舵€?
 @riverpod
 FocusNode chatFocusNode(Ref ref, String roomId) {
   final node = FocusNode();
@@ -650,7 +683,7 @@ FocusNode chatFocusNode(Ref ref, String roomId) {
   return node;
 }
 
-// 在 chat_input_controller.dart 中添加
+// 鍦?chat_input_controller.dart 涓坊鍔?
 @Riverpod(keepAlive: true)
 class MentionState extends _$MentionState {
   @override
@@ -674,14 +707,14 @@ class MentionState extends _$MentionState {
   }
 }
 
-/// @提及状态数据
+/// @鎻愬強鐘舵€佹暟鎹?
 ///
-/// 存储提及弹窗的显示状态和相关信息
+/// 瀛樺偍鎻愬強寮圭獥鐨勬樉绀虹姸鎬佸拰鐩稿叧淇℃伅
 class MentionStateData {
   final bool isShowing;
   final int cursorPosition;
   final String searchText;
-  final Offset? atSymbolOffset; // @ 符号在屏幕上的位置
+  final Offset? atSymbolOffset; // @ 绗﹀彿鍦ㄥ睆骞曚笂鐨勪綅缃?
 
   MentionStateData({
     this.isShowing = false,

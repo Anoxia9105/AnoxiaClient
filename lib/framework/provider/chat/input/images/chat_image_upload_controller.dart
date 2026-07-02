@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/framework/logs/talker.dart';
@@ -21,7 +22,7 @@ part 'chat_image_upload_controller.g.dart';
 /// 处理图片选择、粘贴和上传功能。采用 keepAlive 模式确保跨页面共享状态。
 ///
 /// 核心流程：
-/// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 → 
+/// 1. 用户选择/粘贴图片 → 2. 创建 Attachment 对象 → 3. 标记为上传中 →
 /// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
 ///
 /// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
@@ -54,13 +55,17 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       final id = const Uuid().v4();
       final rawFile = File(p.join(Directory.systemTemp.path, "pasted_$id.jpg"));
       await rawFile.writeAsBytes(imageBytes);
+      final imageSize = await _readImageSizeFromBytes(imageBytes);
 
       final attachment = Attachment(
         id: id,
+        kind: 'IMAGE',
         url: rawFile.path,
         name: "pasted_image",
         size: imageBytes.lengthInBytes,
-        type: "jpg",
+        type: "image/jpeg",
+        width: imageSize.$1,
+        height: imageSize.$2,
       );
 
       // 立即标记为 uploading，再插入 embed，彻底消灭空窗期
@@ -95,13 +100,17 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     final List<Attachment> uploadList = [];
     for (final file in result.files.where((f) => f.path != null)) {
       if (!UploadValidator.validateSingleFile(file)) continue;
+      final imageSize = await _readImageSizeFromFile(file.path!);
       uploadList.add(
         Attachment(
           id: const Uuid().v4(),
+          kind: 'IMAGE',
           url: file.path!,
           name: p.basenameWithoutExtension(file.path!),
           size: file.size,
-          type: file.extension ?? 'jpg',
+          type: _imageMimeType(file.extension),
+          width: imageSize.$1,
+          height: imageSize.$2,
         ),
       );
     }
@@ -188,4 +197,33 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
   /// 消息发送后调用，清理 state
   void clear() => state = {};
+
+  Future<(int?, int?)> _readImageSizeFromBytes(Uint8List bytes) async {
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final size = (image.width, image.height);
+      image.dispose();
+      codec.dispose();
+      return size;
+    } catch (_) {
+      return (null, null);
+    }
+  }
+
+  Future<(int?, int?)> _readImageSizeFromFile(String path) async {
+    try {
+      return _readImageSizeFromBytes(await File(path).readAsBytes());
+    } catch (_) {
+      return (null, null);
+    }
+  }
+
+  String _imageMimeType(String? extension) {
+    final ext = extension?.toLowerCase();
+    if (ext == null || ext.isEmpty) return 'image/jpeg';
+    if (ext == 'jpg') return 'image/jpeg';
+    return 'image/$ext';
+  }
 }

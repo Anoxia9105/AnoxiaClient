@@ -1,5 +1,4 @@
 import '../IPacket.dart';
-import 'Attachment.dart';
 import 'MessageEunm.dart';
 import 'MessagePayload.dart';
 import 'package:flutter/foundation.dart';
@@ -17,7 +16,6 @@ class RoomMessage implements IPacket {
   final int senderId;
   final MessageType messageType;
   final MessagePayload? payload;
-  final List<Attachment> attachments;
   final Map<String, String> properties;
   final int? seq;
   final int? serverTimestamp;
@@ -30,7 +28,6 @@ class RoomMessage implements IPacket {
     required this.senderId,
     required this.messageType,
     this.payload,
-    this.attachments = const [],
     this.properties = const {},
     this.seq,
     this.serverTimestamp,
@@ -54,7 +51,6 @@ class RoomMessage implements IPacket {
     'senderId': senderId,
     'messageType': MessageType.toCode(messageType),
     'payload': payload?.toJson(),
-    'attachments': attachments.map((e) => e.toJson()).toList(),
     'properties': properties,
     'seq': seq,
     'serverTimestamp': serverTimestamp,
@@ -68,7 +64,6 @@ class RoomMessage implements IPacket {
     int? senderId,
     MessageType? messageType,
     MessagePayload? payload,
-    List<Attachment>? attachments,
     Map<String, String>? properties,
     int? seq,
     int? serverTimestamp,
@@ -80,7 +75,6 @@ class RoomMessage implements IPacket {
     senderId: senderId ?? this.senderId,
     messageType: messageType ?? this.messageType,
     payload: payload ?? this.payload,
-    attachments: attachments ?? this.attachments,
     properties: properties ?? this.properties,
     seq: seq ?? this.seq,
     serverTimestamp: serverTimestamp ?? this.serverTimestamp,
