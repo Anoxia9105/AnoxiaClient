@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -26,7 +24,7 @@ class AudioMessageStrategy extends MessageRenderStrategy {
       );
     }
 
-    final url = message.attachments.firstOrNull?.url ?? '';
+    final url = message.payload?.audio?.url ?? '';
     final duration = message.payload?.audioDuration ?? 0;
 
     return _AudioBubble(

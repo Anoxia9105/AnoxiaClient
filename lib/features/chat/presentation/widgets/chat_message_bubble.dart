@@ -33,7 +33,7 @@ class ChatMessageBubble extends ConsumerWidget {
   const ChatMessageBubble({super.key, required this.message});
 
   int _resolveResendTimeoutSeconds(ChatMessage message) {
-    final attachmentCount = message.attachments.length;
+    final attachmentCount = message.payload?.mediaAttachments.length ?? 0;
     var timeout = 10 + (attachmentCount * 2);
 
     if (message.messageType == MessageType.audio ||

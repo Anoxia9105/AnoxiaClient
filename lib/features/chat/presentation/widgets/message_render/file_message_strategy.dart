@@ -27,7 +27,10 @@ class FileMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
-    final fileList = message.attachments;
+    final file = message.payload?.file;
+    final fileList = file != null && file.url?.isNotEmpty == true
+        ? [file]
+        : <Attachment>[];
 
     if (fileList.isEmpty) {
       return const SizedBox.shrink();

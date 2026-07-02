@@ -35,14 +35,14 @@ import '../room/room_member_service.dart';
 
 part 'chat_input_controller.g.dart';
 
-/// 鑱婂ぉ杈撳叆鎺у埗鍣?
+/// 閼卞﹤銇夋潏鎾冲弳閹貉冨煑閸?
 ///
-/// 璐熻矗绠＄悊鑱婂ぉ杈撳叆妗嗙殑鐘舵€侊紝鍖呮嫭锛?
-/// - 瀵屾枃鏈紪杈戯紙浣跨敤 [QuillController]锛?
-/// - @鎻愬強鐢ㄦ埛鍔熻兘
-/// - 鍥剧墖/鏂囦欢涓婁紶
-/// - 姝ｅ湪杈撳叆鐘舵€佸彂閫?
-/// - 娑堟伅鍙戦€侀€昏緫
+/// 鐠愮喕鐭楃粻锛勬倞閼卞﹤銇夋潏鎾冲弳濡楀棛娈戦悩鑸碘偓渚婄礉閸栧懏瀚敍?
+/// - 鐎靛本鏋冮張顒傜椽鏉堟埊绱欐担璺ㄦ暏 [QuillController]閿?
+/// - @閹绘劕寮烽悽銊﹀煕閸旂喕鍏?
+/// - 閸ュ墽澧?閺傚洣娆㈡稉濠佺炊
+/// - 濮濓絽婀潏鎾冲弳閻樿埖鈧礁褰傞柅?
+/// - 濞戝牊浼呴崣鎴︹偓渚€鈧槒绶?
 @Riverpod(keepAlive: true)
 class ChatInputController extends _$ChatInputController {
   bool _isTyping = false;
@@ -66,37 +66,37 @@ class ChatInputController extends _$ChatInputController {
 
   @override
   QuillController build(String roomId) {
-    // 鎻愬墠瀹氫箟 controller 鍙橀噺锛屼互渚垮湪闂寘涓娇鐢?
+    // 閹绘劕澧犵€规矮绠?controller 閸欐﹢鍣洪敍灞间簰娓氬灝婀梻顓炲瘶娑擃厺濞囬悽?
     late QuillController controller;
 
     controller = QuillController.basic(
       config: QuillControllerConfig(
         clipboardConfig: QuillClipboardConfig(
-          enableExternalRichPaste: false, // 绂佹瀵屾枃鏈紝闃叉鏍煎紡閿欎贡
-          // --- 鏍稿績淇敼锛氬鎺ョ矘璐存澘鍥剧墖 ---
+          enableExternalRichPaste: false, // 缁備焦顒涚€靛本鏋冮張顒婄礉闂冨弶顒涢弽鐓庣础闁挎瑤璐?
+          // --- 閺嶇绺炬穱顔芥暭閿涙艾顕幒銉х煒鐠愬瓨婢橀崶鍓у ---
           onImagePaste: (Uint8List imageBytes) async {
-            log.info('妫€娴嬪埌鍥剧墖绮樿创锛屽ぇ灏? ${imageBytes.lengthInBytes} 瀛楄妭');
+            log.info('pasted image bytes: ${imageBytes.lengthInBytes}');
 
-            // 璋冪敤 ChatImageUploadController 澶勭悊绮樿创
-            // 閫昏緫锛氬瓨涓存椂鏂囦欢 -> 鎻掑叆棰勮 -> 鍚庡彴闈欓粯涓婁紶
+            // 鐠嬪啰鏁?ChatImageUploadController 婢跺嫮鎮婄划妯垮垱
+            // 闁槒绶敍姘摠娑撳瓨妞傞弬鍥︽ -> 閹绘帒鍙嗘０鍕潔 -> 閸氬骸褰撮棃娆撶帛娑撳﹣绱?
             await ref
                 .read(chatImageUploadControllerProvider.notifier)
                 .handlePastedImage(controller, imageBytes);
 
-            // 杩斿洖 null锛岃〃绀衡€滄垜宸茬粡鎵嬪姩澶勭悊浜嗘彃鍏ワ紝Quill 浣犱笉鐢ㄥ啀绠′簡鈥?
+            // 鏉╂柨娲?null閿涘矁銆冪粈琛♀偓婊勫灉瀹歌尙绮￠幍瀣З婢跺嫮鎮婃禍鍡樺絻閸忋儻绱漄uill 娴ｇ姳绗夐悽銊ュ晙缁犫€茬啊閳?
             return null;
           },
 
-          // 澶勭悊绾枃鏈矘璐达紙渚嬪杩囨护鏁忔劅璇嶏級
+          // 婢跺嫮鎮婄痪顖涙瀮閺堫剛鐭樼拹杈剧礄娓氬顩ф潻鍥ㄦ姢閺佸繑鍔呯拠宥忕礆
           onPlainTextPaste: (String plainText) async {
-            log.info('妫€娴嬪埌TEXT绮樿创$plainText');
+            log.info('濡偓濞村鍩孴EXT缁鍒?plainText');
             return plainText;
           },
         ),
       ),
     );
 
-    // 鐩戝惉鏂囨湰鍙樺寲澶勭悊鈥滄鍦ㄨ緭鍏モ€濋€昏緫
+    // 閻╂垵鎯夐弬鍥ㄦ拱閸欐ê瀵叉径鍕倞閳ユ粍顒滈崷銊ㄧ翻閸忋儮鈧繈鈧槒绶?
     controller.addListener(_onTextChanged);
 
     ref.onDispose(() {
@@ -107,7 +107,7 @@ class ChatInputController extends _$ChatInputController {
     return controller;
   }
 
-  /// 鐩戝惉鏂囨湰鍙樺寲澶勭悊
+  /// 閻╂垵鎯夐弬鍥ㄦ拱閸欐ê瀵叉径鍕倞
   void _onTextChanged() {
     if (!ref.mounted) return;
     final controller = state;
@@ -127,7 +127,7 @@ class ChatInputController extends _$ChatInputController {
       }
     });
 
-    // 寤惰繜鎵ц锛岄伩鍏嶅湪 notifyListeners 鏈熼棿淇敼 provider
+    // 瀵ゆ儼绻滈幍褑顢戦敍宀勪缉閸忓秴婀?notifyListeners 閺堢喖妫挎穱顔芥暭 provider
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!ref.mounted) return;
 
@@ -137,38 +137,38 @@ class ChatInputController extends _$ChatInputController {
         final plainText = controller.document.toPlainText();
         final cursorPosition = selection.baseOffset;
 
-        // 妫€鏌ュ厜鏍囧墠鐨勫瓧绗︽槸鍚︽槸 @
+        // 濡偓閺屻儱鍘滈弽鍥у閻ㄥ嫬鐡х粭锔芥Ц閸氾附妲?@
         if (cursorPosition <= plainText.length &&
             plainText[cursorPosition - 1] == '@') {
           ref.read(mentionStateProvider.notifier).show(cursorPosition, '');
           return;
         }
 
-        // 濡傛灉宸茬粡鍦?@ 鐘舵€?鏇存柊鎼滅储鏂囨湰
+        // 婵″倹鐏夊鑼病閸?@ 閻樿埖鈧?閺囧瓨鏌婇幖婊呭偍閺傚洦婀?
         final mentionState = ref.read(mentionStateProvider);
         if (mentionState.isShowing) {
-          // 妫€鏌ュ厜鏍囨槸鍚﹀洖閫€鍒癅绗﹀彿涔嬪墠锛堢敤鎴峰垹闄や簡@鎴栭€€鏍煎埌@涔嬪墠锛?
+          // 濡偓閺屻儱鍘滈弽鍥ㄦЦ閸氾箑娲栭柅鈧崚鐧呯粭锕€褰挎稊瀣閿涘牏鏁ら幋宄板灩闂勩倓绨閹存牠鈧偓閺嶇厧鍩孈娑斿澧犻敍?
           if (cursorPosition < mentionState.cursorPosition) {
             ref.read(mentionStateProvider.notifier).hide();
             return;
           }
 
-          // 妫€鏌绗﹀彿浣嶇疆鏄惁杩樻槸@绗﹀彿
+          // 濡偓閺岊檰缁楋箑褰挎担宥囩枂閺勵垰鎯佹潻妯绘Ц@缁楋箑褰?
           if (mentionState.cursorPosition > 0 &&
               mentionState.cursorPosition - 1 < plainText.length &&
               plainText[mentionState.cursorPosition - 1] != '@') {
-            // @绗﹀彿琚垹闄や簡
+            // @缁楋箑褰跨悮顐㈠灩闂勩倓绨?
             ref.read(mentionStateProvider.notifier).hide();
             return;
           }
 
-          // 鎻愬彇 @ 鍚庣殑鏂囨湰
+          // 閹绘劕褰?@ 閸氬海娈戦弬鍥ㄦ拱
           final textAfterAt = plainText.substring(
             mentionState.cursorPosition,
             cursorPosition.clamp(mentionState.cursorPosition, plainText.length),
           );
 
-          // 濡傛灉閬囧埌绌烘牸鎴栨崲琛?鍏抽棴寮圭獥
+          // 婵″倹鐏夐柆鍥у煂缁岀儤鐗搁幋鏍ㄥ床鐞?閸忔娊妫村鍦崶
           if (textAfterAt.contains(' ') || textAfterAt.contains('\n')) {
             ref.read(mentionStateProvider.notifier).hide();
           } else {
@@ -176,7 +176,7 @@ class ChatInputController extends _$ChatInputController {
           }
         }
       } else {
-        // 鍏夋爣鍦ㄥ紑澶达紝濡傛灉寮圭獥姝ｅ湪鏄剧ず鍒欏叧闂?
+        // 閸忓鐖ｉ崷銊ョ磻婢惰揪绱濇俊鍌涚亯瀵湱鐛ュ锝呮躬閺勫墽銇氶崚娆忓彠闂?
         final mentionState = ref.read(mentionStateProvider);
         if (mentionState.isShowing) {
           ref.read(mentionStateProvider.notifier).hide();
@@ -185,23 +185,23 @@ class ChatInputController extends _$ChatInputController {
     });
   }
 
-  /// 鍙戦€佹鍦ㄨ緭鍏ョ姸鎬?
+  /// 閸欐垿鈧焦顒滈崷銊ㄧ翻閸忋儳濮搁幀?
   void _sendTypingStatus(bool isTyping) {
     if (!ref.mounted) return;
     final room = ref.read(currentRoomProvider(roomId));
-    //鎴块棿鎴栬€呮帴鏀惰€呮槸绌虹殑涓嶅彂閫? 锛堢兢鑱婁笉鍙戯級
+    //閹村潡妫块幋鏍偓鍛复閺€鎯扳偓鍛Ц缁岃櫣娈戞稉宥呭絺闁? 閿涘牏鍏㈤懕濠佺瑝閸欐埊绱?
     if (room == null || room.peerId == null) return;
 
-    //鐢ㄦ埛鍦ㄧ嚎鍙戦€?TYPING_STATUS 涓嶅湪绾夸笉鍙戦€?
+    //閻劍鍩涢崷銊у殠閸欐垿鈧?TYPING_STATUS 娑撳秴婀痪澶哥瑝閸欐垿鈧?
     final roomMembers = ref.read(roomMembersProvider(room.roomId!));
 
-    // 4.1 鎴愬憳鍒楄〃涓虹┖锛堟湭鍚屾锛夛紝涓嶅彂閫?
+    // 4.1 閹存劕鎲抽崚妤勩€冩稉铏光敄閿涘牊婀崥灞绢劄閿涘绱濇稉宥呭絺闁?
     if (roomMembers.isEmpty) {
       log.debug('room ${room.roomId} members not synced, skip typing');
       return;
     }
 
-    // 鏍规嵁peerId鏌ユ壘瀵规柟鎴愬憳
+    // 閺嶈宓乸eerId閺屻儲澹樼€佃鏌熼幋鎰喅
     final matchedMembers = roomMembers
         .where((member) => member.userId == room.peerId)
         .toList();
@@ -209,7 +209,7 @@ class ChatInputController extends _$ChatInputController {
 
     if (peerMember == null) return;
 
-    // 鎵句笉鍒板鏂规垚鍛?鎴?瀵规柟绂荤嚎锛屼笉鍙戦€?
+    // 閹靛彞绗夐崚鏉款嚠閺傝鍨氶崨?閹?鐎佃鏌熺粋鑽ゅ殠閿涘奔绗夐崣鎴︹偓?
     if (peerMember.onlineStatus != true) {
       log.debug('${peerMember.nickName} offline, skip typing: $isTyping');
       return;
@@ -226,7 +226,7 @@ class ChatInputController extends _$ChatInputController {
     ref.read(wsControllerProvider.notifier).sendMessage(bytes);
   }
 
-  /// 鍙戦€佹秷鎭?
+  /// 閸欐垿鈧焦绉烽幁?
   void sendMessage() {
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null || state.document.isEmpty()) return;
@@ -237,7 +237,7 @@ class ChatInputController extends _$ChatInputController {
     };
     final processor = DeltaProcessor(state.document.toDelta(), uploadState);
     final mentionIds = processor.mentionedUserIds;
-    // 鎷︽埅锛氭鍦ㄤ笂浼犱腑
+    // 閹凤附鍩呴敍姘劀閸︺劋绗傛导鐘辫厬
     final imageState = ref.read(chatImageUploadControllerProvider);
     final fileState = ref.read(chatFileUploadControllerProvider);
     final allEntries = [...imageState.values, ...fileState.values];
@@ -245,36 +245,36 @@ class ChatInputController extends _$ChatInputController {
     if (allEntries.any((e) => e.isUploading)) return;
     if (allEntries.any((e) => e.isFailed)) return;
 
-    // 鎷︽埅锛氭鏌ユ槸鍚︽湁澶辫触/鏈笂浼犵殑鏂囦欢
+    // 閹凤附鍩呴敍姘梾閺屻儲妲搁崥锔芥箒婢惰精瑙?閺堫亙绗傛导鐘垫畱閺傚洣娆?
     if (!processor.isAllUploaded) {
       return;
     }
-    // --- 绛栫暐锛氭媶鍒嗗彂閫?---
+    // --- 缁涙牜鏆愰敍姘閸掑棗褰傞柅?---
     if (processor.images.isNotEmpty) {
       _doSend(
         type: MessageType.image,
-        payload: MessagePayload(content: '[鍥剧墖]'),
+        payload: MessagePayload(content: '[閸ュ墽澧朷'),
         attachments: processor.images,
       );
     }
-    // 鍙戦€佹枃浠?
+    // 閸欐垿鈧焦鏋冩禒?
     if (processor.files.isNotEmpty) {
       _doSend(
         type: MessageType.file,
-        payload: MessagePayload(content: '[鏂囦欢]'),
+        payload: MessagePayload(content: '[閺傚洣娆'),
         attachments: processor.files,
       );
     }
-    // 鍙戦€佹枃瀛?Emoji (鍖呭惈瀵屾枃鏈牱寮?
+    // 閸欐垿鈧焦鏋冪€?Emoji (閸栧懎鎯堢€靛本鏋冮張顒佺壉瀵?
     if (processor.plainText.isNotEmpty ||
         processor.mentionedUserIds.isNotEmpty) {
       final cleanDelta = processor.filteredDelta;
-      // 鍐嶆妫€鏌ユ竻鐞嗗悗鐨?Delta 鏄惁鏈夋晥锛堥伩鍏嶅彧鍙戜簡涓€涓崲琛岀锛?
+      // 閸愬秵顐煎Λ鈧弻銉︾閻炲棗鎮楅惃?Delta 閺勵垰鎯侀張澶嬫櫏閿涘牓浼╅崗宥呭涧閸欐垳绨℃稉鈧稉顏呭床鐞涘瞼顑侀敍?
       if (cleanDelta.length == 0 ||
           (cleanDelta.length == 1 &&
               cleanDelta.first.data == '\n' &&
               processor.mentionedUserIds.isEmpty)) {
-        // 濡傛灉娓呯悊瀹屽浘鐗囧悗鍙墿绌烘崲琛岋紝涓旀病鏈?@锛屽垯涓嶅彂閫?
+        // 婵″倹鐏夊〒鍛倞鐎瑰苯娴橀悧鍥ф倵閸欘亜澧跨粚鐑樺床鐞涘矉绱濇稉鏃€鐥呴張?@閿涘苯鍨稉宥呭絺闁?
         return;
       }
 
@@ -282,7 +282,7 @@ class ChatInputController extends _$ChatInputController {
         _doSend(
           type: MessageType.text,
           payload: MessagePayload(
-            content: processor.plainText, // emoji鍐呭
+            content: processor.plainText, // emoji閸愬懎顔?
             emojiCode: processor.plainText.characters.first,
           ),
         );
@@ -300,14 +300,14 @@ class ChatInputController extends _$ChatInputController {
         );
       }
     }
-    // 4. 娓呯┖杈撳叆
+    // 4. 濞撳懐鈹栨潏鎾冲弳
     clearInput();
     if (DeviceUtil.isRealDesktop()) {
       ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
     }
   }
 
-  /// Android 鏅€氳緭鍏ユ鍙戦€佺函鏂囨湰锛堝彲甯?@mention锛?
+  /// Android 閺咁噣鈧俺绶崗銉︻攱閸欐垿鈧胶鍑介弬鍥ㄦ拱閿涘牆褰茬敮?@mention閿?
   void sendPlainTextMessage(String text, {List<int>? mentionIds}) {
     final room = ref.read(currentRoomProvider(roomId));
     final content = text.trim();
@@ -363,7 +363,7 @@ class ChatInputController extends _$ChatInputController {
 
     _doSend(
       type: MessageType.image,
-      payload: MessagePayload(content: '[鍥剧墖]'),
+      payload: MessagePayload(content: '[閸ュ墽澧朷'),
       attachments: uploaded,
     );
   }
@@ -400,12 +400,12 @@ class ChatInputController extends _$ChatInputController {
 
     _doSend(
       type: MessageType.file,
-      payload: MessagePayload(content: '[鏂囦欢]'),
+      payload: MessagePayload(content: '[閺傚洣娆'),
       attachments: uploaded,
     );
   }
 
-  /// 渚?Android 鏅€氳緭鍏ユ澶嶇敤鈥滄鍦ㄨ緭鍏モ€濈姸鎬?
+  /// 娓?Android 閺咁噣鈧俺绶崗銉︻攱婢跺秶鏁ら垾婊勵劀閸︺劏绶崗銉⑩偓婵堝Ц閹?
   void handlePlainTextChanged(String text) {
     final hasContent = text.trim().isNotEmpty;
 
@@ -429,7 +429,7 @@ class ChatInputController extends _$ChatInputController {
     }
   }
 
-  /// 鍙戦€佽闊虫秷鎭?
+  /// 閸欐垿鈧浇顕㈤棅铏Х閹?
   Future<void> sendVoiceMessage({
     required String filePath,
     required int duration,
@@ -439,26 +439,30 @@ class ChatInputController extends _$ChatInputController {
 
     final clientMsgId = const Uuid().v4();
     final file = File(filePath);
+    final localAudioAttachments = [
+      Attachment(
+        id: clientMsgId,
+        kind: 'AUDIO',
+        url: filePath,
+        name: 'voice_message',
+        size: file.lengthSync(),
+        type: 'audio/m4a',
+      ),
+    ];
+    final localPayload = MessagePayload(
+      content: '[audio]',
+      audioDuration: duration,
+    ).withMedia(MessageType.audio, localAudioAttachments);
 
-    // 1. 绔嬪嵆鎻掑叆鏈湴鍗犱綅娑堟伅锛堢姸鎬?sending锛寀rl 鐢ㄦ湰鍦拌矾寰勶級
+    // 1. 缁斿宓嗛幓鎺戝弳閺堫剙婀撮崡鐘辩秴濞戝牊浼呴敍鍫㈠Ц閹?sending閿涘瘈rl 閻劍婀伴崷鎷岀熅瀵板嫸绱?
     final localMsg = ChatMessage(
       messageId: clientMsgId,
       clientMsgId: clientMsgId,
       roomId: roomId,
       senderId: ref.read(authControllerProvider).value?.userId,
       messageType: MessageType.audio,
-      content: '[璇煶]',
-      payload: MessagePayload(content: '[璇煶]', audioDuration: duration),
-      attachments: [
-        Attachment(
-          id: clientMsgId,
-          kind: 'AUDIO',
-          url: filePath, // 鍏堢敤鏈湴璺緞锛屾覆鏌撴椂鍙互鐩存帴鎾斁鏈湴鏂囦欢
-          name: 'voice_message',
-          size: file.lengthSync(),
-          type: 'audio/m4a',
-        ),
-      ],
+      content: localPayload.content ?? '',
+      payload: localPayload,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       deliveryStatus: DeliveryStatus.sending,
       seq: 0,
@@ -467,7 +471,7 @@ class ChatInputController extends _$ChatInputController {
     ref.read(chatMessagesProvider.notifier).upsertMessage(localMsg);
 
     try {
-      // 2. 鍚庡彴涓婁紶
+      // 2. 閸氬骸褰存稉濠佺炊
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
         files: [file],
@@ -475,7 +479,7 @@ class ChatInputController extends _$ChatInputController {
 
       final rawList = res.data is Map ? res.data['data'] : res.data;
       if (rawList is! List || rawList.isEmpty) {
-        // 涓婁紶澶辫触锛屾洿鏂颁负 failed 鐘舵€?
+        // 娑撳﹣绱舵径杈Е閿涘本娲块弬棰佽礋 failed 閻樿埖鈧?
         ref
             .read(chatMessagesProvider.notifier)
             .upsertMessage(
@@ -487,7 +491,7 @@ class ChatInputController extends _$ChatInputController {
 
       final url = rawList.first.toString();
 
-      // 3. 涓婁紶鎴愬姛锛岄€氳繃 WS 鍙戦€佺湡姝ｇ殑娑堟伅
+      // 3. 娑撳﹣绱堕幋鎰閿涘矂鈧俺绻?WS 閸欐垿鈧胶婀″锝囨畱濞戝牊浼?
       _doSendVoice(
         clientMsgId: clientMsgId,
         url: url,
@@ -495,7 +499,7 @@ class ChatInputController extends _$ChatInputController {
         fileSize: file.lengthSync(),
       );
 
-      // 4. 鍒犻櫎鏈湴涓存椂鏂囦欢
+      // 4. 閸掔娀娅庨張顒€婀存稉瀛樻閺傚洣娆?
       try {
         file.deleteSync();
       } catch (_) {}
@@ -505,7 +509,7 @@ class ChatInputController extends _$ChatInputController {
           .upsertMessage(
             localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
           );
-      log.error('璇煶娑堟伅鍙戦€佸け璐? $e');
+      log.error('鐠囶參鐓跺☉鍫熶紖閸欐垿鈧礁銇戠拹? $e');
     }
   }
 
@@ -534,16 +538,15 @@ class ChatInputController extends _$ChatInputController {
       audioDuration: duration,
     ).withMedia(MessageType.audio, attachments);
 
-    // 鏇存柊鏈湴娑堟伅鐨?url 涓虹湡瀹?url
+    // 閺囧瓨鏌婇張顒€婀村☉鍫熶紖閻?url 娑撹櫣婀＄€?url
     final updatedMsg = ChatMessage(
       messageId: clientMsgId,
       clientMsgId: clientMsgId,
       roomId: roomId,
       senderId: user.userId,
       messageType: MessageType.audio,
-      content: '[璇煶]',
+      content: '[鐠囶參鐓禲',
       payload: payload,
-      attachments: attachments,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       deliveryStatus: DeliveryStatus.sending,
       seq: 0,
@@ -560,7 +563,7 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('馃殌 鍙戦€佽闊虫秷鎭? $clientMsgId');
+    log.info('棣冩畬 閸欐垿鈧浇顕㈤棅铏Х閹? $clientMsgId');
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
@@ -616,7 +619,7 @@ class ChatInputController extends _$ChatInputController {
     ref.read(mentionStateProvider.notifier).hide();
   }
 
-  // 缁熶竴鐨勫唴閮ㄥ彂閫佹柟娉?
+  // 缂佺喍绔撮惃鍕敶闁劌褰傞柅浣规煙濞?
   void _doSend({
     required MessageType type,
     required MessagePayload payload,
@@ -625,7 +628,7 @@ class ChatInputController extends _$ChatInputController {
     final String clientMsgId = const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      log.error('鍙戦€佸け璐? 鐢ㄦ埛淇℃伅缂哄け');
+      log.error('send failed: missing user');
       return;
     }
     final payloadWithMedia = payload.withMedia(type, attachments ?? const []);
@@ -639,7 +642,6 @@ class ChatInputController extends _$ChatInputController {
       messageType: type,
       content: payloadWithMedia.content ?? '',
       payload: payloadWithMedia,
-      attachments: derivedAttachments,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       deliveryStatus: DeliveryStatus.sending,
       seq: 0,
@@ -657,7 +659,7 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('馃殌 鍙戦€佹秷鎭?[$type]: clientMsgId=$clientMsgId');
+    log.info('棣冩畬 閸欐垿鈧焦绉烽幁?[$type]: clientMsgId=$clientMsgId');
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
@@ -673,9 +675,9 @@ class ChatInputController extends _$ChatInputController {
   }
 }
 
-/// 鑱婂ぉ杈撳叆妗嗙劍鐐?Provider
+/// 閼卞﹤銇夋潏鎾冲弳濡楀棛鍔嶉悙?Provider
 ///
-/// 涓烘瘡涓埧闂寸嫭绔嬬鐞嗚緭鍏ユ鐒︾偣鐘舵€?
+/// 娑撶儤鐦℃稉顏呭煣闂傚瀚粩瀣吀閻炲棜绶崗銉︻攱閻掞妇鍋ｉ悩鑸碘偓?
 @riverpod
 FocusNode chatFocusNode(Ref ref, String roomId) {
   final node = FocusNode();
@@ -683,7 +685,7 @@ FocusNode chatFocusNode(Ref ref, String roomId) {
   return node;
 }
 
-// 鍦?chat_input_controller.dart 涓坊鍔?
+// 閸?chat_input_controller.dart 娑擃厽鍧婇崝?
 @Riverpod(keepAlive: true)
 class MentionState extends _$MentionState {
   @override
@@ -707,14 +709,14 @@ class MentionState extends _$MentionState {
   }
 }
 
-/// @鎻愬強鐘舵€佹暟鎹?
+/// @閹绘劕寮烽悩鑸碘偓浣规殶閹?
 ///
-/// 瀛樺偍鎻愬強寮圭獥鐨勬樉绀虹姸鎬佸拰鐩稿叧淇℃伅
+/// 鐎涙ê鍋嶉幓鎰挤瀵湱鐛ラ惃鍕▔缁€铏瑰Ц閹礁鎷伴惄绋垮彠娣団剝浼?
 class MentionStateData {
   final bool isShowing;
   final int cursorPosition;
   final String searchText;
-  final Offset? atSymbolOffset; // @ 绗﹀彿鍦ㄥ睆骞曚笂鐨勪綅缃?
+  final Offset? atSymbolOffset; // @ 缁楋箑褰块崷銊ョ潌楠炴洑绗傞惃鍕秴缂?
 
   MentionStateData({
     this.isShowing = false,

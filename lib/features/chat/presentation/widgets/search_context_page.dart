@@ -151,12 +151,13 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final textTheme = Theme.of(context).textTheme;
     final bool isDesktop = DeviceUtil.isRealDesktop();
     final String displayName =
-      (chatMessage.senderName != null && chatMessage.senderName!.trim().isNotEmpty)
-      ? chatMessage.senderName!.trim()
-      : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr());
+        (chatMessage.senderName != null &&
+            chatMessage.senderName!.trim().isNotEmpty)
+        ? chatMessage.senderName!.trim()
+        : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr());
     final String? senderMeta = chatMessage.senderId != null
-      ? 'ID: ${chatMessage.senderId}'
-      : null;
+        ? 'ID: ${chatMessage.senderId}'
+        : null;
 
     // 判断是否在高亮范围内
     final searchState = ref.read(searchMessageServiceProvider);
@@ -282,12 +283,11 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     String keyword,
   ) {
     // 检查消息类型（image: 1）
-    if (chatMessage.messageType == MessageType.image ||
-        (chatMessage.attachments.isNotEmpty &&
-            chatMessage.attachments.first.type?.startsWith('image') == true)) {
+    final imageAttachment = chatMessage.payload?.image;
+    if (chatMessage.messageType == MessageType.image) {
       // 图片消息：显示附件缩略图
-      if (chatMessage.attachments.isNotEmpty) {
-        final attachment = chatMessage.attachments.first;
+      if (imageAttachment?.url?.isNotEmpty == true) {
+        final attachment = imageAttachment!;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -465,7 +465,12 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
       children: [
         // 搜索输入栏
         Padding(
-          padding: EdgeInsets.fromLTRB(isDesktop ? 16 : 8, 8, isDesktop ? 16 : 8, 8),
+          padding: EdgeInsets.fromLTRB(
+            isDesktop ? 16 : 8,
+            8,
+            isDesktop ? 16 : 8,
+            8,
+          ),
           child: Material(
             color: colorScheme.surface,
             elevation: isDesktop ? 1 : 0,
@@ -483,7 +488,8 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                   color: colorScheme.outline,
                   size: 20,
                 ),
-                suffixIcon: _searchController.text.isNotEmpty && !searchState.isLoading
+                suffixIcon:
+                    _searchController.text.isNotEmpty && !searchState.isLoading
                     ? IconButton(
                         icon: Icon(
                           Icons.clear_rounded,
@@ -502,7 +508,9 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                         splashRadius: 20,
                       )
                     : IconButton(
-                        onPressed: searchState.isLoading ? null : _performSearch,
+                        onPressed: searchState.isLoading
+                            ? null
+                            : _performSearch,
                         icon: searchState.isLoading
                             ? SizedBox(
                                 width: 20,
@@ -533,7 +541,12 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
         // 搜索结果信息栏
         if (searchState.messages.isNotEmpty)
           Container(
-            margin: EdgeInsets.fromLTRB(isDesktop ? 16 : 0, 0, isDesktop ? 16 : 0, 0),
+            margin: EdgeInsets.fromLTRB(
+              isDesktop ? 16 : 0,
+              0,
+              isDesktop ? 16 : 0,
+              0,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.08),

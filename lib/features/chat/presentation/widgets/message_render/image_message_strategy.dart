@@ -19,7 +19,11 @@ class ImageMessageStrategy extends MessageRenderStrategy {
     ChatMessage message,
     Color textColor,
   ) {
-    final imageList = message.attachments;
+    final imageList =
+        message.payload?.mediaAttachments
+            .where((attachment) => attachment.isImage)
+            .toList() ??
+        const [];
 
     if (imageList.isEmpty) {
       return const SizedBox.shrink();

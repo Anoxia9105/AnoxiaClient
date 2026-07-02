@@ -41,7 +41,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: DeviceUtil.isRealMobile(),
-        title: Text('sidebar_favorites'.tr())),
+        title: Text('sidebar_favorites'.tr()),
+      ),
       body: body,
     );
   }
@@ -421,7 +422,7 @@ class _FavoriteDetailPanel extends StatelessWidget {
     final hasRenderableBody =
         (message.payload?.content?.trim().isNotEmpty ?? false) ||
         (message.payload?.quillDelta?.trim().isNotEmpty ?? false) ||
-        message.attachments.isNotEmpty;
+        (message.payload?.mediaAttachments.isNotEmpty ?? false);
     final isRefinedTextDetail = _isRefinedTextDetail(message, detailFallback);
 
     return Column(

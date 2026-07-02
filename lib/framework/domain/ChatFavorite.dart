@@ -69,7 +69,9 @@ class ChatFavorite {
       senderName: senderInfo.senderName,
       senderAvatar: senderInfo.senderAvatar,
       favoriteType:
-          json['favoriteType']?.toString() ?? json['favorite_type']?.toString() ?? '',
+          json['favoriteType']?.toString() ??
+          json['favorite_type']?.toString() ??
+          '',
       content: json['content']?.toString() ?? '',
       payload: json['payload']?.toString() ?? '',
       attachments: json['attachments']?.toString() ?? '',
@@ -129,7 +131,9 @@ class ChatFavorite {
 
     final byName = MessageType.fromCode(raw);
     final upper = raw.toUpperCase();
-    final hasNameMatch = MessageType.values.any((e) => e.name.toUpperCase() == upper);
+    final hasNameMatch = MessageType.values.any(
+      (e) => e.name.toUpperCase() == upper,
+    );
     if (hasNameMatch) return byName;
 
     final asInt = int.tryParse(raw);
@@ -230,8 +234,11 @@ class ChatFavorite {
         final delta = decoded['delta'];
         if (delta is List) {
           final joined = delta
-              .map((e) =>
-                  e is Map<String, dynamic> ? e['insert']?.toString() ?? '' : '')
+              .map(
+                (e) => e is Map<String, dynamic>
+                    ? e['insert']?.toString() ?? ''
+                    : '',
+              )
               .join('')
               .trim();
           if (joined.isNotEmpty) return joined;
@@ -240,8 +247,11 @@ class ChatFavorite {
 
       if (decoded is List) {
         final joined = decoded
-            .map((e) =>
-                e is Map<String, dynamic> ? e['insert']?.toString() ?? '' : '')
+            .map(
+              (e) => e is Map<String, dynamic>
+                  ? e['insert']?.toString() ?? ''
+                  : '',
+            )
             .join('')
             .trim();
         if (joined.isNotEmpty) return joined;
@@ -260,6 +270,10 @@ class ChatFavorite {
     final resolvedType = messageType;
     final resolvedPayload = _buildPayload(resolvedType);
     final resolvedAttachments = _buildAttachments();
+    final payloadWithMedia = resolvedPayload.withMedia(
+      resolvedType,
+      resolvedAttachments,
+    );
 
     return ChatMessage(
       messageId: msgId,
@@ -268,8 +282,7 @@ class ChatFavorite {
       senderAvatar: senderAvatar,
       messageType: resolvedType,
       content: content,
-      payload: resolvedPayload,
-      attachments: resolvedAttachments,
+      payload: payloadWithMedia,
     );
   }
 
@@ -322,7 +335,11 @@ class ChatFavorite {
 
   /// 从 Map 中提取 Quill Delta 字符串
   String? _extractQuillDeltaString(Map<String, dynamic> decoded) {
-    final candidates = [decoded['quillDelta'], decoded['delta'], decoded['ops']];
+    final candidates = [
+      decoded['quillDelta'],
+      decoded['delta'],
+      decoded['ops'],
+    ];
     for (final candidate in candidates) {
       if (candidate == null) continue;
       if (candidate is String && candidate.trim().isNotEmpty) return candidate;
@@ -345,7 +362,9 @@ class ChatFavorite {
 
     final payloadRaw = payload.trim();
     if (payloadRaw.isNotEmpty) {
-      final fromPayload = _parseAttachmentsDynamic(_decodeMaybeJson(payloadRaw));
+      final fromPayload = _parseAttachmentsDynamic(
+        _decodeMaybeJson(payloadRaw),
+      );
       if (fromPayload.isNotEmpty) return fromPayload;
     }
 
@@ -497,7 +516,10 @@ class ChatFavorite {
   }
 
   /// 从多个候选键中读取整数值的辅助方法
-  static int? _readInt(Map<String, dynamic> source, {required List<String> keys}) {
+  static int? _readInt(
+    Map<String, dynamic> source, {
+    required List<String> keys,
+  }) {
     for (final key in keys) {
       final value = source[key];
       if (value == null) continue;
@@ -508,7 +530,10 @@ class ChatFavorite {
   }
 
   /// 从多个候选键中读取字符串值的辅助方法
-  static String _readString(Map<String, dynamic> source, {required List<String> keys}) {
+  static String _readString(
+    Map<String, dynamic> source, {
+    required List<String> keys,
+  }) {
     for (final key in keys) {
       final value = source[key]?.toString().trim() ?? '';
       if (value.isNotEmpty) return value;
