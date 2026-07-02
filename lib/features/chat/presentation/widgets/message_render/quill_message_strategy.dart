@@ -11,6 +11,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
 import 'base/message_render_strategy.dart';
+import 'link_preview_card.dart';
 
 /// 富文本消息渲染策略
 ///
@@ -96,33 +97,41 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth * 0.72;
         final targetWidth = _resolveTargetWidth(context, maxWidth);
+        final previewSource = _linkPreviewSource();
 
         return SizedBox(
           width: targetWidth,
-          child: QuillEditor.basic(
-            controller: _controller!,
-            config: QuillEditorConfig(
-              textSelectionThemeData: TextSelectionThemeData(
-                selectionColor: Theme.of(
-                  context,
-                ).colorScheme.onPrimary.withValues(alpha: 0.2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              QuillEditor.basic(
+                controller: _controller!,
+                config: QuillEditorConfig(
+                  textSelectionThemeData: TextSelectionThemeData(
+                    selectionColor: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withValues(alpha: 0.2),
+                  ),
+                  enableSelectionToolbar: false,
+                  showCursor: false,
+                  autoFocus: false,
+                  expands: false,
+                  scrollable: false,
+                  padding: EdgeInsets.zero,
+                  customStyles: QuillStyleConfig.get(
+                    context,
+                    color: widget.textColor,
+                  ),
+                  embedBuilders: [
+                    QuillImageBuild(),
+                    QuillFileBuild(),
+                    QuillMentionBuild(),
+                  ],
+                ),
               ),
-              enableSelectionToolbar: false,
-              showCursor: false,
-              autoFocus: false,
-              expands: false,
-              scrollable: false,
-              padding: EdgeInsets.zero,
-              customStyles: QuillStyleConfig.get(
-                context,
-                color: widget.textColor,
-              ),
-              embedBuilders: [
-                QuillImageBuild(),
-                QuillFileBuild(),
-                QuillMentionBuild(),
-              ],
-            ),
+              MessageLinkPreview(text: previewSource),
+            ],
           ),
         );
       },
@@ -136,6 +145,10 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     final trimmed = plain.replaceAll(RegExp(r'\n+$'), '').trim();
     if (trimmed.isEmpty) {
       return 64;
+    }
+
+    if (MessageLinkPreview.extractFirstUrl(_linkPreviewSource()) != null) {
+      return maxWidth;
     }
 
     if (trimmed.contains('\n')) {
@@ -166,5 +179,23 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       }
     }
     return false;
+  }
+
+  String _linkPreviewSource() {
+    final buffer = StringBuffer(_controller?.document.toPlainText() ?? '');
+    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    if (opsJson is! List) return buffer.toString();
+
+    for (final op in opsJson) {
+      if (op is! Map) continue;
+      final attributes = op['attributes'];
+      if (attributes is! Map) continue;
+      final link = attributes['link']?.toString();
+      if (link == null || link.isEmpty) continue;
+      buffer
+        ..write(' ')
+        ..write(link);
+    }
+    return buffer.toString();
   }
 }

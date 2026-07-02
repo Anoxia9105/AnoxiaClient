@@ -17,8 +17,10 @@ import 'package:path/path.dart' as path;
 
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'chat_more_panel.dart';
@@ -330,6 +332,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
+    final replyTarget = ref.watch(replyTargetProvider(widget.roomId));
 
     final isInPipMode = ref.watch(
       mobileCallSessionControllerProvider.select(
@@ -341,6 +344,18 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (replyTarget != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+            child: ReplyPreviewBar(
+              message: replyTarget,
+              onClear: () {
+                ref
+                    .read(replyTargetControllerProvider.notifier)
+                    .clear(widget.roomId);
+              },
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Row(

@@ -173,7 +173,7 @@ class RoomListService extends _$RoomListService {
             title: oldRoom.roomName ?? tr('chat_new_message'),
             body: newMessage.content,
             payload: newMessage.roomId,
-            avatarUrl: newMessage.senderAvatar ?? oldRoom.roomAvatar,
+            avatarUrl: oldRoom.roomAvatar,
           );
         }
 

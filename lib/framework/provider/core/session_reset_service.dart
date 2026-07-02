@@ -3,11 +3,11 @@ import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 
 enum SessionResetReason { logout, tokenExpired, accountSwitch }
 
@@ -31,6 +31,7 @@ class SessionResetService {
     'chatInputControllerProvider(*)',
     'chatFocusNodeProvider(*)',
     'mentionStateProvider',
+    'replyTargetControllerProvider',
     'chatImageUploadControllerProvider',
     'chatFileUploadControllerProvider',
     'roomSearchQueryProvider',
@@ -56,6 +57,7 @@ class SessionResetService {
     container.invalidate(chatInputControllerProvider);
     container.invalidate(chatFocusNodeProvider);
     container.invalidate(mentionStateProvider);
+    container.invalidate(replyTargetControllerProvider);
     container.invalidate(chatImageUploadControllerProvider);
     container.invalidate(chatFileUploadControllerProvider);
     container.invalidate(roomSearchQueryProvider);

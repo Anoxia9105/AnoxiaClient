@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -10,41 +10,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 
-/// 图片查看器组件
+/// 鍥剧墖鏌ョ湅鍣ㄧ粍浠?
 ///
-/// 提供全屏图片预览功能，支持：
-/// - 手势缩放（双指捏合、鼠标滚轮）
-/// - 放大/缩小按钮
-/// - 重置缩放按钮
-/// - 图片下载功能
-/// - Hero 动画过渡
-/// - 加载状态和错误处理
+/// 鎻愪緵鍏ㄥ睆鍥剧墖棰勮鍔熻兘锛屾敮鎸侊細
+/// - 鎵嬪娍缂╂斁锛堝弻鎸囨崗鍚堛€侀紶鏍囨粴杞級
+/// - 鏀惧ぇ/缂╁皬鎸夐挳
+/// - 閲嶇疆缂╂斁鎸夐挳
+/// - 鍥剧墖涓嬭浇鍔熻兘
+/// - Hero 鍔ㄧ敾杩囨浮
+/// - 鍔犺浇鐘舵€佸拰閿欒澶勭悊
 ///
-/// [attachment] 图片附件信息
-/// [heroTag] Hero 动画标签
-class ImageViewer extends StatefulWidget {
+/// [attachment] 鍥剧墖闄勪欢淇℃伅
+/// [heroTag] Hero 鍔ㄧ敾鏍囩
+class ImageViewer extends ConsumerStatefulWidget {
   final Attachment attachment;
   final String heroTag;
+  final String? roomId;
+  final String? currentUrl;
 
   const ImageViewer({
     required this.attachment,
     required this.heroTag,
+    this.roomId,
+    this.currentUrl,
     super.key,
   });
 
   @override
-  State<ImageViewer> createState() => _ImageViewerState();
+  ConsumerState<ImageViewer> createState() => _ImageViewerState();
 }
 
-class _ImageViewerState extends State<ImageViewer> {
+class _ImageViewerState extends ConsumerState<ImageViewer> {
   late final PhotoViewController _controller;
   late final PhotoViewScaleStateController _scaleStateCtrl;
   bool _downloading = false;
+  late String? _currentUrl;
 
   static const double _step = 0.2;
   static const double _minScaleFactor = 0.5;
@@ -55,6 +61,7 @@ class _ImageViewerState extends State<ImageViewer> {
     super.initState();
     _controller = PhotoViewController();
     _scaleStateCtrl = PhotoViewScaleStateController();
+    _currentUrl = widget.currentUrl ?? widget.attachment.url;
   }
 
   @override
@@ -104,7 +111,7 @@ class _ImageViewerState extends State<ImageViewer> {
       return;
     }
 
-    final url = widget.attachment.url;
+    final url = _currentAttachment(_galleryAttachments(watch: false)).url;
     if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -182,7 +189,14 @@ class _ImageViewerState extends State<ImageViewer> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.attachment.url == null || widget.attachment.url!.isEmpty) {
+    final attachments = _galleryAttachments();
+    final attachment = _currentAttachment(attachments);
+    final currentIndex = _currentIndex(attachments);
+    final canGoPrevious = currentIndex > 0;
+    final canGoNext =
+        currentIndex >= 0 && currentIndex < attachments.length - 1;
+
+    if (attachment.url == null || attachment.url!.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.black,
         body: GestureDetector(
@@ -199,10 +213,15 @@ class _ImageViewerState extends State<ImageViewer> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
+        title: attachments.length > 1
+            ? Text(
+                '${currentIndex + 1}/${attachments.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              )
+            : null,
         leading: IconButton(
           icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft02,
@@ -250,22 +269,21 @@ class _ImageViewerState extends State<ImageViewer> {
         value: SystemUiOverlayStyle.light,
         child: Stack(
           children: [
-            // 主体图片展示区
+            // 涓讳綋鍥剧墖灞曠ず鍖?
             Positioned.fill(
               child: GestureDetector(
-                // 兜底关闭：errorBuilder 会替换整个 PhotoView，导致 onTapUp 失效
-                // 外层套 GestureDetector 确保任何情况下点击都能关闭
+                // 鍏滃簳鍏抽棴锛歟rrorBuilder 浼氭浛鎹㈡暣涓?PhotoView锛屽鑷?onTapUp 澶辨晥
+                // 澶栧眰濂?GestureDetector 纭繚浠讳綍鎯呭喌涓嬬偣鍑婚兘鑳藉叧闂?
                 onTap: () => Navigator.pop(context),
                 child: Listener(
                   onPointerSignal: _onPointerSignal,
                   child: PhotoView(
+                    key: ValueKey(attachment.url),
                     controller: _controller,
                     scaleStateController: _scaleStateCtrl,
                     onTapUp: (context, details, value) =>
                         Navigator.pop(context),
-                    imageProvider: CachedNetworkImageProvider(
-                      widget.attachment.url!,
-                    ),
+                    imageProvider: CachedNetworkImageProvider(attachment.url!),
                     filterQuality: FilterQuality.high,
                     backgroundDecoration: const BoxDecoration(
                       color: Colors.black,
@@ -275,17 +293,41 @@ class _ImageViewerState extends State<ImageViewer> {
                     maxScale: PhotoViewComputedScale.covered * 2.5,
                     enableRotation: false,
                     basePosition: Alignment.center,
-                    heroAttributes: PhotoViewHeroAttributes(
-                      tag: widget.heroTag,
-                    ),
+                    heroAttributes: _heroAttributesFor(attachment),
                     loadingBuilder: (context, event) => _buildLoading(event),
                     errorBuilder: (context, error, stackTrace) => _buildError(),
                   ),
                 ),
               ),
             ),
+            if (attachments.length > 1) ...[
+              Positioned(
+                left: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _buildSwitchButton(
+                    icon: HugeIcons.strokeRoundedArrowLeft02,
+                    enabled: canGoPrevious,
+                    onPressed: () => _switchTo(currentIndex - 1, attachments),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _buildSwitchButton(
+                    icon: HugeIcons.strokeRoundedArrowRight02,
+                    enabled: canGoNext,
+                    onPressed: () => _switchTo(currentIndex + 1, attachments),
+                  ),
+                ),
+              ),
+            ],
 
-            // 底部文件名提示（穿透点击，不拦截关闭手势）
+            // 搴曢儴鏂囦欢鍚嶆彁绀猴紙绌块€忕偣鍑伙紝涓嶆嫤鎴叧闂墜鍔匡級
             Positioned(
               bottom: 16.h,
               left: 0,
@@ -302,7 +344,7 @@ class _ImageViewerState extends State<ImageViewer> {
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Text(
-                      widget.attachment.name ?? 'image'.tr(),
+                      attachment.name ?? 'image'.tr(),
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -312,6 +354,82 @@ class _ImageViewerState extends State<ImageViewer> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  List<Attachment> _galleryAttachments({bool watch = true}) {
+    final roomId = widget.roomId;
+    if (roomId == null || roomId.isEmpty) return [widget.attachment];
+
+    final selector = chatMessagesProvider.select(
+      (state) => state[roomId] ?? const [],
+    );
+    final messages = watch ? ref.watch(selector) : ref.read(selector);
+    final result = <Attachment>[];
+    final seenUrls = <String>{};
+
+    for (final message in messages) {
+      final attachments = message.payload?.mediaAttachments ?? const [];
+      for (final attachment in attachments) {
+        final url = attachment.url;
+        if (url == null || url.isEmpty || !attachment.isImage) continue;
+        if (seenUrls.add(url)) result.add(attachment);
+      }
+    }
+
+    final initialUrl = widget.attachment.url;
+    if (initialUrl != null &&
+        initialUrl.isNotEmpty &&
+        seenUrls.add(initialUrl)) {
+      result.add(widget.attachment);
+    }
+
+    return result.isEmpty ? [widget.attachment] : result;
+  }
+
+  Attachment _currentAttachment(List<Attachment> attachments) {
+    for (final attachment in attachments) {
+      if (attachment.url == _currentUrl) return attachment;
+    }
+    return attachments.isEmpty ? widget.attachment : attachments.first;
+  }
+
+  int _currentIndex(List<Attachment> attachments) {
+    final index = attachments.indexWhere((item) => item.url == _currentUrl);
+    return index < 0 ? 0 : index;
+  }
+
+  void _switchTo(int index, List<Attachment> attachments) {
+    if (index < 0 || index >= attachments.length) return;
+    setState(() => _currentUrl = attachments[index].url);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _controller.scale = _controller.initial.scale;
+    });
+  }
+
+  PhotoViewHeroAttributes? _heroAttributesFor(Attachment attachment) {
+    final initialUrl = widget.currentUrl ?? widget.attachment.url;
+    if (attachment.url != initialUrl) return null;
+    return PhotoViewHeroAttributes(tag: widget.heroTag);
+  }
+
+  Widget _buildSwitchButton({
+    required List<List<dynamic>> icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 160),
+      opacity: enabled ? 1 : 0.25,
+      child: Material(
+        color: Colors.black45,
+        shape: const CircleBorder(),
+        child: IconButton(
+          onPressed: enabled ? onPressed : null,
+          icon: HugeIcon(icon: icon, color: Colors.white, size: 22),
         ),
       ),
     );

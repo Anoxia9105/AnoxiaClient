@@ -12,6 +12,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 
 /// 聊天消息上下文菜单组件
@@ -112,6 +114,20 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
       );
     }
 
+    final canReply =
+        widget.message.deliveryStatus == DeliveryStatus.sent &&
+        widget.message.messageId?.isNotEmpty == true;
+
+    if (canReply) {
+      items.add(
+        _buildDesktopItem(
+          'reply',
+          HugeIcons.strokeRoundedMessageCircleReply,
+          '引用',
+        ),
+      );
+    }
+
     items.add(
       _buildDesktopItem(
         'favorite',
@@ -166,6 +182,14 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
           action: 'copy',
           icon: HugeIcons.strokeRoundedCopy01,
           label: 'chat_copy'.tr(),
+        ),
+      if (widget.message.deliveryStatus == DeliveryStatus.sent &&
+          widget.message.messageId?.isNotEmpty == true)
+        _buildMenuItem(
+          context,
+          action: 'reply',
+          icon: HugeIcons.strokeRoundedMessageCircleReply,
+          label: '引用',
         ),
       _buildMenuItem(
         context,
@@ -238,6 +262,9 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
       case 'favorite':
         unawaited(_handleFavorite(context));
         break;
+      case 'reply':
+        _handleReply();
+        break;
       case 'revoke':
         unawaited(_handleRevoke(context));
         break;
@@ -288,6 +315,22 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
       }
     }
     return '';
+  }
+
+  void _handleReply() {
+    final roomId = widget.message.roomId;
+    final messageId = widget.message.messageId;
+    if (roomId == null ||
+        roomId.isEmpty ||
+        messageId == null ||
+        messageId.isEmpty) {
+      return;
+    }
+
+    widget.ref
+        .read(replyTargetControllerProvider.notifier)
+        .set(roomId, widget.message);
+    widget.ref.read(chatFocusNodeProvider(roomId)).requestFocus();
   }
 
   Future<void> _handleFavorite(BuildContext context) async {

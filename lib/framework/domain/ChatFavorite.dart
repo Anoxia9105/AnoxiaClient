@@ -278,8 +278,6 @@ class ChatFavorite {
     return ChatMessage(
       messageId: msgId,
       senderId: senderId,
-      senderName: senderName,
-      senderAvatar: senderAvatar,
       messageType: resolvedType,
       content: content,
       payload: payloadWithMedia,

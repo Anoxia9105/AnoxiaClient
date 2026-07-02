@@ -3,7 +3,9 @@ import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -150,11 +152,22 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final bool isDesktop = DeviceUtil.isRealDesktop();
-    final String displayName =
-        (chatMessage.senderName != null &&
-            chatMessage.senderName!.trim().isNotEmpty)
-        ? chatMessage.senderName!.trim()
-        : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr());
+    final currentUser = ref.watch(authControllerProvider).value;
+    final members = ref.watch(roomMembersProvider(widget.roomId));
+    final senderMember = members
+        .where((member) => member.userId == chatMessage.senderId)
+        .firstOrNull;
+    final bool isCurrentUser = chatMessage.senderId == currentUser?.userId;
+    final String displayName = isCurrentUser
+        ? (currentUser?.nickName.trim().isNotEmpty == true
+              ? currentUser!.nickName.trim()
+              : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr()))
+        : ((senderMember?.nickName?.trim().isNotEmpty == true)
+              ? senderMember!.nickName!.trim()
+              : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr()));
+    final String? avatarUrl = isCurrentUser
+        ? currentUser?.avatar
+        : senderMember?.avatar;
     final String? senderMeta = chatMessage.senderId != null
         ? 'ID: ${chatMessage.senderId}'
         : null;
@@ -197,7 +210,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
             // 用户头像
             AvatarWidget(
               size: isDesktop ? 44 : 40,
-              url: chatMessage.senderAvatar,
+              url: avatarUrl,
               name: displayName,
               borderRadius: isDesktop ? 22 : 20,
             ),

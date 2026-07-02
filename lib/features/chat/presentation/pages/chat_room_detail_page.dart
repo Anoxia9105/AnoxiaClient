@@ -11,6 +11,7 @@ import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_det
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
@@ -145,6 +146,14 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       if (prev != next) setState(() => _showScrollDownButton = false);
     });
 
+    ref.listen<ReplyJumpRequest?>(replyJumpControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (next == null || next.roomId != widget.roomId) return;
+      _scrollToMessage(next.messageId, flatItems);
+    });
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: DeviceUtil.isRealDesktop()
@@ -251,5 +260,24 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     } else {
       _listViewController.sliverController.jumpToIndex(0);
     }
+  }
+
+  void _scrollToMessage(String messageId, List<ChatListItem> flatItems) {
+    if (!_listViewController.hasClients) return;
+
+    final index = flatItems.indexWhere((item) {
+      return switch (item) {
+        MessageItem(:final message) =>
+          message.messageId == messageId || message.clientMsgId == messageId,
+        _ => false,
+      };
+    });
+
+    if (index < 0) return;
+    _listViewController.sliverController.animateToIndex(
+      index,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
   }
 }

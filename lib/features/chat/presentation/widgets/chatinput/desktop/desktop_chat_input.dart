@@ -13,7 +13,9 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toolbar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
@@ -211,10 +213,24 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
   Widget build(BuildContext context) {
     final controller = ref.watch(chatInputControllerProvider(widget.roomId));
     final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
+    final replyTarget = ref.watch(replyTargetProvider(widget.roomId));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (replyTarget != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+            child: ReplyPreviewBar(
+              message: replyTarget,
+              onClear: () {
+                ref
+                    .read(replyTargetControllerProvider.notifier)
+                    .clear(widget.roomId);
+              },
+            ),
+          ),
+
         /// 聊天工具栏
         ChatQuillToolbar(
           controller: controller,

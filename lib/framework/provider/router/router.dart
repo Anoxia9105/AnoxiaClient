@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
@@ -146,14 +145,22 @@ class ImageMessageDetailRoute extends GoRouteData
     with $ImageMessageDetailRoute {
   final Attachment attachment;
   final String heroTag;
+  final String? roomId;
+  final String? currentUrl;
   const ImageMessageDetailRoute({
     required this.attachment,
     required this.heroTag,
+    this.roomId,
+    this.currentUrl,
   });
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      ImageViewer(attachment: attachment, heroTag: heroTag);
+  Widget build(BuildContext context, GoRouterState state) => ImageViewer(
+    attachment: attachment,
+    heroTag: heroTag,
+    roomId: roomId,
+    currentUrl: currentUrl,
+  );
 }
 
 /// 添加好友页路由

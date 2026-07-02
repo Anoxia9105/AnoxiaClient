@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
 import 'base/message_render_strategy.dart';
+import 'link_preview_card.dart';
 
 /// 文本消息渲染策略
 ///
@@ -21,9 +22,16 @@ class TextMessageStrategy extends MessageRenderStrategy {
     }
 
     // 普通文本渲染：避免 SelectionArea 抢占长按手势，确保整块气泡可触发消息菜单。
-    return Text(
-      content,
-      style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          content,
+          style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+        ),
+        MessageLinkPreview(text: content),
+      ],
     );
   }
 }

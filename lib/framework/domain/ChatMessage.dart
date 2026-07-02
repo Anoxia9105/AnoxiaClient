@@ -10,8 +10,6 @@ class ChatMessage {
   final String? clientMsgId;
   final String? roomId;
   final int? senderId;
-  final String? senderName;
-  final String? senderAvatar;
   final MessageType? messageType;
   final String content;
   final MessagePayload? payload;
@@ -26,8 +24,6 @@ class ChatMessage {
     this.clientMsgId,
     this.roomId,
     this.senderId,
-    this.senderName,
-    this.senderAvatar,
     this.messageType,
     this.payload,
     this.messageStatus,
@@ -51,8 +47,6 @@ class ChatMessage {
       clientMsgId: clientMsgId ?? this.clientMsgId,
       roomId: roomId,
       senderId: senderId,
-      senderName: senderName,
-      senderAvatar: senderAvatar,
       messageType: messageType,
       content: content,
       payload: payload,
@@ -87,8 +81,6 @@ class ChatMessage {
       senderId: json['senderId'] != null
           ? int.tryParse(json['senderId'].toString())
           : null,
-      senderName: json['senderName']?.toString(),
-      senderAvatar: json['senderAvatar']?.toString(),
       messageType: MessageType.fromCode(json['messageType']),
       content: content,
       payload: payload,
@@ -108,8 +100,6 @@ class ChatMessage {
       clientMsgId: msg.clientMsgId,
       roomId: msg.roomId,
       senderId: msg.senderId == 0 ? null : msg.senderId,
-      senderName: null,
-      senderAvatar: null,
       messageType: msg.messageType,
       content: msg.payload?.content ?? '',
       payload: msg.payload,

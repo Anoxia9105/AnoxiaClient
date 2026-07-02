@@ -130,6 +130,8 @@ mixin $ImageMessageDetailRoute on GoRouteData {
           return Attachment.fromJson(jsonDecode(json0) as Map<String, dynamic>);
         }(state.uri.queryParameters['attachment']!),
         heroTag: state.uri.queryParameters['hero-tag']!,
+        roomId: state.uri.queryParameters['room-id'],
+        currentUrl: state.uri.queryParameters['current-url'],
       );
 
   ImageMessageDetailRoute get _self => this as ImageMessageDetailRoute;
@@ -140,6 +142,8 @@ mixin $ImageMessageDetailRoute on GoRouteData {
     queryParams: {
       'attachment': jsonEncode(_self.attachment.toJson()),
       'hero-tag': _self.heroTag,
+      if (_self.roomId != null) 'room-id': _self.roomId!,
+      if (_self.currentUrl != null) 'current-url': _self.currentUrl!,
     },
   );
 

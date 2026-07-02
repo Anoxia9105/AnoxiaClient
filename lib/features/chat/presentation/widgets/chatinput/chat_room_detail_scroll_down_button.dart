@@ -13,15 +13,27 @@ class ChatRoomDetailScrollDownButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 35,
-      height: 35,
+    final theme = Theme.of(context);
+
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary, // 背景使用主题色
+        shape: BoxShape.circle, // 容器设为圆形
+      ),
       child: IconButton(
         onPressed: onPressed,
+        style: IconButton.styleFrom(
+          shape: const CircleBorder(), 
+          hoverColor: theme.colorScheme.onPrimary.withValues(alpha: 0.08), 
+        ),
+        padding: EdgeInsets.zero, // 确保图标居中
         icon: HugeIcon(
-          icon: HugeIcons.strokeRoundedCircleArrowDown02,
+          size: 16,
+          icon: HugeIcons.strokeRoundedArrowDown01,
           strokeWidth: 2.0,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          color: theme.colorScheme.onPrimary, // 图标使用主题色之上的文本/图标颜色
         ),
       ),
     );
