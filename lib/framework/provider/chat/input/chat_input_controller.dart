@@ -345,6 +345,17 @@ class ChatInputController extends _$ChatInputController {
     );
   }
 
+  void sendLocationMessage(LocationPayload location) {
+    final room = ref.read(currentRoomProvider(roomId));
+    final title = location.displayTitle.trim();
+    if (room == null || title.isEmpty || !location.hasCoordinate) return;
+
+    _doSend(
+      type: MessageType.location,
+      payload: MessagePayload(content: title, location: location),
+    );
+  }
+
   Future<void> sendPickedImages(List<PlatformFile> files) async {
     if (files.isEmpty) return;
 

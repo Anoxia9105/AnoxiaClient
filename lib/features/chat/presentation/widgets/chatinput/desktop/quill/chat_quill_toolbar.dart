@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/card_box.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
@@ -34,6 +35,7 @@ class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final VoidCallback onSend;
   final ValueChanged<CardPayload> onCardSubmit;
+  final ValueChanged<LocationPayload> onLocationSubmit;
   final VoidCallback? onImagePressed;
   final VoidCallback? onFilePressed;
 
@@ -42,6 +44,7 @@ class ChatQuillToolbar extends ConsumerWidget {
     required this.controller,
     required this.onSend,
     required this.onCardSubmit,
+    required this.onLocationSubmit,
     this.onImagePressed,
     this.onFilePressed,
   });
@@ -208,6 +211,26 @@ class ChatQuillToolbar extends ConsumerWidget {
                       icon: HugeIcons.strokeRoundedCardExchange01,
                       size: 14,
                     ),
+                  ),
+                  IconButton(
+                    mouseCursor: SystemMouseCursors.click,
+                    tooltip: 'toolbar_location'.tr(),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      Function? onCancel;
+                      onCancel = Toast.showWidget(
+                        context,
+                        child: LocationBox(
+                          onCancel: () => onCancel?.call(),
+                          onSubmit: (location) {
+                            onLocationSubmit(location);
+                            onCancel?.call();
+                          },
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.location_on_outlined, size: 16),
                   ),
                   // _buildActionButton(
                   //   HugeIcons.strokeRoundedLeftToRightListBullet,

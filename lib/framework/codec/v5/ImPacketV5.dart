@@ -336,6 +336,16 @@ class ImPacketV5 {
         }
         w.writeMessage(7, ew); // oneof emoji = 7
 
+      case MessageType.location:
+        // LocationPayloadProtoV5: latitude=1, longitude=2, title=3, address=4
+        final location = payload?.location;
+        final lw = ProtoWriter()
+          ..writeDouble(1, location?.latitude)
+          ..writeDouble(2, location?.longitude)
+          ..writeString(3, location?.title ?? payload?.content)
+          ..writeString(4, location?.address);
+        w.writeMessage(8, lw); // oneof location = 8
+
       case MessageType.card:
         // CardPayloadProtoV5: card_type=1, entity_id=2, title=3,
         // summary=4, thumbnail_url=5, properties=6
@@ -368,9 +378,6 @@ class ImPacketV5 {
           sw.writeMessage(3, propWriter);
         }
         w.writeMessage(10, sw); // oneof system = 10
-
-      default:
-        break;
     }
     return w;
   }
@@ -486,8 +493,17 @@ class ImPacketV5 {
         final lb = f.getBytes(8);
         if (lb.isNotEmpty) {
           final lf = ProtoReader(lb).readAll();
+          final location = LocationPayload(
+            latitude: lf.containsKey(1) ? lf.getDouble(1) : null,
+            longitude: lf.containsKey(2) ? lf.getDouble(2) : null,
+            title: _emptyToNull(lf.getString(3)),
+            address: _emptyToNull(lf.getString(4)),
+          );
           payload = MessagePayload(
-            content: _emptyToNull(lf.getString(3)) ?? '[location]',
+            content: location.displayTitle.isNotEmpty
+                ? location.displayTitle
+                : '[location]',
+            location: location,
           );
         }
 

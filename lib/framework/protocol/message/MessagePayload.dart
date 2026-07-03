@@ -87,6 +87,76 @@ class CardPayload {
   }
 }
 
+class LocationPayload {
+  final double? latitude;
+  final double? longitude;
+  final String? title;
+  final String? address;
+
+  const LocationPayload({
+    this.latitude,
+    this.longitude,
+    this.title,
+    this.address,
+  });
+
+  factory LocationPayload.fromJson(Map<String, dynamic> json) =>
+      LocationPayload(
+        latitude: _readDouble(json['latitude'] ?? json['lat']),
+        longitude: _readDouble(json['longitude'] ?? json['lng']),
+        title: _readString(json, ['title', 'name']),
+        address: _readString(json, ['address', 'addr']),
+      );
+
+  Map<String, dynamic> toJson() => {
+    'latitude': latitude,
+    'longitude': longitude,
+    'title': title,
+    'address': address,
+  };
+
+  LocationPayload copyWith({
+    double? latitude,
+    double? longitude,
+    String? title,
+    String? address,
+  }) => LocationPayload(
+    latitude: latitude ?? this.latitude,
+    longitude: longitude ?? this.longitude,
+    title: title ?? this.title,
+    address: address ?? this.address,
+  );
+
+  String get displayTitle => _firstNotEmpty([title, address]);
+  String get displayAddress => _firstNotEmpty([address]);
+  bool get hasCoordinate => latitude != null && longitude != null;
+
+  static double? _readDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  static String? _readString(Map<String, dynamic>? source, List<String> keys) {
+    if (source == null) return null;
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return null;
+  }
+
+  static String _firstNotEmpty(List<String?> values) {
+    for (final value in values) {
+      final text = value?.trim();
+      if (text != null && text.isNotEmpty) return text;
+    }
+    return '';
+  }
+}
+
 class MessagePayload {
   final String? content;
   final String? quillDelta;
@@ -102,6 +172,7 @@ class MessagePayload {
   final Attachment? file;
   final Attachment? asset;
   final String? waveform;
+  final LocationPayload? location;
   final CardPayload? card;
 
   const MessagePayload({
@@ -119,6 +190,7 @@ class MessagePayload {
     this.file,
     this.asset,
     this.waveform,
+    this.location,
     this.card,
   });
 
@@ -163,6 +235,7 @@ class MessagePayload {
     Attachment? file,
     Attachment? asset,
     String? waveform,
+    LocationPayload? location,
     CardPayload? card,
   }) => MessagePayload(
     content: content ?? this.content,
@@ -179,6 +252,7 @@ class MessagePayload {
     file: file ?? this.file,
     asset: asset ?? this.asset,
     waveform: waveform ?? this.waveform,
+    location: location ?? this.location,
     card: card ?? this.card,
   );
 
@@ -279,9 +353,11 @@ class MessagePayload {
 
     final location = _asMap(json['location']);
     if (location != null) {
-      final title = _readString(location, ['title']);
-      final address = _readString(location, ['address']);
-      return MessagePayload(content: title.isNotEmpty ? title : address);
+      final locationPayload = LocationPayload.fromJson(location);
+      return MessagePayload(
+        content: locationPayload.displayTitle,
+        location: locationPayload,
+      );
     }
 
     final cardMap = _asMap(json['card']);
@@ -340,6 +416,7 @@ class MessagePayload {
       file: _readAttachment(json['file'])?.copyWith(kind: 'FILE'),
       asset: _readAttachment(json['asset'])?.copyWith(kind: 'FILE'),
       waveform: _readString(json, ['waveform']),
+      location: _readFlatLocation(json),
       card: flatCard,
     );
   }
@@ -361,6 +438,7 @@ class MessagePayload {
     'file': file?.toJson(),
     'asset': asset?.toJson(),
     'waveform': waveform,
+    'location': location?.toJson(),
     'card': card?.toJson(),
   };
 
@@ -419,7 +497,9 @@ class MessagePayload {
         },
       },
       MessageType.location => {
-        'location': {'title': content},
+        'location':
+            (location ?? LocationPayload(title: content ?? '[location]'))
+                .toJson(),
       },
       MessageType.card => {
         'card': (card ?? CardPayload(title: content ?? '[card]')).toJson(),
@@ -435,7 +515,8 @@ class MessagePayload {
       'MessagePayload{content: $content, quillDelta: $quillDelta, '
       'replyTo: $replyTo, mentions: $mentions, markdown: $markdown, '
       'emojiCode: $emojiCode, audioDuration: $audioDuration, '
-      'mediaAttachments: ${mediaAttachments.length}, card: $card}';
+      'mediaAttachments: ${mediaAttachments.length}, location: $location, '
+      'card: $card}';
 
   static Map<String, dynamic>? _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
@@ -464,6 +545,12 @@ class MessagePayload {
 
   static int? _readInt(dynamic value) =>
       value == null ? null : int.tryParse(value.toString());
+
+  static double? _readDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
 
   static List<int>? _readIntList(dynamic value) {
     if (value is! List) return null;
@@ -503,5 +590,22 @@ class MessagePayload {
     ].any((key) => json[key]?.toString().trim().isNotEmpty == true);
     if (!hasCardField) return null;
     return CardPayload.fromJson(json);
+  }
+
+  static LocationPayload? _readFlatLocation(Map<String, dynamic> json) {
+    final hasLocationField = [
+      'latitude',
+      'lat',
+      'longitude',
+      'lng',
+      'address',
+    ].any((key) => json[key]?.toString().trim().isNotEmpty == true);
+    if (!hasLocationField) return null;
+    return LocationPayload(
+      latitude: _readDouble(json['latitude'] ?? json['lat']),
+      longitude: _readDouble(json['longitude'] ?? json['lng']),
+      title: _readString(json, ['title', 'name', 'content']),
+      address: _readString(json, ['address', 'addr']),
+    );
   }
 }

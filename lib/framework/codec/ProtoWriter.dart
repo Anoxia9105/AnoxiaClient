@@ -46,6 +46,15 @@ class ProtoWriter {
     _writeVarint(1);
   }
 
+  // ─── double ───────────────────────────────────────────────────────────────
+
+  void writeDouble(int fieldNum, double? value) {
+    if (value == null) return;
+    final data = ByteData(8)..setFloat64(0, value, Endian.little);
+    _writeTag(fieldNum, 1);
+    _buf.addAll(data.buffer.asUint8List());
+  }
+
   // ─── string ──────────────────────────────────────────────────────────────
 
   void writeString(int fieldNum, String? value) {

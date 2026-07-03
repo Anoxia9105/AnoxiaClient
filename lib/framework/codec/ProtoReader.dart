@@ -13,8 +13,8 @@ class ProtoReader {
 
   ProtoReader(this._data) : _pos = 0;
   ProtoReader.view(Uint8List data, int offset, int length)
-      : _data = data,
-        _pos = offset;
+    : _data = data,
+      _pos = offset;
 
   bool get hasMore => _pos < _data.length;
 
@@ -43,8 +43,19 @@ class ProtoReader {
           );
           _pos += len;
           _addToMap(result, fieldNum, Uint8List.fromList(bytes));
-        case 1: // 64-bit fixed — 跳过
+        case 1: // 64-bit fixed / double
+          if (_pos + 8 > _data.length) {
+            throw FormatException(
+              'Fixed64 field truncated: pos=$_pos, size=${_data.length}',
+            );
+          }
+          final value = ByteData.sublistView(
+            _data,
+            _pos,
+            _pos + 8,
+          ).getFloat64(0, Endian.little);
           _pos += 8;
+          _addToMap(result, fieldNum, value);
         case 5: // 32-bit fixed — 跳过
           _pos += 4;
         default:
@@ -102,6 +113,14 @@ extension ProtoMapHelpers on Map<int, dynamic> {
 
   /// 读取 bool 字段（默认 false）
   bool getBool(int fieldNum) => getUint32(fieldNum) != 0;
+
+  /// 读取 double 字段（默认 0）
+  double getDouble(int fieldNum) {
+    final v = this[fieldNum];
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    return 0;
+  }
 
   /// 读取 string 字段（默认空串）
   String getString(int fieldNum) {
