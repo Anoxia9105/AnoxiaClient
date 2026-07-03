@@ -256,7 +256,7 @@ class ChatInputController extends _$ChatInputController {
       for (final image in processor.images) {
         _doSend(
           type: MessageType.image,
-          payload: MessagePayload(content: '[image]'),
+          payload: const MessagePayload(content: '[image]'),
           attachments: [image],
           clearReplyAfterSend: false,
         );
@@ -266,7 +266,7 @@ class ChatInputController extends _$ChatInputController {
     if (processor.files.isNotEmpty) {
       _doSend(
         type: MessageType.file,
-        payload: MessagePayload(content: '[file]'),
+        payload: const MessagePayload(content: '[file]'),
         attachments: processor.files,
         clearReplyAfterSend: false,
       );
@@ -285,12 +285,10 @@ class ChatInputController extends _$ChatInputController {
       }
 
       if (processor.isSingleEmoji) {
+        final emoji = processor.plainText.characters.first;
         _doSend(
-          type: MessageType.text,
-          payload: MessagePayload(
-            content: processor.plainText, // emoji闁告劕鎳庨?
-            emojiCode: processor.plainText.characters.first,
-          ),
+          type: MessageType.emoji,
+          payload: MessagePayload(content: emoji, emojiCode: emoji),
           clearReplyAfterSend: false,
         );
       } else {
@@ -325,7 +323,7 @@ class ChatInputController extends _$ChatInputController {
         content.characters.length == 1 && _isEmoji(content.characters.first);
 
     _doSend(
-      type: MessageType.text,
+      type: isSingleEmoji ? MessageType.emoji : MessageType.text,
       payload: MessagePayload(
         content: content,
         mentions: (mentionIds != null && mentionIds.isNotEmpty)
@@ -372,7 +370,7 @@ class ChatInputController extends _$ChatInputController {
     for (var i = 0; i < uploaded.length; i++) {
       _doSend(
         type: MessageType.image,
-        payload: MessagePayload(content: '[image]'),
+        payload: const MessagePayload(content: '[image]'),
         attachments: [uploaded[i]],
         clearReplyAfterSend: i == uploaded.length - 1,
       );
@@ -411,7 +409,7 @@ class ChatInputController extends _$ChatInputController {
 
     _doSend(
       type: MessageType.file,
-      payload: MessagePayload(content: '[file]'),
+      payload: const MessagePayload(content: '[file]'),
       attachments: uploaded,
     );
   }

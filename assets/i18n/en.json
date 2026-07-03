@@ -219,6 +219,7 @@
   "image_load_failed": "Failed to load image",
   "image_failed_to_load": "Image failed to load",
   "group_no_groups": "No groups yet",
+  "contact_no_new_friends": "No new friend requests",
   "contact_new_friends_title": "New friends",
   "contact_request_accepted": "Accepted",
   "contact_request_rejected": "Rejected",

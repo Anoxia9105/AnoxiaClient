@@ -1,9 +1,7 @@
-/// 消息类型枚举（V5 协议对齐）
-///
-/// 数字码与服务端 MessageType.getCode() 保持一致。
+/// Message type enum aligned with V5 protocol numeric codes.
 enum MessageType {
   text(1),
-  richText(2), // 原 quill
+  richText(2),
   image(3),
   audio(4),
   video(5),
@@ -16,10 +14,8 @@ enum MessageType {
   final int code;
   const MessageType(this.code);
 
-  /// 获取枚举的数字码
   static int toCode(MessageType? type) => type == null ? 0 : type.code;
 
-  /// 从数字码或字符串名称解析枚举
   static MessageType fromCode(dynamic value) {
     if (value == null) return MessageType.text;
 
@@ -35,7 +31,7 @@ enum MessageType {
         'TEXT': MessageType.text,
         'RICH_TEXT': MessageType.richText,
         'RICHTEXT': MessageType.richText,
-        'QUILL': MessageType.richText, // 旧名称兼容
+        'QUILL': MessageType.richText,
         'IMAGE': MessageType.image,
         'AUDIO': MessageType.audio,
         'VIDEO': MessageType.video,
@@ -52,30 +48,7 @@ enum MessageType {
   }
 }
 
-/// 消息本地状态枚举（客户端发送态，不在 V5 协议中传输）
-enum MessageState {
-  active,
-  recalled,
-  edited;
-
-  static MessageState from(dynamic value) {
-    if (value == null) return MessageState.active;
-    if (value is String) {
-      return MessageState.values.firstWhere(
-        (e) => e.name.toUpperCase() == value.toUpperCase(),
-        orElse: () => MessageState.active,
-      );
-    }
-    if (value is int && value >= 0 && value < MessageState.values.length) {
-      return MessageState.values[value];
-    }
-    return MessageState.active;
-  }
-
-  String toJson() => name.toUpperCase();
-}
-
-/// 消息投递状态枚举（客户端本地状态，不在 V5 协议中传输）
+/// Local UI delivery state. This is not part of RoomMessage V5 protocol.
 enum DeliveryStatus {
   sending,
   failed,

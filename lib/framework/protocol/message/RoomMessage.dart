@@ -34,14 +34,8 @@ class RoomMessage implements IPacket {
     this.clientTimestamp,
   });
 
-  /// 兼容旧代码的别名 getter
-  MessageType get type => messageType;
-
   /// 消息时间戳（优先取服务端时间）
   int get timestamp => serverTimestamp ?? clientTimestamp ?? 0;
-
-  /// 向后兼容：extra 字段（从 properties 中读取）
-  Map<String, dynamic> get extra => properties.cast<String, dynamic>();
 
   @override
   Map<String, dynamic> toJson() => {

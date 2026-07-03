@@ -29,7 +29,7 @@ class SystemMessageService extends _$SystemMessageService {
     final subscription = stream
         .where((frame) => frame.topic == PacketType.message)
         .map((frame) => frame.data as RoomMessage)
-        .where((msg) => msg.type == MessageType.system) // 只拦截系统消息
+        .where((msg) => msg.messageType == MessageType.system) // 只拦截系统消息
         .listen(_onSystemMessageReceived);
 
     ref.onDispose(() => subscription.cancel());
@@ -40,10 +40,10 @@ class SystemMessageService extends _$SystemMessageService {
   /// 解析消息中的 action 字段，分发到对应的处理方法
   void _onSystemMessageReceived(RoomMessage msg) {
     final roomId = msg.roomId;
-    final action = msg.extra['action']?.toString().toUpperCase();
+    final action = msg.properties['action']?.toString().toUpperCase();
     if (roomId.isEmpty || action == null || action.isEmpty) return;
 
-    _processRoomStatusAction(roomId, action, msg.extra);
+    _processRoomStatusAction(roomId, action, msg.properties);
     _processCallStatusAction(roomId, action, msg);
   }
 
@@ -53,11 +53,11 @@ class SystemMessageService extends _$SystemMessageService {
   /// - ROOM_MUTED：全员禁言/解除禁言
   /// - ROOM_DISSOLVED：房间解散/封禁
   /// - ROOM_CREATED：房间创建/解封
-  void _processRoomStatusAction(String roomId, String action, Map<String, dynamic> extra) {
+  void _processRoomStatusAction(String roomId, String action, Map<String, String> extra) {
     int? nextStatus;
     switch (action) {
       case 'ROOM_MUTED':
-        nextStatus = extra['isMute'] == true ? 1 : 0;
+        nextStatus = extra['isMute'] == 'true' ? 1 : 0;
         break;
       case 'ROOM_DISSOLVED':
         nextStatus = extra['type']?.toString().toLowerCase() == 'ban' ? 2 : 3;
@@ -79,7 +79,7 @@ class SystemMessageService extends _$SystemMessageService {
   /// - CALL_ENDED：标记通话结束，发送桌面通知
   void _processCallStatusAction(String roomId, String action, RoomMessage msg) {
     final callStatus = ref.read(callStatusControllerProvider.notifier);
-    final extra = msg.extra;
+    final extra = msg.properties;
 
     if (action == 'CALL_STARTED') {
       final startTime = (extra['startTime'] as num?)?.toInt() ?? msg.timestamp.toInt();
@@ -99,7 +99,7 @@ class SystemMessageService extends _$SystemMessageService {
     final room = RoomLookupHelper.findByRoomId(rooms, roomId) ?? ChatRoomVO();
     final roomName = (room.roomName?.isNotEmpty == true) ? room.roomName! : '通话通知';
 
-    final extra = msg.extra;
+    final extra = msg.properties;
     String body = '';
 
     if (action == 'CALL_STARTED') {

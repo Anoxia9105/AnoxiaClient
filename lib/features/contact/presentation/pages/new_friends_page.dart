@@ -30,6 +30,9 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
       appBar: AppBar(title: Text('contact_new_friends_title'.tr())),
       body: requestAsync.when(
         data: (req) {
+          if (req.isEmpty) {
+            return Center(child: Text('contact_no_new_friends'.tr()));
+          }
           return ListView.separated(
             itemBuilder: (context, index) {
               final request = req[index];

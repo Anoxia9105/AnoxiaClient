@@ -137,7 +137,7 @@ class RoomListService extends _$RoomListService {
     final currentUser = ref.read(authControllerProvider).value;
     final isSelfMessage = newMessage.senderId == currentUser?.userId;
 
-    final action = newMessage.extra['action']?.toString().toUpperCase();
+    final action = newMessage.properties['action']?.toString().toUpperCase();
     final isCallSystemMessage =
         action == 'CALL_STARTED' || action == 'CALL_ENDED';
 

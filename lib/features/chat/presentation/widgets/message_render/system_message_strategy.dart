@@ -25,7 +25,7 @@ class SystemMessageStrategy extends MessageRenderStrategy {
 
   /// 根据 action 解析图标 + 文本
   Widget _buildSystemMessage(BuildContext context, ChatMessage message) {
-    if (message.extra['action'] == null) {
+    if (message.properties['action'] == null) {
       return _buildChip(
         context,
         icon: HugeIcons.strokeRoundedSettingsError02,
@@ -34,30 +34,30 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       );
     }
 
-    final type = message.extra['action'];
+    final type = message.properties['action'];
 
     final (dynamic icon, String text) = switch (type) {
       'ROOM_CREATED_GROUP' => (
         HugeIcons.strokeRoundedHome03,
         'system_msg_invite'.tr(
           namedArgs: {
-            'nickName': message.extra['nickName'] ?? '',
-            'names': message.extra['names'] ?? '',
+            'nickName': message.properties['nickName'] ?? '',
+            'names': message.properties['names'] ?? '',
           },
         ),
       ),
       'ROOM_MUTED' => (
-        message.extra['isMute'] == true
+        message.properties['isMute'] == 'true'
             ? HugeIcons.strokeRoundedVolumeMute01
             : HugeIcons.strokeRoundedVolumeHigh,
-        message.extra['isMute'] == true
+        message.properties['isMute'] == 'true'
             ? 'system_msg_mute_on'.tr()
             : 'system_msg_mute_off'.tr(),
       ),
       'USER_KICKED' => (
         HugeIcons.strokeRoundedUserRemove02,
         'system_msg_kicked'.tr(
-          namedArgs: {'nickName': message.extra['nickName'] ?? ''},
+          namedArgs: {'nickName': message.properties['nickName'] ?? ''},
         ),
       ),
       'ROOM_CLOSED' => (
@@ -66,27 +66,27 @@ class SystemMessageStrategy extends MessageRenderStrategy {
       ),
       'MESSAGE_RECALL' => (
         HugeIcons.strokeRoundedUndo,
-        'system_msg_recall'.tr(args: [message.extra['nickName'] ?? '--']),
+        'system_msg_recall'.tr(args: [message.properties['nickName'] ?? '--']),
       ),
       'CALL_STARTED' => (
         HugeIcons.strokeRoundedCall02,
-        'system_msg_callstart'.tr(args: [message.extra['nickName'] ?? '--']),
+        'system_msg_callstart'.tr(args: [message.properties['nickName'] ?? '--']),
       ),
       'CALL_ENDED' => (
         HugeIcons.strokeRoundedCallEnd03,
-        'system_msg_callend'.tr(args: [message.extra['durationText'] ?? '--']),
+        'system_msg_callend'.tr(args: [message.properties['durationText'] ?? '--']),
       ),
       'ROOM_DISSOLVED' => (
         HugeIcons.strokeRoundedCancel01,
-        message.extra['type'] == 'ban'
+        message.properties['type'] == 'ban'
             ? 'system_msg_room_banned'.tr()
             : 'system_msg_room_closed'.tr(),
       ),
-      'ROOM_UPDATED' when message.extra['field'] == 'announcement' => (
+      'ROOM_UPDATED' when message.properties['field'] == 'announcement' => (
         HugeIcons.strokeRoundedMegaphone01,
         'system_msg_room_announcement_updated'.tr(
           namedArgs: {
-            'nickName': message.extra['nickName'] ?? '--',
+            'nickName': message.properties['nickName'] ?? '--',
           },
         ),
       ),
@@ -94,13 +94,13 @@ class SystemMessageStrategy extends MessageRenderStrategy {
         HugeIcons.strokeRoundedEdit01,
         'system_msg_room_updated'.tr(
           namedArgs: {
-            'nickName': message.extra['nickName'] ?? '--',
-            'oldName': message.extra['oldName'] ?? '--',
-            'newName': message.extra['newName'] ?? '--',
+            'nickName': message.properties['nickName'] ?? '--',
+            'oldName': message.properties['oldName'] ?? '--',
+            'newName': message.properties['newName'] ?? '--',
           },
         ),
       ),
-      'ROOM_CREATED' when message.extra['type'] == 'unban' => (
+      'ROOM_CREATED' when message.properties['type'] == 'unban' => (
         HugeIcons.strokeRoundedHome03,
         'system_msg_room_unbanned'.tr(),
       ),

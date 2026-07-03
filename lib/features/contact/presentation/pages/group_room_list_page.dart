@@ -26,9 +26,13 @@ class GroupRoomListPage extends ConsumerWidget {
       backgroundColor: DeviceUtil.isRealDesktop()
           ? Colors.transparent
           : Theme.of(context).colorScheme.surface,
-      appBar: AppBar(title: Text('${'contact_joined_groups'.tr()} ${groups.isNotEmpty ? '(${groups.length})' : ''}')),
+      appBar: AppBar(
+        title: Text(
+          '${'contact_joined_groups'.tr()} ${groups.isNotEmpty ? '(${groups.length})' : ''}',
+        ),
+      ),
       body: groups.isEmpty
-          ? const GroupRoomEmptyState()
+          ? Center(child: Text('group_no_groups'.tr()))
           : ListView.builder(
               itemCount: groups.length,
               itemBuilder: (context, index) {
@@ -37,7 +41,9 @@ class GroupRoomListPage extends ConsumerWidget {
 
                 if (roomId != null) {
                   // 预热成员缓存：RoomMemberService 内部会自动去重，避免重复请求。
-                  ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
+                  ref
+                      .read(roomMemberServiceProvider.notifier)
+                      .syncMembers(roomId);
                 }
 
                 final memberCount = roomId == null
@@ -56,9 +62,14 @@ class GroupRoomListPage extends ConsumerWidget {
                       ? null
                       : () async {
                           /// 选中聊天室，设置当前活跃房间 ID
-                          ref.read(activeRoomIdProvider.notifier).setActive(roomId);
+                          ref
+                              .read(activeRoomIdProvider.notifier)
+                              .setActive(roomId);
+
                           /// 跳转到聊天页面
-                          ref.read(layoutControllerProvider.notifier).setIndex(0);
+                          ref
+                              .read(layoutControllerProvider.notifier)
+                              .setIndex(0);
 
                           /// 仅在移动端导航到聊天详情页，桌面端保持当前页面不变（聊天详情在侧边栏展示）
                           if (DeviceUtil.isRealMobile()) {

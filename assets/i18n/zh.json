@@ -219,6 +219,7 @@
   "image_load_failed": "无法加载图片",
   "image_failed_to_load": "图片加载失败",
   "group_no_groups": "暂无群聊",
+  "contact_no_new_friends": "暂无新的好友请求",
   "contact_new_friends_title": "新的朋友",
   "contact_request_accepted": "已同意",
   "contact_request_rejected": "已拒绝",

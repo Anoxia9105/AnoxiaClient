@@ -442,8 +442,7 @@ PacketRegistry.register(
 | `payload` | `MessagePayload?` | 消息负载（支持富文本、引用等） |
 | `attachments` | `List<Attachment>` | 文件附件列表 |
 | `extra` | `Map<String, dynamic>` | 扩展字段 |
-| `state` | `MessageState` | 消息状态 |
-| `status` | `DeliveryStatus` | 投递状态 |
+| `deliveryStatus` | `DeliveryStatus` | 前端本地投递状态（不属于 RoomMessage 协议） |
 | `timestamp` | `int` | 时间戳（毫秒） |
 | `seq` | `int` | 消息序号（用于排序和去重） |
 
@@ -582,8 +581,7 @@ class ChatHasMore extends _$ChatHasMore {
 | `payload` | `MessagePayload?` | - | 消息负载（富文本等） |
 | `attachments` | `List<Attachment>` | `[]` | 文件附件列表 |
 | `extra` | `Map<String, dynamic>` | `{}` | 扩展字段 |
-| `messageStatus` | `MessageState?` | - | 消息状态（已读/未读） |
-| `deliveryStatus` | `DeliveryStatus` | `sent` | 消息投递状态 |
+| `deliveryStatus` | `DeliveryStatus` | `sent` | 前端本地投递状态（不属于 RoomMessage 协议） |
 | `timestamp` | `int?` | - | 消息时间戳（毫秒） |
 | `seq` | `int?` | - | 消息序号（用于排序） |
 

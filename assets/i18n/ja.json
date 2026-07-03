@@ -219,6 +219,7 @@
   "image_load_failed": "画像の読み込みに失敗しました",
   "image_failed_to_load": "画像の読み込みに失敗しました",
   "group_no_groups": "まだグループがありません",
+  "contact_no_new_friends": "新しい友達がいません",
   "contact_new_friends_title": "新しい友達",
   "contact_request_accepted": "承認済み",
   "contact_request_rejected": "拒否済み",
