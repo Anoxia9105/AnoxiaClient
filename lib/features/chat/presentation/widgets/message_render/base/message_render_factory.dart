@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/widgets/message_render/audio_message_strategy.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_render/card_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/quill_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/system_message_strategy.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -26,7 +27,7 @@ class MessageRenderFactory {
     MessageType.video: FileMessageStrategy(),
     MessageType.emoji: TextMessageStrategy(),
     MessageType.location: TextMessageStrategy(),
-    MessageType.card: TextMessageStrategy(),
+    MessageType.card: CardMessageStrategy(),
   };
 
   /// 根据消息类型获取对应的渲染策略

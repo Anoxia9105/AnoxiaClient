@@ -334,6 +334,17 @@ class ChatInputController extends _$ChatInputController {
     );
   }
 
+  void sendCardMessage(CardPayload card) {
+    final room = ref.read(currentRoomProvider(roomId));
+    final title = card.displayTitle.trim();
+    if (room == null || title.isEmpty) return;
+
+    _doSend(
+      type: MessageType.card,
+      payload: MessagePayload(content: title, card: card),
+    );
+  }
+
   Future<void> sendPickedImages(List<PlatformFile> files) async {
     if (files.isEmpty) return;
 

@@ -240,6 +240,12 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
                 .sendMessage();
             widget.bottomSheet();
           },
+          onCardSubmit: (card) {
+            ref
+                .read(chatInputControllerProvider(widget.roomId).notifier)
+                .sendCardMessage(card);
+            widget.bottomSheet();
+          },
           onImagePressed: () => ref
               .read(chatImageUploadControllerProvider.notifier)
               .selectImages(controller),

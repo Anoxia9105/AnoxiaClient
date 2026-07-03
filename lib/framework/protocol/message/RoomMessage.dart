@@ -44,7 +44,7 @@ class RoomMessage implements IPacket {
     'roomId': roomId,
     'senderId': senderId,
     'messageType': MessageType.toCode(messageType),
-    'payload': payload?.toJson(),
+    'payload': payload?.toTypedJson(messageType),
     'properties': properties,
     'seq': seq,
     'serverTimestamp': serverTimestamp,

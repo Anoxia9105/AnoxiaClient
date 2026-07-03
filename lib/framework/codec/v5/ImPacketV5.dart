@@ -336,6 +336,26 @@ class ImPacketV5 {
         }
         w.writeMessage(7, ew); // oneof emoji = 7
 
+      case MessageType.card:
+        // CardPayloadProtoV5: card_type=1, entity_id=2, title=3,
+        // summary=4, thumbnail_url=5, properties=6
+        final card = payload?.card;
+        final fallbackTitle = card?.title ?? payload?.content ?? '[card]';
+        final cw = ProtoWriter()
+          ..writeString(1, card?.cardType)
+          ..writeString(2, card?.entityId)
+          ..writeString(3, fallbackTitle)
+          ..writeString(4, card?.summary)
+          ..writeString(5, card?.thumbnailUrl);
+        for (final entry
+            in card?.properties.entries ?? const <MapEntry<String, String>>[]) {
+          final propWriter = ProtoWriter()
+            ..writeString(1, entry.key)
+            ..writeString(2, entry.value);
+          cw.writeMessage(6, propWriter);
+        }
+        w.writeMessage(9, cw); // oneof card = 9
+
       case MessageType.system:
         // SystemPayloadProtoV5: event_code=1, text=2, properties=3
         final sw = ProtoWriter()
@@ -355,7 +375,7 @@ class ImPacketV5 {
     return w;
   }
 
-  /// 瑙ｇ爜 MessagePayloadProtoV5 鈫?(MessagePayload, List<Attachment>)
+  // Decode MessagePayloadProtoV5 into the local MessagePayload model.
   static MessagePayload? _decodeMessagePayload(
     Uint8List bytes,
     MessageType type,
@@ -475,8 +495,19 @@ class ImPacketV5 {
         final cb = f.getBytes(9);
         if (cb.isNotEmpty) {
           final cf = ProtoReader(cb).readAll();
+          final card = CardPayload(
+            cardType: _emptyToNull(cf.getString(1)),
+            entityId: _emptyToNull(cf.getString(2)),
+            title: _emptyToNull(cf.getString(3)),
+            summary: _emptyToNull(cf.getString(4)),
+            thumbnailUrl: _emptyToNull(cf.getString(5)),
+            properties: _decodeStringProperties(cf.getRepeatedBytes(6)),
+          );
           payload = MessagePayload(
-            content: _emptyToNull(cf.getString(3)) ?? '[card]',
+            content: card.displayTitle.isNotEmpty
+                ? card.displayTitle
+                : '[card]',
+            card: card,
           );
         }
 
@@ -548,8 +579,9 @@ class ImPacketV5 {
     List<int>? mentions,
   ) {
     if ((replyTo == null || replyTo.isEmpty) &&
-        (mentions == null || mentions.isEmpty))
+        (mentions == null || mentions.isEmpty)) {
       return;
+    }
     final iw = ProtoWriter()
       ..writeString(1, replyTo)
       ..writeRepeatedInt64(2, mentions ?? const []);

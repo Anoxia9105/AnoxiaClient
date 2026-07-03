@@ -1,52 +1,108 @@
 import 'Attachment.dart';
 import 'MessageEunm.dart';
 
-/// 消息载荷（Payload），用于存储消息的富文本内容、媒体附件、引用回复、@提及等结构化数据。
-///
-/// 支持多种消息类型（文本、图片、音频、视频、文件、表情、位置、卡片、系统消息等），
-/// 通过不同的字段组合来表示不同消息的具体内容。其中 [mediaAttachments] 可获取所有媒体附件列表。
+class CardPayload {
+  final String? cardType;
+  final String? entityId;
+  final String? title;
+  final String? summary;
+  final String? thumbnailUrl;
+  final Map<String, String> properties;
+
+  const CardPayload({
+    this.cardType,
+    this.entityId,
+    this.title,
+    this.summary,
+    this.thumbnailUrl,
+    this.properties = const {},
+  });
+
+  factory CardPayload.fromJson(Map<String, dynamic> json) => CardPayload(
+    cardType: _readString(json, ['cardType', 'card_type', 'type']),
+    entityId: _readString(json, ['entityId', 'entity_id', 'id']),
+    title: _readString(json, ['title', 'name']),
+    summary: _readString(json, ['summary', 'desc', 'description', 'content']),
+    thumbnailUrl: _readString(json, [
+      'thumbnailUrl',
+      'thumbnail_url',
+      'avatar',
+      'image',
+      'imageUrl',
+      'image_url',
+    ]),
+    properties: _readStringMap(json['properties'] ?? json['extra']),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'cardType': cardType,
+    'entityId': entityId,
+    'title': title,
+    'summary': summary,
+    'thumbnailUrl': thumbnailUrl,
+    'properties': properties,
+  };
+
+  CardPayload copyWith({
+    String? cardType,
+    String? entityId,
+    String? title,
+    String? summary,
+    String? thumbnailUrl,
+    Map<String, String>? properties,
+  }) => CardPayload(
+    cardType: cardType ?? this.cardType,
+    entityId: entityId ?? this.entityId,
+    title: title ?? this.title,
+    summary: summary ?? this.summary,
+    thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+    properties: properties ?? this.properties,
+  );
+
+  String get displayTitle => _firstNotEmpty([title, entityId, cardType]);
+  String get displaySummary => _firstNotEmpty([summary]);
+
+  static String? _readString(Map<String, dynamic>? source, List<String> keys) {
+    if (source == null) return null;
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return null;
+  }
+
+  static Map<String, String> _readStringMap(dynamic value) {
+    if (value is! Map) return const {};
+    return value.map((key, val) => MapEntry(key.toString(), val.toString()));
+  }
+
+  static String _firstNotEmpty(List<String?> values) {
+    for (final value in values) {
+      final text = value?.trim();
+      if (text != null && text.isNotEmpty) return text;
+    }
+    return '';
+  }
+}
+
 class MessagePayload {
-  /// 纯文本内容（可能为消息的简短描述或文本消息体）
   final String? content;
-
-  /// Quill 富文本编辑器生成的 Delta 数据（JSON 字符串），用于显示带格式的文本
   final String? quillDelta;
-
-  /// 引用回复的消息 ID（被回复的消息标识）
   final String? replyTo;
-
-  /// 被 @ 提及的用户 ID 列表
   final List<int>? mentions;
-
-  /// Markdown 格式的文本内容（若消息以 Markdown 形式发送）
   final String? markdown;
-
-  /// 表情符号代码（如 `:smile:` 或 Unicode 码点）
   final String? emojiCode;
-
-  /// 音频时长（单位：毫秒）
   final int? audioDuration;
-
-  /// 图片附件
   final Attachment? image;
-
-  /// 音频附件
   final Attachment? audio;
-
-  /// 视频附件
   final Attachment? video;
-
-  /// 视频封面图附件（通常与视频成对出现）
   final Attachment? cover;
-
-  /// 文件附件（文档、压缩包等）
   final Attachment? file;
-
-  /// 资源附件（如表情包、贴纸等特殊资源）
   final Attachment? asset;
-
-  /// 音频波形数据（用于绘制语音波形图，一般为 Base64 编码的字符串）
   final String? waveform;
+  final CardPayload? card;
 
   const MessagePayload({
     this.content,
@@ -63,9 +119,9 @@ class MessagePayload {
     this.file,
     this.asset,
     this.waveform,
+    this.card,
   });
 
-  /// 获取所有媒体附件（图片、音频、视频、封面、文件、资源）的列表，且 URL 有效
   List<Attachment> get mediaAttachments {
     final result = <Attachment>[];
     for (final item in [image, audio, video, cover, file, asset]) {
@@ -74,10 +130,6 @@ class MessagePayload {
     return result;
   }
 
-  /// 根据消息类型 [type] 设置对应的媒体附件
-  ///
-  /// 用于发送消息时，将附件的 kind 标记为对应类型，并支持视频同时传入封面。
-  /// 若附件列表为空则返回原对象。
   MessagePayload withMedia(MessageType type, List<Attachment> attachments) {
     if (attachments.isEmpty) return this;
     final first = attachments.first;
@@ -96,7 +148,6 @@ class MessagePayload {
     };
   }
 
-  /// 复制当前对象并更新指定字段（不可变更新）
   MessagePayload copyWith({
     String? content,
     String? quillDelta,
@@ -112,6 +163,7 @@ class MessagePayload {
     Attachment? file,
     Attachment? asset,
     String? waveform,
+    CardPayload? card,
   }) => MessagePayload(
     content: content ?? this.content,
     quillDelta: quillDelta ?? this.quillDelta,
@@ -127,24 +179,10 @@ class MessagePayload {
     file: file ?? this.file,
     asset: asset ?? this.asset,
     waveform: waveform ?? this.waveform,
+    card: card ?? this.card,
   );
 
-  /// 从 JSON 映射创建 [MessagePayload] 实例
-  ///
-  /// 根据 JSON 结构自动识别消息类型：
-  /// - `text` / `richText`：文本或富文本消息
-  /// - `image`：图片消息
-  /// - `file`：文件消息
-  /// - `audio`：音频消息（含波形、时长）
-  /// - `video`：视频消息（含封面、时长）
-  /// - `emoji`：表情消息
-  /// - `location`：位置消息
-  /// - `card`：卡片消息（如链接预览）
-  /// - `system`：系统消息
-  ///
-  /// 支持多种字段别名（兼容不同后端协议）。
   factory MessagePayload.fromJson(Map<String, dynamic> json) {
-    // -------- 文本消息（普通文本） --------
     final text = _asMap(json['text']);
     if (text != null) {
       final interaction = _asMap(text['interaction']);
@@ -158,7 +196,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 富文本消息（Quill Delta） --------
     final richText = _asMap(json['richText'] ?? json['rich_text']);
     if (richText != null) {
       final interaction = _asMap(richText['interaction']);
@@ -175,7 +212,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 图片消息 --------
     final imagePayload = _asMap(json['image']);
     if (imagePayload != null) {
       final interaction = _asMap(imagePayload['interaction']);
@@ -187,7 +223,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 文件消息 --------
     final filePayload = _asMap(json['file']);
     if (filePayload != null) {
       final interaction = _asMap(filePayload['interaction']);
@@ -199,7 +234,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 音频消息 --------
     final audioPayload = _asMap(json['audio']);
     if (audioPayload != null) {
       return MessagePayload(
@@ -212,7 +246,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 视频消息 --------
     final videoPayload = _asMap(json['video']);
     if (videoPayload != null) {
       final interaction = _asMap(videoPayload['interaction']);
@@ -229,7 +262,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 表情消息 --------
     final emoji = _asMap(json['emoji']);
     if (emoji != null) {
       final fallback = _readString(emoji, [
@@ -245,7 +277,6 @@ class MessagePayload {
       );
     }
 
-    // -------- 位置消息 --------
     final location = _asMap(json['location']);
     if (location != null) {
       final title = _readString(location, ['title']);
@@ -253,15 +284,17 @@ class MessagePayload {
       return MessagePayload(content: title.isNotEmpty ? title : address);
     }
 
-    // -------- 卡片消息（如链接预览） --------
-    final card = _asMap(json['card']);
-    if (card != null) {
-      final title = _readString(card, ['title']);
-      final summary = _readString(card, ['summary']);
-      return MessagePayload(content: title.isNotEmpty ? title : summary);
+    final cardMap = _asMap(json['card']);
+    if (cardMap != null) {
+      final card = CardPayload.fromJson(cardMap);
+      return MessagePayload(
+        content: card.displayTitle.isNotEmpty
+            ? card.displayTitle
+            : card.displaySummary,
+        card: card,
+      );
     }
 
-    // -------- 系统消息 --------
     final system = _asMap(json['system']);
     if (system != null) {
       return MessagePayload(
@@ -274,7 +307,7 @@ class MessagePayload {
       );
     }
 
-    // -------- 通用兜底解析 --------
+    final flatCard = _readFlatCard(json);
     return MessagePayload(
       content: _readString(json, [
         'content',
@@ -307,11 +340,13 @@ class MessagePayload {
       file: _readAttachment(json['file'])?.copyWith(kind: 'FILE'),
       asset: _readAttachment(json['asset'])?.copyWith(kind: 'FILE'),
       waveform: _readString(json, ['waveform']),
+      card: flatCard,
     );
   }
 
-  /// 将当前对象转换为 JSON 映射（用于序列化发送）
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() => toFlatJson();
+
+  Map<String, dynamic> toFlatJson() => {
     'content': content,
     'quillDelta': quillDelta,
     'replyTo': replyTo,
@@ -326,26 +361,88 @@ class MessagePayload {
     'file': file?.toJson(),
     'asset': asset?.toJson(),
     'waveform': waveform,
+    'card': card?.toJson(),
   };
 
-  /// 返回对象的字符串表示（便于调试）
+  Map<String, dynamic> toTypedJson(MessageType type) {
+    final interaction = _buildInteractionJson();
+    return switch (type) {
+      MessageType.text => {
+        'text': {
+          'text': content,
+          if (markdown?.isNotEmpty == true) 'markdown': markdown,
+          if (interaction != null) 'interaction': interaction,
+        },
+      },
+      MessageType.richText => {
+        'richText': {
+          'plainText': content,
+          'deltaJson': quillDelta,
+          if (interaction != null) 'interaction': interaction,
+        },
+      },
+      MessageType.image => {
+        'image': {
+          'image': image?.toJson(),
+          'caption': content,
+          if (interaction != null) 'interaction': interaction,
+        },
+      },
+      MessageType.audio => {
+        'audio': {
+          'audio': audio?.toJson(),
+          'durationMs': audioDuration,
+          'waveform': waveform,
+        },
+      },
+      MessageType.video => {
+        'video': {
+          'video': video?.toJson(),
+          'cover': cover?.toJson(),
+          'durationMs': audioDuration,
+          'caption': content,
+          if (interaction != null) 'interaction': interaction,
+        },
+      },
+      MessageType.file => {
+        'file': {
+          'file': file?.toJson(),
+          'caption': content,
+          if (interaction != null) 'interaction': interaction,
+        },
+      },
+      MessageType.emoji => {
+        'emoji': {
+          'emojiId': emojiCode ?? content,
+          'textFallback': content,
+          'asset': asset?.toJson(),
+        },
+      },
+      MessageType.location => {
+        'location': {'title': content},
+      },
+      MessageType.card => {
+        'card': (card ?? CardPayload(title: content ?? '[card]')).toJson(),
+      },
+      MessageType.system => {
+        'system': {'text': content, 'eventCode': content},
+      },
+    };
+  }
+
   @override
   String toString() =>
       'MessagePayload{content: $content, quillDelta: $quillDelta, '
       'replyTo: $replyTo, mentions: $mentions, markdown: $markdown, '
       'emojiCode: $emojiCode, audioDuration: $audioDuration, '
-      'mediaAttachments: ${mediaAttachments.length}}';
+      'mediaAttachments: ${mediaAttachments.length}, card: $card}';
 
-  // -------- 私有辅助方法（用于解析 JSON） --------
-
-  /// 将值安全转换为 Map<String, dynamic>，支持传入普通 Map 或 null
   static Map<String, dynamic>? _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value);
     return null;
   }
 
-  /// 从 [source] 中按 [keys] 顺序读取第一个非空字符串并返回
   static String _readString(Map<String, dynamic>? source, List<String> keys) {
     if (source == null) return '';
     for (final key in keys) {
@@ -357,21 +454,17 @@ class MessagePayload {
     return '';
   }
 
-  /// 从 interaction 中读取 replyTo 字段（支持多种别名）
   static String _readReplyTo(Map<String, dynamic>? interaction) => _readString(
     interaction,
     ['replyToMessageId', 'reply_to_message_id', 'replyTo'],
   );
 
-  /// 从 interaction 中读取 mentions（@提及用户 ID 列表）
   static List<int>? _readMentions(Map<String, dynamic>? interaction) =>
       _readIntList(interaction?['mentionUserIds'] ?? interaction?['mentions']);
 
-  /// 将值解析为 int（支持字符串或数字），无法解析则返回 null
   static int? _readInt(dynamic value) =>
       value == null ? null : int.tryParse(value.toString());
 
-  /// 将列表中的每个元素转换为 int，返回非空列表，若列表为空或无效则返回 null
   static List<int>? _readIntList(dynamic value) {
     if (value is! List) return null;
     final result = value
@@ -381,12 +474,34 @@ class MessagePayload {
     return result.isEmpty ? null : result;
   }
 
-  /// 从 JSON 中读取 Attachment 对象，若 URL 无效则返回 null
   static Attachment? _readAttachment(dynamic value) {
     final map = _asMap(value);
     if (map == null) return null;
     final attachment = Attachment.fromJson(map);
     if (attachment.url?.isNotEmpty != true) return null;
     return attachment;
+  }
+
+  Map<String, dynamic>? _buildInteractionJson() {
+    if ((replyTo == null || replyTo!.isEmpty) &&
+        (mentions == null || mentions!.isEmpty)) {
+      return null;
+    }
+    return {'replyToMessageId': replyTo, 'mentionUserIds': mentions};
+  }
+
+  static CardPayload? _readFlatCard(Map<String, dynamic> json) {
+    final hasCardField = [
+      'cardType',
+      'card_type',
+      'entityId',
+      'entity_id',
+      'title',
+      'summary',
+      'thumbnailUrl',
+      'thumbnail_url',
+    ].any((key) => json[key]?.toString().trim().isNotEmpty == true);
+    if (!hasCardField) return null;
+    return CardPayload.fromJson(json);
   }
 }

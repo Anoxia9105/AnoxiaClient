@@ -1,8 +1,10 @@
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/card_box.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -31,6 +33,7 @@ import 'colors_box.dart';
 class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final VoidCallback onSend;
+  final ValueChanged<CardPayload> onCardSubmit;
   final VoidCallback? onImagePressed;
   final VoidCallback? onFilePressed;
 
@@ -38,6 +41,7 @@ class ChatQuillToolbar extends ConsumerWidget {
     super.key,
     required this.controller,
     required this.onSend,
+    required this.onCardSubmit,
     this.onImagePressed,
     this.onFilePressed,
   });
@@ -180,6 +184,31 @@ class ChatQuillToolbar extends ConsumerWidget {
                       );
                     },
                   ),
+
+                  // Card
+                  IconButton(
+                    mouseCursor: SystemMouseCursors.click,
+                    tooltip: 'toolbar_card'.tr(),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      Function? onCancel;
+                      onCancel = Toast.showWidget(
+                        context,
+                        child: CardBox(
+                          onCancel: () => onCancel?.call(),
+                          onSubmit: (card) {
+                            onCardSubmit(card);
+                            onCancel?.call();
+                          },
+                        ),
+                      );
+                    },
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCardExchange01,
+                      size: 14,
+                    ),
+                  ),
                   // _buildActionButton(
                   //   HugeIcons.strokeRoundedLeftToRightListBullet,
                   //   Attribute.ul,
@@ -196,6 +225,8 @@ class ChatQuillToolbar extends ConsumerWidget {
               ),
             ),
           ),
+
+          /// 右侧功能按钮区域
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
