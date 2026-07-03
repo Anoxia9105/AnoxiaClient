@@ -61,6 +61,7 @@ class ChatGroupActionButtonsWidget extends ConsumerWidget {
       children: [
         // 添加成员按钮
         IconButton(
+          mouseCursor: SystemMouseCursors.click,
           tooltip: 'appbar_add_member'.tr(),
           onPressed: () => showDialog(
             context: context,
@@ -112,6 +113,7 @@ class _MuteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return IconButton(
+      mouseCursor: SystemMouseCursors.click,
       tooltip: isMuted ? 'chat_unmute_tooltip'.tr() : 'chat_mute_tooltip'.tr(),
       onPressed: onTap,
       icon: HugeIcon(
@@ -146,6 +148,7 @@ class _MemberListButton extends StatelessWidget {
     return Tooltip(
       message: 'appbar_member_list'.tr(),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: () => Toast.showWidget(
           context,
           child: Material(
@@ -238,6 +241,7 @@ class _MemberListButton extends StatelessWidget {
 
     if (isAdmin && m.userId != currentUserId) {
       return IconButton(
+        mouseCursor: SystemMouseCursors.click,
         icon: const HugeIcon(
           icon: HugeIcons.strokeRoundedUserRoadside,
           size: 18,

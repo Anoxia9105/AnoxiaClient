@@ -133,6 +133,7 @@ class ChatQuillToolbar extends ConsumerWidget {
                   Builder(
                     builder: (context) {
                       return IconButton(
+                        mouseCursor: SystemMouseCursors.click,
                         tooltip: 'toolbar_text_color'.tr(),
                         padding: EdgeInsets.zero,
                         visualDensity: VisualDensity.compact,
@@ -156,6 +157,7 @@ class ChatQuillToolbar extends ConsumerWidget {
                   Builder(
                     builder: (context) {
                       return IconButton(
+                        mouseCursor: SystemMouseCursors.click,
                         tooltip: 'toolbar_bg_color'.tr(),
                         padding: EdgeInsets.zero,
                         visualDensity: VisualDensity.compact,
@@ -264,6 +266,7 @@ class ChatQuillToolbar extends ConsumerWidget {
               ),
               // 发送按钮通常用主题色突出
               IconButton(
+                mouseCursor: SystemMouseCursors.click,
                 tooltip: 'toolbar_send'.tr(),
                 visualDensity: VisualDensity.compact,
                 onPressed: isUploading ? null : onSend,
@@ -292,6 +295,7 @@ class ChatQuillToolbar extends ConsumerWidget {
       attr.key,
     );
     return IconButton(
+      mouseCursor: SystemMouseCursors.click,
       tooltip: tooltip,
       visualDensity: VisualDensity.compact,
       onPressed: () {
@@ -313,6 +317,7 @@ class ChatQuillToolbar extends ConsumerWidget {
     bool enabled = true,
   }) {
     return IconButton(
+      mouseCursor: SystemMouseCursors.click,
       tooltip: tooltip,
       visualDensity: VisualDensity.compact,
       onPressed: enabled ? action : null,

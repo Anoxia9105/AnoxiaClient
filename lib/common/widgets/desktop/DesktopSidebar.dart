@@ -39,6 +39,7 @@ class DesktopSidebar extends ConsumerWidget {
           Builder(
             builder: (context) {
               return InkWell(
+                mouseCursor: SystemMouseCursors.click,
                 child: AvatarWidget(
                   url: user.value?.avatar,
                   name: user.value?.nickName,
@@ -163,7 +164,10 @@ class DesktopSidebar extends ConsumerWidget {
                       ref.read(authControllerProvider.notifier).logout();
                       close?.call();
                     },
-                    label: Text('sidebar_logout'.tr(), style: const TextStyle(color: Colors.red)),
+                    label: Text(
+                      'sidebar_logout'.tr(),
+                      style: const TextStyle(color: Colors.red),
+                    ),
                     icon: const HugeIcon(
                       icon: HugeIcons.strokeRoundedLogout01,
                       color: Colors.red,
@@ -211,6 +215,7 @@ class SidebarButton extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: () {
             ref.read(layoutControllerProvider.notifier).setIndex(index);
           },

@@ -95,6 +95,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                 Builder(
                   builder: (context) {
                     return IconButton(
+                      mouseCursor: SystemMouseCursors.click,
                       icon: const HugeIcon(
                         icon: HugeIcons.strokeRoundedLayerAdd,
                         size: 20,
@@ -232,22 +233,11 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                       'chat_load_failed'.tr(),
                       style: const TextStyle(color: Colors.grey),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.outline,
-                        fontSize: 12,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                     const SizedBox(height: 12),
                     FilledButton.tonal(
                       onPressed: () =>
                           ref.read(roomListServiceProvider.notifier).refresh(),
-                      child: Text('update_retry_download'.tr()),
+                      child: Text('call_window_retry'.tr()),
                     ),
                   ],
                 ),

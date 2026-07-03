@@ -16,6 +16,8 @@ class TextMessageStrategy extends MessageRenderStrategy {
   ) {
     final content = message.payload?.content ?? message.content;
 
+    print(message.payload);
+    
     // 大表情渲染逻辑：当消息包含 emojiCode 且有内容时，以大字体显示
     if (message.payload?.emojiCode != null && content.isNotEmpty) {
       return Text(content, style: const TextStyle(fontSize: 48));

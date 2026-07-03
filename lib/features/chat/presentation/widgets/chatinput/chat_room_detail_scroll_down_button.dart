@@ -23,10 +23,11 @@ class ChatRoomDetailScrollDownButton extends StatelessWidget {
         shape: BoxShape.circle, // 容器设为圆形
       ),
       child: IconButton(
+        mouseCursor: SystemMouseCursors.click,
         onPressed: onPressed,
         style: IconButton.styleFrom(
-          shape: const CircleBorder(), 
-          hoverColor: theme.colorScheme.onPrimary.withValues(alpha: 0.08), 
+          shape: const CircleBorder(),
+          hoverColor: theme.colorScheme.onPrimary.withValues(alpha: 0.08),
         ),
         padding: EdgeInsets.zero, // 确保图标居中
         icon: HugeIcon(

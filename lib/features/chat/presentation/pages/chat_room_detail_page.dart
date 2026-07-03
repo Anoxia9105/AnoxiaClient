@@ -174,8 +174,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）
       floatingActionButton: _showScrollDownButton
           ? ChatRoomDetailScrollDownButton(
-              onPressed: () => _scrollToBottom(animated: true),
-            )
+            onPressed: () => _scrollToBottom(animated: true),
+          )
           : null,
 
       /// 底部输入栏

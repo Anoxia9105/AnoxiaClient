@@ -81,6 +81,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (DeviceUtil.isRealMobile()) {
           return [
             IconButton(
+              mouseCursor: SystemMouseCursors.click,
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical),
               onPressed: () {
                 Navigator.of(context).push(
@@ -106,6 +107,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
           // 搜索按钮
           IconButton(
+            mouseCursor: SystemMouseCursors.click,
             tooltip: 'appbar_search_in_chat'.tr(),
             onPressed: () => showDialog(
               context: context,

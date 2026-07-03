@@ -16,18 +16,21 @@ import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 
-/// 鍥剧墖鏌ョ湅鍣ㄧ粍浠?
+/// 图片查看器组件
 ///
-/// 鎻愪緵鍏ㄥ睆鍥剧墖棰勮鍔熻兘锛屾敮鎸侊細
-/// - 鎵嬪娍缂╂斁锛堝弻鎸囨崗鍚堛€侀紶鏍囨粴杞級
-/// - 鏀惧ぇ/缂╁皬鎸夐挳
-/// - 閲嶇疆缂╂斁鎸夐挳
-/// - 鍥剧墖涓嬭浇鍔熻兘
-/// - Hero 鍔ㄧ敾杩囨浮
-/// - 鍔犺浇鐘舵€佸拰閿欒澶勭悊
+/// 提供全屏图片预览功能，支持：
+/// - 手势缩放（双指捏合、鼠标滚轮）
+/// - 放大/缩小按钮
+/// - 重置缩放按钮
+/// - 图片下载功能（需存储权限）
+/// - Hero 动画过渡
+/// - 多图切换（基于会话消息中的图片附件列表）
+/// - 加载状态和错误处理
 ///
-/// [attachment] 鍥剧墖闄勪欢淇℃伅
-/// [heroTag] Hero 鍔ㄧ敾鏍囩
+/// [attachment] 当前图片附件信息
+/// [heroTag] Hero 动画标签，用于共享元素过渡
+/// [roomId] 会话 ID，若提供则从该会话所有消息中提取图片列表实现多图浏览
+/// [currentUrl] 当前显示的图片 URL，用于定位
 class ImageViewer extends ConsumerStatefulWidget {
   final Attachment attachment;
   final String heroTag;
@@ -47,13 +50,20 @@ class ImageViewer extends ConsumerStatefulWidget {
 }
 
 class _ImageViewerState extends ConsumerState<ImageViewer> {
+  // 图片控制器，管理缩放、平移等
   late final PhotoViewController _controller;
+  // 缩放状态控制器（可用于动画过渡）
   late final PhotoViewScaleStateController _scaleStateCtrl;
+  // 下载中标志，防止重复点击
   bool _downloading = false;
+  // 当前显示的图片 URL（可能随切换变化）
   late String? _currentUrl;
 
+  // 缩放步长（每次点击放大/缩小的比例因子）
   static const double _step = 0.2;
+  // 最小缩放倍数
   static const double _minScaleFactor = 0.5;
+  // 最大缩放倍数
   static const double _maxScaleFactor = 4.0;
 
   @override
@@ -71,6 +81,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     super.dispose();
   }
 
+  /// 鼠标滚轮缩放事件处理（桌面端）
   void _onPointerSignal(PointerSignalEvent evt) {
     if (evt is PointerScrollEvent) {
       final double oldScale = _controller.scale ?? 1.0;
@@ -83,6 +94,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     }
   }
 
+  /// 放大
   void _zoomIn() {
     final double oldScale = _controller.scale ?? 1.0;
     final double target = (oldScale * (1 + _step)).clamp(
@@ -92,6 +104,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     _controller.scale = target;
   }
 
+  /// 缩小
   void _zoomOut() {
     final double oldScale = _controller.scale ?? 1.0;
     final double target = (oldScale * (1 - _step)).clamp(
@@ -101,9 +114,11 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     _controller.scale = target;
   }
 
+  /// 下载当前图片到相册
   Future<void> _downloadImage() async {
     if (_downloading) return;
 
+    // 仅在真实移动设备上允许下载（非模拟器或桌面）
     if (!DeviceUtil.isRealMobile()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('image_download_mobile_only'.tr())),
@@ -111,6 +126,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       return;
     }
 
+    // 获取当前附件 URL
     final url = _currentAttachment(_galleryAttachments(watch: false)).url;
     if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(
@@ -119,6 +135,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       return;
     }
 
+    // 申请存储权限
     final granted = await _ensureGalleryPermission();
     if (!granted) {
       if (!mounted) return;
@@ -134,6 +151,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     ).showSnackBar(SnackBar(content: Text('image_download_started'.tr())));
 
     try {
+      // 使用 Dio 下载图片二进制数据
       final response = await Dio().get<List<int>>(
         url,
         options: Options(responseType: ResponseType.bytes),
@@ -144,6 +162,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
         throw Exception('empty bytes');
       }
 
+      // 生成文件名并保存到系统相册
       final fileName = 'anoxia_image_${DateTime.now().millisecondsSinceEpoch}';
       final result = await ImageGallerySaverPlus.saveImage(
         Uint8List.fromList(bytes),
@@ -151,6 +170,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
         name: fileName,
       );
 
+      // 判断保存结果（isSuccess 可能为 bool 或 int）
       final ok =
           result is Map &&
           (result['isSuccess'] == true || result['isSuccess'] == 1);
@@ -173,6 +193,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     }
   }
 
+  /// 确保拥有相册存储权限（iOS 和 Android 分别处理）
   Future<bool> _ensureGalleryPermission() async {
     if (Platform.isIOS) {
       final status = await Permission.photosAddOnly.request();
@@ -184,11 +205,12 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       return status.isGranted;
     }
 
-    return true;
+    return true; // 其他平台默认允许
   }
 
   @override
   Widget build(BuildContext context) {
+    // 获取当前会话的所有图片附件列表（可能来自多个消息）
     final attachments = _galleryAttachments();
     final attachment = _currentAttachment(attachments);
     final currentIndex = _currentIndex(attachments);
@@ -196,6 +218,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     final canGoNext =
         currentIndex >= 0 && currentIndex < attachments.length - 1;
 
+    // 如果当前附件 URL 无效，显示错误占位并允许点击关闭
     if (attachment.url == null || attachment.url!.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.black,
@@ -216,6 +239,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
+        // 多图时显示页码
         title: attachments.length > 1
             ? Text(
                 '${currentIndex + 1}/${attachments.length}',
@@ -230,6 +254,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // 放大
           IconButton(
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedZoomInArea,
@@ -238,6 +263,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
             ),
             onPressed: _zoomIn,
           ),
+          // 缩小
           IconButton(
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedZoomOutArea,
@@ -246,6 +272,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
             ),
             onPressed: _zoomOut,
           ),
+          // 重置缩放
           IconButton(
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedRefresh,
@@ -254,6 +281,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
             ),
             onPressed: () => _controller.scale = _controller.initial.scale,
           ),
+          // 下载（下载中禁用）
           IconButton(
             icon: const HugeIcon(
               icon: HugeIcons.strokeRoundedDownload01,
@@ -269,13 +297,13 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
         value: SystemUiOverlayStyle.light,
         child: Stack(
           children: [
-            // 涓讳綋鍥剧墖灞曠ず鍖?
+            // 主图片展示区
             Positioned.fill(
               child: GestureDetector(
-                // 鍏滃簳鍏抽棴锛歟rrorBuilder 浼氭浛鎹㈡暣涓?PhotoView锛屽鑷?onTapUp 澶辨晥
-                // 澶栧眰濂?GestureDetector 纭繚浠讳綍鎯呭喌涓嬬偣鍑婚兘鑳藉叧闂?
+                // 点击任意位置关闭（外层确保即使图片加载失败也能关闭）
                 onTap: () => Navigator.pop(context),
                 child: Listener(
+                  // 监听鼠标滚轮事件（桌面端）
                   onPointerSignal: _onPointerSignal,
                   child: PhotoView(
                     key: ValueKey(attachment.url),
@@ -293,6 +321,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                     maxScale: PhotoViewComputedScale.covered * 2.5,
                     enableRotation: false,
                     basePosition: Alignment.center,
+                    // 仅在当前附件与初始一致时启用 Hero 动画
                     heroAttributes: _heroAttributesFor(attachment),
                     loadingBuilder: (context, event) => _buildLoading(event),
                     errorBuilder: (context, error, stackTrace) => _buildError(),
@@ -300,6 +329,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                 ),
               ),
             ),
+            // 多图切换按钮（左右箭头）
             if (attachments.length > 1) ...[
               Positioned(
                 left: 16,
@@ -327,7 +357,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
               ),
             ],
 
-            // 搴曢儴鏂囦欢鍚嶆彁绀猴紙绌块€忕偣鍑伙紝涓嶆嫤鎴叧闂墜鍔匡級
+            // 底部文件名提示（穿透点击，不拦截关闭手势）
             Positioned(
               bottom: 16.h,
               left: 0,
@@ -359,10 +389,13 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     );
   }
 
+  /// 获取当前会话中的所有图片附件列表
+  /// [watch] 是否使用 Riverpod 的 watch 模式（监听变化）
   List<Attachment> _galleryAttachments({bool watch = true}) {
     final roomId = widget.roomId;
     if (roomId == null || roomId.isEmpty) return [widget.attachment];
 
+    // 从 Riverpod 状态中读取该会话的消息列表
     final selector = chatMessagesProvider.select(
       (state) => state[roomId] ?? const [],
     );
@@ -370,6 +403,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     final result = <Attachment>[];
     final seenUrls = <String>{};
 
+    // 遍历所有消息，收集其中的图片附件（去重）
     for (final message in messages) {
       final attachments = message.payload?.mediaAttachments ?? const [];
       for (final attachment in attachments) {
@@ -379,6 +413,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       }
     }
 
+    // 确保当前附件包含在列表中（防止未在消息中）
     final initialUrl = widget.attachment.url;
     if (initialUrl != null &&
         initialUrl.isNotEmpty &&
@@ -389,6 +424,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     return result.isEmpty ? [widget.attachment] : result;
   }
 
+  /// 根据当前 _currentUrl 从附件列表中获取对应的 Attachment
   Attachment _currentAttachment(List<Attachment> attachments) {
     for (final attachment in attachments) {
       if (attachment.url == _currentUrl) return attachment;
@@ -396,26 +432,31 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     return attachments.isEmpty ? widget.attachment : attachments.first;
   }
 
+  /// 计算当前附件在列表中的索引
   int _currentIndex(List<Attachment> attachments) {
     final index = attachments.indexWhere((item) => item.url == _currentUrl);
     return index < 0 ? 0 : index;
   }
 
+  /// 切换到指定索引的图片
   void _switchTo(int index, List<Attachment> attachments) {
     if (index < 0 || index >= attachments.length) return;
     setState(() => _currentUrl = attachments[index].url);
+    // 在下一帧重置缩放为初始状态
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _controller.scale = _controller.initial.scale;
     });
   }
 
+  /// 生成 Hero 属性（仅在当前附件与初始附件一致时返回，保证过渡正确）
   PhotoViewHeroAttributes? _heroAttributesFor(Attachment attachment) {
     final initialUrl = widget.currentUrl ?? widget.attachment.url;
     if (attachment.url != initialUrl) return null;
     return PhotoViewHeroAttributes(tag: widget.heroTag);
   }
 
+  /// 构建切换按钮（带透明度动画）
   Widget _buildSwitchButton({
     required List<List<dynamic>> icon,
     required bool enabled,
@@ -435,6 +476,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     );
   }
 
+  /// 加载中占位
   Widget _buildLoading(ImageChunkEvent? event) {
     return Center(
       child: SizedBox(
@@ -451,6 +493,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     );
   }
 
+  /// 加载失败占位
   Widget _buildError() {
     return Center(
       child: Column(

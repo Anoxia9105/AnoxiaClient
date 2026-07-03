@@ -42,6 +42,7 @@ class ChatCallButtonWidget extends ConsumerWidget {
     final isCallingNow = callStatus.calling;
 
     return IconButton(
+      mouseCursor: SystemMouseCursors.click,
       tooltip: hasActiveCall 
           ? 'appbar_call_back_to_window'.tr() 
           : (isCallingNow ? 'appbar_call_join'.tr() : 'appbar_start_meeting'.tr()),

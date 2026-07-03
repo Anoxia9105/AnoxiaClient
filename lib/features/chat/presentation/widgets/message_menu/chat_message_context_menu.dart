@@ -159,13 +159,19 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     return PopupMenuItem<String>(
       value: value,
       height: 32,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HugeIcon(icon: icon, size: 16, color: color),
-          const SizedBox(width: 10),
-          Text(label, style: TextStyle(fontSize: 12, color: color)),
-        ],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: SizedBox(
+          width: double.infinity,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HugeIcon(icon: icon, size: 16, color: color),
+              const SizedBox(width: 10),
+              Text(label, style: TextStyle(fontSize: 12, color: color)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -233,6 +239,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
   }) {
     final c = color ?? Theme.of(context).colorScheme.onSurface;
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: () {
         _menuController.hideMenu();
         _handleAction(context, action);
