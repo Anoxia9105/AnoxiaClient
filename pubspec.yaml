@@ -136,6 +136,8 @@ dependencies:
   image_picker: ^1.2.2
   # 链接预览
   any_link_preview: ^3.0.3
+  # 数据库
+  drift: ^2.34.0
 
 
 dev_dependencies:
