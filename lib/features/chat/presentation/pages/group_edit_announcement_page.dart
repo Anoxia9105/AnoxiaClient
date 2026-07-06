@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -70,7 +71,7 @@ class _GroupEditAnnouncementPageState
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('chat_group_announcement'.tr()),
-        centerTitle: true,
+        centerTitle: DeviceUtil.isRealMobile(),
         actions: [
           TextButton(
             onPressed: _saving ? null : _submit,

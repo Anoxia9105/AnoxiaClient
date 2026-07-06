@@ -73,6 +73,7 @@ class _LanguageOption extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
+      mouseCursor: SystemMouseCursors.click,
       onTap: () => onLanguageChanged(value),
       child: Container(
         width: double.infinity,

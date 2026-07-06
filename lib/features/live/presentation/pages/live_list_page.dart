@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -12,6 +13,7 @@ class LiveListPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
+        centerTitle: DeviceUtil.isRealMobile(),
         title: Text('live_page_title'.tr()),
         backgroundColor: Colors.transparent,
       ),

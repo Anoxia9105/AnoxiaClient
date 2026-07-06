@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -37,7 +38,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      centerTitle: true,
+      centerTitle: DeviceUtil.isRealMobile(),
       title: Text(
         widget.title,
         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),

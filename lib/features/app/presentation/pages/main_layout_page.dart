@@ -58,7 +58,7 @@ class MainLayoutPage extends ConsumerWidget {
                     _DesktopContentCard(child: ContactPage()),
                     _DesktopContentCard(child: LiveListPage()),
                     _DesktopContentCard(child: FavoritesPage()),
-                    MyPage(),
+                    _DesktopContentCard(child: MyPage()),
                     _DesktopContentCard(child: SettingsPage()),
                   ],
                 ),

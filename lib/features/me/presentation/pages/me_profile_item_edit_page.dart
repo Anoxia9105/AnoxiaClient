@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -88,7 +89,7 @@ class _MeProfileItemEditPageState extends State<MeProfileItemEditPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        centerTitle: true,
+        centerTitle: DeviceUtil.isRealMobile(),
         title: Text(widget.title),
         actions: [
           TextButton(

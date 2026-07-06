@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
+import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
@@ -61,6 +62,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   void _navigateToOpenSourceLicenses() {
     const OpenSourceLicensesRoute().push(context);
+  }
+
+  void _openDeveloperTribute() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => const DeveloperTributePage(),
+      ),
+    );
   }
 
   void _showActionResult(SettingsActionResult result) {
@@ -209,6 +219,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             onCheckUpdate: _checkUpdate,
             onNavigateToUpdatePage: _navigateToUpdatePage,
             onOpenOpenSourceLicenses: _navigateToOpenSourceLicenses,
+            onOpenDeveloperTribute: _openDeveloperTribute,
           ),
         ],
       ),

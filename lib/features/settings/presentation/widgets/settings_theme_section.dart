@@ -122,6 +122,7 @@ class _BrightnessTile extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
+      mouseCursor: SystemMouseCursors.click,
       onTap: () => onChanged(brightness),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
@@ -178,29 +179,53 @@ class _AccentSwatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final shadowColor = color.withValues(alpha: selected ? 0.34 : 0.18);
 
     return Tooltip(
       message: label,
       child: InkWell(
         customBorder: const CircleBorder(),
+        mouseCursor: SystemMouseCursors.click,
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          width: 34,
-          height: 34,
-          padding: const EdgeInsets.all(3),
+          width: 40,
+          height: 40,
+          padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
               color: selected ? colorScheme.primary : Colors.transparent,
               width: 2,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: shadowColor,
+                blurRadius: selected ? 14 : 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: color,
               shape: BoxShape.circle,
-              border: Border.all(color: colorScheme.outlineVariant),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  HSLColor.fromColor(
+                    color,
+                  ).withLightness(0.68).withSaturation(0.72).toColor(),
+                  color,
+                  HSLColor.fromColor(
+                    color,
+                  ).withLightness(0.34).withSaturation(0.66).toColor(),
+                ],
+              ),
+              border: Border.all(
+                color: colorScheme.surface.withValues(alpha: 0.82),
+                width: 1.4,
+              ),
             ),
             child: selected
                 ? Icon(

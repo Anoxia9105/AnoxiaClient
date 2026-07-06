@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
@@ -42,7 +43,7 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
         title: Text(
           '${'appbar_member_list'.tr()} (${members.length})',
         ),
-        centerTitle: true,
+        centerTitle: DeviceUtil.isRealMobile(),
       ),
       body: members.isEmpty
           ? Center(child: Text('member_no_contacts'.tr()))

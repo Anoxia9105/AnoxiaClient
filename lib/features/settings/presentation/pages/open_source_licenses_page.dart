@@ -17,7 +17,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
 
     return AppScaffold(
       hideAppBarLogo: true,
-      title: const Text('开源许可'),
+      title: Text('settings_open_source_title'.tr()),
       body: packages.isEmpty
           ? Center(child: Text('settings_open_source_empty'.tr()))
           : ListView.builder(
@@ -32,6 +32,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     borderRadius: BorderRadius.circular(12),
                     onTap: () {
                       OpenSourceLicenseDetailRoute(

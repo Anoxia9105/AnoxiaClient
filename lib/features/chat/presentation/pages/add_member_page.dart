@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
@@ -40,7 +41,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text('member_add_title'.tr()),
-        centerTitle: true,
+        centerTitle: DeviceUtil.isRealMobile(),
       ),
       body: Column(
         children: [

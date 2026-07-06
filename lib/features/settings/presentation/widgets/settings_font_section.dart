@@ -63,6 +63,7 @@ class _FontOptionTile extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
+      mouseCursor: SystemMouseCursors.click,
       onTap: () => onFontChanged(fontKey),
       child: Container(
         width: double.infinity,

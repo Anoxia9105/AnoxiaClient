@@ -146,7 +146,6 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   }
 
   Widget _buildSearchBar(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: 16,
@@ -223,7 +222,6 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
       },
     );
   }
-
 
   /// 构建空状态视图
   Widget _buildEmptyState(BuildContext context, WidgetRef ref, String query) {

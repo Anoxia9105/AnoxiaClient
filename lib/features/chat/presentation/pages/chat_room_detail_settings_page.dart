@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
@@ -51,7 +52,7 @@ class ChatRoomDetailSettingsPage extends ConsumerWidget {
       backgroundColor: colorScheme.surfaceContainerLow,
       appBar: AppBar(
         title: Text('chat_conversation_detail'.tr()),
-        centerTitle: true,
+        centerTitle: DeviceUtil.isRealMobile(),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
