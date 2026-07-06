@@ -1,8 +1,12 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/BreathingDot.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_settings_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_call_button_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_group_action_buttons_widget.dart';
+import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
+import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,18 +61,36 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         data: (_) {
           if (room == null) return const SizedBox.shrink();
 
-          if (isTyping) {
-            return Text(
-              'appbar_user_typing'.tr(),
-              style: const TextStyle(fontSize: 16),
-            );
-          }
-
           final displayTitle = room.roomType == 1
               ? '${room.roomName} (${members.length})'
               : (room.roomName ?? 'appbar_conversation_detail'.tr());
-
-          return Text(displayTitle);
+          return Row(
+            children: [
+              // 房间头像
+              AvatarWidget(url: room.roomAvatar, name: displayTitle, size: 40),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 显示房间名称或群组名称
+                    Text(
+                      displayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // 显示在线人数或输入状态
+                    _buildTitleOrTypingStatus(context, room, members, isTyping),
+                  ],
+                ),
+              ),
+            ],
+          );
         },
         loading: () => Text('appbar_connecting'.tr()),
         error: (error, stackTrace) => Text('appbar_connection_lost'.tr()),
@@ -143,6 +165,53 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ];
       }(),
     );
+  }
+
+  /// 构建标题栏下方的状态信息：单聊显示“对方正在输入...”，群聊显示在线人数
+  Widget _buildTitleOrTypingStatus(
+    BuildContext context,
+    ChatRoomVO room,
+    List<ChatRoomMemberVO> members,
+    bool isTyping,
+  ) {
+    // 单聊且正在输入 → 显示“对方正在输入...”
+    if (room.roomType == 0 && isTyping) {
+      return Container(
+        height: 20,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'appbar_user_typing'.tr(),
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    // 群聊 → 显示在线人数
+    if (room.roomType == 1) {
+      final onlineCount = members.where((m) => m.onlineStatus == true).length;
+      final totalCount = members.length;
+      return Container(
+        height: 20,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const BreathingDot(),
+            const SizedBox(width: 6),
+            Text(
+              '$onlineCount人在线 / $totalCount位成员',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 私聊且没有输入状态 → 空占位，保持高度
+    return const SizedBox(height: 20);
   }
 
   @override

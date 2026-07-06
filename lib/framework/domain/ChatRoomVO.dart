@@ -1,5 +1,12 @@
 import 'ChatMessage.dart';
 
+/// 聊天室类型枚举
+enum RoomType {
+  singleChat, // 单聊
+  groupChat, // 群聊
+  aiChat, // AI 对话
+}
+
 /// 聊天室视图对象
 ///
 /// 表示单个聊天会话/房间的完整信息，包含房间配置、最后消息和未读计数。

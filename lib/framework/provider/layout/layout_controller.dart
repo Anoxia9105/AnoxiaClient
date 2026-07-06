@@ -44,6 +44,14 @@ class LayoutController extends _$LayoutController {
     }
   }
 
+  /// 设置当前选中的页面为用户页面
+  void setToUser() {
+    final userIndex = state.items.indexWhere((item) => item.name == 'sidebar_my');
+    if (userIndex != -1) {
+      setIndex(userIndex);
+    }
+  }
+
   /// 切换侧边栏展开/收起状态
   void toggleExtended() {
     state = state.copyWith(extendedValue: !state.extendedValue);

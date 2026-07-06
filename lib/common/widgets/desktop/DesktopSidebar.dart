@@ -2,7 +2,6 @@ import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
-import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +12,6 @@ import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/ws/ws_controller.dart';
 import '../../../framework/provider/ws/ws_state.dart';
 import '../AvatarWidget.dart';
-import '../BubbleDialog.dart';
-import '../Toast.dart';
 
 /// 桌面端侧边栏组件
 ///
@@ -31,33 +28,39 @@ class DesktopSidebar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
-    return SizedBox(
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          right: BorderSide(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+      ),
       width: 70,
       child: Column(
         children: [
-          // 用户信息位置
-          Builder(
-            builder: (context) {
-              return InkWell(
-                mouseCursor: SystemMouseCursors.click,
-                child: AvatarWidget(
-                  url: user.value?.avatar,
-                  name: user.value?.nickName,
-                  size: 35,
-                  status: status == WsStatus.connected
-                      ? AvatarStatus.online
-                      : AvatarStatus.offline,
-                ),
-                onTap: () => _showUserDetail(context, ref, user.value, status),
-              );
-            },
+          InkWell(
+            mouseCursor: SystemMouseCursors.click,
+            child: AvatarWidget(
+              url: user.value?.avatar,
+              name: user.value?.nickName,
+              size: 35,
+              status: status == WsStatus.connected
+                  ? AvatarStatus.online
+                  : AvatarStatus.offline,
+            ),
+            onTap: () =>
+                ref.read(layoutControllerProvider.notifier).setToUser(),
           ),
           const SizedBox(height: 8),
           // 导航栏
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: List.generate(layout.items.length - 1, (index) {
+              children: List.generate(layout.items.length, (index) {
                 final item = layout.items[index];
                 return SidebarButton(
                   padding: const EdgeInsets.all(10),
@@ -69,115 +72,41 @@ class DesktopSidebar extends ConsumerWidget {
             ),
           ),
 
-          SidebarButton(
-            padding: const EdgeInsets.all(10),
-            index: layout.items.length - 1,
-            name: layout.items[layout.items.length - 1].name.tr(),
-            icon: layout.items[layout.items.length - 1].icon,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showUserDetail(
-    BuildContext context,
-    WidgetRef ref,
-    dynamic user,
-    WsStatus status,
-  ) {
-    Function? close;
-    close = Toast.showWidget(
-      context,
-      direction: PreferDirection.rightTop,
-      child: Material(
-        color: Colors.transparent,
-        child: BubbleWidget(
-          arrowDirection: AxisDirection.left,
-          arrowOffset: 25,
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          border: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 0.5,
-          ),
-          contentBuilder: (context) => Container(
-            constraints: const BoxConstraints(maxWidth: 220, maxHeight: 600),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    AvatarWidget(
-                      url: user?.avatar,
-                      name: user?.nickName,
-                      size: 50,
-                      status: status == WsStatus.connected
-                          ? AvatarStatus.online
-                          : AvatarStatus.offline,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.nickName ?? 'Unknown',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            user?.email ?? 'No Email',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+          SizedBox(
+            width: double.infinity,
+            child: IconButton(
+              tooltip: 'sidebar_logout'.tr(),
+              onPressed: () async {
+                // 弹出确认对话框
+                final shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('确认退出'.tr()),
+                    content: Text('确定要退出登录吗？'.tr()),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text('取消'.tr()),
                       ),
-                    ),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1),
-                ),
-                // SizedBox(
-                //   width: double.infinity,
-                //   child: TextButton.icon(
-                //     onPressed: () {
-                //       ref.read(authControllerProvider.notifier).logout();
-                //       close?.call();
-                //     },
-                //     label: Text('sidebar_personal_details'.tr()),
-                //     icon: HugeIcon(icon: HugeIcons.strokeRoundedUser),
-                //   ),
-                // ),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      ref.read(authControllerProvider.notifier).logout();
-                      close?.call();
-                    },
-                    label: Text(
-                      'sidebar_logout'.tr(),
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedLogout01,
-                      color: Colors.red,
-                    ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text('确定'.tr()),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+                // 如果用户点击了“确定”且对话框未关闭，执行登出
+                if (shouldLogout == true) {
+                  ref.read(authControllerProvider.notifier).logout();
+                }
+              },
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedLogout01,
+                color: Colors.red,
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -22,7 +22,7 @@ class AvatarWidget extends StatelessWidget {
     this.url,
     this.name,
     this.size = 36,
-    this.borderRadius = 18,
+    this.borderRadius = 6,
     this.status = AvatarStatus.none,
     this.statusWidget,
     this.showBadge = false,
