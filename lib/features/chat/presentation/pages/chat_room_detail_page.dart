@@ -7,9 +7,9 @@ import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart
 import 'package:anoxia/features/chat/presentation/pages/no_conversation_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_bottom_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_scroll_down_button.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_bubble/chat_message_bubble.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
@@ -174,8 +174,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）
       floatingActionButton: _showScrollDownButton
           ? ChatRoomDetailScrollDownButton(
-            onPressed: () => _scrollToBottom(animated: true),
-          )
+              onPressed: () => _scrollToBottom(animated: true),
+            )
           : null,
 
       /// 底部输入栏
