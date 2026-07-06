@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
+import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -147,18 +148,9 @@ class _AppIntro extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             alignment: Alignment.center,
-            child: Text(
-              'A',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+            child: Assets.images.appIconPng.image(),
           ),
           const SizedBox(width: 12),
           Expanded(
