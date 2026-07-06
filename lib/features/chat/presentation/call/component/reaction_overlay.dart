@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:anoxia/common/widgets/AvatarWidget.dart';

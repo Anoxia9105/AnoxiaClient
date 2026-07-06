@@ -84,7 +84,6 @@ class RoomListDialogMenus {
                       ),
                     ),
                   ),
-                  const Divider(height: 1),
                   // 添加好友按钮
                   SizedBox(
                     width: double.infinity,
@@ -114,7 +113,6 @@ class RoomListDialogMenus {
                       ),
                     ),
                   ),
-                  const Divider(height: 1),
                   // 扫一扫
                   if (isMobile)
                     SizedBox(

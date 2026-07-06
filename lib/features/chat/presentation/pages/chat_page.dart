@@ -59,9 +59,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ? ref.watch(currentRoomProvider(activeRoomId))
         : null;
 
-    // 1. 判断是否显示欢迎页
-    final showWelcome = room == null;
-
     return SplitView(
       gripSize: 2,
       gripColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
@@ -75,7 +72,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       },
       children: [
         const ChatRoomList(),
-        if (showWelcome)
+        // 判断是否显示欢迎页
+        if (room == null)
           const Welcome.chat()
         else
           ChatRoomDetail(roomId: activeRoomId!),

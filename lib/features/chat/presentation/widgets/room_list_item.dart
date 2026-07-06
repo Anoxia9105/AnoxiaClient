@@ -126,18 +126,48 @@ class RoomListItem extends ConsumerWidget {
           }
         },
         selected: isSelected,
-        leading: AvatarWidget(
-          url: room.roomAvatar,
-          name: room.roomName,
-          status: isSingle
-              ? (isOnline ? AvatarStatus.online : AvatarStatus.offline)
-              : AvatarStatus.none,
-        ),
-        title: Text(
-          displayRoomName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        leading: () {
+          if (isSingle) {
+            return AvatarWidget(
+              url: room.roomAvatar,
+              name: room.roomName,
+              status: isOnline ? AvatarStatus.online : AvatarStatus.offline,
+            );
+          }
+          return AvatarWidget(
+            url: room.roomAvatar,
+            name: room.roomName,
+            statusWidget: Tooltip(
+              message: 'chat_group_chat'.tr(),
+              child: const HugeIcon(
+                icon: HugeIcons.strokeRoundedGroup,
+                size: 12,
+                strokeWidth: 3,
+              ),
+            ),
+          );
+        }(),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                displayRoomName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+
+            // 最后消息时间
+            Text(
+              DateUtil.formatTime(room.lastMessage?.timestamp),
+              style: const TextStyle(fontSize: 11),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
         subtitle: Text(
           room.lastMessage?.content ?? '',
@@ -145,47 +175,26 @@ class RoomListItem extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-        // 右侧显示最后消息时间和未读数
+        // 右侧显示置顶和未读数
         trailing: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 120),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // 置顶图标
+              Opacity(
+                opacity: isPinned ? 1 : 0,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedPin02,
+                  size: 16,
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+
               // 未读消息数
               VibratingBadge(count: room.unreadCount ?? 0),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 单聊显示个人图标，群聊显示群组图标
-                  HugeIcon(
-                    icon: isSingle
-                        ? HugeIcons.strokeRoundedUser02
-                        : HugeIcons.strokeRoundedUserGroup03,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.outline,
-                    strokeWidth: 2,
-                  ),
-                  const SizedBox(width: 6),
-                  // 置顶图标
-                  if (isPinned) ...[
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedPin,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  // 最后消息时间
-                  Text(
-                    DateUtil.formatTime(room.lastMessage?.timestamp),
-                    style: const TextStyle(fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
             ],
           ),
         ),

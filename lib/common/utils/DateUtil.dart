@@ -30,12 +30,12 @@ class DateUtil {
   /// - 今年：MM-dd
   /// - 跨年：yyyy/MM/dd
   static String formatTime(int? timestamp) {
-    if (timestamp == null) return "";
+    if (timestamp == null) return '';
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     final now = DateTime.now();
-    if (date.day == now.day) return DateFormat('HH:mm').format(date);
-    if (date.year == now.year) return DateFormat('MM-dd').format(date);
-    return DateFormat('yyyy/MM/dd').format(date);
+    if (date.day == now.day) return DateFormat('HH:mm').format(date); // 时间不变
+    if (date.year == now.year) return DateFormat('M/d').format(date); // 例如 7/5
+    return DateFormat('yyyy/M/d').format(date); // 例如 2026/7/5
   }
 
   /// 微信风格时间分隔格式化
@@ -49,7 +49,8 @@ class DateUtil {
   /// - 本周（2~6天前）：星期X HH:mm
   /// - 今年（超过本周）：M月D日 HH:mm
   /// - 跨年：YYYY年M月D日 HH:mm
-  static String formatWeChatTimeDivider(int timestamp, String locale) {
+  static String formatWeChatTimeDivider(int? timestamp, String locale) {
+    if (timestamp == null) return '';
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

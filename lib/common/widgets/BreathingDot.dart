@@ -34,8 +34,8 @@ class _BreathingDotState extends State<BreathingDot>
     return FadeTransition(
       opacity: _animation,
       child: Container(
-        width: 6,
-        height: 6,
+        width: 8,
+        height: 8,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.green,

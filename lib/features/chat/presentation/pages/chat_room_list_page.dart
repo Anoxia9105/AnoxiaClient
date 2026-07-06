@@ -38,6 +38,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: false,
         titleSpacing: 16,
         leading: () {
           /// 如果是移动端 显示菜单按钮 打开个人中心抽屉
@@ -48,99 +49,151 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             );
           }
         }(),
-        title: () {
-          /// 如果是桌面 显示搜索框
-          if (DeviceUtil.isRealDesktop()) {
-            return Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (val) => ref
-                          .read(roomSearchQueryProvider.notifier)
-                          .update(val),
-                      maxLength: 20,
-                      style: const TextStyle(fontSize: 14),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        prefixIcon: const Icon(Icons.search, size: 20),
-                        // 有搜索内容时显示清除按钮
-                        suffixIcon:
-                            ref.watch(roomSearchQueryProvider).isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.cancel, size: 16),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  ref
-                                      .read(roomSearchQueryProvider.notifier)
-                                      .update('');
-                                },
-                              )
-                            : null,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        hintText: 'chat_search_placeholder'.tr(),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 添加房间/好友按钮
-                Builder(
-                  builder: (context) {
-                    return IconButton(
-                      mouseCursor: SystemMouseCursors.click,
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedLayerAdd,
-                        size: 20,
-                      ),
-                      onPressed: () =>
-                          RoomListDialogMenus.showTopRightDialog(context),
-                    );
-                  },
-                ),
-              ],
-            );
-          }
+        // title: () {
+        //   /// 如果是桌面 显示搜索框
+        //   if (DeviceUtil.isRealDesktop()) {
+        //     return Row(
+        //       children: [
+        //         Expanded(
+        //           child: SizedBox(
+        //             child: TextField(
+        //               controller: _searchController,
+        //               onChanged: (val) => ref
+        //                   .read(roomSearchQueryProvider.notifier)
+        //                   .update(val),
+        //               maxLength: 20,
+        //               style: const TextStyle(fontSize: 14),
+        //               decoration: InputDecoration(
+        //                 counterText: '',
+        //                 prefixIcon: const Icon(Icons.search, size: 20),
+        //                 // 有搜索内容时显示清除按钮
+        //                 suffixIcon:
+        //                     ref.watch(roomSearchQueryProvider).isNotEmpty
+        //                     ? IconButton(
+        //                         icon: const Icon(Icons.cancel, size: 16),
+        //                         onPressed: () {
+        //                           _searchController.clear();
+        //                           ref
+        //                               .read(roomSearchQueryProvider.notifier)
+        //                               .update('');
+        //                         },
+        //                       )
+        //                     : null,
+        //                 isDense: true,
+        //                 contentPadding: EdgeInsets.zero,
+        //                 hintText: 'chat_search_placeholder'.tr(),
+        //                 border: OutlineInputBorder(
+        //                   borderRadius: BorderRadius.circular(20),
+        //                   borderSide: BorderSide.none,
+        //                 ),
+        //                 filled: true,
+        //               ),
+        //             ),
+        //           ),
+        //         ),
+        //         const SizedBox(width: 8),
+        //         // 添加房间/好友按钮
+        //         Builder(
+        //           builder: (context) {
+        //             return IconButton(
+        //               mouseCursor: SystemMouseCursors.click,
+        //               icon: const HugeIcon(
+        //                 icon: HugeIcons.strokeRoundedLayerAdd,
+        //                 size: 20,
+        //               ),
+        //               onPressed: () =>
+        //                   RoomListDialogMenus.showTopRightDialog(context),
+        //             );
+        //           },
+        //         ),
+        //       ],
+        //     );
+        //   }
 
-          /// 移动端显示标题
-          return Text('sidebar_chat'.tr());
-        }(),
+        //   /// 移动端显示标题
+        //   return Text('sidebar_chat'.tr());
+        // }(),
+        title: Text('sidebar_chat'.tr()),
         actions: [
-          if (DeviceUtil.isRealMobile()) ...[
-            // 添加房间/好友按钮
-            Builder(
-              builder: (context) {
-                return IconButton(
-                  icon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedLayerAdd,
-                    size: 20,
-                  ),
-                  onPressed: () =>
-                      RoomListDialogMenus.showTopRightDialog(context),
-                );
-              },
-            ),
-          ],
+          // 添加房间/好友按钮
+          Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedLayerAdd,
+                  size: 20,
+                ),
+                onPressed: () =>
+                    RoomListDialogMenus.showTopRightDialog(context),
+              );
+            },
+          ),
         ],
       ),
       // 异步状态处理
-      body: _buildRoomList(context, ref),
+      body: _buildBody(context, ref),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, WidgetRef ref) {
+    final showSearch = DeviceUtil.isRealDesktop();
+    return Column(
+      children: [
+        if (showSearch) _buildSearchBar(context, ref),
+        Expanded(child: _buildRoomList(context, ref)),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 6,
+      ), // 缩小上下间距
+      child: SizedBox(
+        height: 32, // 固定高度，更紧凑
+        child: TextField(
+          controller: _searchController,
+          onChanged: (val) =>
+              ref.read(roomSearchQueryProvider.notifier).update(val),
+          maxLength: 20,
+          style: const TextStyle(fontSize: 13), // 字体稍小
+          decoration: InputDecoration(
+            counterText: '',
+            isDense: true, // 密集模式
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 0,
+            ), // 上下为0，垂直居中
+            prefixIcon: const Icon(Icons.search, size: 16), // 图标缩小
+            suffixIcon: ref.watch(roomSearchQueryProvider).isNotEmpty
+                ? IconButton(
+                    mouseCursor: SystemMouseCursors.click,
+                    icon: const Icon(Icons.cancel, size: 14),
+                    onPressed: () {
+                      _searchController.clear();
+                      ref.read(roomSearchQueryProvider.notifier).update('');
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 24,
+                      height: 24,
+                    ),
+                  )
+                : null,
+            hintText: 'chat_search_placeholder'.tr(),
+            hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          ),
+        ),
+      ),
     );
   }
 
   /// 构建房间列表
   Widget _buildRoomList(BuildContext context, WidgetRef ref) {
-    /// 获取过滤并排序后的异步房间列表
     final filteredRooms = ref.watch(filteredSortedRoomListAsyncProvider);
-
-    /// 搜索查询用于空状态提示文案
     final query = ref.watch(roomSearchQueryProvider);
 
     return filteredRooms.when(
@@ -150,8 +203,6 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         if (rooms.isEmpty) {
           return _buildEmptyState(context, ref, query);
         }
-
-        /// 下拉刷新，调用 RoomListService 的 refresh 方法重新加载房间列表
         return RefreshIndicator(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           color: Theme.of(context).colorScheme.primary,
@@ -163,7 +214,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
             itemBuilder: (context, index) {
               return RoomListItem(
                 key: ValueKey(rooms[index].roomId),
-                id: rooms[index].roomId ?? '');
+                id: rooms[index].roomId ?? '',
+              );
             },
             clipBehavior: Clip.hardEdge,
           ),
@@ -172,6 +224,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     );
   }
 
+
+  /// 构建空状态视图
   Widget _buildEmptyState(BuildContext context, WidgetRef ref, String query) {
     return RefreshIndicator(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -207,6 +261,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     );
   }
 
+  /// 构建错误状态视图
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
     return RefreshIndicator(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
