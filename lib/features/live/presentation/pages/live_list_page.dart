@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -26,6 +27,7 @@ class LiveListPage extends StatelessWidget {
             subtitle: 'live_start_subtitle'.tr(),
             actionLabel: 'live_start_action'.tr(),
             color: cs.primary,
+            onTap: () => _openRoomDialog(context, isHost: true),
           ),
           const SizedBox(height: 14),
           _LiveActionCard(
@@ -34,6 +36,7 @@ class LiveListPage extends StatelessWidget {
             subtitle: 'live_rooms_subtitle'.tr(),
             actionLabel: 'live_rooms_action'.tr(),
             color: cs.tertiary,
+            onTap: () => _openRoomDialog(context, isHost: false),
           ),
           const SizedBox(height: 22),
           Text(
@@ -53,6 +56,53 @@ class LiveListPage extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _openRoomDialog(
+    BuildContext context, {
+    required bool isHost,
+  }) async {
+    final controller = TextEditingController(
+      text: 'live-${DateTime.now().millisecondsSinceEpoch}',
+    );
+
+    final roomId = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(isHost ? '开始直播' : '进入直播间'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: '房间号',
+              hintText: '例如：live-001',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(controller.text.trim()),
+              child: Text(isHost ? '开始' : '进入'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!context.mounted || (roomId ?? '').trim().isEmpty) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LiveRoomPage(roomId: roomId!.trim(), isHost: isHost),
+      ),
+    );
+  }
 }
 
 class _LiveActionCard extends StatelessWidget {
@@ -61,6 +111,7 @@ class _LiveActionCard extends StatelessWidget {
   final String subtitle;
   final String actionLabel;
   final Color color;
+  final VoidCallback? onTap;
 
   const _LiveActionCard({
     required this.icon,
@@ -68,6 +119,7 @@ class _LiveActionCard extends StatelessWidget {
     required this.subtitle,
     required this.actionLabel,
     required this.color,
+    this.onTap,
   });
 
   @override
@@ -79,7 +131,7 @@ class _LiveActionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {},
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -117,7 +169,7 @@ class _LiveActionCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              FilledButton.tonal(onPressed: () {}, child: Text(actionLabel)),
+              FilledButton.tonal(onPressed: onTap, child: Text(actionLabel)),
             ],
           ),
         ),

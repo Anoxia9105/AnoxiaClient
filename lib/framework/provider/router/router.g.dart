@@ -142,8 +142,8 @@ mixin $ImageMessageDetailRoute on GoRouteData {
     queryParams: {
       'attachment': jsonEncode(_self.attachment.toJson()),
       'hero-tag': _self.heroTag,
-      if (_self.roomId != null) 'room-id': _self.roomId!,
-      if (_self.currentUrl != null) 'current-url': _self.currentUrl!,
+      if (_self.roomId != null) 'room-id': _self.roomId,
+      if (_self.currentUrl != null) 'current-url': _self.currentUrl,
     },
   );
 

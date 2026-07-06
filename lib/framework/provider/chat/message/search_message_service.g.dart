@@ -48,7 +48,7 @@ final class SearchMessageServiceProvider
 }
 
 String _$searchMessageServiceHash() =>
-    r'e8e6d6e78e2e4e28abbe65b3a0720eb72b6aa82e';
+    r'0ee596e6ef24dc4552384b42f6eb79508bcb997e';
 
 /// 搜索消息服务
 /// 功能：提供消息搜索、加载更多搜索结果等功能

@@ -53,7 +53,7 @@ final class ContactListServiceProvider
 }
 
 String _$contactListServiceHash() =>
-    r'acda1d2d0e2e11a84e05633e1bf36324c998552a';
+    r'01f9f1761af2c948f95591a3c8e67cd38cd78195';
 
 /// 联系人列表服务
 ///
@@ -143,4 +143,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'dbd8a9ed356bf96f9b79425f6d3d580754b121aa';
+    r'0ad45caf69ea74a73fa9db07b43fd962e4bc6e08';

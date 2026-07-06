@@ -50,7 +50,7 @@ final class LayoutControllerProvider
   }
 }
 
-String _$layoutControllerHash() => r'6364911d1b601e660246abea4f2eab6ae2df1c49';
+String _$layoutControllerHash() => r'dd4505376f9d4038f4af2d8ab12cd2031ca401c3';
 
 /// 布局状态管理器
 ///
