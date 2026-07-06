@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
@@ -17,6 +16,7 @@ class LiveRoomController extends _$LiveRoomController {
   EventsListener<RoomEvent>? _listener;
   bool _isTogglingCamera = false;
   bool _isTogglingMic = false;
+  bool _isTogglingScreen = false;
 
   @override
   Future<RoomState> build(String roomId, bool isHost) async {
@@ -50,6 +50,18 @@ class LiveRoomController extends _$LiveRoomController {
           state = AsyncData(_buildState(room, token));
         })
         ..on<ParticipantDisconnectedEvent>((_) {
+          state = AsyncData(_buildState(room, token));
+        })
+        ..on<TrackPublishedEvent>((_) {
+          state = AsyncData(_buildState(room, token));
+        })
+        ..on<TrackUnpublishedEvent>((_) {
+          state = AsyncData(_buildState(room, token));
+        })
+        ..on<TrackSubscribedEvent>((_) {
+          state = AsyncData(_buildState(room, token));
+        })
+        ..on<TrackUnsubscribedEvent>((_) {
           state = AsyncData(_buildState(room, token));
         });
 
@@ -98,6 +110,52 @@ class LiveRoomController extends _$LiveRoomController {
     }
   }
 
+  Future<void> toggleScreenShare(BuildContext context) async {
+    if (_isTogglingScreen) return;
+    _isTogglingScreen = true;
+    try {
+      final current = state.value;
+      if (current == null || !context.mounted) return;
+      final localParticipant = current.room.localParticipant;
+      if (localParticipant == null) return;
+
+      final next = !current.screenSharing;
+      if (next) {
+        final screenTrack = await LocalVideoTrack.createScreenShareTrack(
+          ScreenShareCaptureOptions(
+            captureScreenAudio: true,
+            maxFrameRate: 15,
+            params: VideoParametersPresets.screenShareH1080FPS30,
+          ),
+        );
+        await localParticipant.publishVideoTrack(screenTrack);
+        state = AsyncData(
+          current.copyWith(screenSharing: true, screenShareTrack: screenTrack),
+        );
+        Toast.showNotificationNow('屏幕共享已开启');
+      } else {
+        TrackPublication? screenPub;
+        for (final publication in localParticipant.videoTrackPublications) {
+          if (publication.isScreenShare) {
+            screenPub = publication;
+            break;
+          }
+        }
+        if (screenPub != null) {
+          await localParticipant.removePublishedTrack(screenPub.sid);
+        }
+        state = AsyncData(
+          current.copyWith(screenSharing: false, screenShareTrack: null),
+        );
+        Toast.showNotificationNow('屏幕共享已关闭');
+      }
+    } catch (e) {
+      Toast.showNotificationNow('切换屏幕共享失败：$e');
+    } finally {
+      _isTogglingScreen = false;
+    }
+  }
+
   Future<String> _fetchToken(String roomId) async {
     final res = await DioClient().get(
       '/live/token',
@@ -117,7 +175,11 @@ class LiveRoomController extends _$LiveRoomController {
       connectionState: room.connectionState,
       micEnabled: room.localParticipant?.isMicrophoneEnabled() ?? false,
       cameraEnabled: room.localParticipant?.isCameraEnabled() ?? false,
-      screenSharing: false,
+      screenSharing:
+          room.localParticipant?.videoTrackPublications.any(
+            (pub) => pub.isScreenShare,
+          ) ??
+          false,
       speakerOn: true,
       audioInputs: const [],
       audioOutputs: const [],

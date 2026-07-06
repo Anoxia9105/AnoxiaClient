@@ -4,8 +4,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-class LiveListPage extends StatelessWidget {
+class LiveListPage extends StatefulWidget {
   const LiveListPage({super.key});
+
+  @override
+  State<LiveListPage> createState() => _LiveListPageState();
+}
+
+class _LiveListPageState extends State<LiveListPage> {
+  final List<_RoomSummary> _rooms = [
+    const _RoomSummary(roomId: 'demo-live', role: '主播', status: '可进入'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -40,18 +49,63 @@ class LiveListPage extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           Text(
-            'live_empty_title'.tr(),
+            '直播间列表',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          Text(
-            'live_empty_description'.tr(),
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-          ),
+          if (_rooms.isEmpty)
+            Text(
+              '暂无直播间，先创建一个吧',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            )
+          else
+            ..._rooms.map(
+              (room) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Material(
+                  color: cs.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            LiveRoomPage(roomId: room.roomId, isHost: false),
+                      ),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  room.roomId,
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${room.role} · ${room.status}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -93,13 +147,26 @@ class LiveListPage extends StatelessWidget {
       },
     );
 
-    if (!context.mounted || (roomId ?? '').trim().isEmpty) {
+    final trimmed = (roomId ?? '').trim();
+    if (!context.mounted || trimmed.isEmpty) {
       return;
+    }
+
+    if (!_rooms.any((item) => item.roomId == trimmed)) {
+      setState(() {
+        _rooms.add(
+          _RoomSummary(
+            roomId: trimmed,
+            role: isHost ? '主播' : '观众',
+            status: '准备就绪',
+          ),
+        );
+      });
     }
 
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => LiveRoomPage(roomId: roomId!.trim(), isHost: isHost),
+        builder: (_) => LiveRoomPage(roomId: trimmed, isHost: isHost),
       ),
     );
   }
@@ -176,4 +243,16 @@ class _LiveActionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RoomSummary {
+  final String roomId;
+  final String role;
+  final String status;
+
+  const _RoomSummary({
+    required this.roomId,
+    required this.role,
+    required this.status,
+  });
 }
