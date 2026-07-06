@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
+import 'package:anoxia/common/widgets/SimpleListTile.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -28,9 +29,7 @@ class ReplyPreviewBar extends ConsumerWidget {
     final sender = _displaySender(ref, message);
     final time = DateUtil.formatTimestampToTime(message?.timestamp);
     final content = _displayContent(message, fallbackMessageId);
-
     final bar = Container(
-      width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 8 : 10,
         vertical: dense ? 6 : 8,
@@ -43,7 +42,7 @@ class ReplyPreviewBar extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
+          Flexible(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +108,7 @@ class ReplyPreviewBar extends ConsumerWidget {
         mouseCursor: SystemMouseCursors.click,
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
-        child: bar,
+        child: IntrinsicWidth(child: bar),
       ),
     );
   }

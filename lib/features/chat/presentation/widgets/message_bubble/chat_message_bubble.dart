@@ -44,10 +44,6 @@ class ChatMessageBubble extends ConsumerWidget {
     }
 
     // 4. 普通用户消息（含头像、昵称、气泡、状态指示器）
-    return UserMessageBubble(
-      message: message,
-      strategy: strategy,
-      view: view,
-    );
+    return UserMessageBubble(message: message, strategy: strategy, view: view);
   }
 }

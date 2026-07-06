@@ -31,71 +31,98 @@ class SettingsFeedbackSection extends StatelessWidget {
       title: 'settings_feedback_title'.tr(),
       subtitle: 'settings_feedback_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedMessage02,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Form(
-          key: formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'settings_feedback_subject'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (v) {
-                  if ((v ?? '').trim().isEmpty) {
-                    return 'settings_feedback_subject_required'.tr();
-                  }
-                  return null;
-                },
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: titleController,
+              decoration: _fieldDecoration(
+                context,
+                'settings_feedback_subject'.tr(),
               ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: contentController,
-                minLines: 4,
-                maxLines: 8,
-                decoration: InputDecoration(
-                  labelText: 'settings_feedback_content'.tr(),
-                  alignLabelWithHint: true,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (v) {
-                  if ((v ?? '').trim().isEmpty) {
-                    return 'settings_feedback_content_required'.tr();
-                  }
-                  return null;
-                },
+              validator: (v) {
+                if ((v ?? '').trim().isEmpty) {
+                  return 'settings_feedback_subject_required'.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: contentController,
+              minLines: 4,
+              maxLines: 8,
+              decoration: _fieldDecoration(
+                context,
+                'settings_feedback_content'.tr(),
+                alignLabelWithHint: true,
               ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: contactController,
-                decoration: InputDecoration(
-                  labelText: 'settings_feedback_contact'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
+              validator: (v) {
+                if ((v ?? '').trim().isEmpty) {
+                  return 'settings_feedback_content_required'.tr();
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: contactController,
+              decoration: _fieldDecoration(
+                context,
+                'settings_feedback_contact'.tr(),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                width: 140,
+                child: FilledButton(
                   onPressed: submitting ? null : onSubmit,
-                  icon: submitting
-                      ? SizedBox(
+                  child: submitting
+                      ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.bug_report_outlined, size: 18),
-                  label: Text('settings_feedback_submit'.tr()),
+                      : Text('settings_feedback_submit'.tr()),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(
+    BuildContext context,
+    String hint, {
+    bool alignLabelWithHint = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      hintText: hint,
+      alignLabelWithHint: alignLabelWithHint,
+      filled: true,
+      fillColor: colorScheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.4),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.error, width: 1.4),
       ),
     );
   }

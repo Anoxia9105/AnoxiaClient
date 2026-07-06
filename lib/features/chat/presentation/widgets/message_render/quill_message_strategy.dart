@@ -46,6 +46,8 @@ class _QuillInternalRenderer extends StatefulWidget {
 }
 
 class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
+  static final Set<_QuillInternalRendererState> _mountedRenderers = {};
+
   QuillController? _controller;
   bool _isError = false;
   late final FocusNode _focusNode;
@@ -53,18 +55,19 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   @override
   void initState() {
     super.initState();
+    _mountedRenderers.add(this);
     _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChanged);
     _initController();
   }
 
   void _onFocusChanged() {
-    if (!_focusNode.hasFocus) {
-      _controller?.updateSelection(
-        const TextSelection.collapsed(offset: 0),
-        ChangeSource.local,
-      );
+    if (_focusNode.hasFocus) {
+      _clearSiblingSelections();
+      return;
     }
+
+    _clearSelection();
   }
 
   @override
@@ -95,6 +98,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
   @override
   void dispose() {
+    _mountedRenderers.remove(this);
     _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     _controller?.dispose();
@@ -119,30 +123,35 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              QuillEditor.basic(
-                focusNode: _focusNode,
-                controller: _controller!,
-                config: QuillEditorConfig(
-                  textSelectionThemeData: TextSelectionThemeData(
-                    selectionColor: Theme.of(
+              Listener(
+                onPointerDown: (_) => _clearSiblingSelections(),
+                child: QuillEditor.basic(
+                  focusNode: _focusNode,
+                  controller: _controller!,
+                  config: QuillEditorConfig(
+                    textSelectionThemeData: TextSelectionThemeData(
+                      selectionColor: Colors.blueAccent.withValues(alpha: 0.5),
+                    ),
+                    enableSelectionToolbar: false,
+                    showCursor: false,
+                    autoFocus: false,
+                    expands: false,
+                    scrollable: false,
+                    padding: EdgeInsets.zero,
+                    customStyles: QuillStyleConfig.get(
                       context,
-                    ).colorScheme.onPrimary.withValues(alpha: 0.2),
+                      color: widget.textColor,
+                    ),
+                    onTapOutside: (_, focusNode) {
+                      focusNode.unfocus();
+                      _clearSelection();
+                    },
+                    embedBuilders: [
+                      QuillImageBuild(),
+                      QuillFileBuild(),
+                      QuillMentionBuild(),
+                    ],
                   ),
-                  enableSelectionToolbar: false,
-                  showCursor: false,
-                  autoFocus: false,
-                  expands: false,
-                  scrollable: false,
-                  padding: EdgeInsets.zero,
-                  customStyles: QuillStyleConfig.get(
-                    context,
-                    color: widget.textColor,
-                  ),
-                  embedBuilders: [
-                    QuillImageBuild(),
-                    QuillFileBuild(),
-                    QuillMentionBuild(),
-                  ],
                 ),
               ),
               MessageLinkPreview(text: previewSource),
@@ -153,6 +162,24 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     );
   }
 
+  void _clearSiblingSelections() {
+    for (final renderer in _mountedRenderers) {
+      if (identical(renderer, this)) continue;
+      renderer._clearSelection();
+    }
+  }
+
+  void _clearSelection() {
+    final controller = _controller;
+    if (controller == null || !controller.selection.isValid) return;
+
+    controller.updateSelection(
+      const TextSelection.collapsed(offset: -1),
+      ChangeSource.local,
+    );
+  }
+
+  /// 计算消息内容的目标宽度
   double _resolveTargetWidth(BuildContext context, double maxWidth) {
     if (_hasEmbed()) return maxWidth;
 
@@ -160,10 +187,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     final trimmed = plain.replaceAll(RegExp(r'\n+$'), '').trim();
     if (trimmed.isEmpty) {
       return 64;
-    }
-
-    if (MessageLinkPreview.extractFirstUrl(_linkPreviewSource()) != null) {
-      return maxWidth;
     }
 
     if (trimmed.contains('\n')) {
@@ -180,7 +203,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       maxLines: 1,
     )..layout();
 
-    final estimated = painter.width + 2;
+    final estimated = painter.width.ceilToDouble();
     return estimated.clamp(64, maxWidth).toDouble();
   }
 

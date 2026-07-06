@@ -9,6 +9,16 @@ import 'ThemeMixin.dart';
 class AppTheme with ThemeMixin {
   AppTheme._();
 
+  static const List<ThemeAccentOption> accentOptions = [
+    ThemeAccentOption('app_light_themes1', Color(0xFF5A5FD6)),
+    ThemeAccentOption('app_light_themes2', Color(0xFF0E9E72)),
+    ThemeAccentOption('app_light_themes3', Color(0xFFD45F9A)),
+    ThemeAccentOption('app_light_themes4', Color(0xFF0FA090)),
+    ThemeAccentOption('app_light_themes5', Color(0xFF5A6172)),
+    ThemeAccentOption('app_light_themes6', Color(0xFFD48A10)),
+    ThemeAccentOption('app_light_themes7', Color(0xFF7250D4)),
+  ];
+
   /// 所有可用主题选项列表
   ///
   /// 包含7个亮色主题和12个暗色主题，每个主题都有独特的配色方案
@@ -213,7 +223,9 @@ class AppTheme with ThemeMixin {
   /// [index] 主题索引，若为 null 或越界则使用默认主题
   /// [overrideFontFamily] 可选，覆盖主题默认字体
   static ThemeData getTheme({int? index, String? overrideFontFamily}) {
-    final idx = (index == null || index < 0 || index >= themes.length) ? 0 : index;
+    final idx = (index == null || index < 0 || index >= themes.length)
+        ? 0
+        : index;
     final t = themes[idx];
     return ThemeMixin.buildTheme(
       brightness: t.brightness,
@@ -222,6 +234,68 @@ class AppTheme with ThemeMixin {
       fontFamily: overrideFontFamily ?? t.fontFamily,
     );
   }
+
+  static ThemeData getThemeByModeAndAccent({
+    required Brightness brightness,
+    required int accentIndex,
+    String? overrideFontFamily,
+  }) {
+    final accent = accentOptions[_safeAccentIndex(accentIndex)];
+    return ThemeMixin.buildTheme(
+      brightness: brightness,
+      primaryColor: accent.color,
+      gradient: _gradientFor(brightness, accent.color),
+      fontFamily: overrideFontFamily,
+    );
+  }
+
+  static int compatibilityThemeIndex({
+    required Brightness brightness,
+    required int accentIndex,
+  }) {
+    final safeAccent = _safeAccentIndex(accentIndex);
+    if (brightness == Brightness.light) return safeAccent;
+
+    const darkCompatibilityIndices = [7, 9, 11, 17, 18, 10, 8];
+    return darkCompatibilityIndices[safeAccent];
+  }
+
+  static int _safeAccentIndex(int index) {
+    return index < 0 || index >= accentOptions.length ? 0 : index;
+  }
+
+  static LinearGradient _gradientFor(Brightness brightness, Color accent) {
+    if (brightness == Brightness.dark) {
+      final hsl = HSLColor.fromColor(accent);
+      return LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          hsl.withLightness(0.08).withSaturation(0.22).toColor(),
+          hsl.withLightness(0.13).withSaturation(0.28).toColor(),
+        ],
+      );
+    }
+
+    final hsl = HSLColor.fromColor(accent);
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        hsl.withLightness(0.97).withSaturation(0.18).toColor(),
+        hsl.withLightness(0.91).withSaturation(0.24).toColor(),
+      ],
+    );
+  }
+}
+
+class ThemeAccentOption {
+  final String name;
+  final Color color;
+
+  const ThemeAccentOption(this.name, this.color);
+
+  String get localizedName => name.tr();
 }
 
 /// 主题选项配置类
@@ -230,12 +304,16 @@ class AppTheme with ThemeMixin {
 class ThemeOption {
   /// 主题名称（用于国际化）
   final String name;
+
   /// 主题主色调
   final Color? color;
+
   /// 主题亮度（亮色/暗色）
   final Brightness brightness;
+
   /// 背景渐变
   final LinearGradient gradient;
+
   /// 主题字体（可选）
   final String? fontFamily;
 
@@ -246,7 +324,13 @@ class ThemeOption {
   /// [brightness] 亮度模式
   /// [gradient] 背景渐变
   /// [fontFamily] 可选字体
-  const ThemeOption(this.name, this.color, this.brightness, this.gradient, {this.fontFamily});
+  const ThemeOption(
+    this.name,
+    this.color,
+    this.brightness,
+    this.gradient, {
+    this.fontFamily,
+  });
 
   /// 获取本地化的主题名称
   String get localizedName => name.tr();

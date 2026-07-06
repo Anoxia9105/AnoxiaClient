@@ -217,6 +217,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (replyTarget != null)
           Padding(

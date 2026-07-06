@@ -10,6 +10,7 @@ import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
+import 'package:anoxia/framework/theme/AppTheme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,7 +120,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final pageState = ref.watch(settingsPageControllerProvider);
-    final themeIndex = ref.watch(themeIndexProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final themeAccentIndex = ref.watch(themeAccentProvider);
     final fontKey = ref.watch(appFontProvider);
     final callWin = ref.read(callWindowControllerProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
@@ -136,17 +138,41 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           : Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         centerTitle: DeviceUtil.isRealMobile(),
-        title: Text('settings_page_title'.tr())),
+        title: Text('settings_page_title'.tr()),
+      ),
       body: ListView(
         children: [
           SettingsThemeSection(
-            selectedThemeIndex: themeIndex,
-            onThemeChanged: (index) {
-              ref.read(themeIndexProvider.notifier).setTheme(index);
+            selectedBrightness: themeMode,
+            selectedAccentIndex: themeAccentIndex,
+            onBrightnessChanged: (brightness) {
+              ref.read(themeModeProvider.notifier).setMode(brightness);
+              final compatibilityIndex = AppTheme.compatibilityThemeIndex(
+                brightness: brightness,
+                accentIndex: themeAccentIndex,
+              );
+              ref
+                  .read(themeIndexProvider.notifier)
+                  .setTheme(compatibilityIndex);
               if (callWin != null) {
                 ref
                     .read(callWindowControllerProvider.notifier)
-                    .updateSettings(themeIndex: index);
+                    .updateSettings(themeIndex: compatibilityIndex);
+              }
+            },
+            onAccentChanged: (index) {
+              ref.read(themeAccentProvider.notifier).setAccent(index);
+              final compatibilityIndex = AppTheme.compatibilityThemeIndex(
+                brightness: themeMode,
+                accentIndex: index,
+              );
+              ref
+                  .read(themeIndexProvider.notifier)
+                  .setTheme(compatibilityIndex);
+              if (callWin != null) {
+                ref
+                    .read(callWindowControllerProvider.notifier)
+                    .updateSettings(themeIndex: compatibilityIndex);
               }
             },
           ),
@@ -169,14 +195,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ref.read(appFontProvider.notifier).setFont(selectedFont);
             },
           ),
-          SettingsAboutSupportSection(
-            appVersionText: appVersionText,
-            hasAppUpdate: hasUpdateBadge,
-            pageState: pageState,
-            onCheckUpdate: _checkUpdate,
-            onNavigateToUpdatePage: _navigateToUpdatePage,
-            onOpenOpenSourceLicenses: _navigateToOpenSourceLicenses,
-          ),
           SettingsFeedbackSection(
             formKey: _feedbackFormKey,
             titleController: _feedbackTitleController,
@@ -184,6 +202,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             contactController: _feedbackContactController,
             submitting: pageState.submittingFeedback,
             onSubmit: _submitFeedback,
+          ),
+          SettingsAboutSupportSection(
+            appVersionText: appVersionText,
+            hasAppUpdate: hasUpdateBadge,
+            pageState: pageState,
+            onCheckUpdate: _checkUpdate,
+            onNavigateToUpdatePage: _navigateToUpdatePage,
+            onOpenOpenSourceLicenses: _navigateToOpenSourceLicenses,
           ),
         ],
       ),

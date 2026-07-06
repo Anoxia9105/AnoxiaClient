@@ -25,43 +25,84 @@ class SettingsLanguageSection extends StatelessWidget {
       title: 'settings_page_language_title'.tr(),
       subtitle: 'settings_page_language_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedLanguageSquare,
-      child: Row(
+      child: Column(
         children: [
-          const Expanded(flex: 2, child: SizedBox.shrink()),
-          Expanded(
-            flex: isDesktop ? 1 : 2,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: DropdownButtonFormField<String>(
-                dropdownColor: Theme.of(context).colorScheme.surface,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-                icon: const Icon(Icons.expand_more),
-                initialValue: selectedLanguageCode,
-                items: [
-                  DropdownMenuItem(
-                    value: 'en',
-                    child: Text('settings_language_english'.tr()),
-                  ),
-                  DropdownMenuItem(
-                    value: 'zh',
-                    child: Text('settings_language_chinese'.tr()),
-                  ),
-                  DropdownMenuItem(
-                    value: 'ja',
-                    child: Text('settings_language_japanese'.tr()),
-                  ),
-                ],
-                onChanged: (locale) {
-                  if (locale != null) onLanguageChanged(locale);
-                },
-              ),
-            ),
+          _LanguageOption(
+            label: 'settings_language_chinese'.tr(),
+            value: 'zh',
+            selectedLanguageCode: selectedLanguageCode,
+            onLanguageChanged: onLanguageChanged,
+          ),
+          const SizedBox(height: 8),
+          _LanguageOption(
+            label: 'settings_language_english'.tr(),
+            value: 'en',
+            selectedLanguageCode: selectedLanguageCode,
+            onLanguageChanged: onLanguageChanged,
+          ),
+          const SizedBox(height: 8),
+          _LanguageOption(
+            label: 'settings_language_japanese'.tr(),
+            value: 'ja',
+            selectedLanguageCode: selectedLanguageCode,
+            onLanguageChanged: onLanguageChanged,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  final String label;
+  final String value;
+  final String selectedLanguageCode;
+  final ValueChanged<String> onLanguageChanged;
+
+  const _LanguageOption({
+    required this.label,
+    required this.value,
+    required this.selectedLanguageCode,
+    required this.onLanguageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selected = selectedLanguageCode == value;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => onLanguageChanged(value),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withValues(alpha: 0.08)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withValues(alpha: 0.75),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: selected ? colorScheme.primary : colorScheme.onSurface,
+                ),
+              ),
+            ),
+            if (selected)
+              Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+          ],
+        ),
       ),
     );
   }

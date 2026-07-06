@@ -1,4 +1,3 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
@@ -8,9 +7,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
-/// 关于与支持组件
-///
-/// 显示应用版本信息、检查更新、开源许可等内容
 class SettingsAboutSupportSection extends StatelessWidget {
   final String appVersionText;
   final bool hasAppUpdate;
@@ -32,154 +28,160 @@ class SettingsAboutSupportSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final updateInfo = pageState.updateInfo;
-    final mobile = DeviceUtil.isRealMobile();
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SettingItemCard(
       title: 'settings_page_about_title'.tr(),
       subtitle: 'settings_page_about_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedLink01,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: mobile ? 4 : 30),
-        child: Column(
-          children: [
-            ListTile(
-              dense: true,
-              leading: const HugeIcon(
-                icon: HugeIcons.strokeRoundedQuillWrite01,
-                size: 18,
-              ),
-              title: Text('settings_app_name'.tr()),
-              trailing: const Text('Anoxia', style: TextStyle(fontSize: 14)),
-            ),
-            ListTile(
-              dense: true,
-              leading: const HugeIcon(
-                icon: HugeIcons.strokeRoundedSortByUp01,
-                size: 18,
-              ),
-              title: Text('settings_app_version'.tr()),
-              trailing: Text(
-                appVersionText,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-            ListTile(
-              dense: true,
-              leading: const HugeIcon(
-                icon: HugeIcons.strokeRoundedLicenseDraft,
-                size: 18,
-              ),
-              title: const Text('开源许可'),
-              trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-              onTap: onOpenOpenSourceLicenses,
-            ),
-            ListTile(
-              dense: true,
-              leading: const HugeIcon(
-                icon: HugeIcons.strokeRoundedCloudSavingDone01,
-                size: 18,
-              ),
-              title: Row(
-                children: [
-                  Text('settings_update_check'.tr()),
-                  if (hasAppUpdate) ...[
-                    const SizedBox(width: 8),
-                    const VibratingBadge(isDot: true),
-                  ],
-                ],
-              ),
-              subtitle: updateInfo?.latestVersion.isNotEmpty == true
-                  ? Text(
-                      '${'settings_update_latest'.tr()}: ${updateInfo!.latestVersion}',
-                      style: const TextStyle(fontSize: 12),
-                    )
-                  : null,
-              trailing: pageState.checkingUpdate
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.chevron_right_rounded, size: 18),
-              onTap: pageState.checkingUpdate ? null : onCheckUpdate,
-            ),
-            if (pageState.updateErrorKey != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                child: Text(
-                  pageState.updateErrorKey!.tr(),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            if (updateInfo != null)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withValues(alpha: .04)
-                      : Colors.black.withValues(alpha: .03),
-                  border: Border.all(
-                    color: updateInfo.hasUpdate
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: .45)
-                        : Theme.of(context).dividerColor.withValues(alpha: .25),
-                  ),
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      updateInfo.hasUpdate
-                          ? '${'update_new_version'.tr()}: ${updateInfo.latestVersion}'
-                          : 'settings_update_no_update'.tr(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: updateInfo.hasUpdate
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurface,
+                      'Anoxia IM Client',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 3),
                     Text(
-                      updateInfo.releaseNotes.isNotEmpty
-                          ? updateInfo.releaseNotes
-                          : 'update_default_notes'.tr(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.45,
+                      '${'settings_app_version'.tr()} $appVersionText',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    if (updateInfo.hasUpdate &&
-                        updateInfo.downloadUrl.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () => onNavigateToUpdatePage(updateInfo),
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedDownload01,
-                            size: 18,
-                          ),
-                          label: Text('update_now'.tr()),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
+              TextButton(
+                onPressed: onOpenOpenSourceLicenses,
+                child: Text('settings_open_source_title'.tr()),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: pageState.checkingUpdate ? null : onCheckUpdate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Row(
+                children: [
+                  HugeIcon(
+                    icon: hasAppUpdate
+                        ? HugeIcons.strokeRoundedUpload03
+                        : HugeIcons.strokeRoundedCloudSavingDone01,
+                    size: 22,
+                    color: hasAppUpdate
+                        ? const Color(0xFFFF9800)
+                        : colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _UpdateCopy(updateInfo: updateInfo)),
+                  if (pageState.checkingUpdate)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (pageState.updateErrorKey != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              pageState.updateErrorKey!.tr(),
+              style: TextStyle(color: colorScheme.error, fontSize: 12),
+            ),
+          ],
+          if (updateInfo?.hasUpdate == true &&
+              updateInfo?.downloadUrl.isNotEmpty == true) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => onNavigateToUpdatePage(updateInfo!),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedDownload01,
+                  size: 18,
+                ),
+                label: Text('update_now'.tr()),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _UpdateCopy extends StatelessWidget {
+  final AppUpdateInfo? updateInfo;
+
+  const _UpdateCopy({required this.updateInfo});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasUpdate = updateInfo?.hasUpdate == true;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                hasUpdate
+                    ? '${'update_new_version'.tr()}: ${updateInfo!.latestVersion}'
+                    : 'settings_update_check'.tr(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: hasUpdate
+                      ? const Color(0xFFFF9800)
+                      : colorScheme.onSurface,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            if (hasUpdate) ...[
+              const SizedBox(width: 8),
+              const VibratingBadge(isDot: true),
+            ],
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          updateInfo?.releaseNotes.isNotEmpty == true
+              ? updateInfo!.releaseNotes
+              : 'update_default_notes'.tr(),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            height: 1.35,
+          ),
+        ),
+      ],
     );
   }
 }

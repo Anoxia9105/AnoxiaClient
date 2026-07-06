@@ -38,10 +38,7 @@ class AppFontOption {
 const List<AppFontOption> appFontOptions = [
   AppFontOption(key: AppFontKeys.roboto, labelKey: 'settings_font_roboto'),
   AppFontOption(key: AppFontKeys.inter, labelKey: 'settings_font_inter'),
-  AppFontOption(
-    key: AppFontKeys.openSans,
-    labelKey: 'settings_font_open_sans',
-  ),
+  AppFontOption(key: AppFontKeys.openSans, labelKey: 'settings_font_open_sans'),
   AppFontOption(key: AppFontKeys.lato, labelKey: 'settings_font_lato'),
   AppFontOption(
     key: AppFontKeys.montserrat,
@@ -100,6 +97,55 @@ final appFontProvider = StateNotifierProvider<AppFontController, String>((ref) {
   return AppFontController();
 });
 
+class ThemeModeController extends StateNotifier<Brightness> {
+  static const String _storageKey = 'theme_brightness';
+
+  ThemeModeController() : super(_load());
+
+  static Brightness _load() {
+    final saved = SPUtil.instance.get(_storageKey, defValue: 'light');
+    return saved == 'dark' ? Brightness.dark : Brightness.light;
+  }
+
+  void setMode(Brightness brightness) {
+    if (state == brightness) return;
+    state = brightness;
+    SPUtil.instance.set(
+      _storageKey,
+      brightness == Brightness.dark ? 'dark' : 'light',
+    );
+  }
+}
+
+final themeModeProvider =
+    StateNotifierProvider<ThemeModeController, Brightness>(
+      (ref) => ThemeModeController(),
+    );
+
+class ThemeAccentController extends StateNotifier<int> {
+  static const String _storageKey = 'theme_accent_index';
+
+  ThemeAccentController() : super(_load());
+
+  static int _load() {
+    final saved = SPUtil.instance.getInt(_storageKey, defValue: 0) ?? 0;
+    return saved < 0 || saved >= AppTheme.accentOptions.length ? 0 : saved;
+  }
+
+  void setAccent(int index) {
+    final safeIndex = index < 0 || index >= AppTheme.accentOptions.length
+        ? 0
+        : index;
+    if (state == safeIndex) return;
+    state = safeIndex;
+    SPUtil.instance.setInt(_storageKey, safeIndex);
+  }
+}
+
+final themeAccentProvider = StateNotifierProvider<ThemeAccentController, int>(
+  (ref) => ThemeAccentController(),
+);
+
 /// 主题索引 Provider
 ///
 /// 持久化存储用户选择的主题索引（0=浅色，1=深色等）。
@@ -125,9 +171,13 @@ class ThemeIndex extends _$ThemeIndex {
 /// 根据 [ThemeIndex] 动态生成对应的 ThemeData
 @riverpod
 ThemeData appTheme(Ref ref) {
-  final index = ref.watch(themeIndexProvider);
+  final brightness = ref.watch(themeModeProvider);
+  final accentIndex = ref.watch(themeAccentProvider);
   final fontKey = ref.watch(appFontProvider);
-  ThemeData baseTheme = AppTheme.getTheme(index: index);
+  ThemeData baseTheme = AppTheme.getThemeByModeAndAccent(
+    brightness: brightness,
+    accentIndex: accentIndex,
+  );
 
   final textTheme = _buildTextTheme(fontKey, baseTheme.textTheme);
   final primaryTextTheme = _buildTextTheme(fontKey, baseTheme.primaryTextTheme);

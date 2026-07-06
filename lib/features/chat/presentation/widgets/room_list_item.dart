@@ -1,6 +1,7 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/SimpleListTile.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
@@ -106,7 +107,7 @@ class RoomListItem extends ConsumerWidget {
           );
         }
       },
-      child: ListTile(
+      child: SimpleListTile(
         onTap: () async {
           if (room.roomId != null) {
             ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
@@ -125,6 +126,7 @@ class RoomListItem extends ConsumerWidget {
             }
           }
         },
+        borderRadius: BorderRadius.circular(8),
         selected: isSelected,
         leading: () {
           if (isSingle) {

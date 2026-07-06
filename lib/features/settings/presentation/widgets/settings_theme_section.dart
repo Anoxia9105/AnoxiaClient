@@ -5,17 +5,18 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
-/// 主题设置组件
-///
-/// 提供主题选择功能，支持多个预设主题的切换
 class SettingsThemeSection extends StatelessWidget {
-  final int selectedThemeIndex;
-  final ValueChanged<int> onThemeChanged;
+  final Brightness selectedBrightness;
+  final int selectedAccentIndex;
+  final ValueChanged<Brightness> onBrightnessChanged;
+  final ValueChanged<int> onAccentChanged;
 
   const SettingsThemeSection({
     super.key,
-    required this.selectedThemeIndex,
-    required this.onThemeChanged,
+    required this.selectedBrightness,
+    required this.selectedAccentIndex,
+    required this.onBrightnessChanged,
+    required this.onAccentChanged,
   });
 
   @override
@@ -24,79 +25,192 @@ class SettingsThemeSection extends StatelessWidget {
       title: 'settings_page_theme_title'.tr(),
       subtitle: 'settings_page_theme_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedColors,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final itemWidth = (constraints.maxWidth - 8) / 2;
-          return Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(AppTheme.themes.length, (index) {
-              final isSelected = selectedThemeIndex == index;
-              final theme = AppTheme.themes[index];
-
-              return SizedBox(
-                width: itemWidth,
-                child: InkWell(
-                  onTap: () => onThemeChanged(index),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey.shade900
-                            : Colors.grey.shade300,
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: theme.color,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            theme.localizedName,
-                            style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        if (isSelected)
-                          Icon(
-                            Icons.check_circle,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 18,
-                          ),
-                      ],
-                    ),
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(text: 'settings_theme_mode'.tr()),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _BrightnessTile(
+                  label: 'settings_theme_light'.tr(),
+                  icon: HugeIcons.strokeRoundedSun03,
+                  brightness: Brightness.light,
+                  selectedBrightness: selectedBrightness,
+                  onChanged: onBrightnessChanged,
                 ),
-              );
-            }),
-          );
-        },
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _BrightnessTile(
+                  label: 'settings_theme_dark'.tr(),
+                  icon: HugeIcons.strokeRoundedMoon02,
+                  brightness: Brightness.dark,
+                  selectedBrightness: selectedBrightness,
+                  onChanged: onBrightnessChanged,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _SectionLabel(text: 'settings_theme_accent_color'.tr()),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (
+                  var index = 0;
+                  index < AppTheme.accentOptions.length;
+                  index++
+                ) ...[
+                  _AccentSwatch(
+                    color: AppTheme.accentOptions[index].color,
+                    label: AppTheme.accentOptions[index].localizedName,
+                    selected: selectedAccentIndex == index,
+                    onTap: () => onAccentChanged(index),
+                  ),
+                  if (index != AppTheme.accentOptions.length - 1)
+                    const SizedBox(width: 12),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _BrightnessTile extends StatelessWidget {
+  final String label;
+  final List<List<dynamic>> icon;
+  final Brightness brightness;
+  final Brightness selectedBrightness;
+  final ValueChanged<Brightness> onChanged;
+
+  const _BrightnessTile({
+    required this.label,
+    required this.icon,
+    required this.brightness,
+    required this.selectedBrightness,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selected = brightness == selectedBrightness;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => onChanged(brightness),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withValues(alpha: 0.08)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: selected ? 1.6 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            HugeIcon(
+              icon: icon,
+              size: 20,
+              color: selected ? colorScheme.primary : colorScheme.onSurface,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: selected ? colorScheme.primary : colorScheme.onSurface,
+                ),
+              ),
+            ),
+            if (selected)
+              Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccentSwatch extends StatelessWidget {
+  final Color color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AccentSwatch({
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 34,
+          height: 34,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected ? colorScheme.primary : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: selected
+                ? Icon(
+                    Icons.check_rounded,
+                    color: colorScheme.onPrimary,
+                    size: 18,
+                  )
+                : null,
+          ),
+        ),
       ),
     );
   }

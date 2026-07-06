@@ -204,40 +204,44 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (currentRoom.roomStatus == 2) return const BannedContentPage();
     if (flatItems.isEmpty) return const EmptyMessagesPage();
 
-    return FlutterListView(
-      controller: _listViewController,
-      reverse: true, // 保持反转状态
-      delegate: FlutterListViewDelegate(
-        (context, index) {
-          // 由于列表反转，加载更多（旧消息）的 Loading 骨架屏出现在列表的最后一项
-          if (hasMore && index == flatItems.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Center(
-                child: SkeletonBox(width: 120, height: 12, radius: 10),
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      child: FlutterListView(
+        controller: _listViewController,
+        reverse: true, // 保持反转状态
+        delegate: FlutterListViewDelegate(
+          (context, index) {
+            // 由于列表反转，加载更多（旧消息）的 Loading 骨架屏出现在列表的最后一项
+            if (hasMore && index == flatItems.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Center(
+                  child: SkeletonBox(width: 120, height: 12, radius: 10),
+                ),
+              );
+            }
+
+            // 关键变动：无需再用 flatItems.length - 1 - index 倒序计算
+            // 因为 flatItems 在 Provider 里已经被反转过了，此处直接一一映射即可！
+            final item = flatItems[index];
+
+            return switch (item) {
+              TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
+                timestamp,
+                context,
               ),
-            );
-          }
-
-          // 关键变动：无需再用 flatItems.length - 1 - index 倒序计算
-          // 因为 flatItems 在 Provider 里已经被反转过了，此处直接一一映射即可！
-          final item = flatItems[index];
-
-          return switch (item) {
-            TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
-              timestamp,
-              context,
-            ),
-            MessageItem(:final message) => ChatMessageBubble(
-              key: ValueKey(message.messageId ?? message.clientMsgId),
-              message: message,
-            ),
-            // ignore: unreachable_switch_case
-            _ => const SizedBox.shrink(),
-          };
-        },
-        childCount: flatItems.length + (hasMore ? 1 : 0),
-        keepPosition: true,
+              MessageItem(:final message) => ChatMessageBubble(
+                key: ValueKey(message.messageId ?? message.clientMsgId),
+                message: message,
+              ),
+              // ignore: unreachable_switch_case
+              _ => const SizedBox.shrink(),
+            };
+          },
+          childCount: flatItems.length + (hasMore ? 1 : 0),
+          keepPosition: true,
+        ),
       ),
     );
   }

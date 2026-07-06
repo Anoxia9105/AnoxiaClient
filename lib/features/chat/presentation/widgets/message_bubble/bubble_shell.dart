@@ -28,11 +28,11 @@ class BubbleShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return BubbleWidget(
       arrowDirection: isCurrentUser ? AxisDirection.right : AxisDirection.left,
-      arrowOffset: 22,
+      arrowOffset: 18,
       arrowLength: 8,
       arrowRadius: 4,
-      arrowWidth: 14,
-      padding: const EdgeInsets.all(12),
+      arrowWidth: 15,
+      padding: const EdgeInsets.all(10),
       borderRadius: BorderRadius.circular(8),
       backgroundColor: backgroundColor,
       contentBuilder: (_) => child,

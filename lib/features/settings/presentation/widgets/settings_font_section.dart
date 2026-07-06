@@ -26,37 +26,73 @@ class SettingsFontSection extends StatelessWidget {
       title: 'settings_page_fonts_title'.tr(),
       subtitle: 'settings_page_fonts_subtitle'.tr(),
       icon: HugeIcons.strokeRoundedText,
-      child: Row(
+      child: Column(
         children: [
-          const Expanded(flex: 1, child: SizedBox.shrink()),
-          Expanded(
-            flex: isDesktop ? 1 : 2,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: DropdownButtonFormField<String>(
-                dropdownColor: Theme.of(context).colorScheme.surface,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+          for (var index = 0; index < appFontOptions.length; index++) ...[
+            _FontOptionTile(
+              label: appFontOptions[index].labelKey.tr(),
+              fontKey: appFontOptions[index].key,
+              selectedFontKey: selectedFontKey,
+              onFontChanged: onFontChanged,
+            ),
+            if (index != appFontOptions.length - 1) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FontOptionTile extends StatelessWidget {
+  final String label;
+  final String fontKey;
+  final String selectedFontKey;
+  final ValueChanged<String> onFontChanged;
+
+  const _FontOptionTile({
+    required this.label,
+    required this.fontKey,
+    required this.selectedFontKey,
+    required this.onFontChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selected = selectedFontKey == fontKey;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => onFontChanged(fontKey),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withValues(alpha: 0.08)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withValues(alpha: 0.75),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: selected ? colorScheme.primary : colorScheme.onSurface,
                 ),
-                icon: const Icon(Icons.expand_more),
-                initialValue: selectedFontKey,
-                items: appFontOptions
-                    .map(
-                      (option) => DropdownMenuItem(
-                        value: option.key,
-                        child: Text(option.labelKey.tr()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (fontKey) {
-                  if (fontKey != null) onFontChanged(fontKey);
-                },
               ),
             ),
-          ),
-        ],
+            if (selected)
+              Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+          ],
+        ),
       ),
     );
   }
