@@ -1,57 +1,83 @@
+import 'dart:async';
+
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'dart:async';
-import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
-import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
-import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
-import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
-import 'package:anoxia/framework/provider/ws/ws_controller.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
-import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
-import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';
-import 'package:flutter/material.dart';
+import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
+import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/framework/logs/talker.dart';
-
-/// 聊天消息气泡组件
+/// Single chat message entry.
 ///
-/// 负责渲染单条聊天消息，包括：
-/// - 消息发送者头像和名称
-/// - 消息内容气泡（支持文本、图片、文件、富文本等多种类型）
-/// - 消息发送状态指示器（发送中、失败、已发送）
-/// - @提及提醒
-/// - 右键菜单/长按菜单
+/// This widget keeps orchestration thin and delegates layout, content, status,
+/// and resend behavior to smaller private components below.
 class ChatMessageBubble extends ConsumerWidget {
-  /// 要显示的消息数据
   final ChatMessage message;
 
   const ChatMessageBubble({super.key, required this.message});
 
-  int _resolveResendTimeoutSeconds(ChatMessage message) {
-    final attachmentCount = message.payload?.mediaAttachments.length ?? 0;
-    var timeout = 10 + (attachmentCount * 2);
-
-    if (message.messageType == MessageType.audio ||
-        message.messageType == MessageType.file ||
-        message.messageType == MessageType.video) {
-      timeout += 5;
-    }
-
-    return timeout.clamp(10, 30);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider.select((v) => v.value));
+    final strategy = MessageRenderFactory.getStrategy(message.messageType);
+    final view = _MessageBubbleViewData.resolve(context, ref, message);
+
+    if (message.messageType == MessageType.system) {
+      return _SystemMessageBubble(
+        message: message,
+        strategy: strategy,
+        textColor: view.textColor,
+        horizontalPadding: view.horizontalPadding,
+      );
+    }
+
+    return _UserMessageBubble(message: message, strategy: strategy, view: view);
+  }
+}
+
+class _MessageBubbleViewData {
+  final bool isCurrentUser;
+  final bool isMentionedMe;
+  final bool needsBubble;
+  final String? senderName;
+  final String? senderAvatar;
+  final Color bubbleColor;
+  final Color textColor;
+  final double horizontalPadding;
+
+  const _MessageBubbleViewData({
+    required this.isCurrentUser,
+    required this.isMentionedMe,
+    required this.needsBubble,
+    required this.senderName,
+    required this.senderAvatar,
+    required this.bubbleColor,
+    required this.textColor,
+    required this.horizontalPadding,
+  });
+
+  static _MessageBubbleViewData resolve(
+    BuildContext context,
+    WidgetRef ref,
+    ChatMessage message,
+  ) {
+    final user = ref.watch(
+      authControllerProvider.select((value) => value.value),
+    );
     final currentUserId = user?.userId;
     final isCurrentUser = message.senderId == currentUserId;
     final roomMembers = message.roomId?.isNotEmpty == true
@@ -60,263 +86,48 @@ class ChatMessageBubble extends ConsumerWidget {
     final senderMember = roomMembers
         .where((member) => member.userId == message.senderId)
         .firstOrNull;
-    final senderName = isCurrentUser
-        ? user?.nickName
-        : _displaySenderName(message.senderId, senderMember?.nickName);
-    final senderAvatar = isCurrentUser ? user?.avatar : senderMember?.avatar;
 
     final colorScheme = Theme.of(context).colorScheme;
-
-    final bubbleBgColor = isCurrentUser
+    final bubbleColor = isCurrentUser
         ? colorScheme.primary
         : colorScheme.surfaceContainerHigh;
-
     final textColor = isCurrentUser
         ? colorScheme.onPrimary
         : colorScheme.onSurfaceVariant;
 
-    final bodyPadding = DeviceUtil.isRealMobile() ? 8.00 : 50.00;
+    return _MessageBubbleViewData(
+      isCurrentUser: isCurrentUser,
+      isMentionedMe: _isMentionedMe(message, currentUserId, isCurrentUser),
+      needsBubble: _needsBubble(message),
+      senderName: isCurrentUser
+          ? user?.nickName
+          : _displaySenderName(message.senderId, senderMember?.nickName),
+      senderAvatar: isCurrentUser ? user?.avatar : senderMember?.avatar,
+      bubbleColor: bubbleColor,
+      textColor: textColor,
+      horizontalPadding: DeviceUtil.isRealMobile() ? 8 : 50,
+    );
+  }
 
-    final mentionList = message.payload?.mentions;
-    bool isMentionedMe = false;
-
-    if (mentionList != null &&
+  static bool _isMentionedMe(
+    ChatMessage message,
+    int? currentUserId,
+    bool isCurrentUser,
+  ) {
+    final mentions = message.payload?.mentions;
+    return mentions != null &&
         !isCurrentUser &&
         currentUserId != null &&
-        mentionList.contains(currentUserId)) {
-      isMentionedMe = true;
-    }
+        mentions.contains(currentUserId);
+  }
 
-    /// 某些消息类型需要气泡背景（如文本、富文本），而图片、文件等类型则直接渲染内容，无需气泡
-    final bool isSingleEmoji = _isSingleEmojiMessage(message);
-    final bool needsBubble =
-        message.messageType == MessageType.richText ||
+  static bool _needsBubble(ChatMessage message) {
+    return message.messageType == MessageType.richText ||
         message.messageType == MessageType.audio ||
-        (message.messageType == MessageType.text && !isSingleEmoji);
-
-    final strategy = MessageRenderFactory.getStrategy(message.messageType);
-    final content = _buildContentWithReply(context, ref, strategy, textColor);
-
-    //系统消息 直接渲染
-    if (message.messageType == MessageType.system) {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: 4, horizontal: bodyPadding),
-        child: strategy.buildContent(context, message, textColor),
-      );
-    }
-
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 6, horizontal: bodyPadding),
-      child: Column(
-        crossAxisAlignment: isCurrentUser
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, isCurrentUser, senderName),
-          const SizedBox(height: 2),
-
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            textDirection: isCurrentUser
-                ? TextDirection.rtl
-                : TextDirection.ltr,
-            children: [
-              /// Avatar
-              AvatarWidget(url: senderAvatar, name: senderName, size: 32),
-
-              const SizedBox(width: 6),
-
-              /// Message
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  textDirection: isCurrentUser
-                      ? TextDirection.rtl
-                      : TextDirection.ltr,
-                  children: [
-                    /// Bubble
-                    Flexible(
-                      child: ChatMessageContextMenu(
-                        message: message,
-                        ref: ref,
-                        child: needsBubble
-                            ? BubbleWidget(
-                                arrowDirection: isCurrentUser
-                                    ? AxisDirection.right
-                                    : AxisDirection.left,
-                                arrowOffset: 15,
-                                arrowLength: 6,
-                                arrowRadius: 4,
-                                arrowWidth: 15,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                  horizontal: 8,
-                                ),
-                                border: BorderSide(
-                                  width: 1,
-                                  color: colorScheme.surface.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                                backgroundColor: bubbleBgColor,
-                                contentBuilder: (context) => content,
-                              )
-                            : content,
-                      ),
-                    ),
-
-                    /// status
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          //太丑了先去掉，后续再优化
-                          // Text(
-                          //   DateUtil.formatTimestampToTime(message.timestamp),
-                          //   style: TextStyle(
-                          //     fontSize: 10,
-                          //     color: Theme.of(context).colorScheme.outline,
-                          //   ),
-                          // ),
-                          if (isMentionedMe)
-                            const Text(
-                              '@',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          if (isCurrentUser)
-                            _buildStatusIndicator(context, ref, message),
-                        ],
-                      ),
-                    ),
-                    // 右侧留空
-                    SizedBox(width: 20.w),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+        (message.messageType == MessageType.text && !_isSingleEmoji(message));
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    bool isCurrentUser,
-    String? sendName,
-  ) {
-    final style = TextStyle(
-      fontSize: 11,
-      color: Theme.of(context).colorScheme.outline,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 45),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!isCurrentUser)
-            Text(
-              sendName ?? 'chat_unknown_user'.tr(),
-              style: style.copyWith(fontWeight: FontWeight.bold),
-            ),
-          if (isCurrentUser)
-            Text(
-              'chat_me'.tr(),
-              style: style.copyWith(fontWeight: FontWeight.bold),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _displaySenderName(int? senderId, String? nickName) {
-    final name = nickName?.trim();
-    if (name != null && name.isNotEmpty) return name;
-    if (senderId != null) return '用户$senderId';
-    return '';
-  }
-
-  Widget _buildContentWithReply(
-    BuildContext context,
-    WidgetRef ref,
-    MessageRenderStrategy strategy,
-    Color textColor,
-  ) {
-    final body = strategy.buildContent(context, message, textColor);
-    final replyTo = message.payload?.replyTo;
-    if (replyTo == null || replyTo.isEmpty) return body;
-
-    final quoted = _findQuotedMessage(ref, replyTo);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ReplyPreviewBar(
-          message: quoted,
-          fallbackMessageId: replyTo,
-          dense: true,
-          onTap: () {
-            final roomId = message.roomId;
-            if (roomId == null || roomId.isEmpty) return;
-            ref
-                .read(replyJumpControllerProvider.notifier)
-                .jumpTo(roomId: roomId, messageId: replyTo);
-          },
-        ),
-        const SizedBox(height: 6),
-        body,
-      ],
-    );
-  }
-
-  ChatMessage? _findQuotedMessage(WidgetRef ref, String messageId) {
-    final roomId = message.roomId;
-    if (roomId == null || roomId.isEmpty) return null;
-
-    final messages = ref.watch(
-      chatMessagesProvider.select((state) => state[roomId] ?? const []),
-    );
-    for (final item in messages) {
-      if (item.messageId == messageId || item.clientMsgId == messageId) {
-        return item;
-      }
-    }
-    return null;
-  }
-
-  Widget _buildStatusIndicator(
-    BuildContext context,
-    WidgetRef ref,
-    ChatMessage message,
-  ) {
-    switch (message.deliveryStatus) {
-      case DeliveryStatus.sending:
-        return const SizedBox(
-          width: 10,
-          height: 10,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        );
-
-      case DeliveryStatus.failed:
-        return GestureDetector(
-          onTap: () => _resendMessage(context, ref, message),
-          child: const Icon(Icons.error, size: 16, color: Colors.red),
-        );
-
-      case DeliveryStatus.sent:
-        return const SizedBox.shrink();
-    }
-  }
-
-  bool _isSingleEmojiMessage(ChatMessage message) {
+  static bool _isSingleEmoji(ChatMessage message) {
     if (message.messageType == MessageType.emoji) return true;
     if (message.payload?.emojiCode != null) return true;
     if (message.messageType != MessageType.text) return false;
@@ -334,19 +145,353 @@ class ChatMessageBubble extends ConsumerWidget {
         (rune >= 0x2300 && rune <= 0x23FF);
   }
 
-  void _resendMessage(
-    BuildContext context,
+  static String _displaySenderName(int? senderId, String? nickName) {
+    final name = nickName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    if (senderId != null) return '用户$senderId';
+    return '';
+  }
+}
+
+class _SystemMessageBubble extends StatelessWidget {
+  final ChatMessage message;
+  final MessageRenderStrategy strategy;
+  final Color textColor;
+  final double horizontalPadding;
+
+  const _SystemMessageBubble({
+    required this.message,
+    required this.strategy,
+    required this.textColor,
+    required this.horizontalPadding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4, horizontal: horizontalPadding),
+      child: strategy.buildContent(context, message, textColor),
+    );
+  }
+}
+
+class _UserMessageBubble extends StatelessWidget {
+  final ChatMessage message;
+  final MessageRenderStrategy strategy;
+  final _MessageBubbleViewData view;
+
+  const _UserMessageBubble({
+    required this.message,
+    required this.strategy,
+    required this.view,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final direction = view.isCurrentUser
+        ? TextDirection.rtl
+        : TextDirection.ltr;
+
+    return Container(
+      margin: EdgeInsets.symmetric(
+        vertical: 6,
+        horizontal: view.horizontalPadding,
+      ),
+      child: Column(
+        crossAxisAlignment: view.isCurrentUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          _MessageHeader(
+            isCurrentUser: view.isCurrentUser,
+            senderName: view.senderName,
+          ),
+          const SizedBox(height: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            textDirection: direction,
+            children: [
+              AvatarWidget(
+                url: view.senderAvatar,
+                name: view.senderName,
+                size: 32,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: _MessageBubbleRow(
+                  message: message,
+                  strategy: strategy,
+                  view: view,
+                  direction: direction,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MessageHeader extends StatelessWidget {
+  final bool isCurrentUser;
+  final String? senderName;
+
+  const _MessageHeader({required this.isCurrentUser, required this.senderName});
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontSize: 11,
+      color: Theme.of(context).colorScheme.outline,
+      fontWeight: FontWeight.bold,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 45),
+      child: Text(
+        isCurrentUser ? 'chat_me'.tr() : senderName ?? 'chat_unknown_user'.tr(),
+        style: style,
+      ),
+    );
+  }
+}
+
+class _MessageBubbleRow extends ConsumerWidget {
+  final ChatMessage message;
+  final MessageRenderStrategy strategy;
+  final _MessageBubbleViewData view;
+  final TextDirection direction;
+
+  const _MessageBubbleRow({
+    required this.message,
+    required this.strategy,
+    required this.view,
+    required this.direction,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      textDirection: direction,
+      children: [
+        Flexible(
+          child: _MessageContentFrame(
+            message: message,
+            strategy: strategy,
+            view: view,
+          ),
+        ),
+        _MessageSideStatus(message: message, view: view),
+        SizedBox(width: 20.w),
+      ],
+    );
+  }
+}
+
+class _MessageContentFrame extends ConsumerWidget {
+  final ChatMessage message;
+  final MessageRenderStrategy strategy;
+  final _MessageBubbleViewData view;
+
+  const _MessageContentFrame({
+    required this.message,
+    required this.strategy,
+    required this.view,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = _MessageContent(
+      message: message,
+      strategy: strategy,
+      textColor: view.textColor,
+    );
+
+    return ChatMessageContextMenu(
+      message: message,
+      ref: ref,
+      child: view.needsBubble
+          ? _BubbleShell(
+              isCurrentUser: view.isCurrentUser,
+              backgroundColor: view.bubbleColor,
+              child: content,
+            )
+          : content,
+    );
+  }
+}
+
+class _BubbleShell extends StatelessWidget {
+  final bool isCurrentUser;
+  final Color backgroundColor;
+  final Widget child;
+
+  const _BubbleShell({
+    required this.isCurrentUser,
+    required this.backgroundColor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return BubbleWidget(
+      arrowDirection: isCurrentUser ? AxisDirection.right : AxisDirection.left,
+      arrowOffset: 15,
+      arrowLength: 6,
+      arrowRadius: 4,
+      arrowWidth: 15,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      border: BorderSide(
+        width: 1,
+        color: colorScheme.surface.withValues(alpha: 0.5),
+      ),
+      borderRadius: BorderRadius.circular(4),
+      backgroundColor: backgroundColor,
+      contentBuilder: (_) => child,
+    );
+  }
+}
+
+class _MessageContent extends ConsumerWidget {
+  final ChatMessage message;
+  final MessageRenderStrategy strategy;
+  final Color textColor;
+
+  const _MessageContent({
+    required this.message,
+    required this.strategy,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final body = strategy.buildContent(context, message, textColor);
+    final replyTo = message.payload?.replyTo;
+    if (replyTo == null || replyTo.isEmpty) return body;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ReplyPreviewBar(
+          message: _findQuotedMessage(ref, message, replyTo),
+          fallbackMessageId: replyTo,
+          dense: true,
+          onTap: () => _jumpToReply(ref, message, replyTo),
+        ),
+        const SizedBox(height: 6),
+        body,
+      ],
+    );
+  }
+
+  ChatMessage? _findQuotedMessage(
     WidgetRef ref,
     ChatMessage message,
+    String messageId,
   ) {
-    final messageNotifier = ref.read(chatMessagesProvider.notifier);
-    final wsNotifier = ref.read(wsControllerProvider.notifier);
+    final roomId = message.roomId;
+    if (roomId == null || roomId.isEmpty) return null;
 
-    if (message.roomId == null) {
-      log.warning('重发失败：消息缺�?roomId');
+    final messages = ref.watch(
+      chatMessagesProvider.select((state) => state[roomId] ?? const []),
+    );
+    for (final item in messages) {
+      if (item.messageId == messageId || item.clientMsgId == messageId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  void _jumpToReply(WidgetRef ref, ChatMessage message, String messageId) {
+    final roomId = message.roomId;
+    if (roomId == null || roomId.isEmpty) return;
+    ref
+        .read(replyJumpControllerProvider.notifier)
+        .jumpTo(roomId: roomId, messageId: messageId);
+  }
+}
+
+class _MessageSideStatus extends ConsumerWidget {
+  final ChatMessage message;
+  final _MessageBubbleViewData view;
+
+  const _MessageSideStatus({required this.message, required this.view});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (view.isMentionedMe) const _MentionIndicator(),
+          if (view.isCurrentUser) _DeliveryStatusIndicator(message: message),
+        ],
+      ),
+    );
+  }
+}
+
+class _MentionIndicator extends StatelessWidget {
+  const _MentionIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      '@',
+      style: TextStyle(
+        fontSize: 16,
+        color: Colors.red,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+class _DeliveryStatusIndicator extends ConsumerWidget {
+  final ChatMessage message;
+
+  const _DeliveryStatusIndicator({required this.message});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    switch (message.deliveryStatus) {
+      case DeliveryStatus.sending:
+        return const SizedBox(
+          width: 10,
+          height: 10,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        );
+      case DeliveryStatus.failed:
+        return GestureDetector(
+          onTap: () => _MessageResender.resend(ref, message),
+          child: const Icon(Icons.error, size: 16, color: Colors.red),
+        );
+      case DeliveryStatus.sent:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+class _MessageResender {
+  const _MessageResender._();
+
+  static void resend(WidgetRef ref, ChatMessage message) {
+    final roomId = message.roomId;
+    if (roomId == null || roomId.isEmpty) {
+      log.warning('重发失败：消息缺少 roomId');
       return;
     }
 
+    final messageNotifier = ref.read(chatMessagesProvider.notifier);
+    final wsNotifier = ref.read(wsControllerProvider.notifier);
     final clientMsgId = message.clientMsgId ?? message.messageId ?? '';
 
     messageNotifier.upsertMessage(
@@ -356,19 +501,31 @@ class ChatMessageBubble extends ConsumerWidget {
     final protoMsg = RoomMessage(
       messageId: '',
       clientMsgId: clientMsgId,
-      roomId: message.roomId!,
+      roomId: roomId,
       senderId: message.senderId ?? 0,
       messageType: message.messageType ?? MessageType.text,
       payload: message.payload,
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('🔁 重发消息: $clientMsgId');
+    log.info('重发消息: $clientMsgId');
     wsNotifier.sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
 
-    final timeoutSeconds = _resolveResendTimeoutSeconds(message);
-    Timer(Duration(seconds: timeoutSeconds), () {
-      messageNotifier.handleTimeout(message.roomId!, clientMsgId);
+    Timer(Duration(seconds: _resendTimeoutSeconds(message)), () {
+      messageNotifier.handleTimeout(roomId, clientMsgId);
     });
+  }
+
+  static int _resendTimeoutSeconds(ChatMessage message) {
+    final attachmentCount = message.payload?.mediaAttachments.length ?? 0;
+    var timeout = 10 + (attachmentCount * 2);
+
+    if (message.messageType == MessageType.audio ||
+        message.messageType == MessageType.file ||
+        message.messageType == MessageType.video) {
+      timeout += 5;
+    }
+
+    return timeout.clamp(10, 30);
   }
 }

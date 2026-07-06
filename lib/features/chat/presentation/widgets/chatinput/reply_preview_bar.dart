@@ -106,6 +106,7 @@ class ReplyPreviewBar extends ConsumerWidget {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
         child: bar,

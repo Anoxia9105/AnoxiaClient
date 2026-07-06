@@ -49,7 +49,7 @@ class ContactPage extends ConsumerWidget {
       case ContactViewType.groups:
         return const GroupRoomListPage();
       case ContactViewType.none:
-        return const Welcome();
+        return const Welcome.contacts();
     }
   }
 }

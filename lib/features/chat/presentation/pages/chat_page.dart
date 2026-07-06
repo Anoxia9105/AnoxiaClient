@@ -55,17 +55,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final splitWeights = ref.watch(chatSplitViewWeightsProvider);
     _syncSplitWeights(splitWeights);
 
-
-    final room = activeRoomId != null ? ref.watch(currentRoomProvider(activeRoomId)) : null;
+    final room = activeRoomId != null
+        ? ref.watch(currentRoomProvider(activeRoomId))
+        : null;
 
     // 1. 判断是否显示欢迎页
     final showWelcome = room == null;
 
     return SplitView(
       gripSize: 2,
-      gripColor: Theme.of(
-        context,
-      ).colorScheme.onSurface.withValues(alpha: 0.1),
+      gripColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
       gripColorActive: Theme.of(context).primaryColor,
       viewMode: SplitViewMode.Horizontal,
       controller: _splitViewController,
@@ -77,7 +76,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       children: [
         const ChatRoomList(),
         if (showWelcome)
-          const Center(child: Welcome())
+          const Welcome.chat()
         else
           ChatRoomDetail(roomId: activeRoomId!),
       ],

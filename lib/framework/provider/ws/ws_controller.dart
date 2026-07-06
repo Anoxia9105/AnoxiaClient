@@ -379,7 +379,7 @@ class WsController extends _$WsController {
       if (decoded.isAck) {
         final ack = ImPacketV5.decodeAck(payload);
         if (ack != null) {
-          // 💡 新增：打印 ACK 详情
+          // 打印 ACK 详情
           log.info('[SERVER ACK] 收到确认帧 -> Topic: $topic, ACK内容: $ack');
           _handleAckV5(ack);
         }
@@ -388,7 +388,7 @@ class WsController extends _$WsController {
 
       final packetData = PacketRegistry.parse(topic, payload, decoded.codecId);
       if (packetData != null) {
-        // 💡 新增：打印解析后的具体业务数据内容
+        // 打印解析后的具体业务数据内容
         log.info('[SERVER DATA] 解析成功 -> Topic: $topic, Content: $packetData');
 
         final frame = PacketFrame(topic: topic, data: packetData);
@@ -410,13 +410,15 @@ class WsController extends _$WsController {
     if (ack.isSuccess) {
       if (seq != null && seq.isNotEmpty) {
         _pendingOutbounds.remove(seq);
-        ref.read(chatMessagesProvider.notifier).markAcked(
-          clientMsgId: seq,
-          roomId: ack.meta?.roomId,
-          messageId: ack.meta?.messageId,
-          seq: ack.meta?.seq,
-          timestamp: ack.meta?.timestamp,
-        );
+        ref
+            .read(chatMessagesProvider.notifier)
+            .markAcked(
+              clientMsgId: seq,
+              roomId: ack.meta?.roomId,
+              messageId: ack.meta?.messageId,
+              seq: ack.meta?.seq,
+              timestamp: ack.meta?.timestamp,
+            );
       }
       return;
     }
@@ -427,9 +429,7 @@ class WsController extends _$WsController {
         _retryPendingOutbound(seq);
       } else {
         _pendingOutbounds.remove(seq);
-        ref
-            .read(chatMessagesProvider.notifier)
-            .markFailedByClientMsgId(seq);
+        ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq);
       }
     }
 
