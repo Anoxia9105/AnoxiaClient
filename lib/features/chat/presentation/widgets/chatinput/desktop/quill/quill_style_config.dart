@@ -36,7 +36,7 @@ class QuillStyleConfig {
         null,
       ),
       link: baseTextStyle.copyWith(
-        color: Colors.blue,
+        color: Colors.blueAccent,
         decoration: TextDecoration.underline,
       ),
       code: DefaultListBlockStyle(

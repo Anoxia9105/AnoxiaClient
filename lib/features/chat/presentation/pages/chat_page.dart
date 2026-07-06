@@ -60,9 +60,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         : null;
 
     return SplitView(
-      gripSize: 2,
-      gripColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-      gripColorActive: Theme.of(context).primaryColor,
+      gripSize: 6,
+      gripColor: Colors.transparent,
+      gripColorActive: Colors.transparent,
       viewMode: SplitViewMode.Horizontal,
       controller: _splitViewController,
       onWeightChanged: (weights) {
@@ -76,7 +76,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         if (room == null)
           const Welcome.chat()
         else
-          ChatRoomDetail(roomId: activeRoomId!),
+          _DetailPanel(child: ChatRoomDetail(roomId: activeRoomId!)),
       ],
     );
   }
@@ -94,5 +94,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         return;
       }
     }
+  }
+}
+
+class _DetailPanel extends StatelessWidget {
+  final Widget child;
+
+  const _DetailPanel({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.18)),
+        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(14), child: child),
+      ),
+    );
   }
 }

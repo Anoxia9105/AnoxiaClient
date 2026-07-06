@@ -47,16 +47,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     return AppBar(
+
       centerTitle: DeviceUtil.isRealMobile(),
       actionsPadding: const EdgeInsets.all(4),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1.0),
-        child: Container(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-          height: 1.0,
-        ),
-      ),
-      // 3. 将异步状态和实体解包结合处理
       title: roomListAsync.when(
         data: (_) {
           if (room == null) return const SizedBox.shrink();
@@ -64,32 +57,35 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           final displayTitle = room.roomType == 1
               ? '${room.roomName} (${members.length})'
               : (room.roomName ?? 'appbar_conversation_detail'.tr());
-          return Row(
-            children: [
-              // 房间头像
-              AvatarWidget(url: room.roomAvatar, name: displayTitle, size: 40),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 显示房间名称或群组名称
-                    Text(
-                      displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+          return Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Row(
+              children: [
+                // 房间头像
+                AvatarWidget(url: room.roomAvatar, name: displayTitle, size: 40),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 显示房间名称或群组名称
+                      Text(
+                        displayTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    // 显示在线人数或输入状态
-                    _buildTitleOrTypingStatus(context, room, members, isTyping),
-                  ],
+                      // 显示在线人数或输入状态
+                      _buildTitleOrTypingStatus(context, room, members, isTyping),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
         loading: () => Text('appbar_connecting'.tr()),

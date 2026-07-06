@@ -28,17 +28,7 @@ class DesktopSidebar extends ConsumerWidget {
     final layout = ref.watch(layoutControllerProvider);
     final user = ref.watch(authControllerProvider);
     final status = ref.watch(wsControllerProvider.select((s) => s.status));
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-      ),
+    return SizedBox(
       width: 70,
       child: Column(
         children: [

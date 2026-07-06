@@ -156,19 +156,20 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: DeviceUtil.isRealDesktop()
-          ? Colors.transparent
-          : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: showInitialSkeleton
           ? AppBar()
           : ChatAppBar(roomId: widget.roomId),
       drawerScrimColor: Colors.transparent,
-      body: _buildChatBody(
-        showInitialSkeleton: showInitialSkeleton,
-        entryTask: entryTask,
-        flatItems: flatItems,
-        hasMore: hasMore,
-        currentRoom: currentRoom,
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: _buildChatBody(
+          showInitialSkeleton: showInitialSkeleton,
+          entryTask: entryTask,
+          flatItems: flatItems,
+          hasMore: hasMore,
+          currentRoom: currentRoom,
+        ),
       ),
 
       /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）

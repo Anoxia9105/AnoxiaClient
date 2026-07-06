@@ -174,7 +174,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     if (controller == null || !controller.selection.isValid) return;
 
     controller.updateSelection(
-      const TextSelection.collapsed(offset: -1),
+      const TextSelection.collapsed(offset: 0),
       ChangeSource.local,
     );
   }
@@ -193,6 +193,9 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       return maxWidth;
     }
 
+    final hasLinkPreview =
+        MessageLinkPreview.extractFirstUrl(_linkPreviewSource()) != null;
+
     final textStyle = DefaultTextStyle.of(
       context,
     ).style.copyWith(fontSize: 15, height: 1.35);
@@ -204,7 +207,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     )..layout();
 
     final estimated = painter.width.ceilToDouble();
-    return estimated.clamp(64, maxWidth).toDouble();
+    final minWidth = hasLinkPreview ? MessageLinkPreview.minCardWidth : 64;
+    return estimated.clamp(minWidth, maxWidth).toDouble();
   }
 
   bool _hasEmbed() {

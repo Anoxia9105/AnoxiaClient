@@ -15,6 +15,10 @@ class LayoutController extends _$LayoutController {
       icon: HugeIcons.strokeRoundedContact01,
     ),
     SidebarItem(
+      name: 'sidebar_live',
+      icon: HugeIcons.strokeRoundedLiveStreaming01,
+    ),
+    SidebarItem(
       name: 'sidebar_favorites',
       icon: HugeIcons.strokeRoundedFavourite,
     ),
@@ -46,7 +50,9 @@ class LayoutController extends _$LayoutController {
 
   /// 设置当前选中的页面为用户页面
   void setToUser() {
-    final userIndex = state.items.indexWhere((item) => item.name == 'sidebar_my');
+    final userIndex = state.items.indexWhere(
+      (item) => item.name == 'sidebar_my',
+    );
     if (userIndex != -1) {
       setIndex(userIndex);
     }

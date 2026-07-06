@@ -3,19 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/contact/contact_requests_controller.dart';
 import '../../../framework/provider/layout/layout_controller.dart';
-import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/setting/update_check_provider.dart';
 import '../VibratingBadge.dart';
 
-/// 移动端底部导航栏组件
-///
-/// 提供移动端的底部导航功能，支持：
-/// - 聊天室导航（显示未读消息数量红点）
-/// - 联系人导航（显示待处理好友请求数量红点）
-/// - 设置导航（显示更新提示红点）
-/// - 根据布局控制器动态渲染导航项
 class MobileBottomBar extends ConsumerWidget {
   const MobileBottomBar({super.key});
 
@@ -29,73 +22,73 @@ class MobileBottomBar extends ConsumerWidget {
     const chatIndex = 0;
     const contactsIndex = 1;
 
+    final visibleEntries = layout.items.asMap().entries.where((entry) {
+      return entry.value.name != 'sidebar_setting' &&
+          entry.value.name != 'sidebar_live';
+    }).toList();
+    final currentVisibleIndex = visibleEntries.indexWhere(
+      (entry) => entry.key == layout.currentIndex,
+    );
+
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
-      currentIndex: layout.currentIndex,
+      currentIndex: currentVisibleIndex < 0 ? 0 : currentVisibleIndex,
       selectedItemColor: Theme.of(context).primaryColor,
       onTap: (index) {
-        ref.read(layoutControllerProvider.notifier).setIndex(index);
+        ref
+            .read(layoutControllerProvider.notifier)
+            .setIndex(visibleEntries[index].key);
       },
-      items: layout.items
-          /// 移动端底部导航不展示“设置”项，避免占用有限空间
-          .where((item) => item.name != 'sidebar_setting')
-          .toList()
-          .asMap()
-          .entries
-          .map((entry) {
-            final idx = entry.key;
-            final item = entry.value;
+      items: visibleEntries.map((entry) {
+        final idx = entry.key;
+        final item = entry.value;
 
-            Widget iconWidget = HugeIcon(
-              icon: item.icon,
-              size: 18,
-              strokeWidth: 1.5,
-            );
+        Widget iconWidget = HugeIcon(
+          icon: item.icon,
+          size: 18,
+          strokeWidth: 1.5,
+        );
 
-            if (idx == chatIndex && totalUnread > 0) {
-              iconWidget = Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  iconWidget,
-                  Positioned(
-                    right: -8,
-                    top: -6,
-                    child: VibratingBadge(count: totalUnread),
-                  ),
-                ],
-              );
-            } else if (idx == contactsIndex && pendingRequests > 0) {
-              iconWidget = Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  iconWidget,
-                  Positioned(
-                    right: -8,
-                    top: -6,
-                    child: VibratingBadge(count: pendingRequests),
-                  ),
-                ],
-              );
-            } else if (idx == settingsIndex && hasUpdate) {
-              iconWidget = Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  iconWidget,
-                  const Positioned(
-                    right: -8,
-                    top: -6,
-                    child: VibratingBadge(isDot: true),
-                  ),
-                ],
-              );
-            }
+        if (idx == chatIndex && totalUnread > 0) {
+          iconWidget = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              iconWidget,
+              Positioned(
+                right: -8,
+                top: -6,
+                child: VibratingBadge(count: totalUnread),
+              ),
+            ],
+          );
+        } else if (idx == contactsIndex && pendingRequests > 0) {
+          iconWidget = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              iconWidget,
+              Positioned(
+                right: -8,
+                top: -6,
+                child: VibratingBadge(count: pendingRequests),
+              ),
+            ],
+          );
+        } else if (idx == settingsIndex && hasUpdate) {
+          iconWidget = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              iconWidget,
+              const Positioned(
+                right: -8,
+                top: -6,
+                child: VibratingBadge(isDot: true),
+              ),
+            ],
+          );
+        }
 
-            return BottomNavigationBarItem(
-              icon: iconWidget,
-              label: item.name.tr(),
-            );
-          })
-          .toList(),
+        return BottomNavigationBarItem(icon: iconWidget, label: item.name.tr());
+      }).toList(),
     );
   }
 }

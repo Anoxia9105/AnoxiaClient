@@ -28,7 +28,13 @@ class ContactPage extends ConsumerWidget {
     );
     return Row(
       children: [
-        SizedBox(width: 100.w, child: const ContactList()),
+        SizedBox(
+          width: 100.w,
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: ContactList(),
+          ),
+        ),
         Expanded(child: _buildRightContent(selection)),
       ],
     );
@@ -45,11 +51,34 @@ class ContactPage extends ConsumerWidget {
       case ContactViewType.newFriends:
         return const NewFriendsPage();
       case ContactViewType.contactDetail:
-        return const ContactDetail();
+        return const _DetailPanel(child: ContactDetail());
       case ContactViewType.groups:
         return const GroupRoomListPage();
       case ContactViewType.none:
         return const Welcome.contacts();
     }
+  }
+}
+
+class _DetailPanel extends StatelessWidget {
+  final Widget child;
+
+  const _DetailPanel({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.18)),
+        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(14), child: child),
+      ),
+    );
   }
 }

@@ -133,14 +133,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
 
     return Scaffold(
-      backgroundColor: DeviceUtil.isRealDesktop()
-          ? Colors.transparent
-          : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         centerTitle: DeviceUtil.isRealMobile(),
         title: Text('settings_page_title'.tr()),
       ),
       body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
           SettingsThemeSection(
             selectedBrightness: themeMode,

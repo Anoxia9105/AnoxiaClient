@@ -96,7 +96,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     return const Row(
       children: [
         SizedBox(width: 340, child: _FavoriteListSkeleton()),
-        VerticalDivider(width: 1),
+        SizedBox(width: 12),
         Expanded(child: _FavoriteDetailSkeleton()),
       ],
     );
@@ -183,7 +183,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             onRefresh: () => ref.invalidate(chatFavoriteListProvider),
           ),
         ),
-        const VerticalDivider(width: 1),
+        const SizedBox(width: 12),
         Expanded(
           child: selected == null
               ? _EmptyFavorites(
@@ -210,9 +210,7 @@ class _FavoriteDetailMobilePage extends StatelessWidget {
         : item.summary;
 
     return Scaffold(
-      backgroundColor: DeviceUtil.isRealDesktop()
-          ? Colors.transparent
-          : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text('chat_favorite'.tr()),
         actions: [

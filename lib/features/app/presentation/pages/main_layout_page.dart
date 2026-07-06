@@ -5,6 +5,7 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
+import 'package:anoxia/features/live/presentation/pages/live_list_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
@@ -48,15 +49,17 @@ class MainLayoutPage extends ConsumerWidget {
               const DesktopSidebar(),
             Expanded(
               child: Scaffold(
+                backgroundColor: Colors.transparent,
                 body: IndexedStack(
                   key: ValueKey(context.locale.languageCode),
                   index: safeIndex,
                   children: const [
-                    ChatPage(),
-                    ContactPage(),
-                    FavoritesPage(),
+                    _DesktopContentCard(child: ChatPage()),
+                    _DesktopContentCard(child: ContactPage()),
+                    _DesktopContentCard(child: LiveListPage()),
+                    _DesktopContentCard(child: FavoritesPage()),
                     MyPage(),
-                    SettingsPage(),
+                    _DesktopContentCard(child: SettingsPage()),
                   ],
                 ),
               ),
@@ -84,5 +87,48 @@ class MainLayoutPage extends ConsumerWidget {
 
     // 桌面端和平板直接返回原生主体，没有任何抽屉干扰
     return buildMainContent();
+  }
+}
+
+class _DesktopContentCard extends StatelessWidget {
+  final Widget child;
+
+  const _DesktopContentCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (DeviceUtil.isMobile(context)) {
+      return child;
+    }
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 16, 16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: cs.outlineVariant.withValues(alpha: isDark ? 0.16 : 0.28),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.12),
+              blurRadius: 28,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: cs.primary.withValues(alpha: isDark ? 0.10 : 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(18), child: child),
+      ),
+    );
   }
 }
