@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -93,6 +96,11 @@ class ChatMessages extends _$ChatMessages {
     });
 
     state = {...state, roomId: newList};
+    if (msg.roomId?.isNotEmpty == true &&
+        ((msg.messageId?.isNotEmpty == true) ||
+            (msg.clientMsgId?.isNotEmpty == true))) {
+      unawaited(ref.read(syncRepositoryProvider).cacheLocalMessage(msg));
+    }
   }
 
   /// 处理消息发送超时
@@ -238,7 +246,7 @@ class ChatMessages extends _$ChatMessages {
         },
       );
 
-      final data = res.data["data"];
+      final data = res.data['data'];
       if (data is! List || data.isEmpty) return;
 
       final List<ChatMessage> history = data

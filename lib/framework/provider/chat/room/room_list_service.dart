@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
+import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
@@ -46,6 +47,11 @@ class RoomListService extends _$RoomListService {
       _readDebounceTimers.clear();
       _pendingReadSeqs.clear();
     });
+    final subscription = ref
+        .read(syncRepositoryProvider)
+        .watchConversations()
+        .listen((rooms) => state = AsyncValue.data(rooms));
+    ref.onDispose(subscription.cancel);
     return await fetchRoomList();
   }
 
@@ -71,24 +77,7 @@ class RoomListService extends _$RoomListService {
     }
 
     try {
-      final res = await DioClient().get(API.chatRooms);
-
-      final data = res.data['data'];
-      if (data is List) {
-        return data
-            .map((e) {
-              try {
-                return ChatRoomVO.fromJson(e);
-              } catch (e) {
-                // 单条解析失败记录日志，防止整个页面崩溃
-                log.warning('ChatRoomVO 解析异常: $e');
-                return null;
-              }
-            })
-            .whereType<ChatRoomVO>()
-            .toList();
-      }
-      return [];
+      return await ref.read(syncRepositoryProvider).getConversations();
     } on DioException catch (e) {
       // 处理 401 登录过期错误：在初始化时优雅地返回空列表而不是崩溃
       // DioClient 的拦截器已处理登出逻辑，此处仅需返回空列表
