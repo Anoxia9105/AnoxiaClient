@@ -32,13 +32,17 @@ class LocalDataSource {
     String convId, {
     int limit = 50,
     int offset = 0,
+    int? beforeSeq,
   }) async {
     final rows = await db.messageDao.getMessagesForConversation(
       convId,
       limit: limit,
       offset: offset,
+      beforeSeq: beforeSeq,
     );
-    log.debug('[DB] getMessages convId=$convId offset=$offset → ${rows.length} rows');
+    log.debug(
+      '[DB] getMessages convId=$convId offset=$offset → ${rows.length} rows',
+    );
     return rows.reversed.map(_messageFromRow).toList();
   }
 
@@ -58,12 +62,27 @@ class LocalDataSource {
 
   Future<int> maxMessageSeq(String convId) => db.messageDao.getMaxSeq(convId);
 
+  Future<int> maxContinuousMessageSeq(String convId) async {
+    final seqs = await db.messageDao.getMessageSeqsForConversation(convId);
+    var watermark = 0;
+    for (final seq in seqs) {
+      if (seq == watermark + 1) {
+        watermark = seq;
+      } else if (seq > watermark + 1) {
+        break;
+      }
+    }
+    return watermark;
+  }
+
   Future<DateTime?> latestMessageSentAt(String convId) {
     return db.messageDao.getLatestSentAt(convId);
   }
 
   Future<void> upsertConversation(ChatRoomVO room) async {
-    log.debug('[DB] upsertConversation roomId=${room.roomId} peerId=${room.peerId}');
+    log.debug(
+      '[DB] upsertConversation roomId=${room.roomId} peerId=${room.peerId}',
+    );
     await _ensurePeerUsersExist([room]);
     return db.conversationDao.insertOrUpdateConversation(
       _conversationToCompanion(room),
@@ -72,7 +91,9 @@ class LocalDataSource {
 
   Future<void> upsertConversations(Iterable<ChatRoomVO> rooms) async {
     final roomList = rooms.toList();
-    log.debug('[DB] upsertConversations count=${roomList.length} ids=${roomList.map((r) => r.roomId).toList()}');
+    log.debug(
+      '[DB] upsertConversations count=${roomList.length} ids=${roomList.map((r) => r.roomId).toList()}',
+    );
     await _ensurePeerUsersExist(roomList);
     return db.conversationDao.insertOrUpdateConversations(
       roomList.map(_conversationToCompanion),
@@ -82,10 +103,7 @@ class LocalDataSource {
   /// 确保 [rooms] 中所有 [ChatRoomVO.peerId] 在 cached_users 表中存在占位记录，
   /// 以满足 conversations.peer_id 的外键约束。
   Future<void> _ensurePeerUsersExist(Iterable<ChatRoomVO> rooms) async {
-    final peerIds = rooms
-        .map((r) => r.peerId)
-        .whereType<int>()
-        .toSet();
+    final peerIds = rooms.map((r) => r.peerId).whereType<int>().toSet();
     if (peerIds.isEmpty) return;
 
     final existing = await db.userDao.getUsersByIds(peerIds);
@@ -94,21 +112,22 @@ class LocalDataSource {
     final missing = peerIds
         .where((id) => !existingIds.contains(id))
         .map(
-          (id) => CachedUsersCompanion(
-            userId: Value(id),
-            cachedAt: Value(now),
-          ),
+          (id) => CachedUsersCompanion(userId: Value(id), cachedAt: Value(now)),
         )
         .toList();
     if (missing.isNotEmpty) {
-      log.debug('[DB] _ensurePeerUsersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}');
+      log.debug(
+        '[DB] _ensurePeerUsersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}',
+      );
       await db.userDao.insertOrUpdateUsers(missing);
     }
   }
 
   Future<void> upsertMessage(ChatMessage message) async {
     final row = _messageToRow(message);
-    log.debug('[DB] upsertMessage id=${message.messageId} room=${message.roomId} seq=${message.seq} status=${message.deliveryStatus}');
+    log.debug(
+      '[DB] upsertMessage id=${message.messageId} room=${message.roomId} seq=${message.seq} status=${message.deliveryStatus}',
+    );
     await _ensureConversationExists(row.conversationId);
     await _ensureMessageSendersExist([row]);
     await db.messageDao.insertOrUpdateMessage(row);
@@ -138,10 +157,7 @@ class LocalDataSource {
   /// 确保 [rows] 中所有 [CachedMessage.senderId] 在 cached_users 表中存在占位记录，
   /// 以满足 messages.sender_id 的外键约束。
   Future<void> _ensureMessageSendersExist(Iterable<CachedMessage> rows) async {
-    final senderIds = rows
-        .map((r) => r.senderId)
-        .whereType<int>()
-        .toSet();
+    final senderIds = rows.map((r) => r.senderId).whereType<int>().toSet();
     if (senderIds.isEmpty) return;
 
     final existing = await db.userDao.getUsersByIds(senderIds);
@@ -150,14 +166,13 @@ class LocalDataSource {
     final missing = senderIds
         .where((id) => !existingIds.contains(id))
         .map(
-          (id) => CachedUsersCompanion(
-            userId: Value(id),
-            cachedAt: Value(now),
-          ),
+          (id) => CachedUsersCompanion(userId: Value(id), cachedAt: Value(now)),
         )
         .toList();
     if (missing.isNotEmpty) {
-      log.debug('[DB] _ensureMessageSendersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}');
+      log.debug(
+        '[DB] _ensureMessageSendersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}',
+      );
       await db.userDao.insertOrUpdateUsers(missing);
     }
   }
@@ -198,7 +213,9 @@ class LocalDataSource {
     int? seq,
     DateTime? sentAt,
   }) {
-    log.debug('[DB] updateDeliveryStatus id=$messageId → $status serverMsgId=$serverMessageId seq=$seq');
+    log.debug(
+      '[DB] updateDeliveryStatus id=$messageId → $status serverMsgId=$serverMessageId seq=$seq',
+    );
     return db.messageDao.updateDeliveryStatus(
       messageId,
       status.toJson(),
@@ -276,7 +293,9 @@ class LocalDataSource {
   Future<void> _ensureConversationExists(String conversationId) async {
     final existing = await db.conversationDao.getConversation(conversationId);
     if (existing != null) return;
-    log.debug('[DB] _ensureConversationExists: create stub convId=$conversationId');
+    log.debug(
+      '[DB] _ensureConversationExists: create stub convId=$conversationId',
+    );
     final now = DateTime.now();
     await db.conversationDao.insertOrUpdateConversation(
       ConversationsCompanion(

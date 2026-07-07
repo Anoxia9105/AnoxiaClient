@@ -186,7 +186,9 @@ class ChatMessages extends _$ChatMessages {
       sync: false,
     );
     if (localMessages.isNotEmpty) {
-      log.debug('[Cache] syncRoomMessages: local hit roomId=$roomId count=${localMessages.length}');
+      log.debug(
+        '[Cache] syncRoomMessages: local hit roomId=$roomId count=${localMessages.length}',
+      );
       _applyMessages(roomId, localMessages);
       ref
           .read(chatHasMoreProvider.notifier)
@@ -194,10 +196,9 @@ class ChatMessages extends _$ChatMessages {
     }
 
     // ─── Step 2: 判断是否需要远端增量同步 ─────────────────────────────
-    final localMaxSeq = (state[roomId] ?? []).fold<int>(
-      0,
-      (max, msg) => (msg.seq ?? 0) > max ? msg.seq! : max,
-    );
+    final localMaxSeq = await ref
+        .read(localDataSourceProvider)
+        .maxContinuousMessageSeq(roomId);
     if (_syncedRoomIds.contains(roomId) &&
         (serverLastSeq == null || localMaxSeq >= serverLastSeq)) {
       return;
@@ -205,7 +206,9 @@ class ChatMessages extends _$ChatMessages {
 
     // ─── Step 3: 后台拉远端增量写入本地，再刷新 UI ────────────────────
     try {
-      log.debug('[Cache] syncRoomMessages: remote sync roomId=$roomId localMaxSeq=$localMaxSeq serverLastSeq=$serverLastSeq');
+      log.debug(
+        '[Cache] syncRoomMessages: remote sync roomId=$roomId localMaxSeq=$localMaxSeq serverLastSeq=$serverLastSeq',
+      );
       await syncRepo.syncMessages(roomId);
       _syncedRoomIds.add(roomId);
 
@@ -215,7 +218,9 @@ class ChatMessages extends _$ChatMessages {
         sync: false,
       );
       if (refreshed.isNotEmpty) {
-        log.debug('[Cache] syncRoomMessages: refreshed after sync roomId=$roomId count=${refreshed.length}');
+        log.debug(
+          '[Cache] syncRoomMessages: refreshed after sync roomId=$roomId count=${refreshed.length}',
+        );
         _applyMessages(roomId, refreshed);
         ref
             .read(chatHasMoreProvider.notifier)
@@ -271,21 +276,26 @@ class ChatMessages extends _$ChatMessages {
       final localMore = await syncRepo.getMessagesForConversation(
         roomId,
         limit: _pageSize,
-        offset: currentList.length,
+        beforeSeq: oldestSeq,
         sync: false,
       );
 
       List<ChatMessage> history;
       if (localMore.isNotEmpty) {
-        log.debug('[Cache] loadMoreHistory: local hit roomId=$roomId offset=${currentList.length} count=${localMore.length}');
+        log.debug(
+          '[Cache] loadMoreHistory: local hit roomId=$roomId offset=${currentList.length} count=${localMore.length}',
+        );
         history = localMore;
       } else {
         // ─── Step 2: 本地无数据，走远端 API 并写入本地 ─────────────────
-        log.debug('[Cache] loadMoreHistory: local miss, fetch API roomId=$roomId lastSeq=$oldestSeq');
+        log.debug(
+          '[Cache] loadMoreHistory: local miss, fetch API roomId=$roomId lastSeq=$oldestSeq',
+        );
         final res = await DioClient().get(
           API.chatHistory,
           queryParameters: {
             'roomId': roomId,
+            'before_seq': oldestSeq,
             'lastSeq': oldestSeq,
             'pageSize': _pageSize,
             'direction': 0,
@@ -300,9 +310,7 @@ class ChatMessages extends _$ChatMessages {
             .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
             .toList();
         // 异步写入本地缓存，不阻塞 UI
-        unawaited(
-          ref.read(localDataSourceProvider).upsertMessages(history),
-        );
+        unawaited(ref.read(localDataSourceProvider).upsertMessages(history));
       }
 
       ref

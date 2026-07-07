@@ -18,8 +18,22 @@ LazyDatabase _openConnection() {
 }
 
 @DriftDatabase(
-  tables: [CachedUsers, Conversations, Messages, SyncStates, SyncLogs, CachedContacts],
-  daos: [UserDao, ConversationDao, MessageDao, SyncStateDao, SyncLogDao, ContactDao],
+  tables: [
+    CachedUsers,
+    Conversations,
+    Messages,
+    SyncStates,
+    SyncLogs,
+    CachedContacts,
+  ],
+  daos: [
+    UserDao,
+    ConversationDao,
+    MessageDao,
+    SyncStateDao,
+    SyncLogDao,
+    ContactDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
@@ -206,12 +220,16 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     String conversationId, {
     int limit = 50,
     int offset = 0,
+    int? beforeSeq,
   }) {
     return (select(messages)
           ..where(
             (tbl) =>
                 tbl.conversationId.equals(conversationId) &
-                tbl.isDeleted.equals(false),
+                tbl.isDeleted.equals(false) &
+                (beforeSeq == null
+                    ? const Constant(true)
+                    : tbl.seq.isSmallerThanValue(beforeSeq)),
           )
           ..orderBy([
             (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
@@ -254,6 +272,20 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     return row?.seq ?? 0;
   }
 
+  Future<List<int>> getMessageSeqsForConversation(String conversationId) async {
+    final rows =
+        await (select(messages)
+              ..where(
+                (tbl) =>
+                    tbl.conversationId.equals(conversationId) &
+                    tbl.isDeleted.equals(false) &
+                    tbl.seq.isBiggerThanValue(0),
+              )
+              ..orderBy([(tbl) => OrderingTerm(expression: tbl.seq)]))
+            .get();
+    return rows.map((row) => row.seq).toList();
+  }
+
   Future<DateTime?> getLatestSentAt(String conversationId) async {
     final row =
         await (select(messages)
@@ -279,12 +311,11 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   Future<void> insertOrUpdateMessage(CachedMessage message) async {
     // 若存在相同 client_msg_id 但不同 id 的旧记录（临时 ID → 服务端 ID），先删除
     if (message.clientMsgId != null) {
-      await (delete(messages)
-            ..where(
-              (tbl) =>
-                  tbl.clientMsgId.equals(message.clientMsgId!) &
-                  tbl.id.isNotValue(message.id),
-            ))
+      await (delete(messages)..where(
+            (tbl) =>
+                tbl.clientMsgId.equals(message.clientMsgId!) &
+                tbl.id.isNotValue(message.id),
+          ))
           .go();
     }
     await into(messages).insertOnConflictUpdate(message);
@@ -296,12 +327,11 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       // 批量清理 client_msg_id 相同但 id 不同的旧记录
       for (final item in list) {
         if (item.clientMsgId != null) {
-          await (delete(messages)
-                ..where(
-                  (tbl) =>
-                      tbl.clientMsgId.equals(item.clientMsgId!) &
-                      tbl.id.isNotValue(item.id),
-                ))
+          await (delete(messages)..where(
+                (tbl) =>
+                    tbl.clientMsgId.equals(item.clientMsgId!) &
+                    tbl.id.isNotValue(item.id),
+              ))
               .go();
         }
       }
@@ -420,31 +450,25 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
   ContactDao(super.db);
 
   Future<List<CachedContact>> getAllContacts() {
-    return (select(cachedContacts)
-          ..orderBy([
-            (tbl) => OrderingTerm(
-              expression: tbl.cachedAt,
-              mode: OrderingMode.desc,
-            ),
-          ]))
+    return (select(cachedContacts)..orderBy([
+          (tbl) =>
+              OrderingTerm(expression: tbl.cachedAt, mode: OrderingMode.desc),
+        ]))
         .get();
   }
 
   Stream<List<CachedContact>> watchAllContacts() {
-    return (select(cachedContacts)
-          ..orderBy([
-            (tbl) => OrderingTerm(
-              expression: tbl.cachedAt,
-              mode: OrderingMode.desc,
-            ),
-          ]))
+    return (select(cachedContacts)..orderBy([
+          (tbl) =>
+              OrderingTerm(expression: tbl.cachedAt, mode: OrderingMode.desc),
+        ]))
         .watch();
   }
 
   Future<CachedContact?> getContact(int contactId) {
-    return (select(cachedContacts)
-          ..where((tbl) => tbl.contactId.equals(contactId)))
-        .getSingleOrNull();
+    return (select(
+      cachedContacts,
+    )..where((tbl) => tbl.contactId.equals(contactId))).getSingleOrNull();
   }
 
   Future<void> insertOrUpdateContact(CachedContactsCompanion contact) {
@@ -460,9 +484,9 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
   }
 
   Future<void> deleteContact(int contactId) {
-    return (delete(cachedContacts)
-          ..where((tbl) => tbl.contactId.equals(contactId)))
-        .go();
+    return (delete(
+      cachedContacts,
+    )..where((tbl) => tbl.contactId.equals(contactId))).go();
   }
 
   Future<void> updateOnlineStatus(int contactId, bool isOnline) {
@@ -472,15 +496,16 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
   }
 
   Future<DateTime?> getLatestUpdatedAt() async {
-    final row = await (select(cachedContacts)
-          ..orderBy([
-            (tbl) => OrderingTerm(
-              expression: tbl.updatedAt,
-              mode: OrderingMode.desc,
-            ),
-          ])
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (select(cachedContacts)
+              ..orderBy([
+                (tbl) => OrderingTerm(
+                  expression: tbl.updatedAt,
+                  mode: OrderingMode.desc,
+                ),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
     return row?.updatedAt;
   }
 }

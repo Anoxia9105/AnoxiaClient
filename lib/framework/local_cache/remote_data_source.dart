@@ -41,16 +41,18 @@ class RemoteDataSource {
     String convId, {
     DateTime? since,
     int? lastSeq,
+    int? beforeSeq,
     int pageSize = 100,
   }) async {
     final res = await _client.get(
       API.chatHistory,
       queryParameters: {
         'roomId': convId,
+        if (beforeSeq != null && beforeSeq > 0) 'before_seq': beforeSeq,
         if (lastSeq != null && lastSeq > 0) 'lastSeq': lastSeq,
         if (since != null) 'since': since.toIso8601String(),
         'pageSize': pageSize,
-        'direction': 1,
+        'direction': beforeSeq == null ? 1 : 0,
       },
     );
     final data = res.data['data'];

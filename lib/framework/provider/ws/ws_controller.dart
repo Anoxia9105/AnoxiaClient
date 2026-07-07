@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io' as io;
-import 'dart:typed_data';
+import 'dart:math' as math;
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/common/constants/StorageKeys.dart';
 import 'package:anoxia/common/utils/SPUtil.dart';
@@ -548,13 +548,19 @@ class WsController extends _$WsController {
     final user = ref.read(authControllerProvider).value;
     if (user == null) return;
 
-    int delaySeconds = (1 << _reconnectAttempts).clamp(2, 30);
+    final delaySeconds = _calculateReconnectDelay();
     log.warning('将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...');
 
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;
       _initConnection();
     });
+  }
+
+  int _calculateReconnectDelay() {
+    final baseDelay = (1 << _reconnectAttempts).clamp(2, 30);
+    final jitterMs = math.Random().nextInt(baseDelay * 1000);
+    return math.max(1, (jitterMs / 1000).round());
   }
 
   /// 登出时主动断开连接

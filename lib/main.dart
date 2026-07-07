@@ -29,6 +29,7 @@ import 'framework/extensions/window_controller.dart';
 import 'framework/logs/talker.dart';
 import 'framework/network/DioClient.dart';
 import 'framework/network/TokenManager.dart';
+import 'framework/provider/auth/token_provider.dart';
 import 'framework/provider/core/AppUpdateInfo.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
@@ -255,10 +256,12 @@ Future<void> runSubApp(WindowController controller) async {
       _ => WindowCallPage(controller: controller),
     };
 
-    // 启动子窗口（继承全局容器，共享状态）
+    final container = await _createIsolatedWindowContainer();
+
+    // 子窗口使用独立 ProviderContainer，仅同步认证 token，避免通话/聊天室状态污染主窗口。
     runApp(
       UncontrolledProviderScope(
-        container: globalContainer,
+        container: container,
         child: _buildAppWrapper(child),
       ),
     );
@@ -281,6 +284,16 @@ Map<String, dynamic> _parseWindowArguments(dynamic arguments) {
     }
   } catch (_) {}
   return {};
+}
+
+/// 启动更新窗口
+Future<ProviderContainer> _createIsolatedWindowContainer() async {
+  final container = ProviderContainer();
+  final token = await TokenManager.instance.getToken();
+  if (token != null && token.isNotEmpty) {
+    container.read(tokenCacheProvider.notifier).setToken(token);
+  }
+  return container;
 }
 
 /// 启动更新窗口

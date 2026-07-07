@@ -11,10 +11,11 @@
 | 功能模块 | 功能描述 |
 |---------|---------|
 | 即时消息 | 支持文本、图片、文件、富文本等多类型消息，支持消息撤回、收藏 |
-| 音视频通话 | 基于 LiveKit + WebRTC 实现实时音视频通话能力 |
+| 音视频通话 | 基于 LiveKit + WebRTC 实现实时音视频通话能力，支持表情反应特效 |
 | 联系人管理 | 好友申请、联系人列表、群组管理 |
 | 富文本输入 | 基于 Flutter Quill 实现支持 Mention、文件嵌入的富文本编辑器 |
 | 多窗口支持 | 桌面端支持多窗口通话页面 |
+| 直播功能 | 支持直播列表、直播间观看、弹幕互动 |
 | 主题系统 | 支持 19 种预设主题（7 种亮色 + 12 种暗色） |
 | 多语言支持 | 支持中文、英文、日文三种语言 |
 
@@ -38,7 +39,7 @@
 │  livekit_client + flutter_webrtc                       │
 ├─────────────────────────────────────────────────────────┤
 │                    本地存储层                            │
-│  shared_preferences + flutter_secure_storage           │
+│  shared_preferences + flutter_secure_storage + sqlite  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -65,22 +66,28 @@
 │      │         │                                              │
 │      │         │    ┌──────────────────────────────────────┐    │
 │      │         │    │            framework/                 │    │
-│      │         │    │  ┌─────────┬────────┬────────┬─────┐ │    │
-│      │         │    │  │ domain  │network │protocol│theme │ │    │
-│      │         │    │  └─────────┴────────┴────────┴─────┘ │    │
+│      │         │    │  ┌─────┬──────┬───────┬──────┬─────┐ │    │
+│      │         │    │  │core │domain│network│protocol│theme│ │    │
+│      │         │    │  └─────┴──────┴───────┴──────┴─────┘ │    │
 │      │         │    │  ┌────────────────────────────────┐  │    │
 │      │         │    │  │          provider/              │  │    │
-│      │         │    │  │  ┌────┬─────┬──────┬────────┐ │  │    │
-│      │         │    │  │  │auth│chat │contact│ setting│ │  │    │
-│      │         │    │  │  └────┴─────┴──────┴────────┘ │  │    │
+│      │         │    │  │  ┌────┬─────┬──────┬─────┐   │ │  │    │
+│      │         │    │  │  │auth│chat │contact│live │... │ │  │    │
+│      │         │    │  │  └────┴─────┴──────┴─────┘   │ │  │    │
 │      │         │    │  └────────────────────────────────┘  │    │
+│      │         │    │  ┌──────────┬───────────────┐       │    │
+│      │         │    │  │  codec   │  local_cache  │       │    │
+│      │         │    │  └──────────┴───────────────┘       │    │
 │      │         │    └──────────────────────────────────────┘    │
 │      │         │                                              │
 │      │         │    ┌──────────────────────────────────────┐    │
 │      │         │    │            features/                 │    │
-│      │         │    │  ┌─────────┬────────┬─────────┐   │    │
-│      │         │    │  │   app   │  chat  │ contact │   │    │
-│      │         │    │  └─────────┴────────┴─────────┘   │    │
+│      │         │    │  ┌──────┬──────┬────────┬────────┐ │    │
+│      │         │    │  │  app │ chat │ contact│  live  │ │    │
+│      │         │    │  └──────┴──────┴────────┴────────┘ │    │
+│      │         │    │  ┌──────┬──────┬────────┐         │    │
+│      │         │    │  │favorite│  me │ settings│        │    │
+│      │         │    │  └──────┴──────┴────────┘         │    │
 │      │         │    └──────────────────────────────────────┘    │
 └──────┴─────────┴─────────────────────────────────────────────────┘
 ```
@@ -116,21 +123,36 @@ lib/
 │       ├── AvatarWidget.dart
 │       ├── BlurBackground.dart
 │       ├── BubbleDialog.dart
+│       ├── BreathingDot.dart
 │       ├── CustomButton.dart
 │       ├── FocusOverlayManager.dart
 │       ├── NoData.dart
+│       ├── SimpleListTile.dart
 │       ├── SkeletonBox.dart
 │       ├── Toast.dart
 │       ├── VibratingBadge.dart
 │       ├── Welcome.dart
+│       ├── ws_connection_banner.dart
 │       ├── app/                  # 应用级组件
 │       │   ├── MobileBottomBar.dart
 │       │   └── app_scaffold.dart
 │       └── desktop/             # 桌面端组件
+│           ├── ConnectionStatusTag.dart
 │           ├── DesktopAppBar.dart
-│           └── DesktopSidebar.dart
+│           ├── DesktopSidebar.dart
+│           ├── GlobalSearchDialog.dart
+│           └── HeaderSearchEntry.dart
 │
 ├── framework/                   # 核心框架层
+│   ├── codec/                   # 协议编解码层
+│   │   ├── FrameCodec.dart
+│   │   ├── ProtoReader.dart
+│   │   ├── ProtoWriter.dart
+│   │   └── v5/
+│   │       └── ImPacketV5.dart
+│   ├── core/                    # 核心基础设施
+│   │   ├── app_globals.dart     # 全局变量
+│   │   └── push_manager.dart    # 推送管理器
 │   ├── domain/                  # 领域模型
 │   │   ├── AiChatMessage.dart
 │   │   ├── Attachment.dart
@@ -144,7 +166,7 @@ lib/
 │   │   ├── ChatRoomVO.dart       # 聊天室视图对象
 │   │   ├── ContactRequest.dart
 │   │   ├── MessagePayload.dart
-│   │   ├── RoomState.dart
+│   │   ├── RoomState.dart        # 通话房间状态
 │   │   ├── upload_entry.dart
 │   │   ├── UserInfo.dart         # 用户信息模型
 │   │   ├── UserSearchResponse.dart
@@ -152,6 +174,14 @@ lib/
 │   ├── extensions/               # 扩展方法
 │   │   ├── QuillCursorX.dart
 │   │   └── window_controller.dart
+│   ├── local_cache/              # 本地缓存层
+│   │   ├── cache_providers.dart
+│   │   ├── database.dart         # SQLite 数据库
+│   │   ├── database.g.dart       # 数据库生成代码
+│   │   ├── local_data_source.dart
+│   │   ├── remote_data_source.dart
+│   │   ├── sync_repository.dart
+│   │   └── tables.dart           # 数据库表定义
 │   ├── logs/                     # 日志系统
 │   │   └── talker.dart
 │   ├── network/                   # 网络层
@@ -172,16 +202,76 @@ lib/
 │   │   └── register/             # 协议注册
 │   │       └── PacketRegistry.dart
 │   ├── provider/                  # Riverpod 状态管理
-│   │   ├── ai/
-│   │   ├── auth/
-│   │   ├── chat/
-│   │   ├── contact/
-│   │   ├── core/
-│   │   ├── layout/
-│   │   ├── router/
-│   │   ├── setting/
-│   │   ├── theme/
-│   │   └── ws/
+│   │   ├── ai/                   # AI 对话
+│   │   │   ├── ai_chat_controller.dart
+│   │   ├── auth/                 # 认证
+│   │   │   ├── auth_controller.dart
+│   │   │   └── token_provider.dart
+│   │   ├── chat/                 # 聊天模块
+│   │   │   ├── call/             # 音视频通话
+│   │   │   │   ├── Channel.dart
+│   │   │   │   ├── LayoutMode.dart
+│   │   │   │   ├── call_status_provider.dart
+│   │   │   │   ├── call_window_controller.dart
+│   │   │   │   ├── mobile_call_session_provider.dart
+│   │   │   │   └── room_controller.dart
+│   │   │   ├── favorite/         # 消息收藏
+│   │   │   │   └── chat_favorite_service.dart
+│   │   │   ├── input/            # 输入控制
+│   │   │   │   ├── files/        # 文件上传
+│   │   │   │   │   └── chat_file_upload_controller.dart
+│   │   │   │   ├── images/       # 图片上传
+│   │   │   │   │   └── chat_image_upload_controller.dart
+│   │   │   │   ├── DeltaProcessor.dart
+│   │   │   │   ├── UploadValidator.dart
+│   │   │   │   ├── chat_audio_player_manager.dart
+│   │   │   │   ├── chat_input_controller.dart
+│   │   │   │   ├── mobile_text_input_controller.dart
+│   │   │   │   ├── reply_target_provider.dart
+│   │   │   │   └── voice_record_controller.dart
+│   │   │   ├── message/          # 消息服务
+│   │   │   │   ├── high_message_service.dart
+│   │   │   │   ├── reply_jump_provider.dart
+│   │   │   │   ├── room_message_service.dart
+│   │   │   │   ├── room_message_ui_item_service.dart
+│   │   │   │   ├── search_message_service.dart
+│   │   │   │   ├── system_event_service.dart
+│   │   │   │   └── system_message_service.dart
+│   │   │   └── room/             # 房间管理
+│   │   │       ├── chat_split_view_provider.dart
+│   │   │       ├── create_new_gropu_controller.dart
+│   │   │       ├── pinned_rooms_provider.dart
+│   │   │       ├── room_list_service.dart
+│   │   │       ├── room_lookup_helper.dart
+│   │   │       └── room_member_service.dart
+│   │   ├── contact/              # 联系人
+│   │   │   ├── contact_detail_controller.dart
+│   │   │   ├── contact_list_controller.dart
+│   │   │   ├── contact_requests_controller.dart
+│   │   │   ├── contact_selection_controller.dart
+│   │   │   └── user_search_service.dart
+│   │   ├── core/                 # 核心服务
+│   │   │   ├── AppUpdateInfo.dart
+│   │   │   ├── app_initializer.dart
+│   │   │   ├── login_bootstrap_orchestrator.dart
+│   │   │   ├── network_provider.dart
+│   │   │   └── session_reset_service.dart
+│   │   ├── desktop/              # 桌面端
+│   │   │   └── desktop_search_controller.dart
+│   │   ├── layout/               # 布局管理
+│   │   │   └── layout_controller.dart
+│   │   ├── live/                 # 直播
+│   │   │   └── live_room_controller.dart
+│   │   ├── router/               # 路由
+│   │   │   └── router.dart
+│   │   ├── setting/              # 设置
+│   │   │   ├── settings_provider.dart
+│   │   │   └── update_check_provider.dart
+│   │   ├── theme/                # 主题
+│   │   │   └── theme_controller.dart
+│   │   └── ws/                   # WebSocket
+│   │       ├── ws_controller.dart
+│   │       └── ws_state.dart
 │   └── theme/                     # 主题系统
 │       ├── AppColors.dart
 │       ├── AppTheme.dart
@@ -192,33 +282,179 @@ lib/
     │   └── presentation/
     │       └── pages/
     │           ├── error_page.dart
+    │           ├── forgot_password_page.dart
     │           ├── login_page.dart
     │           ├── main_layout_page.dart
     │           └── splash_page.dart
     ├── chat/                      # 聊天模块
+    │   ├── models/
+    │   │   ├── chatInput_state.dart
+    │   │   ├── chat_message_extensions.dart
+    │   │   └── message_item.dart
     │   └── presentation/
     │       ├── call/              # 通话功能
+    │       │   ├── component/
+    │       │   │   ├── deesktop/
+    │       │   │   │   └── call_desktop_app_bar.dart
+    │       │   │   ├── command_bar.dart
+    │       │   │   ├── participant_tile.dart
+    │       │   │   ├── reaction_overlay.dart   # 表情反应特效
+    │       │   │   ├── volume_indicator.dart
+    │       │   │   └── window_screen_select_dialog.dart
+    │       │   ├── desktop/
+    │       │   │   ├── room_layout/
+    │       │   │   │   ├── layout_room_carousel_widget.dart
+    │       │   │   │   ├── layout_room_screen_widget.dart
+    │       │   │   │   └── layout_room_widget.dart
+    │       │   │   └── call_window_room_body.dart
+    │       │   ├── mobile/
+    │       │   │   └── call_mobile_room_body.dart
+    │       │   ├── call_room_page.dart
+    │       │   ├── global_call_overlay.dart
+    │       │   ├── mobile_call_page.dart
+    │       │   └── window_call_page.dart
     │       ├── pages/
+    │       │   ├── add_member_page.dart
+    │       │   ├── banned_content_page.dart
+    │       │   ├── chat_page.dart
+    │       │   ├── chat_room_detail_page.dart
+    │       │   ├── chat_room_detail_settings_page.dart
+    │       │   ├── chat_room_list_page.dart
+    │       │   ├── empty_messages_page.dart
+    │       │   ├── group_edit_announcement_page.dart
+    │       │   ├── group_edit_name_page.dart
+    │       │   ├── group_member_list_page.dart
+    │       │   ├── no_conversation_page.dart
+    │       │   └── scan_qr_page.dart
     │       └── widgets/
+    │           ├── appbar/
+    │           │   ├── chat_app_bar.dart
+    │           │   ├── chat_bar_handlers.dart
+    │           │   ├── chat_call_button_widget.dart
+    │           │   └── chat_group_action_buttons_widget.dart
+    │           ├── chatinput/
+    │           │   ├── desktop/
+    │           │   │   ├── quill/
+    │           │   │   │   ├── embedBuilder/
+    │           │   │   │   │   ├── quill_file_build.dart
+    │           │   │   │   │   ├── quill_image_build.dart
+    │           │   │   │   │   └── quill_mention_build.dart
+    │           │   │   │   ├── card_box.dart
+    │           │   │   │   ├── chat_quill_toolbar.dart
+    │           │   │   │   ├── colors_box.dart
+    │           │   │   │   ├── location_box.dart
+    │           │   │   │   └── quill_style_config.dart
+    │           │   │   └── desktop_chat_input.dart
+    │           │   ├── mobile/
+    │           │   │   ├── chat_action_item.dart
+    │           │   │   ├── chat_more_panel.dart
+    │           │   │   ├── chat_voice_overlay.dart
+    │           │   │   └── mobile_chat_input.dart
+    │           │   ├── chat_emoji_widget.dart
+    │           │   ├── chat_input_field.dart
+    │           │   ├── chat_room_detail_bottom_bar.dart
+    │           │   ├── chat_room_detail_scroll_down_button.dart
+    │           │   ├── chat_room_detail_status_tag.dart
+    │           │   ├── reply_preview_bar.dart
+    │           │   └── skeleton/
+    │           │       └── chat_input_skeleton.dart
+    │           ├── message_bubble/
+    │           │   ├── bubble_shell.dart
+    │           │   ├── chat_message_bubble.dart
+    │           │   ├── message_bubble_view_data.dart
+    │           │   ├── message_resender.dart
+    │           │   ├── message_status_indicators.dart
+    │           │   ├── system_message_bubble.dart
+    │           │   └── user_message_bubble.dart
+    │           ├── message_menu/
+    │           │   └── chat_message_context_menu.dart
+    │           ├── message_render/
+    │           │   ├── base/
+    │           │   │   ├── message_render_factory.dart
+    │           │   │   └── message_render_strategy.dart
+    │           │   ├── detail/
+    │           │   │   └── image_viewer.dart
+    │           │   ├── audio_message_strategy.dart
+    │           │   ├── card_message_strategy.dart
+    │           │   ├── file_message_strategy.dart
+    │           │   ├── image_message_strategy.dart
+    │           │   ├── link_preview_card.dart
+    │           │   ├── location_message_strategy.dart
+    │           │   ├── quill_message_strategy.dart
+    │           │   ├── system_message_strategy.dart
+    │           │   └── text_message_strategy.dart
+    │           ├── room_detail_settings/
+    │           │   ├── member_grid_section.dart
+    │           │   └── room_card.dart
+    │           ├── skeleton/
+    │           │   ├── chat_room_detail_skeleton.dart
+    │           │   ├── chat_room_list_item_skeleton.dart
+    │           │   └── chat_room_list_skeleton.dart
+    │           ├── add_member_dialog_widget.dart
+    │           ├── create_chat_dialog_widget.dart
+    │           ├── mention_list_widget.dart
+    │           ├── room_list_dialog_menus.dart
+    │           ├── room_list_item.dart
+    │           └── search_context_page.dart
     ├── contact/                   # 联系人模块
     │   └── presentation/
     │       ├── pages/
+    │       │   ├── add_friend_page.dart
+    │       │   ├── contact_detail_page.dart
+    │       │   ├── contact_page.dart
+    │       │   ├── group_room_list_page.dart
+    │       │   └── new_friends_page.dart
     │       └── widgets/
+    │           ├── add_friend_widgets.dart
+    │           ├── contact_detail_widgets.dart
+    │           ├── contact_list.dart
+    │           ├── group_room_widgets.dart
+    │           ├── new_friends_widgets.dart
+    │           └── sorted_contact_groups_widget.dart
     ├── favorite/                  # 收藏模块
     │   └── presentation/
     │       └── pages/
+    │           └── favorites_page.dart
+    ├── live/                      # 直播模块
+    │   └── presentation/
+    │       └── pages/
+    │           ├── live_list_page.dart
+    │           ├── live_preview_page.dart
+    │           ├── live_room_page.dart
+    │           ├── window_live_danmaku_page.dart
+    │           ├── window_live_page.dart
+    │           └── window_live_preview_page.dart
     ├── me/                        # 个人中心模块
     │   └── presentation/
     │       ├── pages/
+    │       │   ├── change_password_page.dart
+    │       │   ├── me_page.dart
+    │       │   ├── me_profile_item_edit_page.dart
+    │       │   ├── menu_page.dart
+    │       │   └── personal_qr_page.dart
     │       └── widgets/
+    │           └── me_header_widgets.dart
     ├── settings/                  # 设置模块
+    │   ├── application/
+    │   │   └── settings_page_controller.dart
     │   └── presentation/
     │       ├── pages/
+    │       │   ├── developer_tribute_page.dart
+    │       │   ├── open_source_licenses_page.dart
+    │       │   └── settings_page.dart
     │       └── widgets/
+    │           ├── settings_about_support_section.dart
+    │           ├── settings_feedback_section.dart
+    │           ├── settings_font_section.dart
+    │           ├── settings_item_card.dart
+    │           ├── settings_language_section.dart
+    │           └── settings_theme_section.dart
     └── update/                    # 更新模块
         └── presentation/
             ├── pages/
+            │   └── update_page.dart
             └── widgets/
+                └── update_sections.dart
 ```
 
 ---
@@ -239,9 +475,10 @@ lib/
 |--------|---------|------|
 | `main()` | `Future<void>` | 应用主入口，协调初始化流程 |
 | `runMainApp()` | `Future<void>` | 启动主窗口，初始化全局状态和桌面窗口配置 |
-| `runSubApp()` | `Future<void>` | 启动子窗口（通话窗口），继承全局容器 |
+| `runSubApp()` | `Future<void>` | 启动子窗口（通话/直播窗口），使用隔离 Provider 容器 |
 | `runUpdateApp()` | `Future<void>` | 启动更新窗口，显示版本更新信息 |
 | `setupDesktopWindow()` | `Future<void>` | 配置桌面窗口尺寸和样式 |
+| `_createIsolatedWindowContainer()` | `Future<ProviderContainer>` | 为桌面子窗口创建局部容器，仅同步认证 token |
 | `_registerPacketParsers()` | `void` | 注册 WebSocket 协议解析器 |
 | `_checkUpdate()` | `Future<AppUpdateInfo?>` | 检查应用版本更新 |
 
@@ -259,13 +496,15 @@ main()
       └── runSubApp()                         // 子窗口
 ```
 
-**全局容器**:
+**桌面多窗口容器策略**:
 
 ```dart
 final ProviderContainer globalContainer = ProviderContainer();
 ```
 
-所有窗口共享同一个 `globalContainer`，实现状态同步。
+主窗口和更新窗口使用 `globalContainer` 持有应用级状态。桌面子窗口必须通过 `_createIsolatedWindowContainer()` 创建独立 `ProviderContainer`，只从 `TokenManager` 恢复并写入 `tokenCacheProvider`，不能复用主窗口容器。
+
+这样可以避免 `RoomController`、`ChatMessages`、`WsController` 等 keepAlive Provider 在多窗口之间共享单例状态，导致通话窗口污染主窗口当前聊天室、消息列表或媒体状态。子窗口需要的聊天室、通话、直播和 WebSocket 状态应在自己的组件树内按需构建。
 
 #### 3.1.2 App.dart
 
@@ -462,7 +701,7 @@ PacketRegistry.register(
 |-----|------|
 | 连接管理 | 建立 WebSocket 连接，支持 Web 和桌面端 |
 | 心跳保活 | 每 30 秒发送一次 ping，保持连接活跃 |
-| 自动重连 | 指数退避重连策略（2s, 4s, 8s... 最大 30s） |
+| 自动重连 | 指数退避 + Full Jitter，最大 30s，避免客户端同一时间批量重连 |
 | 消息分发 | 将接收到的消息通过 Stream 分发给各 Consumer |
 | 错误处理 | 解析 ACK 错误码，显示 Toast 提示（2秒内重复错误不重复提示） |
 
@@ -470,9 +709,12 @@ PacketRegistry.register(
 
 ```dart
 // 重连间隔计算
-int delaySeconds = (1 << _reconnectAttempts).clamp(2, 30);
-// 第一次：2s，第二次：4s，第三次：8s... 最大 30s
+final baseDelay = (1 << _reconnectAttempts).clamp(2, 30);
+final jitterMs = math.Random().nextInt(baseDelay * 1000);
+final delaySeconds = math.max(1, (jitterMs / 1000).round());
 ```
+
+固定的 2s/4s/8s 重连会在后端重启时形成惊群效应。`WsController` 使用 Full Jitter 后，同一批客户端会被随机分散到 `[1, baseDelay]` 秒区间内重连，降低 Redis、MySQL 和鉴权接口的瞬时压力。
 
 **消息流**:
 
@@ -530,8 +772,8 @@ logout()
 | 功能 | 描述 |
 |-----|------|
 | 消息订阅 | 监听 WebSocket 消息流，自动接收新消息 |
-| 消息同步 | 首次进入房间时同步历史消息 |
-| 历史加载 | 分页加载更早的历史消息（每页50条） |
+| 消息同步 | 首次进入房间时按本地最大连续 seq 水印同步增量消息 |
+| 历史加载 | 基于 `before_seq` 加载更早历史消息（每页50条） |
 | 消息去重 | 通过 clientMsgId 或 messageId 去重 |
 | 消息状态 | 跟踪消息投递状态（发送中、已发送、发送失败） |
 | 消息撤回 | 调用撤回接口并更新本地列表 |
@@ -541,6 +783,13 @@ logout()
 
 - 发送中的消息（seq=0）按时间戳升序排在最后
 - 其他消息按 seq 升序排列
+
+**同步与分页规则**:
+
+- 增量同步不能使用本地最大 seq，必须使用本地最大连续 seq 作为已读/已收水印，避免本地 SQLite 存在空洞时跳过缺失消息。
+- 本地加载更多历史时使用 `beforeSeq` 查询 `seq < oldestSeq` 的消息，不使用列表长度 offset。
+- 远端历史接口使用 `before_seq` 定向分页，并保留 `lastSeq + direction` 作为当前后端兼容参数。
+- `SyncRepository.syncMessages()` 会读取 `LocalDataSource.maxContinuousMessageSeq()`，再向 `/chat/history` 上报该水印做断点续传。
 
 **Provider 结构**:
 
@@ -555,6 +804,55 @@ class ChatHasMore extends _$ChatHasMore {
   // 房间是否还有更多历史消息
 }
 ```
+
+#### 3.4.4 RoomController (通话控制器)
+
+**文件路径**: `lib/framework/provider/chat/call/room_controller.dart`
+
+**职责描述**: 音视频通话控制器，基于 LiveKit 实现房间管理、参与者状态、通话控制和表情反应功能。
+
+**核心功能**:
+
+| 功能 | 描述 |
+|-----|------|
+| 房间管理 | 加入/离开通话房间 |
+| 媒体控制 | 麦克风开关、摄像头开关、屏幕共享 |
+| 参与者管理 | 参与者列表、角色权限、举手状态 |
+| 表情反应 | 发送/接收表情反应，3秒自动消失 |
+| 数据通道 | 发送/接收自定义数据事件 |
+
+**表情反应流程**:
+
+```
+sendReaction(emoji)
+  ├── 创建 ReactionItem（包含唯一 id）
+  ├── 添加到 RoomState.reactions 列表
+  ├── 启动 3 秒 Timer，到期后按 id 删除
+  └── 通过 publishData 广播给房间内其他用户
+```
+
+---
+
+### 3.5 媒体处理模块
+
+#### 3.5.1 表情反应特效
+
+**文件路径**: `lib/features/chat/presentation/call/component/reaction_overlay.dart`
+
+**职责描述**: 通话界面的表情反应全屏特效组件，监听 `RoomState.reactions` 列表，展示缩放+淡出动画。
+
+**动画流程**:
+
+| 阶段 | 时间 | 效果 |
+|-----|------|------|
+| 入场 | 0-400ms | 从 0.3 弹性缩放到 1.2 |
+| 保持 | 400-2200ms | 保持显示 |
+| 退场 | 2200-3000ms | 淡出消失 |
+
+**组件结构**:
+
+- `ReactionOverlay`: 管理所有活动的表情气泡
+- `_ReactionBubble`: 单个表情气泡，包含动画控制器
 
 ---
 
@@ -607,7 +905,25 @@ class ChatHasMore extends _$ChatHasMore {
 | `unreadCount` | `int?` | 未读消息数 |
 | `lastMessage` | `ChatMessage?` | 最后一条消息 |
 
-### 4.3 UserInfo
+### 4.3 RoomState
+
+**文件路径**: `lib/framework/domain/RoomState.dart`
+
+**职责描述**: 通话房间状态，包含参与者、通话状态、表情反应等信息。
+
+**属性说明**:
+
+| 属性名 | 类型 | 描述 |
+|-------|------|------|
+| `room` | `Room?` | LiveKit Room 实例 |
+| `participants` | `List<Participant>` | 参与者列表 |
+| `localParticipant` | `LocalParticipant?` | 本地参与者 |
+| `callStatus` | `CallStatus` | 通话状态 |
+| `handRaiseMap` | `Map<String, bool>` | 举手状态映射 |
+| `reactions` | `List<ReactionItem>` | 表情反应列表 |
+| `layoutMode` | `LayoutMode` | 视频布局模式 |
+
+### 4.4 UserInfo
 
 **文件路径**: `lib/framework/domain/UserInfo.dart`
 
@@ -649,9 +965,9 @@ class ChatHasMore extends _$ChatHasMore {
 │  │  Message:          │  Room:           │  Call:         │       │
 │  │  - ChatMessages    │  - RoomListSvc   │  - CallStatus  │       │
 │  │  - RoomMsgService  │  - RoomMemberSvc │  - RoomCtrl    │       │
-│  │  - HighMsgService  │  - PinnedRooms   │  - HistoryPanel│       │
-│  │  - SystemEventSvc  │  - CreateGroup   │                │       │
-│  │  - SearchMsgSvc    │                  │                │       │
+│  │  - HighMsgService  │  - PinnedRooms   │  - CallWindow  │       │
+│  │  - SystemEventSvc  │  - CreateGroup   │  - MobileSession│      │
+│  │  - SearchMsgSvc    │  - SplitView     │                │       │
 │  ├──────────────────────────────────────────────────────┤       │
 │  │  Input:            │  Favorite:       │                │       │
 │  │  - ChatInputCtrl   │  - ChatFavSvc    │                │       │
@@ -659,15 +975,23 @@ class ChatHasMore extends _$ChatHasMore {
 │  │  - UploadValidator │                  │                │       │
 │  │  - FileUploadCtrl  │                  │                │       │
 │  │  - ImageUploadCtrl │                  │                │       │
+│  │  - VoiceRecordCtrl │                  │                │       │
 │  └──────────────────────────────────────────────────────┘       │
 │                                                                 │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │   Contact    │    │    Theme     │    │   Setting    │       │
+│  │   Contact    │    │    Live       │    │   Setting    │       │
 │  ├──────────────┤    ├──────────────┤    ├──────────────┤       │
-│  │ContactListSvc│    │ThemeController│   │SettingsProv  │       │
-│  │ContactDetail │    │AppTheme       │    │UpdateCheck   │       │
+│  │ContactListSvc│    │LiveRoomCtrl   │   │SettingsProv  │       │
+│  │ContactDetail │    │               │    │UpdateCheck   │       │
 │  │ContactReqs   │    │               │    │              │       │
 │  │UserSearchSvc │    │               │    │              │       │
+│  └──────────────┘    └──────────────┘    └──────────────┘       │
+│                                                                 │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
+│  │   Desktop    │    │    Theme     │    │    Core      │       │
+│  ├──────────────┤    ├──────────────┤    ├──────────────┤       │
+│  │DesktopSearch │    │ThemeController│   │AppInitializer│       │
+│  │               │    │AppTheme       │    │NetworkProv   │       │
 │  └──────────────┘    └──────────────┘    └──────────────┘       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -685,7 +1009,11 @@ class ChatHasMore extends _$ChatHasMore {
 | `appInitializerProvider` | `FutureProvider` | 普通 | 应用初始化 |
 | `chatMessagesProvider` | `Notifier` | keepAlive | 消息存储 |
 | `roomListServiceProvider` | `AsyncNotifier` | keepAlive | 房间列表服务 |
+| `roomControllerProvider` | `Notifier` | keepAlive | 通话房间控制器 |
+| `liveRoomControllerProvider` | `Notifier` | keepAlive | 直播房间控制器 |
+| `contactListServiceProvider` | `AsyncNotifier` | keepAlive | 联系人列表服务 |
 | `appThemeProvider` | `Notifier` | keepAlive | 主题状态 |
+| `settingsProvider` | `Notifier` | keepAlive | 设置状态 |
 
 ---
 
@@ -784,6 +1112,7 @@ class ChatHasMore extends _$ChatHasMore {
 | `desktop_multi_window` | ^0.3.0 | 多窗口支持 |
 | `file_picker` | ^11.0.2 | 文件选择 |
 | `cached_network_image` | ^3.4.1 | 图片缓存 |
+| `drift` | ^2.19.0 | SQLite ORM |
 
 ### 8.2 开发依赖
 
@@ -793,6 +1122,7 @@ class ChatHasMore extends _$ChatHasMore {
 | `build_runner` | ^2.10.3 | 代码生成运行器 |
 | `go_router_builder` | ^4.1.3 | 路由代码生成器 |
 | `flutter_gen_runner` | ^5.12.0 | 资源代码生成器 |
+| `drift_dev` | ^2.19.0 | Drift 数据库代码生成器 |
 
 ---
 
@@ -820,7 +1150,7 @@ flutter pub get
 #### 9.2.2 生成代码
 
 ```bash
-# 生成 Riverpod、GoRouter 等代码
+# 生成 Riverpod、GoRouter、Drift 等代码
 dart run build_runner build --delete-conflicting-outputs
 
 # 生成开源许可证数据（可选）
@@ -928,7 +1258,16 @@ Text('item_count').trplural('other', 10)
 1. **认证状态**: 通过 `AuthController` 统一管理
 2. **WebSocket 连接**: 通过 `WsController` 统一管理
 3. **消息状态**: 通过 `ChatMessages` Provider 集中存储
-4. **UI 状态**: 使用 `ConsumerStatefulWidget` 或 `ref.watch`
+4. **通话状态**: 通过 `RoomController` 统一管理
+5. **UI 状态**: 使用 `ConsumerStatefulWidget` 或 `ref.watch`
+6. **桌面多窗口**: 子窗口必须使用独立 `ProviderContainer`，只同步 token，不共享主窗口聊天室、通话、消息和 WebSocket Provider 状态
+
+### 11.5 媒体资源规范
+
+1. 使用 `flutter_gen` 生成资源引用代码
+2. 通过 `Assets` 类访问资源
+3. 图片资源放在 `assets/images/`
+4. 音频资源放在 `assets/audio/`
 
 ---
 
@@ -944,6 +1283,7 @@ Text('item_count').trplural('other', 10)
 1. 在 `lib/framework/protocol/message/MessageEunm.dart` 中添加枚举值
 2. 创建对应的消息模型类实现 `IPacket` 接口
 3. 在 `main.dart` 的 `_registerPacketParsers()` 中注册解析器
+4. 在 `lib/features/chat/presentation/widgets/message_render/` 中添加渲染策略
 
 ### 12.3 如何添加新的 Provider？
 
@@ -954,6 +1294,10 @@ Text('item_count').trplural('other', 10)
 ### 12.4 如何自定义主题？
 
 在 `lib/framework/theme/AppTheme.dart` 的 `themes` 列表中添加新的 `ThemeOption`。
+
+### 12.5 如何添加表情反应？
+
+在通话界面中，通过 `CommandBar` 组件的 `_showReactionPicker()` 方法选择表情，发送后会在屏幕中央展示 3 秒的全屏特效动画。
 
 ---
 
@@ -974,8 +1318,10 @@ Text('item_count').trplural('other', 10)
 | 消息 | `/chat/search` | GET | 搜索消息 |
 | 消息 | `/chat/recall` | GET | 撤回消息 |
 | 通话 | `/call/token` | GET | 获取通话 Token |
+| 直播 | `/live/list` | GET | 获取直播列表 |
+| 直播 | `/live/enter` | POST | 进入直播间 |
 | 更新 | `/app/update/latest` | GET | 检查版本更新 |
 
 ---
 
-*最后更新: 2026-05-14*
+*最后更新: 2026-07-07*

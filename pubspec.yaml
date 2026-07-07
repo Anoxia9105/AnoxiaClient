@@ -138,9 +138,8 @@ dependencies:
   any_link_preview: ^3.0.3
   # 数据库
   drift: ^2.34.0
+  # 数据库libs
   sqlite3_flutter_libs: ^0.5.40
-  # 图片缓存
-  cross_cache: ^1.1.0
 
 
 dev_dependencies:

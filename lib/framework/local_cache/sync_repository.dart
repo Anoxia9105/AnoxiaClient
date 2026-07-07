@@ -55,12 +55,14 @@ class SyncRepository {
     String convId, {
     int limit = 50,
     int offset = 0,
+    int? beforeSeq,
     bool sync = true,
   }) async {
     final localMessages = await _local.getMessagesForConversation(
       convId,
       limit: limit,
       offset: offset,
+      beforeSeq: beforeSeq,
     );
     if (sync) unawaited(syncMessages(convId));
     return localMessages;
@@ -68,10 +70,9 @@ class SyncRepository {
 
   Future<void> syncConversations() {
     // 已有正在进行的同步，直接复用，避免并发重复请求
-    return _syncConversationsInflight ??=
-        _doSyncConversations().whenComplete(
-          () => _syncConversationsInflight = null,
-        );
+    return _syncConversationsInflight ??= _doSyncConversations().whenComplete(
+      () => _syncConversationsInflight = null,
+    );
   }
 
   Future<void> _doSyncConversations() async {
@@ -97,17 +98,17 @@ class SyncRepository {
 
   Future<void> syncMessages(String convId, {DateTime? since}) {
     // 同一会话已在同步中，直接复用，避免并发重复请求
-    return _syncMessagesInflight[convId] ??=
-        _doSyncMessages(convId, since: since).whenComplete(
-          () => _syncMessagesInflight.remove(convId),
-        );
+    return _syncMessagesInflight[convId] ??= _doSyncMessages(
+      convId,
+      since: since,
+    ).whenComplete(() => _syncMessagesInflight.remove(convId));
   }
 
   Future<void> _doSyncMessages(String convId, {DateTime? since}) async {
     if (!await _hasNetwork()) return;
 
     try {
-      final lastSeq = await _local.maxMessageSeq(convId);
+      final lastSeq = await _local.maxContinuousMessageSeq(convId);
       final latestSentAt = since ?? await _local.latestMessageSentAt(convId);
       final remoteMessages = await _remote.fetchMessages(
         convId,
