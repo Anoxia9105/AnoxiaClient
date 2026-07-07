@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
@@ -9,14 +10,17 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage>
-    with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
+  // 核心视觉控制器（执行一次）
   late AnimationController _controller;
-  late Animation<double> _logoScale;
-  late Animation<double> _logoOpacity;
-  late Animation<double> _indicatorOpacity;
-  late Animation<double> _glowOpacity;
-  late Animation<double> _ringScale;
+  // 粒子持续动画控制器（无限循环，解决定住的问题）
+  late AnimationController _particleController;
+
+  // 核心视觉动画
+  late Animation<double> _textDelayOpacity;
+
+  // 轻量粒子列表
+  final List<_Particle> _particles = List.generate(24, (i) => _Particle());
 
   @override
   void initState() {
@@ -27,43 +31,17 @@ class _SplashPageState extends State<SplashPage>
       duration: const Duration(milliseconds: 2200),
     );
 
-    // Logo 缩放，弹性落下
-    _logoScale = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
-      ),
-    );
+    // 粒子独立的无限循环控制器（确保动画结束后粒子依旧在飘动）
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
 
-    // Logo 淡入
-    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+    //  底部品牌/加载文本优雅淡入
+    _textDelayOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.45),
-      ),
-    );
-
-    // 光晕淡入
-    _glowOpacity = Tween<double>(begin: 0, end: 0.35).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.3, 0.7),
-      ),
-    );
-
-    // 扩散圆环：从1.0放大到1.6并淡出
-    _ringScale = Tween<double>(begin: 1.0, end: 1.6).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.4, 0.85, curve: Curves.easeOut),
-      ),
-    );
-
-    // 底部指示器
-    _indicatorOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.65, 1.0),
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
       ),
     );
 
@@ -73,132 +51,166 @@ class _SplashPageState extends State<SplashPage>
   @override
   void dispose() {
     _controller.dispose();
+    _particleController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final primaryColor = colorScheme.primary;
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
 
     return AppScaffold(
       hideAppBarLogo: true,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (_, __) {
-                return SizedBox(
-                  width: 160,
-                  height: 160,
-                  child: Stack(
-                    alignment: Alignment.center,
+      body: Stack(
+        children: [
+          // 氛围底层：使用 _particleController 驱动，使其无限循环持续飘动
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _particleController,
+              builder: (context, child) {
+                for (var p in _particles) {
+                  p.update(); // 移除了 progress 参数依赖，改为固定时钟步长步进
+                }
+                return CustomPaint(
+                  painter: _ParticlePainter(
+                    particles: _particles,
+                    color: primaryColor,
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // 核心视觉层（Logo 及文本动画）
+          Positioned.fill(
+            child: SafeArea(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 扩散光圈
+                      const SizedBox(height: 40),
+
+                      // 图标主体
+                      SizedBox(
+                        width: 152,
+                        height: 152,
+                        child: Assets.images.appIconPng.image(
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+
+                      // 优雅的底座
                       Opacity(
-                        opacity: (1 -
-                                ((_ringScale.value - 1.0) / 0.6).clamp(
-                                  0.0,
-                                  1.0,
-                                )) *
-                            _glowOpacity.value *
-                            2,
-                        child: Transform.scale(
-                          scale: _ringScale.value,
-                          child: Container(
-                            width: 128,
-                            height: 128,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: primaryColor,
-                                width: 1.5,
+                        opacity: _textDelayOpacity.value,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 40.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'ANOXIA IM',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 6.0,
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.85,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // 背景光晕
-                      Opacity(
-                        opacity: _glowOpacity.value,
-                        child: Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                primaryColor.withValues(alpha: 0.4),
-                                primaryColor.withValues(alpha: 0.0),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Logo 本体
-                      Opacity(
-                        opacity: _logoOpacity.value,
-                        child: Transform.scale(
-                          scale: _logoScale.value,
-                          child: Container(
-                            width: 108,
-                            height: 108,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(26),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primaryColor.withValues(alpha: 0.3),
-                                  blurRadius: 24,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 8),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Secure · High Performance · Cross-Platform',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  letterSpacing: 1.0,
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.4,
+                                  ),
                                 ),
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.12),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
+                              ),
+                              const SizedBox(height: 32),
+                              SizedBox(
+                                width: 64,
+                                child: LinearProgressIndicator(
+                                  minHeight: 2,
+                                  backgroundColor: primaryColor.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  color: primaryColor.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(26),
-                              child: Assets.images.appIconPng
-                                  .image(fit: BoxFit.cover),
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-
-            const SizedBox(height: 56),
-
-            // 底部加载指示器
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (_, __) {
-                return Opacity(
-                  opacity: _indicatorOpacity.value,
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: primaryColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _Particle {
+  late double x;
+  late double y;
+  late double size;
+  late double speed;
+  late double baseOpacity;
+  late double angle;
+
+  _Particle() {
+    _reset(isInitial: true);
+  }
+
+  void _reset({bool isInitial = false}) {
+    final random = math.Random();
+    x = random.nextDouble();
+    // 初始离散在全屏，后续生成的粒子则严格从底部往上走
+    y = isInitial ? random.nextDouble() : 1.1;
+    size = random.nextDouble() * 3.0 + 1.2;
+    speed = random.nextDouble() * 0.05 + 0.02;
+    baseOpacity = random.nextDouble() * 0.28 + 0.12;
+    angle = random.nextDouble() * math.pi * 2;
+  }
+
+  // 移除了依赖全局 progress 的逻辑，改为每帧固定步长更新
+  void update() {
+    y -= speed * 0.016;
+    x += math.sin(angle + y * 4) * 0.0012;
+    if (y < -0.1 || x < -0.1 || x > 1.1) {
+      _reset();
+    }
+  }
+}
+
+class _ParticlePainter extends CustomPainter {
+  final List<_Particle> particles;
+  final Color color;
+
+  _ParticlePainter({required this.particles, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..isAntiAlias = true;
+
+    for (var p in particles) {
+      final position = Offset(p.x * size.width, p.y * size.height);
+      double edgeAlpha = 1.0;
+      if (p.y < 0.2) edgeAlpha = p.y / 0.2;
+
+      paint.color = color.withValues(alpha: p.baseOpacity * edgeAlpha);
+      canvas.drawCircle(position, p.size, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true;
 }

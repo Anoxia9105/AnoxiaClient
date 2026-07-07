@@ -145,6 +145,8 @@ class LocalDataSource {
 
   Future<void> upsertMessages(Iterable<ChatMessage> messages) async {
     final rows = messages.map(_messageToRow).toList();
+    if (rows.isEmpty) return;
+
     log.debug('[DB] upsertMessages count=${rows.length}');
     for (final conversationId
         in rows.map((row) => row.conversationId).toSet()) {

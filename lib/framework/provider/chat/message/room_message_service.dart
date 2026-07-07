@@ -30,6 +30,8 @@ class ChatMessages extends _$ChatMessages {
   /// 已同步过的房间 ID 集合，用于判断是否需要增量拉取
   final Set<String> _syncedRoomIds = {};
 
+  final Map<String, int> _syncedSeqByRoom = {};
+
   @override
   Map<String, List<ChatMessage>> build() {
     // 订阅 WebSocket 消息流，只处理普通消息类型
@@ -178,6 +180,15 @@ class ChatMessages extends _$ChatMessages {
 
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
     final syncRepo = ref.read(syncRepositoryProvider);
+    final cachedMessages = state[roomId] ?? const <ChatMessage>[];
+    final cachedSeq = _maxSeq(cachedMessages);
+
+    if (_syncedRoomIds.contains(roomId) &&
+        cachedMessages.isNotEmpty &&
+        (serverLastSeq == null ||
+            (_syncedSeqByRoom[roomId] ?? cachedSeq) >= serverLastSeq)) {
+      return;
+    }
 
     // ─── Step 1: 本地缓存优先，立即渲染 ───────────────────────────────
     final localMessages = await syncRepo.getMessagesForConversation(
@@ -196,11 +207,15 @@ class ChatMessages extends _$ChatMessages {
     }
 
     // ─── Step 2: 判断是否需要远端增量同步 ─────────────────────────────
-    final localMaxSeq = await ref
-        .read(localDataSourceProvider)
-        .maxContinuousMessageSeq(roomId);
-    if (_syncedRoomIds.contains(roomId) &&
-        (serverLastSeq == null || localMaxSeq >= serverLastSeq)) {
+    final localMaxSeq = localMessages.isNotEmpty
+        ? _maxSeq(localMessages)
+        : cachedSeq;
+    if (serverLastSeq == null || localMaxSeq >= serverLastSeq) {
+      _syncedRoomIds.add(roomId);
+      _syncedSeqByRoom[roomId] = localMaxSeq;
+      log.debug(
+        '[Cache] syncRoomMessages: local up-to-date roomId=$roomId localMaxSeq=$localMaxSeq serverLastSeq=$serverLastSeq',
+      );
       return;
     }
 
@@ -226,12 +241,20 @@ class ChatMessages extends _$ChatMessages {
             .read(chatHasMoreProvider.notifier)
             .setHasMore(roomId, refreshed.length >= _pageSize);
       }
+      _syncedSeqByRoom[roomId] = serverLastSeq;
     } catch (e) {
       log.error('同步房间 $roomId 失败: $e');
     }
   }
 
   /// 将 [localMessages] 合并到 state，保留内存中 sending 状态的消息。
+  int _maxSeq(List<ChatMessage> messages) {
+    return messages.fold<int>(
+      0,
+      (max, msg) => (msg.seq ?? 0) > max ? msg.seq! : max,
+    );
+  }
+
   void _applyMessages(String roomId, List<ChatMessage> localMessages) {
     final sending = (state[roomId] ?? [])
         .where((m) => m.deliveryStatus == DeliveryStatus.sending)
@@ -334,14 +357,23 @@ class ChatMessages extends _$ChatMessages {
   }
 
   /// 撤回消息
-  void clearRoom(String roomId) =>
-      (_syncedRoomIds.remove(roomId), state = {...state, roomId: []});
+  void clearRoom(String roomId) {
+    _syncedRoomIds.remove(roomId);
+    _syncedSeqByRoom.remove(roomId);
+    state = {...state, roomId: []};
+  }
 
   /// 标记房间需要重新同步（如收到系统消息导致状态变化时调用）
-  void markNeedResync(String roomId) => _syncedRoomIds.remove(roomId);
+  void markNeedResync(String roomId) {
+    _syncedRoomIds.remove(roomId);
+    _syncedSeqByRoom.remove(roomId);
+  }
 
   /// 全局标记所有房间需要重新同步（如网络重连时调用）
-  void markAllNeedResync() => _syncedRoomIds.clear();
+  void markAllNeedResync() {
+    _syncedRoomIds.clear();
+    _syncedSeqByRoom.clear();
+  }
 
   /// 删除消息（如撤回成功后从列表移除）
   void removeMessage(String messageId, String roomId) {

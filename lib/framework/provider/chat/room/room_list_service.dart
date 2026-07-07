@@ -207,17 +207,20 @@ class RoomListService extends _$RoomListService {
     state.whenData((rooms) {
       final index = rooms.indexWhere((r) => r.roomId == roomId);
       if (index != -1) {
-        // 上报已读 seq：优先用待上报的 seq（更大），否则用 lastMessage 的 seq
-        final int? lastSeq = rooms[index].lastMessage?.seq;
-        final int? seqToReport = (pendingSeq != null && pendingSeq > 0)
-            ? pendingSeq
-            : lastSeq;
-        if (seqToReport != null && seqToReport > 0) {
-          _reportReadSeq(roomId, seqToReport);
+        final unreadCount = rooms[index].unreadCount ?? 0;
+        final hasPendingReadSeq = pendingSeq != null && pendingSeq > 0;
+
+        // 只有存在未上报的已读 seq，或房间确实有未读时，才触发本地/远端已读同步。
+        if (hasPendingReadSeq || unreadCount > 0) {
+          final int? lastSeq = rooms[index].lastMessage?.seq;
+          final int? seqToReport = hasPendingReadSeq ? pendingSeq : lastSeq;
+          if (seqToReport != null && seqToReport > 0) {
+            _reportReadSeq(roomId, seqToReport);
+          }
         }
 
         // 本地未读数归零
-        if ((rooms[index].unreadCount ?? 0) > 0) {
+        if (unreadCount > 0) {
           final List<ChatRoomVO> updatedList = List.from(rooms);
           updatedList[index] = updatedList[index].copyWith(unreadCount: 0);
           state = AsyncValue.data(updatedList);

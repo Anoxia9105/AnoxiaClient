@@ -787,9 +787,11 @@ logout()
 **同步与分页规则**:
 
 - 增量同步不能使用本地最大 seq，必须使用本地最大连续 seq 作为已读/已收水印，避免本地 SQLite 存在空洞时跳过缺失消息。
+- 重复进入同一房间时，`RoomMessageService.syncRoomMessages()` 必须先检查内存消息与最新本地页；当本地最新 seq 已覆盖到服务端 `lastMessage.seq` 时，直接返回，不能请求历史接口。
 - 本地加载更多历史时使用 `beforeSeq` 查询 `seq < oldestSeq` 的消息，不使用列表长度 offset。
 - 远端历史接口使用 `before_seq` 定向分页，并保留 `lastSeq + direction` 作为当前后端兼容参数。
 - `SyncRepository.syncMessages()` 会读取 `LocalDataSource.maxContinuousMessageSeq()`，再向 `/chat/history` 上报该水印做断点续传。
+- 进入房间后的已读同步只在存在未读数或待上报 seq 时触发；对已经为 0 未读的房间重复点击，不应再次调用本地/远端 `markAsRead`。
 
 **Provider 结构**:
 

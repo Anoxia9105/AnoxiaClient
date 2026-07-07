@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/desktop/DesktopSidebar.dart';
 import 'package:anoxia/common/widgets/app/MobileBottomBar.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
