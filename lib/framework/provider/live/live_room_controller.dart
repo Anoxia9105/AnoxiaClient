@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
@@ -105,7 +107,10 @@ class LiveRoomController extends _$LiveRoomController {
     }
   }
 
-  Future<void> toggleScreenShare(BuildContext context) async {
+  Future<void> toggleScreenShare(
+    BuildContext context, {
+    String? sourceId,
+  }) async {
     if (_isTogglingScreen) return;
     _isTogglingScreen = true;
     try {
@@ -116,8 +121,17 @@ class LiveRoomController extends _$LiveRoomController {
 
       final next = !current.screenSharing;
       if (next) {
+        if (sourceId == null && DeviceUtil.isRealDesktop() && context.mounted) {
+          final source = await showDialog<dynamic>(
+            context: context,
+            builder: (context) => const WindowScreenSelectDialog(),
+          );
+          if (source == null) return;
+          sourceId = source.id?.toString();
+        }
         final screenTrack = await LocalVideoTrack.createScreenShareTrack(
-          const ScreenShareCaptureOptions(
+          ScreenShareCaptureOptions(
+            sourceId: sourceId,
             captureScreenAudio: true,
             maxFrameRate: 15,
             params: VideoParametersPresets.screenShareH1080FPS30,

@@ -64,27 +64,32 @@ class Toast {
     final config = _toastConfig(type);
     final resolvedColor = color ?? config.color;
 
-    return BotToast.showNotification(
-      onTap: onTap,
-      align: alignment,
-      duration: duration,
-      margin: _defaultMargin,
-      title: (_) => Text(
-        message,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          height: 1.2,
+    try {
+      return BotToast.showNotification(
+        onTap: onTap,
+        align: alignment,
+        duration: duration,
+        margin: _defaultMargin,
+        title: (_) => Text(
+          message,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.2,
+          ),
         ),
-      ),
-      leading: (_) => config.icon,
-      trailing: (_) =>
-          Text(typeMessage ?? '', style: const TextStyle(color: white)),
-      backgroundColor: resolvedColor,
-    );
+        leading: (_) => config.icon,
+        trailing: (_) =>
+            Text(typeMessage ?? '', style: const TextStyle(color: white)),
+        backgroundColor: resolvedColor,
+      );
+    } catch (e) {
+      debugPrint('BotToast is not ready: $e');
+      return () {};
+    }
   }
 
   /// 显示文本提示框

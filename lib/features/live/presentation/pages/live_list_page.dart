@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/features/live/presentation/pages/live_preview_page.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -84,7 +83,7 @@ class _LiveListPageState extends State<LiveListPage> {
               subtitle: '先预览直播画面，开播后由服务端自动生成数字房间号',
               actionLabel: 'live_start_action'.tr(),
               color: cs.primary,
-              onTap: _openStartDialog,
+              onTap: _openLivePreviewWindow,
             ),
             const SizedBox(height: 14),
             _LiveActionCard(
@@ -198,88 +197,20 @@ class _LiveListPageState extends State<LiveListPage> {
     );
   }
 
-  Future<void> _openStartDialog() async {
-    var visibility = LiveVisibility.public;
-    final selected = await showDialog<LiveVisibility>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('开播设置'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SegmentedButton<LiveVisibility>(
-                    segments: const [
-                      ButtonSegment(
-                        value: LiveVisibility.public,
-                        icon: Icon(Icons.public),
-                        label: Text('公开'),
-                      ),
-                      ButtonSegment(
-                        value: LiveVisibility.private,
-                        icon: Icon(Icons.lock_outline),
-                        label: Text('私密'),
-                      ),
-                    ],
-                    selected: {visibility},
-                    onSelectionChanged: (value) {
-                      setDialogState(() => visibility = value.first);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    visibility == LiveVisibility.public
-                        ? '公开直播会显示在直播间列表，平台用户都可以观看。'
-                        : '私密直播不会出现在列表，观众只能通过房间号进入。',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(visibility),
-                  child: const Text('预览画面'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (!mounted || selected == null) return;
-
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LivePreviewPage(
-          visibility: selected,
-          onStart:
-              ({required title, required visibility, required source}) async {
-                final room = await _startLive(
-                  title: title,
-                  visibility: visibility,
-                  source: source,
-                );
-                await _openLiveWindow(
-                  roomId: room.roomId,
-                  title: room.title,
-                  isHost: true,
-                  visibility: visibility,
-                  source: source,
-                );
-                if (mounted) {
-                  await _loadPublicRooms();
-                }
-              },
+  Future<void> _openLivePreviewWindow() async {
+    if (DeviceUtil.isRealDesktop()) {
+      final controller = await WindowController.create(
+        WindowConfiguration(
+          hiddenAtLaunch: true,
+          arguments: jsonEncode({'type': 'live-preview'}),
         ),
-      ),
-    );
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await controller.show();
+      return;
+    }
+
+    Toast.showNotificationNow('移动端直播预览窗口暂未接入');
   }
 
   Future<void> _openJoinDialog() async {
@@ -331,30 +262,6 @@ class _LiveListPageState extends State<LiveListPage> {
     } catch (e) {
       Toast.showNotificationNow('进入直播间失败：$e');
     }
-  }
-
-  Future<_RoomSummary> _startLive({
-    required String title,
-    required LiveVisibility visibility,
-    required LiveSource source,
-  }) async {
-    final res = await DioClient().post(
-      '/live/start',
-      data: {
-        'title': title,
-        'visibility': visibility.serverValue,
-        'source': source.serverValue,
-      },
-    );
-    if (res.data?['code'] != 200) {
-      throw Exception(res.data?['msg'] ?? res.data?['message'] ?? '未知错误');
-    }
-
-    final data = res.data?['data'];
-    if (data is Map) {
-      return _RoomSummary.fromJson(data);
-    }
-    throw Exception('服务端未返回直播间信息');
   }
 
   Future<_RoomSummary> _ensureRoomExists(String roomId) async {
@@ -520,27 +427,5 @@ class _RoomSummary {
           ? LiveSource.screen
           : LiveSource.camera,
     );
-  }
-}
-
-extension _LiveVisibilityServerValue on LiveVisibility {
-  String get serverValue {
-    switch (this) {
-      case LiveVisibility.public:
-        return 'PUBLIC';
-      case LiveVisibility.private:
-        return 'PRIVATE';
-    }
-  }
-}
-
-extension _LiveSourceServerValue on LiveSource {
-  String get serverValue {
-    switch (this) {
-      case LiveSource.camera:
-        return 'CAMERA';
-      case LiveSource.screen:
-        return 'SCREEN';
-    }
   }
 }

@@ -18,11 +18,33 @@ enum LiveVisibility {
   String get label => this == LiveVisibility.public ? '公开' : '私密';
 }
 
+extension LiveVisibilityCodec on LiveVisibility {
+  String get serverValue {
+    switch (this) {
+      case LiveVisibility.public:
+        return 'PUBLIC';
+      case LiveVisibility.private:
+        return 'PRIVATE';
+    }
+  }
+}
+
 enum LiveSource {
   camera,
   screen;
 
   String get label => this == LiveSource.camera ? '摄像头' : '屏幕共享';
+}
+
+extension LiveSourceCodec on LiveSource {
+  String get serverValue {
+    switch (this) {
+      case LiveSource.camera:
+        return 'CAMERA';
+      case LiveSource.screen:
+        return 'SCREEN';
+    }
+  }
 }
 
 class LiveRoomPage extends ConsumerStatefulWidget {
@@ -31,6 +53,7 @@ class LiveRoomPage extends ConsumerStatefulWidget {
   final bool isHost;
   final LiveVisibility visibility;
   final LiveSource source;
+  final String? screenSourceId;
 
   const LiveRoomPage({
     super.key,
@@ -39,6 +62,7 @@ class LiveRoomPage extends ConsumerStatefulWidget {
     required this.isHost,
     this.visibility = LiveVisibility.public,
     this.source = LiveSource.camera,
+    this.screenSourceId,
   });
 
   @override
@@ -61,6 +85,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   bool _cohostRequested = false;
   bool _cohostActive = false;
   bool _initialMediaStarted = false;
+  bool _joinMessageSent = false;
 
   @override
   void initState() {
@@ -99,6 +124,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     await ref.read(
       liveRoomControllerProvider(widget.roomId, widget.isHost).future,
     );
+
+    if (!widget.isHost) {
+      unawaited(_sendJoinMessage());
+    }
   }
 
   Future<void> _startInitialMedia() async {
@@ -112,13 +141,17 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       if (widget.source == LiveSource.screen) {
         await controller.toggleMic();
         if (mounted) {
-          await controller.toggleScreenShare(context);
+          await controller.toggleScreenShare(
+            context,
+            sourceId: widget.screenSourceId,
+          );
         }
       } else {
         await controller.toggleCamera();
         await controller.toggleMic();
       }
     } catch (e) {
+      _initialMediaStarted = false;
       Toast.showNotificationNow('启动直播画面失败：$e');
     }
   }
@@ -230,6 +263,44 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       reliable: true,
       topic: topic,
     );
+  }
+
+  Future<void> _sendJoinMessage() async {
+    if (_joinMessageSent) return;
+    _joinMessageSent = true;
+
+    final current = ref.read(
+      liveRoomControllerProvider(widget.roomId, widget.isHost),
+    );
+    final participant = current.value?.room.localParticipant;
+    final name = _participantName(participant);
+    final text = '$name 进入直播间';
+
+    if (!mounted) return;
+    _addMessage(_LiveChatMessage(text: text, isHost: false, name: '系统'));
+
+    try {
+      await _publishLiveEvent(
+        topic: _danmakuTopic,
+        payload: {'text': text, 'isHost': false, 'name': '系统', 'system': true},
+      );
+    } catch (e) {
+      _joinMessageSent = false;
+      Toast.showNotificationNow('进入直播间提示发送失败：$e');
+    }
+  }
+
+  String _participantName(Participant? participant) {
+    if (participant == null) return '观众';
+    try {
+      final metadata =
+          jsonDecode(participant.metadata ?? '{}') as Map<String, dynamic>;
+      final nickName = metadata['nickName']?.toString();
+      if (nickName != null && nickName.trim().isNotEmpty) {
+        return nickName.trim();
+      }
+    } catch (_) {}
+    return participant.identity;
   }
 
   void _addMessage(_LiveChatMessage message) {
@@ -403,8 +474,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    _ChatPanel(messages: _messages),
-                    const SizedBox(height: 8),
+                    if (!widget.isHost) ...[
+                      _ChatPanel(messages: _messages),
+                      const SizedBox(height: 8),
+                    ],
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -413,31 +486,35 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
                       ),
                       child: Column(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _chatController,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: const InputDecoration(
-                                    hintText: '说点什么...',
-                                    hintStyle: TextStyle(color: Colors.white54),
-                                    border: InputBorder.none,
+                          if (!widget.isHost) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _chatController,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: const InputDecoration(
+                                      hintText: '说点什么...',
+                                      hintStyle: TextStyle(
+                                        color: Colors.white54,
+                                      ),
+                                      border: InputBorder.none,
+                                    ),
+                                    onSubmitted: (_) => _sendMessage(),
                                   ),
-                                  onSubmitted: (_) => _sendMessage(),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: _sendMessage,
-                                icon: const Icon(
-                                  Icons.send,
-                                  color: Colors.white,
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: _sendMessage,
+                                  icon: const Icon(
+                                    Icons.send,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                          ],
                           _LiveControls(
                             isHost: widget.isHost,
                             cohostRequested: _cohostRequested,

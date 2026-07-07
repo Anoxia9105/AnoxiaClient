@@ -1,4 +1,6 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -10,6 +12,7 @@ class LivePreviewPage extends StatefulWidget {
     required String title,
     required LiveVisibility visibility,
     required LiveSource source,
+    String? sourceId,
   })
   onStart;
 
@@ -26,7 +29,9 @@ class LivePreviewPage extends StatefulWidget {
 class _LivePreviewPageState extends State<LivePreviewPage> {
   final TextEditingController _titleController = TextEditingController();
   LocalVideoTrack? _previewTrack;
+  late LiveVisibility _visibility;
   LiveSource _source = LiveSource.camera;
+  String? _screenSourceId;
   bool _loading = true;
   bool _starting = false;
   Object? _error;
@@ -34,6 +39,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
   @override
   void initState() {
     super.initState();
+    _visibility = widget.visibility;
     _startPreview();
   }
 
@@ -61,6 +67,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
     try {
       LocalVideoTrack track;
       if (_source == LiveSource.camera) {
+        _screenSourceId = null;
         final camera = await Permission.camera.request();
         final mic = await Permission.microphone.request();
         if (!camera.isGranted || !mic.isGranted) {
@@ -70,12 +77,25 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
           const CameraCaptureOptions(params: VideoParametersPresets.h720_169),
         );
       } else {
+        String? sourceId;
+        if (DeviceUtil.isRealDesktop() && mounted) {
+          final source = await showDialog<dynamic>(
+            context: context,
+            builder: (context) => const WindowScreenSelectDialog(),
+          );
+          if (source == null) {
+            throw Exception('未选择共享屏幕或窗口');
+          }
+          sourceId = source.id?.toString();
+        }
+        _screenSourceId = sourceId;
         final mic = await Permission.microphone.request();
         if (!mic.isGranted) {
           throw Exception('需要开启麦克风权限');
         }
         track = await LocalVideoTrack.createScreenShareTrack(
-          const ScreenShareCaptureOptions(
+          ScreenShareCaptureOptions(
+            sourceId: sourceId,
             captureScreenAudio: true,
             maxFrameRate: 15,
             params: VideoParametersPresets.screenShareH1080FPS15,
@@ -126,12 +146,10 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
       await _disposePreviewTrack();
       await widget.onStart(
         title: title,
-        visibility: widget.visibility,
+        visibility: _visibility,
         source: _source,
+        sourceId: _source == LiveSource.screen ? _screenSourceId : null,
       );
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
     } catch (e) {
       if (!mounted) return;
       Toast.showNotificationNow('开播失败：$e');
@@ -189,11 +207,27 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Icon(
-                        widget.visibility == LiveVisibility.public
-                            ? Icons.public
-                            : Icons.lock_outline,
-                        color: Colors.white,
+                      Expanded(
+                        child: SegmentedButton<LiveVisibility>(
+                          segments: const [
+                            ButtonSegment(
+                              value: LiveVisibility.public,
+                              icon: Icon(Icons.public),
+                              label: Text('公开'),
+                            ),
+                            ButtonSegment(
+                              value: LiveVisibility.private,
+                              icon: Icon(Icons.lock_outline),
+                              label: Text('私密'),
+                            ),
+                          ],
+                          selected: {_visibility},
+                          onSelectionChanged: _starting
+                              ? null
+                              : (value) {
+                                  setState(() => _visibility = value.first);
+                                },
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -223,7 +257,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${widget.visibility.label}直播 · ${_source.label} · 房间号由服务端生成',
+                          '${_visibility.label}直播 · ${_source.label} · 房间号由服务端生成',
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ),

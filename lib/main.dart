@@ -4,7 +4,9 @@ import 'dart:io';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
+import 'package:anoxia/features/live/presentation/pages/window_live_danmaku_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
+import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -241,9 +243,12 @@ Future<void> runSubApp(WindowController controller) async {
     }
 
     final args = _parseWindowArguments(controller.arguments);
-    final Widget child = args['type'] == 'live'
-        ? WindowLivePage(controller: controller)
-        : WindowCallPage(controller: controller);
+    final Widget child = switch (args['type']) {
+      'live-preview' => WindowLivePreviewPage(controller: controller),
+      'live' => WindowLivePage(controller: controller),
+      'live-danmaku' => WindowLiveDanmakuPage(controller: controller),
+      _ => WindowCallPage(controller: controller),
+    };
 
     // 启动子窗口（继承全局容器，共享状态）
     runApp(
