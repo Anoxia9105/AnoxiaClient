@@ -1,5 +1,5 @@
+import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
@@ -52,7 +52,7 @@ class ImageMessageStrategy extends MessageRenderStrategy {
           borderRadius: BorderRadius.circular(8),
           child: Hero(
             tag: heroTag,
-            child: CachedNetworkImage(
+            child: CachedNetworkImageView(
               imageUrl: attachment.url!,
               width: displayWidth,
               height: displayHeight,
@@ -89,7 +89,7 @@ class ImageMessageStrategy extends MessageRenderStrategy {
             borderRadius: BorderRadius.circular(4),
             child: Hero(
               tag: heroTag,
-              child: CachedNetworkImage(
+              child: CachedNetworkImageView(
                 imageUrl: attachment.url!,
                 width: gridSize,
                 height: gridSize,

@@ -1,5 +1,5 @@
+import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/theme/AppTheme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -52,14 +52,16 @@ class AvatarWidget extends StatelessWidget {
   Color _getTextColor(Color backgroundColor) {
     // 1. 计算背景色相对亮度
     final double luminance = backgroundColor.computeLuminance();
-    
+
     // 2. 将背景色转为 HSL 颜色空间，准备精准操控
     final hsl = HSLColor.fromColor(backgroundColor);
 
     // 情况 A：如果背景色是非常淡的浅色 (亮度 > 0.6)
     if (luminance > 0.6) {
       // 文字采用：同色系大幅加深（降亮度）
-      return hsl.withLightness((hsl.lightness - 0.45).clamp(0.0, 1.0)).toColor();
+      return hsl
+          .withLightness((hsl.lightness - 0.45).clamp(0.0, 1.0))
+          .toColor();
     }
 
     // 情况 B：如果背景色是中等或深色 (亮度 <= 0.6)
@@ -81,7 +83,7 @@ class AvatarWidget extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
           child: hasUrl
-              ? CachedNetworkImage(
+              ? CachedNetworkImageView(
                   maxWidthDiskCache: (size * 3).toInt(),
                   maxHeightDiskCache: (size * 3).toInt(),
                   filterQuality: FilterQuality.low,

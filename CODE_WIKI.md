@@ -1111,7 +1111,7 @@ sendReaction(emoji)
 | `window_manager` | git | 窗口管理 |
 | `desktop_multi_window` | ^0.3.0 | 多窗口支持 |
 | `file_picker` | ^11.0.2 | 文件选择 |
-| `cached_network_image` | ^3.4.1 | 图片缓存 |
+| `cross_cache` | ^1.1.0 | 跨平台图片/二进制缓存，Web 使用 IndexedDB，IO 使用本地缓存目录 |
 | `drift` | ^2.19.0 | SQLite ORM |
 
 ### 8.2 开发依赖

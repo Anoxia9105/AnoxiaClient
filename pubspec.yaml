@@ -51,7 +51,8 @@ dependencies:
   # 富文本
   flutter_quill: ^11.5.1
   # 图片缓存
-  cached_network_image: ^3.4.1
+  #cached_network_image: ^3.4.1
+  cross_cache: ^1.1.0
   # 图片查看
   photo_view: ^0.15.0
   window_manager:

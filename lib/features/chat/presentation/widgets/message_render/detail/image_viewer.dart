@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -117,10 +117,11 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   /// 下载当前图片到相册
   Future<void> _downloadImage() async {
     if (_downloading) return;
+    final messenger = ScaffoldMessenger.of(context);
 
     // 仅在真实移动设备上允许下载（非模拟器或桌面）
     if (!DeviceUtil.isRealMobile()) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('image_download_mobile_only'.tr())),
       );
       return;
@@ -129,9 +130,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     // 获取当前附件 URL
     final url = _currentAttachment(_galleryAttachments(watch: false)).url;
     if (url == null || url.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('image_load_failed'.tr())));
+      messenger.showSnackBar(SnackBar(content: Text('image_load_failed'.tr())));
       return;
     }
 
@@ -139,16 +138,16 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     final granted = await _ensureGalleryPermission();
     if (!granted) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('gallery_permission_required'.tr())),
       );
       return;
     }
 
     setState(() => _downloading = true);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('image_download_started'.tr())));
+    messenger.showSnackBar(
+      SnackBar(content: Text('image_download_started'.tr())),
+    );
 
     try {
       // 使用 Dio 下载图片二进制数据
@@ -176,7 +175,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
           (result['isSuccess'] == true || result['isSuccess'] == 1);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             ok ? 'image_download_success'.tr() : 'image_download_failed'.tr(),
@@ -185,9 +184,9 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('image_download_failed'.tr())));
+      messenger.showSnackBar(
+        SnackBar(content: Text('image_download_failed'.tr())),
+      );
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -311,7 +310,9 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                     scaleStateController: _scaleStateCtrl,
                     onTapUp: (context, details, value) =>
                         Navigator.pop(context),
-                    imageProvider: CachedNetworkImageProvider(attachment.url!),
+                    imageProvider: appCachedNetworkImageProvider(
+                      attachment.url!,
+                    ),
                     filterQuality: FilterQuality.high,
                     backgroundDecoration: const BoxDecoration(
                       color: Colors.black,
