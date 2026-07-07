@@ -140,9 +140,9 @@ class RoomListItem extends ConsumerWidget {
             url: room.roomAvatar,
             name: room.roomName,
             statusWidget: Tooltip(
-              message: 'chat_group_chat'.tr(),
+              message: 'chat_type_group'.tr(),
               child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedGroup,
+                icon: HugeIcons.strokeRoundedUserGroup03,
                 size: 12,
                 strokeWidth: 3,
               ),
@@ -178,25 +178,31 @@ class RoomListItem extends ConsumerWidget {
           style: const TextStyle(fontSize: 12),
         ),
         // 右侧显示置顶和未读数
-        trailing: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 120),
+        trailing: SizedBox(
+          width: 32,
+          height: 44,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // 置顶图标
-              Opacity(
-                opacity: isPinned ? 1 : 0,
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedPin02,
-                  size: 16,
-                  strokeWidth: 2,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
+              SizedBox(
+                height: 20,
+                child: isPinned
+                    ? HugeIcon(
+                        icon: HugeIcons.strokeRoundedPin02,
+                        size: 16,
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.outline,
+                      )
+                    : const SizedBox.shrink(),
               ),
 
-              // 未读消息数
-              VibratingBadge(count: room.unreadCount ?? 0),
+              const Spacer(),
+
+              SizedBox(
+                height: 20,
+                child: VibratingBadge(count: room.unreadCount ?? 0),
+              ),
             ],
           ),
         ),

@@ -792,6 +792,7 @@ logout()
 - 远端历史接口使用 `before_seq` 定向分页，并保留 `lastSeq + direction` 作为当前后端兼容参数。
 - `SyncRepository.syncMessages()` 会读取 `LocalDataSource.maxContinuousMessageSeq()`，再向 `/chat/history` 上报该水印做断点续传。
 - 进入房间后的已读同步只在存在未读数或待上报 seq 时触发；对已经为 0 未读的房间重复点击，不应再次调用本地/远端 `markAsRead`。
+- 离线待发送消息以 SQLite 中的 `SENDING` / `FAILED` 状态为唯一队列来源，由 `SyncRepository.retryPendingOutgoing()` 在网络恢复时重试；`WsController` 不再维护 SharedPreferences 离线二进制帧队列。
 
 **Provider 结构**:
 

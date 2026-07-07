@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:collection';
-import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:math' as math;
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/common/constants/StorageKeys.dart';
-import 'package:anoxia/common/utils/SPUtil.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/core/network_provider.dart';
@@ -34,25 +30,18 @@ part 'ws_controller.g.dart';
 @Riverpod(keepAlive: true)
 class WsController extends _$WsController {
   static const int _maxAutoRetryAttempts = 2;
-  static const int _maxOfflineQueueSize = 200;
-  static const int _offlineFlushBatchSize = 20;
-  static const Duration _offlineFlushBatchInterval = Duration(milliseconds: 50);
 
   WebSocketChannel? _channel;
   Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
-  Timer? _offlineFlushTimer;
   int _reconnectAttempts = 0;
   bool _reconnectEnabled = true;
   int? _lastAckErrorCode;
   String? _lastAckErrorMessage;
   DateTime? _lastAckErrorAt;
   bool _lastNetworkAvailable = true;
-  bool _isFlushingOfflineOutbounds = false;
 
   final Map<String, _PendingOutbound> _pendingOutbounds = {};
-  // 离线队列存储 base64 编码的二进制帧，便于持久化到 SharedPreferences
-  final ListQueue<String> _offlineOutbounds = ListQueue<String>();
 
   late final StreamController<PacketFrame<IPacket>> _messageController;
 
@@ -61,7 +50,6 @@ class WsController extends _$WsController {
     log.info('🌐 WsController 构建中...');
 
     _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
-    _restoreOfflineOutbounds();
 
     // 监听认证状态变化：登录时连接，登出时断开
     ref.listen(authControllerProvider, (previous, next) {
@@ -177,7 +165,6 @@ class WsController extends _$WsController {
       log.info('✅ WebSocket 连接成功');
 
       _startHeartbeat();
-      _flushOfflineOutbounds();
     } catch (e, st) {
       log.error('❌ WebSocket 连接失败', e, st);
       _handleError(e);
@@ -190,16 +177,13 @@ class WsController extends _$WsController {
     final Uint8List? bytes = _toBytes(msg);
     if (bytes == null) return;
 
-    final String b64 = base64.encode(bytes);
-
     if (state.status != WsStatus.connected) {
-      _enqueueOfflineOutbound(b64);
-      log.warning('尝试在未连接状态发送消息，已进入离线队列');
+      log.warning('尝试在未连接状态发送消息，交给本地持久化队列处理');
       return;
     }
 
     try {
-      _cachePendingOutbound(b64, bytes);
+      _cachePendingOutbound(bytes);
       _channel?.sink.add(bytes);
     } catch (e) {
       log.error('发送消息失败', e);
@@ -213,23 +197,16 @@ class WsController extends _$WsController {
     return null;
   }
 
-  void _cachePendingOutbound(String b64Payload, Uint8List bytes) {
-    final seq = _extractSeqFromB64(b64Payload);
+  void _cachePendingOutbound(Uint8List bytes) {
+    final seq = _extractSeqFromBytes(bytes);
     if (seq == null || seq.isEmpty) return;
-    _pendingOutbounds[seq] = _PendingOutbound(
-      payload: b64Payload,
-      bytes: bytes,
-    );
+    _pendingOutbounds[seq] = _PendingOutbound(bytes: bytes);
   }
 
-  /// 从 base64 编码的二进制帧中提取 clientMsgId（用作 seq key）
-  String? _extractSeqFromPayload(String b64Payload) =>
-      _extractSeqFromB64(b64Payload);
-
-  String? _extractSeqFromB64(String b64) {
+  /// 从二进制帧中提取 clientMsgId（用作 ACK 等待队列 key）
+  String? _extractSeqFromBytes(Uint8List bytes) {
     try {
-      final bytes = base64.decode(b64);
-      final frame = FrameCodec.parse(Uint8List.fromList(bytes));
+      final frame = FrameCodec.parse(bytes);
       if (!frame.isProtobuf) return null;
       final decoded = ImPacketV5.decodeEnvelope(frame.body);
       if (decoded == null || !decoded.isData) return null;
@@ -243,111 +220,6 @@ class WsController extends _$WsController {
     } catch (_) {
       return null;
     }
-  }
-
-  void _enqueueOfflineOutbound(String payload) {
-    final seq = _extractSeqFromPayload(payload);
-    if (seq != null) {
-      _offlineOutbounds.removeWhere((item) {
-        final existingSeq = _extractSeqFromPayload(item);
-        return existingSeq != null && existingSeq == seq;
-      });
-    }
-
-    if (_offlineOutbounds.length >= _maxOfflineQueueSize) {
-      _offlineOutbounds.removeFirst();
-      log.warning('[WsController] 离线队列已满，丢弃最早的一条消息');
-    }
-    _offlineOutbounds.addLast(payload);
-    unawaited(_persistOfflineOutbounds());
-  }
-
-  void _flushOfflineOutbounds() {
-    if (_isFlushingOfflineOutbounds) return;
-    if (_offlineOutbounds.isEmpty || state.status != WsStatus.connected) {
-      return;
-    }
-
-    log.info('[WsController] 开始回放离线消息，数量=${_offlineOutbounds.length}');
-    _isFlushingOfflineOutbounds = true;
-    _flushNextOfflineBatch();
-  }
-
-  void _flushNextOfflineBatch() {
-    if (_offlineOutbounds.isEmpty || state.status != WsStatus.connected) {
-      _isFlushingOfflineOutbounds = false;
-      return;
-    }
-
-    bool changed = false;
-    int sentCount = 0;
-    while (_offlineOutbounds.isNotEmpty &&
-        state.status == WsStatus.connected &&
-        sentCount < _offlineFlushBatchSize) {
-      final b64 = _offlineOutbounds.removeFirst();
-      changed = true;
-      sentCount += 1;
-      try {
-        final bytes = Uint8List.fromList(base64.decode(b64));
-        _cachePendingOutbound(b64, bytes);
-        _channel?.sink.add(bytes);
-      } catch (e) {
-        _offlineOutbounds.addFirst(b64);
-        log.error('[WsController] 回放离线消息失败，稍后重试', e);
-        break;
-      }
-    }
-
-    if (changed) {
-      unawaited(_persistOfflineOutbounds());
-    }
-
-    if (_offlineOutbounds.isEmpty || state.status != WsStatus.connected) {
-      _isFlushingOfflineOutbounds = false;
-      return;
-    }
-
-    _offlineFlushTimer?.cancel();
-    _offlineFlushTimer = Timer(
-      _offlineFlushBatchInterval,
-      _flushNextOfflineBatch,
-    );
-  }
-
-  Future<void> _persistOfflineOutbounds() async {
-    await SPUtil.instance.setStringList(
-      StorageKeys.wsOfflineOutboundQueue,
-      _offlineOutbounds.toList(),
-    );
-  }
-
-  void _restoreOfflineOutbounds() {
-    final cached = SPUtil.instance.getStringList(
-      StorageKeys.wsOfflineOutboundQueue,
-      defValue: const <String>[],
-    );
-    if (cached == null || cached.isEmpty) return;
-
-    _offlineOutbounds.clear();
-    final restored = cached.length > _maxOfflineQueueSize
-        ? cached.sublist(cached.length - _maxOfflineQueueSize)
-        : cached;
-
-    for (final payload in restored) {
-      final seq = _extractSeqFromPayload(payload);
-      if (seq != null) {
-        _offlineOutbounds.removeWhere((item) {
-          final existingSeq = _extractSeqFromPayload(item);
-          return existingSeq != null && existingSeq == seq;
-        });
-      }
-      _offlineOutbounds.addLast(payload);
-    }
-  }
-
-  Future<void> _clearOfflineOutbounds() async {
-    _offlineOutbounds.clear();
-    await SPUtil.instance.delete(StorageKeys.wsOfflineOutboundQueue);
   }
 
   /// 处理接收到的消息（V5 二进制帧）
@@ -579,13 +451,9 @@ class WsController extends _$WsController {
     );
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
-    _offlineFlushTimer?.cancel();
     _channel?.sink.close();
     _channel = null;
     _pendingOutbounds.clear();
-    if (manual && !closeStream) {
-      unawaited(_clearOfflineOutbounds());
-    }
     _reconnectAttempts = 0;
     if (closeStream) {
       _messageController.close();
@@ -595,10 +463,9 @@ class WsController extends _$WsController {
 }
 
 class _PendingOutbound {
-  _PendingOutbound({required this.payload, required this.bytes});
+  _PendingOutbound({required this.bytes});
 
-  final String payload; // base64 编码，用于离线持久化
-  final Uint8List bytes; // 原始二进制，用于重试发送
+  final Uint8List bytes; // 原始二进制，用于连接内 ACK 重试发送
   int attempts = 0;
   bool retryScheduled = false;
 }
