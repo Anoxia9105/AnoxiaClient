@@ -11,7 +11,7 @@ import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
-import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart' as core;
+import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -217,7 +217,7 @@ class UpdateRoute extends GoRouteData with $UpdateRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => UpdatePage(
-    updateInfo: core.AppUpdateInfo(
+    updateInfo: AppUpdateInfo(
       hasUpdate: hasUpdate,
       latestVersion: latestVersion,
       downloadUrl: downloadUrl,

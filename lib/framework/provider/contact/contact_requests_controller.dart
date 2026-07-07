@@ -14,15 +14,21 @@ part 'contact_requests_controller.g.dart';
 /// 采用 keepAlive 模式，确保请求列表在全局共享。
 @Riverpod(keepAlive: true)
 class ContactRequestsService extends _$ContactRequestsService {
+  /// 正在进行的请求 Future，防止并发重复调用
+  Future<List<ChatContactRequestVO>>? _fetchInflight;
+
   @override
   FutureOr<List<ChatContactRequestVO>> build() {
     return _fetchRequests();
   }
 
-  /// 从后端获取好友申请列表
-  ///
-  /// 服务端异常时返回空列表，避免阻塞 UI
-  Future<List<ChatContactRequestVO>> _fetchRequests() async {
+  /// 从后端获取好友申请列表（自动去重并发请求）
+  Future<List<ChatContactRequestVO>> _fetchRequests() {
+    return _fetchInflight ??=
+        _doFetchRequests().whenComplete(() => _fetchInflight = null);
+  }
+
+  Future<List<ChatContactRequestVO>> _doFetchRequests() async {
     try {
       final response = await DioClient().get(API.contactRequest);
       return (response.data["data"] as List)

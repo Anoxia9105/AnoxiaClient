@@ -45,17 +45,30 @@ class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
 
   static const _checkInterval = Duration(minutes: 30);
 
+  /// 如果外部已经通过 [syncResult] 提前填充了结果，
+  /// 跳过即将到来的首次定时检查
+  bool _skipNextScheduledCheck = false;
+
   @override
   AppUpdateInfo? build() {
     ref.onDispose(() => _timer?.cancel());
 
-    // 启动后延迟 3 秒做首次检查（避免跟启动初始化争抢资源）
-    Future.delayed(const Duration(seconds: 3), _check);
+    // 启动后延迟 3 秒做首次检查（避免跟启动初始化争択资源）
+    Future.delayed(const Duration(seconds: 3), _scheduledInitialCheck);
 
     // 定时周期检查
     _timer = Timer.periodic(_checkInterval, (_) => _check());
 
     return null;
+  }
+
+  /// 首次延迟检查：若外部已提前填充结果则跳过
+  Future<void> _scheduledInitialCheck() async {
+    if (_skipNextScheduledCheck) {
+      _skipNextScheduledCheck = false;
+      return;
+    }
+    await _check();
   }
 
   /// 执行版本检查
@@ -95,11 +108,12 @@ class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
   /// 手动触发一次检查
   Future<void> forceCheck() => _check();
 
-  /// 同步外部检查结果
+  /// 同步外部检查结果（同时标记跳过即将的首次延迟检查，避免重复请求）
   ///
   /// [raw] 外部检查的结果
   /// [currentVersion] 当前版本号
   void syncResult(AppUpdateInfo? raw, {String currentVersion = ''}) {
+    _skipNextScheduledCheck = true; // 取消 build() 里挂的 3s 延迟重复检查
     if (raw == null || !raw.hasUpdate) {
       state = null;
       return;

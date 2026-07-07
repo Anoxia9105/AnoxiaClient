@@ -4,6 +4,7 @@
 /// 
 /// [hasUpdate] 是否有新版本可用
 /// [latestVersion] 最新版本号
+/// [currentVersion] 当前版本号
 /// [downloadUrl] 安装包下载地址
 /// [releaseNotes] 更新说明/发行日志
 /// [forceUpdate] 是否强制更新（用户无法跳过）
@@ -11,14 +12,16 @@
 class AppUpdateInfo {
   final bool hasUpdate;
   final String latestVersion;
+  final String currentVersion;
   final String downloadUrl;
   final String releaseNotes;
   final bool forceUpdate;
   final String minSupportVersion;
 
-  AppUpdateInfo({
+  const AppUpdateInfo({
     this.hasUpdate = false,
     required this.latestVersion,
+    this.currentVersion = '',
     required this.downloadUrl,
     required this.releaseNotes,
     this.forceUpdate = false,
@@ -34,6 +37,7 @@ class AppUpdateInfo {
       hasUpdate: json['hasUpdate'] == true,
       latestVersion: (json['latestVersion'] ?? json['latest_version'] ?? '')
           .toString(),
+      currentVersion: (json['currentVersion'] ?? '').toString(),
       downloadUrl: (json['downloadUrl'] ?? json['download_url'] ?? '')
           .toString(),
       releaseNotes: (json['releaseNotes'] ?? json['release_notes'] ?? '')

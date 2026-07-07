@@ -23,6 +23,12 @@ class SyncRepository {
   final RemoteDataSource _remote;
   final Connectivity _connectivity;
 
+  /// 正在进行的 syncConversations Future（去重用）
+  Future<void>? _syncConversationsInflight;
+
+  /// 正在进行的 syncMessages Future，按 convId 去重
+  final Map<String, Future<void>> _syncMessagesInflight = {};
+
   Stream<List<ChatRoomVO>> watchConversations() {
     return _local.watchConversations();
   }
@@ -60,7 +66,15 @@ class SyncRepository {
     return localMessages;
   }
 
-  Future<void> syncConversations() async {
+  Future<void> syncConversations() {
+    // 已有正在进行的同步，直接复用，避免并发重复请求
+    return _syncConversationsInflight ??=
+        _doSyncConversations().whenComplete(
+          () => _syncConversationsInflight = null,
+        );
+  }
+
+  Future<void> _doSyncConversations() async {
     if (!await _hasNetwork()) return;
 
     try {
@@ -81,7 +95,15 @@ class SyncRepository {
     }
   }
 
-  Future<void> syncMessages(String convId, {DateTime? since}) async {
+  Future<void> syncMessages(String convId, {DateTime? since}) {
+    // 同一会话已在同步中，直接复用，避免并发重复请求
+    return _syncMessagesInflight[convId] ??=
+        _doSyncMessages(convId, since: since).whenComplete(
+          () => _syncMessagesInflight.remove(convId),
+        );
+  }
+
+  Future<void> _doSyncMessages(String convId, {DateTime? since}) async {
     if (!await _hasNetwork()) return;
 
     try {

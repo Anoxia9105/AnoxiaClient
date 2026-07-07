@@ -8,6 +8,7 @@ import 'package:anoxia/features/live/presentation/pages/window_live_danmaku_page
 import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
+import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -127,6 +128,10 @@ void _backgroundAsyncInit() {
           final updateInfo = await _checkUpdate().timeout(
             const Duration(seconds: 5),
           );
+          // 把结果同步给 provider，避免 provider 内 3s 延迟重复请求
+          globalContainer
+              .read(appUpdateCheckerProvider.notifier)
+              .syncResult(updateInfo, currentVersion: packageInfo.version);
           if (updateInfo != null && updateInfo.forceUpdate) {
             log.info('检测到强制更新，切换至更新页面');
             await runUpdateApp(updateInfo);

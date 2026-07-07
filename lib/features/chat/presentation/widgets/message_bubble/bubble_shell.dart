@@ -33,7 +33,7 @@ class BubbleShell extends StatelessWidget {
       arrowRadius: 4,
       arrowWidth: 15,
       padding: const EdgeInsets.all(10),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       backgroundColor: backgroundColor,
       contentBuilder: (_) => child,
     );

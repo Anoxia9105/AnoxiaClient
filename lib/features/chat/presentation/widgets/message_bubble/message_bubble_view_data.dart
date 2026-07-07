@@ -13,7 +13,6 @@ import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
 
 /// 消息展示视图数据（不可变）
 class MessageBubbleViewData {
@@ -23,7 +22,7 @@ class MessageBubbleViewData {
   final String? senderName; // 发送者昵称（自己显示“我”，其他显示联系人名称）
   final String? senderAvatar; // 发送者头像URL
   final Color bubbleColor; // 气泡背景色（自己为primary，对方为surfaceContainerHigh）
-  final Color textColor; // 文字颜色（自己为onPrimary，对方为onSurfaceVariant）
+  final Color textColor; // 文字颜色（自己为onPrimary，对方为onSurface）
   final double horizontalPadding; // 左右边距（移动端8，桌面端50）
 
   const MessageBubbleViewData({
@@ -59,18 +58,14 @@ class MessageBubbleViewData {
         .firstOrNull;
 
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // -------- 自己消息：使用品牌主色，但保证文字对比度 --------
-    final selfBubbleColor = colorScheme.primary; // 固定主色
-    final selfTextColor = colorScheme.onPrimary; // 主色上的文字（通常白色）
+    // -------- 自己消息：品牌主色 + 对应文字色，天然保证对比度 --------
+    final selfBubbleColor = colorScheme.primary;
+    final selfTextColor = colorScheme.onPrimary;
 
-    // -------- 对方消息：使用中性色，不依赖主题主色 --------
-    final otherBubbleColor = isDark
-        ? const Color(0xFF2C2C2C) // 暗色模式：深灰
-        : const Color(0xFFE8E8E8); // 亮色模式：浅灰
-
-    final otherTextColor = isDark ? Colors.white : Colors.black87;
+    // -------- 对方消息：跟随主题的中性色阶，换肤/切深浅色都能自动适配 --------
+    final otherBubbleColor = colorScheme.surfaceContainerHigh;
+    final otherTextColor = colorScheme.onSurface;
 
     final bubbleColor = isCurrentUser ? selfBubbleColor : otherBubbleColor;
     final textColor = isCurrentUser ? selfTextColor : otherTextColor;

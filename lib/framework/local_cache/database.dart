@@ -276,13 +276,36 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         .get();
   }
 
-  Future<void> insertOrUpdateMessage(CachedMessage message) {
-    return into(messages).insertOnConflictUpdate(message);
+  Future<void> insertOrUpdateMessage(CachedMessage message) async {
+    // 若存在相同 client_msg_id 但不同 id 的旧记录（临时 ID → 服务端 ID），先删除
+    if (message.clientMsgId != null) {
+      await (delete(messages)
+            ..where(
+              (tbl) =>
+                  tbl.clientMsgId.equals(message.clientMsgId!) &
+                  tbl.id.isNotValue(message.id),
+            ))
+          .go();
+    }
+    await into(messages).insertOnConflictUpdate(message);
   }
 
   Future<void> insertOrUpdateMessages(Iterable<CachedMessage> items) async {
-    await batch((batch) {
-      batch.insertAllOnConflictUpdate(messages, items.toList());
+    final list = items.toList();
+    await transaction(() async {
+      // 批量清理 client_msg_id 相同但 id 不同的旧记录
+      for (final item in list) {
+        if (item.clientMsgId != null) {
+          await (delete(messages)
+                ..where(
+                  (tbl) =>
+                      tbl.clientMsgId.equals(item.clientMsgId!) &
+                      tbl.id.isNotValue(item.id),
+                ))
+              .go();
+        }
+      }
+      await batch((b) => b.insertAllOnConflictUpdate(messages, list));
     });
   }
 

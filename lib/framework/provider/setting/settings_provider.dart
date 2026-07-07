@@ -1,8 +1,12 @@
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+// AppUpdateInfo is re-exported from core/AppUpdateInfo.dart
+export 'package:anoxia/framework/provider/core/AppUpdateInfo.dart' show AppUpdateInfo;
 
 /// 反馈提交结果
 class FeedbackSubmitResult {
@@ -13,40 +17,6 @@ class FeedbackSubmitResult {
   final String? message;
 
   const FeedbackSubmitResult({required this.success, this.message});
-}
-
-/// 应用更新信息
-class AppUpdateInfo {
-  /// 是否有可用更新
-  final bool hasUpdate;
-
-  /// 是否为强制更新
-  final bool forceUpdate;
-
-  /// 最新版本号
-  final String latestVersion;
-
-  /// 当前版本号
-  final String currentVersion;
-
-  /// 下载链接
-  final String downloadUrl;
-
-  /// 更新日志
-  final String releaseNotes;
-
-  /// 最低支持版本
-  final String minSupportVersion;
-
-  const AppUpdateInfo({
-    required this.hasUpdate,
-    required this.forceUpdate,
-    required this.latestVersion,
-    required this.currentVersion,
-    required this.downloadUrl,
-    required this.releaseNotes,
-    required this.minSupportVersion,
-  });
 }
 
 /// 设置仓储层

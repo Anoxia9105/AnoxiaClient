@@ -21,7 +21,7 @@ extension ChatMessageUIExtension on ChatMessage {
   bool get _isSingleEmoji {
     // 如果是 emoji 类型，认为是单个表情
     if (messageType == MessageType.emoji) return true;
-    if (payload?.emojiCode != null) return true;
+    if (payload?.emojiCode?.isNotEmpty == true) return true;
 
     // 仅对 text 类型进一步检查
     if (messageType != MessageType.text) return false;

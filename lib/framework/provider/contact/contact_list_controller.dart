@@ -18,6 +18,8 @@ part 'contact_list_controller.g.dart';
 /// 采用 keepAlive 模式，确保联系人缓存在全局共享。
 @Riverpod(keepAlive: true)
 class ContactListService extends _$ContactListService {
+  /// 正在进行的远端同步 Future，避免并发重复请求
+  Future<Map<int, ChatContactVO>?>? _syncInflight;
   @override
   FutureOr<Map<int, ChatContactVO>> build() async {
     final local = ref.read(localDataSourceProvider);
@@ -42,8 +44,13 @@ class ContactListService extends _$ContactListService {
     return await _syncFromRemote() ?? {};
   }
 
-  /// 从远端拉取联系人并写入本地缓存
-  Future<Map<int, ChatContactVO>?> _syncFromRemote() async {
+  /// 从远端拉取联系人并写入本地缓存（自动去重）
+  Future<Map<int, ChatContactVO>?> _syncFromRemote() {
+    return _syncInflight ??=
+        _doSyncFromRemote().whenComplete(() => _syncInflight = null);
+  }
+
+  Future<Map<int, ChatContactVO>?> _doSyncFromRemote() async {
     try {
       final response = await DioClient().get(API.contactList);
       final list = (response.data['data'] as List)

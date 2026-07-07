@@ -13,7 +13,7 @@ class TextMessageStrategy extends MessageRenderStrategy {
   ) {
     final content = message.payload?.content ?? message.content;
 
-    if (message.payload?.emojiCode != null && content.isNotEmpty) {
+    if (message.payload?.emojiCode?.isNotEmpty == true && content.isNotEmpty) {
       return Text(content, style: const TextStyle(fontSize: 48));
     }
 
