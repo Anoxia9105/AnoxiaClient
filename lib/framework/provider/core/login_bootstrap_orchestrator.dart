@@ -25,6 +25,9 @@ final loginBootstrapOrchestratorProvider = Provider<LoginBootstrapOrchestrator>(
 class LoginBootstrapOrchestrator {
   LoginBootstrapOrchestrator(this._ref);
 
+  static const Duration _roomListTimeout = Duration(seconds: 12);
+  static const Duration _warmUpTimeout = Duration(seconds: 8);
+
   final Ref _ref;
   Future<void>? _inflight;
 
@@ -72,7 +75,7 @@ class LoginBootstrapOrchestrator {
   Future<List<ChatRoomVO>> _safeReadRoomList() async {
     try {
       final roomListNotifier = _ref.read(roomListServiceProvider.notifier);
-      await roomListNotifier.refresh(silent: false);
+      await roomListNotifier.refresh(silent: false).timeout(_roomListTimeout);
       return _ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     } catch (e, st) {
       log.error('[Bootstrap] 房间列表预加载失败，降级为空列表', e, st);
@@ -94,15 +97,17 @@ class LoginBootstrapOrchestrator {
     try {
       await _ref
           .read(chatMessagesProvider.notifier)
-          .syncRoomMessages(targetRoomId, room?.lastMessage?.seq);
+          .syncRoomMessages(targetRoomId, room?.lastMessage?.seq)
+          .timeout(_warmUpTimeout);
     } catch (e, st) {
       log.error('[Bootstrap] 房间消息预热失败，继续后续流程', e, st);
     }
 
     try {
-      await _ref.read(roomMemberServiceProvider.notifier).syncMembers(
-        targetRoomId,
-      );
+      await _ref
+          .read(roomMemberServiceProvider.notifier)
+          .syncMembers(targetRoomId)
+          .timeout(_warmUpTimeout);
     } catch (e, st) {
       log.error('[Bootstrap] 房间成员预热失败，继续后续流程', e, st);
     }

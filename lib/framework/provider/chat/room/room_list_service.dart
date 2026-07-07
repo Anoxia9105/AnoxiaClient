@@ -13,7 +13,7 @@ import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/ChatMessage.dart';
@@ -28,6 +28,8 @@ part 'room_list_service.g.dart';
 /// 采用 keepAlive 模式，确保列表数据全局共享。
 @Riverpod(keepAlive: true)
 class RoomListService extends _$RoomListService {
+  static const Duration _startupFetchTimeout = Duration(seconds: 12);
+
   /// 已读上报防抖定时器（按房间维度）
   final Map<String, Timer> _readDebounceTimers = {};
 
@@ -52,7 +54,7 @@ class RoomListService extends _$RoomListService {
         .watchConversations()
         .listen((rooms) => state = AsyncValue.data(rooms));
     ref.onDispose(subscription.cancel);
-    return await fetchRoomList();
+    return await _fetchRoomListForStartup();
   }
 
   /// 切换当前房间的搜索栏展开状态
@@ -95,7 +97,7 @@ class RoomListService extends _$RoomListService {
   /// 刷新后自动将当前活跃房间的未读数归零，防止服务端数据覆盖本地已读状态
   Future<void> refresh({bool silent = false}) async {
     if (!silent) state = const AsyncValue.loading();
-    final newState = await AsyncValue.guard(() => fetchRoomList());
+    final newState = await AsyncValue.guard(_fetchRoomListForStartup);
 
     final activeId = ref.read(activeRoomIdProvider);
     if (activeId != null && newState is AsyncData<List<ChatRoomVO>>) {
@@ -110,6 +112,15 @@ class RoomListService extends _$RoomListService {
     }
 
     state = newState;
+  }
+
+  Future<List<ChatRoomVO>> _fetchRoomListForStartup() async {
+    try {
+      return await fetchRoomList().timeout(_startupFetchTimeout);
+    } on TimeoutException catch (e, st) {
+      log.warning('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
+      return state.value ?? const <ChatRoomVO>[];
+    }
   }
 
   /// 实时更新房间位置和未读数

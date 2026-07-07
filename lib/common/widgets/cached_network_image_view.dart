@@ -1,7 +1,11 @@
 import 'package:cross_cache/cross_cache.dart' as cross_cache;
 import 'package:flutter/material.dart';
 
-final cross_cache.CrossCache appImageCrossCache = cross_cache.CrossCache();
+cross_cache.CrossCache? _appImageCrossCache;
+
+cross_cache.CrossCache get appImageCrossCache {
+  return _appImageCrossCache ??= cross_cache.CrossCache();
+}
 
 ImageProvider appCachedNetworkImageProvider(
   String url, {
