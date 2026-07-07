@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:window_manager/window_manager.dart';
 
 enum LiveVisibility {
   public,
@@ -17,16 +18,27 @@ enum LiveVisibility {
   String get label => this == LiveVisibility.public ? '公开' : '私密';
 }
 
+enum LiveSource {
+  camera,
+  screen;
+
+  String get label => this == LiveSource.camera ? '摄像头' : '屏幕共享';
+}
+
 class LiveRoomPage extends ConsumerStatefulWidget {
   final String roomId;
+  final String title;
   final bool isHost;
   final LiveVisibility visibility;
+  final LiveSource source;
 
   const LiveRoomPage({
     super.key,
     required this.roomId,
+    this.title = '',
     required this.isHost,
     this.visibility = LiveVisibility.public,
+    this.source = LiveSource.camera,
   });
 
   @override
@@ -48,6 +60,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   Room? _listeningRoom;
   bool _cohostRequested = false;
   bool _cohostActive = false;
+  bool _initialMediaStarted = false;
 
   @override
   void initState() {
@@ -69,11 +82,15 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
 
   Future<void> _enterRoom() async {
     if (widget.isHost) {
-      final camera = await Permission.camera.request();
       final mic = await Permission.microphone.request();
-      if (!camera.isGranted || !mic.isGranted) {
+      final camera = widget.source == LiveSource.camera
+          ? await Permission.camera.request()
+          : null;
+      if (!mic.isGranted || (camera != null && !camera.isGranted)) {
         if (!mounted) return;
-        Toast.showNotificationNow('需要开启摄像头和麦克风权限');
+        Toast.showNotificationNow(
+          widget.source == LiveSource.camera ? '需要开启摄像头和麦克风权限' : '需要开启麦克风权限',
+        );
         Navigator.of(context).pop();
         return;
       }
@@ -84,10 +101,42 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     );
   }
 
+  Future<void> _startInitialMedia() async {
+    if (_initialMediaStarted || !widget.isHost) return;
+    _initialMediaStarted = true;
+
+    final controller = ref.read(
+      liveRoomControllerProvider(widget.roomId, widget.isHost).notifier,
+    );
+    try {
+      if (widget.source == LiveSource.screen) {
+        await controller.toggleMic();
+        if (mounted) {
+          await controller.toggleScreenShare(context);
+        }
+      } else {
+        await controller.toggleCamera();
+        await controller.toggleMic();
+      }
+    } catch (e) {
+      Toast.showNotificationNow('启动直播画面失败：$e');
+    }
+  }
+
   Future<void> _endLive() async {
     try {
       await DioClient().post('/live/end', data: {'roomId': widget.roomId});
     } catch (_) {}
+  }
+
+  Future<void> _leaveRoom() async {
+    if (DeviceUtil.isRealDesktop()) {
+      await windowManager.close();
+      return;
+    }
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _bindRoomDataListener(Room room) {
@@ -299,6 +348,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         ),
         data: (roomState) {
           _bindRoomDataListener(roomState.room);
+          unawaited(_startInitialMedia());
 
           final participants = <Participant>[
             if (roomState.room.localParticipant != null)
@@ -332,7 +382,9 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
                 child: _RoomHeader(
                   isHost: widget.isHost,
                   roomId: widget.roomId,
+                  title: widget.title,
                   visibility: widget.visibility,
+                  source: widget.source,
                   connectionState: roomState.connectionState.name,
                   participantCount: participants.length,
                 ),
@@ -415,7 +467,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
                                   ).notifier,
                                 )
                                 .toggleScreenShare(context),
-                            onLeave: () => Navigator.of(context).pop(),
+                            onLeave: _leaveRoom,
                           ),
                         ],
                       ),
@@ -434,14 +486,18 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
 class _RoomHeader extends StatelessWidget {
   final bool isHost;
   final String roomId;
+  final String title;
   final LiveVisibility visibility;
+  final LiveSource source;
   final String connectionState;
   final int participantCount;
 
   const _RoomHeader({
     required this.isHost,
     required this.roomId,
+    required this.title,
     required this.visibility,
+    required this.source,
     required this.connectionState,
     required this.participantCount,
   });
@@ -471,9 +527,13 @@ class _RoomHeader extends StatelessWidget {
                     : Colors.deepPurpleAccent,
               ),
               const SizedBox(width: 8),
+              _Badge(label: source.label, color: Colors.teal),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  isHost ? '你正在直播 $roomId' : '你正在观看 $roomId',
+                  title.isEmpty
+                      ? (isHost ? '你正在直播 $roomId' : '你正在观看 $roomId')
+                      : title,
                   style: const TextStyle(color: Colors.white),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -483,7 +543,7 @@ class _RoomHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '状态: $connectionState · 参与者: $participantCount',
+            '房间号: $roomId · 状态: $connectionState · 参与者: $participantCount',
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],

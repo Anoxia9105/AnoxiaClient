@@ -65,11 +65,6 @@ class LiveRoomController extends _$LiveRoomController {
           state = AsyncData(_buildState(room, token));
         });
 
-      if (isHost) {
-        await room.localParticipant?.setCameraEnabled(true);
-        await room.localParticipant?.setMicrophoneEnabled(true);
-      }
-
       return _buildState(room, token);
     } catch (e) {
       log.error('直播房间初始化失败: $e');
@@ -122,7 +117,7 @@ class LiveRoomController extends _$LiveRoomController {
       final next = !current.screenSharing;
       if (next) {
         final screenTrack = await LocalVideoTrack.createScreenShareTrack(
-          ScreenShareCaptureOptions(
+          const ScreenShareCaptureOptions(
             captureScreenAudio: true,
             maxFrameRate: 15,
             params: VideoParametersPresets.screenShareH1080FPS30,

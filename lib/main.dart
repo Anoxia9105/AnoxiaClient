@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
+import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -239,17 +240,37 @@ Future<void> runSubApp(WindowController controller) async {
       );
     }
 
+    final args = _parseWindowArguments(controller.arguments);
+    final Widget child = args['type'] == 'live'
+        ? WindowLivePage(controller: controller)
+        : WindowCallPage(controller: controller);
+
     // 启动子窗口（继承全局容器，共享状态）
     runApp(
       UncontrolledProviderScope(
         container: globalContainer,
-        child: _buildAppWrapper(WindowCallPage(controller: controller)),
+        child: _buildAppWrapper(child),
       ),
     );
   } catch (e, stack) {
     log.error('子窗口启动失败', e, stack);
     runApp(_buildErrorPage('子窗口启动失败：$e'));
   }
+}
+
+Map<String, dynamic> _parseWindowArguments(dynamic arguments) {
+  if (arguments == null) {
+    return {};
+  }
+  try {
+    final decoded = arguments is Map
+        ? arguments
+        : jsonDecode(arguments.toString());
+    if (decoded is Map) {
+      return decoded.map((key, value) => MapEntry(key.toString(), value));
+    }
+  } catch (_) {}
+  return {};
 }
 
 /// 启动更新窗口
