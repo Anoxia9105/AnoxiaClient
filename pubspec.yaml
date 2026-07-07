@@ -139,6 +139,8 @@ dependencies:
   # 数据库
   drift: ^2.34.0
   sqlite3_flutter_libs: ^0.5.40
+  # 图片缓存
+  cross_cache: ^1.1.0
 
 
 dev_dependencies:

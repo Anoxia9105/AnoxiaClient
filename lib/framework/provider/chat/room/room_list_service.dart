@@ -269,14 +269,11 @@ class RoomListService extends _$RoomListService {
     });
   }
 
-  /// 上报已读 seq 到服务器
+  /// 上报已读 seq 到服务器，同时更新本地 DB（last_read_seq / unread_count）
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
       log.info('🚀 上报已读状态: 房间 $roomId, Seq $seq');
-      await DioClient().get(
-        API.chatReadReport,
-        queryParameters: {'roomId': roomId, 'seq': seq},
-      );
+      await ref.read(syncRepositoryProvider).markAsRead(roomId, seq: seq);
     } catch (e) {
       log.warning('上报已读失败: $e');
     }

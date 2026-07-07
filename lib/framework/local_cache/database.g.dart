@@ -3333,6 +3333,525 @@ class SyncLogsCompanion extends UpdateCompanion<SyncLogEntry> {
   }
 }
 
+class $CachedContactsTable extends CachedContacts
+    with TableInfo<$CachedContactsTable, CachedContact> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedContactsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _contactIdMeta = const VerificationMeta(
+    'contactId',
+  );
+  @override
+  late final GeneratedColumn<int> contactId = GeneratedColumn<int>(
+    'contact_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _remarkMeta = const VerificationMeta('remark');
+  @override
+  late final GeneratedColumn<String> remark = GeneratedColumn<String>(
+    'remark',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nickNameMeta = const VerificationMeta(
+    'nickName',
+  );
+  @override
+  late final GeneratedColumn<String> nickName = GeneratedColumn<String>(
+    'nick_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _avatarMeta = const VerificationMeta('avatar');
+  @override
+  late final GeneratedColumn<String> avatar = GeneratedColumn<String>(
+    'avatar',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sexMeta = const VerificationMeta('sex');
+  @override
+  late final GeneratedColumn<String> sex = GeneratedColumn<String>(
+    'sex',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _onlineStatusMeta = const VerificationMeta(
+    'onlineStatus',
+  );
+  @override
+  late final GeneratedColumn<bool> onlineStatus = GeneratedColumn<bool>(
+    'online_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("online_status" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta(
+    'cachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    contactId,
+    remark,
+    nickName,
+    avatar,
+    sex,
+    onlineStatus,
+    updatedAt,
+    cachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_contacts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedContact> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('contact_id')) {
+      context.handle(
+        _contactIdMeta,
+        contactId.isAcceptableOrUnknown(data['contact_id']!, _contactIdMeta),
+      );
+    }
+    if (data.containsKey('remark')) {
+      context.handle(
+        _remarkMeta,
+        remark.isAcceptableOrUnknown(data['remark']!, _remarkMeta),
+      );
+    }
+    if (data.containsKey('nick_name')) {
+      context.handle(
+        _nickNameMeta,
+        nickName.isAcceptableOrUnknown(data['nick_name']!, _nickNameMeta),
+      );
+    }
+    if (data.containsKey('avatar')) {
+      context.handle(
+        _avatarMeta,
+        avatar.isAcceptableOrUnknown(data['avatar']!, _avatarMeta),
+      );
+    }
+    if (data.containsKey('sex')) {
+      context.handle(
+        _sexMeta,
+        sex.isAcceptableOrUnknown(data['sex']!, _sexMeta),
+      );
+    }
+    if (data.containsKey('online_status')) {
+      context.handle(
+        _onlineStatusMeta,
+        onlineStatus.isAcceptableOrUnknown(
+          data['online_status']!,
+          _onlineStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cachedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {contactId};
+  @override
+  CachedContact map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedContact(
+      contactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}contact_id'],
+      )!,
+      remark: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remark'],
+      ),
+      nickName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nick_name'],
+      ),
+      avatar: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar'],
+      ),
+      sex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sex'],
+      ),
+      onlineStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}online_status'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedContactsTable createAlias(String alias) {
+    return $CachedContactsTable(attachedDatabase, alias);
+  }
+}
+
+class CachedContact extends DataClass implements Insertable<CachedContact> {
+  /// 联系人用户 ID（主键）
+  final int contactId;
+
+  /// 备注名（用户自定义，优先展示）
+  final String? remark;
+
+  /// 昵称
+  final String? nickName;
+
+  /// 头像 URL
+  final String? avatar;
+
+  /// 性别
+  final String? sex;
+
+  /// 在线状态（由 WebSocket 维护，不作为持久化数据依赖）
+  final bool onlineStatus;
+
+  /// 服务端最后更新时间（用于增量同步判断）
+  final DateTime? updatedAt;
+  final DateTime cachedAt;
+  const CachedContact({
+    required this.contactId,
+    this.remark,
+    this.nickName,
+    this.avatar,
+    this.sex,
+    required this.onlineStatus,
+    this.updatedAt,
+    required this.cachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['contact_id'] = Variable<int>(contactId);
+    if (!nullToAbsent || remark != null) {
+      map['remark'] = Variable<String>(remark);
+    }
+    if (!nullToAbsent || nickName != null) {
+      map['nick_name'] = Variable<String>(nickName);
+    }
+    if (!nullToAbsent || avatar != null) {
+      map['avatar'] = Variable<String>(avatar);
+    }
+    if (!nullToAbsent || sex != null) {
+      map['sex'] = Variable<String>(sex);
+    }
+    map['online_status'] = Variable<bool>(onlineStatus);
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    return map;
+  }
+
+  CachedContactsCompanion toCompanion(bool nullToAbsent) {
+    return CachedContactsCompanion(
+      contactId: Value(contactId),
+      remark: remark == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remark),
+      nickName: nickName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nickName),
+      avatar: avatar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatar),
+      sex: sex == null && nullToAbsent ? const Value.absent() : Value(sex),
+      onlineStatus: Value(onlineStatus),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      cachedAt: Value(cachedAt),
+    );
+  }
+
+  factory CachedContact.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedContact(
+      contactId: serializer.fromJson<int>(json['contactId']),
+      remark: serializer.fromJson<String?>(json['remark']),
+      nickName: serializer.fromJson<String?>(json['nickName']),
+      avatar: serializer.fromJson<String?>(json['avatar']),
+      sex: serializer.fromJson<String?>(json['sex']),
+      onlineStatus: serializer.fromJson<bool>(json['onlineStatus']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'contactId': serializer.toJson<int>(contactId),
+      'remark': serializer.toJson<String?>(remark),
+      'nickName': serializer.toJson<String?>(nickName),
+      'avatar': serializer.toJson<String?>(avatar),
+      'sex': serializer.toJson<String?>(sex),
+      'onlineStatus': serializer.toJson<bool>(onlineStatus),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+    };
+  }
+
+  CachedContact copyWith({
+    int? contactId,
+    Value<String?> remark = const Value.absent(),
+    Value<String?> nickName = const Value.absent(),
+    Value<String?> avatar = const Value.absent(),
+    Value<String?> sex = const Value.absent(),
+    bool? onlineStatus,
+    Value<DateTime?> updatedAt = const Value.absent(),
+    DateTime? cachedAt,
+  }) => CachedContact(
+    contactId: contactId ?? this.contactId,
+    remark: remark.present ? remark.value : this.remark,
+    nickName: nickName.present ? nickName.value : this.nickName,
+    avatar: avatar.present ? avatar.value : this.avatar,
+    sex: sex.present ? sex.value : this.sex,
+    onlineStatus: onlineStatus ?? this.onlineStatus,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    cachedAt: cachedAt ?? this.cachedAt,
+  );
+  CachedContact copyWithCompanion(CachedContactsCompanion data) {
+    return CachedContact(
+      contactId: data.contactId.present ? data.contactId.value : this.contactId,
+      remark: data.remark.present ? data.remark.value : this.remark,
+      nickName: data.nickName.present ? data.nickName.value : this.nickName,
+      avatar: data.avatar.present ? data.avatar.value : this.avatar,
+      sex: data.sex.present ? data.sex.value : this.sex,
+      onlineStatus: data.onlineStatus.present
+          ? data.onlineStatus.value
+          : this.onlineStatus,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedContact(')
+          ..write('contactId: $contactId, ')
+          ..write('remark: $remark, ')
+          ..write('nickName: $nickName, ')
+          ..write('avatar: $avatar, ')
+          ..write('sex: $sex, ')
+          ..write('onlineStatus: $onlineStatus, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    contactId,
+    remark,
+    nickName,
+    avatar,
+    sex,
+    onlineStatus,
+    updatedAt,
+    cachedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedContact &&
+          other.contactId == this.contactId &&
+          other.remark == this.remark &&
+          other.nickName == this.nickName &&
+          other.avatar == this.avatar &&
+          other.sex == this.sex &&
+          other.onlineStatus == this.onlineStatus &&
+          other.updatedAt == this.updatedAt &&
+          other.cachedAt == this.cachedAt);
+}
+
+class CachedContactsCompanion extends UpdateCompanion<CachedContact> {
+  final Value<int> contactId;
+  final Value<String?> remark;
+  final Value<String?> nickName;
+  final Value<String?> avatar;
+  final Value<String?> sex;
+  final Value<bool> onlineStatus;
+  final Value<DateTime?> updatedAt;
+  final Value<DateTime> cachedAt;
+  const CachedContactsCompanion({
+    this.contactId = const Value.absent(),
+    this.remark = const Value.absent(),
+    this.nickName = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.sex = const Value.absent(),
+    this.onlineStatus = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+  });
+  CachedContactsCompanion.insert({
+    this.contactId = const Value.absent(),
+    this.remark = const Value.absent(),
+    this.nickName = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.sex = const Value.absent(),
+    this.onlineStatus = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required DateTime cachedAt,
+  }) : cachedAt = Value(cachedAt);
+  static Insertable<CachedContact> custom({
+    Expression<int>? contactId,
+    Expression<String>? remark,
+    Expression<String>? nickName,
+    Expression<String>? avatar,
+    Expression<String>? sex,
+    Expression<bool>? onlineStatus,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? cachedAt,
+  }) {
+    return RawValuesInsertable({
+      if (contactId != null) 'contact_id': contactId,
+      if (remark != null) 'remark': remark,
+      if (nickName != null) 'nick_name': nickName,
+      if (avatar != null) 'avatar': avatar,
+      if (sex != null) 'sex': sex,
+      if (onlineStatus != null) 'online_status': onlineStatus,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (cachedAt != null) 'cached_at': cachedAt,
+    });
+  }
+
+  CachedContactsCompanion copyWith({
+    Value<int>? contactId,
+    Value<String?>? remark,
+    Value<String?>? nickName,
+    Value<String?>? avatar,
+    Value<String?>? sex,
+    Value<bool>? onlineStatus,
+    Value<DateTime?>? updatedAt,
+    Value<DateTime>? cachedAt,
+  }) {
+    return CachedContactsCompanion(
+      contactId: contactId ?? this.contactId,
+      remark: remark ?? this.remark,
+      nickName: nickName ?? this.nickName,
+      avatar: avatar ?? this.avatar,
+      sex: sex ?? this.sex,
+      onlineStatus: onlineStatus ?? this.onlineStatus,
+      updatedAt: updatedAt ?? this.updatedAt,
+      cachedAt: cachedAt ?? this.cachedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (contactId.present) {
+      map['contact_id'] = Variable<int>(contactId.value);
+    }
+    if (remark.present) {
+      map['remark'] = Variable<String>(remark.value);
+    }
+    if (nickName.present) {
+      map['nick_name'] = Variable<String>(nickName.value);
+    }
+    if (avatar.present) {
+      map['avatar'] = Variable<String>(avatar.value);
+    }
+    if (sex.present) {
+      map['sex'] = Variable<String>(sex.value);
+    }
+    if (onlineStatus.present) {
+      map['online_status'] = Variable<bool>(onlineStatus.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedContactsCompanion(')
+          ..write('contactId: $contactId, ')
+          ..write('remark: $remark, ')
+          ..write('nickName: $nickName, ')
+          ..write('avatar: $avatar, ')
+          ..write('sex: $sex, ')
+          ..write('onlineStatus: $onlineStatus, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3341,6 +3860,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessagesTable messages = $MessagesTable(this);
   late final $SyncStatesTable syncStates = $SyncStatesTable(this);
   late final $SyncLogsTable syncLogs = $SyncLogsTable(this);
+  late final $CachedContactsTable cachedContacts = $CachedContactsTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final ConversationDao conversationDao = ConversationDao(
     this as AppDatabase,
@@ -3348,6 +3868,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final MessageDao messageDao = MessageDao(this as AppDatabase);
   late final SyncStateDao syncStateDao = SyncStateDao(this as AppDatabase);
   late final SyncLogDao syncLogDao = SyncLogDao(this as AppDatabase);
+  late final ContactDao contactDao = ContactDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3358,6 +3879,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messages,
     syncStates,
     syncLogs,
+    cachedContacts,
   ];
 }
 
@@ -5562,6 +6084,261 @@ typedef $$SyncLogsTableProcessedTableManager =
       SyncLogEntry,
       PrefetchHooks Function()
     >;
+typedef $$CachedContactsTableCreateCompanionBuilder =
+    CachedContactsCompanion Function({
+      Value<int> contactId,
+      Value<String?> remark,
+      Value<String?> nickName,
+      Value<String?> avatar,
+      Value<String?> sex,
+      Value<bool> onlineStatus,
+      Value<DateTime?> updatedAt,
+      required DateTime cachedAt,
+    });
+typedef $$CachedContactsTableUpdateCompanionBuilder =
+    CachedContactsCompanion Function({
+      Value<int> contactId,
+      Value<String?> remark,
+      Value<String?> nickName,
+      Value<String?> avatar,
+      Value<String?> sex,
+      Value<bool> onlineStatus,
+      Value<DateTime?> updatedAt,
+      Value<DateTime> cachedAt,
+    });
+
+class $$CachedContactsTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedContactsTable> {
+  $$CachedContactsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get contactId => $composableBuilder(
+    column: $table.contactId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remark => $composableBuilder(
+    column: $table.remark,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nickName => $composableBuilder(
+    column: $table.nickName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatar => $composableBuilder(
+    column: $table.avatar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sex => $composableBuilder(
+    column: $table.sex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get onlineStatus => $composableBuilder(
+    column: $table.onlineStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedContactsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedContactsTable> {
+  $$CachedContactsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get contactId => $composableBuilder(
+    column: $table.contactId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remark => $composableBuilder(
+    column: $table.remark,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nickName => $composableBuilder(
+    column: $table.nickName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatar => $composableBuilder(
+    column: $table.avatar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sex => $composableBuilder(
+    column: $table.sex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get onlineStatus => $composableBuilder(
+    column: $table.onlineStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedContactsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedContactsTable> {
+  $$CachedContactsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get contactId =>
+      $composableBuilder(column: $table.contactId, builder: (column) => column);
+
+  GeneratedColumn<String> get remark =>
+      $composableBuilder(column: $table.remark, builder: (column) => column);
+
+  GeneratedColumn<String> get nickName =>
+      $composableBuilder(column: $table.nickName, builder: (column) => column);
+
+  GeneratedColumn<String> get avatar =>
+      $composableBuilder(column: $table.avatar, builder: (column) => column);
+
+  GeneratedColumn<String> get sex =>
+      $composableBuilder(column: $table.sex, builder: (column) => column);
+
+  GeneratedColumn<bool> get onlineStatus => $composableBuilder(
+    column: $table.onlineStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+}
+
+class $$CachedContactsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedContactsTable,
+          CachedContact,
+          $$CachedContactsTableFilterComposer,
+          $$CachedContactsTableOrderingComposer,
+          $$CachedContactsTableAnnotationComposer,
+          $$CachedContactsTableCreateCompanionBuilder,
+          $$CachedContactsTableUpdateCompanionBuilder,
+          (
+            CachedContact,
+            BaseReferences<_$AppDatabase, $CachedContactsTable, CachedContact>,
+          ),
+          CachedContact,
+          PrefetchHooks Function()
+        > {
+  $$CachedContactsTableTableManager(
+    _$AppDatabase db,
+    $CachedContactsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedContactsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedContactsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedContactsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> contactId = const Value.absent(),
+                Value<String?> remark = const Value.absent(),
+                Value<String?> nickName = const Value.absent(),
+                Value<String?> avatar = const Value.absent(),
+                Value<String?> sex = const Value.absent(),
+                Value<bool> onlineStatus = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
+              }) => CachedContactsCompanion(
+                contactId: contactId,
+                remark: remark,
+                nickName: nickName,
+                avatar: avatar,
+                sex: sex,
+                onlineStatus: onlineStatus,
+                updatedAt: updatedAt,
+                cachedAt: cachedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> contactId = const Value.absent(),
+                Value<String?> remark = const Value.absent(),
+                Value<String?> nickName = const Value.absent(),
+                Value<String?> avatar = const Value.absent(),
+                Value<String?> sex = const Value.absent(),
+                Value<bool> onlineStatus = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                required DateTime cachedAt,
+              }) => CachedContactsCompanion.insert(
+                contactId: contactId,
+                remark: remark,
+                nickName: nickName,
+                avatar: avatar,
+                sex: sex,
+                onlineStatus: onlineStatus,
+                updatedAt: updatedAt,
+                cachedAt: cachedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedContactsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedContactsTable,
+      CachedContact,
+      $$CachedContactsTableFilterComposer,
+      $$CachedContactsTableOrderingComposer,
+      $$CachedContactsTableAnnotationComposer,
+      $$CachedContactsTableCreateCompanionBuilder,
+      $$CachedContactsTableUpdateCompanionBuilder,
+      (
+        CachedContact,
+        BaseReferences<_$AppDatabase, $CachedContactsTable, CachedContact>,
+      ),
+      CachedContact,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5576,6 +6353,8 @@ class $AppDatabaseManager {
       $$SyncStatesTableTableManager(_db, _db.syncStates);
   $$SyncLogsTableTableManager get syncLogs =>
       $$SyncLogsTableTableManager(_db, _db.syncLogs);
+  $$CachedContactsTableTableManager get cachedContacts =>
+      $$CachedContactsTableTableManager(_db, _db.cachedContacts);
 }
 
 mixin _$UserDaoMixin on DatabaseAccessor<AppDatabase> {
@@ -5645,4 +6424,19 @@ class SyncLogDaoManager {
   SyncLogDaoManager(this._db);
   $$SyncLogsTableTableManager get syncLogs =>
       $$SyncLogsTableTableManager(_db.attachedDatabase, _db.syncLogs);
+}
+
+mixin _$ContactDaoMixin on DatabaseAccessor<AppDatabase> {
+  $CachedContactsTable get cachedContacts => attachedDatabase.cachedContacts;
+  ContactDaoManager get managers => ContactDaoManager(this);
+}
+
+class ContactDaoManager {
+  final _$ContactDaoMixin _db;
+  ContactDaoManager(this._db);
+  $$CachedContactsTableTableManager get cachedContacts =>
+      $$CachedContactsTableTableManager(
+        _db.attachedDatabase,
+        _db.cachedContacts,
+      );
 }

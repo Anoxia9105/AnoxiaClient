@@ -18,14 +18,14 @@ LazyDatabase _openConnection() {
 }
 
 @DriftDatabase(
-  tables: [CachedUsers, Conversations, Messages, SyncStates, SyncLogs],
-  daos: [UserDao, ConversationDao, MessageDao, SyncStateDao, SyncLogDao],
+  tables: [CachedUsers, Conversations, Messages, SyncStates, SyncLogs, CachedContacts],
+  daos: [UserDao, ConversationDao, MessageDao, SyncStateDao, SyncLogDao, ContactDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -33,7 +33,10 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (m, from, to) async {
-      // Future migrations should be additive and preserve cached offline data.
+      // v1 → v2: 新增联系人缓存表
+      if (from < 2) {
+        await m.createTable(cachedContacts);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -386,5 +389,75 @@ class SyncLogDao extends DatabaseAccessor<AppDatabase> with _$SyncLogDaoMixin {
 
   Future<int> insertLog(SyncLogsCompanion log) {
     return into(syncLogs).insert(log);
+  }
+}
+
+@DriftAccessor(tables: [CachedContacts])
+class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
+  ContactDao(super.db);
+
+  Future<List<CachedContact>> getAllContacts() {
+    return (select(cachedContacts)
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.cachedAt,
+              mode: OrderingMode.desc,
+            ),
+          ]))
+        .get();
+  }
+
+  Stream<List<CachedContact>> watchAllContacts() {
+    return (select(cachedContacts)
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.cachedAt,
+              mode: OrderingMode.desc,
+            ),
+          ]))
+        .watch();
+  }
+
+  Future<CachedContact?> getContact(int contactId) {
+    return (select(cachedContacts)
+          ..where((tbl) => tbl.contactId.equals(contactId)))
+        .getSingleOrNull();
+  }
+
+  Future<void> insertOrUpdateContact(CachedContactsCompanion contact) {
+    return into(cachedContacts).insertOnConflictUpdate(contact);
+  }
+
+  Future<void> insertOrUpdateContacts(
+    Iterable<CachedContactsCompanion> contacts,
+  ) async {
+    await batch(
+      (b) => b.insertAllOnConflictUpdate(cachedContacts, contacts.toList()),
+    );
+  }
+
+  Future<void> deleteContact(int contactId) {
+    return (delete(cachedContacts)
+          ..where((tbl) => tbl.contactId.equals(contactId)))
+        .go();
+  }
+
+  Future<void> updateOnlineStatus(int contactId, bool isOnline) {
+    return (update(cachedContacts)
+          ..where((tbl) => tbl.contactId.equals(contactId)))
+        .write(CachedContactsCompanion(onlineStatus: Value(isOnline)));
+  }
+
+  Future<DateTime?> getLatestUpdatedAt() async {
+    final row = await (select(cachedContacts)
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.updatedAt,
+              mode: OrderingMode.desc,
+            ),
+          ])
+          ..limit(1))
+        .getSingleOrNull();
+    return row?.updatedAt;
   }
 }

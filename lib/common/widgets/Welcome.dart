@@ -16,7 +16,7 @@ class WelcomeFeature {
 }
 
 /// Reusable welcome and empty-state panel for feature pages.
-class Welcome extends StatelessWidget {
+class Welcome extends StatefulWidget {
   final List<List<dynamic>> icon;
   final String titleKey;
   final String descriptionKey;
@@ -83,6 +83,55 @@ class Welcome extends StatelessWidget {
       maxWidth = 620;
 
   @override
+  State<Welcome> createState() => _WelcomeState();
+}
+
+class _WelcomeState extends State<Welcome> with TickerProviderStateMixin {
+  // 进场动画：图标 -> 标题 -> 描述 -> 卡片，依次淡入上滑
+  late final AnimationController _enterCtrl;
+  // 图标呼吸/漂浮动画，循环播放
+  late final AnimationController _floatCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _enterCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _enterCtrl.dispose();
+    _floatCtrl.dispose();
+    super.dispose();
+  }
+
+  Animation<double> _fade(double start, double end) {
+    return CurvedAnimation(
+      parent: _enterCtrl,
+      curve: Interval(start, end, curve: Curves.easeOut),
+    );
+  }
+
+  Animation<Offset> _slide(double start, double end) {
+    return Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _enterCtrl,
+        curve: Interval(start, end, curve: Curves.easeOutCubic),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -91,53 +140,106 @@ class Welcome extends StatelessWidget {
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 32.h),
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
+          constraints: BoxConstraints(maxWidth: widget.maxWidth),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 76,
-                height: 76,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: colorScheme.primary.withValues(alpha: 0.12),
+              // 图标：淡入缩放 + 循环漂浮
+              FadeTransition(
+                opacity: _fade(0.0, 0.5),
+                child: ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: _enterCtrl,
+                    curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
                   ),
-                ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: icon,
-                    size: 38,
-                    color: colorScheme.onPrimaryContainer,
+                  child: AnimatedBuilder(
+                    animation: _floatCtrl,
+                    builder: (context, child) {
+                      final dy = -4 * (_floatCtrl.value - 0.5) * 2;
+                      return Transform.translate(
+                        offset: Offset(0, dy),
+                        child: child,
+                      );
+                    },
+                    child: Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.85),
+                            colorScheme.primary.withValues(alpha: 0.55),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.28),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: HugeIcon(
+                          icon: widget.icon,
+                          size: 38,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
               SizedBox(height: 24.h),
-              Text(
-                titleKey.tr(),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                  height: 1.2,
+              FadeTransition(
+                opacity: _fade(0.15, 0.65),
+                child: SlideTransition(
+                  position: _slide(0.15, 0.65),
+                  child: Text(
+                    widget.titleKey.tr(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                      height: 1.2,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: 12.h),
-              Text(
-                descriptionKey.tr(),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.55,
+              FadeTransition(
+                opacity: _fade(0.25, 0.75),
+                child: SlideTransition(
+                  position: _slide(0.25, 0.75),
+                  child: Text(
+                    widget.descriptionKey.tr(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.55,
+                    ),
+                  ),
                 ),
               ),
-              if (features.isNotEmpty) ...[
+              if (widget.features.isNotEmpty) ...[
                 SizedBox(height: 28.h),
-                _FeatureGrid(features: features),
+                _FeatureGrid(features: widget.features, enterCtrl: _enterCtrl),
               ],
-              if (action != null) ...[SizedBox(height: 28.h), action!],
+              if (widget.action != null) ...[
+                SizedBox(height: 28.h),
+                FadeTransition(
+                  opacity: _fade(0.55, 1.0),
+                  child: SlideTransition(
+                    position: _slide(0.55, 1.0),
+                    child: widget.action!,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -148,8 +250,9 @@ class Welcome extends StatelessWidget {
 
 class _FeatureGrid extends StatelessWidget {
   final List<WelcomeFeature> features;
+  final AnimationController enterCtrl;
 
-  const _FeatureGrid({required this.features});
+  const _FeatureGrid({required this.features, required this.enterCtrl});
 
   @override
   Widget build(BuildContext context) {
@@ -162,10 +265,16 @@ class _FeatureGrid extends StatelessWidget {
           runSpacing: 12,
           alignment: WrapAlignment.center,
           children: [
-            for (final feature in features)
+            for (var i = 0; i < features.length; i++)
               SizedBox(
                 width: isNarrow ? constraints.maxWidth : 188,
-                child: _FeatureItem(feature: feature),
+                child: _FeatureItem(
+                  feature: features[i],
+                  enterCtrl: enterCtrl,
+                  // 每张卡片依次错开进场，形成层次感
+                  start: 0.4 + i * 0.12,
+                  end: 0.75 + i * 0.12,
+                ),
               ),
           ],
         );
@@ -174,49 +283,133 @@ class _FeatureGrid extends StatelessWidget {
   }
 }
 
-class _FeatureItem extends StatelessWidget {
+class _FeatureItem extends StatefulWidget {
   final WelcomeFeature feature;
+  final AnimationController enterCtrl;
+  final double start;
+  final double end;
 
-  const _FeatureItem({required this.feature});
+  const _FeatureItem({
+    required this.feature,
+    required this.enterCtrl,
+    required this.start,
+    required this.end,
+  });
+
+  @override
+  State<_FeatureItem> createState() => _FeatureItemState();
+}
+
+class _FeatureItemState extends State<_FeatureItem> {
+  bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      constraints: const BoxConstraints(minHeight: 116),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outlineVariant),
+    final end = widget.end.clamp(0.0, 1.0);
+    final start = widget.start.clamp(0.0, end - 0.01);
+
+    final fade = CurvedAnimation(
+      parent: widget.enterCtrl,
+      curve: Interval(start, end, curve: Curves.easeOut),
+    );
+    final slide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: widget.enterCtrl,
+        curve: Interval(start, end, curve: Curves.easeOutCubic),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HugeIcon(icon: feature.icon, size: 22, color: colorScheme.primary),
-          const SizedBox(height: 12),
-          Text(
-            feature.titleKey.tr(),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
+    );
+
+    final scale = _pressed
+        ? 0.97
+        : _hovered
+        ? 1.03
+        : 1.0;
+
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(
+        position: slide,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            child: AnimatedScale(
+              scale: scale,
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                constraints: const BoxConstraints(minHeight: 116),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _hovered
+                      ? colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.7,
+                        )
+                      : colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.42,
+                        ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _hovered
+                        ? colorScheme.primary.withValues(alpha: 0.4)
+                        : colorScheme.outlineVariant,
+                  ),
+                  boxShadow: _hovered
+                      ? [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.14),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HugeIcon(
+                      icon: widget.feature.icon,
+                      size: 22,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.feature.titleKey.tr(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.feature.descriptionKey.tr(),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            feature.descriptionKey.tr(),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.35,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

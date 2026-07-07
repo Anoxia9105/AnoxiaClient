@@ -133,12 +133,13 @@ class ChatMessages extends _$ChatMessages {
     if (idx == -1) return;
 
     final newList = [...list];
-    newList[idx] = newList[idx].copyWith(
+    final ackedMsg = newList[idx].copyWith(
       messageId: messageId,
       seq: seq,
       timestamp: timestamp,
       deliveryStatus: DeliveryStatus.sent,
     );
+    newList[idx] = ackedMsg;
 
     newList.sort((a, b) {
       if ((a.seq ?? 0) == 0 || (b.seq ?? 0) == 0) {
@@ -148,6 +149,9 @@ class ChatMessages extends _$ChatMessages {
     });
 
     state = {...state, targetRoomId: newList};
+
+    // 持久化 ACK 后的最终状态（messageId/seq/sent）到本地 DB
+    unawaited(ref.read(syncRepositoryProvider).cacheLocalMessage(ackedMsg));
   }
 
   String? _findRoomIdByClientMsgId(String clientMsgId) {
@@ -173,57 +177,82 @@ class ChatMessages extends _$ChatMessages {
   }
 
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
-    final currentList = state[roomId] ?? [];
-    int localMaxSeq = currentList.isEmpty ? 0 : (currentList.last.seq ?? 0);
+    final syncRepo = ref.read(syncRepositoryProvider);
 
+    // ─── Step 1: 本地缓存优先，立即渲染 ───────────────────────────────
+    final localMessages = await syncRepo.getMessagesForConversation(
+      roomId,
+      limit: _pageSize,
+      sync: false,
+    );
+    if (localMessages.isNotEmpty) {
+      log.debug('[Cache] syncRoomMessages: local hit roomId=$roomId count=${localMessages.length}');
+      _applyMessages(roomId, localMessages);
+      ref
+          .read(chatHasMoreProvider.notifier)
+          .setHasMore(roomId, localMessages.length >= _pageSize);
+    }
+
+    // ─── Step 2: 判断是否需要远端增量同步 ─────────────────────────────
+    final localMaxSeq = (state[roomId] ?? []).fold<int>(
+      0,
+      (max, msg) => (msg.seq ?? 0) > max ? msg.seq! : max,
+    );
     if (_syncedRoomIds.contains(roomId) &&
         (serverLastSeq == null || localMaxSeq >= serverLastSeq)) {
       return;
     }
 
+    // ─── Step 3: 后台拉远端增量写入本地，再刷新 UI ────────────────────
     try {
-      final res = await DioClient().get(
-        API.chatHistory,
-        queryParameters: {
-          'roomId': roomId,
-          'lastSeq': null,
-          'pageSize': _pageSize,
-          'direction': 0,
-        },
-      );
-
+      log.debug('[Cache] syncRoomMessages: remote sync roomId=$roomId localMaxSeq=$localMaxSeq serverLastSeq=$serverLastSeq');
+      await syncRepo.syncMessages(roomId);
       _syncedRoomIds.add(roomId);
-      final data = res.data['data'];
-      if (data is! List) return;
 
-      final List<ChatMessage> history = data
-          .map((e) => ChatMessage.fromJson(e))
-          .toList();
-      ref
-          .read(chatHasMoreProvider.notifier)
-          .setHasMore(roomId, history.length >= _pageSize);
-
-      final Map<String, ChatMessage> mergeMap = {};
-      for (var m in currentList) {
-        final key = (m.seq != null && m.seq != 0)
-            ? m.seq.toString()
-            : m.messageId;
-        if (key != null) mergeMap[key] = m;
+      final refreshed = await syncRepo.getMessagesForConversation(
+        roomId,
+        limit: _pageSize,
+        sync: false,
+      );
+      if (refreshed.isNotEmpty) {
+        log.debug('[Cache] syncRoomMessages: refreshed after sync roomId=$roomId count=${refreshed.length}');
+        _applyMessages(roomId, refreshed);
+        ref
+            .read(chatHasMoreProvider.notifier)
+            .setHasMore(roomId, refreshed.length >= _pageSize);
       }
-      for (var m in history) {
-        final key = m.seq?.toString() ?? m.messageId;
-        if (key != null) mergeMap[key] = m;
-      }
-
-      final sortedList = mergeMap.values.toList()
-        ..sort((a, b) => a.seq!.compareTo(b.seq!));
-      state = {...state, roomId: sortedList};
     } catch (e) {
       log.error('同步房间 $roomId 失败: $e');
     }
   }
 
-  /// 向前加载更多历史记录
+  /// 将 [localMessages] 合并到 state，保留内存中 sending 状态的消息。
+  void _applyMessages(String roomId, List<ChatMessage> localMessages) {
+    final sending = (state[roomId] ?? [])
+        .where((m) => m.deliveryStatus == DeliveryStatus.sending)
+        .toList();
+    final Map<String, ChatMessage> map = {};
+    for (final m in localMessages) {
+      final key = (m.seq != null && m.seq! > 0)
+          ? 's${m.seq}'
+          : (m.messageId ?? m.clientMsgId);
+      if (key != null) map[key] = m;
+    }
+    for (final m in sending) {
+      final key = m.clientMsgId ?? m.messageId;
+      if (key != null) map[key] = m;
+    }
+    final sorted = map.values.toList()
+      ..sort((a, b) {
+        if ((a.seq ?? 0) == 0 || (b.seq ?? 0) == 0) {
+          return (a.timestamp ?? 0).compareTo(b.timestamp ?? 0);
+        }
+        return a.seq!.compareTo(b.seq!);
+      });
+    state = {...state, roomId: sorted};
+  }
+
+  /// 向前加载更多历史记录（本地缓存优先，本地无数据再回退 API 并写入本地）
   Future<void> loadMoreHistory(String roomId) async {
     if (_isFetchingHistory) return;
     if (!(ref.read(chatHasMoreProvider)[roomId] ?? true)) return;
@@ -236,22 +265,46 @@ class ChatMessages extends _$ChatMessages {
 
     _isFetchingHistory = true;
     try {
-      final res = await DioClient().get(
-        API.chatHistory,
-        queryParameters: {
-          'roomId': roomId,
-          'lastSeq': oldestSeq,
-          'pageSize': _pageSize,
-          'direction': 0,
-        },
+      final syncRepo = ref.read(syncRepositoryProvider);
+
+      // ─── Step 1: 先从本地按偏移量加载 ────────────────────────────────
+      final localMore = await syncRepo.getMessagesForConversation(
+        roomId,
+        limit: _pageSize,
+        offset: currentList.length,
+        sync: false,
       );
 
-      final data = res.data['data'];
-      if (data is! List || data.isEmpty) return;
+      List<ChatMessage> history;
+      if (localMore.isNotEmpty) {
+        log.debug('[Cache] loadMoreHistory: local hit roomId=$roomId offset=${currentList.length} count=${localMore.length}');
+        history = localMore;
+      } else {
+        // ─── Step 2: 本地无数据，走远端 API 并写入本地 ─────────────────
+        log.debug('[Cache] loadMoreHistory: local miss, fetch API roomId=$roomId lastSeq=$oldestSeq');
+        final res = await DioClient().get(
+          API.chatHistory,
+          queryParameters: {
+            'roomId': roomId,
+            'lastSeq': oldestSeq,
+            'pageSize': _pageSize,
+            'direction': 0,
+          },
+        );
+        final data = res.data['data'];
+        if (data is! List || data.isEmpty) {
+          ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+          return;
+        }
+        history = data
+            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+            .toList();
+        // 异步写入本地缓存，不阻塞 UI
+        unawaited(
+          ref.read(localDataSourceProvider).upsertMessages(history),
+        );
+      }
 
-      final List<ChatMessage> history = data
-          .map((e) => ChatMessage.fromJson(e))
-          .toList();
       ref
           .read(chatHasMoreProvider.notifier)
           .setHasMore(roomId, history.length >= _pageSize);
@@ -262,7 +315,6 @@ class ChatMessages extends _$ChatMessages {
         for (var m in currentList)
           if (m.seq != null) m.seq!: m,
       };
-
       final sortedList = mergeMap.values.toList()
         ..sort((a, b) => a.seq!.compareTo(b.seq!));
       state = {...state, roomId: sortedList};

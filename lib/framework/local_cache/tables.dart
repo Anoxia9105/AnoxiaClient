@@ -64,6 +64,36 @@ class Messages extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('CachedContact')
+class CachedContacts extends Table {
+  /// 联系人用户 ID（主键）
+  IntColumn get contactId => integer()();
+
+  /// 备注名（用户自定义，优先展示）
+  TextColumn get remark => text().nullable()();
+
+  /// 昵称
+  TextColumn get nickName => text().nullable()();
+
+  /// 头像 URL
+  TextColumn get avatar => text().nullable()();
+
+  /// 性别
+  TextColumn get sex => text().nullable()();
+
+  /// 在线状态（由 WebSocket 维护，不作为持久化数据依赖）
+  BoolColumn get onlineStatus =>
+      boolean().withDefault(const Constant(false))();
+
+  /// 服务端最后更新时间（用于增量同步判断）
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+
+  DateTimeColumn get cachedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {contactId};
+}
+
 @DataClassName('SyncState')
 class SyncStates extends Table {
   TextColumn get scope => text()();

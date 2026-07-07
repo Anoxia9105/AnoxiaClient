@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/domain/ChatContactVO.dart';
+import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:lpinyin/lpinyin.dart';
@@ -16,45 +19,82 @@ part 'contact_list_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ContactListService extends _$ContactListService {
   @override
-  FutureOr<Map<int, ChatContactVO>> build() {
-    return _fetchContacts();
+  FutureOr<Map<int, ChatContactVO>> build() async {
+    final local = ref.read(localDataSourceProvider);
+
+    // 订阅本地 DB 流，DB 写入后自动推送更新到 UI
+    final subscription = local.watchContacts().listen((contacts) {
+      state = AsyncData({for (final c in contacts) c.contactId!: c});
+    });
+    ref.onDispose(subscription.cancel);
+
+    // ─── Step 1: 优先读本地缓存，立即渲染 ────────────────────────────────
+    final localContacts = await local.getContacts();
+    if (localContacts.isNotEmpty) {
+      log.debug('[Cache] ContactListService: local hit count=${localContacts.length}');
+      // 后台增量同步，不阻塞 UI
+      unawaited(_syncFromRemote());
+      return {for (final c in localContacts) c.contactId!: c};
+    }
+
+    // ─── Step 2: 本地无数据（首次），从远端全量拉取 ───────────────────────
+    log.debug('[Cache] ContactListService: local empty, fetch from remote');
+    return await _syncFromRemote() ?? {};
   }
 
-  /// 从后端获取联系人列表
-  ///
-  /// 返回 Map 结构便于 O(1) 按 contactId 查找
-  Future<Map<int, ChatContactVO>> _fetchContacts() async {
-    final response = await DioClient().get(API.contactList);
-    final list = (response.data['data'] as List)
-        .map((e) => ChatContactVO.fromJson(e))
-        .toList();
-
-    return {for (var item in list) item.contactId!: item};
+  /// 从远端拉取联系人并写入本地缓存
+  Future<Map<int, ChatContactVO>?> _syncFromRemote() async {
+    try {
+      final response = await DioClient().get(API.contactList);
+      final list = (response.data['data'] as List)
+          .map((e) => ChatContactVO.fromJson(e as Map<String, dynamic>))
+          .toList();
+      await ref.read(localDataSourceProvider).upsertContacts(list);
+      log.debug('[Cache] ContactListService: synced ${list.length} contacts');
+      return {for (final c in list) c.contactId!: c};
+    } catch (e) {
+      log.error('[Cache] ContactListService: sync failed: $e');
+      return null;
+    }
   }
 
   /// 局部更新联系人的在线状态
   ///
-  /// 由 WebSocket 在线状态推送触发，避免全量刷新
+  /// 由 WebSocket 在线状态推送触发，同时更新内存和本地 DB
   void updateOnlineStatus(int userId, bool isOnline) {
     final currentAsync = state;
     if (currentAsync is AsyncData<Map<int, ChatContactVO>>) {
       final contactMap = currentAsync.value;
-
       if (contactMap.containsKey(userId)) {
         final updatedContact = contactMap[userId]!.copyWith(
           onlineStatus: isOnline,
         );
-
         state = AsyncData({...contactMap, userId: updatedContact});
         log.info("👤 联系人 $userId 状态同步: ${isOnline ? '在线' : '离线'}");
       }
     }
+    // 同步写入本地 DB（不 await，非关键路径）
+    unawaited(
+      ref.read(localDataSourceProvider).updateContactOnlineStatus(userId, isOnline),
+    );
   }
 
-  /// 刷新联系人列表
+  /// 刷新联系人列表（强制从远端拉取）
   Future<void> refresh({bool quiet = false}) async {
     if (!quiet) state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchContacts());
+    final result = await _syncFromRemote();
+    if (result != null) {
+      state = AsyncData(result);
+    }
+  }
+
+  /// 删除联系人（解除好友后调用，同步更新内存和本地 DB）
+  Future<void> removeContact(int contactId) async {
+    await ref.read(localDataSourceProvider).deleteContact(contactId);
+    state.whenData((map) {
+      final updated = Map<int, ChatContactVO>.from(map)..remove(contactId);
+      state = AsyncData(updated);
+    });
   }
 }
 

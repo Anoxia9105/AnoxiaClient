@@ -55,7 +55,7 @@ final class ChatMessagesProvider
   }
 }
 
-String _$chatMessagesHash() => r'62df2a916547d750f3352f8e989496baaa435ebb';
+String _$chatMessagesHash() => r'f855d7272456da64ff03fe62e869bf7050e7ae9f';
 
 /// 聊天消息存储器
 ///
