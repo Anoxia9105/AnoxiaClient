@@ -47,7 +47,6 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     return AppBar(
-
       centerTitle: DeviceUtil.isRealMobile(),
       actionsPadding: const EdgeInsets.all(4),
       title: roomListAsync.when(
@@ -62,7 +61,11 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: Row(
               children: [
                 // 房间头像
-                AvatarWidget(url: room.roomAvatar, name: displayTitle, size: 40),
+                AvatarWidget(
+                  url: room.roomAvatar,
+                  name: displayTitle,
+                  size: 40,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -80,7 +83,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         ),
                       ),
                       // 显示在线人数或输入状态
-                      _buildTitleOrTypingStatus(context, room, members, isTyping),
+                      _buildTitleOrTypingStatus(
+                        context,
+                        room,
+                        members,
+                        isTyping,
+                      ),
                     ],
                   ),
                 ),
@@ -156,6 +164,16 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
 
+          // 更多按钮（移动端不显示，放在 AppBar 右上角）
+          IconButton(
+            mouseCursor: SystemMouseCursors.click,
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical),
+            onPressed: () {
+              ref.read(chatRightPanelVisibleProvider.notifier).state = !ref
+                  .read(chatRightPanelVisibleProvider);
+            },
+          ),
+
           // 更多群功能组件化（添加、禁言、列表）
           if (room.roomType == 1) ChatGroupActionButtonsWidget(roomId: roomId),
         ];
@@ -186,20 +204,21 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     if (room.roomType == 1) {
       final onlineCount = members.where((m) => m.onlineStatus == true).length;
       final totalCount = members.length;
-      return Container(
+      return SizedBox(
         height: 20,
-        alignment: Alignment.centerLeft,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const BreathingDot(),
             const SizedBox(width: 6),
-            Text(
-              '$onlineCount人在线 / $totalCount位成员',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            Expanded(
+              child: Text(
+                '$onlineCount人在线 / $totalCount位成员',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
             ),
           ],
         ),

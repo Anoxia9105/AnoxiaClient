@@ -103,23 +103,6 @@ GoRouter router(Ref ref) {
   return router;
 }
 
-/// 公共转场：新页面从底部滑入，覆盖到旧页面之上
-CustomTransitionPage<void> _slideUpPage(LocalKey key, Widget child) {
-  return CustomTransitionPage<void>(
-    key: key,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 450),
-    reverseTransitionDuration: const Duration(milliseconds: 350),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final offset = Tween<Offset>(
-        begin: const Offset(0, 1),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
-      return SlideTransition(position: offset, child: child);
-    },
-  );
-}
-
 /// 登录页路由
 @TypedGoRoute<InitLoginRoute>(path: '/login')
 class InitLoginRoute extends GoRouteData with $InitLoginRoute {
@@ -127,11 +110,6 @@ class InitLoginRoute extends GoRouteData with $InitLoginRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const LoginPage();
-
-  @override
-  Page<void> buildPage(BuildContext context, GoRouterState state) {
-    return _slideUpPage(state.pageKey, const LoginPage());
-  }
 }
 
 /// 首页/主布局路由
@@ -142,11 +120,6 @@ class HomeRoute extends GoRouteData with $HomeRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       const MainLayoutPage();
-
-  @override
-  Page<void> buildPage(BuildContext context, GoRouterState state) {
-    return _slideUpPage(state.pageKey, const MainLayoutPage());
-  }
 }
 
 /// 启动页路由
@@ -156,26 +129,6 @@ class SplashRoute extends GoRouteData with $SplashRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const SplashPage();
-
-  @override
-  Page<void> buildPage(BuildContext context, GoRouterState state) {
-    return CustomTransitionPage<void>(
-      key: state.pageKey,
-      child: const SplashPage(),
-      transitionDuration: const Duration(milliseconds: 450),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        // 当有新页面（Home/Login）盖上来时，自己被“推”着往上滑走
-        final offset = Tween<Offset>(
-          begin: Offset.zero,
-          end: const Offset(0, -1),
-        ).animate(CurvedAnimation(
-          parent: secondaryAnimation,
-          curve: Curves.easeInOutCubic,
-        ));
-        return SlideTransition(position: offset, child: child);
-      },
-    );
-  }
 }
 
 /// 错误页路由

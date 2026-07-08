@@ -14,6 +14,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/ChatMessage.dart';
@@ -21,6 +22,8 @@ import '../../../domain/ChatRoomVO.dart';
 import '../../../logs/talker.dart';
 
 part 'room_list_service.g.dart';
+
+final chatRightPanelVisibleProvider = StateProvider<bool>((ref) => false);
 
 /// 聊天室列表服务
 ///

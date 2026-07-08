@@ -23,7 +23,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   late Animation<double> _textDelayOpacity;
 
-  bool _isExiting = false;
+  bool _hasScheduledExit = false;
 
   // 轻量粒子列表
   final List<_Particle> _particles = List.generate(24, (i) => _Particle());
@@ -66,13 +66,15 @@ class _SplashPageState extends ConsumerState<SplashPage>
   /// 真正的推离/滑入效果交给 router.dart 里的 CustomTransitionPage 联动完成，
   /// 这样只有一份真实页面在跑动画，不会出现“预览切真实页面”的闪跳。
   void _scheduleExit(String targetLocation) {
-    if (_isExiting) return;
-    _isExiting = true;
+    if (_hasScheduledExit) return;
+    _hasScheduledExit = true;
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      // 保证 Logo 入场动画播放完整，体验更连贯，避免动画播到一半就跳走
       if (!_controller.isCompleted) {
         await _controller.forward();
+      } else {
+        await Future.delayed(const Duration(milliseconds: 300));
       }
       if (!mounted) return;
       context.go(targetLocation);
@@ -138,7 +140,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
                       SizedBox(
                         width: 152,
                         height: 152,
-                        child: Assets.images.appIconPng.image(fit: BoxFit.cover),
+                        child: Assets.images.appIconPng.image(
+                          fit: BoxFit.cover,
+                        ),
                       ),
 
                       // 优雅的底座
@@ -154,8 +158,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 6.0,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.85),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.85,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -163,8 +168,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
                                 'Secure · High Performance · Cross-Platform',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   letterSpacing: 1.0,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.4,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 32),

@@ -26,16 +26,24 @@ class BubbleShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BubbleWidget(
-      arrowDirection: isCurrentUser ? AxisDirection.right : AxisDirection.left,
-      arrowOffset: 18,
-      arrowLength: 8,
-      arrowRadius: 4,
-      arrowWidth: 15,
-      padding: const EdgeInsets.all(10),
-      borderRadius: BorderRadius.circular(12),
-      backgroundColor: backgroundColor,
-      contentBuilder: (_) => child,
+    // return BubbleWidget(
+    //   arrowDirection: isCurrentUser ? AxisDirection.right : AxisDirection.left,
+    //   arrowOffset: 19,
+    //   arrowLength: 8,
+    //   arrowRadius: 4,
+    //   arrowWidth: 12,
+    //   padding: const EdgeInsets.all(8),
+    //   borderRadius: BorderRadius.circular(12),
+    //   backgroundColor: backgroundColor,
+    //   contentBuilder: (_) => child,
+    // );
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: child,
     );
   }
 }
