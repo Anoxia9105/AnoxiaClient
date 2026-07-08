@@ -246,6 +246,10 @@ class WsController extends _$WsController {
       if (!decoded.isData) return;
       final payload = decoded.payload!;
       final topic = decoded.topic!;
+      final effectiveTopic = PacketRegistry.topicForCodecId(
+        decoded.codecId,
+        topic,
+      );
 
       // ACK 帧：特殊处理
       if (decoded.isAck) {
@@ -259,11 +263,16 @@ class WsController extends _$WsController {
       }
 
       final packetData = PacketRegistry.parse(topic, payload, decoded.codecId);
+      log.debug(
+        '[SERVER DATA] dispatch -> Topic: $topic, CodecId: ${decoded.codecId}, EffectiveTopic: $effectiveTopic, PayloadSize: ${payload.length}',
+      );
       if (packetData != null) {
         // 打印解析后的具体业务数据内容
-        log.info('[SERVER DATA] 解析成功 -> Topic: $topic, Content: $packetData');
+        log.info(
+          '[SERVER DATA] 解析成功 -> Topic: $topic, CodecId: ${decoded.codecId}, EffectiveTopic: $effectiveTopic, Content: $packetData',
+        );
 
-        final frame = PacketFrame(topic: topic, data: packetData);
+        final frame = PacketFrame(topic: effectiveTopic, data: packetData);
         if (!_messageController.isClosed) {
           _messageController.add(frame);
         }

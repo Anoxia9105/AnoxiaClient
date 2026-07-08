@@ -1,5 +1,6 @@
 
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
+import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -99,6 +100,9 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
                     }
 
                     // 结束全局会话状态
+                    ref
+                        .read(callInvitationControllerProvider.notifier)
+                        .endRoom(widget.roomId, title: widget.title);
                     ref
                         .read(mobileCallSessionControllerProvider.notifier)
                         .end();

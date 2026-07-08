@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -164,6 +165,13 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
             ],
           );
         }
+
+        content = Stack(
+          children: [
+            content,
+            const Positioned.fill(child: CallInvitationOverlay()),
+          ],
+        );
 
         return content;
       },

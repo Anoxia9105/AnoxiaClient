@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -57,12 +58,14 @@ class ChatBarHandlers {
       // 💡 首次起呼/进入房间：移除了旧的透明路由 push 代码，由全局组件自适应接管
       final roomId = room.roomId ?? '';
       final title = room.roomName ?? '';
+      ref.read(callInvitationControllerProvider.notifier).invite(room);
       ref
           .read(mobileCallSessionControllerProvider.notifier)
           .start(roomId: roomId, title: title);
           
     } else {
       /// 桌面端直接打开通话窗口
+      ref.read(callInvitationControllerProvider.notifier).invite(room);
       ref
           .read(callWindowControllerProvider.notifier)
           .openCallWindow(

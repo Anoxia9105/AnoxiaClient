@@ -10,6 +10,7 @@ import '../../protocol/message/MessageEunm.dart';
 import '../../protocol/message/MessagePayload.dart';
 import '../../protocol/message/RoomMessage.dart';
 import '../../protocol/PacketType.dart';
+import '../../logs/talker.dart';
 
 /// IM V5 鍗忚鍏ㄩ噺缂栬В鐮佸櫒
 ///
@@ -51,7 +52,8 @@ class ImPacketV5 {
       if (!frame.isProtobuf) return null;
 
       return decodeEnvelope(frame.body);
-    } catch (_) {
+    } catch (e, st) {
+      log.error('[ImPacketV5] decodeFrame failed', e, st);
       return null;
     }
   }
@@ -77,7 +79,8 @@ class ImPacketV5 {
         roomId: roomId,
         payload: payloadBytes,
       );
-    } catch (_) {
+    } catch (e, st) {
+      log.error('[ImPacketV5] decodeEnvelope failed', e, st);
       return null;
     }
   }
@@ -123,7 +126,8 @@ class ImPacketV5 {
         serverTimestamp: _zeroToNull(f.getInt64(8)),
         clientTimestamp: _zeroToNull(f.getInt64(9)),
       );
-    } catch (_) {
+    } catch (e, st) {
+      log.error('[ImPacketV5] decodeRoomMessage failed', e, st);
       return null;
     }
   }
@@ -142,7 +146,8 @@ class ImPacketV5 {
         content: _emptyToNull(f.getString(7)),
         timestamp: _zeroToNull(f.getInt64(8)),
       );
-    } catch (_) {
+    } catch (e, st) {
+      log.error('[ImPacketV5] decodeHighMessage failed', e, st);
       return null;
     }
   }
@@ -160,7 +165,8 @@ class ImPacketV5 {
         timestamp: f.getInt64(4),
         extra: properties.isEmpty ? null : properties.cast<String, dynamic>(),
       );
-    } catch (_) {
+    } catch (e, st) {
+      log.error('[ImPacketV5] decodeEventMessage failed', e, st);
       return null;
     }
   }

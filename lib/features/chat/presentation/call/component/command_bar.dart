@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/features/chat/presentation/call/component/volume_indicator.dart';
@@ -169,7 +170,7 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
 
-                    _buildHangupButton(context, ref, notifier),
+                    _buildHangupButton(context, ref, notifier, state),
                   ],
                 ),
               ),
@@ -338,6 +339,7 @@ class CommandBar extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     RoomController notifier,
+    RoomState state,
   ) {
     return Tooltip(
       message: 'call_hangup'.tr(),
@@ -348,6 +350,9 @@ class CommandBar extends ConsumerWidget {
         ),
         child: InkWell(
           onTap: () async {
+            ref
+                .read(callInvitationControllerProvider.notifier)
+                .endRoom(state.room.name ?? '');
             if (DeviceUtil.isRealDesktop()) {
               windowManager.close();
             } else {

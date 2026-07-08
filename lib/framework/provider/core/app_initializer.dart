@@ -43,7 +43,6 @@ class AppInitializer extends _$AppInitializer {
 
       // 3. 业务数据预加载
       await _preloadData();
-
     } catch (e, stack) {
       log.error('❌ 应用初始化崩溃', e, stack);
       // 异常会被 Router 捕获并跳转错误页
@@ -59,7 +58,6 @@ class AppInitializer extends _$AppInitializer {
       log.info('🛠️ 基础服务已初始化，跳过重复挂载');
       return;
     }
-
 
     if (DeviceUtil.isRealMobile()) {
       if (Firebase.apps.isEmpty) {
@@ -89,11 +87,26 @@ class AppInitializer extends _$AppInitializer {
       PacketType.message,
       (payload, codecId) => ImPacketV5.decodeRoomMessage(payload),
     );
+    PacketRegistry.registerCodec(
+      ImPacketV5.codecRoomMessage,
+      PacketType.message,
+      (payload, codecId) => ImPacketV5.decodeRoomMessage(payload),
+    );
     PacketRegistry.register(
       PacketType.event,
       (payload, codecId) => ImPacketV5.decodeEventMessage(payload),
     );
+    PacketRegistry.registerCodec(
+      ImPacketV5.codecEventMessage,
+      PacketType.event,
+      (payload, codecId) => ImPacketV5.decodeEventMessage(payload),
+    );
     PacketRegistry.register(
+      PacketType.highFrequency,
+      (payload, codecId) => ImPacketV5.decodeHighMessage(payload),
+    );
+    PacketRegistry.registerCodec(
+      ImPacketV5.codecHighMessage,
       PacketType.highFrequency,
       (payload, codecId) => ImPacketV5.decodeHighMessage(payload),
     );
@@ -107,9 +120,9 @@ class AppInitializer extends _$AppInitializer {
   Future<void> _preloadData() async {
     final user = ref.read(authControllerProvider).value;
     if (user != null) {
-      await ref.read(loginBootstrapOrchestratorProvider).run(
-        reason: 'app_initializer',
-      );
+      await ref
+          .read(loginBootstrapOrchestratorProvider)
+          .run(reason: 'app_initializer');
     }
   }
 

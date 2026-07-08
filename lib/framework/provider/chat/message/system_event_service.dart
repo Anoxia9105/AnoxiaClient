@@ -156,7 +156,11 @@ class SystemEventService extends _$SystemEventService {
   /// 处理被踢出房间事件
   void _handleUserKicked(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
-    final int? targetId = event.extra?['targetId'];
+    final int? targetId = _extractInt(
+      event.extra?['targetUserId'] ??
+          event.extra?['targetId'] ??
+          event.extra?['userId'],
+    );
     final currentUser = ref.read(authControllerProvider).value;
 
     if (roomId == null) {
@@ -198,7 +202,9 @@ class SystemEventService extends _$SystemEventService {
 
     if (roomId != null) {
       final nextStatus = dissolveType == 'ban' ? 2 : 3;
-      ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, nextStatus);
+      ref
+          .read(roomListServiceProvider.notifier)
+          .updateRoomStatus(roomId, nextStatus);
       log.info("房间 $roomId 已${nextStatus == 2 ? '封禁' : '解散'}，保留历史消息并更新状态");
     }
 
@@ -284,7 +290,8 @@ class SystemEventService extends _$SystemEventService {
   void _handleUserMuted(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
     final dynamic rawIsMute = event.extra?['isMute'];
-    final bool isMute = rawIsMute == true ||
+    final bool isMute =
+        rawIsMute == true ||
         rawIsMute == 1 ||
         rawIsMute?.toString().toLowerCase() == 'true';
 
@@ -323,6 +330,13 @@ class SystemEventService extends _$SystemEventService {
     if (raw == null) return null;
     final roomId = raw.toString().trim();
     return roomId.isEmpty ? null : roomId;
+  }
+
+  int? _extractInt(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw.toString());
   }
 
   /// 处理消息撤回

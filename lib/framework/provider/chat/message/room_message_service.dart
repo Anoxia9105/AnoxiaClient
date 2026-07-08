@@ -4,6 +4,7 @@ import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -54,6 +55,7 @@ class ChatMessages extends _$ChatMessages {
 
     // 1. 更新当前缓存状态
     upsertMessage(chatMessage);
+    _handleSystemMessageSideEffects(chatMessage);
 
     // 2. 拿到当前最干净、最轻量的活跃房间 ID 指针
     final activeRoomId = ref.read(activeRoomIdProvider);
@@ -65,6 +67,29 @@ class ChatMessages extends _$ChatMessages {
   }
 
   /// 插入或更新消息（状态机核心）
+  void _handleSystemMessageSideEffects(ChatMessage msg) {
+    if (msg.messageType != MessageType.system) return;
+    final roomId = msg.roomId;
+    if (roomId == null || roomId.isEmpty) return;
+
+    final action = (msg.properties['action'] ?? msg.content).toUpperCase();
+    switch (action) {
+      case 'CALL_STARTED':
+      case 'CALL_START':
+      case 'CALLING':
+        ref
+            .read(callStatusControllerProvider.notifier)
+            .markStarted(roomId, startTime: msg.timestamp);
+        break;
+      case 'CALL_ENDED':
+      case 'CALL_END':
+        ref.read(callStatusControllerProvider.notifier).markEnded(roomId);
+        break;
+      default:
+        break;
+    }
+  }
+
   void upsertMessage(ChatMessage msg) {
     final roomId = msg.roomId ?? 'system';
     final currentList = state[roomId] ?? [];
