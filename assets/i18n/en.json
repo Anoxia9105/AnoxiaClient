@@ -382,6 +382,7 @@
   "toolbar_reset_color": "Reset color",
   "toolbar_search_emoji": "Search emoji...",
   "system_msg_unknown": "Unknown system message",
+  "system_msg_preview": "[System message]",
   "system_msg_invite": "{nickName} invited [{names}] to join the room",
   "system_msg_mute_on": "Admin [enabled mute all]",
   "system_msg_mute_off": "Admin [disabled mute all]",

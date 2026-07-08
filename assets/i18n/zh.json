@@ -382,6 +382,7 @@
   "toolbar_reset_color": "重置颜色",
   "toolbar_search_emoji": "搜索表情...",
   "system_msg_unknown": "未知系统消息",
+  "system_msg_preview": "[系统消息]",
   "system_msg_invite": "{nickName} 邀请了[{names}] 加入房间",
   "system_msg_mute_on": "管理员 [开启全体禁言]",
   "system_msg_mute_off": "管理员 [取消全体禁言]",

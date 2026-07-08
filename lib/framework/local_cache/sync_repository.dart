@@ -35,7 +35,7 @@ class SyncRepository {
 
   Stream<List<ChatMessage>> watchMessages(
     String convId, {
-    int limit = 50,
+    int? limit = 50,
     int offset = 0,
   }) {
     return _local.watchMessagesForConversation(

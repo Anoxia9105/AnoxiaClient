@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   Future<void> clearSessionCache() async {
     await transaction(() async {
@@ -61,6 +61,11 @@ class AppDatabase extends _$AppDatabase {
       // v1 → v2: 新增联系人缓存表
       if (from < 2) {
         await m.createTable(cachedContacts);
+      }
+      // v2 -> v3: Persist last message type so cached conversations can
+      // restore system-message semantics after app restart.
+      if (from < 3) {
+        await m.addColumn(conversations, conversations.lastMessageType);
       }
     },
     beforeOpen: (details) async {
@@ -201,10 +206,62 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  Future<void> markDeleted(String conversationId) async {
+    await (update(conversations)..where((tbl) => tbl.id.equals(conversationId)))
+        .write(
+          ConversationsCompanion(
+            isDeleted: const Value(true),
+            updatedAt: Value(DateTime.now()),
+            cachedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
+  Future<void> updateStatus(String conversationId, int status) async {
+    await (update(conversations)..where((tbl) => tbl.id.equals(conversationId)))
+        .write(
+          ConversationsCompanion(
+            status: Value(status),
+            updatedAt: Value(DateTime.now()),
+            cachedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
+  Future<void> updateIncomingMessage({
+    required String conversationId,
+    required String messageId,
+    required String preview,
+    int? messageType,
+    int? seq,
+    DateTime? sentAt,
+    required bool incrementUnread,
+  }) async {
+    final existing = await getConversation(conversationId);
+    if (existing == null) return;
+
+    await (update(conversations)..where((tbl) => tbl.id.equals(conversationId)))
+        .write(
+          ConversationsCompanion(
+            unreadCount: incrementUnread
+                ? Value(existing.unreadCount + 1)
+                : const Value(0),
+            lastMessageId: Value(messageId),
+            lastMessagePreview: Value(preview),
+            lastMessageType: Value(messageType),
+            lastMessageSeq: Value(seq),
+            lastMessageAt: Value(sentAt),
+            updatedAt: Value(sentAt ?? DateTime.now()),
+            cachedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
   Future<void> updateLastMessage({
     required String conversationId,
     required String messageId,
     required String preview,
+    int? messageType,
     int? seq,
     DateTime? sentAt,
   }) async {
@@ -214,6 +271,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
       ConversationsCompanion(
         lastMessageId: Value(messageId),
         lastMessagePreview: Value(preview),
+        lastMessageType: Value(messageType),
         lastMessageSeq: Value(seq),
         lastMessageAt: Value(sentAt),
         updatedAt: Value(sentAt ?? DateTime.now()),
@@ -253,21 +311,23 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   Stream<List<CachedMessage>> watchMessagesForConversation(
     String conversationId, {
-    int limit = 50,
+    int? limit = 50,
     int offset = 0,
   }) {
-    return (select(messages)
-          ..where(
-            (tbl) =>
-                tbl.conversationId.equals(conversationId) &
-                tbl.isDeleted.equals(false),
-          )
-          ..orderBy([
-            (tbl) => OrderingTerm(expression: tbl.seq),
-            (tbl) => OrderingTerm(expression: tbl.sentAt),
-          ])
-          ..limit(limit, offset: offset))
-        .watch();
+    final query = select(messages)
+      ..where(
+        (tbl) =>
+            tbl.conversationId.equals(conversationId) &
+            tbl.isDeleted.equals(false),
+      )
+      ..orderBy([
+        (tbl) => OrderingTerm(expression: tbl.seq),
+        (tbl) => OrderingTerm(expression: tbl.sentAt),
+      ]);
+    if (limit != null) {
+      query.limit(limit, offset: offset);
+    }
+    return query.watch();
   }
 
   Future<int> getMaxSeq(String conversationId) async {
@@ -398,6 +458,38 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         deliveryStatus: Value(status),
         seq: seq == null ? const Value.absent() : Value(seq),
         sentAt: sentAt == null ? const Value.absent() : Value(sentAt),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<CachedMessage?> getMessageByClientMsgId(String clientMsgId) {
+    return (select(
+      messages,
+    )..where((tbl) => tbl.clientMsgId.equals(clientMsgId))).getSingleOrNull();
+  }
+
+  Future<CachedMessage?> getMessageById(String messageId) {
+    return (select(
+      messages,
+    )..where((tbl) => tbl.id.equals(messageId))).getSingleOrNull();
+  }
+
+  Future<void> deleteMessage(String messageId) async {
+    await (update(messages)..where((tbl) => tbl.id.equals(messageId))).write(
+      MessagesCompanion(
+        isDeleted: const Value(true),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> deleteMessagesForConversation(String conversationId) async {
+    await (update(
+      messages,
+    )..where((tbl) => tbl.conversationId.equals(conversationId))).write(
+      MessagesCompanion(
+        isDeleted: const Value(true),
         updatedAt: Value(DateTime.now()),
       ),
     );

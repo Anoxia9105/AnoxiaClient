@@ -1,5 +1,4 @@
 import 'package:anoxia/common/utils/DateUtil.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
@@ -253,7 +252,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   void _scrollToBottom({bool animated = true}) {
     if (!_listViewController.hasClients) return;
     final activeId = ref.read(activeRoomIdProvider);
-    final messageCount = ref.read(chatMessagesProvider)[activeId]?.length ?? 0;
+    final messageCount = activeId == null
+        ? 0
+        : ref.read(roomMessagesProvider(activeId)).value?.length ?? 0;
     // 如果没消息直接返回
     if (messageCount == 0 || messageCount < 10) return;
     if (animated) {

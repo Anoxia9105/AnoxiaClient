@@ -1,5 +1,4 @@
 import 'package:anoxia/features/chat/models/message_item.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'room_message_service.dart';
 
@@ -15,12 +14,12 @@ part 'room_message_ui_item_service.g.dart';
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
 @riverpod
 ChatUiListResult chatUiList(Ref ref, String roomId) {
-  final messages = ref.watch(chatMessagesProvider.select((state) => state[roomId] ?? []));
-  
+  final messages = ref.watch(roomMessagesProvider(roomId)).value ?? const [];
+
   if (messages.isEmpty) return ChatUiListResult(const []);
 
   final List<ChatListItem> items = [];
-  const int thirtyMinutesMs = 30 * 60 * 1000; 
+  const int thirtyMinutesMs = 30 * 60 * 1000;
 
   // 正序遍历原始消息（旧到新），保证时间间隔计算正确
   for (int i = 0; i < messages.length; i++) {

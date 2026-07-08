@@ -68,7 +68,7 @@ class ProtoReader {
   void _addToMap(Map<int, dynamic> map, int fieldNum, dynamic value) {
     if (map.containsKey(fieldNum)) {
       final existing = map[fieldNum];
-      if (existing is List) {
+      if (existing is List && existing is! Uint8List) {
         existing.add(value);
       } else {
         map[fieldNum] = [existing, value];

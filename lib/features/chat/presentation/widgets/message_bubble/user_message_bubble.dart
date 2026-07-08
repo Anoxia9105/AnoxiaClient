@@ -235,9 +235,7 @@ class MessageContent extends ConsumerWidget {
     final roomId = message.roomId;
     if (roomId == null || roomId.isEmpty) return null;
 
-    final messages = ref.watch(
-      chatMessagesProvider.select((state) => state[roomId] ?? const []),
-    );
+    final messages = ref.watch(roomMessagesProvider(roomId)).value ?? const [];
     for (final item in messages) {
       if (item.messageId == messageId || item.clientMsgId == messageId) {
         return item;

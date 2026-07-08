@@ -31,6 +31,7 @@ class Conversations extends Table {
   IntColumn get lastReadSeq => integer().withDefault(const Constant(0))();
   TextColumn get lastMessageId => text().nullable()();
   TextColumn get lastMessagePreview => text().nullable()();
+  IntColumn get lastMessageType => integer().nullable()();
   IntColumn get lastMessageSeq => integer().nullable()();
   DateTimeColumn get lastMessageAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().nullable()();
@@ -82,8 +83,7 @@ class CachedContacts extends Table {
   TextColumn get sex => text().nullable()();
 
   /// 在线状态（由 WebSocket 维护，不作为持久化数据依赖）
-  BoolColumn get onlineStatus =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get onlineStatus => boolean().withDefault(const Constant(false))();
 
   /// 服务端最后更新时间（用于增量同步判断）
   DateTimeColumn get updatedAt => dateTime().nullable()();

@@ -8,24 +8,88 @@ part of 'room_message_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 聊天消息存储器
-///
-/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
-/// 采用 keepAlive 模式，确保消息缓存在全局共享。
+
+@ProviderFor(roomMessages)
+final roomMessagesProvider = RoomMessagesFamily._();
+
+final class RoomMessagesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ChatMessage>>,
+          List<ChatMessage>,
+          Stream<List<ChatMessage>>
+        >
+    with
+        $FutureModifier<List<ChatMessage>>,
+        $StreamProvider<List<ChatMessage>> {
+  RoomMessagesProvider._({
+    required RoomMessagesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'roomMessagesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$roomMessagesHash();
+
+  @override
+  String toString() {
+    return r'roomMessagesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<ChatMessage>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<ChatMessage>> create(Ref ref) {
+    final argument = this.argument as String;
+    return roomMessages(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RoomMessagesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$roomMessagesHash() => r'dc7c484d3caa41fa7e3d266330196b09f5e74b18';
+
+final class RoomMessagesFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<ChatMessage>>, String> {
+  RoomMessagesFamily._()
+    : super(
+        retry: null,
+        name: r'roomMessagesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  RoomMessagesProvider call(String roomId) =>
+      RoomMessagesProvider._(argument: roomId, from: this);
+
+  @override
+  String toString() => r'roomMessagesProvider';
+}
 
 @ProviderFor(ChatMessages)
 final chatMessagesProvider = ChatMessagesProvider._();
 
-/// 聊天消息存储器
-///
-/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
-/// 采用 keepAlive 模式，确保消息缓存在全局共享。
-final class ChatMessagesProvider
-    extends $NotifierProvider<ChatMessages, Map<String, List<ChatMessage>>> {
-  /// 聊天消息存储器
-  ///
-  /// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
-  /// 采用 keepAlive 模式，确保消息缓存在全局共享。
+final class ChatMessagesProvider extends $NotifierProvider<ChatMessages, void> {
   ChatMessagesProvider._()
     : super(
         from: null,
@@ -45,43 +109,27 @@ final class ChatMessagesProvider
   ChatMessages create() => ChatMessages();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Map<String, List<ChatMessage>> value) {
+  Override overrideWithValue(void value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<Map<String, List<ChatMessage>>>(
-        value,
-      ),
+      providerOverride: $SyncValueProvider<void>(value),
     );
   }
 }
 
-String _$chatMessagesHash() => r'f855d7272456da64ff03fe62e869bf7050e7ae9f';
+String _$chatMessagesHash() => r'287acefdb051409506e75c70001ee4ff0307bc1a';
 
-/// 聊天消息存储器
-///
-/// 维护所有房间的消息列表（按 roomId 分组），支持消息同步、加载历史、撤回等操作。
-/// 采用 keepAlive 模式，确保消息缓存在全局共享。
-
-abstract class _$ChatMessages
-    extends $Notifier<Map<String, List<ChatMessage>>> {
-  Map<String, List<ChatMessage>> build();
+abstract class _$ChatMessages extends $Notifier<void> {
+  void build();
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref =
-        this.ref
-            as $Ref<
-              Map<String, List<ChatMessage>>,
-              Map<String, List<ChatMessage>>
-            >;
+    final ref = this.ref as $Ref<void, void>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<
-                Map<String, List<ChatMessage>>,
-                Map<String, List<ChatMessage>>
-              >,
-              Map<String, List<ChatMessage>>,
+              AnyNotifier<void, void>,
+              void,
               Object?,
               Object?
             >;
@@ -89,15 +137,11 @@ abstract class _$ChatMessages
   }
 }
 
-/// 房间是否还有更多历史消息的状态
-
 @ProviderFor(ChatHasMore)
 final chatHasMoreProvider = ChatHasMoreProvider._();
 
-/// 房间是否还有更多历史消息的状态
 final class ChatHasMoreProvider
     extends $NotifierProvider<ChatHasMore, Map<String, bool>> {
-  /// 房间是否还有更多历史消息的状态
   ChatHasMoreProvider._()
     : super(
         from: null,
@@ -126,8 +170,6 @@ final class ChatHasMoreProvider
 }
 
 String _$chatHasMoreHash() => r'7e088105f09d24fbc40ad81a1b224c7ea48b416f';
-
-/// 房间是否还有更多历史消息的状态
 
 abstract class _$ChatHasMore extends $Notifier<Map<String, bool>> {
   Map<String, bool> build();

@@ -48,7 +48,7 @@ class LocalDataSource {
 
   Stream<List<ChatMessage>> watchMessagesForConversation(
     String convId, {
-    int limit = 50,
+    int? limit = 50,
     int offset = 0,
   }) {
     return db.messageDao
@@ -137,6 +137,9 @@ class LocalDataSource {
         conversationId: roomId,
         messageId: message.messageId ?? message.clientMsgId ?? '',
         preview: message.content,
+        messageType: message.messageType == null
+            ? null
+            : MessageType.toCode(message.messageType),
         seq: message.seq,
         sentAt: _dateTimeFromMillis(message.timestamp),
       );
@@ -208,6 +211,16 @@ class LocalDataSource {
     return rows.map(_messageFromRow).toList();
   }
 
+  Future<ChatMessage?> getMessageByClientMsgId(String clientMsgId) async {
+    final row = await db.messageDao.getMessageByClientMsgId(clientMsgId);
+    return row == null ? null : _messageFromRow(row);
+  }
+
+  Future<ChatMessage?> getMessageById(String messageId) async {
+    final row = await db.messageDao.getMessageById(messageId);
+    return row == null ? null : _messageFromRow(row);
+  }
+
   Future<void> updateDeliveryStatus(
     String messageId,
     DeliveryStatus status, {
@@ -225,6 +238,48 @@ class LocalDataSource {
       seq: seq,
       sentAt: sentAt,
     );
+  }
+
+  Future<void> updateConversationForIncomingMessage(
+    ChatMessage message, {
+    required bool incrementUnread,
+  }) async {
+    final roomId = message.roomId;
+    final messageId = message.messageId ?? message.clientMsgId;
+    if (roomId == null ||
+        roomId.isEmpty ||
+        messageId == null ||
+        messageId.isEmpty) {
+      return;
+    }
+
+    await db.conversationDao.updateIncomingMessage(
+      conversationId: roomId,
+      messageId: messageId,
+      preview: message.content,
+      messageType: message.messageType == null
+          ? null
+          : MessageType.toCode(message.messageType),
+      seq: message.seq,
+      sentAt: _dateTimeFromMillis(message.timestamp),
+      incrementUnread: incrementUnread,
+    );
+  }
+
+  Future<void> markConversationDeleted(String conversationId) {
+    return db.conversationDao.markDeleted(conversationId);
+  }
+
+  Future<void> updateConversationStatus(String conversationId, int status) {
+    return db.conversationDao.updateStatus(conversationId, status);
+  }
+
+  Future<void> deleteMessage(String messageId) {
+    return db.messageDao.deleteMessage(messageId);
+  }
+
+  Future<void> deleteMessagesForConversation(String conversationId) {
+    return db.messageDao.deleteMessagesForConversation(conversationId);
   }
 
   Future<void> updateSyncState({
@@ -283,6 +338,11 @@ class LocalDataSource {
       lastReadSeq: Value(room.lastReadSeq ?? 0),
       lastMessageId: Value(lastMessage?.messageId ?? lastMessage?.clientMsgId),
       lastMessagePreview: Value(lastMessage?.content),
+      lastMessageType: Value(
+        lastMessage?.messageType == null
+            ? null
+            : MessageType.toCode(lastMessage?.messageType),
+      ),
       lastMessageSeq: Value(lastMessage?.seq),
       lastMessageAt: Value(lastAt),
       createdAt: Value(room.createdAt),
@@ -347,6 +407,9 @@ class LocalDataSource {
         : ChatMessage(
             messageId: row.lastMessageId,
             roomId: row.id,
+            messageType: row.lastMessageType == null
+                ? null
+                : MessageType.fromCode(row.lastMessageType),
             content: row.lastMessagePreview ?? '',
             seq: row.lastMessageSeq,
             timestamp: row.lastMessageAt?.millisecondsSinceEpoch,

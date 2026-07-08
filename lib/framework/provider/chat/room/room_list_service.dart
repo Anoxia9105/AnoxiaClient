@@ -142,13 +142,8 @@ class RoomListService extends _$RoomListService {
         action == 'CALL_STARTED' || action == 'CALL_ENDED';
 
     state.whenData((rooms) {
-      final List<ChatRoomVO> updatedList = List.from(rooms);
-      final index = updatedList.indexWhere(
-        (r) => r.roomId == newMessage.roomId,
-      );
-
-      if (index != -1) {
-        final oldRoom = updatedList.removeAt(index);
+      final oldRoom = RoomLookupHelper.findByRoomId(rooms, newMessage.roomId);
+      if (oldRoom != null) {
         final lifecycle = WidgetsBinding.instance.lifecycleState;
         final isAppForeground =
             lifecycle == null ||
@@ -162,9 +157,6 @@ class RoomListService extends _$RoomListService {
             !isCallSystemMessage &&
             !isCurrentRoom &&
             !(isMobile && isAppForeground);
-
-        // 当前正在看的房间不增加未读数
-        int newUnread = isCurrentRoom ? 0 : (oldRoom.unreadCount ?? 0) + 1;
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
         if (shouldShowLocalNotification) {
@@ -185,13 +177,14 @@ class RoomListService extends _$RoomListService {
           _debouncedReportReadSeq(newMessage.roomId!, newMessage.seq!);
         }
 
-        final newRoom = oldRoom.copyWith(
-          lastMessage: newMessage,
-          unreadCount: newUnread,
+        unawaited(
+          ref
+              .read(localDataSourceProvider)
+              .updateConversationForIncomingMessage(
+                newMessage,
+                incrementUnread: !isCurrentRoom && !isSelfMessage,
+              ),
         );
-
-        updatedList.insert(0, newRoom);
-        state = AsyncValue.data(updatedList);
       }
     });
   }
@@ -244,24 +237,18 @@ class RoomListService extends _$RoomListService {
 
   /// 本地移除房间（被踢/房间关闭等场景）
   void removeRoomLocally(String roomId) {
-    state.whenData((rooms) {
-      final updatedList = rooms.where((r) => r.roomId != roomId).toList();
-      if (updatedList.length != rooms.length) {
-        state = AsyncValue.data(updatedList);
-      }
-    });
+    unawaited(
+      ref.read(localDataSourceProvider).markConversationDeleted(roomId),
+    );
   }
 
   /// 本地更新房间状态（禁言/解禁等场景）
   void updateRoomStatus(String roomId, int newStatus) {
-    state.whenData((rooms) {
-      final index = rooms.indexWhere((r) => r.roomId == roomId);
-      if (index != -1) {
-        final List<ChatRoomVO> updatedList = List.from(rooms);
-        updatedList[index] = updatedList[index].copyWith(roomStatus: newStatus);
-        state = AsyncValue.data(updatedList);
-      }
-    });
+    unawaited(
+      ref
+          .read(localDataSourceProvider)
+          .updateConversationStatus(roomId, newStatus),
+    );
   }
 
   /// 防抖上报已读 seq

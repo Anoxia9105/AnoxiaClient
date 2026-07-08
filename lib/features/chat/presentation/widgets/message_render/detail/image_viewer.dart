@@ -396,11 +396,10 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     final roomId = widget.roomId;
     if (roomId == null || roomId.isEmpty) return [widget.attachment];
 
-    // 从 Riverpod 状态中读取该会话的消息列表
-    final selector = chatMessagesProvider.select(
-      (state) => state[roomId] ?? const [],
-    );
-    final messages = watch ? ref.watch(selector) : ref.read(selector);
+    final provider = roomMessagesProvider(roomId);
+    final messages = watch
+        ? ref.watch(provider).value ?? const []
+        : ref.read(provider).value ?? const [];
     final result = <Attachment>[];
     final seenUrls = <String>{};
 

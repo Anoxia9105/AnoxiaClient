@@ -3,8 +3,10 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SimpleListTile.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
+import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -171,7 +173,7 @@ class RoomListItem extends ConsumerWidget {
           ],
         ),
         subtitle: Text(
-          room.lastMessage?.content ?? '',
+          _lastMessagePreview(room.lastMessage),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
@@ -207,6 +209,14 @@ class RoomListItem extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _lastMessagePreview(ChatMessage? message) {
+    if (SystemMessageFormatter.isSystemMessage(message)) {
+      return SystemMessageFormatter.previewText(message);
+    }
+    if (message == null) return '';
+    return message.content;
   }
 
   /// 显示上下文菜单

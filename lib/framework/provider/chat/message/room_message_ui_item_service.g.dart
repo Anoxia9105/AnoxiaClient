@@ -96,7 +96,7 @@ final class ChatUiListProvider
   }
 }
 
-String _$chatUiListHash() => r'558243b65b3973247bdae94521e7ef5573d067d6';
+String _$chatUiListHash() => r'b84c1885622926b41c32d3a1ee055b864b4403aa';
 
 /// 聊天 UI 列表计算服务
 ///

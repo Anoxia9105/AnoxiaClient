@@ -382,6 +382,7 @@
   "toolbar_reset_color": "色をリセット",
   "toolbar_search_emoji": "絵文字を検索...",
   "system_msg_unknown": "不明なシステムメッセージ",
+  "system_msg_preview": "[システムメッセージ]",
   "system_msg_invite": "{nickName} が [{names}] をルームに招待しました",
   "system_msg_mute_on": "管理者 [全体ミュートを有効にしました]",
   "system_msg_mute_off": "管理者 [全体ミュートを解除しました]",

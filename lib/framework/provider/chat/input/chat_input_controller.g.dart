@@ -8,36 +8,27 @@ part of 'chat_input_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮抽柟璨夊啫鐓戦柛?
+/// 聊天输入控制器
 ///
-/// 閻犳劗鍠曢惌妤冪不閿涘嫭鍊為柤鍗烇工閵囧娼忛幘鍐插汲婵℃妫涘▓鎴︽偐閼哥鍋撴笟濠勭闁告牕鎳忕€氼參鏁?
-/// - 閻庨潧鏈弸鍐嫉椤掑倻妞介弶鍫熷煀缁辨瑦鎷呯捄銊︽殢 [QuillController]闁?
-/// - @闁圭粯鍔曞鐑芥偨閵婏箑鐓曢柛鏃傚枙閸?
-/// - 闁搞儱澧芥晶?闁哄倸娲ｅ▎銏＄▔婵犱胶鐐?
-/// - 婵繐绲藉﹢顏呮綇閹惧啿寮抽柣妯垮煐閳ь兛绀佽ぐ鍌炴焻?
-/// - 婵炴垵鐗婃导鍛村矗閹达腹鍋撴笟鈧埀顒佹缁?
+/// 负责管理聊天输入框的 QuillController，处理文本输入、@提及、图片/文件上传、
+/// 消息发送（文本、富文本、表情、图片、文件、语音、卡片、位置）、输入状态通知、
+/// 回复目标、输入超时等核心交互逻辑。
 
 @ProviderFor(ChatInputController)
 final chatInputControllerProvider = ChatInputControllerFamily._();
 
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮抽柟璨夊啫鐓戦柛?
+/// 聊天输入控制器
 ///
-/// 閻犳劗鍠曢惌妤冪不閿涘嫭鍊為柤鍗烇工閵囧娼忛幘鍐插汲婵℃妫涘▓鎴︽偐閼哥鍋撴笟濠勭闁告牕鎳忕€氼參鏁?
-/// - 閻庨潧鏈弸鍐嫉椤掑倻妞介弶鍫熷煀缁辨瑦鎷呯捄銊︽殢 [QuillController]闁?
-/// - @闁圭粯鍔曞鐑芥偨閵婏箑鐓曢柛鏃傚枙閸?
-/// - 闁搞儱澧芥晶?闁哄倸娲ｅ▎銏＄▔婵犱胶鐐?
-/// - 婵繐绲藉﹢顏呮綇閹惧啿寮抽柣妯垮煐閳ь兛绀佽ぐ鍌炴焻?
-/// - 婵炴垵鐗婃导鍛村矗閹达腹鍋撴笟鈧埀顒佹缁?
+/// 负责管理聊天输入框的 QuillController，处理文本输入、@提及、图片/文件上传、
+/// 消息发送（文本、富文本、表情、图片、文件、语音、卡片、位置）、输入状态通知、
+/// 回复目标、输入超时等核心交互逻辑。
 final class ChatInputControllerProvider
     extends $NotifierProvider<ChatInputController, QuillController> {
-  /// 闁煎崬锕ら妵澶嬫綇閹惧啿寮抽柟璨夊啫鐓戦柛?
+  /// 聊天输入控制器
   ///
-  /// 閻犳劗鍠曢惌妤冪不閿涘嫭鍊為柤鍗烇工閵囧娼忛幘鍐插汲婵℃妫涘▓鎴︽偐閼哥鍋撴笟濠勭闁告牕鎳忕€氼參鏁?
-  /// - 閻庨潧鏈弸鍐嫉椤掑倻妞介弶鍫熷煀缁辨瑦鎷呯捄銊︽殢 [QuillController]闁?
-  /// - @闁圭粯鍔曞鐑芥偨閵婏箑鐓曢柛鏃傚枙閸?
-  /// - 闁搞儱澧芥晶?闁哄倸娲ｅ▎銏＄▔婵犱胶鐐?
-  /// - 婵繐绲藉﹢顏呮綇閹惧啿寮抽柣妯垮煐閳ь兛绀佽ぐ鍌炴焻?
-  /// - 婵炴垵鐗婃导鍛村矗閹达腹鍋撴笟鈧埀顒佹缁?
+  /// 负责管理聊天输入框的 QuillController，处理文本输入、@提及、图片/文件上传、
+  /// 消息发送（文本、富文本、表情、图片、文件、语音、卡片、位置）、输入状态通知、
+  /// 回复目标、输入超时等核心交互逻辑。
   ChatInputControllerProvider._({
     required ChatInputControllerFamily super.from,
     required String super.argument,
@@ -83,16 +74,13 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'790df3d0a2f729ded3fdaf174b293e6f0b341593';
+    r'1f976e06bbfbee5f9307cbe693a31a5b24cff928';
 
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮抽柟璨夊啫鐓戦柛?
+/// 聊天输入控制器
 ///
-/// 閻犳劗鍠曢惌妤冪不閿涘嫭鍊為柤鍗烇工閵囧娼忛幘鍐插汲婵℃妫涘▓鎴︽偐閼哥鍋撴笟濠勭闁告牕鎳忕€氼參鏁?
-/// - 閻庨潧鏈弸鍐嫉椤掑倻妞介弶鍫熷煀缁辨瑦鎷呯捄銊︽殢 [QuillController]闁?
-/// - @闁圭粯鍔曞鐑芥偨閵婏箑鐓曢柛鏃傚枙閸?
-/// - 闁搞儱澧芥晶?闁哄倸娲ｅ▎銏＄▔婵犱胶鐐?
-/// - 婵繐绲藉﹢顏呮綇閹惧啿寮抽柣妯垮煐閳ь兛绀佽ぐ鍌炴焻?
-/// - 婵炴垵鐗婃导鍛村矗閹达腹鍋撴笟鈧埀顒佹缁?
+/// 负责管理聊天输入框的 QuillController，处理文本输入、@提及、图片/文件上传、
+/// 消息发送（文本、富文本、表情、图片、文件、语音、卡片、位置）、输入状态通知、
+/// 回复目标、输入超时等核心交互逻辑。
 
 final class ChatInputControllerFamily extends $Family
     with
@@ -112,14 +100,11 @@ final class ChatInputControllerFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// 闁煎崬锕ら妵澶嬫綇閹惧啿寮抽柟璨夊啫鐓戦柛?
+  /// 聊天输入控制器
   ///
-  /// 閻犳劗鍠曢惌妤冪不閿涘嫭鍊為柤鍗烇工閵囧娼忛幘鍐插汲婵℃妫涘▓鎴︽偐閼哥鍋撴笟濠勭闁告牕鎳忕€氼參鏁?
-  /// - 閻庨潧鏈弸鍐嫉椤掑倻妞介弶鍫熷煀缁辨瑦鎷呯捄銊︽殢 [QuillController]闁?
-  /// - @闁圭粯鍔曞鐑芥偨閵婏箑鐓曢柛鏃傚枙閸?
-  /// - 闁搞儱澧芥晶?闁哄倸娲ｅ▎銏＄▔婵犱胶鐐?
-  /// - 婵繐绲藉﹢顏呮綇閹惧啿寮抽柣妯垮煐閳ь兛绀佽ぐ鍌炴焻?
-  /// - 婵炴垵鐗婃导鍛村矗閹达腹鍋撴笟鈧埀顒佹缁?
+  /// 负责管理聊天输入框的 QuillController，处理文本输入、@提及、图片/文件上传、
+  /// 消息发送（文本、富文本、表情、图片、文件、语音、卡片、位置）、输入状态通知、
+  /// 回复目标、输入超时等核心交互逻辑。
 
   ChatInputControllerProvider call(String roomId) =>
       ChatInputControllerProvider._(argument: roomId, from: this);
@@ -128,14 +113,11 @@ final class ChatInputControllerFamily extends $Family
   String toString() => r'chatInputControllerProvider';
 }
 
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮抽柟璨夊啫鐓戦柛?
+/// 聊天输入控制器
 ///
-/// 閻犳劗鍠曢惌妤冪不閿涘嫭鍊為柤鍗烇工閵囧娼忛幘鍐插汲婵℃妫涘▓鎴︽偐閼哥鍋撴笟濠勭闁告牕鎳忕€氼參鏁?
-/// - 閻庨潧鏈弸鍐嫉椤掑倻妞介弶鍫熷煀缁辨瑦鎷呯捄銊︽殢 [QuillController]闁?
-/// - @闁圭粯鍔曞鐑芥偨閵婏箑鐓曢柛鏃傚枙閸?
-/// - 闁搞儱澧芥晶?闁哄倸娲ｅ▎銏＄▔婵犱胶鐐?
-/// - 婵繐绲藉﹢顏呮綇閹惧啿寮抽柣妯垮煐閳ь兛绀佽ぐ鍌炴焻?
-/// - 婵炴垵鐗婃导鍛村矗閹达腹鍋撴笟鈧埀顒佹缁?
+/// 负责管理聊天输入框的 QuillController，处理文本输入、@提及、图片/文件上传、
+/// 消息发送（文本、富文本、表情、图片、文件、语音、卡片、位置）、输入状态通知、
+/// 回复目标、输入超时等核心交互逻辑。
 
 abstract class _$ChatInputController extends $Notifier<QuillController> {
   late final _$args = ref.$arg as String;
@@ -158,23 +140,23 @@ abstract class _$ChatInputController extends $Notifier<QuillController> {
   }
 }
 
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮虫俊妤€妫涢崝宥夋倷?Provider
+/// 聊天输入框的焦点节点 Provider
 ///
-/// 濞戞挾鍎ら惁鈩冪▔椤忓懎鐓ｉ梻鍌氼嚟鐎氼厾绮╃€ｎ剦鍚€闁荤偛妫滅欢顓㈠礂閵夛富鏀遍柣鎺炲閸嬶綁鎮╅懜纰樺亾?
+/// 用于在发送消息后（桌面端）自动获取焦点。
 
 @ProviderFor(chatFocusNode)
 final chatFocusNodeProvider = ChatFocusNodeFamily._();
 
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮虫俊妤€妫涢崝宥夋倷?Provider
+/// 聊天输入框的焦点节点 Provider
 ///
-/// 濞戞挾鍎ら惁鈩冪▔椤忓懎鐓ｉ梻鍌氼嚟鐎氼厾绮╃€ｎ剦鍚€闁荤偛妫滅欢顓㈠礂閵夛富鏀遍柣鎺炲閸嬶綁鎮╅懜纰樺亾?
+/// 用于在发送消息后（桌面端）自动获取焦点。
 
 final class ChatFocusNodeProvider
     extends $FunctionalProvider<FocusNode, FocusNode, FocusNode>
     with $Provider<FocusNode> {
-  /// 闁煎崬锕ら妵澶嬫綇閹惧啿寮虫俊妤€妫涢崝宥夋倷?Provider
+  /// 聊天输入框的焦点节点 Provider
   ///
-  /// 濞戞挾鍎ら惁鈩冪▔椤忓懎鐓ｉ梻鍌氼嚟鐎氼厾绮╃€ｎ剦鍚€闁荤偛妫滅欢顓㈠礂閵夛富鏀遍柣鎺炲閸嬶綁鎮╅懜纰樺亾?
+  /// 用于在发送消息后（桌面端）自动获取焦点。
   ChatFocusNodeProvider._({
     required ChatFocusNodeFamily super.from,
     required String super.argument,
@@ -228,9 +210,9 @@ final class ChatFocusNodeProvider
 
 String _$chatFocusNodeHash() => r'4660d1fd2f3c46541ef6c2a8488481cd922b89dc';
 
-/// 闁煎崬锕ら妵澶嬫綇閹惧啿寮虫俊妤€妫涢崝宥夋倷?Provider
+/// 聊天输入框的焦点节点 Provider
 ///
-/// 濞戞挾鍎ら惁鈩冪▔椤忓懎鐓ｉ梻鍌氼嚟鐎氼厾绮╃€ｎ剦鍚€闁荤偛妫滅欢顓㈠礂閵夛富鏀遍柣鎺炲閸嬶綁鎮╅懜纰樺亾?
+/// 用于在发送消息后（桌面端）自动获取焦点。
 
 final class ChatFocusNodeFamily extends $Family
     with $FunctionalFamilyOverride<FocusNode, String> {
@@ -243,9 +225,9 @@ final class ChatFocusNodeFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// 闁煎崬锕ら妵澶嬫綇閹惧啿寮虫俊妤€妫涢崝宥夋倷?Provider
+  /// 聊天输入框的焦点节点 Provider
   ///
-  /// 濞戞挾鍎ら惁鈩冪▔椤忓懎鐓ｉ梻鍌氼嚟鐎氼厾绮╃€ｎ剦鍚€闁荤偛妫滅欢顓㈠礂閵夛富鏀遍柣鎺炲閸嬶綁鎮╅懜纰樺亾?
+  /// 用于在发送消息后（桌面端）自动获取焦点。
 
   ChatFocusNodeProvider call(String roomId) =>
       ChatFocusNodeProvider._(argument: roomId, from: this);
@@ -254,11 +236,21 @@ final class ChatFocusNodeFamily extends $Family
   String toString() => r'chatFocusNodeProvider';
 }
 
+/// @提及状态管理
+///
+/// 用于管理 @ 提及选择器的显示/隐藏、搜索文本、光标位置等信息。
+
 @ProviderFor(MentionState)
 final mentionStateProvider = MentionStateProvider._();
 
+/// @提及状态管理
+///
+/// 用于管理 @ 提及选择器的显示/隐藏、搜索文本、光标位置等信息。
 final class MentionStateProvider
     extends $NotifierProvider<MentionState, MentionStateData> {
+  /// @提及状态管理
+  ///
+  /// 用于管理 @ 提及选择器的显示/隐藏、搜索文本、光标位置等信息。
   MentionStateProvider._()
     : super(
         from: null,
@@ -287,6 +279,10 @@ final class MentionStateProvider
 }
 
 String _$mentionStateHash() => r'4979a8c55c48aba2ee915f321b876beb71cd8461';
+
+/// @提及状态管理
+///
+/// 用于管理 @ 提及选择器的显示/隐藏、搜索文本、光标位置等信息。
 
 abstract class _$MentionState extends $Notifier<MentionStateData> {
   MentionStateData build();
