@@ -143,8 +143,7 @@ class RoomListItem extends ConsumerWidget {
               message: 'chat_type_group'.tr(),
               child: const HugeIcon(
                 icon: HugeIcons.strokeRoundedUserGroup03,
-                size: 12,
-                strokeWidth: 3,
+                size: 16,
               ),
             ),
           );

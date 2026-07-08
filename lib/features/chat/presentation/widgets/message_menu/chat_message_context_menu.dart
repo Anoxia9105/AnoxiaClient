@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -284,7 +285,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
 
     Clipboard.setData(ClipboardData(text: text)).then((_) {
       if (context.mounted) {
-        _showSnackBar(context, 'chat_copy_success'.tr());
+        Toast.showToast('chat_copy_success'.tr());
       }
     });
   }
@@ -349,15 +350,13 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
           .read(chatMessagesProvider.notifier)
           .addFavorite(messageId);
       if (context.mounted) {
-        _showSnackBar(
-          context,
+        Toast.showToast(
           success ? 'chat_favorite_success'.tr() : 'chat_favorite_failed'.tr(),
-          isError: !success,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        _showSnackBar(context, 'chat_favorite_error'.tr(), isError: true);
+        Toast.showToast('chat_favorite_error'.tr());
       }
     }
   }
@@ -371,32 +370,14 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
           .read(chatMessagesProvider.notifier)
           .recallMessage(messageId, widget.message.roomId ?? '');
       if (context.mounted) {
-        _showSnackBar(
-          context,
+        Toast.showToast(
           success ? 'chat_revoke_success'.tr() : 'chat_revoke_failed'.tr(),
-          isError: !success,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        _showSnackBar(context, 'chat_revoke_error'.tr(), isError: true);
+        Toast.showToast('chat_revoke_error'.tr());
       }
     }
-  }
-
-  // 统一反馈 UI
-  void _showSnackBar(
-    BuildContext context,
-    String message, {
-    bool isError = false,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isError ? Colors.redAccent : null,
-      ),
-    );
   }
 }

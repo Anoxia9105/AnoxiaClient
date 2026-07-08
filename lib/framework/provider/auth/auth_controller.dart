@@ -13,9 +13,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
+import '../../local_cache/cache_providers.dart';
 import '../../logs/talker.dart';
 import '../../network/TokenManager.dart';
 import '../chat/room/room_list_service.dart';
+import '../contact/contact_list_controller.dart';
 import '../core/app_initializer.dart';
 import '../core/session_reset_service.dart';
 import 'token_provider.dart';
@@ -49,6 +51,7 @@ class AuthController extends _$AuthController {
       log.error('[AuthController] 自动恢复失败', e, st);
       await TokenManager.instance.clearToken();
       ref.read(tokenCacheProvider.notifier).clearToken();
+      await _clearLocalSessionCache();
       return null;
     }
   }
@@ -90,6 +93,7 @@ class AuthController extends _$AuthController {
       // 同时保存到 TokenManager 和内存缓存
       await TokenManager.instance.setToken(token);
       ref.read(tokenCacheProvider.notifier).setToken(token);
+      await _clearLocalSessionCache();
 
       return await _fetchUserInfo();
     });
@@ -207,6 +211,7 @@ class AuthController extends _$AuthController {
       // 3. 切换认证态，触发路由回到登录页。
       //    WsController 自身已通过 ref.listen(authControllerProvider) 监听此变化，
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
+      await _clearLocalSessionCache();
       state = const AsyncData(null);
 
       // 4. 统一清理会话级缓存，避免切账号后复用旧会话数据
@@ -226,6 +231,12 @@ class AuthController extends _$AuthController {
   Future<UserInfo?> _fetchUserInfo() async {
     final res = await DioClient().get(API.getInfo);
     return UserInfo.fromJson(res.data['data']);
+  }
+
+  Future<void> _clearLocalSessionCache() async {
+    await ref.read(localDataSourceProvider).clearSessionCache();
+    ref.invalidate(contactListServiceProvider);
+    ref.invalidate(sortedContactGroupsProvider);
   }
 
   /// 刷新当前登录用户信息

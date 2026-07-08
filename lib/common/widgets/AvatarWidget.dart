@@ -48,7 +48,7 @@ class AvatarWidget extends StatelessWidget {
     return selectedColor ?? Theme.of(context).colorScheme.primary;
   }
 
-  /// 🎨 终极美化：文字颜色100%融入背景，彻底告别死板纯白
+  /// 文字颜色100%融入背景，彻底告别死板纯白
   Color _getTextColor(Color backgroundColor) {
     // 1. 计算背景色相对亮度
     final double luminance = backgroundColor.computeLuminance();
@@ -65,7 +65,7 @@ class AvatarWidget extends StatelessWidget {
     }
 
     // 情况 B：如果背景色是中等或深色 (亮度 <= 0.6)
-    // 🛠️ 核心修改：绝对不用纯白！而是将当前背景色提取后，强行变成“极淡、柔和的同色系字”
+    // 绝对不用纯白！而是将当前背景色提取后，强行变成“极淡、柔和的同色系字”
     return hsl
         .withSaturation((hsl.saturation * 0.3).clamp(0.0, 0.4)) // 降低饱和度，避免变成荧光字
         .withLightness(0.94) // 强行把亮度拉到 94% 的极亮状态（代替纯白）

@@ -1,6 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 import 'package:anoxia/framework/domain/ChatFavorite.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
@@ -219,9 +220,7 @@ class _FavoriteDetailMobilePage extends StatelessWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: copyText));
               if (!context.mounted) return;
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('chat_copy_success'.tr())));
+              Toast.showToast('chat_copy_success'.tr());
             },
             icon: const Icon(Icons.copy_rounded),
           ),

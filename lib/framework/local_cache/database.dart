@@ -41,6 +41,17 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 2;
 
+  Future<void> clearSessionCache() async {
+    await transaction(() async {
+      await delete(messages).go();
+      await delete(conversations).go();
+      await delete(cachedContacts).go();
+      await delete(syncStates).go();
+      await delete(syncLogs).go();
+      await delete(cachedUsers).go();
+    });
+  }
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {

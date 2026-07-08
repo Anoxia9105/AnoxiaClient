@@ -459,6 +459,11 @@ class LocalDataSource {
 
   // ── 私有转换 ──────────────────────────────────────────────────────────────
 
+  Future<void> clearSessionCache() async {
+    log.info('[DB] clearSessionCache: remove chat/contact local data');
+    await db.clearSessionCache();
+  }
+
   ChatContactVO _contactFromRow(CachedContact row) {
     return ChatContactVO(
       contactId: row.contactId,
