@@ -1,4 +1,3 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/contact/presentation/widgets/new_friends_widgets.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
