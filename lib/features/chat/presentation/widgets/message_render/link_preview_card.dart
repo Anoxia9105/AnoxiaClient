@@ -7,8 +7,9 @@ class MessageLinkPreview extends StatefulWidget {
   static const double maxCardWidth = 420;
 
   final String text;
+  final double? maxWidth;
 
-  const MessageLinkPreview({super.key, required this.text});
+  const MessageLinkPreview({super.key, required this.text, this.maxWidth});
 
   @override
   State<MessageLinkPreview> createState() => _MessageLinkPreviewState();
@@ -74,7 +75,11 @@ class _MessageLinkPreviewState extends State<MessageLinkPreview> {
           return const SizedBox.shrink();
         }
 
-        return _ResolvedLinkPreview(link: link, metadata: result.metadata!);
+        return _ResolvedLinkPreview(
+          link: link,
+          metadata: result.metadata!,
+          maxWidth: widget.maxWidth,
+        );
       },
     );
   }
@@ -111,8 +116,13 @@ class _LinkPreviewCache {
 class _ResolvedLinkPreview extends StatelessWidget {
   final String link;
   final Metadata metadata;
+  final double? maxWidth;
 
-  const _ResolvedLinkPreview({required this.link, required this.metadata});
+  const _ResolvedLinkPreview({
+    required this.link,
+    required this.metadata,
+    this.maxWidth,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -120,13 +130,19 @@ class _ResolvedLinkPreview extends StatelessWidget {
     final title = _firstNotEmpty([metadata.title, metadata.siteName, link]);
     final desc = _firstNotEmpty([metadata.desc, metadata.url]);
     final imageUrl = _safeImageUrl(metadata.image);
+    final effectiveMaxWidth = maxWidth == null || maxWidth! <= 0
+        ? MessageLinkPreview.maxCardWidth
+        : maxWidth!.clamp(0.0, MessageLinkPreview.maxCardWidth).toDouble();
+    final effectiveMinWidth = MessageLinkPreview.minCardWidth
+        .clamp(0.0, effectiveMaxWidth)
+        .toDouble();
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: MessageLinkPreview.minCardWidth,
-          maxWidth: MessageLinkPreview.maxCardWidth,
+        constraints: BoxConstraints(
+          minWidth: effectiveMinWidth,
+          maxWidth: effectiveMaxWidth,
         ),
         child: Material(
           color: colorScheme.surfaceContainerHighest,

@@ -23,86 +23,124 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     final activeRoomId = ref.watch(activeRoomIdProvider);
     final showRightPanel = ref.watch(chatRightPanelVisibleProvider);
-
     final room = activeRoomId != null
         ? ref.watch(currentRoomProvider(activeRoomId))
         : null;
 
     final isCompactWidth = MediaQuery.of(context).size.width < 1000;
-    // 没有选中会话时右侧面板没有内容可展示，一并隐藏
-    final effectiveShowRightPanel =
-        showRightPanel && !isCompactWidth && activeRoomId != null;
+    final canShowRightPanel = showRightPanel && activeRoomId != null;
+    final inlineRightPanel = canShowRightPanel && !isCompactWidth;
+    final overlayRightPanel = canShowRightPanel && isCompactWidth;
 
-    return Row(
+    return Stack(
       children: [
-        SizedBox(
-          width: isCompactWidth ? 240.0 : 320.0,
-          child: const ChatRoomList(),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outlineVariant.withValues(alpha: 0.18),
+        Row(
+          children: [
+            SizedBox(
+              width: isCompactWidth ? 240.0 : 320.0,
+              child: const ChatRoomList(),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: room == null
+                        ? const Welcome.chat()
+                        : ChatRoomDetail(roomId: activeRoomId!),
+                  ),
                 ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: room == null
-                    ? const Welcome.chat()
-                    : ChatRoomDetail(roomId: activeRoomId!),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                width: inlineRightPanel ? 320.0 : 0,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: inlineRightPanel
+                      ? _buildRightPanel(
+                          context,
+                          activeRoomId,
+                          const EdgeInsets.fromLTRB(8, 10, 12, 12),
+                        )
+                      : const SizedBox.shrink(
+                          key: ValueKey('right-panel-closed'),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (overlayRightPanel)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _closeRightPanel,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () {},
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    child: _buildRightPanel(
+                      context,
+                      activeRoomId,
+                      const EdgeInsets.fromLTRB(8, 10, 12, 12),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          alignment: Alignment.centerRight,
-          child: SizedBox(
-            width: effectiveShowRightPanel ? 320.0 : 0,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: effectiveShowRightPanel
-                  ? Container(
-                      key: ValueKey('right-panel-${activeRoomId!}'),
-                      margin: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.outlineVariant.withValues(alpha: 0.18),
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: ChatRoomDetailPanel(
-                          roomId: activeRoomId,
-                          onClose: () =>
-                              ref
-                                      .read(
-                                        chatRightPanelVisibleProvider.notifier,
-                                      )
-                                      .state =
-                                  false,
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(key: ValueKey('right-panel-closed')),
-            ),
-          ),
-        ),
       ],
     );
+  }
+
+  Widget _buildRightPanel(
+    BuildContext context,
+    String roomId,
+    EdgeInsets margin,
+  ) {
+    return Container(
+      key: ValueKey('right-panel-$roomId'),
+      margin: margin,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(-8, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: ChatRoomDetailPanel(roomId: roomId, onClose: _closeRightPanel),
+      ),
+    );
+  }
+
+  void _closeRightPanel() {
+    ref.read(chatRightPanelVisibleProvider.notifier).state = false;
   }
 }

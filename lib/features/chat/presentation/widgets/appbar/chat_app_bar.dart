@@ -125,7 +125,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ChatCallButtonWidget(roomId: roomId), // 通话按钮组件化
           ],
 
-          // 更多按钮（移动端不显示，放在 AppBar 右上角）
+          // 更多按钮
           IconButton(
             mouseCursor: SystemMouseCursors.click,
             icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical),

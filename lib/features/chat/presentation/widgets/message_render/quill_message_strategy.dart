@@ -113,7 +113,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth * 0.72;
+        final maxWidth = _safeMaxWidth(constraints.maxWidth);
         final targetWidth = _resolveTargetWidth(context, maxWidth);
         final previewSource = _linkPreviewSource();
 
@@ -154,7 +154,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                   ),
                 ),
               ),
-              MessageLinkPreview(text: previewSource),
+              MessageLinkPreview(text: previewSource, maxWidth: targetWidth),
             ],
           ),
         );
@@ -180,6 +180,13 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   /// 计算消息内容的目标宽度
+  double _safeMaxWidth(double constraintWidth) {
+    if (!constraintWidth.isFinite || constraintWidth <= 0) {
+      return MessageLinkPreview.maxCardWidth;
+    }
+    return (constraintWidth * 0.72).clamp(64.0, constraintWidth).toDouble();
+  }
+
   double _resolveTargetWidth(BuildContext context, double maxWidth) {
     if (_hasEmbed()) return maxWidth;
 
@@ -208,7 +215,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     final estimated = painter.width.ceilToDouble();
     final minWidth = hasLinkPreview ? MessageLinkPreview.minCardWidth : 64;
-    return estimated.clamp(minWidth, maxWidth).toDouble();
+    final effectiveMinWidth = minWidth.clamp(0.0, maxWidth).toDouble();
+    return estimated.clamp(effectiveMinWidth, maxWidth).toDouble();
   }
 
   bool _hasEmbed() {
