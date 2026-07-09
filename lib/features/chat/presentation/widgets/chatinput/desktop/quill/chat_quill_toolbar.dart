@@ -66,185 +66,188 @@ class ChatQuillToolbar extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextBold,
-                    Attribute.bold,
-                    'toolbar_bold'.tr(),
-                    iconColor,
-                  ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextItalic,
-                    Attribute.italic,
-                    'toolbar_italic'.tr(),
-                    iconColor,
-                  ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextUnderline,
-                    Attribute.underline,
-                    'toolbar_underline'.tr(),
-                    iconColor,
-                  ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedTextStrikethrough,
-                    Attribute.strikeThrough,
-                    'toolbar_strikethrough'.tr(),
-                    iconColor,
-                  ),
-
-                  // 清除格式按钮
-                  IconButton(
-                    tooltip: 'toolbar_clear_format'.tr(),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _clearAttributes,
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedTextClear,
-                      size: 16,
-                      color: iconColor,
+            child: Scrollbar(
+              thumbVisibility: false,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedTextBold,
+                      Attribute.bold,
+                      'toolbar_bold'.tr(),
+                      iconColor,
                     ),
-                  ),
-
-                  // _buildActionButton(
-                  //   HugeIcons.strokeRoundedTextAlignLeft,
-                  //   Attribute.leftAlignment,
-                  //   "左对齐",
-                  //   iconColor,
-                  // ),
-                  // _buildActionButton(
-                  //   HugeIcons.strokeRoundedTextAlignCenter,
-                  //   Attribute.centerAlignment,
-                  //   "居中",
-                  //   iconColor,
-                  // ),
-                  // _buildActionButton(
-                  //   HugeIcons.strokeRoundedTextAlignRight,
-                  //   Attribute.rightAlignment,
-                  //   "右对齐",
-                  //   iconColor,
-                  // ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedQuoteDown,
-                    Attribute.blockQuote,
-                    'toolbar_quote'.tr(),
-                    iconColor,
-                  ),
-                  _buildActionButton(
-                    HugeIcons.strokeRoundedSourceCode,
-                    Attribute.codeBlock,
-                    'toolbar_code_block'.tr(),
-                    iconColor,
-                  ),
-                  Builder(
-                    builder: (context) {
-                      return IconButton(
-                        mouseCursor: SystemMouseCursors.click,
-                        tooltip: 'toolbar_text_color'.tr(),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          Function? onCancel;
-                          onCancel = Toast.showWidget(
-                            context,
-                            child: ColorsBox.buildColorsWidget((hex) {
-                              controller.formatSelection(ColorAttribute(hex));
-                              onCancel?.call();
-                            }, context),
-                          );
-                        },
-                        icon: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedTextColor,
-                          size: 14,
-                        ),
-                      );
-                    },
-                  ),
-                  Builder(
-                    builder: (context) {
-                      return IconButton(
-                        mouseCursor: SystemMouseCursors.click,
-                        tooltip: 'toolbar_bg_color'.tr(),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          Function? onCancel;
-                          onCancel = Toast.showWidget(
-                            context,
-                            child: ColorsBox.buildColorsWidget((hex) {
-                              controller.formatSelection(
-                                BackgroundAttribute(hex),
-                              );
-                              onCancel?.call();
-                            }, context),
-                          );
-                        },
-                        icon: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedBackground,
-                          size: 14,
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Card
-                  IconButton(
-                    mouseCursor: SystemMouseCursors.click,
-                    tooltip: 'toolbar_card'.tr(),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      Function? onCancel;
-                      onCancel = Toast.showWidget(
-                        context,
-                        child: CardBox(
-                          onCancel: () => onCancel?.call(),
-                          onSubmit: (card) {
-                            onCardSubmit(card);
-                            onCancel?.call();
-                          },
-                        ),
-                      );
-                    },
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedCardExchange01,
-                      size: 14,
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedTextItalic,
+                      Attribute.italic,
+                      'toolbar_italic'.tr(),
+                      iconColor,
                     ),
-                  ),
-                  IconButton(
-                    mouseCursor: SystemMouseCursors.click,
-                    tooltip: 'toolbar_location'.tr(),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      Function? onCancel;
-                      onCancel = Toast.showWidget(
-                        context,
-                        child: LocationBox(
-                          onCancel: () => onCancel?.call(),
-                          onSubmit: (location) {
-                            onLocationSubmit(location);
-                            onCancel?.call();
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedTextUnderline,
+                      Attribute.underline,
+                      'toolbar_underline'.tr(),
+                      iconColor,
+                    ),
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedTextStrikethrough,
+                      Attribute.strikeThrough,
+                      'toolbar_strikethrough'.tr(),
+                      iconColor,
+                    ),
+
+                    // 清除格式按钮
+                    IconButton(
+                      tooltip: 'toolbar_clear_format'.tr(),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: _clearAttributes,
+                      icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedTextClear,
+                        size: 16,
+                        color: iconColor,
+                      ),
+                    ),
+
+                    // _buildActionButton(
+                    //   HugeIcons.strokeRoundedTextAlignLeft,
+                    //   Attribute.leftAlignment,
+                    //   "左对齐",
+                    //   iconColor,
+                    // ),
+                    // _buildActionButton(
+                    //   HugeIcons.strokeRoundedTextAlignCenter,
+                    //   Attribute.centerAlignment,
+                    //   "居中",
+                    //   iconColor,
+                    // ),
+                    // _buildActionButton(
+                    //   HugeIcons.strokeRoundedTextAlignRight,
+                    //   Attribute.rightAlignment,
+                    //   "右对齐",
+                    //   iconColor,
+                    // ),
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedQuoteDown,
+                      Attribute.blockQuote,
+                      'toolbar_quote'.tr(),
+                      iconColor,
+                    ),
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedSourceCode,
+                      Attribute.codeBlock,
+                      'toolbar_code_block'.tr(),
+                      iconColor,
+                    ),
+                    Builder(
+                      builder: (context) {
+                        return IconButton(
+                          mouseCursor: SystemMouseCursors.click,
+                          tooltip: 'toolbar_text_color'.tr(),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            Function? onCancel;
+                            onCancel = Toast.showWidget(
+                              context,
+                              child: ColorsBox.buildColorsWidget((hex) {
+                                controller.formatSelection(ColorAttribute(hex));
+                                onCancel?.call();
+                              }, context),
+                            );
                           },
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.location_on_outlined, size: 16),
-                  ),
-                  // _buildActionButton(
-                  //   HugeIcons.strokeRoundedLeftToRightListBullet,
-                  //   Attribute.ul,
-                  //   "无序列表",
-                  //   iconColor,
-                  // ),
-                  // _buildActionButton(
-                  //   HugeIcons.strokeRoundedLeftToRightListNumber,
-                  //   Attribute.ol,
-                  //   "有序列表",
-                  //   iconColor,
-                  // ),
-                ],
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedTextColor,
+                            size: 14,
+                          ),
+                        );
+                      },
+                    ),
+                    Builder(
+                      builder: (context) {
+                        return IconButton(
+                          mouseCursor: SystemMouseCursors.click,
+                          tooltip: 'toolbar_bg_color'.tr(),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            Function? onCancel;
+                            onCancel = Toast.showWidget(
+                              context,
+                              child: ColorsBox.buildColorsWidget((hex) {
+                                controller.formatSelection(
+                                  BackgroundAttribute(hex),
+                                );
+                                onCancel?.call();
+                              }, context),
+                            );
+                          },
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedBackground,
+                            size: 14,
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Card
+                    IconButton(
+                      mouseCursor: SystemMouseCursors.click,
+                      tooltip: 'toolbar_card'.tr(),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        Function? onCancel;
+                        onCancel = Toast.showWidget(
+                          context,
+                          child: CardBox(
+                            onCancel: () => onCancel?.call(),
+                            onSubmit: (card) {
+                              onCardSubmit(card);
+                              onCancel?.call();
+                            },
+                          ),
+                        );
+                      },
+                      icon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedCardExchange01,
+                        size: 14,
+                      ),
+                    ),
+                    IconButton(
+                      mouseCursor: SystemMouseCursors.click,
+                      tooltip: 'toolbar_location'.tr(),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        Function? onCancel;
+                        onCancel = Toast.showWidget(
+                          context,
+                          child: LocationBox(
+                            onCancel: () => onCancel?.call(),
+                            onSubmit: (location) {
+                              onLocationSubmit(location);
+                              onCancel?.call();
+                            },
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.location_on_outlined, size: 16),
+                    ),
+                    // _buildActionButton(
+                    //   HugeIcons.strokeRoundedLeftToRightListBullet,
+                    //   Attribute.ul,
+                    //   "无序列表",
+                    //   iconColor,
+                    // ),
+                    // _buildActionButton(
+                    //   HugeIcons.strokeRoundedLeftToRightListNumber,
+                    //   Attribute.ol,
+                    //   "有序列表",
+                    //   iconColor,
+                    // ),
+                  ],
+                ),
               ),
             ),
           ),
