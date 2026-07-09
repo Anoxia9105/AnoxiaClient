@@ -270,7 +270,7 @@ class SystemEventService extends _$SystemEventService {
     final String? roomId = _extractRoomIdFromEvent(event);
     if (roomId == null || roomId.isEmpty) return;
 
-    final startTime = (event.extra?['startTime'] as num?)?.toInt();
+    final startTime = _extractInt(event.extra?['startTime']);
     ref
         .read(callStatusControllerProvider.notifier)
         .markStarted(roomId, startTime: startTime);

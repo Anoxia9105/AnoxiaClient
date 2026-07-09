@@ -53,7 +53,11 @@ class SystemMessageService extends _$SystemMessageService {
   /// - ROOM_MUTED：全员禁言/解除禁言
   /// - ROOM_DISSOLVED：房间解散/封禁
   /// - ROOM_CREATED：房间创建/解封
-  void _processRoomStatusAction(String roomId, String action, Map<String, String> extra) {
+  void _processRoomStatusAction(
+    String roomId,
+    String action,
+    Map<String, String> extra,
+  ) {
     int? nextStatus;
     switch (action) {
       case 'ROOM_MUTED':
@@ -68,7 +72,9 @@ class SystemMessageService extends _$SystemMessageService {
     }
 
     if (nextStatus != null) {
-      ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, nextStatus);
+      ref
+          .read(roomListServiceProvider.notifier)
+          .updateRoomStatus(roomId, nextStatus);
       log.info('房间 $roomId 状态根据系统信令 [$action] 异步变更为: $nextStatus');
     }
   }
@@ -82,7 +88,7 @@ class SystemMessageService extends _$SystemMessageService {
     final extra = msg.properties;
 
     if (action == 'CALL_STARTED') {
-      final startTime = (extra['startTime'] as num?)?.toInt() ?? msg.timestamp.toInt();
+      final startTime = _readInt(extra['startTime']) ?? msg.timestamp.toInt();
       callStatus.markStarted(roomId, startTime: startTime);
       _sendDesktopNotification(roomId, action, msg);
     } else if (action == 'CALL_ENDED') {
@@ -95,9 +101,12 @@ class SystemMessageService extends _$SystemMessageService {
   ///
   /// 根据通话状态生成通知内容并推送到系统通知栏
   void _sendDesktopNotification(String roomId, String action, RoomMessage msg) {
-    final rooms = ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
+    final rooms =
+        ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     final room = RoomLookupHelper.findByRoomId(rooms, roomId) ?? ChatRoomVO();
-    final roomName = (room.roomName?.isNotEmpty == true) ? room.roomName! : '通话通知';
+    final roomName = (room.roomName?.isNotEmpty == true)
+        ? room.roomName!
+        : '通话通知';
 
     final extra = msg.properties;
     String body = '';
@@ -107,7 +116,9 @@ class SystemMessageService extends _$SystemMessageService {
       body = (nickName?.isNotEmpty == true) ? '$nickName 发起了通话' : '房间通话已开始';
     } else {
       final durationText = extra['durationText']?.toString();
-      body = (durationText?.isNotEmpty == true) ? '房间通话已结束:$durationText' : '房间通话已结束';
+      body = (durationText?.isNotEmpty == true)
+          ? '房间通话已结束:$durationText'
+          : '房间通话已结束';
     }
 
     NotificationHelper().show(
@@ -118,5 +129,12 @@ class SystemMessageService extends _$SystemMessageService {
       avatarUrl: null, // V5 协议不在消息体中携带 senderAvatar
       force: true,
     );
+  }
+
+  int? _readInt(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw.toString());
   }
 }

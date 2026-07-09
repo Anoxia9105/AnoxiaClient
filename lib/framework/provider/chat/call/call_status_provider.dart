@@ -21,9 +21,16 @@ class RoomCallStatus {
   factory RoomCallStatus.fromJson(Map<String, dynamic> json) {
     return RoomCallStatus(
       calling: json['calling'] == true,
-      startTime: (json['startTime'] as num?)?.toInt() ?? 0,
+      startTime: _readInt(json['startTime']) ?? 0,
     );
   }
+}
+
+int? _readInt(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is int) return raw;
+  if (raw is num) return raw.toInt();
+  return int.tryParse(raw.toString());
 }
 
 /// 从后端获取房间通话状态
@@ -121,7 +128,10 @@ final callStatusControllerProvider =
 /// 获取指定房间的通话状态（便捷方法）
 ///
 /// 通过 select 优化，仅在目标房间状态变化时重建
-final roomCallStatusProvider = Provider.family<RoomCallStatus, String>((ref, roomId) {
+final roomCallStatusProvider = Provider.family<RoomCallStatus, String>((
+  ref,
+  roomId,
+) {
   return ref.watch(
     callStatusControllerProvider.select(
       (map) => map[roomId] ?? const RoomCallStatus.idle(),

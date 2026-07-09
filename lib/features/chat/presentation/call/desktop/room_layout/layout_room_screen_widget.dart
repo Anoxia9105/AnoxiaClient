@@ -8,7 +8,8 @@ import 'package:livekit_client/livekit_client.dart';
 /// 当有参与者共享屏幕时使用此布局：
 /// - 左侧大区域显示共享内容
 /// - 右侧小列表显示其他参与者
-class LayoutRoomScreenWidget extends StatefulWidget {
+/// - 当可用宽度过小时，自动隐藏右侧列表，宽度恢复后自动显示
+class LayoutRoomScreenWidget extends StatelessWidget {
   /// 正在共享屏幕的参与者
   final Participant screenParticipant;
 
@@ -24,6 +25,9 @@ class LayoutRoomScreenWidget extends StatefulWidget {
   /// 踢出回调，传入目标参与者 identity
   final void Function(String identity)? onKick;
 
+  /// 低于此宽度时自动隐藏右侧参与者列表
+  static const double _sidebarBreakpoint = 480;
+
   const LayoutRoomScreenWidget({
     super.key,
     required this.screenParticipant,
@@ -34,50 +38,52 @@ class LayoutRoomScreenWidget extends StatefulWidget {
   });
 
   @override
-  State<LayoutRoomScreenWidget> createState() => _LayoutRoomScreenWidgetState();
-}
-
-class _LayoutRoomScreenWidgetState extends State<LayoutRoomScreenWidget> {
-  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: ParticipantTile(
-            participant: widget.screenParticipant,
-            handRaised:
-                widget.handRaiseMap[widget.screenParticipant.identity] == true,
-            onMute: widget.onMute,
-            onKick: widget.onKick,
-            key: ValueKey('${widget.screenParticipant.sid}-screen'),
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showSidebar =
+            otherParticipants.isNotEmpty &&
+            constraints.maxWidth >= _sidebarBreakpoint;
 
-        const SizedBox(width: 8),
-
-        if (widget.otherParticipants.isNotEmpty)
-          SizedBox(
-            width: 40.w,
-            child: ListView.separated(
-              itemCount: widget.otherParticipants.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final p = widget.otherParticipants[index];
-                return AspectRatio(
-                  aspectRatio: 1.0,
-                  child: ParticipantTile(
-                    participant: p,
-                    handRaised: widget.handRaiseMap[p.identity] == true,
-                    onMute: widget.onMute,
-                    onKick: widget.onKick,
-                    key: ValueKey(p.sid),
-                  ),
-                );
-              },
+        return Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: ParticipantTile(
+                participant: screenParticipant,
+                handRaised: handRaiseMap[screenParticipant.identity] == true,
+                onMute: onMute,
+                onKick: onKick,
+                key: ValueKey('${screenParticipant.sid}-screen'),
+              ),
             ),
-          ),
-      ],
+
+            if (showSidebar) ...[
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 40.w,
+                child: ListView.separated(
+                  itemCount: otherParticipants.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final p = otherParticipants[index];
+                    return AspectRatio(
+                      aspectRatio: 1.0,
+                      child: ParticipantTile(
+                        participant: p,
+                        handRaised: handRaiseMap[p.identity] == true,
+                        onMute: onMute,
+                        onKick: onKick,
+                        key: ValueKey(p.sid),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
