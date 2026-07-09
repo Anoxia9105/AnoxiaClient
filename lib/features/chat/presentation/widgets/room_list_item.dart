@@ -8,6 +8,7 @@ import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.da
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -73,6 +74,8 @@ class RoomListItem extends ConsumerWidget {
     final pinnedIds = ref.watch(pinnedRoomsProvider);
     final roomId = room.roomId;
     final isPinned = roomId != null && pinnedIds.contains(room.roomId);
+    final isDoNotDisturb =
+        roomId != null && ref.watch(doNotDisturbRoomsProvider).contains(roomId);
 
     bool isOnline = false;
     if (isSingle && room.peerId != null) {
@@ -180,7 +183,7 @@ class RoomListItem extends ConsumerWidget {
         ),
         // 右侧显示置顶和未读数
         trailing: SizedBox(
-          width: 32,
+          width: 44,
           height: 44,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -188,14 +191,28 @@ class RoomListItem extends ConsumerWidget {
             children: [
               SizedBox(
                 height: 20,
-                child: isPinned
-                    ? HugeIcon(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (isDoNotDisturb)
+                      Tooltip(
+                        message: 'chat_do_not_disturb'.tr(),
+                        child: Icon(
+                          Icons.notifications_off_outlined,
+                          size: 15,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    if (isDoNotDisturb && isPinned) const SizedBox(width: 3),
+                    if (isPinned)
+                      HugeIcon(
                         icon: HugeIcons.strokeRoundedPin02,
                         size: 16,
                         strokeWidth: 2,
                         color: Theme.of(context).colorScheme.outline,
-                      )
-                    : const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
               ),
 
               const Spacer(),
@@ -285,6 +302,7 @@ class RoomListItem extends ConsumerWidget {
     );
 
     if (result == null) return;
+    if (!context.mounted) return;
     final roomList = ref.read(roomListServiceProvider.notifier);
     final activeRoomId = ref.read(activeRoomIdProvider);
 
@@ -296,6 +314,8 @@ class RoomListItem extends ConsumerWidget {
         roomList.markAsRead(roomId);
         break;
       case 'hide':
+        final confirmed = await _showDeleteConversationConfirm(context);
+        if (!confirmed) return;
         await roomList.leaveRoom(roomId);
         if (activeRoomId == roomId) {
           ref.read(activeRoomIdProvider.notifier).setActive(null);
@@ -308,6 +328,36 @@ class RoomListItem extends ConsumerWidget {
         }
         break;
     }
+  }
+
+  Future<bool> _showDeleteConversationConfirm(BuildContext context) async {
+    final result = await showAdaptiveDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog.adaptive(
+        title: Text('chat_delete_conversation'.tr()),
+        content: Text('chat_delete_conversation_confirm_hint'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'cancel'.tr(),
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'confirm'.tr(),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result == true;
   }
 
   /// 构建上下文菜单项

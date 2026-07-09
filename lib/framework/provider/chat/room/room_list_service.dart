@@ -6,6 +6,7 @@ import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
@@ -155,10 +156,14 @@ class RoomListService extends _$RoomListService {
         final isMobile =
             defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS;
+        final isDoNotDisturb = ref
+            .read(doNotDisturbRoomsProvider)
+            .contains(newMessage.roomId);
         final shouldShowLocalNotification =
             !isSelfMessage &&
             !isCallSystemMessage &&
             !isCurrentRoom &&
+            !isDoNotDisturb &&
             !(isMobile && isAppForeground);
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
@@ -334,13 +339,16 @@ class RoomListService extends _$RoomListService {
 
       if (res.data['code'] == 200) {
         log.info('删除会话成功');
-        await refresh(silent: true);
+        await ref.read(localDataSourceProvider).deleteConversationCache(roomId);
 
         // 删除对应房间缓存的消息
         ref.read(chatMessagesProvider.notifier).clearRoom(roomId);
 
         // 清理加载更多状态
         ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+        await ref.read(doNotDisturbRoomsProvider.notifier).remove(roomId);
+
+        await refresh(silent: true);
 
         log.info('✅ 已删除房间 $roomId 的本地消息缓存和状态');
       }

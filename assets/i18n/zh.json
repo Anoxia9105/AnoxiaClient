@@ -162,6 +162,8 @@
   "chat_new_message": "新消息",
   "chat_unpin": "取消置顶",
   "chat_pin": "置顶会话",
+  "chat_do_not_disturb": "免打扰",
+  "chat_do_not_disturb_hint": "开启后新消息不会弹出通知",
   "chat_mark_as_read": "标为已读",
   "chat_leave_group": "退出群聊",
   "chat_delete_conversation": "删除会话",

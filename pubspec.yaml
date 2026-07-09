@@ -141,6 +141,8 @@ dependencies:
   drift: ^2.34.0
   # 数据库libs
   sqlite3_flutter_libs: ^0.5.40
+  # 游戏引擎
+  flame: ^1.37.0
 
 
 dev_dependencies:

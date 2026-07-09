@@ -5,12 +5,14 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
+import 'package:anoxia/features/game/game_page.dart';
 import 'package:anoxia/features/live/presentation/pages/live_list_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
@@ -59,6 +61,7 @@ class MainLayoutPage extends ConsumerWidget {
                     _DesktopContentCard(child: LiveListPage()),
                     _DesktopContentCard(child: FavoritesPage()),
                     _DesktopContentCard(child: MyPage()),
+                    _DesktopContentCard(child: GamePage()),
                     _DesktopContentCard(child: SettingsPage()),
                   ],
                 ),

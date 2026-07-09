@@ -8,6 +8,7 @@ import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -235,6 +236,17 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               value: ref.watch(pinnedRoomsProvider).contains(roomId),
               onChanged: (value) async {
                 await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
+              },
+            ),
+            SwitchListTile.adaptive(
+              secondary: const Icon(Icons.notifications_off_outlined, size: 22),
+              title: Text('chat_do_not_disturb'.tr()),
+              subtitle: Text('chat_do_not_disturb_hint'.tr()),
+              value: ref.watch(doNotDisturbRoomsProvider).contains(roomId),
+              onChanged: (value) async {
+                await ref
+                    .read(doNotDisturbRoomsProvider.notifier)
+                    .setEnabled(roomId, value);
               },
             ),
             if (isGroup && isAdmin)

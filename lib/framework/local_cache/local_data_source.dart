@@ -270,6 +270,24 @@ class LocalDataSource {
     return db.conversationDao.markDeleted(conversationId);
   }
 
+  Future<void> deleteConversationCache(String conversationId) async {
+    log.debug('[DB] deleteConversationCache convId=$conversationId');
+    await db.transaction(() async {
+      await (db.delete(
+        db.messages,
+      )..where((tbl) => tbl.conversationId.equals(conversationId))).go();
+      await (db.delete(
+        db.conversations,
+      )..where((tbl) => tbl.id.equals(conversationId))).go();
+      await (db.delete(db.syncStates)..where(
+            (tbl) =>
+                tbl.scope.equals('messages') &
+                tbl.scopeId.equals(conversationId),
+          ))
+          .go();
+    });
+  }
+
   Future<void> updateConversationStatus(String conversationId, int status) {
     return db.conversationDao.updateStatus(conversationId, status);
   }

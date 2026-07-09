@@ -24,6 +24,10 @@ class LayoutController extends _$LayoutController {
     ),
     SidebarItem(name: 'sidebar_my', icon: HugeIcons.strokeRoundedUser),
     SidebarItem(
+      name: 'sidebar_game',
+      icon: HugeIcons.strokeRoundedGame,
+    ),
+    SidebarItem(
       name: 'sidebar_setting',
       icon: HugeIcons.strokeRoundedSettings01,
     ),
