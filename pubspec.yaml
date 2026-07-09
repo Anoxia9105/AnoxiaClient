@@ -164,7 +164,71 @@ flutter:
   uses-material-design: true
   assets:
     - assets/i18n/
+    # logo
+    - assets/images/app_icon.ico
+    - assets/images/app_icon.png
     - assets/images/
+    # 竹子
+    - assets/images/crops/bamboo/growth_basic/
+    - assets/images/crops/bamboo/icon/
+    # 甜菜根
+    - assets/images/crops/beetroot/growth_basic/
+    - assets/images/crops/beetroot/icon/
+    # 浆果
+    - assets/images/crops/berry/growth_basic/
+    - assets/images/crops/berry/icon/
+    # 西兰花
+    - assets/images/crops/broccoli/growth_basic/
+    - assets/images/crops/broccoli/icon/
+    # 胡萝卜
+    - assets/images/crops/carrot/growth_basic/
+    - assets/images/crops/carrot/icon/
+    # 花椰菜
+    - assets/images/crops/cauliflower/growth_basic/
+    - assets/images/crops/cauliflower/icon/
+    # 芹菜
+    - assets/images/crops/celery/growth_basic/
+    - assets/images/crops/celery/icon/
+    # 玉米
+    - assets/images/crops/corn/growth_basic/
+    - assets/images/crops/corn/icon/
+    # 茄子
+    - assets/images/crops/eggplant/growth_basic/
+    - assets/images/crops/eggplant/icon/
+    # 葡萄
+    - assets/images/crops/grape/growth_basic/
+    - assets/images/crops/grape/icon/
+    # 韭葱
+    - assets/images/crops/leek/growth_basic/
+    - assets/images/crops/leek/icon/
+    # 生菜
+    - assets/images/crops/lettuce/growth_basic/
+    - assets/images/crops/lettuce/icon/
+    # 洋葱
+    - assets/images/crops/onion/growth_basic/
+    - assets/images/crops/onion/icon/
+    # 辣椒
+    - assets/images/crops/pepper/growth_basic/
+    - assets/images/crops/pepper/icon/
+    # 土豆
+    - assets/images/crops/potato/growth_basic/
+    - assets/images/crops/potato/icon/
+    # 南瓜
+    - assets/images/crops/pumpkin/growth_basic/
+    - assets/images/crops/pumpkin/icon/
+    # 萝卜
+    - assets/images/crops/radish/growth_basic/
+    - assets/images/crops/radish/icon/
+    # 高草（仅生长动画，无图标，但可保留）
+    - assets/images/crops/tallgrass/growth_basic/
+    # 番茄
+    - assets/images/crops/tomato/growth_basic/
+    - assets/images/crops/tomato/icon/
+    # 小麦
+    - assets/images/crops/wheat/growth_basic/
+    - assets/images/crops/wheat/icon/
+    #土地
+    - assets/images/tiles/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
