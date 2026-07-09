@@ -1,12 +1,14 @@
-import 'dart:ui';
+import 'dart:math' show min;
+import 'dart:ui' as ui;
 import 'package:anoxia/features/game/config/crop_map.dart';
 import 'package:anoxia/features/game/config/crop_type_enum.dart';
+import 'package:anoxia/features/game/game_persistence.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/sprite.dart';
-import 'package:flutter/material.dart' show Colors, ValueNotifier;
+import 'package:flutter/material.dart' show Color, Colors, ValueNotifier;
 
 // ========== 地块状态 ==========
 enum PlotStage { empty, growing, ripe, withered }
@@ -20,14 +22,28 @@ class FarmGamePage extends FlameGame {
   final ValueNotifier<CropType?> selectedSeedNotifier =
       ValueNotifier<CropType?>(null);
 
-  // 预加载好的逐帧图片缓存：一种作物对应一串 Sprite
+  // 预加载好的逐帧图片缓存
   final Map<CropType, List<Sprite>> cropSprites = {};
+  // 所有地块引用（用于持久化快照）
+  final List<DirtPlot> plots = [];
+  // 地面瓦片图片
+  ui.Image? groundImage;
+
+  // 自动存档计时器
+  double _saveTimer = 0;
+  static const double _saveInterval = 5.0; // 每 5 秒自动存一次
+
+  @override
+  Color backgroundColor() => const Color(0xFF6AAB3A); // 草地绿背景
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    // 预加载所有作物的雪碧图并切成一帧一帧的 Sprite，避免种下去那一刻卡顿
+    // 1. 加载地面瓦片
+    groundImage = await Flame.images.load('tiles/ground_01_16x16.png');
+
+    // 2. 预加载所有作物的雪碧图
     for (final entry in cropRegistry.entries) {
       final config = entry.value;
       final image = await Flame.images.load(config.spriteSheetPath);
@@ -40,37 +56,95 @@ class FarmGamePage extends FlameGame {
       );
       cropSprites[entry.key] = List.generate(
         config.frameCount,
-        (i) => sheet.getSprite(0, i), // 单行横排，行号固定为 0
+        (i) => sheet.getSprite(0, i),
       );
     }
 
-    const int rows = 3;
-    const int cols = 3;
-    const double plotSize = 120.0;
-    const double spacing = 15.0;
+    // 3. 加载持久化存档
+    final saved = await GamePersistence.load();
+    if (saved != null) {
+      coinNotifier.value = saved.coins;
+      seedInventoryNotifier.value = saved.seeds;
+      harvestInventoryNotifier.value = saved.harvest;
+    }
 
-    final double totalWidth = (cols * plotSize) + ((cols - 1) * spacing);
-    final double totalHeight = (rows * plotSize) + ((rows - 1) * spacing);
+    // 4. 动态计算地块大小并创建 4×5 = 20 块地
+    const int rows = 5;
+    const int cols = 4;
+    const double spacing = 10.0;
+    const double topPadding = 130.0;
 
+    final double availW = size.x - 32;
+    final double availH = size.y - topPadding - 20;
+    final double plotSize = min(
+      (availW - spacing * (cols - 1)) / cols,
+      (availH - spacing * (rows - 1)) / rows,
+    ).clamp(60.0, 112.0);
+
+    final double totalWidth = cols * plotSize + (cols - 1) * spacing;
+    final double totalHeight = rows * plotSize + (rows - 1) * spacing;
     final double startX = (size.x - totalWidth) / 2;
-    final double startY = (size.y - totalHeight) / 2;
+    final double startY = topPadding + (availH - totalHeight) / 2;
 
+    int plotIndex = 0;
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
-        final double x = startX + (col * (plotSize + spacing)) + (plotSize / 2);
-        final double y = startY + (row * (plotSize + spacing)) + (plotSize / 2);
+        final double x = startX + col * (plotSize + spacing) + plotSize / 2;
+        final double y = startY + row * (plotSize + spacing) + plotSize / 2;
 
-        add(
-          DirtPlot()
-            ..position = Vector2(x, y)
-            ..anchor = Anchor.center,
-        );
+        final plot = DirtPlot(groundImage: groundImage!, plotSize: plotSize)
+          ..position = Vector2(x, y)
+          ..anchor = Anchor.center;
+
+        // 恢复持久化状态
+        if (saved != null && plotIndex < saved.plots.length) {
+          final ps = saved.plots[plotIndex];
+          plot.currentStage = ps.stage;
+          plot.growingCrop = ps.crop;
+          plot.elapsedGrow = ps.elapsedGrow;
+          plot.elapsedRipe = ps.elapsedRipe;
+        }
+
+        plots.add(plot);
+        add(plot);
+        plotIndex++;
       }
     }
   }
 
-  // ---------- 金币 ----------
-  bool spendCoin(int amount) {
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _saveTimer += dt;
+    if (_saveTimer >= _saveInterval) {
+      _saveTimer = 0;
+      saveState();
+    }
+  }
+
+  // ---------- 持久化 ----------
+  void saveState() {
+    final plotStates =
+        plots
+            .map(
+              (p) => PlotSaveState(
+                stage: p.currentStage,
+                crop: p.growingCrop,
+                elapsedGrow: p.elapsedGrow,
+                elapsedRipe: p.elapsedRipe,
+              ),
+            )
+            .toList();
+    GamePersistence.save(
+      coins: coinNotifier.value,
+      seeds: seedInventoryNotifier.value,
+      harvest: harvestInventoryNotifier.value,
+      plots: plotStates,
+    );
+  }
+
+  // ---------- 内部金币操作（不触发存档，由外层统一存）----------
+  bool _trySpend(int amount) {
     if (coinNotifier.value >= amount) {
       coinNotifier.value -= amount;
       return true;
@@ -78,15 +152,28 @@ class FarmGamePage extends FlameGame {
     return false;
   }
 
-  void earnCoin(int amount) => coinNotifier.value += amount;
+  // ---------- 金币 ----------
+  bool spendCoin(int amount) {
+    if (_trySpend(amount)) {
+      saveState();
+      return true;
+    }
+    return false;
+  }
+
+  void earnCoin(int amount) {
+    coinNotifier.value += amount;
+    saveState();
+  }
 
   // ---------- 种子背包 ----------
-  bool buySeed(CropType type) {
+  bool buySeed(CropType type, {int qty = 1}) {
     final config = cropRegistry[type]!;
-    if (!spendCoin(config.seedPrice)) return false;
+    if (!_trySpend(config.seedPrice * qty)) return false;
     final map = Map<CropType, int>.from(seedInventoryNotifier.value);
-    map[type] = (map[type] ?? 0) + 1;
+    map[type] = (map[type] ?? 0) + qty;
     seedInventoryNotifier.value = map;
+    saveState();
     return true;
   }
 
@@ -111,15 +198,17 @@ class FarmGamePage extends FlameGame {
     final map = Map<CropType, int>.from(harvestInventoryNotifier.value);
     map[type] = (map[type] ?? 0) + 1;
     harvestInventoryNotifier.value = map;
+    saveState();
   }
 
   void sellHarvest(CropType type) {
     final map = Map<CropType, int>.from(harvestInventoryNotifier.value);
     final count = map[type] ?? 0;
     if (count <= 0) return;
-    earnCoin(count * cropRegistry[type]!.sellPrice);
+    coinNotifier.value += count * cropRegistry[type]!.sellPrice;
     map.remove(type);
     harvestInventoryNotifier.value = map;
+    saveState();
   }
 
   void sellAllHarvest() {
@@ -129,23 +218,28 @@ class FarmGamePage extends FlameGame {
     for (final entry in map.entries) {
       total += entry.value * cropRegistry[entry.key]!.sellPrice;
     }
-    earnCoin(total);
+    coinNotifier.value += total;
     harvestInventoryNotifier.value = {};
+    saveState();
   }
 }
 
-// ========== 土地组件（用真实素材帧渲染） ==========
+// ========== 土地组件（地面瓦片 + 作物动画） ==========
 class DirtPlot extends PositionComponent
     with TapCallbacks, HasGameReference<FarmGamePage> {
   PlotStage currentStage = PlotStage.empty;
   CropType? growingCrop;
-  double elapsedGrow = 0; // 种下后经过的时间
-  double elapsedRipe = 0; // 成熟后经过的时间（用来判断是否枯萎）
+  double elapsedGrow = 0;
+  double elapsedRipe = 0;
+
+  final ui.Image groundImage;
 
   // 像素画用最近邻缩放，避免糊成马赛克
-  static final Paint _pixelPaint = Paint()..filterQuality = FilterQuality.none;
+  static final ui.Paint _pixelPaint =
+      ui.Paint()..filterQuality = ui.FilterQuality.none;
 
-  DirtPlot() : super(size: Vector2.all(120));
+  DirtPlot({required this.groundImage, required double plotSize})
+    : super(size: Vector2.all(plotSize));
 
   @override
   void update(double dt) {
@@ -156,6 +250,7 @@ class DirtPlot extends PositionComponent
       if (elapsedGrow >= config.growSeconds) {
         elapsedGrow = config.growSeconds;
         currentStage = PlotStage.ripe;
+        game.saveState();
       }
     } else if (currentStage == PlotStage.ripe && growingCrop != null) {
       final config = cropRegistry[growingCrop]!;
@@ -163,13 +258,14 @@ class DirtPlot extends PositionComponent
         elapsedRipe += dt;
         if (elapsedRipe >= config.witherSeconds!) {
           currentStage = PlotStage.withered;
+          game.saveState();
         }
       }
     }
   }
 
   @override
-  void render(Canvas canvas) {
+  void render(ui.Canvas canvas) {
     super.render(canvas);
     _drawSoil(canvas);
 
@@ -180,102 +276,144 @@ class DirtPlot extends PositionComponent
 
     late final Sprite frame;
     if (currentStage == PlotStage.withered) {
-      frame = sprites.last; // 最后一帧 = 枯萎
+      frame = sprites.last;
     } else if (currentStage == PlotStage.ripe) {
       frame = sprites[config.ripeFrameIndex];
     } else {
       final progress = (elapsedGrow / config.growSeconds).clamp(0.0, 1.0);
-      final frameIndex = (progress * config.ripeFrameIndex).floor().clamp(
-        0,
-        config.ripeFrameIndex,
-      );
+      final frameIndex = (progress * config.ripeFrameIndex)
+          .floor()
+          .clamp(0, config.ripeFrameIndex);
       frame = sprites[frameIndex];
     }
 
-    const spriteSize = 72.0; // 按你素材实际尺寸和视觉效果调整
+    // 按作物素材宽高比动态渲染，高作物（16×32）不会被压扁
+    final aspectRatio = config.frameHeight / config.frameWidth;
+    final maxW = size.x * 0.70;
+    final maxH = size.y * 0.78; // 底部留给进度条
+    double dw = maxW;
+    double dh = dw * aspectRatio;
+    if (dh > maxH) {
+      dh = maxH;
+      dw = dh / aspectRatio;
+    }
+
+    final dx = (size.x - dw) / 2;
+    final dy = size.y - dh - 12;
+
     frame.render(
       canvas,
-      position: Vector2((size.x - spriteSize) / 2, (size.y - spriteSize) / 2),
-      size: Vector2.all(spriteSize),
+      position: Vector2(dx, dy),
+      size: Vector2(dw, dh),
       overridePaint: _pixelPaint,
     );
 
-    if (currentStage == PlotStage.growing)
+    if (currentStage == PlotStage.growing) {
       _drawProgressBar(canvas, size.toRect());
+    }
     if (currentStage == PlotStage.ripe && config.witherSeconds != null) {
       _drawWitherWarning(canvas, size.toRect(), config.witherSeconds!);
     }
   }
 
-  void _drawSoil(Canvas canvas) {
+  // 用地面瓦片平铺填满地块背景
+  void _drawSoil(ui.Canvas canvas) {
     final rect = size.toRect();
-    final outerRRect = RRect.fromRectAndRadius(rect, const Radius.circular(14));
-    canvas.drawRRect(outerRRect, Paint()..color = const Color(0xFF6B3F1F));
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect.deflate(6), const Radius.circular(10)),
-      Paint()..color = const Color(0xFF8B5A2B),
+    canvas.save();
+    canvas.clipRRect(
+      ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(8)),
     );
+
+    // 以 32×32（2× 像素画缩放）为单位平铺 ground_01_16x16.png
+    const double tileDisplay = 32.0;
+    const double tileNative = 16.0;
+    final srcRect = ui.Rect.fromLTWH(0, 0, tileNative, tileNative);
+    final tilesX = (size.x / tileDisplay).ceil() + 1;
+    final tilesY = (size.y / tileDisplay).ceil() + 1;
+
+    for (int tx = 0; tx < tilesX; tx++) {
+      for (int ty = 0; ty < tilesY; ty++) {
+        canvas.drawImageRect(
+          groundImage,
+          srcRect,
+          ui.Rect.fromLTWH(
+            tx * tileDisplay,
+            ty * tileDisplay,
+            tileDisplay,
+            tileDisplay,
+          ),
+          _pixelPaint,
+        );
+      }
+    }
+
+    canvas.restore();
+
+    // 细边框
     canvas.drawRRect(
-      outerRRect,
-      Paint()
-        ..color = Colors.black.withOpacity(0.25)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+      ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(8)),
+      ui.Paint()
+        ..color = const ui.Color(0x55000000)
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 1.5,
     );
   }
 
-  void _drawProgressBar(Canvas canvas, Rect rect) {
+  void _drawProgressBar(ui.Canvas canvas, ui.Rect rect) {
     final config = cropRegistry[growingCrop]!;
-    final barRect = Rect.fromLTWH(
-      rect.left + 10,
-      rect.bottom - 12,
-      rect.width - 20,
-      6,
+    final barRect = ui.Rect.fromLTWH(
+      rect.left + 8,
+      rect.bottom - 11,
+      rect.width - 16,
+      5,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(barRect, const Radius.circular(3)),
-      Paint()..color = Colors.black.withOpacity(0.3),
+      ui.RRect.fromRectAndRadius(barRect, const ui.Radius.circular(3)),
+      ui.Paint()..color = const ui.Color(0x44000000),
     );
     final progress = (elapsedGrow / config.growSeconds).clamp(0.0, 1.0);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(
+      ui.RRect.fromRectAndRadius(
+        ui.Rect.fromLTWH(
           barRect.left,
           barRect.top,
           barRect.width * progress,
           barRect.height,
         ),
-        const Radius.circular(3),
+        const ui.Radius.circular(3),
       ),
-      Paint()..color = const Color(0xFF7CFC00),
+      ui.Paint()..color = const ui.Color(0xFF7CFC00),
     );
   }
 
-  void _drawWitherWarning(Canvas canvas, Rect rect, double witherSeconds) {
-    // 快枯萎时进度条变红提醒
+  void _drawWitherWarning(
+    ui.Canvas canvas,
+    ui.Rect rect,
+    double witherSeconds,
+  ) {
     final remain = 1 - (elapsedRipe / witherSeconds).clamp(0.0, 1.0);
-    if (remain > 0.4) return; // 剩余时间还多，不提醒
-    final barRect = Rect.fromLTWH(
-      rect.left + 10,
-      rect.bottom - 12,
-      rect.width - 20,
-      6,
+    if (remain > 0.4) return;
+    final barRect = ui.Rect.fromLTWH(
+      rect.left + 8,
+      rect.bottom - 11,
+      rect.width - 16,
+      5,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(barRect, const Radius.circular(3)),
-      Paint()..color = Colors.black.withOpacity(0.3),
+      ui.RRect.fromRectAndRadius(barRect, const ui.Radius.circular(3)),
+      ui.Paint()..color = const ui.Color(0x44000000),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(
+      ui.RRect.fromRectAndRadius(
+        ui.Rect.fromLTWH(
           barRect.left,
           barRect.top,
           barRect.width * remain,
           barRect.height,
         ),
-        const Radius.circular(3),
+        const ui.Radius.circular(3),
       ),
-      Paint()..color = Colors.redAccent,
+      ui.Paint()..color = const ui.Color(0xFFFF4444),
     );
   }
 
@@ -291,19 +429,22 @@ class DirtPlot extends PositionComponent
           currentStage = PlotStage.growing;
           elapsedGrow = 0;
           elapsedRipe = 0;
+          game.saveState();
         }
         break;
       case PlotStage.ripe:
         if (growingCrop != null) {
           game.addHarvest(growingCrop!);
           _reset();
+          game.saveState();
         }
         break;
       case PlotStage.withered:
-        _reset(); // 枯萎了只能清地，没有收获
+        _reset();
+        game.saveState();
         break;
       case PlotStage.growing:
-        break; // 生长中点击无效果
+        break;
     }
   }
 
