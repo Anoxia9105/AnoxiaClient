@@ -1,5 +1,6 @@
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
+import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -36,6 +37,7 @@ class App extends ConsumerStatefulWidget {
 class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   /// 未读消息角标订阅（仅移动端）
   ProviderSubscription<int>? _unreadBadgeSubscription;
+  ProviderSubscription<int>? _callThemeSubscription;
 
   @override
   void initState() {
@@ -49,6 +51,16 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       windowManager.setPreventClose(true);
       windowManager.addListener(this);
       trayManager.addListener(this);
+      _callThemeSubscription = ref.listenManual<int>(themeIndexProvider, (
+        previous,
+        next,
+      ) {
+        if (previous == next) return;
+        if (ref.read(callWindowControllerProvider) == null) return;
+        ref
+            .read(callWindowControllerProvider.notifier)
+            .updateSettings(themeIndex: next);
+      });
     }
 
     // 移动端：监听未读数量，更新应用角标
@@ -66,6 +78,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   @override
   void dispose() {
     _unreadBadgeSubscription?.close();
+    _callThemeSubscription?.close();
 
     if (DeviceUtil.isRealDesktop()) {
       windowManager.removeListener(this);

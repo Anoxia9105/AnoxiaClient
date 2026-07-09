@@ -9,10 +9,6 @@ import 'call_initial_media.dart';
 
 part 'call_window_controller.g.dart';
 
-/// 桌面端通话窗口控制器
-///
-/// 管理通话窗口的创建、显示和设置更新，支持窗口关闭监听。
-/// 通话窗口是一个独立的子窗口，用于显示音视频通话界面。
 @Riverpod(keepAlive: true)
 class CallWindowController extends _$CallWindowController {
   @override
@@ -27,7 +23,6 @@ class CallWindowController extends _$CallWindowController {
     return null;
   }
 
-  /// 打开或聚焦通话窗口
   Future<void> openCallWindow({
     required int themeIndex,
     required String title,
@@ -36,10 +31,11 @@ class CallWindowController extends _$CallWindowController {
   }) async {
     if (state != null) {
       await state!.show();
+      updateSettings(themeIndex: themeIndex);
       return;
     }
+
     ref.read(callInitialMediaProvider(roomId).notifier).state = initialMedia;
-    // 2. 创建新窗口
     final controller = await WindowController.create(
       WindowConfiguration(
         hiddenAtLaunch: true,
@@ -52,24 +48,24 @@ class CallWindowController extends _$CallWindowController {
       ),
     );
 
-    // 3. 保存 ID 到状态
     state = controller;
-
     controller.show();
   }
 
   void updateSettings({int? themeIndex, String? localeCode}) {
-    log.info('调用Call窗口$themeIndex,$localeCode');
+    final payload = <String, Object>{};
+    if (themeIndex != null) payload['themeIndex'] = themeIndex;
+    if (localeCode != null) payload['locale'] = localeCode;
+    if (payload.isEmpty) return;
 
-    if (themeIndex != null) {
-      Channel.callChannel.invokeMethod(Channel.callChannelMethod, {
-        'themeIndex': themeIndex,
-      });
+    log.info('调用Call窗口设置: $payload');
+
+    final controller = state;
+    if (controller != null) {
+      controller.invokeMethod(Channel.callChannelMethod, payload);
+      return;
     }
-    if (localeCode != null) {
-      Channel.callChannel.invokeMethod(Channel.callChannelMethod, {
-        'locale': localeCode,
-      });
-    }
+
+    Channel.callChannel.invokeMethod(Channel.callChannelMethod, payload);
   }
 }
