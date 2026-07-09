@@ -1,0 +1,22 @@
+// ========== 作物类型 ==========
+enum CropType {
+  bamboo,
+  beetroot,
+  berry,
+  broccoli,
+  carrot,
+  cauliflower,
+  celery,
+  corn,
+  eggplant,
+  grape,
+  leek,
+  lettuce,
+  onion,
+  pepper,
+  potato,
+  pumpkin,
+  radish,
+  tomato,
+  wheat,
+}
