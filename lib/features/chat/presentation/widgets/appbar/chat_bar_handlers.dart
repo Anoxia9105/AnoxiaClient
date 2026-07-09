@@ -3,6 +3,7 @@ import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -34,13 +35,14 @@ class ChatBarHandlers {
   static void onCallPressed(
     BuildContext context,
     WidgetRef ref,
-    ChatRoomVO room,
-  ) {
+    ChatRoomVO room, {
+    CallInitialMedia initialMedia = CallInitialMedia.audio,
+  }) {
     if ((room.roomId ?? '').isEmpty) {
       Toast.showToast('appbar_connection_lost'.tr());
       return;
     }
-    
+
     if (DeviceUtil.isRealMobile()) {
       final currentSession = ref.read(mobileCallSessionControllerProvider);
       if (currentSession != null) {
@@ -61,8 +63,7 @@ class ChatBarHandlers {
       ref.read(callInvitationControllerProvider.notifier).invite(room);
       ref
           .read(mobileCallSessionControllerProvider.notifier)
-          .start(roomId: roomId, title: title);
-          
+          .start(roomId: roomId, title: title, initialMedia: initialMedia);
     } else {
       /// 桌面端直接打开通话窗口
       ref.read(callInvitationControllerProvider.notifier).invite(room);
@@ -72,10 +73,10 @@ class ChatBarHandlers {
             title: room.roomName ?? '',
             themeIndex: ref.read(themeIndexProvider),
             roomId: room.roomId ?? '',
+            initialMedia: initialMedia,
           );
     }
   }
-
 
   /// 显示全体禁言/解除禁言确认对话框
   ///

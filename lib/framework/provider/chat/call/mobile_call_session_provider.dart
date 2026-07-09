@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mobile_call_session_provider.g.dart';
@@ -17,6 +18,7 @@ class MobileCallSession {
   // 从小窗右上角定位改回统一的绝对坐标偏移（方便吸边计算）
   final Offset position;
   final String? token;
+  final CallInitialMedia initialMedia;
 
   const MobileCallSession({
     required this.roomId,
@@ -25,6 +27,7 @@ class MobileCallSession {
     this.isInPipMode = false,
     this.position = const Offset(16, 150),
     this.token,
+    this.initialMedia = CallInitialMedia.audio,
   });
 
   MobileCallSession copyWith({
@@ -34,6 +37,7 @@ class MobileCallSession {
     bool? isInPipMode,
     String? token,
     Offset? position,
+    CallInitialMedia? initialMedia,
   }) {
     return MobileCallSession(
       roomId: roomId ?? this.roomId,
@@ -42,6 +46,7 @@ class MobileCallSession {
       isInPipMode: isInPipMode ?? this.isInPipMode,
       token: token ?? this.token,
       position: position ?? this.position,
+      initialMedia: initialMedia ?? this.initialMedia,
     );
   }
 }
@@ -53,8 +58,18 @@ class MobileCallSessionController extends _$MobileCallSessionController {
     return null;
   }
 
-  void start({required String roomId, required String title}) {
-    state = MobileCallSession(roomId: roomId, title: title, minimized: false);
+  void start({
+    required String roomId,
+    required String title,
+    CallInitialMedia initialMedia = CallInitialMedia.audio,
+  }) {
+    ref.read(callInitialMediaProvider(roomId).notifier).state = initialMedia;
+    state = MobileCallSession(
+      roomId: roomId,
+      title: title,
+      minimized: false,
+      initialMedia: initialMedia,
+    );
   }
 
   void minimize() {

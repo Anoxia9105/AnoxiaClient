@@ -27,7 +27,9 @@ class MemberGridSection extends ConsumerWidget {
     final members = ref.watch(roomMembersProvider(roomId));
 
     final maxGridItems = isGroup ? 20 : 1;
-    final displayCount = (members.length > (maxGridItems - 1) && isGroup) ? (maxGridItems - 1) : members.length;
+    final displayCount = (members.length > (maxGridItems - 1) && isGroup)
+        ? (maxGridItems - 1)
+        : members.length;
 
     return Padding(
       padding: const EdgeInsets.all(8),
@@ -36,7 +38,7 @@ class MemberGridSection extends ConsumerWidget {
         shrinkWrap: true,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 5,
-          childAspectRatio: 0.85,
+          childAspectRatio: 0.7,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
@@ -62,16 +64,20 @@ class MemberGridSection extends ConsumerWidget {
                 AvatarWidget(
                   url: member.avatar,
                   name: member.nickName,
-                  size: 44,
+                  size: 36,
                 ),
                 const SizedBox(height: 4),
                 Expanded(
-                  child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     child: Text(
                       member.nickName ?? '?',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
@@ -90,13 +96,14 @@ class MemberGridSection extends ConsumerWidget {
     required VoidCallback onTap,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      mouseCursor: SystemMouseCursors.click,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(13),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
@@ -109,10 +116,16 @@ class MemberGridSection extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Expanded(
-            child: Text(
-              label,
-              maxLines: 1,
-              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
           ),
         ],

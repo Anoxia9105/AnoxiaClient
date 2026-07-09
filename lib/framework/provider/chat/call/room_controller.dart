@@ -14,6 +14,7 @@ import 'package:anoxia/features/chat/presentation/call/component/window_screen_s
 
 import '../../../domain/RoomState.dart';
 import '../../../network/DioClient.dart';
+import 'call_initial_media.dart';
 
 part 'room_controller.g.dart';
 
@@ -287,8 +288,16 @@ class RoomController extends _$RoomController {
     final localParticipant = room.localParticipant;
     if (localParticipant == null) return;
     try {
-      localParticipant.setCameraEnabled(false);
-      localParticipant.setMicrophoneEnabled(false);
+      final roomName = room.name;
+      final initialMedia = roomName == null || roomName.isEmpty
+          ? CallInitialMedia.audio
+          : ref.read(callInitialMediaProvider(roomName));
+      await localParticipant.setCameraEnabled(
+        initialMedia == CallInitialMedia.video,
+      );
+      await localParticipant.setMicrophoneEnabled(
+        initialMedia == CallInitialMedia.audio,
+      );
       log.info(
         '本地轨道初始化 → mic: ${localParticipant.isMicrophoneEnabled()}, '
         'video: ${localParticipant.isCameraEnabled()}',

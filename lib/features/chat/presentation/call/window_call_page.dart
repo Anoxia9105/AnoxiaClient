@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/provider/chat/call/Channel.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/theme/AppColors.dart';
 import 'package:anoxia/framework/theme/AppTheme.dart';
@@ -55,6 +56,8 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     _themeIndex = args['themeIndex'] ?? 0;
     _title = args['title'] ?? '';
     _roomId = args['roomId'] ?? '';
+    ref.read(callInitialMediaProvider(_roomId).notifier).state =
+        CallInitialMedia.fromValue(args['initialMedia']);
     ref.read(roomTokenProvider(_roomId));
 
     Channel.callChannel.setMethodCallHandler((call) async {

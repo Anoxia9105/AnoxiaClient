@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../logs/talker.dart';
 import 'Channel.dart';
+import 'call_initial_media.dart';
 
 part 'call_window_controller.g.dart';
 
@@ -18,7 +19,7 @@ class CallWindowController extends _$CallWindowController {
   WindowController? build() {
     Channel.callChannel.setMethodCallHandler((call) async {
       if (call.method == 'on_call_window_close') {
-        log.info("收到窗口关闭");
+        log.info('收到窗口关闭');
         state = null;
       }
       return null;
@@ -31,29 +32,34 @@ class CallWindowController extends _$CallWindowController {
     required int themeIndex,
     required String title,
     required String roomId,
+    CallInitialMedia initialMedia = CallInitialMedia.audio,
   }) async {
     if (state != null) {
       await state!.show();
       return;
     }
+    ref.read(callInitialMediaProvider(roomId).notifier).state = initialMedia;
     // 2. 创建新窗口
     final controller = await WindowController.create(
       WindowConfiguration(
         hiddenAtLaunch: true,
-        arguments: jsonEncode({'themeIndex': themeIndex, 'title': title,'roomId':roomId}),
+        arguments: jsonEncode({
+          'themeIndex': themeIndex,
+          'title': title,
+          'roomId': roomId,
+          'initialMedia': initialMedia.value,
+        }),
       ),
     );
 
     // 3. 保存 ID 到状态
     state = controller;
 
-    Future.delayed(Duration(seconds: 1), () {
-      controller.show();
-    });
+    controller.show();
   }
 
   void updateSettings({int? themeIndex, String? localeCode}) {
-    log.info("调用Call窗口$themeIndex,$localeCode");
+    log.info('调用Call窗口$themeIndex,$localeCode');
 
     if (themeIndex != null) {
       Channel.callChannel.invokeMethod(Channel.callChannelMethod, {

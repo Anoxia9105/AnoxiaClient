@@ -2,9 +2,7 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/BreathingDot.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_settings_page.dart';
-import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_call_button_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_group_action_buttons_widget.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -125,44 +123,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           /// 通话按钮（房间正常状态才显示，禁言/封禁/解散不显示）
           if (room.roomStatus == 0) ...[
             ChatCallButtonWidget(roomId: roomId), // 通话按钮组件化
-            Container(
-              margin: const EdgeInsets.all(4),
-              child: const VerticalDivider(indent: 4, endIndent: 4),
-            ),
           ],
-
-          // 搜索按钮
-          IconButton(
-            mouseCursor: SystemMouseCursors.click,
-            tooltip: 'appbar_search_in_chat'.tr(),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                insetPadding: const EdgeInsets.symmetric(
-                  horizontal: 80,
-                  vertical: 40,
-                ),
-                child: SizedBox(
-                  width: 980,
-                  height: 720,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SearchContextPage(
-                      roomId: roomId,
-                      roomName: room.roomName ?? '',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedSearch01,
-              size: 20,
-            ),
-          ),
 
           // 更多按钮（移动端不显示，放在 AppBar 右上角）
           IconButton(
@@ -173,9 +134,6 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   .read(chatRightPanelVisibleProvider);
             },
           ),
-
-          // 更多群功能组件化（添加、禁言、列表）
-          if (room.roomType == 1) ChatGroupActionButtonsWidget(roomId: roomId),
         ];
       }(),
     );
