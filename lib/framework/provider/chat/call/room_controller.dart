@@ -11,10 +11,12 @@ import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../../domain/RoomState.dart';
 import '../../../network/DioClient.dart';
 import 'call_initial_media.dart';
+import 'mobile_call_session_provider.dart';
 
 part 'room_controller.g.dart';
 
@@ -33,6 +35,7 @@ class RoomController extends _$RoomController {
   bool _isTogglingMic = false;
   bool _isTogglingCamera = false;
   bool _isTogglingScreen = false;
+  bool _removedFromCallHandled = false;
 
   // ================= Riverpod build =================
 
@@ -92,6 +95,9 @@ class RoomController extends _$RoomController {
         /// SDK 会在网络中断或主动 disconnect 后触发
         /// 重连逻辑由 SDK 自动处理，不需要手动干预
         ..on<RoomDisconnectedEvent>((event) {
+          if (event.reason == DisconnectReason.participantRemoved) {
+            unawaited(_handleRemovedFromCall('主持人'));
+          }
           log.info('✗ 房间已断开');
         })
         /// 房间正在重连中（网络抖动时触发）
@@ -340,6 +346,9 @@ class RoomController extends _$RoomController {
         case 'app-mute-command':
           _onMuteCommand(payload);
           break;
+        case 'app-kick-command':
+          unawaited(_onKickCommand(payload));
+          break;
       }
     } catch (err) {
       log.error('解析数据事件失败: $err');
@@ -419,6 +428,43 @@ class RoomController extends _$RoomController {
     Toast.showNotificationNow(
       muted ? '$senderName 将您静音 🔇' : '$senderName 取消了您的静音 🔈',
     );
+  }
+
+  Future<void> _onKickCommand(Map<String, dynamic> payload) async {
+    final targetUid = payload['uid'] as String?;
+    final senderName = payload['senderName'] as String? ?? '主持人';
+    final current = state.value;
+    if (current == null) return;
+
+    final localIdentity = current.room.localParticipant?.identity;
+    if (targetUid != localIdentity) return;
+
+    await _handleRemovedFromCall(senderName);
+  }
+
+  Future<void> _handleRemovedFromCall(String senderName) async {
+    if (_removedFromCallHandled) return;
+    _removedFromCallHandled = true;
+
+    Toast.showNotificationNow(
+      '$senderName 已将你移出通话',
+      type: ToastType.warning,
+      duration: const Duration(seconds: 2),
+    );
+
+    final current = state.value;
+    try {
+      await current?.room.disconnect().timeout(const Duration(seconds: 1));
+    } catch (_) {}
+
+    if (DeviceUtil.isRealMobile()) {
+      ref.read(mobileCallSessionControllerProvider.notifier).end();
+      ref.invalidateSelf();
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    await windowManager.close();
   }
 
   /// 绑定设备热插拔监听
@@ -733,6 +779,7 @@ class RoomController extends _$RoomController {
   Future<void> sendDataEvent({
     required String topic,
     Map<String, dynamic> payload = const {},
+    List<String>? destinationIdentities,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -743,6 +790,8 @@ class RoomController extends _$RoomController {
       });
       await currentState.room.localParticipant?.publishData(
         utf8.encode(data),
+        reliable: true,
+        destinationIdentities: destinationIdentities,
         topic: topic,
       );
     } catch (e) {
@@ -850,6 +899,16 @@ class RoomController extends _$RoomController {
     );
   }
 
+  Future<void> sendKickCommand(String targetUid) {
+    final current = state.value;
+    final meta = _parseParticipantMeta(current?.room.localParticipant);
+    return sendDataEvent(
+      topic: 'app-kick-command',
+      destinationIdentities: [targetUid],
+      payload: {'uid': targetUid, 'senderName': meta.name},
+    );
+  }
+
   /// 踢出参与者（从通话房间移除）
   /// [identity] LiveKit 参与者 identity
   /// 对应后端接口 GET /call/participant/remove?roomId=&identity=
@@ -862,6 +921,8 @@ class RoomController extends _$RoomController {
         log.warning('踢出失败: roomId 为空');
         return false;
       }
+      await sendKickCommand(identity);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
       final res = await DioClient().get(
         API.callRemoveParticipant,
         queryParameters: {'roomId': roomId, 'identity': identity},
