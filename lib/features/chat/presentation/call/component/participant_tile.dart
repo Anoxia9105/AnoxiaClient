@@ -240,6 +240,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
               mainAxisSize: MainAxisSize.min,
               children: items.map((item) {
                 return InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   onTap: item.onTap,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
