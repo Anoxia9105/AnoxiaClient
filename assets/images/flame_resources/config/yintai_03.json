@@ -1,0 +1,133 @@
+{
+  "sheet_path": "flame_resources/sheets/yintai_03_sheet.png",
+  "cell_w": 107,
+  "cell_h": 85,
+  "cols": 8,
+  "frame_count": 2,
+  "origin": [
+    -107,
+    -70
+  ],
+  "animations": {
+    "all": [
+      0,
+      1
+    ],
+    "group0": [
+      0
+    ],
+    "group1": [
+      1
+    ]
+  },
+  "groups": [
+    [
+      0
+    ],
+    [
+      1
+    ]
+  ],
+  "group_packed": [
+    [
+      1024
+    ],
+    [
+      1025
+    ]
+  ],
+  "frame_transforms": {
+    "0": 1,
+    "1": 1
+  },
+  "tiles": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 16,
+      "h": 37
+    },
+    {
+      "x": 0,
+      "y": 38,
+      "w": 107,
+      "h": 48
+    },
+    {
+      "x": 54,
+      "y": 7,
+      "w": 53,
+      "h": 31
+    }
+  ],
+  "frames": [
+    {
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 0,
+          "dy": -33
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 54,
+          "dy": -64
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 49,
+          "dy": -70
+        },
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 27,
+          "dy": -59
+        },
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 0,
+          "dy": -33
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 54,
+          "dy": -64
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

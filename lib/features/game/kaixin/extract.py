@@ -175,6 +175,30 @@ def frame_flip(global_transform: int) -> tuple[bool, bool]:
     return global_transform in (1, 3), global_transform in (2, 3)
 
 
+def flip_code(horizontal: bool, vertical: bool) -> int:
+    if horizontal:
+        return 3 if vertical else 2
+    return 1 if vertical else 0
+
+
+def draw_region_transform(part_transform: int, global_transform: int = 0) -> int:
+    global_h, global_v = frame_flip(global_transform)
+    effective_h = global_h ^ bool(part_transform & 0x01)
+    effective_v = global_v ^ bool(part_transform & 0x02)
+    code = flip_code(effective_h, effective_v)
+
+    if not part_transform & 0x04:
+        return code
+
+    if code == 0:
+        return 5
+    if code == 1:
+        return 7
+    if code == 2:
+        return 4
+    return 6
+
+
 def transformed_part_bounds(
     tile: Tile,
     part: Part,
@@ -190,7 +214,7 @@ def transformed_part_bounds(
     height = tile.h
 
     if part.transform & 0x04:
-        if effective_h:
+        if not effective_h:
             x -= tile.h
         if effective_v:
             y -= tile.w
@@ -209,18 +233,19 @@ def transform_tile(
     transform: int,
     global_transform: int = 0,
 ) -> Image.Image:
-    global_h, global_v = frame_flip(global_transform)
-    effective_h = global_h ^ bool(transform & 0x01)
-    effective_v = global_v ^ bool(transform & 0x02)
-
-    result = image
-    if transform & 0x04:
-        result = result.transpose(Image.Transpose.ROTATE_90)
-    if effective_h:
-        result = result.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-    if effective_v:
-        result = result.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-    return result
+    final_transform = draw_region_transform(transform, global_transform)
+    transforms = {
+        0: None,
+        1: Image.Transpose.FLIP_TOP_BOTTOM,
+        2: Image.Transpose.FLIP_LEFT_RIGHT,
+        3: Image.Transpose.ROTATE_180,
+        4: Image.Transpose.TRANSPOSE,
+        5: Image.Transpose.ROTATE_270,
+        6: Image.Transpose.ROTATE_90,
+        7: Image.Transpose.TRANSVERSE,
+    }
+    operation = transforms[final_transform]
+    return image if operation is None else image.transpose(operation)
 
 
 def render_frame(

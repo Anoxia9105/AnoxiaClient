@@ -1,54 +1,64 @@
+import 'dart:ui';
+
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
+import 'package:flame_tiled/flame_tiled.dart';
 
 class RestaurantMap extends PositionComponent {
-  static const double cellSize = 32;
+  static final Vector2 tileSize = Vector2(32, 16);
+  static const String _mapFile = 'restaurant_level_1.tmx';
+  static const String _mapPrefix = 'assets/images/flame_resources/maps/';
 
-  // 0 = 可走, 1 = 墙/障碍(桌子、吧台之类先用这个占位)
-  static const List<String> _layout = [
-    '111111111111',
-    '100000000001',
-    '100110000101',
-    '100110000101',
-    '100000000001',
-    '100000011001',
-    '111111111111',
-  ];
+  late final TiledComponent tiled;
 
-  late final int cols;
-  late final int rows;
-
-  RestaurantMap() {
-    rows = _layout.length;
-    cols = _layout[0].length;
-    size = Vector2(cols * cellSize, rows * cellSize);
-  }
-
-  bool isWalkable(int col, int row) {
-    if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
-    return _layout[row][col] == '0';
-  }
-
-  Vector2 gridToWorld(int col, int row) {
-    return Vector2(
-      col * cellSize + cellSize / 2,
-      row * cellSize + cellSize / 2,
-    );
-  }
+  final List<Rect> _collisionRects = [];
+  final Map<String, Vector2> _spawnPoints = {};
 
   @override
-  void render(Canvas canvas) {
-    final paint = Paint();
-    for (var r = 0; r < rows; r++) {
-      for (var c = 0; c < cols; c++) {
-        paint.color = _layout[r][c] == '1'
-            ? const Color(0xFF8D6E63) // 墙
-            : const Color(0xFFF5F0E6); // 地板
-        canvas.drawRect(
-          Rect.fromLTWH(c * cellSize, r * cellSize, cellSize, cellSize),
-          paint,
-        );
-      }
+  Future<void> onLoad() async {
+    await super.onLoad();
+
+    tiled = await TiledComponent.load(_mapFile, tileSize, prefix: _mapPrefix);
+    await add(tiled);
+    size = tiled.size;
+
+    _loadCollisionRects();
+    _loadSpawnPoints();
+  }
+
+  bool isWalkableAt(Vector2 worldPosition) {
+    final local = worldPosition - absolutePosition;
+    if (local.x < 0 || local.y < 0 || local.x > size.x || local.y > size.y) {
+      return false;
+    }
+
+    return !_collisionRects.any((rect) {
+      return rect.contains(Offset(local.x, local.y));
+    });
+  }
+
+  Vector2 spawnPoint(String name, {Vector2? fallback}) {
+    return (_spawnPoints[name] ?? fallback ?? size / 2) + position;
+  }
+
+  void _loadCollisionRects() {
+    final collisionLayer = tiled.tileMap.getLayer<ObjectGroup>('collision');
+    if (collisionLayer == null) return;
+
+    for (final object in collisionLayer.objects) {
+      if (object.width <= 0 || object.height <= 0) continue;
+      _collisionRects.add(
+        Rect.fromLTWH(object.x, object.y, object.width, object.height),
+      );
+    }
+  }
+
+  void _loadSpawnPoints() {
+    final spawnLayer = tiled.tileMap.getLayer<ObjectGroup>('spawn');
+    if (spawnLayer == null) return;
+
+    for (final object in spawnLayer.objects) {
+      if (object.name.isEmpty) continue;
+      _spawnPoints[object.name] = Vector2(object.x, object.y);
     }
   }
 }

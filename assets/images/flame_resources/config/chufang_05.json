@@ -1,0 +1,415 @@
+{
+  "sheet_path": "flame_resources/sheets/chufang_05_sheet.png",
+  "cell_w": 171,
+  "cell_h": 128,
+  "cols": 8,
+  "frame_count": 4,
+  "origin": [
+    -170,
+    -105
+  ],
+  "animations": {
+    "all": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "group0": [
+      0
+    ],
+    "group1": [
+      1
+    ],
+    "group2": [
+      2
+    ],
+    "group3": [
+      3
+    ]
+  },
+  "groups": [
+    [
+      0
+    ],
+    [
+      1
+    ],
+    [
+      2
+    ],
+    [
+      3
+    ]
+  ],
+  "group_packed": [
+    [
+      1024
+    ],
+    [
+      1025
+    ],
+    [
+      1026
+    ],
+    [
+      1027
+    ]
+  ],
+  "frame_transforms": {
+    "0": 1,
+    "1": 1,
+    "2": 1,
+    "3": 1
+  },
+  "tiles": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 20,
+      "h": 28
+    },
+    {
+      "x": 21,
+      "y": 0,
+      "w": 13,
+      "h": 19
+    },
+    {
+      "x": 154,
+      "y": 91,
+      "w": 14,
+      "h": 35
+    },
+    {
+      "x": 147,
+      "y": 115,
+      "w": 0,
+      "h": 0
+    },
+    {
+      "x": 144,
+      "y": 115,
+      "w": 8,
+      "h": 12
+    },
+    {
+      "x": 129,
+      "y": 120,
+      "w": 14,
+      "h": 7
+    },
+    {
+      "x": 111,
+      "y": 117,
+      "w": 17,
+      "h": 10
+    },
+    {
+      "x": 0,
+      "y": 28,
+      "w": 111,
+      "h": 100
+    },
+    {
+      "x": 56,
+      "y": 0,
+      "w": 115,
+      "h": 28
+    },
+    {
+      "x": 111,
+      "y": 28,
+      "w": 43,
+      "h": 70
+    },
+    {
+      "x": 154,
+      "y": 28,
+      "w": 17,
+      "h": 49
+    }
+  ],
+  "frames": [
+    {
+      "parts": [
+        {
+          "tile": 8,
+          "transform": 0,
+          "dx": 55,
+          "dy": -105
+        },
+        {
+          "tile": 7,
+          "transform": 0,
+          "dx": -1,
+          "dy": -77
+        },
+        {
+          "tile": 9,
+          "transform": 0,
+          "dx": 110,
+          "dy": -77
+        },
+        {
+          "tile": 10,
+          "transform": 0,
+          "dx": 153,
+          "dy": -77
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 8,
+          "transform": 0,
+          "dx": 55,
+          "dy": -105
+        },
+        {
+          "tile": 7,
+          "transform": 0,
+          "dx": -1,
+          "dy": -77
+        },
+        {
+          "tile": 9,
+          "transform": 0,
+          "dx": 110,
+          "dy": -77
+        },
+        {
+          "tile": 10,
+          "transform": 0,
+          "dx": 153,
+          "dy": -77
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 69,
+          "dy": -46
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 90,
+          "dy": -57
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 111,
+          "dy": -69
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 8,
+          "transform": 0,
+          "dx": 55,
+          "dy": -105
+        },
+        {
+          "tile": 7,
+          "transform": 0,
+          "dx": -1,
+          "dy": -77
+        },
+        {
+          "tile": 9,
+          "transform": 0,
+          "dx": 110,
+          "dy": -77
+        },
+        {
+          "tile": 10,
+          "transform": 0,
+          "dx": 153,
+          "dy": -77
+        },
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 53,
+          "dy": -31
+        },
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 47,
+          "dy": -59
+        },
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 85,
+          "dy": -47
+        },
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 79,
+          "dy": -75
+        },
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 115,
+          "dy": -63
+        },
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 110,
+          "dy": -90
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 8,
+          "transform": 0,
+          "dx": 55,
+          "dy": -105
+        },
+        {
+          "tile": 7,
+          "transform": 0,
+          "dx": -1,
+          "dy": -77
+        },
+        {
+          "tile": 9,
+          "transform": 0,
+          "dx": 110,
+          "dy": -77
+        },
+        {
+          "tile": 10,
+          "transform": 0,
+          "dx": 153,
+          "dy": -77
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 69,
+          "dy": -46
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 90,
+          "dy": -57
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 111,
+          "dy": -69
+        },
+        {
+          "tile": 5,
+          "transform": 7,
+          "dx": 93,
+          "dy": -16
+        },
+        {
+          "tile": 5,
+          "transform": 6,
+          "dx": 107,
+          "dy": -16
+        },
+        {
+          "tile": 4,
+          "transform": 0,
+          "dx": 117,
+          "dy": -41
+        },
+        {
+          "tile": 4,
+          "transform": 1,
+          "dx": 133,
+          "dy": -41
+        },
+        {
+          "tile": 6,
+          "transform": 7,
+          "dx": 74,
+          "dy": -8
+        },
+        {
+          "tile": 6,
+          "transform": 6,
+          "dx": 94,
+          "dy": -8
+        },
+        {
+          "tile": 6,
+          "transform": 7,
+          "dx": 104,
+          "dy": -22
+        },
+        {
+          "tile": 6,
+          "transform": 6,
+          "dx": 124,
+          "dy": -22
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

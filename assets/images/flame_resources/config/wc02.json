@@ -1,0 +1,97 @@
+{
+  "sheet_path": "flame_resources/sheets/wc02_sheet.png",
+  "cell_w": 81,
+  "cell_h": 83,
+  "cols": 8,
+  "frame_count": 2,
+  "origin": [
+    -81,
+    -70
+  ],
+  "animations": {
+    "all": [
+      0,
+      1
+    ],
+    "group0": [
+      0
+    ],
+    "group1": [
+      1
+    ]
+  },
+  "groups": [
+    [
+      0
+    ],
+    [
+      1
+    ]
+  ],
+  "group_packed": [
+    [
+      1024
+    ],
+    [
+      1025
+    ]
+  ],
+  "frame_transforms": {
+    "0": 1,
+    "1": 1
+  },
+  "tiles": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 81,
+      "h": 83
+    }
+  ],
+  "frames": [
+    {
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 0,
+          "dy": -70
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 1,
+          "dx": 81,
+          "dy": -70
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -143,6 +143,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.40
   # 游戏引擎
   flame: ^1.37.0
+  flame_tiled: ^3.1.1
 
 
 dev_dependencies:
@@ -168,6 +169,12 @@ flutter:
     - assets/images/
     - assets/images/dr/
     - assets/images/flame_sprites/
+    - assets/images/flame_resources/
+    - assets/images/flame_resources/config/
+    - assets/images/flame_resources/customers/
+    - assets/images/flame_resources/maps/
+    - assets/images/flame_resources/raw/
+    - assets/images/flame_resources/sheets/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
