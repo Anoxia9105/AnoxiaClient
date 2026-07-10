@@ -32,28 +32,30 @@ class RestaurantLevel1 extends World with TapCallbacks {
 
     waiter = MyWaiter()..position = map.gridToWorld(2, 2);
     await add(waiter);
+    
+    // 动画切换
+    // waiter.changeState(WaiterState.walking);
 
-    waiter.changeState(WaiterState.walking);
+    // Future.delayed(const Duration(seconds: 4), () {
+    //   waiter.changeState(WaiterState.carryingFood);
+    // });
 
-    Future.delayed(const Duration(seconds: 4), () {
-      waiter.changeState(WaiterState.carryingFood);
-    });
+    // Future.delayed(const Duration(seconds: 8), () {
+    //   waiter.changeState(WaiterState.idle);
+    // });
 
-    Future.delayed(const Duration(seconds: 8), () {
-      waiter.changeState(WaiterState.idle);
-    });
-
-    for (var i = 0; i < _characterNames.length; i++) {
-      final col = i % 4;
-      final row = i ~/ 4;
-      await add(
-        RestaurantCharacterPreview(
-          characterName: _characterNames[i],
-          position: Vector2(180 + col * 130, 20 + row * 150),
-          previewScale: 2.0,
-        ),
-      );
-    }
+    // 角色预览
+    // for (var i = 0; i < _characterNames.length; i++) {
+    //   final col = i % 4;
+    //   final row = i ~/ 4;
+    //   await add(
+    //     RestaurantCharacterPreview(
+    //       characterName: _characterNames[i],
+    //       position: Vector2(180 + col * 130, 20 + row * 150),
+    //       previewScale: 2.0,
+    //     ),
+    //   );
+    // }
   }
 
   @override
