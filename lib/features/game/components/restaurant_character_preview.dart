@@ -21,13 +21,14 @@ class RestaurantCharacterPreview extends SpriteAnimationComponent
     final configPath =
         'assets/images/flame_sprites/${characterName}_anim_config.json';
     final config =
-        jsonDecode(await rootBundle.loadString(configPath)) as Map<String, dynamic>;
+        jsonDecode(await rootBundle.loadString(configPath))
+            as Map<String, dynamic>;
     final sheetPath = config['sheet_path'] as String;
     final cellW = (config['cell_w'] as num).toDouble();
     final cellH = (config['cell_h'] as num).toDouble();
     final cols = config['cols'] as int;
     final animations = config['animations'] as Map<String, dynamic>;
-    final frameIndexes = (animations['all'] as List<dynamic>).cast<int>();
+    final frameIndexes = _readAnimationFrames(animations);
     final image = game.images.fromCache(sheetPath);
 
     size = Vector2(cellW, cellH);
@@ -44,6 +45,16 @@ class RestaurantCharacterPreview extends SpriteAnimationComponent
         );
       }).toList(),
       stepTime: 0.18,
+      loop: frameIndexes.length > 1,
     );
+  }
+
+  List<int> _readAnimationFrames(Map<String, dynamic> animations) {
+    final frames =
+        animations['preview'] ?? animations['walking'] ?? animations['idle'];
+    if (frames is List) {
+      return frames.cast<int>();
+    }
+    return const [0];
   }
 }

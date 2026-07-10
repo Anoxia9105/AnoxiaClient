@@ -15,7 +15,7 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
   WaiterState currentState = WaiterState.idle;
 
   MyWaiter() : super(position: Vector2(24, 24)) {
-    scale = Vector2.all(1.35);
+    scale = Vector2.all(2);
   }
 
   @override

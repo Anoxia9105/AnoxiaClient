@@ -41,7 +41,7 @@ class RestaurantLevel1 extends World {
         RestaurantCharacterPreview(
           characterName: _characterNames[i],
           position: Vector2(180 + col * 130, 20 + row * 150),
-          previewScale: 1.0,
+          previewScale: 2.0,
         ),
       );
     }
