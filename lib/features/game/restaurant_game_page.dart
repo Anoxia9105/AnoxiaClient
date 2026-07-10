@@ -31,6 +31,8 @@ class RestaurantGamePage extends StatelessWidget {
 }
 
 class RestaurantGame extends FlameGame {
+  static final Vector2 _desktopPadding = Vector2(96, 96);
+
   static const characterNames = [
     'waiter',
     'womanwaiter',
@@ -46,6 +48,8 @@ class RestaurantGame extends FlameGame {
     'yongwoman',
   ];
 
+  RestaurantLevel1? _level;
+
   @override
   Color backgroundColor() => const Color(0xFFE8F0F2);
 
@@ -57,7 +61,27 @@ class RestaurantGame extends FlameGame {
     ]);
 
     final level1 = RestaurantLevel1();
+    _level = level1;
     world = level1;
-    camera.viewfinder.anchor = Anchor.topLeft;
+    await level1.loaded;
+    _fitCameraToLevel();
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    _fitCameraToLevel();
+  }
+
+  void _fitCameraToLevel() {
+    final level = _level;
+    if (level == null || !level.isLoaded || level.mapVisualSize.isZero()) {
+      return;
+    }
+
+    camera.viewfinder
+      ..anchor = Anchor.center
+      ..position = level.mapVisualCenter
+      ..visibleGameSize = level.mapVisualSize + _desktopPadding;
   }
 }

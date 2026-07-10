@@ -9,53 +9,33 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
   static const String _sheetPath = 'flame_sprites/waiter_anim_sheet.png';
   static const String _configPath =
       'assets/images/flame_sprites/waiter_anim_config.json';
+  static const double _speed = 90;
 
   late final Map<WaiterState, SpriteAnimation> _animations;
 
+  final List<Vector2> _path = [];
   Vector2? _targetPosition;
   bool _facingRight = true;
-  static const double _speed = 90; // px/秒
+
+  WaiterState currentState = WaiterState.idle;
+
+  bool get isMoving => _targetPosition != null || _path.isNotEmpty;
+
+  MyWaiter() : super(position: Vector2(24, 24)) {
+    scale = Vector2.all(2);
+  }
 
   void moveTo(Vector2 target) {
+    _path.clear();
     _targetPosition = target;
     changeState(WaiterState.walking);
   }
 
-  @override
-  void update(double dt) {
-    super.update(dt);
-    final target = _targetPosition;
-    if (target == null) return;
-
-    final diff = target - position;
-    final distance = diff.length;
-
-    if (distance < 2) {
-      position = target;
-      _targetPosition = null;
-      changeState(WaiterState.idle);
-      return;
-    }
-
-    final direction = diff / distance;
-
-    // 左右朝向翻转
-    if (direction.x.abs() > 0.05) {
-      final shouldFaceRight = direction.x > 0;
-      if (shouldFaceRight != _facingRight) {
-        flipHorizontallyAroundCenter();
-        _facingRight = shouldFaceRight;
-      }
-    }
-
-    final step = direction * _speed * dt;
-    position += step.length >= distance ? diff : step;
-  }
-
-  WaiterState currentState = WaiterState.idle;
-
-  MyWaiter() : super(position: Vector2(24, 24)) {
-    scale = Vector2.all(2);
+  void followPath(List<Vector2> path) {
+    _path
+      ..clear()
+      ..addAll(path.map((point) => point.clone()));
+    _advancePath();
   }
 
   @override
@@ -100,10 +80,50 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
     animation = _animations[currentState];
   }
 
+  @override
+  void update(double dt) {
+    super.update(dt);
+    final target = _targetPosition;
+    if (target == null) return;
+
+    final diff = target - position;
+    final distance = diff.length;
+
+    if (distance < 2) {
+      position = target;
+      _targetPosition = null;
+      _advancePath();
+      return;
+    }
+
+    final direction = diff / distance;
+    if (direction.x.abs() > 0.05) {
+      final shouldFaceRight = direction.x > 0;
+      if (shouldFaceRight != _facingRight) {
+        flipHorizontallyAroundCenter();
+        _facingRight = shouldFaceRight;
+      }
+    }
+
+    final step = direction * _speed * dt;
+    position += step.length >= distance ? diff : step;
+  }
+
   void changeState(WaiterState state) {
     if (currentState == state) return;
     currentState = state;
     animation = _animations[state];
     animationTicker?.reset();
+  }
+
+  void _advancePath() {
+    if (_path.isEmpty) {
+      _targetPosition = null;
+      changeState(WaiterState.idle);
+      return;
+    }
+
+    _targetPosition = _path.removeAt(0);
+    changeState(WaiterState.walking);
   }
 }
