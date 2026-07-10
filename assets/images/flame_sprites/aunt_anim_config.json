@@ -1,0 +1,190 @@
+{
+  "sheet_path": "flame_sprites/aunt_anim_sheet.png",
+  "cell_w": 70,
+  "cell_h": 79,
+  "cols": 7,
+  "frame_count": 7,
+  "animations": {
+    "all": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "idle": [
+      0
+    ]
+  },
+  "records": [
+    {
+      "offset": 40,
+      "parts": [
+        {
+          "tile": 3,
+          "transform": 0,
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "tile": 3,
+          "transform": 1,
+          "dx": 16,
+          "dy": -8
+        },
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": -1,
+          "dy": -47
+        },
+        {
+          "tile": 7,
+          "transform": 0,
+          "dx": 2,
+          "dy": -20
+        }
+      ]
+    },
+    {
+      "offset": 65,
+      "parts": [
+        {
+          "tile": 3,
+          "transform": 0,
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "tile": 3,
+          "transform": 1,
+          "dx": 16,
+          "dy": -8
+        },
+        {
+          "tile": 8,
+          "transform": 0,
+          "dx": 2,
+          "dy": -14
+        },
+        {
+          "tile": 6,
+          "transform": 0,
+          "dx": -2,
+          "dy": -28
+        },
+        {
+          "tile": 4,
+          "transform": 1,
+          "dx": 17,
+          "dy": -46
+        }
+      ]
+    },
+    {
+      "offset": 94,
+      "parts": [
+        {
+          "tile": 3,
+          "transform": 0,
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "tile": 3,
+          "transform": 1,
+          "dx": 16,
+          "dy": -8
+        },
+        {
+          "tile": 8,
+          "transform": 1,
+          "dx": 14,
+          "dy": -14
+        },
+        {
+          "tile": 6,
+          "transform": 1,
+          "dx": 17,
+          "dy": -28
+        },
+        {
+          "tile": 4,
+          "transform": 0,
+          "dx": -2,
+          "dy": -46
+        }
+      ]
+    },
+    {
+      "offset": 123,
+      "parts": [
+        {
+          "tile": 4,
+          "transform": 0,
+          "dx": -1,
+          "dy": -45
+        },
+        {
+          "tile": 5,
+          "transform": 0,
+          "dx": 9,
+          "dy": -23
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 15,
+          "dy": -21
+        }
+      ]
+    },
+    {
+      "offset": 144,
+      "parts": [
+        {
+          "tile": 4,
+          "transform": 0,
+          "dx": -1,
+          "dy": -45
+        },
+        {
+          "tile": 5,
+          "transform": 0,
+          "dx": 9,
+          "dy": -23
+        }
+      ]
+    },
+    {
+      "offset": 161,
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 0,
+          "dy": -47
+        },
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": -2,
+          "dy": -9
+        }
+      ]
+    },
+    {
+      "offset": 178,
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 0,
+          "dy": -47
+        }
+      ]
+    }
+  ]
+}

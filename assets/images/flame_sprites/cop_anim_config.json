@@ -1,0 +1,64 @@
+{
+  "sheet_path": "flame_sprites/cop_anim_sheet.png",
+  "cell_w": 74,
+  "cell_h": 81,
+  "cols": 4,
+  "frame_count": 4,
+  "animations": {
+    "all": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "idle": [
+      0
+    ]
+  },
+  "records": [
+    {
+      "offset": 12,
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 0,
+          "dy": -48
+        }
+      ]
+    },
+    {
+      "offset": 25,
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 1,
+          "dx": 19,
+          "dy": -48
+        }
+      ]
+    },
+    {
+      "offset": 38,
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": -1,
+          "dy": -49
+        }
+      ]
+    },
+    {
+      "offset": 51,
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 1,
+          "dx": 21,
+          "dy": -49
+        }
+      ]
+    }
+  ]
+}

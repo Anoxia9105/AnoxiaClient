@@ -1,0 +1,86 @@
+{
+  "waiter": {
+    "sheet_path": "flame_sprites/waiter_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/waiter_anim_config.json",
+    "cell_w": 79,
+    "cell_h": 81,
+    "frame_count": 40
+  },
+  "womanwaiter": {
+    "sheet_path": "flame_sprites/womanwaiter_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/womanwaiter_anim_config.json",
+    "cell_w": 78,
+    "cell_h": 80,
+    "frame_count": 40
+  },
+  "aunt": {
+    "sheet_path": "flame_sprites/aunt_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/aunt_anim_config.json",
+    "cell_w": 70,
+    "cell_h": 79,
+    "frame_count": 7
+  },
+  "uncle": {
+    "sheet_path": "flame_sprites/uncle_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/uncle_anim_config.json",
+    "cell_w": 68,
+    "cell_h": 79,
+    "frame_count": 7
+  },
+  "boy": {
+    "sheet_path": "flame_sprites/boy_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/boy_anim_config.json",
+    "cell_w": 64,
+    "cell_h": 74,
+    "frame_count": 7
+  },
+  "girl": {
+    "sheet_path": "flame_sprites/girl_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/girl_anim_config.json",
+    "cell_w": 65,
+    "cell_h": 81,
+    "frame_count": 7
+  },
+  "cleaner": {
+    "sheet_path": "flame_sprites/cleaner_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/cleaner_anim_config.json",
+    "cell_w": 88,
+    "cell_h": 83,
+    "frame_count": 26
+  },
+  "cop": {
+    "sheet_path": "flame_sprites/cop_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/cop_anim_config.json",
+    "cell_w": 74,
+    "cell_h": 81,
+    "frame_count": 4
+  },
+  "oldman": {
+    "sheet_path": "flame_sprites/oldman_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/oldman_anim_config.json",
+    "cell_w": 68,
+    "cell_h": 81,
+    "frame_count": 7
+  },
+  "oldwoman": {
+    "sheet_path": "flame_sprites/oldwoman_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/oldwoman_anim_config.json",
+    "cell_w": 64,
+    "cell_h": 82,
+    "frame_count": 7
+  },
+  "yongman": {
+    "sheet_path": "flame_sprites/yongman_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/yongman_anim_config.json",
+    "cell_w": 64,
+    "cell_h": 84,
+    "frame_count": 7
+  },
+  "yongwoman": {
+    "sheet_path": "flame_sprites/yongwoman_anim_sheet.png",
+    "config_path": "assets/images/flame_sprites/yongwoman_anim_config.json",
+    "cell_w": 64,
+    "cell_h": 85,
+    "frame_count": 7
+  }
+}

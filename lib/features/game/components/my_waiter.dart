@@ -5,101 +5,65 @@ import 'package:flutter/services.dart';
 
 enum WaiterState { idle, walking, carryingFood }
 
-class MyWaiter extends PositionComponent with HasGameReference {
-  static const int _headFrameIndex = 0;
-  static const int _idleBodyFrameIndex = 12;
-  static const List<int> _walkingBodyFrameIndexes = [16, 17, 20, 22];
-  static const List<int> _carryingBodyFrameIndexes = [8, 9, 10, 11];
+class MyWaiter extends SpriteAnimationComponent with HasGameReference {
+  static const String _sheetPath = 'flame_sprites/waiter_anim_sheet.png';
+  static const String _configPath =
+      'assets/images/flame_sprites/waiter_anim_config.json';
 
-  List<dynamic> frames = [];
-  late SpriteComponent head;
-  late SpriteComponent body;
-  late SpriteComponent legs;
+  late final Map<WaiterState, SpriteAnimation> _animations;
 
   WaiterState currentState = WaiterState.idle;
-  double _timer = 0;
-  int _walkFrame = 0;
 
-  MyWaiter() : super(size: Vector2(48, 76), position: Vector2(24, 24)) {
-    scale = Vector2.all(3.0);
+  MyWaiter() : super(position: Vector2(24, 24)) {
+    scale = Vector2.all(1.35);
   }
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    final jsonStr = await rootBundle.loadString(
-      'assets/images/flame_sprites/sprite_config.json',
-    );
-    final data = jsonDecode(jsonStr);
-    frames = data['waiter']['frames'];
+    final image = game.images.fromCache(_sheetPath);
+    final jsonStr = await rootBundle.loadString(_configPath);
+    final config = jsonDecode(jsonStr) as Map<String, dynamic>;
+    final cellW = (config['cell_w'] as num).toDouble();
+    final cellH = (config['cell_h'] as num).toDouble();
+    final cols = config['cols'] as int;
+    final animations = config['animations'] as Map<String, dynamic>;
+    size = Vector2(cellW, cellH);
 
-    head = SpriteComponent();
-    body = SpriteComponent();
-    legs = SpriteComponent();
-
-    add(legs);
-    add(body);
-    add(head);
-
-    _buildWaiter();
-  }
-
-  void _buildWaiter() {
-    if (frames.isEmpty) return;
-
-    Sprite getPart(int index) {
-      final f = frames[index];
+    Sprite spriteForFrame(int frameIndex) {
       return Sprite(
-        game.images.fromCache('flame_sprites/waiter_sheet.png'),
-        srcPosition: Vector2(f['x'].toDouble(), f['y'].toDouble()),
-        srcSize: Vector2(f['w'].toDouble(), f['h'].toDouble()),
+        image,
+        srcPosition: Vector2(
+          (frameIndex % cols) * cellW,
+          (frameIndex ~/ cols) * cellH,
+        ),
+        srcSize: Vector2(cellW, cellH),
       );
     }
 
-    final headFrame = frames[_headFrameIndex];
-    head.sprite = getPart(_headFrameIndex);
-    head.size = Vector2(
-      headFrame['w'].toDouble(),
-      headFrame['h'].toDouble(),
-    );
-    head.position = Vector2((size.x - head.size.x) / 2, 0);
+    SpriteAnimation buildAnimation(String key, {double stepTime = 0.15}) {
+      final indexes = (animations[key] as List<dynamic>).cast<int>();
+      return SpriteAnimation.spriteList(
+        indexes.map(spriteForFrame).toList(),
+        stepTime: stepTime,
+        loop: indexes.length > 1,
+      );
+    }
 
-    final bodyIndex = switch (currentState) {
-      WaiterState.idle => _idleBodyFrameIndex,
-      WaiterState.walking =>
-        _walkingBodyFrameIndexes[_walkFrame % _walkingBodyFrameIndexes.length],
-      WaiterState.carryingFood =>
-        _carryingBodyFrameIndexes[_walkFrame % _carryingBodyFrameIndexes.length],
+    _animations = {
+      WaiterState.idle: buildAnimation('idle', stepTime: 1),
+      WaiterState.walking: buildAnimation('walking'),
+      WaiterState.carryingFood: buildAnimation('carryingFood'),
     };
-    final bodyFrame = frames[bodyIndex];
-    body.sprite = getPart(bodyIndex);
-    body.size = Vector2(
-      bodyFrame['w'].toDouble(),
-      bodyFrame['h'].toDouble(),
-    );
-    body.position = Vector2((size.x - body.size.x) / 2, size.y - body.size.y);
 
-    legs.sprite = null;
-    legs.size = Vector2.zero();
+    animation = _animations[currentState];
   }
 
   void changeState(WaiterState state) {
+    if (currentState == state) return;
     currentState = state;
-    _buildWaiter();
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    if (currentState != WaiterState.idle) {
-      _timer += dt;
-      if (_timer > 0.15) {
-        _timer = 0;
-        _walkFrame++;
-        _buildWaiter();
-      }
-    }
+    animation = _animations[state];
+    animationTicker?.reset();
   }
 }

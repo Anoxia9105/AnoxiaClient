@@ -31,13 +31,30 @@ class RestaurantGamePage extends StatelessWidget {
 }
 
 class RestaurantGame extends FlameGame {
+  static const characterNames = [
+    'waiter',
+    'womanwaiter',
+    'aunt',
+    'uncle',
+    'boy',
+    'girl',
+    'cleaner',
+    'cop',
+    'oldman',
+    'oldwoman',
+    'yongman',
+    'yongwoman',
+  ];
+
   @override
   Color backgroundColor() => const Color(0xFFE8F0F2);
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    await images.load('flame_sprites/waiter_sheet.png');
+    await images.loadAll([
+      for (final name in characterNames) 'flame_sprites/${name}_anim_sheet.png',
+    ]);
 
     final level1 = RestaurantLevel1();
     world = level1;

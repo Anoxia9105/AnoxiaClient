@@ -1,0 +1,238 @@
+{
+  "sheet_path": "flame_sprites/uncle_anim_sheet.png",
+  "cell_w": 68,
+  "cell_h": 79,
+  "cols": 7,
+  "frame_count": 7,
+  "animations": {
+    "all": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "idle": [
+      0
+    ]
+  },
+  "records": [
+    {
+      "offset": 56,
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "tile": 1,
+          "transform": 1,
+          "dx": 16,
+          "dy": -8
+        },
+        {
+          "tile": 4,
+          "transform": 0,
+          "dx": 7,
+          "dy": -24
+        },
+        {
+          "tile": 3,
+          "transform": 0,
+          "dx": -1,
+          "dy": -24
+        },
+        {
+          "tile": 11,
+          "transform": 0,
+          "dx": 3,
+          "dy": -46
+        },
+        {
+          "tile": 12,
+          "transform": 0,
+          "dx": -1,
+          "dy": -33
+        }
+      ]
+    },
+    {
+      "offset": 89,
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "tile": 1,
+          "transform": 1,
+          "dx": 16,
+          "dy": -8
+        },
+        {
+          "tile": 10,
+          "transform": 0,
+          "dx": 2,
+          "dy": -8
+        },
+        {
+          "tile": 9,
+          "transform": 0,
+          "dx": 3,
+          "dy": -20
+        },
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 0,
+          "dy": -47
+        },
+        {
+          "tile": 7,
+          "transform": 0,
+          "dx": 0,
+          "dy": -28
+        }
+      ]
+    },
+    {
+      "offset": 122,
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 0,
+          "dy": -8
+        },
+        {
+          "tile": 1,
+          "transform": 1,
+          "dx": 16,
+          "dy": -8
+        },
+        {
+          "tile": 10,
+          "transform": 1,
+          "dx": 14,
+          "dy": -8
+        },
+        {
+          "tile": 9,
+          "transform": 1,
+          "dx": 13,
+          "dy": -20
+        },
+        {
+          "tile": 0,
+          "transform": 1,
+          "dx": 16,
+          "dy": -47
+        },
+        {
+          "tile": 7,
+          "transform": 1,
+          "dx": 16,
+          "dy": -28
+        }
+      ]
+    },
+    {
+      "offset": 155,
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 1,
+          "dx": 17,
+          "dy": -46
+        },
+        {
+          "tile": 5,
+          "transform": 1,
+          "dx": 18,
+          "dy": -23
+        },
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": 15,
+          "dy": -19
+        }
+      ]
+    },
+    {
+      "offset": 176,
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 1,
+          "dx": 17,
+          "dy": -46
+        },
+        {
+          "tile": 5,
+          "transform": 1,
+          "dx": 18,
+          "dy": -23
+        }
+      ]
+    },
+    {
+      "offset": 193,
+      "parts": [
+        {
+          "tile": 6,
+          "transform": 0,
+          "dx": 1,
+          "dy": -24
+        },
+        {
+          "tile": 12,
+          "transform": 0,
+          "dx": 0,
+          "dy": -33
+        },
+        {
+          "tile": 11,
+          "transform": 0,
+          "dx": 4,
+          "dy": -46
+        },
+        {
+          "tile": 8,
+          "transform": 0,
+          "dx": -2,
+          "dy": -9
+        }
+      ]
+    },
+    {
+      "offset": 218,
+      "parts": [
+        {
+          "tile": 6,
+          "transform": 0,
+          "dx": 1,
+          "dy": -24
+        },
+        {
+          "tile": 12,
+          "transform": 0,
+          "dx": 0,
+          "dy": -33
+        },
+        {
+          "tile": 11,
+          "transform": 0,
+          "dx": 4,
+          "dy": -46
+        }
+      ]
+    }
+  ]
+}
