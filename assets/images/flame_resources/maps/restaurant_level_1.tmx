@@ -1,17 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="right-down" width="32" height="16" tilewidth="32" tileheight="16" infinite="0" nextlayerid="14" nextobjectid="30">
  <tileset firstgid="1" source="map_wall_01.tsx"/>
- <imagelayer id="13" name="图像图层 4" offsetx="512" offsety="256">
-  <image source="../raw/sdiud.png" width="256" height="128"/>
- </imagelayer>
- <imagelayer id="12" name="图像图层 3" offsetx="257" offsety="256">
-  <image source="../raw/sdilr.png" width="256" height="128"/>
- </imagelayer>
- <imagelayer id="11" name="图像图层 2" offsetx="511" offsety="127">
-  <image source="../raw/sdilr.png" width="256" height="128"/>
- </imagelayer>
- <imagelayer id="10" name="图像图层 1" visible="0" offsetx="0" offsety="1">
-  <image source="../raw/sdiud.png" width="256" height="128"/>
+ <imagelayer id="10" name="clean_background" offsetx="-640" offsety="-320">
+  <image source="flame_resources/maps/restaurant_city_background.png" width="2048" height="1024"/>
  </imagelayer>
  <layer id="1" name="图块层 1" width="32" height="16">
   <data encoding="csv">

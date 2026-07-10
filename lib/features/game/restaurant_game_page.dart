@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:anoxia/features/game/restaurant_level/restaurant_level1.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
@@ -31,8 +33,6 @@ class RestaurantGamePage extends StatelessWidget {
 }
 
 class RestaurantGame extends FlameGame {
-  static final Vector2 _desktopPadding = Vector2(96, 96);
-
   static const characterNames = [
     'waiter',
     'womanwaiter',
@@ -79,9 +79,15 @@ class RestaurantGame extends FlameGame {
       return;
     }
 
+    final zoom = math.max(
+      size.x / level.mapVisualSize.x,
+      size.y / level.mapVisualSize.y,
+    );
+
     camera.viewfinder
       ..anchor = Anchor.center
       ..position = level.mapVisualCenter
-      ..visibleGameSize = level.mapVisualSize + _desktopPadding;
+      ..visibleGameSize = null
+      ..zoom = zoom;
   }
 }

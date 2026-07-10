@@ -22,7 +22,7 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
   bool get isMoving => _targetPosition != null || _path.isNotEmpty;
 
   MyWaiter() : super(position: Vector2(24, 24)) {
-    scale = Vector2.all(2);
+    scale = Vector2.all(1);
   }
 
   void moveTo(Vector2 target) {
