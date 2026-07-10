@@ -5,7 +5,7 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
-import 'package:anoxia/features/game/game_page.dart';
+import 'package:anoxia/features/game/restaurant_game_page.dart';
 import 'package:anoxia/features/live/presentation/pages/live_list_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
@@ -60,7 +60,7 @@ class MainLayoutPage extends ConsumerWidget {
                     _DesktopContentCard(child: LiveListPage()),
                     _DesktopContentCard(child: FavoritesPage()),
                     _DesktopContentCard(child: MyPage()),
-                    _DesktopContentCard(child: GamePage()),
+                    _DesktopContentCard(child: RestaurantGamePage()),
                     _DesktopContentCard(child: SettingsPage()),
                   ],
                 ),
