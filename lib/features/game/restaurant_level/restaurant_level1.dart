@@ -1,8 +1,10 @@
 import 'package:anoxia/features/game/components/my_waiter.dart';
 import 'package:anoxia/features/game/components/restaurant_character_preview.dart';
+import 'package:anoxia/features/game/components/restaurant_map.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 
-class RestaurantLevel1 extends World {
+class RestaurantLevel1 extends World with TapCallbacks {
   static const _characterNames = [
     'waiter',
     'womanwaiter',
@@ -18,10 +20,17 @@ class RestaurantLevel1 extends World {
     'yongwoman',
   ];
 
+  late final RestaurantMap map;
+  late final MyWaiter waiter;
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    final waiter = MyWaiter()..position = Vector2(24, 12);
+
+    map = RestaurantMap();
+    await add(map);
+
+    waiter = MyWaiter()..position = map.gridToWorld(2, 2);
     await add(waiter);
 
     waiter.changeState(WaiterState.walking);
@@ -44,6 +53,17 @@ class RestaurantLevel1 extends World {
           previewScale: 2.0,
         ),
       );
+    }
+  }
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    final pos = event.localPosition;
+    final col = (pos.x / RestaurantMap.cellSize).floor();
+    final row = (pos.y / RestaurantMap.cellSize).floor();
+
+    if (map.isWalkable(col, row)) {
+      waiter.moveTo(map.gridToWorld(col, row));
     }
   }
 }

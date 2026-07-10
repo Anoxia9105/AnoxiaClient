@@ -12,6 +12,46 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
 
   late final Map<WaiterState, SpriteAnimation> _animations;
 
+  Vector2? _targetPosition;
+  bool _facingRight = true;
+  static const double _speed = 90; // px/秒
+
+  void moveTo(Vector2 target) {
+    _targetPosition = target;
+    changeState(WaiterState.walking);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    final target = _targetPosition;
+    if (target == null) return;
+
+    final diff = target - position;
+    final distance = diff.length;
+
+    if (distance < 2) {
+      position = target;
+      _targetPosition = null;
+      changeState(WaiterState.idle);
+      return;
+    }
+
+    final direction = diff / distance;
+
+    // 左右朝向翻转
+    if (direction.x.abs() > 0.05) {
+      final shouldFaceRight = direction.x > 0;
+      if (shouldFaceRight != _facingRight) {
+        flipHorizontallyAroundCenter();
+        _facingRight = shouldFaceRight;
+      }
+    }
+
+    final step = direction * _speed * dt;
+    position += step.length >= distance ? diff : step;
+  }
+
   WaiterState currentState = WaiterState.idle;
 
   MyWaiter() : super(position: Vector2(24, 24)) {
