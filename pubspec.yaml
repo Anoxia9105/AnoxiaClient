@@ -173,6 +173,7 @@ flutter:
     - assets/images/flame_resources/config/
     - assets/images/flame_resources/customers/
     - assets/images/flame_resources/maps/
+    - assets/images/flame_resources/objects/
     - assets/images/flame_resources/raw/
     - assets/images/flame_resources/sheets/
   # An image asset can refer to one or more resolution-specific "variants", see
