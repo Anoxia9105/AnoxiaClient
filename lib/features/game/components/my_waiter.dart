@@ -16,6 +16,7 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
   final List<Vector2> _path = [];
   Vector2? _targetPosition;
   bool _facingRight = true;
+  WaiterState _movingState = WaiterState.walking;
 
   WaiterState currentState = WaiterState.idle;
 
@@ -31,7 +32,11 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
     changeState(WaiterState.walking);
   }
 
-  void followPath(List<Vector2> path) {
+  void followPath(
+    List<Vector2> path, {
+    WaiterState movingState = WaiterState.walking,
+  }) {
+    _movingState = movingState;
     _path
       ..clear()
       ..addAll(path.map((point) => point.clone()));
@@ -126,6 +131,6 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
     }
 
     _targetPosition = _path.removeAt(0);
-    changeState(WaiterState.walking);
+    changeState(_movingState);
   }
 }

@@ -4,14 +4,28 @@ import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-enum CustomerState { entering, seated, waiting, eating, paying, leaving }
+enum CustomerState {
+  entering,
+  waitingForTable,
+  seated,
+  waiting,
+  eating,
+  queueing,
+  paying,
+  leaving,
+}
 
 class RestaurantCustomer extends SpriteAnimationComponent
     with HasGameReference {
-  RestaurantCustomer({required Vector2 position})
-    : super(position: position, anchor: Anchor.bottomCenter);
+  RestaurantCustomer({
+    required this.customerId,
+    required this.characterName,
+    required Vector2 position,
+  }) : super(position: position, anchor: Anchor.bottomCenter);
 
   static const _speed = 72.0;
+  final int customerId;
+  final String characterName;
   final List<Vector2> _path = [];
   Vector2? _target;
   bool _facingRight = true;
@@ -25,7 +39,7 @@ class RestaurantCustomer extends SpriteAnimationComponent
     final config =
         jsonDecode(
               await rootBundle.loadString(
-                'assets/images/flame_sprites/yongman_anim_config.json',
+                'assets/images/flame_sprites/${characterName}_anim_config.json',
               ),
             )
             as Map<String, dynamic>;
@@ -55,7 +69,7 @@ class RestaurantCustomer extends SpriteAnimationComponent
       stepTime: 0.18,
       loop: frames.length > 1,
     );
-    debugPrint('[MVP] customer spawned at $position');
+    debugPrint('[Restaurant] customer#$customerId ($characterName) spawned');
   }
 
   void followPath(List<Vector2> path) {
@@ -68,7 +82,7 @@ class RestaurantCustomer extends SpriteAnimationComponent
   void changeState(CustomerState value) {
     if (state == value) return;
     state = value;
-    debugPrint('[MVP] customer state -> ${value.name}');
+    debugPrint('[Restaurant] customer#$customerId -> ${value.name}');
   }
 
   @override

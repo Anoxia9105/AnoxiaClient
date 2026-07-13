@@ -95,8 +95,10 @@ class RestaurantGame extends FlameGame {
     final level = _level;
     if (level == null || !_hud.isMounted) return;
     _hud.text =
-        '金币 ${level.coins}   已完成 ${level.completedOrders}\n'
-        '流程 ${level.phase.name}';
+        '金币 ${level.coins}   完成 ${level.completedOrders}   '
+        '流失 ${level.lostCustomers}\n'
+        '顾客 ${level.activeCustomers}   等位 ${level.waitingCustomers}   '
+        '${level.phaseLabel}';
   }
 
   @override
