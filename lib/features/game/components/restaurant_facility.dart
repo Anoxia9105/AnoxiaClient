@@ -5,28 +5,33 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:anoxia/features/game/models/facility_placement.dart';
+import 'package:anoxia/features/game/models/restaurant_level_config.dart';
 
 class RestaurantFacility extends SpriteAnimationComponent
     with HasGameReference, DragCallbacks, TapCallbacks {
   RestaurantFacility({
-    required this.facilityId,
-    required this.assetNames,
+    required this.config,
     required Vector2 position,
-    this.initialFrame = 0,
-    this.renderOffset = 0,
     this.onSelected,
-    this.onLayoutChanged,
+    this.onMoveRequested,
+    this.onRotateRequested,
+    this.onPlacementChanged,
   }) : super(position: position, anchor: Anchor.bottomCenter);
 
-  final String facilityId;
-  final List<String> assetNames;
-  final int initialFrame;
-  final int renderOffset;
+  final FacilityConfig config;
   final void Function(RestaurantFacility facility)? onSelected;
-  final void Function()? onLayoutChanged;
+  final PlacementResult Function(
+    RestaurantFacility facility,
+    Vector2 requestedPosition,
+  )?
+  onMoveRequested;
+  final bool Function(RestaurantFacility facility)? onRotateRequested;
+  final void Function()? onPlacementChanged;
   bool editable = false;
   bool selected = false;
   bool isVertical = true;
+  PlacementFailure? lastPlacementFailure;
   int _level = 1;
   int _cols = 1;
   double _cellW = 1;
@@ -34,6 +39,20 @@ class RestaurantFacility extends SpriteAnimationComponent
   late dynamic _image;
 
   int get level => _level;
+  String get facilityId => config.id;
+  List<String> get assetNames => config.assetNames;
+
+  /// 占地框只描述家具接触地面的部分，不使用整张精灵图片尺寸。
+  Rect footprintAt(Vector2 target, {required bool vertical}) {
+    final footprintSize = config.footprintFor(vertical);
+    return Rect.fromCenter(
+      center: Offset(target.x, target.y - footprintSize.y / 2),
+      width: footprintSize.x,
+      height: footprintSize.y,
+    );
+  }
+
+  Rect get footprint => footprintAt(position, vertical: isVertical);
 
   @override
   Future<void> onLoad() async {
@@ -45,19 +64,19 @@ class RestaurantFacility extends SpriteAnimationComponent
   Future<void> setLevel(int value) async {
     _level = value.clamp(1, assetNames.length);
     final name = assetNames[_level - 1];
-    final config =
+    final assetConfig =
         jsonDecode(
               await rootBundle.loadString(
                 'assets/images/flame_resources/config/$name.json',
               ),
             )
             as Map<String, dynamic>;
-    _cellW = (config['cell_w'] as num).toDouble();
-    _cellH = (config['cell_h'] as num).toDouble();
-    _cols = config['cols'] as int;
-    _image = await game.images.load(config['sheet_path'] as String);
+    _cellW = (assetConfig['cell_w'] as num).toDouble();
+    _cellH = (assetConfig['cell_h'] as num).toDouble();
+    _cols = assetConfig['cols'] as int;
+    _image = await game.images.load(assetConfig['sheet_path'] as String);
     size = Vector2(_cellW, _cellH);
-    showFrame(initialFrame);
+    showFrame(config.initialFrame);
   }
 
   void showFrame(int frame) {
@@ -77,9 +96,15 @@ class RestaurantFacility extends SpriteAnimationComponent
   }
 
   void rotateOrientation() {
+    if (!(onRotateRequested?.call(this) ?? true)) {
+      lastPlacementFailure = PlacementFailure.overlapsFacility;
+      debugPrint('[家具摆放] $facilityId 旋转失败：会与其他家具重叠');
+      return;
+    }
     flipHorizontallyAroundCenter();
     isVertical = !isVertical;
-    onLayoutChanged?.call();
+    lastPlacementFailure = null;
+    onPlacementChanged?.call();
   }
 
   @override
@@ -99,14 +124,26 @@ class RestaurantFacility extends SpriteAnimationComponent
   void onDragUpdate(DragUpdateEvent event) {
     if (!editable) return;
     final delta = event.localDelta;
-    position += Vector2(isVertical ? delta.x : -delta.x, delta.y);
+    final requested =
+        position + Vector2(isVertical ? delta.x : -delta.x, delta.y);
+    final result =
+        onMoveRequested?.call(this, requested) ??
+        PlacementResult.accepted(requested);
+    lastPlacementFailure = result.failure;
+    if (result.accepted) {
+      position = result.position;
+      onPlacementChanged?.call();
+    }
   }
 
   @override
   void onDragEnd(DragEndEvent event) {
     super.onDragEnd(event);
     if (!editable) return;
-    onLayoutChanged?.call();
+    if (lastPlacementFailure != null) {
+      debugPrint('[家具摆放] $facilityId 摆放失败：$lastPlacementFailure');
+    }
+    onPlacementChanged?.call();
   }
 
   Sprite _spriteFor(int frame) => Sprite(
@@ -118,17 +155,20 @@ class RestaurantFacility extends SpriteAnimationComponent
   @override
   void update(double dt) {
     super.update(dt);
-    priority = position.y.round() + renderOffset;
+    priority = position.y.round() + config.renderOffset;
   }
 
   @override
   void renderDebugMode(Canvas canvas) {
     super.renderDebugMode(canvas);
-    if (!selected) return;
+    if (!selected && lastPlacementFailure == null) return;
+    final localFootprint = footprint.shift(Offset(-position.x, -position.y));
     canvas.drawRect(
-      size.toRect(),
+      localFootprint,
       Paint()
-        ..color = const Color(0xFF00E5FF)
+        ..color = lastPlacementFailure == null
+            ? const Color(0xFF00E5FF)
+            : const Color(0xFFFF1744)
         ..strokeWidth = 2
         ..style = PaintingStyle.stroke,
     );

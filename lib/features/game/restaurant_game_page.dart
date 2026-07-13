@@ -121,7 +121,7 @@ class RestaurantGame extends FlameGame {
     final level = _level;
     if (level == null || !_hud.isMounted) return;
     _hud.text = level.editMode
-        ? '摆放模式：点击家具后拖动，使用右下角按钮旋转'
+        ? '摆放模式：点击家具后拖动，红色占地框表示当前位置不可用'
         : '完成 ${level.completedOrders}   顾客 ${level.activeCustomers}   ${level.phaseLabel}';
   }
 

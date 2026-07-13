@@ -6,15 +6,19 @@ import 'package:flutter/foundation.dart';
 
 class RestaurantMap extends PositionComponent {
   static final Vector2 tileSize = Vector2(32, 16);
-  static const String _mapFile = 'restaurant_level_1.tmx';
   static const String _mapPrefix = 'assets/images/flame_resources/maps/';
   static const double _pathNodeSize = 16;
 
   late final TiledComponent tiled;
 
+  RestaurantMap({required this.mapFile});
+
+  final String mapFile;
+
   final List<Rect> _collisionRects = [];
   final List<Rect> _dynamicCollisionRects = [];
   final Map<String, Vector2> _spawnPoints = {};
+  Rect? _playableObjectBounds;
   DateTime? _lastCollisionLogAt;
 
   Vector2 get visualSize {
@@ -31,11 +35,12 @@ class RestaurantMap extends PositionComponent {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    tiled = await TiledComponent.load(_mapFile, tileSize, prefix: _mapPrefix);
+    tiled = await TiledComponent.load(mapFile, tileSize, prefix: _mapPrefix);
     await add(tiled);
     size = tiled.size;
 
     _loadCollisionRects();
+    _calculatePlayableObjectBounds();
     _loadSpawnPoints();
     debugPrint(
       '[RestaurantMap] debug=$debugMode, collisions=${_collisionRects.length}, '
@@ -45,11 +50,14 @@ class RestaurantMap extends PositionComponent {
 
   bool isWalkableAt(Vector2 worldPosition) {
     final local = worldPosition - absolutePosition;
-    if (local.x < 0 || local.y < 0 || local.x > size.x || local.y > size.y) {
+    final objectPosition = _screenToObject(local);
+    final bounds = _playableBounds;
+    const actorWallInset = 8.0;
+    final actorBounds = bounds.deflate(actorWallInset);
+    if (!actorBounds.contains(Offset(objectPosition.x, objectPosition.y))) {
       return false;
     }
 
-    final objectPosition = _screenToObject(local);
     if (_dynamicCollisionRects.any(
       (rect) => rect.contains(Offset(local.x, local.y)),
     )) {
@@ -85,6 +93,61 @@ class RestaurantMap extends PositionComponent {
     _dynamicCollisionRects
       ..clear()
       ..addAll(obstacles);
+  }
+
+  Vector2 clampToPlayableArea(Vector2 worldPosition, {double margin = 24}) {
+    final local = worldPosition - absolutePosition;
+    final objectPosition = _screenToObject(local);
+    final bounds = _playableBounds;
+    final safeBounds = bounds.deflate(margin);
+    final clamped = Vector2(
+      objectPosition.x.clamp(safeBounds.left, safeBounds.right),
+      objectPosition.y.clamp(safeBounds.top, safeBounds.bottom),
+    );
+    return _objectToScreen(clamped) + position;
+  }
+
+  Rect get _playableBounds {
+    final map = tiled.tileMap.map;
+    return _playableObjectBounds ??
+        Rect.fromLTWH(0, 0, map.width * tileSize.y, map.height * tileSize.y);
+  }
+
+  /// The collision layer contains four long wall rectangles. Their inner
+  /// edges define the floor that can actually be occupied. Deriving this from
+  /// Tiled keeps furniture placement and actor pathfinding on the same bounds.
+  void _calculatePlayableObjectBounds() {
+    final map = tiled.tileMap.map;
+    final fullWidth = map.width * tileSize.y;
+    final fullHeight = map.height * tileSize.y;
+    var left = 0.0;
+    var top = 0.0;
+    var right = fullWidth;
+    var bottom = fullHeight;
+
+    for (final rect in _collisionRects) {
+      if (rect.width >= fullWidth * .6) {
+        if (rect.center.dy < fullHeight / 2) {
+          top = top.clamp(rect.bottom, fullHeight);
+        } else {
+          bottom = bottom.clamp(0, rect.top);
+        }
+      }
+      if (rect.height >= fullHeight * .6) {
+        if (rect.center.dx < fullWidth / 2) {
+          left = left.clamp(rect.right, fullWidth);
+        } else {
+          right = right.clamp(0, rect.left);
+        }
+      }
+    }
+
+    if (left < right && top < bottom) {
+      _playableObjectBounds = Rect.fromLTRB(left, top, right, bottom);
+      debugPrint(
+        '[RestaurantMap] playable object bounds=$_playableObjectBounds',
+      );
+    }
   }
 
   /// Tiled stores object-layer coordinates for isometric maps in its
@@ -268,6 +331,27 @@ class RestaurantMap extends PositionComponent {
     for (final rect in _dynamicCollisionRects) {
       canvas.drawRect(rect, dynamicPaint);
     }
+
+    final playable = _playableBounds;
+    final playablePoints = [
+      _objectToScreen(Vector2(playable.left, playable.top)),
+      _objectToScreen(Vector2(playable.right, playable.top)),
+      _objectToScreen(Vector2(playable.right, playable.bottom)),
+      _objectToScreen(Vector2(playable.left, playable.bottom)),
+    ];
+    final playablePath = Path()
+      ..moveTo(playablePoints.first.x, playablePoints.first.y);
+    for (final point in playablePoints.skip(1)) {
+      playablePath.lineTo(point.x, point.y);
+    }
+    playablePath.close();
+    canvas.drawPath(
+      playablePath,
+      Paint()
+        ..color = const Color(0xFF00E5FF)
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke,
+    );
 
     final spawnPaint = Paint()
       ..color = const Color(0xFF00E676)

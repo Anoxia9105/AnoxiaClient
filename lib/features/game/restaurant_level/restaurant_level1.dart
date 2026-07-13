@@ -1,11 +1,12 @@
 import 'dart:math';
-import 'dart:ui';
-
 import 'package:anoxia/features/game/components/my_waiter.dart';
+import 'package:anoxia/features/game/components/facility_placement_controller.dart';
 import 'package:anoxia/features/game/components/restaurant_customer.dart';
 import 'package:anoxia/features/game/components/restaurant_facility.dart';
 import 'package:anoxia/features/game/components/restaurant_map.dart';
 import 'package:anoxia/features/game/components/restaurant_person.dart';
+import 'package:anoxia/features/game/models/facility_placement.dart';
+import 'package:anoxia/features/game/models/restaurant_level_config.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 
@@ -29,13 +30,16 @@ enum OrderState {
 enum WaiterTaskType { takeOrder, deliverFood, cleanTable }
 
 class RestaurantLevel1 extends World {
-  static const _customerNames = ['yongman', 'yongwoman', 'aunt', 'uncle'];
-  static const _maxCustomers = 5;
+  RestaurantLevel1({RestaurantLevelConfig? config})
+    : config = config ?? level1Config;
+
+  final RestaurantLevelConfig config;
 
   late final RestaurantMap map;
   late final MyWaiter waiter;
   late final RestaurantFacility kitchenFacility;
   late final RestaurantFacility cashierFacility;
+  late final FacilityPlacementController placementController;
   final facilities = <RestaurantFacility>[];
   final tables = <_RestaurantTable>[];
   final customers = <_CustomerSession>[];
@@ -93,6 +97,18 @@ class RestaurantLevel1 extends World {
     selectedFacility?.rotateOrientation();
   }
 
+  PlacementResult _requestFacilityMove(
+    RestaurantFacility facility,
+    Vector2 position,
+  ) => placementController.tryMove(facility, position);
+
+  bool _requestFacilityRotate(RestaurantFacility facility) =>
+      placementController.canRotate(facility);
+
+  void _facilityPlacementChanged() {
+    placementController.refreshObstacles();
+  }
+
   void _selectFacility(RestaurantFacility facility) {
     selectedFacility = facility;
     for (final item in facilities) {
@@ -103,68 +119,53 @@ class RestaurantLevel1 extends World {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    map = RestaurantMap();
+    map = RestaurantMap(mapFile: config.mapFile);
     await add(map);
     waiter = MyWaiter()
       ..position = map.spawnPoint('waiter_spawn', fallback: Vector2(250, 110));
     await add(waiter);
-    kitchenFacility = RestaurantFacility(
-      facilityId: 'kitchen',
-      assetNames: const ['chufang_01'],
-      position: map.spawnPoint('kitchen_facility'),
-      initialFrame: 1,
-      onSelected: _selectFacility,
-      onLayoutChanged: _refreshFacilityLayout,
+    // 家具完全由关卡配置生成。扩展地图时不需要复制这段初始化代码。
+    for (final facilityConfig in config.facilities) {
+      facilities.add(
+        RestaurantFacility(
+          config: facilityConfig,
+          position: map.spawnPoint(facilityConfig.spawnName),
+          onSelected: _selectFacility,
+          onMoveRequested: _requestFacilityMove,
+          onRotateRequested: _requestFacilityRotate,
+          onPlacementChanged: _facilityPlacementChanged,
+        ),
+      );
+    }
+    placementController = FacilityPlacementController(
+      map: map,
+      facilities: facilities,
     );
-    cashierFacility = RestaurantFacility(
-      facilityId: 'cashier',
-      assetNames: const ['yintai_01'],
-      position: map.spawnPoint('cashier_facility'),
-      initialFrame: 1,
-      onSelected: _selectFacility,
-      onLayoutChanged: _refreshFacilityLayout,
-    );
-    final table1Facility = RestaurantFacility(
-      facilityId: 'table_1',
-      assetNames: const ['2pzhuoyi_putong'],
-      position: map.spawnPoint('table_1_facility'),
-      onSelected: _selectFacility,
-      onLayoutChanged: _refreshFacilityLayout,
-    );
-    final table2Facility = RestaurantFacility(
-      facilityId: 'table_2',
-      assetNames: const ['2pzhuoyi_putong'],
-      position: map.spawnPoint('table_2_facility'),
-      onSelected: _selectFacility,
-      onLayoutChanged: _refreshFacilityLayout,
-    );
-    final toiletFacility = RestaurantFacility(
-      facilityId: 'toilet',
-      assetNames: const ['wc01'],
-      position: map.spawnPoint('toilet_facility'),
-      onSelected: _selectFacility,
-      onLayoutChanged: _refreshFacilityLayout,
-    );
-    facilities.addAll([
-      table1Facility,
-      table2Facility,
-      kitchenFacility,
-      cashierFacility,
-      toiletFacility,
-    ]);
     await addAll(facilities);
-    _refreshFacilityLayout();
-    tables.addAll([
-      _RestaurantTable(1, table1Facility),
-      _RestaurantTable(2, table2Facility),
-    ]);
+    kitchenFacility = facilities.singleWhere(
+      (item) => item.config.type == FacilityType.kitchen,
+    );
+    cashierFacility = facilities.singleWhere(
+      (item) => item.config.type == FacilityType.cashier,
+    );
+    tables.addAll(
+      facilities
+          .where((item) => item.config.type == FacilityType.table)
+          .toList()
+          .asMap()
+          .entries
+          .map((entry) => _RestaurantTable(entry.key + 1, entry.value)),
+    );
+    placementController
+      ..refreshObstacles()
+      ..printLayout();
     await addAll([
       RestaurantPerson(
         characterName: 'cleaner',
         position: map.spawnPoint('cleaner_spawn', fallback: Vector2(330, 120)),
       ),
     ]);
-    debugPrint('[Restaurant] stage 2 opened with ${tables.length} tables');
+    debugPrint('[餐厅关卡] ${config.id} 加载完成，共 ${tables.length} 张桌子');
   }
 
   @override
@@ -182,7 +183,7 @@ class RestaurantLevel1 extends World {
 
   void _updateSpawner(double dt) {
     _spawnTimer -= dt;
-    if (_spawnTimer > 0 || customers.length >= _maxCustomers) return;
+    if (_spawnTimer > 0 || customers.length >= config.maxCustomers) return;
     if (_availableTable() == null) {
       _spawnTimer = .5;
       return;
@@ -195,10 +196,11 @@ class RestaurantLevel1 extends World {
     final id = _nextCustomerId++;
     final table = _availableTable();
     if (table == null) return;
-    final seat = table.seatPosition;
+    final seat = map.clampToPlayableArea(table.seatPosition, margin: 8);
     final customer = RestaurantCustomer(
       customerId: id,
-      characterName: _customerNames[(id - 1) % _customerNames.length],
+      characterName:
+          config.customerNames[(id - 1) % config.customerNames.length],
       position: seat,
     );
     final session = _CustomerSession(customer);
@@ -279,7 +281,10 @@ class RestaurantLevel1 extends World {
     if (current.orderState == OrderState.waitingToPay) {
       current.orderState = OrderState.paying;
       current.customer.changeState(CustomerState.paying);
-      current.customer.position = cashierFacility.position + Vector2(0, 10);
+      current.customer.position = map.clampToPlayableArea(
+        cashierFacility.position + Vector2(0, 10),
+        margin: 8,
+      );
       _cashierTimer = 1.5;
       return;
     }
@@ -320,7 +325,9 @@ class RestaurantLevel1 extends World {
     switch (task.type) {
       case WaiterTaskType.takeOrder:
       case WaiterTaskType.cleanTable:
-        _moveWaiter(session.table!.servicePosition);
+        _moveWaiter(
+          map.clampToPlayableArea(session.table!.servicePosition, margin: 8),
+        );
       case WaiterTaskType.deliverFood:
         _moveWaiter(_kitchenServicePosition);
     }
@@ -354,7 +361,10 @@ class RestaurantLevel1 extends World {
         }
         if (task.stage == 1) {
           task.stage = 2;
-          _moveWaiter(session.table!.servicePosition, carryingFood: true);
+          _moveWaiter(
+            map.clampToPlayableArea(session.table!.servicePosition, margin: 8),
+            carryingFood: true,
+          );
           return;
         }
         waiter.changeState(WaiterState.idle);
@@ -431,7 +441,7 @@ class RestaurantLevel1 extends World {
       ..orderState = OrderState.waitingToOrder
       ..timer = 1 + _random.nextDouble();
     session.customer
-      ..position = table.seatPosition
+      ..position = map.clampToPlayableArea(table.seatPosition, margin: 8)
       ..changeState(CustomerState.seated);
     debugPrint(
       '[Restaurant] customer#${session.id} assigned table#${table.id}',
@@ -462,13 +472,18 @@ class RestaurantLevel1 extends World {
               c.orderState == OrderState.paying,
         )
         .length;
-    return cashierFacility.position +
-        Vector2(count <= 1 ? -18 : -34, count <= 1 ? 12 : 20);
+    return map.clampToPlayableArea(
+      cashierFacility.position +
+          Vector2(count <= 1 ? -18 : -34, count <= 1 ? 12 : 20),
+      margin: 8,
+    );
   }
 
-  Vector2 get _kitchenServicePosition =>
-      kitchenFacility.position +
-      Vector2(kitchenFacility.isVertical ? -55 : 55, 14);
+  Vector2 get _kitchenServicePosition => map.clampToPlayableArea(
+    kitchenFacility.position +
+        Vector2(kitchenFacility.isVertical ? -55 : 55, 14),
+    margin: 8,
+  );
 
   void _moveCustomer(_CustomerSession session, Vector2 target) {
     final path = map.findPath(session.customer.position, target);
@@ -482,21 +497,6 @@ class RestaurantLevel1 extends World {
       movingState: carryingFood
           ? WaiterState.carryingFood
           : WaiterState.walking,
-    );
-  }
-
-  void _refreshFacilityLayout() {
-    map.setDynamicObstacles(
-      facilities.map((facility) {
-        final isTable = facility.facilityId.startsWith('table');
-        final width = isTable ? 54.0 : 72.0;
-        final height = isTable ? 18.0 : 24.0;
-        return Rect.fromCenter(
-          center: Offset(facility.position.x, facility.position.y - height / 2),
-          width: width,
-          height: height,
-        );
-      }).toList(),
     );
   }
 
