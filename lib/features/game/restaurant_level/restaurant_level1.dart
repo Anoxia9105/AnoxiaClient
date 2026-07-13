@@ -1,5 +1,6 @@
 import 'package:anoxia/features/game/components/my_waiter.dart';
 import 'package:anoxia/features/game/components/restaurant_map.dart';
+import 'package:anoxia/features/game/components/restaurant_person.dart';
 import 'package:flame/components.dart';
 
 class RestaurantLevel1 extends World {
@@ -10,7 +11,6 @@ class RestaurantLevel1 extends World {
   Vector2 get mapVisualCenter => map.visualCenter;
 
   final List<String> _autoRoute = [
-    'cashier_spawn',
     'door_spawn',
     'customer_spawn',
     'waiter_spawn',
@@ -29,6 +29,19 @@ class RestaurantLevel1 extends World {
     waiter = MyWaiter()
       ..position = map.spawnPoint('waiter_spawn', fallback: Vector2(120, 120));
     await add(waiter);
+
+    // Spawn points describe people positions too; previously they were only
+    // used as waypoints, so roles such as the cashier never appeared.
+    await addAll([
+      RestaurantPerson(
+        characterName: 'womanwaiter',
+        position: map.spawnPoint('cashier_spawn', fallback: Vector2(164, 61)),
+      ),
+      RestaurantPerson(
+        characterName: 'yongman',
+        position: map.spawnPoint('customer_spawn', fallback: Vector2(102, 53)),
+      ),
+    ]);
   }
 
   @override
