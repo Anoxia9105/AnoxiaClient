@@ -43,6 +43,12 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
     _advancePath();
   }
 
+  void stop() {
+    _path.clear();
+    _targetPosition = null;
+    changeState(WaiterState.idle);
+  }
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();

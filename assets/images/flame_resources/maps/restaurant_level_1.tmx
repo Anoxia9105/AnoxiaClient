@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="right-down" width="32" height="16" tilewidth="32" tileheight="16" infinite="0" nextlayerid="14" nextobjectid="49">
+<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="right-down" width="32" height="16" tilewidth="32" tileheight="16" infinite="0" nextlayerid="14" nextobjectid="48">
  <tileset firstgid="1" source="map_wall_01.tsx"/>
  <imagelayer id="10" name="clean_background" offsetx="-640" offsety="-320">
   <image source="flame_resources/maps/restaurant_city_background.png"/>
@@ -29,7 +29,6 @@
   <object id="17" x="1" y="46" width="45" height="207"/>
   <object id="20" x="45" y="242.5" width="464.5" height="10.5"/>
   <object id="21" x="494.5" y="47.5" width="14.5" height="191.5"/>
-  <object id="48" name="kitchen_block" x="400" y="80" width="70" height="65"/>
   <object id="22" x="600.5" y="261.5"/>
  </objectgroup>
  <objectgroup id="9" name="spawn" visible="0">

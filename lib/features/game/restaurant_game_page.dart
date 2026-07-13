@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:anoxia/features/game/models/restaurant_economy.dart';
 import 'package:anoxia/features/game/restaurant_level/restaurant_level1.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
@@ -15,6 +14,7 @@ class RestaurantGamePage extends StatefulWidget {
 
 class _RestaurantGamePageState extends State<RestaurantGamePage> {
   late final RestaurantGame game;
+  bool editing = false;
 
   @override
   void initState() {
@@ -38,15 +38,28 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
           ),
         ),
         Positioned(
-          left: 12,
           right: 12,
           bottom: 12,
-          child: ValueListenableBuilder<RestaurantSnapshot?>(
-            valueListenable: game.snapshot,
-            builder: (context, value, child) {
-              if (value == null) return const SizedBox.shrink();
-              return _UpgradePanel(game: game, data: value);
-            },
+          child: Row(
+            children: [
+              if (editing)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilledButton.tonalIcon(
+                    onPressed: game.rotateSelectedFacility,
+                    icon: const Icon(Icons.rotate_90_degrees_cw),
+                    label: const Text('旋转选中家具'),
+                  ),
+                ),
+              FilledButton.icon(
+                onPressed: () {
+                  setState(() => editing = !editing);
+                  game.setEditMode(editing);
+                },
+                icon: Icon(editing ? Icons.check : Icons.chair_alt),
+                label: Text(editing ? '完成摆放' : '摆放家具'),
+              ),
+            ],
           ),
         ),
       ],
@@ -54,62 +67,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
   }
 }
 
-class _UpgradePanel extends StatelessWidget {
-  const _UpgradePanel({required this.game, required this.data});
-  final RestaurantGame game;
-  final RestaurantSnapshot data;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xCC17242B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 6,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-              '等级 ${data.level}  经验 ${data.experience}/${data.experienceToNext}'
-              '  人气 ${data.popularity}  菜品 ${data.unlockedRecipes}/5',
-              style: const TextStyle(color: Colors.white),
-            ),
-            FilledButton.tonal(
-              onPressed:
-                  data.kitchenLevel >= 5 || data.coins < data.kitchenUpgradeCost
-                  ? null
-                  : game.upgradeKitchen,
-              child: Text(
-                data.kitchenLevel >= 5
-                    ? '厨房 Lv.5'
-                    : '升级厨房 Lv.${data.kitchenLevel} (${data.kitchenUpgradeCost}金币)',
-              ),
-            ),
-            FilledButton.tonal(
-              onPressed:
-                  data.cashierLevel >= 5 || data.coins < data.cashierUpgradeCost
-                  ? null
-                  : game.upgradeCashier,
-              child: Text(
-                data.cashierLevel >= 5
-                    ? '银台 Lv.5'
-                    : '升级银台 Lv.${data.cashierLevel} (${data.cashierUpgradeCost}金币)',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class RestaurantGame extends FlameGame {
-  static const bool enableDebugMode = false;
   static const characterNames = [
     'waiter',
     'womanwaiter',
@@ -125,10 +83,8 @@ class RestaurantGame extends FlameGame {
     'yongwoman',
   ];
 
-  final snapshot = ValueNotifier<RestaurantSnapshot?>(null);
   RestaurantLevel1? _level;
   late final TextComponent _hud;
-  double _snapshotTimer = 0;
 
   @override
   Color backgroundColor() => const Color(0xFFE8F0F2);
@@ -136,7 +92,6 @@ class RestaurantGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    debugMode = enableDebugMode;
     await images.loadAll([
       for (final name in characterNames) 'flame_sprites/${name}_anim_sheet.png',
     ]);
@@ -157,7 +112,6 @@ class RestaurantGame extends FlameGame {
       ),
     );
     await camera.viewport.add(_hud);
-    _publishSnapshot();
     _fitCameraToLevel();
   }
 
@@ -166,30 +120,13 @@ class RestaurantGame extends FlameGame {
     super.update(dt);
     final level = _level;
     if (level == null || !_hud.isMounted) return;
-    _hud.text =
-        '金币 ${level.coins}   完成 ${level.completedOrders}   流失 ${level.lostCustomers}\n'
-        '顾客 ${level.activeCustomers}   等位 ${level.waitingCustomers}   ${level.phaseLabel}';
-    _snapshotTimer -= dt;
-    if (_snapshotTimer <= 0) {
-      _snapshotTimer = .25;
-      _publishSnapshot();
-    }
+    _hud.text = level.editMode
+        ? '摆放模式：点击家具后拖动，使用右下角按钮旋转'
+        : '完成 ${level.completedOrders}   顾客 ${level.activeCustomers}   ${level.phaseLabel}';
   }
 
-  void upgradeKitchen() {
-    _level?.upgradeKitchen();
-    _publishSnapshot();
-  }
-
-  void upgradeCashier() {
-    _level?.upgradeCashier();
-    _publishSnapshot();
-  }
-
-  void _publishSnapshot() {
-    final level = _level;
-    if (level != null) snapshot.value = level.snapshot;
-  }
+  void setEditMode(bool value) => _level?.setEditMode(value);
+  void rotateSelectedFacility() => _level?.rotateSelectedFacility();
 
   @override
   void onGameResize(Vector2 size) {

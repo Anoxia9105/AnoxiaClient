@@ -103,8 +103,9 @@ class RestaurantCustomer extends SpriteAnimationComponent
         state == CustomerState.seated ||
         state == CustomerState.waiting ||
         state == CustomerState.eating;
-    // Seated frames are intentionally partially occluded by the table sprite.
-    priority = position.y.round() - (isSeated ? 1 : 0);
+    // The separated seated frame is already pre-occluded. It must render over
+    // the chair sprite, otherwise the chair back hides the whole customer.
+    priority = position.y.round() + (isSeated ? 1 : 0);
     final target = _target;
     if (target == null) return;
     final diff = target - position;

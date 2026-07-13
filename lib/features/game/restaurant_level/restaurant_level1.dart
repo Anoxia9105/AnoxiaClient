@@ -1,11 +1,11 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:anoxia/features/game/components/my_waiter.dart';
 import 'package:anoxia/features/game/components/restaurant_customer.dart';
 import 'package:anoxia/features/game/components/restaurant_facility.dart';
 import 'package:anoxia/features/game/components/restaurant_map.dart';
 import 'package:anoxia/features/game/components/restaurant_person.dart';
-import 'package:anoxia/features/game/models/restaurant_economy.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 
@@ -36,6 +36,7 @@ class RestaurantLevel1 extends World {
   late final MyWaiter waiter;
   late final RestaurantFacility kitchenFacility;
   late final RestaurantFacility cashierFacility;
+  final facilities = <RestaurantFacility>[];
   final tables = <_RestaurantTable>[];
   final customers = <_CustomerSession>[];
   final _taskQueue = <_WaiterTask>[];
@@ -45,49 +46,11 @@ class RestaurantLevel1 extends World {
   double _spawnTimer = 1;
   double _cashierTimer = 0;
   int _kitchenVisualState = -1;
+  bool editMode = false;
+  RestaurantFacility? selectedFacility;
 
-  int coins = 0;
   int completedOrders = 0;
   int lostCustomers = 0;
-  int playerLevel = 1;
-  int experience = 0;
-  int popularity = 0;
-  int kitchenLevel = 1;
-  int cashierLevel = 1;
-  int get kitchenUpgradeCost => kitchenLevel * 80;
-  int get cashierUpgradeCost => cashierLevel * 60;
-  int get experienceToNext => experienceForLevel(playerLevel);
-  int get unlockedRecipeCount => restaurantRecipes
-      .where((recipe) => recipe.requiredLevel <= playerLevel)
-      .length;
-  RestaurantSnapshot get snapshot => RestaurantSnapshot(
-    coins: coins,
-    level: playerLevel,
-    experience: experience,
-    experienceToNext: experienceToNext,
-    popularity: popularity,
-    kitchenLevel: kitchenLevel,
-    cashierLevel: cashierLevel,
-    kitchenUpgradeCost: kitchenUpgradeCost,
-    cashierUpgradeCost: cashierUpgradeCost,
-    unlockedRecipes: unlockedRecipeCount,
-  );
-
-  bool upgradeKitchen() {
-    if (kitchenLevel >= 5 || coins < kitchenUpgradeCost) return false;
-    coins -= kitchenUpgradeCost;
-    kitchenLevel++;
-    kitchenFacility.setLevel(kitchenLevel);
-    return true;
-  }
-
-  bool upgradeCashier() {
-    if (cashierLevel >= 5 || coins < cashierUpgradeCost) return false;
-    coins -= cashierUpgradeCost;
-    cashierLevel++;
-    cashierFacility.setLevel(cashierLevel);
-    return true;
-  }
 
   Vector2 get mapVisualSize => map.visualSize;
   Vector2 get mapVisualCenter => map.visualCenter;
@@ -96,6 +59,46 @@ class RestaurantLevel1 extends World {
       customers.where((c) => c.orderState == OrderState.waitingForTable).length;
   String get phaseLabel =>
       _activeTask == null ? '服务员空闲' : '服务员：${_taskLabel(_activeTask!.type)}';
+
+  void setEditMode(bool value) {
+    editMode = value;
+    if (value) {
+      for (final session in customers) {
+        session.customer.removeFromParent();
+      }
+      customers.clear();
+      _taskQueue.clear();
+      _activeTask = null;
+      for (final table in tables) {
+        table
+          ..state = TableState.available
+          ..customerId = null;
+        table.facility.showFrame(0);
+      }
+      waiter.stop();
+      kitchenFacility.showFrame(1);
+      _kitchenVisualState = 0;
+      _spawnTimer = 1;
+    }
+    for (final facility in facilities) {
+      facility
+        ..editable = value
+        ..debugMode = value;
+      if (!value) facility.selected = false;
+    }
+    if (!value) selectedFacility = null;
+  }
+
+  void rotateSelectedFacility() {
+    selectedFacility?.rotateOrientation();
+  }
+
+  void _selectFacility(RestaurantFacility facility) {
+    selectedFacility = facility;
+    for (final item in facilities) {
+      item.selected = identical(item, facility);
+    }
+  }
 
   @override
   Future<void> onLoad() async {
@@ -107,52 +110,53 @@ class RestaurantLevel1 extends World {
     await add(waiter);
     kitchenFacility = RestaurantFacility(
       facilityId: 'kitchen',
-      assetNames: const [
-        'chufang_01',
-        'chufang_02',
-        'chufang_03',
-        'chufang_04',
-        'chufang_05',
-      ],
+      assetNames: const ['chufang_01'],
       position: map.spawnPoint('kitchen_facility'),
       initialFrame: 1,
+      onSelected: _selectFacility,
+      onLayoutChanged: _refreshFacilityLayout,
     );
     cashierFacility = RestaurantFacility(
       facilityId: 'cashier',
-      assetNames: const [
-        'yintai_01',
-        'yintai_02',
-        'yintai_03',
-        'yintai_04',
-        'yintai_05',
-      ],
+      assetNames: const ['yintai_01'],
       position: map.spawnPoint('cashier_facility'),
       initialFrame: 1,
+      onSelected: _selectFacility,
+      onLayoutChanged: _refreshFacilityLayout,
     );
     final table1Facility = RestaurantFacility(
       facilityId: 'table_1',
       assetNames: const ['2pzhuoyi_putong'],
       position: map.spawnPoint('table_1_facility'),
+      onSelected: _selectFacility,
+      onLayoutChanged: _refreshFacilityLayout,
     );
     final table2Facility = RestaurantFacility(
       facilityId: 'table_2',
       assetNames: const ['2pzhuoyi_putong'],
       position: map.spawnPoint('table_2_facility'),
+      onSelected: _selectFacility,
+      onLayoutChanged: _refreshFacilityLayout,
     );
-    await addAll([
+    final toiletFacility = RestaurantFacility(
+      facilityId: 'toilet',
+      assetNames: const ['wc01'],
+      position: map.spawnPoint('toilet_facility'),
+      onSelected: _selectFacility,
+      onLayoutChanged: _refreshFacilityLayout,
+    );
+    facilities.addAll([
       table1Facility,
       table2Facility,
       kitchenFacility,
       cashierFacility,
-      RestaurantFacility(
-        facilityId: 'toilet',
-        assetNames: const ['wc01'],
-        position: map.spawnPoint('toilet_facility'),
-      ),
+      toiletFacility,
     ]);
+    await addAll(facilities);
+    _refreshFacilityLayout();
     tables.addAll([
-      _RestaurantTable(1, 'table_1_seat', 'table_1_service', table1Facility),
-      _RestaurantTable(2, 'table_2_seat', 'table_2_service', table2Facility),
+      _RestaurantTable(1, table1Facility),
+      _RestaurantTable(2, table2Facility),
     ]);
     await addAll([
       RestaurantPerson(
@@ -166,6 +170,7 @@ class RestaurantLevel1 extends World {
   @override
   void update(double dt) {
     super.update(dt);
+    if (editMode) return;
     _updateSpawner(dt);
     _updateCustomers(dt);
     _updateCashier(dt);
@@ -190,7 +195,7 @@ class RestaurantLevel1 extends World {
     final id = _nextCustomerId++;
     final table = _availableTable();
     if (table == null) return;
-    final seat = map.spawnPoint(table.seatPoint);
+    final seat = table.seatPosition;
     final customer = RestaurantCustomer(
       customerId: id,
       characterName: _customerNames[(id - 1) % _customerNames.length],
@@ -274,18 +279,13 @@ class RestaurantLevel1 extends World {
     if (current.orderState == OrderState.waitingToPay) {
       current.orderState = OrderState.paying;
       current.customer.changeState(CustomerState.paying);
-      current.customer.position = map.spawnPoint('cashier_customer');
-      _cashierTimer = 1.5 / (1 + (cashierLevel - 1) * .2);
+      current.customer.position = cashierFacility.position + Vector2(0, 10);
+      _cashierTimer = 1.5;
       return;
     }
     if (current.customer.isMoving) return;
     _cashierTimer -= dt;
     if (_cashierTimer > 0) return;
-    final recipe = current.recipe ?? restaurantRecipes.first;
-    coins += recipe.price;
-    experience += recipe.experience;
-    popularity += 2;
-    _checkLevelUp();
     completedOrders++;
     final table = current.table!;
     table.state = TableState.dirty;
@@ -294,10 +294,7 @@ class RestaurantLevel1 extends World {
     current.customer.changeState(CustomerState.leaving);
     current.customer.removeFromParent();
     _enqueueTask(WaiterTaskType.cleanTable, current);
-    debugPrint(
-      '[Economy] ${recipe.name}: +${recipe.price} coins, '
-      '+${recipe.experience} exp, total=$coins',
-    );
+    debugPrint('[Restaurant] customer#${current.id} checkout complete');
   }
 
   void _updateWaiter(double dt) {
@@ -323,9 +320,9 @@ class RestaurantLevel1 extends World {
     switch (task.type) {
       case WaiterTaskType.takeOrder:
       case WaiterTaskType.cleanTable:
-        _moveWaiter(map.spawnPoint(session.table!.servicePoint));
+        _moveWaiter(session.table!.servicePosition);
       case WaiterTaskType.deliverFood:
-        _moveWaiter(map.spawnPoint('kitchen_service'));
+        _moveWaiter(_kitchenServicePosition);
     }
   }
 
@@ -340,31 +337,24 @@ class RestaurantLevel1 extends World {
         }
         if (task.stage == 1) {
           task.stage = 2;
-          _moveWaiter(map.spawnPoint('kitchen_service'));
+          _moveWaiter(_kitchenServicePosition);
           return;
         }
-        final unlocked = restaurantRecipes
-            .where((recipe) => recipe.requiredLevel <= playerLevel)
-            .toList();
-        session.recipe = unlocked[_random.nextInt(unlocked.length)];
         session.orderState = OrderState.cooking;
-        session.timer =
-            session.recipe!.cookTime / (1 + (kitchenLevel - 1) * .18);
-        debugPrint('[Order] customer#${session.id}: ${session.recipe!.name}');
+        session.timer = 2.8;
         _finishTask();
       case WaiterTaskType.deliverFood:
         if (task.stage == 0) {
           task.stage = 1;
           task.actionTimer = .5;
           waiter.changeState(WaiterState.carryingFood);
+          // Food leaves the kitchen as soon as the waiter picks it up.
+          session.orderState = OrderState.ready;
           return;
         }
         if (task.stage == 1) {
           task.stage = 2;
-          _moveWaiter(
-            map.spawnPoint(session.table!.servicePoint),
-            carryingFood: true,
-          );
+          _moveWaiter(session.table!.servicePosition, carryingFood: true);
           return;
         }
         waiter.changeState(WaiterState.idle);
@@ -397,9 +387,7 @@ class RestaurantLevel1 extends World {
       (session) => session.orderState == OrderState.cooking,
     );
     final hasReadyFood = customers.any(
-      (session) =>
-          session.orderState == OrderState.deliveryQueued ||
-          session.orderState == OrderState.ready,
+      (session) => session.orderState == OrderState.deliveryQueued,
     );
     final nextState = hasCooking ? 1 : (hasReadyFood ? 2 : 0);
     if (nextState == _kitchenVisualState) return;
@@ -443,7 +431,7 @@ class RestaurantLevel1 extends World {
       ..orderState = OrderState.waitingToOrder
       ..timer = 1 + _random.nextDouble();
     session.customer
-      ..position = map.spawnPoint(table.seatPoint)
+      ..position = table.seatPosition
       ..changeState(CustomerState.seated);
     debugPrint(
       '[Restaurant] customer#${session.id} assigned table#${table.id}',
@@ -452,7 +440,6 @@ class RestaurantLevel1 extends World {
 
   void _customerGivesUp(_CustomerSession session) {
     lostCustomers++;
-    popularity = max(0, popularity - 3);
     session.orderState = OrderState.leaving;
     session.customer.changeState(CustomerState.leaving);
     _moveCustomer(session, map.spawnPoint('door_spawn'));
@@ -475,8 +462,13 @@ class RestaurantLevel1 extends World {
               c.orderState == OrderState.paying,
         )
         .length;
-    return map.spawnPoint(count <= 1 ? 'cashier_queue_1' : 'cashier_queue_2');
+    return cashierFacility.position +
+        Vector2(count <= 1 ? -18 : -34, count <= 1 ? 12 : 20);
   }
+
+  Vector2 get _kitchenServicePosition =>
+      kitchenFacility.position +
+      Vector2(kitchenFacility.isVertical ? -55 : 55, 14);
 
   void _moveCustomer(_CustomerSession session, Vector2 target) {
     final path = map.findPath(session.customer.position, target);
@@ -493,27 +485,36 @@ class RestaurantLevel1 extends World {
     );
   }
 
+  void _refreshFacilityLayout() {
+    map.setDynamicObstacles(
+      facilities.map((facility) {
+        final isTable = facility.facilityId.startsWith('table');
+        final width = isTable ? 54.0 : 72.0;
+        final height = isTable ? 18.0 : 24.0;
+        return Rect.fromCenter(
+          center: Offset(facility.position.x, facility.position.y - height / 2),
+          width: width,
+          height: height,
+        );
+      }).toList(),
+    );
+  }
+
   String _taskLabel(WaiterTaskType type) => switch (type) {
     WaiterTaskType.takeOrder => '接单',
     WaiterTaskType.deliverFood => '上菜',
     WaiterTaskType.cleanTable => '清桌',
   };
-
-  void _checkLevelUp() {
-    while (experience >= experienceToNext) {
-      experience -= experienceToNext;
-      playerLevel++;
-      debugPrint('[Economy] player level up -> $playerLevel');
-    }
-  }
 }
 
 class _RestaurantTable {
-  _RestaurantTable(this.id, this.seatPoint, this.servicePoint, this.facility);
+  _RestaurantTable(this.id, this.facility);
   final int id;
-  final String seatPoint;
-  final String servicePoint;
   final RestaurantFacility facility;
+  Vector2 get seatPosition =>
+      facility.position + Vector2(facility.isVertical ? -28 : 28, -26);
+  Vector2 get servicePosition =>
+      facility.position + Vector2(facility.isVertical ? 6 : -6, 13);
   TableState state = TableState.available;
   int? customerId;
 }
@@ -526,7 +527,6 @@ class _CustomerSession {
   _RestaurantTable? table;
   double timer = 0;
   double patience = 18;
-  RecipeData? recipe;
 }
 
 class _WaiterTask {

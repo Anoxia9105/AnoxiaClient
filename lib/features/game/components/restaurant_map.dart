@@ -13,6 +13,7 @@ class RestaurantMap extends PositionComponent {
   late final TiledComponent tiled;
 
   final List<Rect> _collisionRects = [];
+  final List<Rect> _dynamicCollisionRects = [];
   final Map<String, Vector2> _spawnPoints = {};
   DateTime? _lastCollisionLogAt;
 
@@ -49,6 +50,11 @@ class RestaurantMap extends PositionComponent {
     }
 
     final objectPosition = _screenToObject(local);
+    if (_dynamicCollisionRects.any(
+      (rect) => rect.contains(Offset(local.x, local.y)),
+    )) {
+      return false;
+    }
     for (var index = 0; index < _collisionRects.length; index++) {
       final rect = _collisionRects[index];
       if (!rect.contains(Offset(objectPosition.x, objectPosition.y))) continue;
@@ -73,6 +79,12 @@ class RestaurantMap extends PositionComponent {
       return _objectToScreen(objectPosition) + position;
     }
     return (fallback ?? size / 2) + position;
+  }
+
+  void setDynamicObstacles(List<Rect> obstacles) {
+    _dynamicCollisionRects
+      ..clear()
+      ..addAll(obstacles);
   }
 
   /// Tiled stores object-layer coordinates for isometric maps in its
@@ -249,6 +261,12 @@ class RestaurantMap extends PositionComponent {
       canvas
         ..drawPath(path, collisionFill)
         ..drawPath(path, collisionLine);
+    }
+    final dynamicPaint = Paint()
+      ..color = const Color(0x559C27B0)
+      ..style = PaintingStyle.fill;
+    for (final rect in _dynamicCollisionRects) {
+      canvas.drawRect(rect, dynamicPaint);
     }
 
     final spawnPaint = Paint()
