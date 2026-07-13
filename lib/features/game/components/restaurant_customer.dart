@@ -50,8 +50,10 @@ class RestaurantCustomer extends SpriteAnimationComponent
     final cols = config['cols'] as int;
     final animations = config['animations'] as Map<String, dynamic>;
     final standingFrames = (animations['standing'] as List).cast<int>();
-    final seatedFrames = (animations['seatedSide'] as List).cast<int>();
-    final image = game.images.fromCache(config['sheet_path'] as String);
+    // These tables use the vertical isometric orientation, so customers must
+    // use the front-facing seated frames rather than the sideways pose.
+    final seatedFrames = (animations['seatedFront'] as List).cast<int>();
+    final image = await game.images.load(config['sheet_path'] as String);
     size = Vector2(cellW, cellH);
     Sprite frameSprite(int frame) => Sprite(
       image,
@@ -64,7 +66,10 @@ class RestaurantCustomer extends SpriteAnimationComponent
       loop: false,
     );
     _seatedAnimation = SpriteAnimation.spriteList(
-      [frameSprite(seatedFrames.first)],
+      // The first front-seated frame contains a detached foot that was meant
+      // to be composited by the original J2ME renderer. Frame 6 is the clean,
+      // complete near-seat pose for our precomposed sheet.
+      [frameSprite(seatedFrames.last)],
       stepTime: 1,
       loop: false,
     );
@@ -94,7 +99,12 @@ class RestaurantCustomer extends SpriteAnimationComponent
   @override
   void update(double dt) {
     super.update(dt);
-    priority = position.y.round();
+    final isSeated =
+        state == CustomerState.seated ||
+        state == CustomerState.waiting ||
+        state == CustomerState.eating;
+    // Seated frames are intentionally partially occluded by the table sprite.
+    priority = position.y.round() - (isSeated ? 1 : 0);
     final target = _target;
     if (target == null) return;
     final diff = target - position;

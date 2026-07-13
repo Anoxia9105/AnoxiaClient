@@ -178,31 +178,30 @@ class RestaurantLevel1 extends World {
   void _updateSpawner(double dt) {
     _spawnTimer -= dt;
     if (_spawnTimer > 0 || customers.length >= _maxCustomers) return;
+    if (_availableTable() == null) {
+      _spawnTimer = .5;
+      return;
+    }
     _spawnTimer = 4 + _random.nextDouble() * 2;
     _spawnCustomer();
   }
 
   void _spawnCustomer() {
     final id = _nextCustomerId++;
-    final door = map.spawnPoint('door_spawn', fallback: Vector2(370, 200));
+    final table = _availableTable();
+    if (table == null) return;
+    final seat = map.spawnPoint(table.seatPoint);
     final customer = RestaurantCustomer(
       customerId: id,
       characterName: _customerNames[(id - 1) % _customerNames.length],
-      position: door,
+      position: seat,
     );
     final session = _CustomerSession(customer);
     customers.add(session);
     add(customer);
     customer.loaded.then((_) {
       if (customer.isRemoved) return;
-      final table = _availableTable();
-      if (table == null) {
-        session.orderState = OrderState.waitingForTable;
-        customer.changeState(CustomerState.waitingForTable);
-        _moveCustomer(session, _waitingPoint(session));
-      } else {
-        _assignTable(session, table);
-      }
+      _assignTable(session, table);
     });
   }
 
@@ -235,9 +234,9 @@ class RestaurantLevel1 extends World {
           session.timer -= dt;
           if (session.timer <= 0) {
             session.table!.facility.showFrame(2);
-            session.orderState = OrderState.goingToCashier;
+            session.orderState = OrderState.waitingToPay;
             session.customer.changeState(CustomerState.queueing);
-            _moveCustomer(session, _cashierQueuePoint(session));
+            session.customer.position = _cashierQueuePoint(session);
           }
         case OrderState.goingToCashier:
           if (!session.customer.isMoving) {
@@ -275,7 +274,7 @@ class RestaurantLevel1 extends World {
     if (current.orderState == OrderState.waitingToPay) {
       current.orderState = OrderState.paying;
       current.customer.changeState(CustomerState.paying);
-      _moveCustomer(current, map.spawnPoint('cashier_customer'));
+      current.customer.position = map.spawnPoint('cashier_customer');
       _cashierTimer = 1.5 / (1 + (cashierLevel - 1) * .2);
       return;
     }
@@ -293,7 +292,7 @@ class RestaurantLevel1 extends World {
     table.customerId = null;
     current.orderState = OrderState.leaving;
     current.customer.changeState(CustomerState.leaving);
-    _moveCustomer(current, map.spawnPoint('door_spawn'));
+    current.customer.removeFromParent();
     _enqueueTask(WaiterTaskType.cleanTable, current);
     debugPrint(
       '[Economy] ${recipe.name}: +${recipe.price} coins, '
@@ -441,9 +440,11 @@ class RestaurantLevel1 extends World {
       ..customerId = session.id;
     session
       ..table = table
-      ..orderState = OrderState.entering;
-    session.customer.changeState(CustomerState.entering);
-    _moveCustomer(session, map.spawnPoint(table.seatPoint));
+      ..orderState = OrderState.waitingToOrder
+      ..timer = 1 + _random.nextDouble();
+    session.customer
+      ..position = map.spawnPoint(table.seatPoint)
+      ..changeState(CustomerState.seated);
     debugPrint(
       '[Restaurant] customer#${session.id} assigned table#${table.id}',
     );
@@ -463,14 +464,6 @@ class RestaurantLevel1 extends World {
       if (table.state == TableState.available) return table;
     }
     return null;
-  }
-
-  Vector2 _waitingPoint(_CustomerSession session) {
-    final index = customers
-        .where((c) => c.orderState == OrderState.waitingForTable)
-        .toList()
-        .indexOf(session);
-    return map.spawnPoint(index.isEven ? 'waiting_1' : 'waiting_2');
   }
 
   Vector2 _cashierQueuePoint(_CustomerSession session) {

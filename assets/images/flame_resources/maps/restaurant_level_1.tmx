@@ -45,10 +45,10 @@
   <object id="28" name="door_spawn" x="258.5" y="143.5">
    <point/>
   </object>
-  <object id="30" name="table_1_seat" x="210" y="135">
+  <object id="30" name="table_1_seat" x="180" y="128">
    <point/>
   </object>
-  <object id="31" name="table_1_service" x="190" y="145">
+  <object id="31" name="table_1_service" x="235" y="150">
    <point/>
   </object>
   <object id="32" name="kitchen_service" x="410" y="160">
@@ -60,10 +60,10 @@
   <object id="34" name="cleaner_spawn" x="420" y="190">
    <point/>
   </object>
-  <object id="35" name="table_2_seat" x="300" y="150">
+  <object id="35" name="table_2_seat" x="270" y="143">
    <point/>
   </object>
-  <object id="36" name="table_2_service" x="280" y="160">
+  <object id="36" name="table_2_service" x="325" y="175">
    <point/>
   </object>
   <object id="37" name="waiting_1" x="265" y="135">

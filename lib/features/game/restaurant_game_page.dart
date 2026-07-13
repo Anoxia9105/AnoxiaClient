@@ -109,7 +109,7 @@ class _UpgradePanel extends StatelessWidget {
 }
 
 class RestaurantGame extends FlameGame {
-  static const bool enableDebugMode = true;
+  static const bool enableDebugMode = false;
   static const characterNames = [
     'waiter',
     'womanwaiter',
