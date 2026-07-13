@@ -7,6 +7,8 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+/// 餐厅游戏的主页面（StatefulWidget）。
+/// 负责管理游戏状态、存档加载、UI面板显示和结算弹窗。
 class RestaurantGamePage extends StatefulWidget {
   const RestaurantGamePage({super.key});
 
@@ -15,13 +17,13 @@ class RestaurantGamePage extends StatefulWidget {
 }
 
 class _RestaurantGamePageState extends State<RestaurantGamePage> {
-  RestaurantBusinessState? business;
-  RestaurantGame? game;
-  bool hasSave = false;
-  bool checkingSave = true;
-  bool editing = false;
-  bool _wasOpen = false;
-  int? _shownSettlementDay;
+  RestaurantBusinessState? business; // 业务状态（经营数据）
+  RestaurantGame? game;              // Flame 游戏实例
+  bool hasSave = false;              // 是否存在存档
+  bool checkingSave = true;          // 是否正在检查存档
+  bool editing = false;             // 是否处于家具编辑模式
+  bool _wasOpen = false;            // 上次营业状态（用于检测打烊结算）
+  int? _shownSettlementDay;         // 已显示结算弹窗的日期（避免重复弹窗）
 
   @override
   void initState() {
@@ -29,11 +31,13 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     _checkSave();
   }
 
+  /// 检查本地是否存在存档
   Future<void> _checkSave() async {
     hasSave = await RestaurantBusinessState.hasSave();
     if (mounted) setState(() => checkingSave = false);
   }
 
+  /// 进入游戏，使用指定的业务状态
   void _enterGame(RestaurantBusinessState state) {
     business?.removeListener(_businessChanged);
     state.addListener(_businessChanged);
@@ -46,12 +50,14 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     state.saveGame();
   }
 
+  /// 业务状态变更监听器（营业/打烊、结算等）
   void _businessChanged() {
     final state = business;
     if (state == null || !mounted) return;
     final ended = _wasOpen && !state.shopOpen && state.lastSettlement != null;
     _wasOpen = state.shopOpen;
     setState(() {});
+    // 如果刚刚打烊且尚未显示过该日结算，则弹出结算对话框
     if (ended && _shownSettlementDay != state.lastSettlement!.day) {
       _shownSettlementDay = state.lastSettlement!.day;
       WidgetsBinding.instance.addPostFrameCallback((_) => _showSettlement());
@@ -71,6 +77,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     return _buildGame();
   }
 
+  /// 开始菜单界面（新游戏 / 加载存档）
   Widget _buildStartScreen() {
     return ColoredBox(
       color: const Color(0xFF263238),
@@ -94,9 +101,9 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
                   onPressed: checkingSave || !hasSave
                       ? null
                       : () async {
-                          final loaded = await RestaurantBusinessState.load();
-                          if (loaded != null && mounted) _enterGame(loaded);
-                        },
+                    final loaded = await RestaurantBusinessState.load();
+                    if (loaded != null && mounted) _enterGame(loaded);
+                  },
                   child: Text(checkingSave ? '检查存档…' : '加载游戏'),
                 ),
                 const SizedBox(height: 12),
@@ -109,6 +116,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     );
   }
 
+  /// 游戏主界面（Flame 游戏 + 覆盖的管理面板和 HUD）
   Widget _buildGame() {
     final state = business!;
     return Stack(
@@ -121,7 +129,9 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
           ),
           errorBuilder: (_, error) => Center(child: Text('游戏加载失败：$error')),
         ),
+        // 左上资源 HUD
         Positioned(left: 10, top: 10, child: _ResourceHud(state: state)),
+        // 右侧管理面板
         Positioned(
           right: 10,
           top: 10,
@@ -140,9 +150,10 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     );
   }
 
+  /// 切换编辑模式（摆放家具）
   void _toggleEditing() {
     final state = business!;
-    if (state.shopOpen) return;
+    if (state.shopOpen) return; // 营业中不允许编辑
     setState(() => editing = !editing);
     game!.setEditMode(editing);
     if (editing) {
@@ -152,6 +163,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     }
   }
 
+  /// 开店（结束筹备，开始营业）
   void _openShop() {
     if (!business!.openShop()) return;
     if (editing) {
@@ -160,6 +172,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
     }
   }
 
+  /// 显示结算弹窗
   Future<void> _showSettlement() async {
     if (!mounted || business?.lastSettlement == null) return;
     final result = business!.lastSettlement!;
@@ -169,7 +182,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
         title: Text('第 ${result.day} 天结算'),
         content: Text(
           '订单：${result.orders}\n收入：${result.revenue}\n'
-          '支出：${result.expenses}\n净利润：${result.profit}',
+              '支出：${result.expenses}\n净利润：${result.profit}',
         ),
         actions: [
           TextButton(
@@ -182,6 +195,7 @@ class _RestaurantGamePageState extends State<RestaurantGamePage> {
   }
 }
 
+/// 右侧管理面板组件（经营操作、采购、升级等）
 class _ManagementPanel extends StatelessWidget {
   const _ManagementPanel({
     required this.state,
@@ -207,6 +221,7 @@ class _ManagementPanel extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          // 日期与金币
           Text(
             '第 ${state.day} 天  金币 ${state.coins}',
             style: Theme.of(context).textTheme.titleMedium,
@@ -215,6 +230,7 @@ class _ManagementPanel extends StatelessWidget {
             state.shopOpen ? '营业中 ${state.remainingSeconds.ceil()} 秒' : '筹备中',
           ),
           const Divider(),
+          // 员工雇佣
           const Text('员工'),
           _buyButton(
             '服务员 ${state.waiterHired ? '已雇佣' : '500'}',
@@ -229,6 +245,7 @@ class _ManagementPanel extends StatelessWidget {
                 : () => state.hire('cleaner'),
           ),
           const Divider(),
+          // 基础设施购买
           const Text('基础家具'),
           _equipment('tables', '桌椅', state.tablesOwned),
           _equipment('kitchen', '厨房', state.kitchenOwned),
@@ -249,6 +266,7 @@ class _ManagementPanel extends StatelessWidget {
             ],
           ),
           const Divider(),
+          // 菜品选择与升级
           const Text('菜品与食材（营业中也可采购）'),
           DropdownButton<String>(
             isExpanded: true,
@@ -277,7 +295,7 @@ class _ManagementPanel extends StatelessWidget {
           ),
           Text(
             '${state.activeDish.name} Lv.${state.activeDishLevel}  '
-            '售价 ${state.activeDishPrice}',
+                '售价 ${state.activeDishPrice}',
           ),
           Text(
             '配方：${state.activeDish.recipe.entries.map((e) => '${RestaurantBalance.ingredientNames[e.key]}×${e.value}').join('、')}',
@@ -290,6 +308,7 @@ class _ManagementPanel extends StatelessWidget {
               '升级菜品 ${RestaurantBalance.dishUpgradeCost(state.activeDishLevel)}',
             ),
           ),
+          // 食材采购
           for (final item in RestaurantBalance.ingredientUnitPrices.entries)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -299,13 +318,13 @@ class _ManagementPanel extends StatelessWidget {
                   children: [
                     _IngredientSprite(
                       index:
-                          RestaurantBalance.ingredientSpriteIndexes[item.key]!,
+                      RestaurantBalance.ingredientSpriteIndexes[item.key]!,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '${RestaurantBalance.ingredientNames[item.key]}：'
-                        '${state.inventory[item.key]}',
+                            '${state.inventory[item.key]}',
                       ),
                     ),
                     Text(
@@ -316,8 +335,10 @@ class _ManagementPanel extends StatelessWidget {
               ),
             ),
           const Divider(),
+          // 开店条件
           if (!state.shopOpen && state.openingRequirements.isNotEmpty)
             Text('开店还需：${state.openingRequirements.join('、')}'),
+          // 开店/打烊按钮
           FilledButton.icon(
             onPressed: state.shopOpen
                 ? onClose
@@ -330,6 +351,7 @@ class _ManagementPanel extends StatelessWidget {
     );
   }
 
+  /// 购买基础设施的按钮构建
   Widget _equipment(String id, String name, bool owned) {
     final price = RestaurantBalance.equipmentPrices[id]!;
     return _buyButton(
@@ -338,6 +360,7 @@ class _ManagementPanel extends StatelessWidget {
     );
   }
 
+  /// 通用购买按钮
   Widget _buyButton(String text, VoidCallback? action) => Padding(
     padding: const EdgeInsets.only(top: 4),
     child: SizedBox(
@@ -347,6 +370,7 @@ class _ManagementPanel extends StatelessWidget {
   );
 }
 
+/// 左上角资源 HUD（时间、人气、金币，使用像素风格数字）
 class _ResourceHud extends StatelessWidget {
   const _ResourceHud({required this.state});
 
@@ -391,6 +415,7 @@ class _ResourceHud extends StatelessWidget {
   }
 }
 
+/// 像素风格 HUD 条（背景、图标、数字）
 class _PixelHudBar extends StatelessWidget {
   const _PixelHudBar({
     required this.background,
@@ -416,6 +441,7 @@ class _PixelHudBar extends StatelessWidget {
       child: Stack(
         alignment: Alignment.centerLeft,
         children: [
+          // 背景条
           Positioned.fill(
             child: Image.asset(
               background,
@@ -423,6 +449,7 @@ class _PixelHudBar extends StatelessWidget {
               filterQuality: FilterQuality.none,
             ),
           ),
+          // 图标
           Positioned(
             left: 3,
             child: Image.asset(
@@ -433,6 +460,7 @@ class _PixelHudBar extends StatelessWidget {
               filterQuality: FilterQuality.none,
             ),
           ),
+          // 数字
           Positioned(
             left: 38,
             right: 6,
@@ -450,7 +478,7 @@ class _PixelHudBar extends StatelessWidget {
   }
 }
 
-/// timenum/qianupnum 都是横向数字条，每个字符固定为 8×10。
+/// 从横向数字条中裁剪单个数字（每个数字 8×10 像素）
 class _SpriteDigits extends StatelessWidget {
   const _SpriteDigits({
     required this.value,
@@ -497,7 +525,7 @@ class _SpriteDigits extends StatelessWidget {
   }
 }
 
-/// 从 22×88 的 shicaibig.png 中裁出一格 22×22 食材图标。
+/// 从食材大图中裁出单个食材图标（22×22）
 class _IngredientSprite extends StatelessWidget {
   const _IngredientSprite({required this.index});
 
@@ -535,11 +563,13 @@ class _IngredientSprite extends StatelessWidget {
   }
 }
 
+/// Flame 游戏主类，承载 RestaurantLevel1 世界，并关联业务状态
 class RestaurantGame extends FlameGame {
   RestaurantGame({required this.business}) {
-    debugMode = true;
+    debugMode = true; // 启用调试模式（显示碰撞框等）
   }
 
+  // 所有角色精灵表名称（用于预加载）
   static const characterNames = [
     'waiter',
     'womanwaiter',
@@ -564,6 +594,7 @@ class RestaurantGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    // 预加载所有角色动画资源
     await images.loadAll([
       for (final name in characterNames) 'flame_sprites/${name}_anim_sheet.png',
     ]);
@@ -577,10 +608,12 @@ class RestaurantGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
-    business.tick(dt);
+    business.tick(dt); // 每帧更新业务状态
   }
 
+  /// 设置编辑模式（由管理面板调用）
   void setEditMode(bool value) => _level?.setEditMode(value);
+  /// 旋转当前选中的家具
   void rotateSelectedFacility() => _level?.rotateSelectedFacility();
 
   @override
@@ -589,11 +622,13 @@ class RestaurantGame extends FlameGame {
     _fitCameraToLevel();
   }
 
+  /// 调整相机以适应地图视觉尺寸
   void _fitCameraToLevel() {
     final level = _level;
     if (level == null || !level.isLoaded || level.mapVisualSize.isZero()) {
       return;
     }
+    // 计算合适的缩放，使地图完整可见
     final zoom = math.max(
       size.x / level.mapVisualSize.x,
       size.y / level.mapVisualSize.y,
