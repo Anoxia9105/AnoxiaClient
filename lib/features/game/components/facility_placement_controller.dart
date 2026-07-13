@@ -44,17 +44,26 @@ class FacilityPlacementController {
     Vector2 position,
     bool vertical,
   ) {
-    final candidate = moving.footprintAt(position, vertical: vertical);
+    // 两个占地框各扩一半间距：相交时说明家具本体太近或已经穿插。
+    final candidate = moving
+        .footprintAt(position, vertical: vertical)
+        .inflate(moving.config.placementGap / 2);
     for (final other in facilities) {
-      if (identical(other, moving)) continue;
-      if (candidate.overlaps(other.footprint)) return true;
+      if (identical(other, moving) || !other.active) continue;
+      final otherArea = other.footprint.inflate(other.config.placementGap / 2);
+      if (candidate.overlaps(otherArea)) return true;
     }
     return false;
   }
 
   /// 家具位置或方向变化后，重新生成服务员寻路使用的障碍物。
   void refreshObstacles() {
-    map.setDynamicObstacles(facilities.map((item) => item.footprint).toList());
+    map.setDynamicObstacles(
+      facilities
+          .where((item) => item.active)
+          .map((item) => item.footprint)
+          .toList(),
+    );
   }
 
   void printLayout() {

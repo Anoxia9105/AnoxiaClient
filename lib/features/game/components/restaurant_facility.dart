@@ -31,6 +31,7 @@ class RestaurantFacility extends SpriteAnimationComponent
   bool editable = false;
   bool selected = false;
   bool isVertical = true;
+  bool active = true;
   PlacementFailure? lastPlacementFailure;
   int _level = 1;
   int _cols = 1;
@@ -159,15 +160,21 @@ class RestaurantFacility extends SpriteAnimationComponent
   }
 
   @override
+  void render(Canvas canvas) {
+    if (!active) return;
+    super.render(canvas);
+  }
+
+  @override
   void renderDebugMode(Canvas canvas) {
+    if (!active) return;
     super.renderDebugMode(canvas);
-    if (!selected && lastPlacementFailure == null) return;
     final localFootprint = footprint.shift(Offset(-position.x, -position.y));
     canvas.drawRect(
       localFootprint,
       Paint()
         ..color = lastPlacementFailure == null
-            ? const Color(0xFF00E5FF)
+            ? (selected ? const Color(0xFF00E5FF) : const Color(0xFFFFAB00))
             : const Color(0xFFFF1744)
         ..strokeWidth = 2
         ..style = PaintingStyle.stroke,

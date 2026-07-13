@@ -31,6 +31,7 @@ class RestaurantCustomer extends SpriteAnimationComponent
   bool _facingRight = true;
   late final SpriteAnimation _standingAnimation;
   late final SpriteAnimation _seatedAnimation;
+  late final SpriteComponent _moodIcon;
   CustomerState state = CustomerState.entering;
 
   bool get isMoving => _target != null || _path.isNotEmpty;
@@ -74,6 +75,19 @@ class RestaurantCustomer extends SpriteAnimationComponent
       loop: false,
     );
     animation = _standingAnimation;
+    final moodSheet = await game.images.load('flame_resources/raw/lian.png');
+    _moodIcon = SpriteComponent(
+      sprite: Sprite(
+        moodSheet,
+        srcPosition: Vector2.zero(),
+        srcSize: Vector2(12, 12),
+      ),
+      size: Vector2(12, 12),
+      position: Vector2(size.x / 2, -7),
+      anchor: Anchor.center,
+      priority: 10,
+    );
+    await add(_moodIcon);
     debugPrint('[Restaurant] customer#$customerId ($characterName) spawned');
   }
 
@@ -93,6 +107,7 @@ class RestaurantCustomer extends SpriteAnimationComponent
             value == CustomerState.eating
         ? _seatedAnimation
         : _standingAnimation;
+    _showMood(_moodFor(value));
     debugPrint('[Restaurant] customer#$customerId -> ${value.name}');
   }
 
@@ -130,5 +145,19 @@ class RestaurantCustomer extends SpriteAnimationComponent
 
   void _advancePath() {
     _target = _path.isEmpty ? null : _path.removeAt(0);
+  }
+
+  int _moodFor(CustomerState value) => switch (value) {
+    CustomerState.waitingForTable || CustomerState.waiting => 1,
+    CustomerState.leaving => 2,
+    _ => 0,
+  };
+
+  void _showMood(int index) {
+    _moodIcon.sprite = Sprite(
+      _moodIcon.sprite!.image,
+      srcPosition: Vector2(index * 12, 0),
+      srcSize: Vector2(12, 12),
+    );
   }
 }

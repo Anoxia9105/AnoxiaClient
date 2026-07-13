@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:anoxia/features/game/components/my_waiter.dart';
+import 'package:anoxia/features/game/components/random_cleaner.dart';
 import 'package:anoxia/features/game/components/facility_placement_controller.dart';
+import 'package:anoxia/features/game/components/keyboard_waitress.dart';
 import 'package:anoxia/features/game/components/restaurant_customer.dart';
 import 'package:anoxia/features/game/components/restaurant_facility.dart';
 import 'package:anoxia/features/game/components/restaurant_map.dart';
-import 'package:anoxia/features/game/components/restaurant_person.dart';
 import 'package:anoxia/features/game/models/facility_placement.dart';
+import 'package:anoxia/features/game/models/restaurant_business_state.dart';
 import 'package:anoxia/features/game/models/restaurant_level_config.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
@@ -30,13 +32,16 @@ enum OrderState {
 enum WaiterTaskType { takeOrder, deliverFood, cleanTable }
 
 class RestaurantLevel1 extends World {
-  RestaurantLevel1({RestaurantLevelConfig? config})
+  RestaurantLevel1({RestaurantLevelConfig? config, this.business})
     : config = config ?? level1Config;
 
   final RestaurantLevelConfig config;
+  final RestaurantBusinessState? business;
 
   late final RestaurantMap map;
   late final MyWaiter waiter;
+  late final RandomCleaner cleaner;
+  late final KeyboardWaitress keyboardWaitress;
   late final RestaurantFacility kitchenFacility;
   late final RestaurantFacility cashierFacility;
   late final FacilityPlacementController placementController;
@@ -50,6 +55,7 @@ class RestaurantLevel1 extends World {
   double _spawnTimer = 1;
   double _cashierTimer = 0;
   int _kitchenVisualState = -1;
+  String _facilityOwnershipKey = '';
   bool editMode = false;
   RestaurantFacility? selectedFacility;
 
@@ -87,7 +93,8 @@ class RestaurantLevel1 extends World {
     for (final facility in facilities) {
       facility
         ..editable = value
-        ..debugMode = value;
+        // 全局 Debug 已开启，退出摆放模式后也保留占地和锚点显示。
+        ..debugMode = true;
       if (!value) facility.selected = false;
     }
     if (!value) selectedFacility = null;
@@ -156,22 +163,32 @@ class RestaurantLevel1 extends World {
           .entries
           .map((entry) => _RestaurantTable(entry.key + 1, entry.value)),
     );
-    placementController
-      ..refreshObstacles()
-      ..printLayout();
-    await addAll([
-      RestaurantPerson(
-        characterName: 'cleaner',
-        position: map.spawnPoint('cleaner_spawn', fallback: Vector2(330, 120)),
-      ),
-    ]);
+    placementController.printLayout();
+    _syncOwnedFacilities(force: true);
+    keyboardWaitress = KeyboardWaitress(
+      map: map,
+      position:
+          map.spawnPoint('waiter_spawn', fallback: Vector2(250, 110)) +
+          Vector2(28, 12),
+    );
+    await add(keyboardWaitress);
+    cleaner = RandomCleaner(
+      map: map,
+      position: map.spawnPoint('cleaner_spawn', fallback: Vector2(330, 120)),
+    );
+    await add(cleaner);
     debugPrint('[餐厅关卡] ${config.id} 加载完成，共 ${tables.length} 张桌子');
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    if (editMode) return;
+    _syncOwnedFacilities();
+    waiter.opacity = business?.waiterHired == false ? 0 : 1;
+    cleaner.opacity = business?.cleanerHired == false ? 0 : 1;
+    cleaner.enabled =
+        business?.shopOpen == true && business?.cleanerHired == true;
+    if (editMode || business?.shopOpen == false) return;
     _updateSpawner(dt);
     _updateCustomers(dt);
     _updateCashier(dt);
@@ -179,6 +196,27 @@ class RestaurantLevel1 extends World {
     _updateKitchenVisual();
     _seatWaitingCustomers();
     customers.removeWhere((session) => session.customer.isRemoved);
+  }
+
+  void _syncOwnedFacilities({bool force = false}) {
+    final state = business;
+    if (state == null) {
+      if (force) placementController.refreshObstacles();
+      return;
+    }
+    final key =
+        '${state.tablesOwned}-${state.kitchenOwned}-${state.cashierOwned}';
+    if (!force && key == _facilityOwnershipKey) return;
+    _facilityOwnershipKey = key;
+    for (final facility in facilities) {
+      facility.active = switch (facility.config.type) {
+        FacilityType.table => state.tablesOwned,
+        FacilityType.kitchen => state.kitchenOwned,
+        FacilityType.cashier => state.cashierOwned,
+        FacilityType.toilet || FacilityType.decoration => true,
+      };
+    }
+    placementController.refreshObstacles();
   }
 
   void _updateSpawner(double dt) {
@@ -292,6 +330,7 @@ class RestaurantLevel1 extends World {
     _cashierTimer -= dt;
     if (_cashierTimer > 0) return;
     completedOrders++;
+    business?.completeOrder();
     final table = current.table!;
     table.state = TableState.dirty;
     table.customerId = null;
@@ -345,6 +384,14 @@ class RestaurantLevel1 extends World {
         if (task.stage == 1) {
           task.stage = 2;
           _moveWaiter(_kitchenServicePosition);
+          return;
+        }
+        if (business?.consumeActiveDishIngredients() == false) {
+          // 食材不足时不凭空做菜，顾客稍后重新下单等待补货。
+          session.orderState = OrderState.waitingToOrder;
+          session.timer = 2;
+          session.customer.changeState(CustomerState.waiting);
+          _finishTask();
           return;
         }
         session.orderState = OrderState.cooking;

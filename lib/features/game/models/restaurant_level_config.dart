@@ -17,6 +17,7 @@ class FacilityConfig {
     this.initialFrame = 0,
     this.renderOffset = 0,
     this.wallMargin = 12,
+    this.placementGap = 4,
   });
 
   final String id;
@@ -30,6 +31,9 @@ class FacilityConfig {
 
   /// 家具中心与墙体内沿至少保留的对象坐标距离。
   final double wallMargin;
+
+  /// 与其他家具至少保留的屏幕像素间距，避免贴边后图片仍然穿插。
+  final double placementGap;
 
   Vector2 footprintFor(bool vertical) =>
       (vertical ? verticalFootprint : horizontalFootprint ?? verticalFootprint)
@@ -64,18 +68,21 @@ final level1Config = RestaurantLevelConfig(
       type: FacilityType.table,
       assetNames: const ['2pzhuoyi_putong'],
       spawnName: 'table_1_facility',
-      verticalFootprint: Vector2(58, 22),
-      horizontalFootprint: Vector2(58, 22),
+      // 桌椅是一整套家具，占地必须包含两侧椅子，不能只量桌面。
+      verticalFootprint: Vector2(82, 46),
+      horizontalFootprint: Vector2(82, 46),
       wallMargin: 32,
+      placementGap: 6,
     ),
     FacilityConfig(
       id: 'table_2',
       type: FacilityType.table,
       assetNames: const ['2pzhuoyi_putong'],
       spawnName: 'table_2_facility',
-      verticalFootprint: Vector2(58, 22),
-      horizontalFootprint: Vector2(58, 22),
+      verticalFootprint: Vector2(82, 46),
+      horizontalFootprint: Vector2(82, 46),
       wallMargin: 32,
+      placementGap: 6,
     ),
     FacilityConfig(
       id: 'kitchen',
