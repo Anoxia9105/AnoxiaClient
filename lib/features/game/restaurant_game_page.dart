@@ -33,6 +33,8 @@ class RestaurantGamePage extends StatelessWidget {
 }
 
 class RestaurantGame extends FlameGame {
+  static const bool enableDebugMode = true;
+
   static const characterNames = [
     'waiter',
     'womanwaiter',
@@ -49,6 +51,7 @@ class RestaurantGame extends FlameGame {
   ];
 
   RestaurantLevel1? _level;
+  late final TextComponent _hud;
 
   @override
   Color backgroundColor() => const Color(0xFFE8F0F2);
@@ -56,6 +59,7 @@ class RestaurantGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    debugMode = enableDebugMode;
     await images.loadAll([
       for (final name in characterNames) 'flame_sprites/${name}_anim_sheet.png',
     ]);
@@ -64,7 +68,35 @@ class RestaurantGame extends FlameGame {
     _level = level1;
     world = level1;
     await level1.loaded;
+    _hud = TextComponent(
+      position: Vector2(16, 16),
+      priority: 100000,
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+        ),
+      ),
+    );
+    await camera.viewport.add(_hud);
+    _updateHud();
     _fitCameraToLevel();
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _updateHud();
+  }
+
+  void _updateHud() {
+    final level = _level;
+    if (level == null || !_hud.isMounted) return;
+    _hud.text =
+        '金币 ${level.coins}   已完成 ${level.completedOrders}\n'
+        '流程 ${level.phase.name}';
   }
 
   @override

@@ -1,14 +1,26 @@
 import 'dart:convert';
 
 import 'package:flame/components.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// A stationary member of the restaurant staff/customer cast.
 class RestaurantPerson extends SpriteAnimationComponent with HasGameReference {
   RestaurantPerson({required this.characterName, required Vector2 position})
-    : super(position: position, anchor: Anchor.bottomCenter, priority: 10);
+    : super(
+        position: position,
+        anchor: Anchor.bottomCenter,
+        priority: position.y.round(),
+      );
 
   final String characterName;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    // Isometric depth is determined by the character's feet, not add order.
+    priority = position.y.round();
+  }
 
   @override
   Future<void> onLoad() async {
@@ -45,6 +57,10 @@ class RestaurantPerson extends SpriteAnimationComponent with HasGameReference {
           .toList(),
       stepTime: 0.2,
       loop: frames.length > 1,
+    );
+    debugPrint(
+      '[RestaurantNPC] loaded=$characterName position=$position '
+      'size=$size anchor=$anchor debug=$debugMode',
     );
   }
 }

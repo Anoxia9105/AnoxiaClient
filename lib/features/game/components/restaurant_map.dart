@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame_tiled/flame_tiled.dart';
+import 'package:flutter/foundation.dart';
 
 class RestaurantMap extends PositionComponent {
   static final Vector2 tileSize = Vector2(32, 16);
@@ -13,6 +14,7 @@ class RestaurantMap extends PositionComponent {
 
   final List<Rect> _collisionRects = [];
   final Map<String, Vector2> _spawnPoints = {};
+  DateTime? _lastCollisionLogAt;
 
   Vector2 get visualSize {
     final map = tiled.tileMap.map;
@@ -34,6 +36,10 @@ class RestaurantMap extends PositionComponent {
 
     _loadCollisionRects();
     _loadSpawnPoints();
+    debugPrint(
+      '[RestaurantMap] debug=$debugMode, collisions=${_collisionRects.length}, '
+      'spawns=${_spawnPoints.keys.join(', ')}',
+    );
   }
 
   bool isWalkableAt(Vector2 worldPosition) {
@@ -42,13 +48,49 @@ class RestaurantMap extends PositionComponent {
       return false;
     }
 
-    return !_collisionRects.any((rect) {
-      return rect.contains(Offset(local.x, local.y));
-    });
+    final objectPosition = _screenToObject(local);
+    for (var index = 0; index < _collisionRects.length; index++) {
+      final rect = _collisionRects[index];
+      if (!rect.contains(Offset(objectPosition.x, objectPosition.y))) continue;
+
+      final now = DateTime.now();
+      if (_lastCollisionLogAt == null ||
+          now.difference(_lastCollisionLogAt!).inMilliseconds >= 500) {
+        _lastCollisionLogAt = now;
+        debugPrint(
+          '[RestaurantMap] COLLISION #$index screen=$local '
+          'object=$objectPosition rect=$rect',
+        );
+      }
+      return false;
+    }
+    return true;
   }
 
   Vector2 spawnPoint(String name, {Vector2? fallback}) {
-    return (_spawnPoints[name] ?? fallback ?? size / 2) + position;
+    final objectPosition = _spawnPoints[name];
+    if (objectPosition != null) {
+      return _objectToScreen(objectPosition) + position;
+    }
+    return (fallback ?? size / 2) + position;
+  }
+
+  /// Tiled stores object-layer coordinates for isometric maps in its
+  /// unprojected coordinate plane. Flame renders tiles in screen space, so
+  /// spawn points and collision shapes must use the same projection.
+  Vector2 _objectToScreen(Vector2 point) {
+    final scale = tileSize.x / tileSize.y;
+    return Vector2(
+      (point.x - point.y) * scale / 2 +
+          tiled.tileMap.map.height * tileSize.x / 2,
+      (point.x + point.y) / 2,
+    );
+  }
+
+  Vector2 _screenToObject(Vector2 point) {
+    final shiftedX = point.x - tiled.tileMap.map.height * tileSize.x / 2;
+    final scale = tileSize.x / tileSize.y;
+    return Vector2(point.y + shiftedX / scale, point.y - shiftedX / scale);
   }
 
   List<Vector2> findPath(Vector2 worldStart, Vector2 worldTarget) {
@@ -173,6 +215,59 @@ class RestaurantMap extends PositionComponent {
     for (final object in spawnLayer.objects) {
       if (object.name.isEmpty) continue;
       _spawnPoints[object.name] = Vector2(object.x, object.y);
+      debugPrint(
+        '[RestaurantMap] SPAWN ${object.name}: object='
+        '(${object.x}, ${object.y}) screen='
+        '${_objectToScreen(Vector2(object.x, object.y))}',
+      );
+    }
+  }
+
+  @override
+  void renderDebugMode(Canvas canvas) {
+    super.renderDebugMode(canvas);
+
+    final collisionFill = Paint()
+      ..color = const Color(0x55FF1744)
+      ..style = PaintingStyle.fill;
+    final collisionLine = Paint()
+      ..color = const Color(0xFFFF1744)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    for (final rect in _collisionRects) {
+      final points = [
+        _objectToScreen(Vector2(rect.left, rect.top)),
+        _objectToScreen(Vector2(rect.right, rect.top)),
+        _objectToScreen(Vector2(rect.right, rect.bottom)),
+        _objectToScreen(Vector2(rect.left, rect.bottom)),
+      ];
+      final path = Path()..moveTo(points.first.x, points.first.y);
+      for (final point in points.skip(1)) {
+        path.lineTo(point.x, point.y);
+      }
+      path.close();
+      canvas
+        ..drawPath(path, collisionFill)
+        ..drawPath(path, collisionLine);
+    }
+
+    final spawnPaint = Paint()
+      ..color = const Color(0xFF00E676)
+      ..strokeWidth = 2;
+    for (final entry in _spawnPoints.entries) {
+      final point = _objectToScreen(entry.value);
+      canvas
+        ..drawCircle(Offset(point.x, point.y), 5, spawnPaint)
+        ..drawLine(
+          Offset(point.x - 8, point.y),
+          Offset(point.x + 8, point.y),
+          spawnPaint,
+        )
+        ..drawLine(
+          Offset(point.x, point.y - 8),
+          Offset(point.x, point.y + 8),
+          spawnPaint,
+        );
     }
   }
 }

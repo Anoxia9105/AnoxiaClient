@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="right-down" width="32" height="16" tilewidth="32" tileheight="16" infinite="0" nextlayerid="14" nextobjectid="30">
+<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="right-down" width="32" height="16" tilewidth="32" tileheight="16" infinite="0" nextlayerid="14" nextobjectid="35">
  <tileset firstgid="1" source="map_wall_01.tsx"/>
  <imagelayer id="10" name="clean_background" offsetx="-640" offsety="-320">
-  <image source="flame_resources/maps/restaurant_city_background.png" width="2048" height="1024"/>
+  <image source="flame_resources/maps/restaurant_city_background.png"/>
  </imagelayer>
  <layer id="1" name="图块层 1" width="32" height="16">
   <data encoding="csv">
@@ -41,10 +41,22 @@
   <object id="26" name="cashier_spawn" x="163.5" y="60.5">
    <point/>
   </object>
-  <object id="27" x="-83" y="-69">
+  <object id="28" name="door_spawn" x="258.5" y="143.5">
    <point/>
   </object>
-  <object id="28" name="door_spawn" x="258.5" y="143.5">
+  <object id="30" name="table_seat" x="210" y="135">
+   <point/>
+  </object>
+  <object id="31" name="table_service" x="190" y="145">
+   <point/>
+  </object>
+  <object id="32" name="kitchen_service" x="410" y="105">
+   <point/>
+  </object>
+  <object id="33" name="cashier_customer" x="180" y="78">
+   <point/>
+  </object>
+  <object id="34" name="cleaner_spawn" x="420" y="190">
    <point/>
   </object>
  </objectgroup>

@@ -21,7 +21,7 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
 
   bool get isMoving => _targetPosition != null || _path.isNotEmpty;
 
-  MyWaiter() : super(position: Vector2(24, 24)) {
+  MyWaiter() : super(position: Vector2(24, 24), anchor: Anchor.bottomCenter) {
     scale = Vector2.all(1);
   }
 
@@ -83,6 +83,8 @@ class MyWaiter extends SpriteAnimationComponent with HasGameReference {
   @override
   void update(double dt) {
     super.update(dt);
+    // Keep every NPC in the same isometric Y-sorted render layer.
+    priority = position.y.round();
     final target = _targetPosition;
     if (target == null) return;
 
