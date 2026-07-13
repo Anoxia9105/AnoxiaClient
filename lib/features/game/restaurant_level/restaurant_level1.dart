@@ -4,6 +4,7 @@ import 'package:anoxia/features/game/components/my_waiter.dart';
 import 'package:anoxia/features/game/components/restaurant_customer.dart';
 import 'package:anoxia/features/game/components/restaurant_map.dart';
 import 'package:anoxia/features/game/components/restaurant_person.dart';
+import 'package:anoxia/features/game/models/restaurant_economy.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 
@@ -44,6 +45,44 @@ class RestaurantLevel1 extends World {
   int coins = 0;
   int completedOrders = 0;
   int lostCustomers = 0;
+  int playerLevel = 1;
+  int experience = 0;
+  int popularity = 0;
+  int kitchenLevel = 1;
+  int cashierLevel = 1;
+  int get kitchenUpgradeCost => kitchenLevel * 80;
+  int get cashierUpgradeCost => cashierLevel * 60;
+  int get experienceToNext => experienceForLevel(playerLevel);
+  int get unlockedRecipeCount => restaurantRecipes
+      .where((recipe) => recipe.requiredLevel <= playerLevel)
+      .length;
+  RestaurantSnapshot get snapshot => RestaurantSnapshot(
+    coins: coins,
+    level: playerLevel,
+    experience: experience,
+    experienceToNext: experienceToNext,
+    popularity: popularity,
+    kitchenLevel: kitchenLevel,
+    cashierLevel: cashierLevel,
+    kitchenUpgradeCost: kitchenUpgradeCost,
+    cashierUpgradeCost: cashierUpgradeCost,
+    unlockedRecipes: unlockedRecipeCount,
+  );
+
+  bool upgradeKitchen() {
+    if (kitchenLevel >= 5 || coins < kitchenUpgradeCost) return false;
+    coins -= kitchenUpgradeCost;
+    kitchenLevel++;
+    return true;
+  }
+
+  bool upgradeCashier() {
+    if (cashierLevel >= 5 || coins < cashierUpgradeCost) return false;
+    coins -= cashierUpgradeCost;
+    cashierLevel++;
+    return true;
+  }
+
   Vector2 get mapVisualSize => map.visualSize;
   Vector2 get mapVisualCenter => map.visualCenter;
   int get activeCustomers => customers.length;
@@ -188,13 +227,17 @@ class RestaurantLevel1 extends World {
       current.orderState = OrderState.paying;
       current.customer.changeState(CustomerState.paying);
       _moveCustomer(current, map.spawnPoint('cashier_customer'));
-      _cashierTimer = 1.5;
+      _cashierTimer = 1.5 / (1 + (cashierLevel - 1) * .2);
       return;
     }
     if (current.customer.isMoving) return;
     _cashierTimer -= dt;
     if (_cashierTimer > 0) return;
-    coins += 20;
+    final recipe = current.recipe ?? restaurantRecipes.first;
+    coins += recipe.price;
+    experience += recipe.experience;
+    popularity += 2;
+    _checkLevelUp();
     completedOrders++;
     final table = current.table!;
     table.state = TableState.dirty;
@@ -203,7 +246,10 @@ class RestaurantLevel1 extends World {
     current.customer.changeState(CustomerState.leaving);
     _moveCustomer(current, map.spawnPoint('door_spawn'));
     _enqueueTask(WaiterTaskType.cleanTable, current);
-    debugPrint('[Restaurant] customer#${current.id} paid, coins=$coins');
+    debugPrint(
+      '[Economy] ${recipe.name}: +${recipe.price} coins, '
+      '+${recipe.experience} exp, total=$coins',
+    );
   }
 
   void _updateWaiter(double dt) {
@@ -249,8 +295,14 @@ class RestaurantLevel1 extends World {
           _moveWaiter(map.spawnPoint('kitchen_service'));
           return;
         }
+        final unlocked = restaurantRecipes
+            .where((recipe) => recipe.requiredLevel <= playerLevel)
+            .toList();
+        session.recipe = unlocked[_random.nextInt(unlocked.length)];
         session.orderState = OrderState.cooking;
-        session.timer = 2.5;
+        session.timer =
+            session.recipe!.cookTime / (1 + (kitchenLevel - 1) * .18);
+        debugPrint('[Order] customer#${session.id}: ${session.recipe!.name}');
         _finishTask();
       case WaiterTaskType.deliverFood:
         if (task.stage == 0) {
@@ -326,6 +378,7 @@ class RestaurantLevel1 extends World {
 
   void _customerGivesUp(_CustomerSession session) {
     lostCustomers++;
+    popularity = max(0, popularity - 3);
     session.orderState = OrderState.leaving;
     session.customer.changeState(CustomerState.leaving);
     _moveCustomer(session, map.spawnPoint('door_spawn'));
@@ -379,6 +432,14 @@ class RestaurantLevel1 extends World {
     WaiterTaskType.deliverFood => '上菜',
     WaiterTaskType.cleanTable => '清桌',
   };
+
+  void _checkLevelUp() {
+    while (experience >= experienceToNext) {
+      experience -= experienceToNext;
+      playerLevel++;
+      debugPrint('[Economy] player level up -> $playerLevel');
+    }
+  }
 }
 
 class _RestaurantTable {
@@ -398,6 +459,7 @@ class _CustomerSession {
   _RestaurantTable? table;
   double timer = 0;
   double patience = 18;
+  RecipeData? recipe;
 }
 
 class _WaiterTask {
