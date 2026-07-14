@@ -8,9 +8,9 @@ import 'package:restaurant_game/main_game.dart';
 
 class WomanWaiter extends SpriteAnimationGroupComponent
     with HasGameReference<MyGame> {
-  static const String _sheetPath = 'package/restaurant_game/flame_sprites/womanwaiter_anim_sheet.png';
+  static const String _sheetPath = 'flame_sprites/womanwaiter_anim_sheet.png';
   static const String _configPath =
-      'package/restaurant_game/assets/images/flame_sprites/womanwaiter_anim_config.json';
+      'assets/images/flame_sprites/womanwaiter_anim_config.json';
 
   @override
   Future<void> onLoad() async {
