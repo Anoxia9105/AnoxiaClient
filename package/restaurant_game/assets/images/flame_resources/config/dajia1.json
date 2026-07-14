@@ -1,0 +1,181 @@
+{
+  "sheet_path": "flame_resources/sheets/dajia1_sheet.png",
+  "cell_w": 58,
+  "cell_h": 40,
+  "cols": 8,
+  "frame_count": 3,
+  "origin": [
+    -57,
+    0
+  ],
+  "animations": {
+    "all": [
+      0,
+      1,
+      2
+    ],
+    "group0": [
+      0,
+      1,
+      2,
+      1
+    ]
+  },
+  "groups": [
+    [
+      0,
+      1,
+      2,
+      1
+    ]
+  ],
+  "group_packed": [
+    [
+      1024,
+      1025,
+      1026,
+      1025
+    ]
+  ],
+  "frame_transforms": {
+    "0": 1,
+    "1": 1,
+    "2": 1
+  },
+  "tiles": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 38,
+      "h": 40
+    },
+    {
+      "x": 38,
+      "y": 0,
+      "w": 36,
+      "h": 40
+    },
+    {
+      "x": 74,
+      "y": 0,
+      "w": 40,
+      "h": 40
+    },
+    {
+      "x": 0,
+      "y": 40,
+      "w": 25,
+      "h": 13
+    },
+    {
+      "x": 25,
+      "y": 40,
+      "w": 34,
+      "h": 20
+    },
+    {
+      "x": 65,
+      "y": 46,
+      "w": 7,
+      "h": 9
+    },
+    {
+      "x": 77,
+      "y": 44,
+      "w": 5,
+      "h": 11
+    }
+  ],
+  "frames": [
+    {
+      "parts": [
+        {
+          "tile": 0,
+          "transform": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "tile": 3,
+          "transform": 0,
+          "dx": 19,
+          "dy": 16
+        },
+        {
+          "tile": 5,
+          "transform": 0,
+          "dx": 38,
+          "dy": 27
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 1,
+          "transform": 0,
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "parts": [
+        {
+          "tile": 2,
+          "transform": 0,
+          "dx": -1,
+          "dy": 0
+        },
+        {
+          "tile": 4,
+          "transform": 0,
+          "dx": 16,
+          "dy": 11
+        },
+        {
+          "tile": 6,
+          "transform": 0,
+          "dx": 52,
+          "dy": 26
+        }
+      ],
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hit_bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
