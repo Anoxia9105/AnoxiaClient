@@ -63,6 +63,6 @@ class WomanWaiter extends SpriteAnimationGroupComponent
       WaiterState.carryingFood: buildAnimation('carryingFood'),
     };
     // 当前状态
-    current = WaiterState.walking;
+    current = WaiterState.carryingFood;
   }
 }
