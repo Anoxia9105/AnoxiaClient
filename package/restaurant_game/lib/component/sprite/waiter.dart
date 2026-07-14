@@ -8,9 +8,9 @@ import 'package:restaurant_game/main_game.dart';
 
 class Waiter extends SpriteAnimationGroupComponent
     with HasGameReference<MyGame> {
-  static const String _sheetPath = 'flame_sprites/waiter_anim_sheet.png';
+  static const String _sheetPath = 'package/restaurant_game/flame_sprites/waiter_anim_sheet.png';
   static const String _configPath =
-      'assets/images/flame_sprites/waiter_anim_config.json';
+      'package/restaurant_game/assets/images/flame_sprites/waiter_anim_config.json';
 
   @override
   Future<void> onLoad() async {
@@ -62,6 +62,6 @@ class Waiter extends SpriteAnimationGroupComponent
       WaiterState.carryingFood: buildAnimation('carryingFood'),
     };
     // 当前状态
-    current = WaiterState.idle;
+    current = WaiterState.carryingFood;
   }
 }

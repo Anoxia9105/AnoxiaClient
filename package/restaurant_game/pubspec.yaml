@@ -23,12 +23,6 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter:
-  assets:
-    - assets/audio/
-    - assets/images/
-    - assets/images/flame_resources/
-    - assets/images/flame_sprites/
   # To add custom fonts to your package, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a

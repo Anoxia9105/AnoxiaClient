@@ -1,2 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<tileset version="1.10" tiledversion="1.10.2" name="map_wall_04" tilewidth="32" tileheight="16" tilecount="36" columns="4"><image source="flame_resources/maps/map_wall_04.png" width="128" height="144" /></tileset>
