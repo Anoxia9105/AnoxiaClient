@@ -1,9 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/framework/core/app_globals.dart';
-import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
-import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -30,11 +28,17 @@ class NotificationHelper {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  void Function(String roomId)? _onOpenRoom;
+
+  void configure({required void Function(String roomId) onOpenRoom}) {
+    _onOpenRoom = onOpenRoom;
+  }
 
   /// 初始化通知插件
   ///
   /// 配置各平台的初始化设置，包括 Android、iOS、macOS、Linux、Windows
   Future<void> init() async {
+    await _pruneAvatarCache();
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwin = DarwinInitializationSettings();
     const linux = LinuxInitializationSettings(
@@ -128,11 +132,16 @@ class NotificationHelper {
             final req = await client.getUrl(uri);
             final resp = await req.close();
             if (resp.statusCode == 200) {
-              final bytes = await resp.fold<List<int>>(
-                <int>[],
-                (prev, e) => prev..addAll(e),
-              );
-              await file.writeAsBytes(bytes, flush: true);
+              const maxAvatarBytes = 2 * 1024 * 1024;
+              if (resp.contentLength > maxAvatarBytes) return null;
+              final bytes = BytesBuilder(copy: false);
+              var total = 0;
+              await for (final chunk in resp) {
+                total += chunk.length;
+                if (total > maxAvatarBytes) return null;
+                bytes.add(chunk);
+              }
+              await file.writeAsBytes(bytes.takeBytes(), flush: true);
             }
           } finally {
             client.close(force: true);
@@ -148,6 +157,31 @@ class NotificationHelper {
     }
 
     return null;
+  }
+
+  Future<void> _pruneAvatarCache() async {
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final files = await dir
+          .list()
+          .where(
+            (entry) =>
+                entry is File && entry.path.contains('notification_avatar_'),
+          )
+          .cast<File>()
+          .toList();
+      if (files.length <= 50) return;
+      final byNewest = <({File file, DateTime modified})>[];
+      for (final file in files) {
+        byNewest.add((file: file, modified: await file.lastModified()));
+      }
+      byNewest.sort((a, b) => b.modified.compareTo(a.modified));
+      for (final entry in byNewest.skip(50)) {
+        await entry.file.delete();
+      }
+    } catch (e) {
+      log.debug('清理通知头像缓存失败: $e');
+    }
   }
 
   /// 判断是否应该发送通知
@@ -177,8 +211,7 @@ class NotificationHelper {
     if (roomId != null) {
       log.info('用户点击通知，准备跳转房间: $roomId');
 
-      globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
-      globalContainer.read(layoutControllerProvider.notifier).setIndex(0);
+      _onOpenRoom?.call(roomId);
 
       // 仅桌面端需要主动唤醒窗口；移动端调用会触发 MissingPluginException。
       if (DeviceUtil.isRealDesktop()) {

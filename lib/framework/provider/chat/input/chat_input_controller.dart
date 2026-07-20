@@ -638,19 +638,17 @@ class ChatInputController extends _$ChatInputController {
     );
 
     log.info('发送语音消息: $clientMsgId');
-    ref
-        .read(wsControllerProvider.notifier)
-        .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
-
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: MessageType.audio,
       attachments: attachments,
     );
-    Timer(Duration(seconds: timeoutSeconds), () {
-      ref
-          .read(chatMessagesProvider.notifier)
-          .handleTimeout(roomId, clientMsgId);
-    });
+    ref
+        .read(wsControllerProvider.notifier)
+        .sendMessage(
+          ImPacketV5.encodeRoomMessageFrame(protoMsg),
+          clientMsgId: clientMsgId,
+          ackTimeout: Duration(seconds: timeoutSeconds),
+        );
     ref.read(replyTargetControllerProvider.notifier).clear(roomId);
   }
 
@@ -769,18 +767,17 @@ class ChatInputController extends _$ChatInputController {
     );
 
     log.info('发送消息[$type]: clientMsgId=$clientMsgId');
-    ref
-        .read(wsControllerProvider.notifier)
-        .sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: type,
       attachments: derivedAttachments,
     );
-    Timer(Duration(seconds: timeoutSeconds), () {
-      ref
-          .read(chatMessagesProvider.notifier)
-          .handleTimeout(roomId, clientMsgId);
-    });
+    ref
+        .read(wsControllerProvider.notifier)
+        .sendMessage(
+          ImPacketV5.encodeRoomMessageFrame(protoMsg),
+          clientMsgId: clientMsgId,
+          ackTimeout: Duration(seconds: timeoutSeconds),
+        );
     if (clearReplyAfterSend) {
       ref.read(replyTargetControllerProvider.notifier).clear(roomId);
     }

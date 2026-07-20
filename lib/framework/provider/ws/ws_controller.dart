@@ -30,6 +30,8 @@ part 'ws_controller.g.dart';
 @Riverpod(keepAlive: true)
 class WsController extends _$WsController {
   static const int _maxAutoRetryAttempts = 2;
+  static const Duration _defaultAckTimeout = Duration(seconds: 15);
+  static const int _maxPendingOutbounds = 500;
 
   WebSocketChannel? _channel;
   Timer? _heartbeatTimer;
@@ -139,7 +141,7 @@ class WsController extends _$WsController {
 
     try {
       final url = '${API.wsBaseUrl}$token';
-      log.info('[WsController] 正在尝试建立 WebSocket 连接: $url');
+      log.info('[WsController] 正在尝试建立 WebSocket 连接');
 
       if (kIsWeb) {
         _channel = WebSocketChannel.connect(Uri.parse(url));
@@ -172,7 +174,11 @@ class WsController extends _$WsController {
   }
 
   /// 发送二进制消息（V5 协议帧）
-  void sendMessage(dynamic msg) {
+  void sendMessage(
+    dynamic msg, {
+    String? clientMsgId,
+    Duration ackTimeout = _defaultAckTimeout,
+  }) {
     // 统一转换为 Uint8List
     final Uint8List? bytes = _toBytes(msg);
     if (bytes == null) return;
@@ -183,9 +189,21 @@ class WsController extends _$WsController {
     }
 
     try {
-      _cachePendingOutbound(bytes);
+      _cachePendingOutbound(
+        bytes,
+        clientMsgId: clientMsgId,
+        ackTimeout: ackTimeout,
+      );
       _channel?.sink.add(bytes);
     } catch (e) {
+      if (clientMsgId != null) {
+        _removePendingOutbound(clientMsgId);
+        unawaited(
+          ref
+              .read(chatMessagesProvider.notifier)
+              .markFailedByClientMsgId(clientMsgId),
+        );
+      }
       log.error('发送消息失败', e);
     }
   }
@@ -197,10 +215,37 @@ class WsController extends _$WsController {
     return null;
   }
 
-  void _cachePendingOutbound(Uint8List bytes) {
-    final seq = _extractSeqFromBytes(bytes);
+  void _cachePendingOutbound(
+    Uint8List bytes, {
+    String? clientMsgId,
+    required Duration ackTimeout,
+  }) {
+    final seq = clientMsgId ?? _extractSeqFromBytes(bytes);
     if (seq == null || seq.isEmpty) return;
-    _pendingOutbounds[seq] = _PendingOutbound(bytes: bytes);
+    if (_pendingOutbounds.length >= _maxPendingOutbounds) {
+      final oldestKey = _pendingOutbounds.keys.first;
+      _removePendingOutbound(oldestKey);
+      unawaited(
+        ref
+            .read(chatMessagesProvider.notifier)
+            .markFailedByClientMsgId(oldestKey),
+      );
+    }
+    _removePendingOutbound(seq);
+    final pending = _PendingOutbound(bytes: bytes);
+    pending.timeoutTimer = Timer(ackTimeout, () {
+      if (!_pendingOutbounds.containsKey(seq)) return;
+      _removePendingOutbound(seq);
+      unawaited(
+        ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq),
+      );
+      log.warning('[WsController] ACK timeout: clientMsgId=$seq');
+    });
+    _pendingOutbounds[seq] = pending;
+  }
+
+  void _removePendingOutbound(String clientMsgId) {
+    _pendingOutbounds.remove(clientMsgId)?.timeoutTimer?.cancel();
   }
 
   /// 从二进制帧中提取 clientMsgId（用作 ACK 等待队列 key）
@@ -229,8 +274,8 @@ class WsController extends _$WsController {
       log.warning('[WsController] 收到非二进制消息，忽略');
       return;
     }
-    final bytes = Uint8List.fromList(message);
-    log.info('[SERVER FRAME]: ${bytes.length} bytes');
+    final bytes = message is Uint8List ? message : Uint8List.fromList(message);
+    log.debug('[SERVER FRAME]: ${bytes.length} bytes');
 
     try {
       final decoded = ImPacketV5.decodeFrame(bytes);
@@ -256,7 +301,7 @@ class WsController extends _$WsController {
         final ack = ImPacketV5.decodeAck(payload);
         if (ack != null) {
           // 打印 ACK 详情
-          log.info('[SERVER ACK] 收到确认帧 -> Topic: $topic, ACK内容: $ack');
+          log.debug('[SERVER ACK] topic=$topic code=${ack.code}');
           _handleAckV5(ack);
         }
         return;
@@ -267,11 +312,6 @@ class WsController extends _$WsController {
         '[SERVER DATA] dispatch -> Topic: $topic, CodecId: ${decoded.codecId}, EffectiveTopic: $effectiveTopic, PayloadSize: ${payload.length}',
       );
       if (packetData != null) {
-        // 打印解析后的具体业务数据内容
-        log.info(
-          '[SERVER DATA] 解析成功 -> Topic: $topic, CodecId: ${decoded.codecId}, EffectiveTopic: $effectiveTopic, Content: $packetData',
-        );
-
         final frame = PacketFrame(topic: effectiveTopic, data: packetData);
         if (!_messageController.isClosed) {
           _messageController.add(frame);
@@ -289,7 +329,7 @@ class WsController extends _$WsController {
     final seq = ack.clientMessageId;
     if (ack.isSuccess) {
       if (seq != null && seq.isNotEmpty) {
-        _pendingOutbounds.remove(seq);
+        _removePendingOutbound(seq);
         ref
             .read(chatMessagesProvider.notifier)
             .markAcked(
@@ -308,7 +348,7 @@ class WsController extends _$WsController {
       if (ack.retryable) {
         _retryPendingOutbound(seq);
       } else {
-        _pendingOutbounds.remove(seq);
+        _removePendingOutbound(seq);
         ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq);
       }
     }
@@ -340,7 +380,10 @@ class WsController extends _$WsController {
     if (pending.retryScheduled) return;
 
     if (pending.attempts >= _maxAutoRetryAttempts) {
-      _pendingOutbounds.remove(seq);
+      _removePendingOutbound(seq);
+      unawaited(
+        ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq),
+      );
       log.warning('[WsController] 自动重试超过上限，放弃: seq=$seq');
       return;
     }
@@ -354,7 +397,7 @@ class WsController extends _$WsController {
       if (state.status != WsStatus.connected) return;
 
       if (pending.attempts > _maxAutoRetryAttempts) {
-        _pendingOutbounds.remove(seq);
+        _removePendingOutbound(seq);
         log.warning('[WsController] 自动重试超过上限(延迟触发)，放弃: seq=$seq');
         return;
       }
@@ -461,6 +504,9 @@ class WsController extends _$WsController {
     _reconnectTimer?.cancel();
     _channel?.sink.close();
     _channel = null;
+    for (final pending in _pendingOutbounds.values) {
+      pending.timeoutTimer?.cancel();
+    }
     _pendingOutbounds.clear();
     _reconnectAttempts = 0;
     if (closeStream) {
@@ -476,6 +522,7 @@ class _PendingOutbound {
   final Uint8List bytes; // 原始二进制，用于连接内 ACK 重试发送
   int attempts = 0;
   bool retryScheduled = false;
+  Timer? timeoutTimer;
 }
 
 /// WebSocket 消息流 Provider

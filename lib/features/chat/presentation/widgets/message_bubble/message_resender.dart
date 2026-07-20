@@ -4,8 +4,6 @@
 /// 独立封装便于单元测试和复用。
 library;
 
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
@@ -54,12 +52,11 @@ class MessageResender {
     );
 
     log.info('重发消息: $clientMsgId');
-    wsNotifier.sendMessage(ImPacketV5.encodeRoomMessageFrame(protoMsg));
-
-    // 设置超时定时器，若超时仍无回复，标记为失败
-    Timer(Duration(seconds: _resendTimeoutSeconds(message)), () {
-      messageNotifier.handleTimeout(roomId, clientMsgId);
-    });
+    wsNotifier.sendMessage(
+      ImPacketV5.encodeRoomMessageFrame(protoMsg),
+      clientMsgId: clientMsgId,
+      ackTimeout: Duration(seconds: _resendTimeoutSeconds(message)),
+    );
   }
 
   /// 根据消息类型和附件数量计算合理超时时间（秒）

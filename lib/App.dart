@@ -38,6 +38,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   /// 未读消息角标订阅（仅移动端）
   ProviderSubscription<int>? _unreadBadgeSubscription;
   ProviderSubscription<int>? _callThemeSubscription;
+  ProviderSubscription<ThemeData>? _systemUiSubscription;
+  final TransitionBuilder _botToastBuilder = BotToastInit();
 
   @override
   void initState() {
@@ -65,6 +67,11 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
     // 移动端：监听未读数量，更新应用角标
     if (DeviceUtil.isRealMobile()) {
+      _systemUiSubscription = ref.listenManual<ThemeData>(
+        appThemeProvider,
+        (previous, next) => _applySystemUiStyle(next.brightness),
+        fireImmediately: true,
+      );
       _unreadBadgeSubscription = ref.listenManual<int>(
         totalUnreadCountProvider,
         (previous, next) {
@@ -79,6 +86,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   void dispose() {
     _unreadBadgeSubscription?.close();
     _callThemeSubscription?.close();
+    _systemUiSubscription?.close();
 
     if (DeviceUtil.isRealDesktop()) {
       windowManager.removeListener(this);
@@ -137,15 +145,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final locale = context.locale;
-    final appTheme = ref.watch(appThemeProvider);
-    final isDark = appTheme.brightness == Brightness.dark;
-    // 获取全局通话会话状态
-    final session = ref.watch(mobileCallSessionControllerProvider);
-
-    /// 手机系统栏适配：根据当前主题调整状态栏和导航栏图标颜色
+  void _applySystemUiStyle(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -156,9 +157,12 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
             : Brightness.dark,
       ),
     );
+  }
 
-    // 初始化 BotToast
-    final botToastBuilder = BotToastInit();
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.locale;
+    final appTheme = ref.watch(appThemeProvider);
 
     return MaterialApp.router(
       title: 'Anoxia',
@@ -166,27 +170,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       theme: appTheme,
       builder: (context, child) {
         // 先让 BotToast 包裹路由子节点
-        Widget content = botToastBuilder(context, child);
-
-        // 如果是 Android 端且存在活跃的通话 session，则使用 Stack 在顶层覆盖通话视图
-        if (DeviceUtil.isAndroid() && session != null) {
-          content = Stack(
-            children: [
-              content, // 底层：正常的应用路由页面（聊天列表、个人中心等，生命周期完全正常）
-              // 顶层：大厂全功能全局通话浮层（内部自适应全屏/小窗/PiP）
-              const GlobalCallOverlay(),
-            ],
-          );
-        }
-
-        content = Stack(
-          children: [
-            content,
-            const Positioned.fill(child: CallInvitationOverlay()),
-          ],
-        );
-
-        return content;
+        final content = _botToastBuilder(context, child);
+        return _AppOverlays(child: content);
       },
       debugShowCheckedModeBanner: false,
       locale: locale,
@@ -195,6 +180,26 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         FlutterQuillLocalizations.delegate,
       ],
       supportedLocales: context.supportedLocales,
+    );
+  }
+}
+
+class _AppOverlays extends ConsumerWidget {
+  const _AppOverlays({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasMobileCall = ref.watch(
+      mobileCallSessionControllerProvider.select((session) => session != null),
+    );
+    return Stack(
+      children: [
+        child,
+        if (DeviceUtil.isAndroid() && hasMobileCall) const GlobalCallOverlay(),
+        const Positioned.fill(child: CallInvitationOverlay()),
+      ],
     );
   }
 }

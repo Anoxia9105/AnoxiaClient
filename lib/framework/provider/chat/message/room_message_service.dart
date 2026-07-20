@@ -4,8 +4,10 @@ import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/ChatMessage.dart';
@@ -16,16 +18,65 @@ import '../../ws/ws_controller.dart';
 
 part 'room_message_service.g.dart';
 
+const int _initialMessageWindowSize = 100;
+const int _maximumMessageWindowSize = 1000;
+
+final chatMessageWindowLimitsProvider =
+    NotifierProvider<ChatMessageWindowLimits, Map<String, int>>(
+      ChatMessageWindowLimits.new,
+    );
+
+class ChatMessageWindowLimits extends Notifier<Map<String, int>> {
+  @override
+  Map<String, int> build() => const {};
+
+  int limitFor(String roomId) => state[roomId] ?? _initialMessageWindowSize;
+
+  bool expand(String roomId, [int amount = 50]) {
+    final current = limitFor(roomId);
+    if (current >= _maximumMessageWindowSize) return false;
+    state = {
+      ...state,
+      roomId: (current + amount).clamp(1, _maximumMessageWindowSize),
+    };
+    return true;
+  }
+
+  void reset(String roomId) {
+    if (!state.containsKey(roomId)) return;
+    state = {...state}..remove(roomId);
+  }
+}
+
 @riverpod
 Stream<List<ChatMessage>> roomMessages(Ref ref, String roomId) {
-  return ref.read(syncRepositoryProvider).watchMessages(roomId, limit: null);
+  final limit = ref.watch(
+    chatMessageWindowLimitsProvider.select(
+      (limits) => limits[roomId] ?? _initialMessageWindowSize,
+    ),
+  );
+  return ref.read(syncRepositoryProvider).watchMessages(roomId, limit: limit);
 }
+
+final roomMessageIndexProvider =
+    Provider.family<Map<String, ChatMessage>, String>((ref, roomId) {
+      final messages =
+          ref.watch(roomMessagesProvider(roomId)).value ?? const [];
+      final index = <String, ChatMessage>{};
+      for (final message in messages) {
+        final messageId = message.messageId;
+        final clientMsgId = message.clientMsgId;
+        if (messageId != null) index[messageId] = message;
+        if (clientMsgId != null) index[clientMsgId] = message;
+      }
+      return index;
+    });
 
 @Riverpod(keepAlive: true)
 class ChatMessages extends _$ChatMessages {
   static const int _pageSize = 50;
 
-  bool _isFetchingHistory = false;
+  final Set<String> _fetchingHistoryRoomIds = {};
   final Set<String> _syncedRoomIds = {};
   final Map<String, int> _syncedSeqByRoom = {};
 
@@ -42,10 +93,30 @@ class ChatMessages extends _$ChatMessages {
 
   void _handleIncomingMessage(RoomMessage msg) {
     final chatMessage = ChatMessage.fromRoomMessage(msg);
-    upsertMessage(chatMessage);
+    unawaited(_processIncomingMessage(chatMessage));
+  }
+
+  Future<void> _processIncomingMessage(ChatMessage chatMessage) async {
+    final activeRoomId = ref.read(activeRoomIdProvider);
+    final currentUser = ref.read(authControllerProvider).value;
+    final incrementUnread =
+        activeRoomId != chatMessage.roomId &&
+        currentUser?.userId != chatMessage.senderId;
+    try {
+      final inserted = await ref
+          .read(localDataSourceProvider)
+          .applyIncomingMessage(
+            chatMessage,
+            incrementUnread: incrementUnread,
+            clearUnread: activeRoomId == chatMessage.roomId,
+          );
+      if (!inserted) return;
+    } catch (error, stackTrace) {
+      log.error('缓存入站消息失败', error, stackTrace);
+      return;
+    }
     _handleSystemMessageSideEffects(chatMessage);
 
-    final activeRoomId = ref.read(activeRoomIdProvider);
     ref
         .read(roomListServiceProvider.notifier)
         .updateRoomPosition(chatMessage, activeRoomId);
@@ -168,15 +239,19 @@ class ChatMessages extends _$ChatMessages {
   }
 
   Future<void> loadMoreHistory(String roomId) async {
-    if (_isFetchingHistory) return;
+    if (_fetchingHistoryRoomIds.contains(roomId)) return;
     if (!(ref.read(chatHasMoreProvider)[roomId] ?? true)) return;
 
     final syncRepo = ref.read(syncRepositoryProvider);
-    final currentList = await syncRepo.getMessagesForConversation(
-      roomId,
-      limit: 100000,
-      sync: false,
-    );
+    final currentList =
+        ref.read(roomMessagesProvider(roomId)).value ??
+        await syncRepo.getMessagesForConversation(
+          roomId,
+          limit: ref
+              .read(chatMessageWindowLimitsProvider.notifier)
+              .limitFor(roomId),
+          sync: false,
+        );
     if (currentList.isEmpty) return;
 
     final int? oldestSeq = currentList.first.seq;
@@ -185,7 +260,7 @@ class ChatMessages extends _$ChatMessages {
       return;
     }
 
-    _isFetchingHistory = true;
+    _fetchingHistoryRoomIds.add(roomId);
     try {
       var history = await syncRepo.getMessagesForConversation(
         roomId,
@@ -216,19 +291,24 @@ class ChatMessages extends _$ChatMessages {
         await ref.read(localDataSourceProvider).upsertMessages(history);
       }
 
+      final expanded = ref
+          .read(chatMessageWindowLimitsProvider.notifier)
+          .expand(roomId, history.length);
+
       ref
           .read(chatHasMoreProvider.notifier)
-          .setHasMore(roomId, history.length >= _pageSize);
+          .setHasMore(roomId, expanded && history.length >= _pageSize);
     } catch (e) {
       log.error('加载历史消息失败: $e');
     } finally {
-      _isFetchingHistory = false;
+      _fetchingHistoryRoomIds.remove(roomId);
     }
   }
 
   Future<void> clearRoom(String roomId) async {
     _syncedRoomIds.remove(roomId);
     _syncedSeqByRoom.remove(roomId);
+    ref.read(chatMessageWindowLimitsProvider.notifier).reset(roomId);
     await ref
         .read(localDataSourceProvider)
         .deleteMessagesForConversation(roomId);

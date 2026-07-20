@@ -185,14 +185,8 @@ class RoomListService extends _$RoomListService {
           _debouncedReportReadSeq(newMessage.roomId!, newMessage.seq!);
         }
 
-        unawaited(
-          ref
-              .read(localDataSourceProvider)
-              .updateConversationForIncomingMessage(
-                newMessage,
-                incrementUnread: !isCurrentRoom && !isSelfMessage,
-              ),
-        );
+        // Persistence and unread projection are committed atomically by
+        // ChatMessages. This method only owns presentation side effects.
       }
     });
   }

@@ -30,6 +30,10 @@ import 'framework/logs/talker.dart';
 import 'framework/network/DioClient.dart';
 import 'framework/network/TokenManager.dart';
 import 'framework/provider/auth/token_provider.dart';
+import 'framework/provider/auth/auth_controller.dart';
+import 'framework/provider/core/session_reset_service.dart';
+import 'framework/provider/chat/room/room_list_service.dart';
+import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/core/AppUpdateInfo.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
@@ -189,7 +193,26 @@ Future<void> runMainApp() async {
   try {
     // 预加载全局 Token（主窗口核心逻辑）
     final token = await TokenManager.instance.getToken();
-    log.info('主窗口启动，Token: ${token?.substring(0, 20)}...'); // 脱敏打印
+    log.info('主窗口启动，Token available: ${token?.isNotEmpty == true}');
+    NotificationHelper().configure(
+      onOpenRoom: (roomId) {
+        globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
+        globalContainer.read(layoutControllerProvider.notifier).setIndex(0);
+      },
+    );
+    DioClient().configureAuth(
+      tokenLoader: () async {
+        final cached = globalContainer.read(tokenCacheProvider);
+        if (cached?.isNotEmpty == true) return cached;
+        return TokenManager.instance.getToken();
+      },
+      onUnauthorized: () => globalContainer
+          .read(authControllerProvider.notifier)
+          .logout(
+            reason: SessionResetReason.tokenExpired,
+            notifyBackend: false,
+          ),
+    );
 
     log.info('''
  _______

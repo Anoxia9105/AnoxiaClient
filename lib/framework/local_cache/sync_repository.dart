@@ -108,7 +108,7 @@ class SyncRepository {
     if (!await _hasNetwork()) return;
 
     try {
-      final lastSeq = await _local.maxContinuousMessageSeq(convId);
+      final lastSeq = await _local.messageSyncWatermark(convId);
       final latestSentAt = since ?? await _local.latestMessageSentAt(convId);
       final remoteMessages = await _remote.fetchMessages(
         convId,
@@ -116,10 +116,24 @@ class SyncRepository {
         lastSeq: lastSeq,
       );
       await _local.upsertMessages(remoteMessages);
-      final maxSeq = remoteMessages.fold<int>(
-        lastSeq,
-        (max, msg) => (msg.seq ?? 0) > max ? msg.seq! : max,
-      );
+      final orderedSeqs =
+          remoteMessages
+              .map((message) => message.seq ?? 0)
+              .where((seq) => seq > lastSeq)
+              .toList()
+            ..sort();
+      // A first sync may start at the member's visibility boundary instead of
+      // room seq 1. Treat the first returned seq as the local baseline.
+      var maxSeq = lastSeq == 0 && orderedSeqs.isNotEmpty
+          ? orderedSeqs.first - 1
+          : lastSeq;
+      for (final seq in orderedSeqs) {
+        if (seq == maxSeq + 1) {
+          maxSeq = seq;
+        } else if (seq > maxSeq + 1) {
+          break;
+        }
+      }
       await _local.updateSyncState(
         scope: 'messages',
         scopeId: convId,

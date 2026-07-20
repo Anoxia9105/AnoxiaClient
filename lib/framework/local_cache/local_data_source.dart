@@ -53,7 +53,72 @@ class LocalDataSource {
   }) {
     return db.messageDao
         .watchMessagesForConversation(convId, limit: limit, offset: offset)
-        .map((rows) => rows.map(_messageFromRow).toList());
+        .map((rows) => rows.reversed.map(_messageFromRow).toList());
+  }
+
+  /// Persists an inbound message and its conversation projection atomically.
+  /// This is the only write path for messages received from WebSocket.
+  Future<bool> applyIncomingMessage(
+    ChatMessage message, {
+    required bool incrementUnread,
+    bool clearUnread = false,
+  }) async {
+    final row = _messageToRow(
+      message.copyWith(deliveryStatus: DeliveryStatus.sent),
+    );
+    final messageId = message.messageId ?? message.clientMsgId;
+    if (messageId == null || messageId.isEmpty) return false;
+
+    return db.transaction(() async {
+      final existing = await db.messageDao.getMessageById(messageId);
+      await _ensureConversationExists(row.conversationId);
+      await _ensureMessageSendersExist([row]);
+      await db.messageDao.insertOrUpdateMessage(row);
+      await db.conversationDao.updateIncomingMessage(
+        conversationId: row.conversationId,
+        messageId: messageId,
+        preview: message.content,
+        messageType: message.messageType == null
+            ? null
+            : MessageType.toCode(message.messageType),
+        seq: message.seq,
+        sentAt: _dateTimeFromMillis(message.timestamp),
+        incrementUnread: incrementUnread && existing == null,
+        clearUnread: clearUnread,
+      );
+      await _advanceMessageWatermark(row.conversationId, message.seq);
+      return existing == null;
+    });
+  }
+
+  Future<int> messageSyncWatermark(String convId) async {
+    final state = await db.syncStateDao.getState('messages', convId);
+    if (state != null) return state.lastSeq;
+
+    // One-time migration for databases created before the watermark existed.
+    final watermark = await maxContinuousMessageSeq(convId);
+    await db.syncStateDao.upsertState(
+      scope: 'messages',
+      scopeId: convId,
+      lastSyncedAt: DateTime.now(),
+      lastSeq: watermark,
+    );
+    return watermark;
+  }
+
+  Future<void> _advanceMessageWatermark(String convId, int? seq) async {
+    if (seq == null || seq <= 0) return;
+    final current = await db.syncStateDao.getState('messages', convId);
+    final watermark = current?.lastSeq ?? 0;
+    // Only advance a continuous watermark. A gap is recovered by syncMessages.
+    if (seq == watermark + 1) {
+      await db.syncStateDao.upsertState(
+        scope: 'messages',
+        scopeId: convId,
+        lastSyncedAt: DateTime.now(),
+        lastSeq: seq,
+      );
+    }
   }
 
   Future<DateTime?> latestConversationUpdatedAt() {

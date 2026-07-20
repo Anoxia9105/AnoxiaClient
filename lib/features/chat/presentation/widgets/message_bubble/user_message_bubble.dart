@@ -235,13 +235,7 @@ class MessageContent extends ConsumerWidget {
     final roomId = message.roomId;
     if (roomId == null || roomId.isEmpty) return null;
 
-    final messages = ref.watch(roomMessagesProvider(roomId)).value ?? const [];
-    for (final item in messages) {
-      if (item.messageId == messageId || item.clientMsgId == messageId) {
-        return item;
-      }
-    }
-    return null;
+    return ref.watch(roomMessageIndexProvider(roomId))[messageId];
   }
 
   /// 跳转到引用的消息

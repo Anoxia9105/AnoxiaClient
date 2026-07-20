@@ -1,12 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:anoxia/framework/core/app_globals.dart';
-import 'package:anoxia/framework/provider/core/session_reset_service.dart';
 import 'package:dio/dio.dart';
 import 'package:anoxia/framework/network/TokenManager.dart';
-import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/auth/token_provider.dart';
 
 import '../logs/talker.dart';
 import 'DioConfig.dart';
@@ -27,15 +23,7 @@ class DioClient {
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
             // 优先从内存缓存获取 Token（减少频繁读取本地存储）
-            String? token = globalContainer.read(tokenCacheProvider);
-
-            // 内存中没有时，尝试从 TokenManager 恢复（用于冷启动自动登录场景）
-            if (token == null || token.isEmpty) {
-              token = await TokenManager.instance.getToken();
-              if (token != null && token.isNotEmpty) {
-                globalContainer.read(tokenCacheProvider.notifier).setToken(token);
-              }
-            }
+            final token = await _tokenLoader();
 
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
@@ -62,12 +50,8 @@ class DioClient {
               final isLogoutApi = requestPath.contains('/logout');
 
               if (needAuth && !skipAuthFailureLogout && !isLogoutApi) {
-                unawaited(
-                  globalContainer.read(authControllerProvider.notifier).logout(
-                    reason: SessionResetReason.tokenExpired,
-                    notifyBackend: false,
-                  ),
-                );
+                final handler = _onUnauthorized;
+                if (handler != null) unawaited(handler());
                 log.info('鉴权失败，已触发登出并跳转登录页');
               }
 
@@ -108,6 +92,16 @@ class DioClient {
   factory DioClient() => _instance;
 
   final Dio _dio;
+  Future<String?> Function() _tokenLoader = TokenManager.instance.getToken;
+  Future<void> Function()? _onUnauthorized;
+
+  void configureAuth({
+    required Future<String?> Function() tokenLoader,
+    required Future<void> Function() onUnauthorized,
+  }) {
+    _tokenLoader = tokenLoader;
+    _onUnauthorized = onUnauthorized;
+  }
 
   /// GET 请求
   Future<Response> get(
@@ -247,10 +241,7 @@ class DioClient {
         );
       }
 
-      final formData = FormData.fromMap({
-        fileField: multipartFiles,
-        ...?data,
-      });
+      final formData = FormData.fromMap({fileField: multipartFiles, ...?data});
 
       return await _dio.post(
         path,
@@ -291,10 +282,7 @@ class DioClient {
         deleteOnError: deleteOnError,
         lengthHeader: lengthHeader,
         data: data,
-        options: _mergeOptions(
-          options,
-          auth: false,
-        ),
+        options: _mergeOptions(options, auth: false),
       );
     } on DioException catch (_) {
       rethrow;
