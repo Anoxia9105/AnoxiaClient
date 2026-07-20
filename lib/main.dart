@@ -19,7 +19,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:restaurant_game/main_game.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
@@ -35,10 +34,8 @@ import 'framework/provider/core/AppUpdateInfo.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 
-void main() => runApp(const MainGame());
-
 /// 应用入口
-Future<void> mainOff(List<String> args) async {
+Future<void> main(List<String> args) async {
   log.info('程序启动参数：$args');
   try {
     //  优先初始化 Flutter 核心绑定

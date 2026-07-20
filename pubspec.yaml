@@ -141,9 +141,6 @@ dependencies:
   drift: ^2.34.0
   # 数据库libs
   sqlite3_flutter_libs: ^0.5.40
-  # package
-  restaurant_game:
-    path: ./package/restaurant_game
 
 
 dev_dependencies:
