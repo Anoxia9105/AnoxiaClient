@@ -164,9 +164,9 @@ class FileUtil {
     try {
       Directory? dir;
       if (Platform.isWindows) {
-        dir = Directory(Platform.environment['USERPROFILE']! + '\\Downloads');
+        dir = Directory('${Platform.environment['USERPROFILE']!}\\Downloads');
       } else if (Platform.isMacOS) {
-        dir = Directory(Platform.environment['HOME']! + '/Downloads');
+        dir = Directory('${Platform.environment['HOME']!}/Downloads');
       }
 
       if (dir == null || !await dir.exists()) return null;

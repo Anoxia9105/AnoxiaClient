@@ -9,10 +9,10 @@ class Level1 extends World {
   FutureOr<void> onLoad() {
     //load waiter sprite
     // final waiter = Waiter();
-    final woman_waiter = WomanWaiter();
+    final womanWaiter = WomanWaiter();
     addAll([
       // waiter,
-      woman_waiter,
+      womanWaiter,
     ]);
 
     return super.onLoad();

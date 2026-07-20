@@ -14,7 +14,7 @@ part 'user_search_service.g.dart';
 class UserSearchService extends _$UserSearchService {
   @override
   UserSearchResponse build() {
-    return UserSearchResponse(total: 0, rows: [], code: 200, msg: "");
+    return UserSearchResponse(total: 0, rows: [], code: 200, msg: '');
   }
 
   /// 清空搜索结果

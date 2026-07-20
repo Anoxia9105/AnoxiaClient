@@ -58,7 +58,7 @@ class CreateGroupController extends _$CreateGroupController {
         onSuccess(); // 成功回调
         return vo;
       } else {
-        throw res.data['msg'] ?? "创建失败";
+        throw res.data['msg'] ?? '创建失败';
       }
     });
   }

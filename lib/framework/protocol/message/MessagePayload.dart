@@ -599,21 +599,21 @@ class MessagePayload {
         'text': {
           'text': content,
           if (markdown?.isNotEmpty == true) 'markdown': markdown,
-          if (interaction != null) 'interaction': interaction,
+          'interaction': ?interaction,
         },
       },
       MessageType.richText => {
         'richText': {
           'plainText': content,
           'deltaJson': quillDelta,
-          if (interaction != null) 'interaction': interaction,
+          'interaction': ?interaction,
         },
       },
       MessageType.image => {
         'image': {
           'image': image?.toJson(),
           'caption': content,
-          if (interaction != null) 'interaction': interaction,
+          'interaction': ?interaction,
         },
       },
       MessageType.audio => {
@@ -629,14 +629,14 @@ class MessagePayload {
           'cover': cover?.toJson(),
           'durationMs': audioDuration,
           'caption': content,
-          if (interaction != null) 'interaction': interaction,
+          'interaction': ?interaction,
         },
       },
       MessageType.file => {
         'file': {
           'file': file?.toJson(),
           'caption': content,
-          if (interaction != null) 'interaction': interaction,
+          'interaction': ?interaction,
         },
       },
       MessageType.emoji => {

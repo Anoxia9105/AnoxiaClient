@@ -60,23 +60,23 @@ class SearchMessageService extends _$SearchMessageService {
       final res = await DioClient().get(
         API.chatSearch,
         queryParameters: {
-          "roomId": roomId,
-          "keyword": normalizedKeyword,
-          "contextSize": effectiveContextSize,
+          'roomId': roomId,
+          'keyword': normalizedKeyword,
+          'contextSize': effectiveContextSize,
         },
       );
 
-      final data = res.data["data"];
+      final data = res.data['data'];
       if (data is! Map) return;
 
-      final messagesData = data["messages"] ?? [];
-      final firstMatchIndex = data["firstMatchIndex"] ?? -1;
-      final lastMatchIndex = data["lastMatchIndex"] ?? -1;
-      final hasMoreBefore = data["hasMoreBefore"] ?? false;
-      final hasMoreAfter = data["hasMoreAfter"] ?? false;
-      final minSeq = data["minSeq"] ?? 0;
-      final maxSeq = data["maxSeq"] ?? 0;
-      final totalMatches = data["totalMatches"] ?? 0;
+      final messagesData = data['messages'] ?? [];
+      final firstMatchIndex = data['firstMatchIndex'] ?? -1;
+      final lastMatchIndex = data['lastMatchIndex'] ?? -1;
+      final hasMoreBefore = data['hasMoreBefore'] ?? false;
+      final hasMoreAfter = data['hasMoreAfter'] ?? false;
+      final minSeq = data['minSeq'] ?? 0;
+      final maxSeq = data['maxSeq'] ?? 0;
+      final totalMatches = data['totalMatches'] ?? 0;
 
       final List<ChatMessage> messages = [];
       if (messagesData is List) {
@@ -105,7 +105,7 @@ class SearchMessageService extends _$SearchMessageService {
         totalMatches: totalMatches,
       );
     } catch (e) {
-      log.error("搜索消息失败: $e");
+      log.error('搜索消息失败: $e');
       state = state.copyWith(isLoading: false);
     }
   }

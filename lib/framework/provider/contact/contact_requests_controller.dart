@@ -31,7 +31,7 @@ class ContactRequestsService extends _$ContactRequestsService {
   Future<List<ChatContactRequestVO>> _doFetchRequests() async {
     try {
       final response = await DioClient().get(API.contactRequest);
-      return (response.data["data"] as List)
+      return (response.data['data'] as List)
           .map((e) => ChatContactRequestVO.fromJson(e))
           .toList();
     } catch (e) {
@@ -48,8 +48,8 @@ class ContactRequestsService extends _$ContactRequestsService {
       API.contactAcceptRequest,
       queryParameters: {
         'requestId': requestId,
-        "status": isAccepted ? 1 : 2,
-        "source": 0,
+        'status': isAccepted ? 1 : 2,
+        'source': 0,
       },
     );
 

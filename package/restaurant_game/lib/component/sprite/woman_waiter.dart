@@ -55,7 +55,7 @@ class WomanWaiter extends SpriteAnimationGroupComponent
       );
     }
 
-    print("=============>${animationMap}");
+    print("=============>$animationMap");
     // 组装动画组
     animations = {
       WaiterState.idle: buildAnimation('idle', stepTime: 0.3),

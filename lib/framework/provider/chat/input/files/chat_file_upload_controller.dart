@@ -86,7 +86,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
         final res = await DioClient().uploadFiles(
-          "/file/uploadBatch",
+          '/file/uploadBatch',
           files: files,
         );
 
@@ -106,7 +106,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
         }
       } catch (e, st) {
         if (isLastAttempt) {
-          log.error("文件上传失败: $e\n$st");
+          log.error('文件上传失败: $e\n$st');
           _markFailed(attachments);
           return;
         }

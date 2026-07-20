@@ -45,7 +45,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   ) async {
     try {
       final tempFile = PlatformFile(
-        name: "pasted_image.jpg",
+        name: 'pasted_image.jpg',
         size: imageBytes.lengthInBytes,
         bytes: imageBytes,
       );
@@ -53,7 +53,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       if (!UploadValidator.validateSingleFile(tempFile)) return;
 
       final id = const Uuid().v4();
-      final rawFile = File(p.join(Directory.systemTemp.path, "pasted_$id.jpg"));
+      final rawFile = File(p.join(Directory.systemTemp.path, 'pasted_$id.jpg'));
       await rawFile.writeAsBytes(imageBytes);
       final imageSize = await _readImageSizeFromBytes(imageBytes);
 
@@ -61,9 +61,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         id: id,
         kind: 'IMAGE',
         url: rawFile.path,
-        name: "pasted_image",
+        name: 'pasted_image',
         size: imageBytes.lengthInBytes,
-        type: "image/jpeg",
+        type: 'image/jpeg',
         width: imageSize.$1,
         height: imageSize.$2,
       );
@@ -79,7 +79,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
       unawaited(uploadImages([attachment]));
     } catch (e, st) {
-      log.error("处理粘贴图片失败: $e", st);
+      log.error('处理粘贴图片失败: $e', st);
     }
   }
 
@@ -148,7 +148,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
         final res = await DioClient().uploadFiles(
-          "/file/uploadBatch",
+          '/file/uploadBatch',
           files: files,
         );
 
@@ -168,7 +168,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         }
       } catch (e, st) {
         if (isLastAttempt) {
-          log.error("图片上传失败: $e\n$st");
+          log.error('图片上传失败: $e\n$st');
           _markFailed(images);
           return;
         }

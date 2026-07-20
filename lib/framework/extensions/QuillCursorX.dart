@@ -25,7 +25,7 @@ extension QuillEditorX on GlobalKey<QuillEditorState> {
       final offset = renderEditor.localToGlobal(caretRect.topRight);
       return offset;
     } catch (e) {
-      log.error("获取光标坐标失败: $e");
+      log.error('获取光标坐标失败: $e');
       return null;
     }
   }

@@ -120,12 +120,12 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
                   physics: const BouncingScrollPhysics(),
                   slivers: [
                     if (screens.isNotEmpty) ...[
-                      _buildSectionTitle("call_share_screen".tr()),
+                      _buildSectionTitle('call_share_screen'.tr()),
                       _buildSourceGrid(screens, crossCount: 2),
                     ],
 
                     if (windows.isNotEmpty) ...[
-                      _buildSectionTitle("call_share_window".tr()),
+                      _buildSectionTitle('call_share_window'.tr()),
                       _buildSourceGrid(windows, crossCount: 3),
                     ],
 
@@ -197,11 +197,11 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
+          const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
           const SizedBox(width: 10),
           Text(
-            "call_share_select_title".tr(),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            'call_share_select_title'.tr(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           IconButton(
@@ -242,8 +242,8 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
             ),
             onPressed: _selectedSource != null ? _onOk : null,
             child: Text(
-              "call_share_start".tr(),
-              style: TextStyle(fontWeight: FontWeight.bold),
+              'call_share_start'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],

@@ -18,7 +18,7 @@ class ChatVoiceOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: controller,
-      builder: (_, __) {
+      builder: (_, _) {
         if (!controller.overlayVisible) {
           return const SizedBox.shrink();
         }

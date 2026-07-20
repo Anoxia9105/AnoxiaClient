@@ -29,7 +29,7 @@ class MenuPage extends ConsumerWidget {
                   height: 64,
                   child: CircularProgressIndicator(color: Colors.white),
                 ),
-                error: (_, __) => const SizedBox(),
+                error: (_, _) => const SizedBox(),
                 data: (user) {
                   if (user == null) return const SizedBox();
                   return Row(
@@ -78,7 +78,7 @@ class MenuPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: authAsync.when(
                 loading: () => const SizedBox(),
-                error: (_, __) => const SizedBox(),
+                error: (_, _) => const SizedBox(),
                 data: (user) {
                   if (user == null) return const SizedBox();
                   return Container(

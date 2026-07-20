@@ -62,7 +62,7 @@ class RoomMemberService extends _$RoomMemberService {
   Future<void> syncMembers(String roomId, {bool force = false}) async {
     if (_syncedRoomIds.contains(roomId) && !force) return;
 
-    log.info("🚀 拉取房间 $roomId 成员列表");
+    log.info('🚀 拉取房间 $roomId 成员列表');
 
     try {
       final res = await DioClient().get(
@@ -70,7 +70,7 @@ class RoomMemberService extends _$RoomMemberService {
         queryParameters: {'roomId': roomId},
       );
 
-      final data = res.data["data"];
+      final data = res.data['data'];
       if (data is! List) return;
 
       // 构建 userId -> ChatRoomMemberVO 的 Map，实现 O(1) 查询
@@ -83,9 +83,9 @@ class RoomMemberService extends _$RoomMemberService {
       state = {...state, roomId: members};
       _syncedRoomIds.add(roomId);
 
-      log.info("✅ 房间 $roomId 成员同步完成，共 ${members.length} 人");
+      log.info('✅ 房间 $roomId 成员同步完成，共 ${members.length} 人');
     } catch (e, st) {
-      log.error("❌ 同步成员失败", e, st);
+      log.error('❌ 同步成员失败', e, st);
     }
   }
 
@@ -139,21 +139,21 @@ class RoomMemberService extends _$RoomMemberService {
   /// [userIds] 要添加的用户 ID 列表
   Future<bool> addMembers(String roomId, List<int> userIds) async {
     try {
-      log.info("🚀 添加成员 $userIds 到房间 $roomId");
+      log.info('🚀 添加成员 $userIds 到房间 $roomId');
 
       final res = await DioClient().post(
         API.chatRoomAddMembers,
-        data: {"roomId": roomId, "userIds": userIds},
+        data: {'roomId': roomId, 'userIds': userIds},
       );
 
-      if (res.data["code"] == 200) {
+      if (res.data['code'] == 200) {
         await syncMembers(roomId, force: true);
         return true;
       }
 
       return false;
     } catch (e, st) {
-      log.error("❌ 添加成员失败", e, st);
+      log.error('❌ 添加成员失败', e, st);
       return false;
     }
   }
@@ -164,14 +164,14 @@ class RoomMemberService extends _$RoomMemberService {
   /// [targetUserId] 被踢出的用户 ID
   Future<bool> kickMember(String roomId, int targetUserId) async {
     try {
-      log.info("🚀 从房间 $roomId 踢出用户 $targetUserId");
+      log.info('🚀 从房间 $roomId 踢出用户 $targetUserId');
 
       final res = await DioClient().get(
         API.chatRoomKickMember,
-        queryParameters: {"roomId": roomId, "targetUserId": targetUserId},
+        queryParameters: {'roomId': roomId, 'targetUserId': targetUserId},
       );
 
-      if (res.data["code"] == 200) {
+      if (res.data['code'] == 200) {
         // 先乐观更新本地缓存（立即生效）
         removeMember(roomId, targetUserId);
         // 再强制同步确保数据一致
@@ -181,7 +181,7 @@ class RoomMemberService extends _$RoomMemberService {
 
       return false;
     } catch (e, st) {
-      log.error("❌ 踢人失败", e, st);
+      log.error('❌ 踢人失败', e, st);
       return false;
     }
   }

@@ -18,7 +18,7 @@ class DateUtil {
 
   /// 将时间戳格式化为 HH:mm
   static String formatTimestampToTime(int? timestamp) {
-    if (timestamp == null) return "";
+    if (timestamp == null) return '';
     DateTime date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     return DateFormat('HH:mm').format(date);
   }
@@ -144,7 +144,7 @@ class DateUtil {
   /// [pattern] 输出格式，默认 "yyyy-MM-dd HH:mm:ss"
   static String formatIsoDate(
     String isoString, {
-    String pattern = "yyyy-MM-dd HH:mm:ss",
+    String pattern = 'yyyy-MM-dd HH:mm:ss',
   }) {
     try {
       final dateTime = DateTime.parse(isoString);

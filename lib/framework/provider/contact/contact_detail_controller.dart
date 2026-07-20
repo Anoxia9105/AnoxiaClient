@@ -18,7 +18,7 @@ Future<ChatContactDetailVO> contactDetailData(Ref ref, int userId) async {
   );
 
   log.info(response);
-  return ChatContactDetailVO.fromJson(response.data["data"]);
+  return ChatContactDetailVO.fromJson(response.data['data']);
 }
 
 /// 联系人聊天按钮加载状态

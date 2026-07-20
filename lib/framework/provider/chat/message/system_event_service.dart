@@ -79,14 +79,14 @@ class SystemEventService extends _$SystemEventService {
     ref.read(contactListServiceProvider.notifier).refresh();
     ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
 
-    log.info("✅ 重连数据补偿完成");
+    log.info('✅ 重连数据补偿完成');
   }
 
   /// 核心分发逻辑
   ///
   /// 根据 [EventMessage.eventType] 分发到对应的处理函数
   void _onEventReceived(EventMessage event) {
-    log.info("收到系统事件: ${event.eventType} 从用户: ${event.operatorId}");
+    log.info('收到系统事件: ${event.eventType} 从用户: ${event.operatorId}');
 
     switch (event.eventType) {
       case SystemEventType.userOnline:
@@ -164,13 +164,13 @@ class SystemEventService extends _$SystemEventService {
     final currentUser = ref.read(authControllerProvider).value;
 
     if (roomId == null) {
-      log.warning("无法从 userKicked 事件中获取 roomId");
+      log.warning('无法从 userKicked 事件中获取 roomId');
       return;
     }
 
     // 判断是否是自己被踢
     if (targetId == currentUser?.userId) {
-      log.warning("你已被踢出房间 $roomId");
+      log.warning('你已被踢出房间 $roomId');
 
       // 1. 本地移除该房间
       ref.read(roomListServiceProvider.notifier).removeRoomLocally(roomId);
@@ -191,7 +191,7 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      log.info("用户 $targetId 被踢出房间 $roomId，刷新成员列表");
+      log.info('用户 $targetId 被踢出房间 $roomId，刷新成员列表');
     }
   }
 
@@ -209,7 +209,7 @@ class SystemEventService extends _$SystemEventService {
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    log.info("房间状态已更新，兜底刷新房间列表");
+    log.info('房间状态已更新，兜底刷新房间列表');
   }
 
   /// 处理用户加入房间
@@ -220,7 +220,7 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      log.info("用户 ${event.operatorId} 加入房间 $roomId，刷新成员列表");
+      log.info('用户 ${event.operatorId} 加入房间 $roomId，刷新成员列表');
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
@@ -233,9 +233,9 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      log.info("用户 ${event.operatorId} 离开房间 $roomId，强制刷新成员列表");
+      log.info('用户 ${event.operatorId} 离开房间 $roomId，强制刷新成员列表');
     } else {
-      log.warning("无法从 userLeft 事件中获取 roomId");
+      log.warning('无法从 userLeft 事件中获取 roomId');
     }
   }
 
@@ -247,11 +247,11 @@ class SystemEventService extends _$SystemEventService {
     // 解封：恢复房间状态为正常
     if (createdType == 'unban' && roomId != null) {
       ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, 0);
-      log.info("房间 $roomId 已解封，恢复正常状态");
+      log.info('房间 $roomId 已解封，恢复正常状态');
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    log.info("房间创建/解封，刷新房间列表");
+    log.info('房间创建/解封，刷新房间列表');
   }
 
   /// 处理房间信息更新
@@ -262,7 +262,7 @@ class SystemEventService extends _$SystemEventService {
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    log.info("房间信息更新，刷新房间列表");
+    log.info('房间信息更新，刷新房间列表');
   }
 
   /// 处理通话开始
@@ -274,7 +274,7 @@ class SystemEventService extends _$SystemEventService {
     ref
         .read(callStatusControllerProvider.notifier)
         .markStarted(roomId, startTime: startTime);
-    log.info("房间 $roomId 通话开始");
+    log.info('房间 $roomId 通话开始');
   }
 
   /// 处理通话结束
@@ -283,7 +283,7 @@ class SystemEventService extends _$SystemEventService {
     if (roomId == null || roomId.isEmpty) return;
 
     ref.read(callStatusControllerProvider.notifier).markEnded(roomId);
-    log.info("房间 $roomId 通话结束");
+    log.info('房间 $roomId 通话结束');
   }
 
   /// 处理全体禁言/解除禁言
@@ -296,7 +296,7 @@ class SystemEventService extends _$SystemEventService {
         rawIsMute?.toString().toLowerCase() == 'true';
 
     if (roomId == null) {
-      log.warning("无法从 userMuted 事件中获取 roomId");
+      log.warning('无法从 userMuted 事件中获取 roomId');
       return;
     }
 
@@ -318,9 +318,9 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      log.info("用户 ${event.operatorId} 角色变更，强制刷新成员列表");
+      log.info('用户 ${event.operatorId} 角色变更，强制刷新成员列表');
     } else {
-      log.warning("无法从 userRoleChanged 事件中获取 roomId");
+      log.warning('无法从 userRoleChanged 事件中获取 roomId');
     }
   }
 
@@ -345,7 +345,7 @@ class SystemEventService extends _$SystemEventService {
     final String? messageId = event.extra?['messageId'] as String?;
 
     if (roomId == null || messageId == null) {
-      log.warning("无法从 messageRecall 事件中获取 roomId 或 messageId");
+      log.warning('无法从 messageRecall 事件中获取 roomId 或 messageId');
       return;
     }
 

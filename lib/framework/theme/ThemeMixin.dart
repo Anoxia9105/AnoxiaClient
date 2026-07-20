@@ -341,7 +341,7 @@ mixin ThemeMixin {
       refreshBackgroundColor: colorScheme.primary, // 下拉刷新时的背景色
       strokeCap: StrokeCap.round,
       borderRadius: BorderRadius.circular(4),
-      constraints: BoxConstraints.tight(Size(25, 25)),
+      constraints: BoxConstraints.tight(const Size(25, 25)),
     );
 
     //表格

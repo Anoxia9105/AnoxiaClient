@@ -31,14 +31,14 @@ class UploadValidator {
 
     // 3. 校验总数量
     if (existingCount + selectingCount > maxTotalCount) {
-      Toast.showToast("upload_total_count_exceeded".tr(args: [maxTotalCount.toString(), existingCount.toString()]));
+      Toast.showToast('upload_total_count_exceeded'.tr(args: [maxTotalCount.toString(), existingCount.toString()]));
       return false;
     }
 
     // 4. 校验总大小
     if (existingSize + selectingSize > maxTotalSize) {
       final String limitStr = (maxTotalSize / 1024 / 1024).toStringAsFixed(0);
-      Toast.showToast("upload_total_size_exceeded".tr(args: [limitStr]));
+      Toast.showToast('upload_total_size_exceeded'.tr(args: [limitStr]));
       return false;
     }
 
@@ -48,7 +48,7 @@ class UploadValidator {
   /// 校验单个文件是否过大（用于循环内部）
   static bool validateSingleFile(PlatformFile file) {
     if (file.size > maxSingleFileSize) {
-      Toast.showToast("upload_single_file_too_large".tr(args: [file.name]));
+      Toast.showToast('upload_single_file_too_large'.tr(args: [file.name]));
       return false;
     }
     return true;

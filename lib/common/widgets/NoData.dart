@@ -29,7 +29,7 @@ class NoData extends StatelessWidget {
     this.buttonText,
     this.iconData,
   }) : assert(
-         !(onPressed != null && (buttonText == null || buttonText == "")),
+         !(onPressed != null && (buttonText == null || buttonText == '')),
          '当 onPressed 不为 null 时，buttonText 不能为空',
        );
 
@@ -59,7 +59,7 @@ class NoData extends StatelessWidget {
               ),
             ),
             if (subTitle != null) ...[
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 subTitle ?? '',
                 textAlign: TextAlign.center,

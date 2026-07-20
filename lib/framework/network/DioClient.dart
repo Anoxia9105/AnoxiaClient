@@ -207,7 +207,7 @@ class DioClient {
 
       final formData = FormData.fromMap({
         fileField: await MultipartFile.fromFile(file.path, filename: fileName),
-        if (data != null) ...data,
+        ...?data,
       });
 
       return await _dio.post(
@@ -249,7 +249,7 @@ class DioClient {
 
       final formData = FormData.fromMap({
         fileField: multipartFiles,
-        if (data != null) ...data,
+        ...?data,
       });
 
       return await _dio.post(

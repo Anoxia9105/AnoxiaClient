@@ -23,7 +23,7 @@ class Channel {
   /// 获取当前平台的通话通道
   static dynamic get callChannel {
     if (DeviceUtil.isRealDesktop()) {
-      _desktopCallChannel ??= WindowMethodChannel('call_windows_handler');
+      _desktopCallChannel ??= const WindowMethodChannel('call_windows_handler');
       return _desktopCallChannel!;
     }
     return _mobileCallChannel;

@@ -41,7 +41,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
       centerTitle: DeviceUtil.isRealMobile(),
       title: Text(
         widget.title,
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
       ),
       leading: Center(
         child: Assets.images.appIconPng.image(
@@ -53,19 +53,19 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
       actions: [
         const SizedBox(width: 10),
         IconButton(
-          tooltip: "header_minimize".tr(),
+          tooltip: 'header_minimize'.tr(),
           padding: EdgeInsets.zero,
           onPressed: () {
             windowManager.minimize();
           },
-          icon: HugeIcon(
+          icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedSolidLine01,
             size: 18,
           ),
         ),
         changeScreenMode(extended),
         IconButton(
-          tooltip: "header_closure".tr(),
+          tooltip: 'header_closure'.tr(),
           padding: EdgeInsets.zero,
           hoverColor: Colors.red,
           onPressed: () {
@@ -82,7 +82,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
               return null;
             }),
           ),
-          icon: HugeIcon(
+          icon: const HugeIcon(
             icon: HugeIcons.strokeRoundedCancel01,
             size: 18,
           ),
@@ -99,7 +99,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
   Widget changeScreenMode(bool mode) {
     if (mode) {
       return IconButton(
-        tooltip: "header_reduction".tr(),
+        tooltip: 'header_reduction'.tr(),
         padding: EdgeInsets.zero,
         onPressed: () {
           setState(() {
@@ -107,14 +107,14 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
             windowManager.unmaximize();
           });
         },
-        icon: HugeIcon(
+        icon: const HugeIcon(
           icon: HugeIcons.strokeRoundedChangeScreenMode,
           size: 18,
         ),
       );
     }
     return IconButton(
-      tooltip: "header_maximize".tr(),
+      tooltip: 'header_maximize'.tr(),
       padding: EdgeInsets.zero,
       onPressed: () {
         setState(() {
@@ -122,7 +122,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
           windowManager.maximize();
         });
       },
-      icon: HugeIcon(
+      icon: const HugeIcon(
         icon: HugeIcons.strokeRoundedSquare,
         size: 16,
       ),

@@ -132,7 +132,7 @@ class _MeProfileItemEditPageState extends State<MeProfileItemEditPage> {
     final options = widget.options!;
     return ListView.separated(
       itemCount: options.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final item = options[index];
         final selected = item.value == _selected;

@@ -28,15 +28,7 @@ class MyGame extends FlameGame {
     world = level1;
   }
 
-  @override
-  void update(double dt) {
-    super.update(dt);
-  }
 
-  @override
-  void render(Canvas canvas) {
-    super.render(canvas);
-  }
 
   @override
   void onGameResize(Vector2 size) {
