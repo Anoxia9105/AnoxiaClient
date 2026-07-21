@@ -1,10 +1,5 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
-import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
-import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
-import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
-import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -67,8 +62,13 @@ class _IncomingCallCard extends ConsumerWidget {
                   children: [
                     AvatarWidget(
                       size: 84,
-                      url: invitation.callerAvatar,
-                      name: invitation.callerName.isEmpty
+                      url:
+                          invitation.isGroup && invitation.roomAvatar.isNotEmpty
+                          ? invitation.roomAvatar
+                          : invitation.callerAvatar,
+                      name: invitation.isGroup
+                          ? invitation.title
+                          : invitation.callerName.isEmpty
                           ? invitation.title
                           : invitation.callerName,
                     ),
@@ -132,8 +132,7 @@ class _IncomingCallCard extends ConsumerWidget {
                         onPressed: () async {
                           await ref
                               .read(callInvitationControllerProvider.notifier)
-                              .accept(invitation);
-                          await _openCall(ref, invitation);
+                              .acceptAndOpen(invitation);
                         },
                         icon: const Icon(Icons.call),
                         label: const Text('接听'),
@@ -147,30 +146,6 @@ class _IncomingCallCard extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _openCall(WidgetRef ref, CallInvitationState invitation) async {
-    if (DeviceUtil.isRealMobile()) {
-      ref
-          .read(mobileCallSessionControllerProvider.notifier)
-          .start(
-            roomId: invitation.roomId,
-            title: invitation.title,
-            initialMedia: invitation.initialMedia,
-          );
-      return;
-    }
-
-    await ref
-        .read(callWindowControllerProvider.notifier)
-        .openCallWindow(
-          title: invitation.title,
-          themeIndex: ref.read(themeIndexProvider),
-          roomId: invitation.roomId,
-          initialMedia: invitation.initialMedia,
-          isGroup: invitation.isGroup,
-          token: await ref.read(roomTokenProvider(invitation.roomId).future),
-        );
   }
 }
 

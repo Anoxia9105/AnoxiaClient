@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/protocol/PacketType.dart';
@@ -13,6 +14,8 @@ import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/extensions/window_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +42,7 @@ class CallInvitationState {
   final bool isGroup;
   final String callerName;
   final String callerAvatar;
+  final String roomAvatar;
 
   const CallInvitationState({
     required this.inviteId,
@@ -52,6 +56,7 @@ class CallInvitationState {
     this.isGroup = false,
     this.callerName = '',
     this.callerAvatar = '',
+    this.roomAvatar = '',
   });
 
   CallInvitationState copyWith({
@@ -70,6 +75,47 @@ class CallInvitationState {
       isGroup: isGroup,
       callerName: callerName,
       callerAvatar: callerAvatar,
+      roomAvatar: roomAvatar,
+    );
+  }
+
+  Map<String, dynamic> toNotificationPayload() => <String, dynamic>{
+    'inviteId': inviteId,
+    'roomId': roomId,
+    'title': title,
+    'callerId': callerId,
+    'targetId': targetId,
+    'createdAt': createdAt,
+    'initialMedia': initialMedia.value,
+    'isGroup': isGroup,
+    'callerName': callerName,
+    'callerAvatar': callerAvatar,
+    'roomAvatar': roomAvatar,
+  };
+
+  factory CallInvitationState.fromNotificationPayload(
+    Map<String, dynamic> payload,
+  ) {
+    int? readInt(dynamic value) =>
+        value is int ? value : int.tryParse(value?.toString() ?? '');
+    final roomId = payload['roomId']?.toString() ?? '';
+    return CallInvitationState(
+      inviteId:
+          payload['inviteId']?.toString() ??
+          '${roomId}_${payload['createdAt'] ?? ''}',
+      roomId: roomId,
+      title: payload['title']?.toString() ?? '',
+      callerId: readInt(payload['callerId'] ?? payload['senderId']),
+      targetId: readInt(payload['targetId'] ?? payload['receiverId']),
+      createdAt:
+          readInt(payload['createdAt']) ??
+          DateTime.now().millisecondsSinceEpoch,
+      phase: CallInvitationPhase.incoming,
+      initialMedia: CallInitialMedia.fromValue(payload['initialMedia']),
+      isGroup: payload['isGroup'] == true || payload['isGroup'] == 'true',
+      callerName: payload['callerName']?.toString() ?? '',
+      callerAvatar: payload['callerAvatar']?.toString() ?? '',
+      roomAvatar: payload['roomAvatar']?.toString() ?? '',
     );
   }
 }
@@ -119,6 +165,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       isGroup: isGroup,
       callerName: currentUser?.nickName ?? '',
       callerAvatar: currentUser?.avatar ?? '',
+      roomAvatar: room.roomAvatar ?? '',
     );
     state = invite;
     _scheduleClear(const Duration(seconds: 30));
@@ -145,6 +192,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       isGroup: true,
       callerName: currentUser?.nickName ?? '',
       callerAvatar: currentUser?.avatar ?? '',
+      roomAvatar: room.roomAvatar ?? '',
     );
     for (final userId in userIds.toSet()) {
       _send(HighMessageType.CALL_INVITE, invite, targetId: userId);
@@ -161,6 +209,45 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
   Future<void> accept(CallInvitationState invite) async {
     _send(HighMessageType.CALL_ACCEPT, invite, targetId: invite.callerId);
     state = null;
+  }
+
+  Future<void> acceptAndOpen(CallInvitationState invite) async {
+    await accept(invite);
+    if (DeviceUtil.isRealMobile()) {
+      ref
+          .read(mobileCallSessionControllerProvider.notifier)
+          .start(
+            roomId: invite.roomId,
+            title: invite.title,
+            initialMedia: invite.initialMedia,
+          );
+      return;
+    }
+
+    await ref
+        .read(callWindowControllerProvider.notifier)
+        .openCallWindow(
+          title: invite.title,
+          themeIndex: ref.read(themeIndexProvider),
+          roomId: invite.roomId,
+          initialMedia: invite.initialMedia,
+          isGroup: invite.isGroup,
+          token: await ref.read(roomTokenProvider(invite.roomId).future),
+        );
+  }
+
+  /// Restores an invitation delivered through JPush while the IM WebSocket
+  /// was unavailable. Expired pushes are deliberately ignored.
+  void receiveExternalInvite(Map<String, dynamic> payload) {
+    final invite = CallInvitationState.fromNotificationPayload(payload);
+    if (invite.roomId.isEmpty) return;
+    final age = DateTime.now().millisecondsSinceEpoch - invite.createdAt;
+    if (age > const Duration(seconds: 60).inMilliseconds) return;
+    if (state?.inviteId == invite.inviteId &&
+        state?.phase == CallInvitationPhase.incoming) {
+      return;
+    }
+    _handleIncomingInvite(invite);
   }
 
   Future<void> reject(CallInvitationState invite) async {
@@ -239,8 +326,6 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
   }
 
   void _handleIncomingInvite(CallInvitationState invite) {
-    // 群聊通话通过系统消息提示，避免给全群成员弹出强打断式来电窗口。
-    if (invite.isGroup) return;
     final mobileSession = ref.read(mobileCallSessionControllerProvider);
     final desktopWindow = ref.read(callWindowControllerProvider);
     final inAnotherCall =
@@ -314,6 +399,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         'isGroup': invite.isGroup,
         'callerName': invite.callerName,
         'callerAvatar': invite.callerAvatar,
+        'roomAvatar': invite.roomAvatar,
       }),
       timestamp: DateTime.now().millisecondsSinceEpoch,
     );
@@ -341,6 +427,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       isGroup: payload['isGroup'] == true || payload['isGroup'] == 'true',
       callerName: payload['callerName']?.toString() ?? '',
       callerAvatar: payload['callerAvatar']?.toString() ?? '',
+      roomAvatar: payload['roomAvatar']?.toString() ?? '',
     );
   }
 

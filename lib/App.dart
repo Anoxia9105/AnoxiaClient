@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -42,6 +43,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   ProviderSubscription<int>? _unreadBadgeSubscription;
   ProviderSubscription<int>? _callThemeSubscription;
   ProviderSubscription<ThemeData>? _systemUiSubscription;
+  ProviderSubscription<CallInvitationState?>? _callInvitationSubscription;
   final TransitionBuilder _botToastBuilder = BotToastInit();
 
   @override
@@ -89,6 +91,50 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         fireImmediately: true,
       );
     }
+
+    _callInvitationSubscription = ref.listenManual<CallInvitationState?>(
+      callInvitationControllerProvider,
+      (previous, next) {
+        if (!DeviceUtil.isRealDesktop()) return;
+        if (previous != null &&
+            previous.phase == CallInvitationPhase.incoming) {
+          final shouldCancel =
+              next == null ||
+              next.inviteId != previous.inviteId ||
+              next.phase != CallInvitationPhase.incoming;
+          if (shouldCancel) {
+            unawaited(
+              NotificationHelper().cancelIncomingCall(previous.inviteId),
+            );
+          }
+        }
+        if (next?.phase != CallInvitationPhase.incoming) return;
+        final invitation = next!;
+        final displayName = invitation.isGroup
+            ? invitation.title.trim()
+            : (invitation.callerName.trim().isNotEmpty
+                  ? invitation.callerName.trim()
+                  : invitation.title.trim());
+        final mediaLabel = invitation.initialMedia.value == 'video'
+            ? '视频通话'
+            : '语音通话';
+        final body =
+            invitation.isGroup && invitation.callerName.trim().isNotEmpty
+            ? '${invitation.callerName.trim()} 邀请你加入$mediaLabel'
+            : '正在邀请你进行$mediaLabel';
+        unawaited(
+          NotificationHelper().showIncomingCall(
+            payload: invitation.toNotificationPayload(),
+            title: displayName.isEmpty ? '新的通话邀请' : displayName,
+            body: body,
+            avatarUrl:
+                invitation.isGroup && invitation.roomAvatar.trim().isNotEmpty
+                ? invitation.roomAvatar
+                : invitation.callerAvatar,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -96,6 +142,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     _unreadBadgeSubscription?.close();
     _callThemeSubscription?.close();
     _systemUiSubscription?.close();
+    _callInvitationSubscription?.close();
 
     if (DeviceUtil.isRealDesktop()) {
       windowManager.removeListener(this);

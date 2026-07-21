@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -33,9 +35,20 @@ class NotificationHelper {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   void Function(String roomId)? _onOpenRoom;
+  FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
+  _onCallAction;
 
-  void configure({required void Function(String roomId) onOpenRoom}) {
+  static const String callAcceptAction = 'call_accept';
+  static const String callRejectAction = 'call_reject';
+  static const String _incomingCallCategory = 'incoming_call';
+
+  void configure({
+    required void Function(String roomId) onOpenRoom,
+    FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
+    onCallAction,
+  }) {
     _onOpenRoom = onOpenRoom;
+    _onCallAction = onCallAction;
   }
 
   /// 初始化通知插件
@@ -44,7 +57,23 @@ class NotificationHelper {
   Future<void> init() async {
     await _pruneAvatarCache();
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const darwin = DarwinInitializationSettings();
+    final darwin = DarwinInitializationSettings(
+      notificationCategories: <DarwinNotificationCategory>[
+        DarwinNotificationCategory(
+          _incomingCallCategory,
+          actions: <DarwinNotificationAction>[
+            DarwinNotificationAction.plain(
+              callAcceptAction,
+              '接听',
+              options: const <DarwinNotificationActionOption>{
+                DarwinNotificationActionOption.foreground,
+              },
+            ),
+            DarwinNotificationAction.plain(callRejectAction, '拒绝'),
+          ],
+        ),
+      ],
+    );
     const linux = LinuxInitializationSettings(
       defaultActionName: 'Open notification',
     );
@@ -212,6 +241,33 @@ class NotificationHelper {
   void _onTapNotification(NotificationResponse response) {
     final String? roomId = response.payload;
 
+    if (roomId != null && roomId.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(roomId);
+        if (decoded is Map && decoded['kind'] == 'incoming_call') {
+          final payload = Map<String, dynamic>.from(decoded);
+          final actionId =
+              payload['actionId']?.toString() ?? response.actionId ?? '';
+          if (actionId == callAcceptAction || actionId == callRejectAction) {
+            unawaited(
+              Future.sync(() => _onCallAction?.call(actionId, payload)),
+            );
+          } else {
+            final callRoomId = payload['roomId']?.toString();
+            if (callRoomId != null && callRoomId.isNotEmpty) {
+              _onOpenRoom?.call(callRoomId);
+            }
+          }
+          if (DeviceUtil.isRealDesktop()) {
+            unawaited(_ensureWindowActive());
+          }
+          return;
+        }
+      } catch (e) {
+        log.warning('无法解析通话通知载荷: $e');
+      }
+    }
+
     if (roomId != null) {
       log.info('用户点击通知，准备跳转房间: $roomId');
 
@@ -291,6 +347,117 @@ class NotificationHelper {
       notificationDetails: details,
       payload: payload,
     );
+  }
+
+  /// 显示带有接听/拒绝动作的强制来电通知。
+  Future<void> showIncomingCall({
+    required Map<String, dynamic> payload,
+    required String title,
+    required String body,
+    String? avatarUrl,
+  }) async {
+    if (kIsWeb) return;
+    await _ensureInitialized();
+
+    final notificationId = incomingCallNotificationId(
+      payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '',
+    );
+    final encodedPayload = jsonEncode(<String, dynamic>{
+      ...payload,
+      'kind': 'incoming_call',
+    });
+
+    final avatarUri = await _resolveWindowsAvatarUri(avatarUrl);
+    final windowsImages = avatarUri == null
+        ? const <WindowsImage>[]
+        : <WindowsImage>[
+            WindowsImage(
+              avatarUri,
+              altText: title,
+              placement: WindowsImagePlacement.appLogoOverride,
+              crop: WindowsImageCrop.circle,
+            ),
+          ];
+
+    final details = NotificationDetails(
+      android: const AndroidNotificationDetails(
+        'incoming_call_channel',
+        '来电通知',
+        channelDescription: '语音和视频通话邀请',
+        importance: Importance.max,
+        priority: Priority.max,
+        category: AndroidNotificationCategory.call,
+        visibility: NotificationVisibility.public,
+        ongoing: true,
+        autoCancel: false,
+        actions: <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            callRejectAction,
+            '拒绝',
+            cancelNotification: true,
+          ),
+          AndroidNotificationAction(
+            callAcceptAction,
+            '接听',
+            showsUserInterface: true,
+            cancelNotification: true,
+          ),
+        ],
+      ),
+      iOS: const DarwinNotificationDetails(
+        categoryIdentifier: _incomingCallCategory,
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+      macOS: const DarwinNotificationDetails(
+        categoryIdentifier: _incomingCallCategory,
+        presentAlert: true,
+        presentSound: true,
+      ),
+      windows: WindowsNotificationDetails(
+        duration: WindowsNotificationDuration.long,
+        scenario: WindowsNotificationScenario.incomingCall,
+        images: windowsImages,
+        actions: <WindowsAction>[
+          WindowsAction(
+            content: '接听',
+            arguments: jsonEncode(<String, dynamic>{
+              ...payload,
+              'kind': 'incoming_call',
+              'actionId': callAcceptAction,
+            }),
+          ),
+          WindowsAction(
+            content: '拒绝',
+            arguments: jsonEncode(<String, dynamic>{
+              ...payload,
+              'kind': 'incoming_call',
+              'actionId': callRejectAction,
+            }),
+          ),
+        ],
+      ),
+    );
+
+    await _plugin.show(
+      id: notificationId,
+      title: title,
+      body: body,
+      notificationDetails: details,
+      payload: encodedPayload,
+    );
+  }
+
+  Future<void> cancelIncomingCall(String inviteId) async {
+    if (kIsWeb || inviteId.isEmpty) return;
+    await _ensureInitialized();
+    await _plugin.cancel(id: incomingCallNotificationId(inviteId));
+  }
+
+  int incomingCallNotificationId(String inviteId) {
+    return 0x3fffffff & inviteId.hashCode;
   }
 
   /// 更新系统未读角标（Android/iOS/macOS App 图标、Windows 任务栏）

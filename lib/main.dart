@@ -8,6 +8,8 @@ import 'package:anoxia/features/live/presentation/pages/window_live_danmaku_page
 import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
+import 'package:anoxia/framework/core/push_manager.dart';
+import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -199,7 +201,36 @@ Future<void> runMainApp() async {
         globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
         globalContainer.read(layoutControllerProvider.notifier).setIndex(0);
       },
+      onCallAction: (actionId, payload) async {
+        final invitation = CallInvitationState.fromNotificationPayload(payload);
+        final controller = globalContainer.read(
+          callInvitationControllerProvider.notifier,
+        );
+        if (actionId == NotificationHelper.callAcceptAction) {
+          await controller.acceptAndOpen(invitation);
+        } else if (actionId == NotificationHelper.callRejectAction) {
+          await controller.reject(invitation);
+        }
+        await NotificationHelper().cancelIncomingCall(invitation.inviteId);
+      },
     );
+    if (DeviceUtil.isRealMobile()) {
+      PushManager.instance.setOnNotification((payload) {
+        final pushType =
+            payload['pushType']?.toString() ?? payload['kind']?.toString();
+        if (pushType == 'call_invite' || pushType == 'incoming_call') {
+          globalContainer
+              .read(callInvitationControllerProvider.notifier)
+              .receiveExternalInvite(payload);
+          return;
+        }
+        final roomId = payload['roomId']?.toString();
+        if (roomId != null && roomId.isNotEmpty) {
+          globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
+          globalContainer.read(layoutControllerProvider.notifier).setIndex(0);
+        }
+      });
+    }
     DioClient().configureAuth(
       tokenLoader: () async {
         final cached = globalContainer.read(tokenCacheProvider);

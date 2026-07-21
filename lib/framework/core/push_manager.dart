@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 
 import 'package:anoxia/common/utils/SPUtil.dart';
@@ -9,6 +10,8 @@ import 'package:jpush_flutter/jpush_interface.dart';
 import 'package:uuid/uuid.dart';
 
 typedef PushTokenChangedCallback = FutureOr<void> Function(String token);
+typedef PushNotificationCallback =
+    FutureOr<void> Function(Map<String, dynamic> payload);
 
 class PushManager {
   PushManager._();
@@ -26,6 +29,8 @@ class PushManager {
   String? _latestFcmToken;
   PushTokenChangedCallback? _onFcmTokenChanged;
   StreamSubscription<String>? _fcmTokenRefreshSub;
+  PushNotificationCallback? _onNotification;
+  Map<String, dynamic>? _pendingNotification;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -62,7 +67,6 @@ class PushManager {
         onTimeout: () => '',
       );
 
-      print('JPush RID => $rid');
       log.info('JPush RID => $rid');
 
       // FCM 在部分国内机型/网络环境下可能长时间阻塞，这里不阻塞主初始化链路。
@@ -79,19 +83,21 @@ class PushManager {
   }
 
   Future<dynamic> _onConnected(Map<String, dynamic> event) async {
-    print('极光连接成功 => $event');
+    log.info('极光连接成功 => $event');
   }
 
   Future<dynamic> _onReceiveNotification(Map<String, dynamic> event) async {
-    print('收到通知 => $event');
+    log.info('收到通知 => $event');
+    _dispatchNotification(event);
   }
 
   Future<dynamic> _onOpenNotification(Map<String, dynamic> event) async {
-    print('点击通知 => $event');
+    log.info('点击通知 => $event');
+    _dispatchNotification(event);
   }
 
   Future<dynamic> _onReceiveMessage(Map<String, dynamic> event) async {
-    print('收到透传消息 => $event');
+    log.info('收到透传消息 => $event');
   }
 
   Future<String> getRegistrationId() async {
@@ -206,6 +212,51 @@ class PushManager {
 
   void setOnFcmTokenChanged(PushTokenChangedCallback? callback) {
     _onFcmTokenChanged = callback;
+  }
+
+  void setOnNotification(PushNotificationCallback? callback) {
+    _onNotification = callback;
+    final pending = _pendingNotification;
+    if (callback != null && pending != null) {
+      _pendingNotification = null;
+      unawaited(Future.sync(() => callback(pending)));
+    }
+  }
+
+  void _dispatchNotification(Map<String, dynamic> event) {
+    final payload = _flattenNotificationPayload(event);
+    final callback = _onNotification;
+    if (callback == null) {
+      _pendingNotification = payload;
+      return;
+    }
+    unawaited(
+      Future.sync(() => callback(payload)).catchError((error, stackTrace) {
+        log.error('处理推送通知失败', error, stackTrace);
+      }),
+    );
+  }
+
+  Map<String, dynamic> _flattenNotificationPayload(Map<String, dynamic> event) {
+    final result = <String, dynamic>{...event};
+    void merge(dynamic value) {
+      if (value is Map) {
+        for (final entry in value.entries) {
+          result[entry.key.toString()] = entry.value;
+        }
+      } else if (value is String && value.trimLeft().startsWith('{')) {
+        try {
+          merge(jsonDecode(value));
+        } catch (_) {
+          // Keep the original field when a vendor-specific value is not JSON.
+        }
+      }
+    }
+
+    for (final key in const <String>['extras', 'extra', 'data']) {
+      merge(event[key]);
+    }
+    return result;
   }
 
   void _notifyFcmTokenChanged(String token) {
