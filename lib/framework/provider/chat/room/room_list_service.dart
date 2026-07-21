@@ -240,6 +240,18 @@ class RoomListService extends _$RoomListService {
     );
   }
 
+  /// Applies announcement events immediately while the authoritative refresh runs.
+  void updateRoomAnnouncementLocally(String roomId, String announcement) {
+    state.whenData((rooms) {
+      final index = rooms.indexWhere((room) => room.roomId == roomId);
+      if (index == -1) return;
+
+      final updated = List<ChatRoomVO>.from(rooms);
+      updated[index] = updated[index].copyWith(roomDescription: announcement);
+      state = AsyncValue.data(updated);
+    });
+  }
+
   /// 防抖上报已读 seq
   ///
   /// 2 秒内连续收到消息只上报最后一次（取最大值）

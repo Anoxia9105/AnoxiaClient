@@ -9,6 +9,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_de
 import 'package:anoxia/features/chat/presentation/widgets/message_bubble/chat_message_bubble.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/group_announcement_banner.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
@@ -183,14 +184,25 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           ? AppBar()
           : ChatAppBar(roomId: widget.roomId),
       drawerScrimColor: Colors.transparent,
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: _buildChatBody(
-          showInitialSkeleton: showInitialSkeleton,
-          entryTask: entryTask,
-          flatItems: flatItems,
-          currentRoom: currentRoom,
-        ),
+      body: Column(
+        children: [
+          if (!showInitialSkeleton && currentRoom.roomType == 1)
+            GroupAnnouncementBanner(
+              roomId: widget.roomId,
+              announcement: currentRoom.roomDescription ?? '',
+            ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _buildChatBody(
+                showInitialSkeleton: showInitialSkeleton,
+                entryTask: entryTask,
+                flatItems: flatItems,
+                currentRoom: currentRoom,
+              ),
+            ),
+          ),
+        ],
       ),
 
       /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）

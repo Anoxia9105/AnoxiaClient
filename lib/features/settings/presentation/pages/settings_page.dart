@@ -133,7 +133,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final themeMode = ref.watch(themeModeProvider);
     final themeAccentIndex = ref.watch(themeAccentProvider);
     final fontKey = ref.watch(appFontProvider);
-    final callWin = ref.read(callWindowControllerProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
     final hasUpdateBadge = ref.watch(hasAppUpdateProvider);
 
@@ -163,11 +162,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ref
                   .read(themeIndexProvider.notifier)
                   .setTheme(compatibilityIndex);
-              if (callWin != null) {
-                ref
-                    .read(callWindowControllerProvider.notifier)
-                    .updateSettings(themeIndex: compatibilityIndex);
-              }
             },
             onAccentChanged: (index) {
               ref.read(themeAccentProvider.notifier).setAccent(index);
@@ -178,11 +172,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ref
                   .read(themeIndexProvider.notifier)
                   .setTheme(compatibilityIndex);
-              if (callWin != null) {
-                ref
-                    .read(callWindowControllerProvider.notifier)
-                    .updateSettings(themeIndex: compatibilityIndex);
-              }
             },
           ),
           SettingsLanguageSection(
@@ -190,7 +179,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             isDesktop: DeviceUtil.isDesktop(context),
             onLanguageChanged: (localeCode) {
               context.setLocale(Locale(localeCode));
-              if (callWin != null) {
+              if (ref.read(callWindowControllerProvider) != null) {
                 ref
                     .read(callWindowControllerProvider.notifier)
                     .updateSettings(localeCode: localeCode);

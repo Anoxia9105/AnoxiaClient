@@ -71,7 +71,7 @@ class CallWindowController extends _$CallWindowController {
   }) async {
     if (state != null) {
       await state!.show();
-      updateSettings(themeIndex: themeIndex);
+      await updateSettings(themeIndex: themeIndex);
       return;
     }
 
@@ -95,20 +95,26 @@ class CallWindowController extends _$CallWindowController {
     controller.show();
   }
 
-  void updateSettings({int? themeIndex, String? localeCode}) {
+  Future<void> updateSettings({int? themeIndex, String? localeCode}) async {
     final payload = <String, Object>{};
     if (themeIndex != null) payload['themeIndex'] = themeIndex;
     if (localeCode != null) payload['locale'] = localeCode;
     if (payload.isEmpty) return;
 
-    log.info('调用Call窗口设置: $payload');
+    // The call page listens on Channel.callChannel. WindowController has its
+    // own channel for window lifecycle methods and cannot receive this method.
+    if (state == null) return;
 
-    final controller = state;
-    if (controller != null) {
-      controller.invokeMethod(Channel.callChannelMethod, payload);
-      return;
+    try {
+      log.info('调用Call窗口设置: $payload');
+      await Channel.callChannel.invokeMethod(
+        Channel.callChannelMethod,
+        payload,
+      );
+    } catch (e, st) {
+      // The child engine may still be registering its handler, or may have
+      // closed between the state check and this invocation.
+      log.warning('Call窗口设置同步失败，已忽略本次更新', e, st);
     }
-
-    Channel.callChannel.invokeMethod(Channel.callChannelMethod, payload);
   }
 }

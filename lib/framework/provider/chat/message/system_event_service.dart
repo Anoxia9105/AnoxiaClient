@@ -258,6 +258,12 @@ class SystemEventService extends _$SystemEventService {
   void _handleRoomUpdated(EventMessage event) {
     final String? roomId = _extractRoomIdFromEvent(event);
     if (roomId != null && roomId.isNotEmpty) {
+      if (event.extra?['field']?.toString() == 'announcement') {
+        final announcement = event.extra?['roomDescription']?.toString() ?? '';
+        ref
+            .read(roomListServiceProvider.notifier)
+            .updateRoomAnnouncementLocally(roomId, announcement);
+      }
       ref.read(callStatusControllerProvider.notifier).refresh(roomId);
     }
 

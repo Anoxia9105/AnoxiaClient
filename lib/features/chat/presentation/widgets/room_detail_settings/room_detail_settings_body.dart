@@ -5,6 +5,7 @@ import 'package:anoxia/features/chat/presentation/pages/add_member_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_member_list_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -175,14 +176,20 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 ),
                 title: Text('chat_group_announcement'.tr()),
                 subtitle: Text(currentRoom.roomDescription ?? ''),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                trailing: Icon(
+                  isAdmin ? Icons.edit_outlined : Icons.arrow_forward_ios,
+                  size: isAdmin ? 18 : 14,
+                ),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => GroupEditAnnouncementPage(
-                        roomId: roomId,
-                        initialAnnouncement: currentRoom.roomDescription ?? '',
-                      ),
+                      builder: (_) => isAdmin
+                          ? GroupEditAnnouncementPage(
+                              roomId: roomId,
+                              initialAnnouncement:
+                                  currentRoom.roomDescription ?? '',
+                            )
+                          : GroupAnnouncementDetailPage(roomId: roomId),
                     ),
                   );
                 },
