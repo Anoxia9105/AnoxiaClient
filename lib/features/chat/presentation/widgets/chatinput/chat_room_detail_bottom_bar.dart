@@ -41,29 +41,40 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (showSkeleton) return const ChatInputSkeleton();
 
+    final isDesktop = DeviceUtil.isRealDesktop();
+    final content = switch (roomStatus) {
+      0 => ChatInputField(bottomSheet: onFieldTap),
+      1 => ChatRoomDetailStatusTag(
+        text: 'chat_room_muted'.tr(),
+        icon: HugeIcons.strokeRoundedVolumeMute01,
+      ),
+      2 => const SizedBox.shrink(),
+      3 => ChatRoomDetailStatusTag(
+        text: 'chat_room_dissolved'.tr(),
+        icon: HugeIcons.strokeRoundedDelete02,
+      ),
+      _ => const SizedBox.shrink(),
+    };
+
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.only(
-          left: DeviceUtil.isRealDesktop() ? 50 : 0,
-          right: DeviceUtil.isRealDesktop() ? 50 : 0,
+        padding: EdgeInsets.fromLTRB(
+          isDesktop ? 50 : 12,
+          0,
+          isDesktop ? 50 : 12,
+          isDesktop ? 0 : 10,
         ),
-        child: switch (roomStatus) {
-          0 => ChatInputField(bottomSheet: onFieldTap),
-          // 全员禁言
-          1 => ChatRoomDetailStatusTag(
-            text: 'chat_room_muted'.tr(),
-            icon: HugeIcons.strokeRoundedVolumeMute01,
-          ),
-          // 封禁
-          2 => const SizedBox.shrink(),
-          // 已解散
-          3 => ChatRoomDetailStatusTag(
-            text: 'chat_room_dissolved'.tr(),
-            icon: HugeIcons.strokeRoundedDelete02,
-          ),
-          _ => const SizedBox.shrink(),
-        },
+        child: isDesktop
+            ? content
+            : Material(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                elevation: 8,
+                shadowColor: Colors.black.withValues(alpha: 0.18),
+                clipBehavior: Clip.antiAlias,
+                borderRadius: BorderRadius.circular(22),
+                child: content,
+              ),
       ),
     );
   }

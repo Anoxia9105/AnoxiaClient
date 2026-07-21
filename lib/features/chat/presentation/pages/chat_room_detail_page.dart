@@ -39,6 +39,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   /// 是否显示滚动到底部按钮
   bool _showScrollDownButton = false;
+  bool _isLoadingMore = false;
+  bool _historyEdgeArmed = true;
 
   /// 构建时间分隔 UI
   ///
@@ -79,6 +81,16 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   }
 
   @override
+  void didUpdateWidget(covariant ChatRoomDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.roomId != widget.roomId) {
+      _isLoadingMore = false;
+      _historyEdgeArmed = true;
+      _showScrollDownButton = false;
+    }
+  }
+
+  @override
   void dispose() {
     _listViewController.dispose();
     super.dispose();
@@ -92,29 +104,45 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       }
     });
 
-    _listViewController
-        .sliverController
-        .onPaintItemPositionsCallback = (height, positions) {
-      if (positions.isEmpty) return;
-      final currentRoomId = widget.roomId;
-      if (currentRoomId.isEmpty) return;
+    _listViewController.sliverController.onPaintItemPositionsCallback =
+        (height, positions) {
+          if (positions.isEmpty) return;
+          final currentRoomId = widget.roomId;
+          if (currentRoomId.isEmpty) return;
 
-      // 直接看滑动到的 maxVisibleIndex
-      int maxVisibleIndex = positions
-          .map((p) => p.index)
-          .reduce((a, b) => a > b ? a : b);
+          // 直接看滑动到的 maxVisibleIndex
+          int maxVisibleIndex = positions
+              .map((p) => p.index)
+              .reduce((a, b) => a > b ? a : b);
 
-      // 通过 Riverpod 异步高效读取平铺列表长度
-      final flatItemsLength = ref
-          .read(chatUiListProvider(currentRoomId))
-          .items
-          .length;
+          // 通过 Riverpod 异步高效读取平铺列表长度
+          final flatItemsLength = ref
+              .read(chatUiListProvider(currentRoomId))
+              .items
+              .length;
 
-      // 触底（反转列表的顶部，即触及历史边界）触发翻页
-      if (flatItemsLength >= 10 && maxVisibleIndex >= flatItemsLength - 5) {
-        ref.read(chatMessagesProvider.notifier).loadMoreHistory(currentRoomId);
-      }
-    };
+          final nearHistoryEdge =
+              flatItemsLength >= 10 && maxVisibleIndex >= flatItemsLength - 5;
+          if (!nearHistoryEdge) {
+            _historyEdgeArmed = true;
+            return;
+          }
+          final hasMore = ref.read(chatHasMoreProvider)[currentRoomId] ?? false;
+          if (hasMore && _historyEdgeArmed && !_isLoadingMore) {
+            _historyEdgeArmed = false;
+            _loadMoreHistory(currentRoomId);
+          }
+        };
+  }
+
+  Future<void> _loadMoreHistory(String roomId) async {
+    if (_isLoadingMore || !mounted) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      await ref.read(chatMessagesProvider.notifier).loadMoreHistory(roomId);
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
   }
 
   @override
@@ -127,11 +155,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
     /// 监听 WebSocket 连接状态
     // final wsState = ref.watch(wsControllerProvider);
-
-    /// 监听这个房间是否有更多消息
-    final hasMore = ref.watch(
-      chatHasMoreProvider.select((map) => map[widget.roomId] ?? false),
-    );
 
     // 监听清洗平铺后的 UI 专属混合列表
     final chatUiListResult = ref.watch(chatUiListProvider(widget.roomId));
@@ -166,7 +189,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           showInitialSkeleton: showInitialSkeleton,
           entryTask: entryTask,
           flatItems: flatItems,
-          hasMore: hasMore,
           currentRoom: currentRoom,
         ),
       ),
@@ -192,7 +214,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     required bool showInitialSkeleton,
     required AsyncValue<void> entryTask,
     required List<ChatListItem> flatItems,
-    required bool hasMore,
     required ChatRoomVO currentRoom,
   }) {
     if (showInitialSkeleton) return const ChatRoomDetailSkeleton();
@@ -213,7 +234,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         delegate: FlutterListViewDelegate(
           (context, index) {
             // 由于列表反转，加载更多（旧消息）的 Loading 骨架屏出现在列表的最后一项
-            if (hasMore && index == flatItems.length) {
+            if (_isLoadingMore && index == flatItems.length) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Center(
@@ -239,7 +260,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
               _ => const SizedBox.shrink(),
             };
           },
-          childCount: flatItems.length + (hasMore ? 1 : 0),
+          childCount: flatItems.length + (_isLoadingMore ? 1 : 0),
           keepPosition: true,
         ),
       ),

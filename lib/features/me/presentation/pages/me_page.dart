@@ -115,25 +115,14 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_nickname'.tr(),
               value: _nickController.text,
               icon: Icons.badge_outlined,
-              onTap: () async {
-                final old = _nickController.text;
-                await Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (_) => MeProfileItemEditPage.text(
-                      title: 'me_profile_nickname'.tr(),
-                      initialValue: old,
-                      requiredMessage: 'me_profile_nickname_required'.tr(),
-                      onSave: (value) async {
-                        final ok = await _saveProfile(nickName: value);
-                        if (ok && mounted) {
-                          setState(() => _nickController.text = value);
-                        }
-                        return ok;
-                      },
-                    ),
-                  ),
-                );
-              },
+              onTap: () => _editTextItem(
+                context,
+                title: 'me_profile_nickname'.tr(),
+                initialValue: _nickController.text,
+                requiredMessage: 'me_profile_nickname_required'.tr(),
+                onSave: (value) => _saveProfile(nickName: value),
+                onApplied: (value) => _nickController.text = value,
+              ),
             ),
             _buildTileDivider(context),
             _buildEditableTile(
@@ -141,25 +130,14 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_email'.tr(),
               value: _emailController.text,
               icon: Icons.email_outlined,
-              onTap: () async {
-                final old = _emailController.text;
-                await Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (_) => MeProfileItemEditPage.text(
-                      title: 'me_profile_email'.tr(),
-                      initialValue: old,
-                      keyboardType: TextInputType.emailAddress,
-                      onSave: (value) async {
-                        final ok = await _saveProfile(email: value);
-                        if (ok && mounted) {
-                          setState(() => _emailController.text = value);
-                        }
-                        return ok;
-                      },
-                    ),
-                  ),
-                );
-              },
+              onTap: () => _editTextItem(
+                context,
+                title: 'me_profile_email'.tr(),
+                initialValue: _emailController.text,
+                keyboardType: TextInputType.emailAddress,
+                onSave: (value) => _saveProfile(email: value),
+                onApplied: (value) => _emailController.text = value,
+              ),
             ),
             _buildTileDivider(context),
             _buildEditableTile(
@@ -167,25 +145,14 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_phone'.tr(),
               value: _phoneController.text,
               icon: Icons.phone_outlined,
-              onTap: () async {
-                final old = _phoneController.text;
-                await Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (_) => MeProfileItemEditPage.text(
-                      title: 'me_profile_phone'.tr(),
-                      initialValue: old,
-                      keyboardType: TextInputType.phone,
-                      onSave: (value) async {
-                        final ok = await _saveProfile(phoneNumber: value);
-                        if (ok && mounted) {
-                          setState(() => _phoneController.text = value);
-                        }
-                        return ok;
-                      },
-                    ),
-                  ),
-                );
-              },
+              onTap: () => _editTextItem(
+                context,
+                title: 'me_profile_phone'.tr(),
+                initialValue: _phoneController.text,
+                keyboardType: TextInputType.phone,
+                onSave: (value) => _saveProfile(phoneNumber: value),
+                onApplied: (value) => _phoneController.text = value,
+              ),
             ),
             _buildTileDivider(context),
             _buildEditableTile(
@@ -193,38 +160,27 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: 'me_profile_gender'.tr(),
               value: _genderLabel(),
               icon: Icons.wc_outlined,
-              onTap: () async {
-                final old = _sex;
-                await Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (_) => MeProfileItemEditPage.select(
-                      title: 'me_profile_gender'.tr(),
-                      initialValue: old,
-                      options: [
-                        MeProfileEditOption(
-                          value: '0',
-                          label: 'contact_male'.tr(),
-                        ),
-                        MeProfileEditOption(
-                          value: '1',
-                          label: 'contact_female'.tr(),
-                        ),
-                        MeProfileEditOption(
-                          value: '2',
-                          label: 'contact_unknown_gender'.tr(),
-                        ),
-                      ],
-                      onSave: (value) async {
-                        final ok = await _saveProfile(sex: value);
-                        if (ok && mounted) {
-                          setState(() => _sex = value);
-                        }
-                        return ok;
-                      },
-                    ),
+              onTap: () => _editSelectItem(
+                context,
+                title: 'me_profile_gender'.tr(),
+                initialValue: _sex,
+                options: [
+                  MeProfileEditOption(
+                    value: '0',
+                    label: 'contact_male'.tr(),
                   ),
-                );
-              },
+                  MeProfileEditOption(
+                    value: '1',
+                    label: 'contact_female'.tr(),
+                  ),
+                  MeProfileEditOption(
+                    value: '2',
+                    label: 'contact_unknown_gender'.tr(),
+                  ),
+                ],
+                onSave: (value) => _saveProfile(sex: value),
+                onApplied: (value) => _sex = value,
+              ),
             ),
           ],
         ),
@@ -376,6 +332,83 @@ class _MyPageState extends ConsumerState<MyPage> {
       endIndent: 14,
       color: cs.outlineVariant.withValues(alpha: 0.5),
     );
+  }
+
+  Future<void> _editTextItem(
+    BuildContext context, {
+    required String title,
+    required String initialValue,
+    required Future<bool> Function(String value) onSave,
+    required void Function(String value) onApplied,
+    String? requiredMessage,
+    TextInputType keyboardType = TextInputType.text,
+  }) async {
+    final String? result;
+    if (DeviceUtil.isRealDesktop()) {
+      result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => MeProfileItemEditDialog.text(
+          title: title,
+          initialValue: initialValue,
+          requiredMessage: requiredMessage,
+          keyboardType: keyboardType,
+          onSave: onSave,
+        ),
+      );
+    } else {
+      result = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => MeProfileItemEditPage.text(
+            title: title,
+            initialValue: initialValue,
+            requiredMessage: requiredMessage,
+            keyboardType: keyboardType,
+            onSave: onSave,
+          ),
+        ),
+      );
+    }
+    if (result != null && mounted) {
+      setState(() => onApplied(result!));
+    }
+  }
+
+  Future<void> _editSelectItem(
+    BuildContext context, {
+    required String title,
+    required String initialValue,
+    required List<MeProfileEditOption> options,
+    required Future<bool> Function(String value) onSave,
+    required void Function(String value) onApplied,
+  }) async {
+    final String? result;
+    if (DeviceUtil.isRealDesktop()) {
+      result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => MeProfileItemEditDialog.select(
+          title: title,
+          initialValue: initialValue,
+          options: options,
+          onSave: onSave,
+        ),
+      );
+    } else {
+      result = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => MeProfileItemEditPage.select(
+            title: title,
+            initialValue: initialValue,
+            options: options,
+            onSave: onSave,
+          ),
+        ),
+      );
+    }
+    if (result != null && mounted) {
+      setState(() => onApplied(result!));
+    }
   }
 
   String _genderLabel() {

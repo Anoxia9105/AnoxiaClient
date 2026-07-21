@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pip/pip.dart';
 
 import 'mobile_call_timer.dart';
+import '../component/call_invite_members_button.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 
 class MobileCallControls extends ConsumerWidget {
   const MobileCallControls({
@@ -25,6 +27,7 @@ class MobileCallControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
+    final isGroup = ref.watch(callIsGroupProvider(roomId));
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(12, 0, 12, 14),
@@ -56,10 +59,12 @@ class MobileCallControls extends ConsumerWidget {
                 ),
               ],
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 _CallControlButton(
                   tooltip: state.micEnabled ? '麦克风静音' : '开启麦克风',
                   icon: state.micEnabled ? Icons.mic : Icons.mic_off,
@@ -94,6 +99,10 @@ class MobileCallControls extends ConsumerWidget {
                     onPressed: notifier.switchCamera,
                   ),
                 ],
+                if (isGroup) ...[
+                  const SizedBox(width: 10),
+                  CallInviteMembersButton(state: state),
+                ],
                 const SizedBox(width: 10),
                 _CallControlButton(
                   tooltip: '挂断',
@@ -102,7 +111,8 @@ class MobileCallControls extends ConsumerWidget {
                   foregroundColor: Colors.white,
                   onPressed: () => _hangUp(ref, notifier),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

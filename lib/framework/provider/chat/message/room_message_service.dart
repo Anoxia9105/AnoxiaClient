@@ -77,6 +77,7 @@ class ChatMessages extends _$ChatMessages {
   static const int _pageSize = 50;
 
   final Set<String> _fetchingHistoryRoomIds = {};
+  final Map<String, int> _lastLoadedHistoryBoundary = {};
   final Set<String> _syncedRoomIds = {};
   final Map<String, int> _syncedSeqByRoom = {};
 
@@ -242,26 +243,32 @@ class ChatMessages extends _$ChatMessages {
     if (_fetchingHistoryRoomIds.contains(roomId)) return;
     if (!(ref.read(chatHasMoreProvider)[roomId] ?? true)) return;
 
-    final syncRepo = ref.read(syncRepositoryProvider);
-    final currentList =
-        ref.read(roomMessagesProvider(roomId)).value ??
-        await syncRepo.getMessagesForConversation(
-          roomId,
-          limit: ref
-              .read(chatMessageWindowLimitsProvider.notifier)
-              .limitFor(roomId),
-          sync: false,
-        );
-    if (currentList.isEmpty) return;
-
-    final int? oldestSeq = currentList.first.seq;
-    if (oldestSeq == null || oldestSeq <= 1) {
-      ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
-      return;
-    }
-
+    // 必须在第一个 await 前加锁；否则首次缓存尚未就绪时，同一帧的多次
+    // onPaint 回调会同时进入分页，造成数据库写入和列表重建风暴。
     _fetchingHistoryRoomIds.add(roomId);
+
     try {
+      final syncRepo = ref.read(syncRepositoryProvider);
+      final currentList =
+          ref.read(roomMessagesProvider(roomId)).value ??
+          await syncRepo.getMessagesForConversation(
+            roomId,
+            limit: ref
+                .read(chatMessageWindowLimitsProvider.notifier)
+                .limitFor(roomId),
+            sync: false,
+          );
+      if (currentList.isEmpty) return;
+
+      final int? oldestSeq = currentList.first.seq;
+      if (oldestSeq == null || oldestSeq <= 1) {
+        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+        return;
+      }
+      // 扩大监听窗口到 UI 收到新快照之间存在一个短间隙。记录边界可阻止
+      // 这段间隙内再次请求完全相同的一页。
+      if (_lastLoadedHistoryBoundary[roomId] == oldestSeq) return;
+
       var history = await syncRepo.getMessagesForConversation(
         roomId,
         limit: _pageSize,
@@ -282,6 +289,7 @@ class ChatMessages extends _$ChatMessages {
         );
         final data = res.data['data'];
         if (data is! List || data.isEmpty) {
+          _lastLoadedHistoryBoundary[roomId] = oldestSeq;
           ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
           return;
         }
@@ -294,6 +302,7 @@ class ChatMessages extends _$ChatMessages {
       final expanded = ref
           .read(chatMessageWindowLimitsProvider.notifier)
           .expand(roomId, history.length);
+      _lastLoadedHistoryBoundary[roomId] = oldestSeq;
 
       ref
           .read(chatHasMoreProvider.notifier)
@@ -308,6 +317,7 @@ class ChatMessages extends _$ChatMessages {
   Future<void> clearRoom(String roomId) async {
     _syncedRoomIds.remove(roomId);
     _syncedSeqByRoom.remove(roomId);
+    _lastLoadedHistoryBoundary.remove(roomId);
     ref.read(chatMessageWindowLimitsProvider.notifier).reset(roomId);
     await ref
         .read(localDataSourceProvider)

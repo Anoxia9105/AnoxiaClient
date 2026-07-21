@@ -30,6 +30,7 @@ class SystemMessageFormatter {
     'MESSAGE_RECALL',
     'CALL_STARTED',
     'CALL_ENDED',
+    'CALL_REJECTED',
   };
 
   static bool isSystemMessage(ChatMessage? message) {
@@ -110,6 +111,11 @@ class SystemMessageFormatter {
         text: 'system_msg_callend'.tr(
           args: [message.properties['durationText'] ?? '--'],
         ),
+      ),
+      'CALL_REJECTED' => SystemMessageDisplay(
+        action: action,
+        icon: HugeIcons.strokeRoundedCallEnd03,
+        text: '${message.properties['nickName'] ?? '--'} 拒绝了通话',
       ),
       'ROOM_DISSOLVED' => SystemMessageDisplay(
         action: action,

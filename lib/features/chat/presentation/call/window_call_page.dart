@@ -44,6 +44,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
 
   /// 房间ID
   String _roomId = '';
+  String _prefetchedToken = '';
 
   @override
   void initState() {
@@ -56,8 +57,11 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     _themeIndex = args['themeIndex'] ?? 0;
     _title = args['title'] ?? '';
     _roomId = args['roomId'] ?? '';
+    _prefetchedToken = args['token']?.toString() ?? '';
     ref.read(callInitialMediaProvider(_roomId).notifier).state =
         CallInitialMedia.fromValue(args['initialMedia']);
+    ref.read(callIsGroupProvider(_roomId).notifier).state =
+        args['isGroup'] == true || args['isGroup'] == 'true';
     ref.read(roomTokenProvider(_roomId));
 
     Channel.callChannel.setMethodCallHandler((call) async {
@@ -104,7 +108,9 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   Widget build(BuildContext context) {
     final themeData = AppTheme.getTheme(index: _themeIndex);
 
-    final tokenAsync = ref.watch(roomTokenProvider(_roomId));
+    final tokenAsync = _prefetchedToken.isNotEmpty
+        ? AsyncValue.data(_prefetchedToken)
+        : ref.watch(roomTokenProvider(_roomId));
     return MaterialApp(
       title: _title,
       theme: themeData,

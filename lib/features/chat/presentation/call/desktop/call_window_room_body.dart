@@ -15,7 +15,7 @@ import 'package:window_manager/window_manager.dart';
 /// 通话房间主体内容
 ///
 /// 根据房间状态渲染实际的通话界面
-class CallWindowRoomBody extends ConsumerWidget {
+class CallWindowRoomBody extends ConsumerStatefulWidget {
   /// 房间状态
   final RoomState roomState;
 
@@ -29,7 +29,16 @@ class CallWindowRoomBody extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CallWindowRoomBody> createState() => _CallWindowRoomBodyState();
+}
+
+class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
+  String? _focusedIdentity;
+
+  @override
+  Widget build(BuildContext context) {
+    final roomState = widget.roomState;
+    final token = widget.token;
     final layoutMode = ref.watch(layoutModeProvider(roomState));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -47,6 +56,9 @@ class CallWindowRoomBody extends ConsumerWidget {
 
     final screenSharer = participants
         .where((p) => p.videoTrackPublications.any((pub) => pub.isScreenShare))
+        .firstOrNull;
+    final focused = participants
+        .where((p) => p.identity == _focusedIdentity)
         .firstOrNull;
 
     final notifier = ref.read(roomControllerProvider(token).notifier);
@@ -66,6 +78,7 @@ class CallWindowRoomBody extends ConsumerWidget {
                       mode: layoutMode,
                       participants: participants,
                       screenSharer: screenSharer,
+                      focusedParticipant: focused,
                       handRaiseMap: roomState.handRaiseMap ?? {},
                       onMute: onMute,
                       onKick: onKick,
@@ -124,16 +137,36 @@ class CallWindowRoomBody extends ConsumerWidget {
     required LayoutMode mode,
     required List<Participant> participants,
     required Participant? screenSharer,
+    required Participant? focusedParticipant,
     required Map<String, bool> handRaiseMap,
     void Function(String identity)? onMute,
     void Function(String identity)? onKick,
   }) {
+    final primary = focusedParticipant ?? screenSharer;
+    if (primary != null) {
+      return LayoutRoomScreenWidget(
+        screenParticipant: primary,
+        otherParticipants: participants
+            .where((p) => p.sid != primary.sid)
+            .toList(),
+        handRaiseMap: handRaiseMap,
+        onMute: onMute,
+        onKick: onKick,
+        onParticipantTap: (participant) => setState(() {
+          _focusedIdentity = participant.identity == _focusedIdentity
+              ? null
+              : participant.identity;
+        }),
+      );
+    }
     return switch (mode) {
       LayoutMode.grid => LayoutRoomWidget(
         participants: participants,
         handRaiseMap: handRaiseMap,
         onMute: onMute,
         onKick: onKick,
+        onParticipantTap: (participant) =>
+            setState(() => _focusedIdentity = participant.identity),
       ),
       LayoutMode.focus => LayoutRoomScreenWidget(
         screenParticipant: screenSharer!,
@@ -143,6 +176,8 @@ class CallWindowRoomBody extends ConsumerWidget {
         handRaiseMap: handRaiseMap,
         onMute: onMute,
         onKick: onKick,
+        onParticipantTap: (participant) =>
+            setState(() => _focusedIdentity = participant.identity),
       ),
       LayoutMode.carousel => LayoutRoomCarouselWidget(
         participants: participants,

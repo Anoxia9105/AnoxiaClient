@@ -19,3 +19,7 @@ enum CallInitialMedia {
 final callInitialMediaProvider = StateProvider.family<CallInitialMedia, String>(
   (ref, roomId) => CallInitialMedia.audio,
 );
+
+final callIsGroupProvider = StateProvider.family<bool, String>(
+  (ref, roomId) => false,
+);

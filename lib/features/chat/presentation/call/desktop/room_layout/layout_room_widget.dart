@@ -21,6 +21,7 @@ class LayoutRoomWidget extends StatelessWidget {
 
   /// 踢出回调，传入目标参与者 identity
   final void Function(String identity)? onKick;
+  final void Function(Participant participant)? onParticipantTap;
 
   const LayoutRoomWidget({
     super.key,
@@ -28,6 +29,7 @@ class LayoutRoomWidget extends StatelessWidget {
     this.handRaiseMap = const {},
     this.onMute,
     this.onKick,
+    this.onParticipantTap,
   });
 
   /// 构建单个参与者磁贴
@@ -36,6 +38,7 @@ class LayoutRoomWidget extends StatelessWidget {
     handRaised: handRaiseMap[p.identity] == true,
     onMute: onMute,
     onKick: onKick,
+    onTap: () => onParticipantTap?.call(p),
   );
 
   @override
@@ -90,15 +93,27 @@ class LayoutRoomWidget extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
-      itemCount: count,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-        childAspectRatio: 16 / 9,
-      ),
-      itemBuilder: (context, index) => _tile(participants[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1100
+            ? 4
+            : constraints.maxWidth >= 680
+            ? 3
+            : 2;
+        final tileWidth = constraints.maxWidth / columns;
+        final rows = (count / columns).ceil();
+        final tileHeight = constraints.maxHeight / rows;
+        return GridView.builder(
+          itemCount: count,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            childAspectRatio: tileWidth / tileHeight.clamp(1, double.infinity),
+          ),
+          itemBuilder: (context, index) => _tile(participants[index]),
+        );
+      },
     );
   }
 }

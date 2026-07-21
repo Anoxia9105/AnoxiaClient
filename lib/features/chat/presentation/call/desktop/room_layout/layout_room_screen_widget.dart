@@ -1,6 +1,5 @@
 import 'package:anoxia/features/chat/presentation/call/component/participant_tile.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:livekit_client/livekit_client.dart';
 
 /// 通话房间屏幕共享布局组件
@@ -24,6 +23,7 @@ class LayoutRoomScreenWidget extends StatelessWidget {
 
   /// 踢出回调，传入目标参与者 identity
   final void Function(String identity)? onKick;
+  final void Function(Participant participant)? onParticipantTap;
 
   /// 低于此宽度时自动隐藏右侧参与者列表
   static const double _sidebarBreakpoint = 480;
@@ -35,6 +35,7 @@ class LayoutRoomScreenWidget extends StatelessWidget {
     this.handRaiseMap = const {},
     this.onMute,
     this.onKick,
+    this.onParticipantTap,
   });
 
   @override
@@ -45,38 +46,57 @@ class LayoutRoomScreenWidget extends StatelessWidget {
             otherParticipants.isNotEmpty &&
             constraints.maxWidth >= _sidebarBreakpoint;
 
+        final main = ParticipantTile(
+          participant: screenParticipant,
+          handRaised: handRaiseMap[screenParticipant.identity] == true,
+          onMute: onMute,
+          onKick: onKick,
+          onTap: () => onParticipantTap?.call(screenParticipant),
+          key: ValueKey('${screenParticipant.sid}-screen'),
+        );
+        Widget thumbnail(Participant p) => ParticipantTile(
+          participant: p,
+          handRaised: handRaiseMap[p.identity] == true,
+          onMute: onMute,
+          onKick: onKick,
+          onTap: () => onParticipantTap?.call(p),
+          key: ValueKey(p.sid),
+        );
+        if (!showSidebar) {
+          return Column(
+            children: [
+              Expanded(child: main),
+              if (otherParticipants.isNotEmpty)
+                SizedBox(
+                  height: 112,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: otherParticipants.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 6),
+                    itemBuilder: (_, index) => SizedBox(
+                      width: 160,
+                      child: thumbnail(otherParticipants[index]),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        }
+        final sidebarWidth = (constraints.maxWidth * 0.2).clamp(180.0, 260.0);
         return Row(
           children: [
-            Expanded(
-              flex: 3,
-              child: ParticipantTile(
-                participant: screenParticipant,
-                handRaised: handRaiseMap[screenParticipant.identity] == true,
-                onMute: onMute,
-                onKick: onKick,
-                key: ValueKey('${screenParticipant.sid}-screen'),
-              ),
-            ),
+            Expanded(child: main),
 
             if (showSidebar) ...[
               const SizedBox(width: 8),
               SizedBox(
-                width: 40.w,
+                width: sidebarWidth,
                 child: ListView.separated(
                   itemCount: otherParticipants.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final p = otherParticipants[index];
-                    return AspectRatio(
-                      aspectRatio: 1.0,
-                      child: ParticipantTile(
-                        participant: p,
-                        handRaised: handRaiseMap[p.identity] == true,
-                        onMute: onMute,
-                        onKick: onKick,
-                        key: ValueKey(p.sid),
-                      ),
-                    );
+                    return AspectRatio(aspectRatio: 1.0, child: thumbnail(p));
                   },
                 ),
               ),

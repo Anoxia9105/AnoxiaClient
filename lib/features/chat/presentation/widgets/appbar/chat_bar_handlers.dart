@@ -6,6 +6,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -32,16 +33,17 @@ class ChatBarHandlers {
   /// [context] 构建上下文
   /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
   /// [room] 当前聊天房间数据
-  static void onCallPressed(
+  static Future<void> onCallPressed(
     BuildContext context,
     WidgetRef ref,
     ChatRoomVO room, {
     CallInitialMedia initialMedia = CallInitialMedia.audio,
-  }) {
+  }) async {
     if ((room.roomId ?? '').isEmpty) {
       Toast.showToast('appbar_connection_lost'.tr());
       return;
     }
+    final tokenFuture = ref.read(roomTokenProvider(room.roomId ?? '').future);
 
     if (DeviceUtil.isRealMobile()) {
       final currentSession = ref.read(mobileCallSessionControllerProvider);
@@ -60,6 +62,7 @@ class ChatBarHandlers {
       // 💡 首次起呼/进入房间：移除了旧的透明路由 push 代码，由全局组件自适应接管
       final roomId = room.roomId ?? '';
       final title = room.roomName ?? '';
+      ref.read(callIsGroupProvider(roomId).notifier).state = room.roomType == 1;
       ref
           .read(callInvitationControllerProvider.notifier)
           .invite(room, initialMedia: initialMedia);
@@ -68,16 +71,22 @@ class ChatBarHandlers {
           .start(roomId: roomId, title: title, initialMedia: initialMedia);
     } else {
       /// 桌面端直接打开通话窗口
-      ref
+      await ref
           .read(callInvitationControllerProvider.notifier)
           .invite(room, initialMedia: initialMedia);
-      ref
+      String? prefetchedToken;
+      try {
+        prefetchedToken = await tokenFuture;
+      } catch (_) {}
+      await ref
           .read(callWindowControllerProvider.notifier)
           .openCallWindow(
             title: room.roomName ?? '',
             themeIndex: ref.read(themeIndexProvider),
             roomId: room.roomId ?? '',
             initialMedia: initialMedia,
+            isGroup: room.roomType == 1,
+            token: prefetchedToken,
           );
     }
   }

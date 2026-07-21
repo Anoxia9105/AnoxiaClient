@@ -1,11 +1,12 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 class CallInvitationOverlay extends ConsumerWidget {
   const CallInvitationOverlay({super.key});
@@ -43,13 +44,13 @@ class _IncomingCallCard extends ConsumerWidget {
       color: Colors.black.withValues(alpha: 0.42),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
+          constraints: const BoxConstraints(maxWidth: 390),
           child: Container(
             margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+            padding: const EdgeInsets.fromLTRB(28, 30, 28, 24),
             decoration: BoxDecoration(
               color: cs.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: const [
                 BoxShadow(
                   blurRadius: 30,
@@ -61,34 +62,57 @@ class _IncomingCallCard extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 62,
-                  height: 62,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedCall02,
-                    size: 30,
-                    color: cs.onPrimaryContainer,
-                  ),
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    AvatarWidget(
+                      size: 84,
+                      url: invitation.callerAvatar,
+                      name: invitation.callerName.isEmpty
+                          ? invitation.title
+                          : invitation.callerName,
+                    ),
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: invitation.initialMedia.value == 'video'
+                            ? cs.tertiary
+                            : cs.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: cs.surface, width: 3),
+                      ),
+                      child: Icon(
+                        invitation.initialMedia.value == 'video'
+                            ? Icons.videocam_rounded
+                            : Icons.call_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Text(
-                  invitation.title.isEmpty ? '通话邀请' : invitation.title,
+                  invitation.callerName.isEmpty
+                      ? invitation.title
+                      : invitation.callerName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '邀请你加入通话',
+                  invitation.initialMedia.value == 'video'
+                      ? '邀请你进行视频通话'
+                      : '邀请你进行语音通话',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 28),
                 Row(
                   children: [
                     Expanded(
@@ -144,6 +168,8 @@ class _IncomingCallCard extends ConsumerWidget {
           themeIndex: ref.read(themeIndexProvider),
           roomId: invitation.roomId,
           initialMedia: invitation.initialMedia,
+          isGroup: invitation.isGroup,
+          token: await ref.read(roomTokenProvider(invitation.roomId).future),
         );
   }
 }

@@ -49,27 +49,25 @@ class CallRoomPage extends ConsumerWidget {
           color: Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
+        child: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.ring_volume_rounded, size: 34),
-            const SizedBox(height: 14),
+            SizedBox(
+              width: 34,
+              height: 34,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            SizedBox(height: 14),
             Text(
-              'call_connecting_to_room'.tr(),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              '正在进入通话',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'call_please_wait'.tr(),
-              style: const TextStyle(fontSize: 13),
+              '正在准备音视频连接，请稍候',
+              style: TextStyle(fontSize: 13),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
             ),
           ],
         ),

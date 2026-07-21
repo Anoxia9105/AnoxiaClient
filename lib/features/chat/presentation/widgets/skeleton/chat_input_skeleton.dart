@@ -76,40 +76,56 @@ class _MobileChatInputSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          /// 左侧语音按钮
-          const SkeletonBox(width: 40, height: 40, radius: 8),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: Material(
+          color: colorScheme.surfaceContainerLow,
+          elevation: 8,
+          shadowColor: Colors.black.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                /// 左侧语音按钮
+                const SkeletonBox(width: 40, height: 40, radius: 8),
 
-          const SizedBox(width: 6),
+                const SizedBox(width: 6),
 
-          /// 输入框区域
-          Expanded(
-            child: Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              alignment: Alignment.centerLeft,
-              child: const SkeletonLine(width: 140, height: 14, radius: 7),
+                /// 输入框区域
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.centerLeft,
+                    child: const SkeletonLine(
+                      width: 140,
+                      height: 14,
+                      radius: 7,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 6),
+
+                /// 表情按钮
+                const SkeletonBox(width: 40, height: 40, radius: 8),
+
+                const SizedBox(width: 6),
+
+                /// 更多/发送按钮
+                const SkeletonBox(width: 40, height: 40, radius: 8),
+              ],
             ),
           ),
-
-          const SizedBox(width: 6),
-
-          /// 表情按钮
-          const SkeletonBox(width: 40, height: 40, radius: 8),
-
-          const SizedBox(width: 6),
-
-          /// 更多/发送按钮
-          const SkeletonBox(width: 40, height: 40, radius: 8),
-        ],
+        ),
       ),
     );
   }

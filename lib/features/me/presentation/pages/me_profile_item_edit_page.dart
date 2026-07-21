@@ -9,6 +9,165 @@ class MeProfileEditOption {
   final String label;
 }
 
+/// 桌面端资料编辑对话框。移动端继续使用下方的全屏编辑页面。
+class MeProfileItemEditDialog extends StatefulWidget {
+  const MeProfileItemEditDialog.text({
+    super.key,
+    required this.title,
+    required this.initialValue,
+    this.onSave,
+    this.requiredMessage,
+    this.keyboardType = TextInputType.text,
+  }) : options = null;
+
+  const MeProfileItemEditDialog.select({
+    super.key,
+    required this.title,
+    required this.initialValue,
+    this.onSave,
+    required this.options,
+  }) : requiredMessage = null,
+       keyboardType = TextInputType.text;
+
+  final String title;
+  final String initialValue;
+  final Future<bool> Function(String value)? onSave;
+  final String? requiredMessage;
+  final TextInputType keyboardType;
+  final List<MeProfileEditOption>? options;
+
+  bool get isSelect => options != null;
+
+  @override
+  State<MeProfileItemEditDialog> createState() =>
+      _MeProfileItemEditDialogState();
+}
+
+class _MeProfileItemEditDialogState extends State<MeProfileItemEditDialog> {
+  late final TextEditingController _controller;
+  late String _selected;
+  String? _errorText;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _selected = widget.initialValue;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final value = widget.isSelect ? _selected : _controller.text.trim();
+    if (!widget.isSelect && widget.requiredMessage != null && value.isEmpty) {
+      setState(() => _errorText = widget.requiredMessage);
+      return;
+    }
+    if (value == widget.initialValue) {
+      Navigator.of(context).pop(value);
+      return;
+    }
+    if (widget.onSave != null) {
+      setState(() => _saving = true);
+      final ok = await widget.onSave!(value);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      if (!ok) return;
+    }
+    if (mounted) Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(
+            widget.isSelect ? Icons.tune_rounded : Icons.edit_outlined,
+            color: cs.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(widget.title)),
+        ],
+      ),
+      content: SizedBox(
+        width: 440,
+        child: widget.isSelect ? _buildOptions(cs) : _buildTextField(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: Text('dialog_cancel'.tr()),
+        ),
+        FilledButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: _saving
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.check_rounded, size: 18),
+          label: Text('common_save'.tr()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField() {
+    return TextField(
+      controller: _controller,
+      autofocus: true,
+      keyboardType: widget.keyboardType,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) {
+        if (!_saving) _save();
+      },
+      onChanged: (_) {
+        if (_errorText != null) setState(() => _errorText = null);
+      },
+      decoration: InputDecoration(
+        labelText: widget.title,
+        border: const OutlineInputBorder(),
+        errorText: _errorText,
+      ),
+    );
+  }
+
+  Widget _buildOptions(ColorScheme cs) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: widget.options!.map((option) {
+        final selected = option.value == _selected;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: Text(option.label),
+              trailing: selected
+                  ? Icon(Icons.check_circle_rounded, color: cs.primary)
+                  : const Icon(Icons.circle_outlined),
+              onTap: _saving
+                  ? null
+                  : () => setState(() => _selected = option.value),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
 class MeProfileItemEditPage extends StatefulWidget {
   const MeProfileItemEditPage.text({
     super.key,

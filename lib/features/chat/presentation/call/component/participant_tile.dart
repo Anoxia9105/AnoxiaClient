@@ -98,6 +98,7 @@ class ParticipantTile extends StatefulWidget {
 
   /// 点击"踢出"时触发，传入目标参与者 identity
   final void Function(String identity)? onKick;
+  final VoidCallback? onTap;
 
   const ParticipantTile({
     super.key,
@@ -105,6 +106,7 @@ class ParticipantTile extends StatefulWidget {
     this.handRaised = false,
     this.onMute,
     this.onKick,
+    this.onTap,
   });
 
   @override
@@ -297,9 +299,12 @@ class _ParticipantTileState extends State<ParticipantTile> {
 
     final displayName = nickName;
 
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
@@ -402,6 +407,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                 ),
             ],
           ),
+        ),
         ),
       ),
     );

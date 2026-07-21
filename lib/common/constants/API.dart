@@ -141,6 +141,9 @@ class API {
   /// 获取通话状态
   static const String callStatus = '/call/status';
 
+  /// 记录私聊通话拒接系统消息
+  static const String callReject = '/call/reject';
+
   /// 移出通话参与者
   static const String callRemoveParticipant = '/call/participant/remove';
 

@@ -6,6 +6,8 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/features/chat/presentation/call/component/volume_indicator.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_invite_members_button.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -48,6 +50,8 @@ class CommandBar extends ConsumerWidget {
     }
 
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
+    final roomId = state.room.name ?? '';
+    final isGroup = ref.watch(callIsGroupProvider(roomId));
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -158,6 +162,11 @@ class CommandBar extends ConsumerWidget {
                     ),
 
                     const SizedBox(width: 2),
+
+                    if (isGroup) ...[
+                      CallInviteMembersButton(state: state),
+                      const SizedBox(width: 2),
+                    ],
 
                     _soloButton(
                       context: context,
