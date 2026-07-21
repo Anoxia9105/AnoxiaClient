@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
@@ -17,6 +19,7 @@ import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
+import 'framework/provider/ws/ws_controller.dart';
 import 'gen/assets.gen.dart';
 import 'common/utils/NotificationHelper.dart';
 
@@ -130,9 +133,21 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     } else if (menuItem.key == 'hide_window') {
       windowManager.hide();
     } else if (menuItem.key == 'exit_app') {
-      windowManager.setPreventClose(false);
-      windowManager.close();
+      unawaited(_exitApplication());
     }
+  }
+
+  Future<void> _exitApplication() async {
+    try {
+      await ref
+          .read(wsControllerProvider.notifier)
+          .disconnectForLogout()
+          .timeout(const Duration(seconds: 1));
+    } on TimeoutException {
+      // 关闭握手超时也继续退出，服务端会通过心跳超时兜底判定离线。
+    }
+    await windowManager.setPreventClose(false);
+    await windowManager.close();
   }
 
   Future<void> _initTray() async {

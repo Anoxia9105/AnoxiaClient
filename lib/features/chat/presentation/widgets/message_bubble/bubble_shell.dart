@@ -38,10 +38,22 @@ class BubbleShell extends StatelessWidget {
     //   contentBuilder: (_) => child,
     // );
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
+          bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.04 * 255).toInt()),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );

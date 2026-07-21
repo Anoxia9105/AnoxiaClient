@@ -45,6 +45,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   /// 房间ID
   String _roomId = '';
   String _prefetchedToken = '';
+  bool _callSettingsInitialized = false;
 
   @override
   void initState() {
@@ -58,10 +59,18 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     _title = args['title'] ?? '';
     _roomId = args['roomId'] ?? '';
     _prefetchedToken = args['token']?.toString() ?? '';
-    ref.read(callInitialMediaProvider(_roomId).notifier).state =
-        CallInitialMedia.fromValue(args['initialMedia']);
-    ref.read(callIsGroupProvider(_roomId).notifier).state =
-        args['isGroup'] == true || args['isGroup'] == 'true';
+    final initialMedia = CallInitialMedia.fromValue(args['initialMedia']);
+    final isGroup = args['isGroup'] == true || args['isGroup'] == 'true';
+
+    // Riverpod forbids changing providers synchronously from initState because
+    // the parent widget tree can still be building. Initialize them after the
+    // first frame, and keep CallRoomPage out of the tree until they are ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(callInitialMediaProvider(_roomId).notifier).state = initialMedia;
+      ref.read(callIsGroupProvider(_roomId).notifier).state = isGroup;
+      setState(() => _callSettingsInitialized = true);
+    });
     ref.read(roomTokenProvider(_roomId));
 
     Channel.callChannel.setMethodCallHandler((call) async {
@@ -126,25 +135,29 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         ),
         child: Scaffold(
           appBar: CallDesktopAppbar(title: _title),
-          body: tokenAsync.when(
-            data: (token) {
-              log.info('Token 获取成功（开始启动通话）: $token');
-              return CallRoomPage(token: token);
-            },
-            error: (err, stack) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('call_window_room_creation_failed'.tr()),
-                  FilledButton(
-                    onPressed: () => ref.invalidate(roomTokenProvider(_roomId)),
-                    child: Text('call_window_retry'.tr()),
+          body: !_callSettingsInitialized
+              ? const Center(child: CircularProgressIndicator())
+              : tokenAsync.when(
+                  data: (token) {
+                    log.info('Token 获取成功（开始启动通话）: $token');
+                    return CallRoomPage(token: token);
+                  },
+                  error: (err, stack) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('call_window_room_creation_failed'.tr()),
+                        FilledButton(
+                          onPressed: () =>
+                              ref.invalidate(roomTokenProvider(_roomId)),
+                          child: Text('call_window_retry'.tr()),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-          ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                ),
         ),
       ),
     );

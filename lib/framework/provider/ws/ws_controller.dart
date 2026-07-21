@@ -67,12 +67,12 @@ class WsController extends _$WsController {
           } else {
             log.info('[WsController] 检测到用户退出，断开连接...');
             _reconnectEnabled = false;
-            _disposeAll(closeStream: false, manual: true);
+            unawaited(_disposeAll(closeStream: false, manual: true));
           }
         },
         error: (err, _) {
           _reconnectEnabled = false;
-          _disposeAll(closeStream: false, manual: true);
+          unawaited(_disposeAll(closeStream: false, manual: true));
         },
         loading: () => {},
       );
@@ -101,7 +101,7 @@ class WsController extends _$WsController {
 
     ref.onDispose(() {
       _reconnectEnabled = false;
-      _disposeAll(closeStream: true, manual: true);
+      unawaited(_disposeAll(closeStream: true, manual: true));
     });
 
     return WsState(status: WsStatus.disconnected);
@@ -489,20 +489,23 @@ class WsController extends _$WsController {
   /// 登出时主动断开连接
   Future<void> disconnectForLogout() async {
     _reconnectEnabled = false;
-    _disposeAll(closeStream: false, manual: true);
+    await _disposeAll(closeStream: false, manual: true);
   }
 
   /// 清理所有资源
   ///
   /// [closeStream] 是否关闭消息流（登出时不断流，断开网络连接即可）
   /// [manual] 是否为手动触发
-  void _disposeAll({bool closeStream = false, bool manual = false}) {
+  Future<void> _disposeAll({
+    bool closeStream = false,
+    bool manual = false,
+  }) async {
     log.info(
       '[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}',
     );
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
-    _channel?.sink.close();
+    final channel = _channel;
     _channel = null;
     for (final pending in _pendingOutbounds.values) {
       pending.timeoutTimer?.cancel();
@@ -513,6 +516,11 @@ class WsController extends _$WsController {
       _messageController.close();
     }
     state = WsState(status: WsStatus.disconnected);
+    try {
+      await channel?.sink.close();
+    } catch (e) {
+      log.warning('[WsController] 关闭 WebSocket 时发生异常: $e');
+    }
   }
 }
 
