@@ -4,6 +4,157 @@ import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 桌面端密码修改对话框，避免在主内容区继续压入移动端页面。
+class ChangePasswordDialog extends StatefulWidget {
+  const ChangePasswordDialog({super.key});
+
+  @override
+  State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
+  final _oldPassword = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _confirmPassword = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _oldPassword.dispose();
+    _newPassword.dispose();
+    _confirmPassword.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_oldPassword.text.isEmpty) {
+      Toast.showToast('me_password_old_required'.tr(), type: ToastType.error);
+      return;
+    }
+    if (_newPassword.text.length < 6) {
+      Toast.showToast('me_password_new_len'.tr(), type: ToastType.error);
+      return;
+    }
+    if (_confirmPassword.text != _newPassword.text) {
+      Toast.showToast(
+        'me_password_confirm_mismatch'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final res = await DioClient().put(
+        API.userProfileUpdatePassword,
+        data: {
+          'oldPassword': _oldPassword.text,
+          'newPassword': _newPassword.text,
+          'confirmPassword': _confirmPassword.text,
+        },
+      );
+      final ok = res.data is Map && res.data['code'] == 200;
+      if (!ok) {
+        final msg =
+            (res.data is Map ? res.data['msg']?.toString() : null) ?? '';
+        Toast.showToast(
+          msg.isNotEmpty ? msg : 'me_password_update_failed'.tr(),
+          type: ToastType.error,
+        );
+        return;
+      }
+      Toast.showToast(
+        'me_password_update_success'.tr(),
+        type: ToastType.success,
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      Toast.showToast('me_password_update_failed'.tr(), type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.lock_reset_rounded, color: cs.primary),
+          const SizedBox(width: 10),
+          Text('me_password_title'.tr()),
+        ],
+      ),
+      content: SizedBox(
+        width: 460,
+        child: AutofillGroup(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _passwordField(
+                controller: _oldPassword,
+                label: 'me_password_old'.tr(),
+                autofillHints: const [AutofillHints.password],
+              ),
+              const SizedBox(height: 14),
+              _passwordField(
+                controller: _newPassword,
+                label: 'me_password_new'.tr(),
+                autofillHints: const [AutofillHints.newPassword],
+              ),
+              const SizedBox(height: 14),
+              _passwordField(
+                controller: _confirmPassword,
+                label: 'me_password_confirm'.tr(),
+                autofillHints: const [AutofillHints.newPassword],
+                onSubmitted: (_) {
+                  if (!_saving) _submit();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: Text('dialog_cancel'.tr()),
+        ),
+        FilledButton.icon(
+          onPressed: _saving ? null : _submit,
+          icon: _saving
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.lock_reset_rounded, size: 18),
+          label: Text('me_password_submit'.tr()),
+        ),
+      ],
+    );
+  }
+
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String label,
+    required Iterable<String> autofillHints,
+    ValueChanged<String>? onSubmitted,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: true,
+      enabled: !_saving,
+      autofillHints: autofillHints,
+      onSubmitted: onSubmitted,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.password_rounded),
+      ),
+    );
+  }
+}
+
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
 

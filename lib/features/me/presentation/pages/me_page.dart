@@ -165,14 +165,8 @@ class _MyPageState extends ConsumerState<MyPage> {
                 title: 'me_profile_gender'.tr(),
                 initialValue: _sex,
                 options: [
-                  MeProfileEditOption(
-                    value: '0',
-                    label: 'contact_male'.tr(),
-                  ),
-                  MeProfileEditOption(
-                    value: '1',
-                    label: 'contact_female'.tr(),
-                  ),
+                  MeProfileEditOption(value: '0', label: 'contact_male'.tr()),
+                  MeProfileEditOption(value: '1', label: 'contact_female'.tr()),
                   MeProfileEditOption(
                     value: '2',
                     label: 'contact_unknown_gender'.tr(),
@@ -196,9 +190,19 @@ class _MyPageState extends ConsumerState<MyPage> {
               value: 'common_go_edit'.tr(),
               icon: Icons.lock_outline_rounded,
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
-                );
+                if (DeviceUtil.isRealDesktop()) {
+                  showDialog<bool>(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const ChangePasswordDialog(),
+                  );
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ChangePasswordPage(),
+                    ),
+                  );
+                }
               },
             ),
           ],
