@@ -5,6 +5,7 @@
 #include <flutter/flutter_view_controller.h>
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
+#include <shobjidl.h>
 
 #include <memory>
 
@@ -25,6 +26,10 @@ class FlutterWindow : public Win32Window {
                          LPARAM const lparam) noexcept override;
 
  private:
+  void UpdateTaskbarBadge(int count);
+  void ApplyTaskbarBadge();
+  HICON CreateTaskbarBadgeIcon(int count);
+
   // The project to run.
   flutter::DartProject project_;
 
@@ -34,6 +39,14 @@ class FlutterWindow : public Win32Window {
   // Method channel used to forward deep-link events to Dart.
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
       register_return_channel_;
+
+  // Method channel and native state for the Windows taskbar unread badge.
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
+      taskbar_badge_channel_;
+  ITaskbarList3* taskbar_list_ = nullptr;
+  HICON taskbar_badge_icon_ = nullptr;
+  UINT taskbar_button_created_message_ = 0;
+  int unread_badge_count_ = 0;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

@@ -35,7 +35,7 @@ class App extends ConsumerStatefulWidget {
 }
 
 class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
-  /// 未读消息角标订阅（仅移动端）
+  /// 未读消息角标订阅（移动端应用图标、macOS Dock、Windows 任务栏）
   ProviderSubscription<int>? _unreadBadgeSubscription;
   ProviderSubscription<int>? _callThemeSubscription;
   ProviderSubscription<ThemeData>? _systemUiSubscription;
@@ -72,10 +72,16 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         (previous, next) => _applySystemUiStyle(next.brightness),
         fireImmediately: true,
       );
+    }
+
+    // Mobile/macOS use the app icon badge; Windows uses a taskbar overlay icon.
+    if (DeviceUtil.isRealMobile() ||
+        DeviceUtil.isMacOS() ||
+        DeviceUtil.isWindows()) {
       _unreadBadgeSubscription = ref.listenManual<int>(
         totalUnreadCountProvider,
         (previous, next) {
-          NotificationHelper().updateAppIconBadge(next);
+          NotificationHelper().updateUnreadBadge(next);
         },
         fireImmediately: true,
       );

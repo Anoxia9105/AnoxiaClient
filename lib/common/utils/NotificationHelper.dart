@@ -25,6 +25,10 @@ class NotificationHelper {
   static final NotificationHelper _instance = NotificationHelper._internal();
   factory NotificationHelper() => _instance;
 
+  static const MethodChannel _taskbarBadgeChannel = MethodChannel(
+    'anoxia/taskbar_badge',
+  );
+
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
@@ -289,15 +293,28 @@ class NotificationHelper {
     );
   }
 
-  /// 更新 App 图标角标（Android/iOS）
+  /// 更新系统未读角标（Android/iOS/macOS App 图标、Windows 任务栏）
   ///
   /// [count] 角标数量，<=0 时移除角标
-  Future<void> updateAppIconBadge(int count) async {
+  Future<void> updateUnreadBadge(int count) async {
     if (kIsWeb) return;
-    final isMobile =
+
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      try {
+        await _taskbarBadgeChannel.invokeMethod<void>('updateBadge', {
+          'count': count < 0 ? 0 : count,
+        });
+      } catch (e) {
+        log.warning('更新 Windows 任务栏角标失败: $e');
+      }
+      return;
+    }
+
+    final isAppBadgePlatform =
         defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS;
-    if (!isMobile) return;
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+    if (!isAppBadgePlatform) return;
 
     try {
       final supported = await AppBadgePlus.isSupported();
