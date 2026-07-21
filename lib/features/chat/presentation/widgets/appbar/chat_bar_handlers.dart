@@ -60,13 +60,17 @@ class ChatBarHandlers {
       // 💡 首次起呼/进入房间：移除了旧的透明路由 push 代码，由全局组件自适应接管
       final roomId = room.roomId ?? '';
       final title = room.roomName ?? '';
-      ref.read(callInvitationControllerProvider.notifier).invite(room);
+      ref
+          .read(callInvitationControllerProvider.notifier)
+          .invite(room, initialMedia: initialMedia);
       ref
           .read(mobileCallSessionControllerProvider.notifier)
           .start(roomId: roomId, title: title, initialMedia: initialMedia);
     } else {
       /// 桌面端直接打开通话窗口
-      ref.read(callInvitationControllerProvider.notifier).invite(room);
+      ref
+          .read(callInvitationControllerProvider.notifier)
+          .invite(room, initialMedia: initialMedia);
       ref
           .read(callWindowControllerProvider.notifier)
           .openCallWindow(

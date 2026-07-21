@@ -8,6 +8,7 @@ import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/protocol/PacketType.dart';
 import 'package:anoxia/framework/protocol/message/HighMessage.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
@@ -31,6 +32,7 @@ class CallInvitationState {
   final int? targetId;
   final int createdAt;
   final CallInvitationPhase phase;
+  final CallInitialMedia initialMedia;
 
   const CallInvitationState({
     required this.inviteId,
@@ -38,11 +40,15 @@ class CallInvitationState {
     required this.title,
     required this.createdAt,
     required this.phase,
+    this.initialMedia = CallInitialMedia.audio,
     this.callerId,
     this.targetId,
   });
 
-  CallInvitationState copyWith({CallInvitationPhase? phase}) {
+  CallInvitationState copyWith({
+    CallInvitationPhase? phase,
+    CallInitialMedia? initialMedia,
+  }) {
     return CallInvitationState(
       inviteId: inviteId,
       roomId: roomId,
@@ -51,6 +57,7 @@ class CallInvitationState {
       targetId: targetId,
       createdAt: createdAt,
       phase: phase ?? this.phase,
+      initialMedia: initialMedia ?? this.initialMedia,
     );
   }
 }
@@ -80,7 +87,10 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     return null;
   }
 
-  Future<void> invite(ChatRoomVO room) async {
+  Future<void> invite(
+    ChatRoomVO room, {
+    CallInitialMedia initialMedia = CallInitialMedia.audio,
+  }) async {
     final roomId = room.roomId ?? '';
     if (roomId.isEmpty) return;
 
@@ -91,15 +101,12 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       targetId: room.roomType == 0 ? room.peerId : null,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       phase: CallInvitationPhase.outgoing,
+      initialMedia: initialMedia,
     );
     state = invite;
     _scheduleClear(const Duration(seconds: 30));
 
-    _send(
-      HighMessageType.CALL_INVITE,
-      invite,
-      targetId: invite.targetId,
-    );
+    _send(HighMessageType.CALL_INVITE, invite, targetId: invite.targetId);
   }
 
   Future<void> cancelCurrent() async {
@@ -122,7 +129,9 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
   Future<void> endRoom(String roomId, {String? title}) async {
     if (roomId.isEmpty) return;
     final invite = CallInvitationState(
-      inviteId: state?.roomId == roomId ? state!.inviteId : _newInviteId(roomId),
+      inviteId: state?.roomId == roomId
+          ? state!.inviteId
+          : _newInviteId(roomId),
       roomId: roomId,
       title: title ?? state?.title ?? '',
       createdAt: DateTime.now().millisecondsSinceEpoch,
@@ -153,7 +162,11 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         _handleRemoteAccept(invite, fromSelf: fromSelf);
         break;
       case HighMessageType.CALL_REJECT:
-        _handleTerminalSignal(invite, fromSelf, CallInvitationPhase.rejectedElsewhere);
+        _handleTerminalSignal(
+          invite,
+          fromSelf,
+          CallInvitationPhase.rejectedElsewhere,
+        );
         break;
       case HighMessageType.CALL_CANCEL:
         _handleTerminalSignal(invite, fromSelf, CallInvitationPhase.canceled);
@@ -228,6 +241,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         'roomId': invite.roomId,
         'title': invite.title,
         'createdAt': invite.createdAt,
+        'initialMedia': invite.initialMedia.value,
       }),
       timestamp: DateTime.now().millisecondsSinceEpoch,
     );
@@ -251,6 +265,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
           msg.timestamp ??
           DateTime.now().millisecondsSinceEpoch,
       phase: CallInvitationPhase.incoming,
+      initialMedia: CallInitialMedia.fromValue(payload['initialMedia']),
     );
   }
 

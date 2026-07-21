@@ -302,7 +302,7 @@ class RoomController extends _$RoomController {
         initialMedia == CallInitialMedia.video,
       );
       await localParticipant.setMicrophoneEnabled(
-        initialMedia == CallInitialMedia.audio,
+        initialMedia == CallInitialMedia.audio || DeviceUtil.isRealMobile(),
       );
       log.info(
         '本地轨道初始化 → mic: ${localParticipant.isMicrophoneEnabled()}, '
@@ -538,6 +538,29 @@ class RoomController extends _$RoomController {
       log.error('切换摄像头失败: $e');
     } finally {
       _isTogglingCamera = false;
+    }
+  }
+
+  /// 移动端快速切换前置/后置摄像头。
+  Future<void> switchCamera() async {
+    final currentState = state.value;
+    if (currentState == null || !currentState.cameraEnabled) return;
+    try {
+      final publication = currentState
+          .room
+          .localParticipant
+          ?.videoTrackPublications
+          .where((item) => !item.isScreenShare)
+          .firstOrNull;
+      final track = publication?.track;
+      if (track is! LocalVideoTrack) return;
+      final options = track.currentOptions;
+      if (options is! CameraCaptureOptions) return;
+      await track.setCameraPosition(options.cameraPosition.switched());
+      state = AsyncData(currentState.copyWith());
+      log.info('已切换至${options.cameraPosition.switched().name}摄像头');
+    } catch (e) {
+      log.error('切换前后摄像头失败: $e');
     }
   }
 

@@ -1,14 +1,10 @@
-
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
-import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:pip/pip.dart';
 
 /// 移动端通话页面
 ///
@@ -40,8 +36,8 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
 
   @override
   void dispose() {
-    // 恢复息屏
     _keepScreenOn(false);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -58,22 +54,25 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   Widget build(BuildContext context) {
     final session = ref.watch(mobileCallSessionControllerProvider);
 
-    final token = session?.token;
-
     final inPip = session?.isInPipMode ?? false;
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: const Color(0xFF0D0F14),
 
       appBar: inPip
           ? null
           : AppBar(
+              backgroundColor: const Color(0xFF0D0F14),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
               title: Text(
                 widget.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               leading: IconButton(
-                icon: const Icon(Icons.fullscreen_exit),
+                tooltip: '最小化',
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
 
                 /// 最小化
                 onPressed: () {
@@ -82,47 +81,9 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
                       .minimize();
                 },
               ),
-
-              // 右上角挂断按钮（非 PiP 时显示）
-              actions: [
-                IconButton(
-                  icon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedCallRinging03,
-                    size: 18,
-                    color: Colors.redAccent,
-                  ),
-                  onPressed: () async {
-                    // 优先释放 PiP 插件，防止原生残留
-                    try {
-                      await Pip().dispose();
-                    } catch (e) {
-                      debugPrint('PiP dispose error: $e');
-                    }
-
-                    // 结束全局会话状态
-                    ref
-                        .read(callInvitationControllerProvider.notifier)
-                        .endRoom(widget.roomId, title: widget.title);
-                    ref
-                        .read(mobileCallSessionControllerProvider.notifier)
-                        .end();
-
-                    // 如果已有 token，尝试断开房间连接（异步）
-                    if (token != null && token.isNotEmpty) {
-                      try {
-                        ref
-                            .read(roomControllerProvider(token).notifier)
-                            .leave();
-                      } catch (e) {
-                        debugPrint('Leave room error: $e');
-                      }
-                    }
-                  },
-                ),
-              ],
             ),
 
-      body: _buildBody(token),
+      body: _buildBody(session?.token),
     );
   }
 

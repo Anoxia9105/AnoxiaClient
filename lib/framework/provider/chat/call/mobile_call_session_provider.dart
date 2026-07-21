@@ -101,12 +101,25 @@ class MobileCallSessionController extends _$MobileCallSessionController {
   void updatePosition(Offset delta, double screenWidth, double screenHeight) {
     if (state == null) return;
 
+    final widgetWidth = state!.initialMedia == CallInitialMedia.audio
+        ? 176.0
+        : 120.0;
+    final widgetHeight = state!.initialMedia == CallInitialMedia.audio
+        ? 72.0
+        : 180.0;
+
     double newX = state!.position.dx + delta.dx;
     double newY = state!.position.dy + delta.dy;
 
     // 基础边界防御，防止完全拖出屏幕外
-    newX = newX.clamp(0.0, screenWidth - 120.0);
-    newY = newY.clamp(40.0, screenHeight - 180.0 - 40.0);
+    newX = newX.clamp(
+      0.0,
+      (screenWidth - widgetWidth).clamp(0.0, double.infinity),
+    );
+    newY = newY.clamp(
+      40.0,
+      (screenHeight - widgetHeight - 40.0).clamp(40.0, double.infinity),
+    );
 
     state = state!.copyWith(position: Offset(newX, newY));
   }
@@ -117,7 +130,9 @@ class MobileCallSessionController extends _$MobileCallSessionController {
 
     final currentX = state!.position.dx;
     final currentY = state!.position.dy;
-    const widgetWidth = 120.0;
+    final widgetWidth = state!.initialMedia == CallInitialMedia.audio
+        ? 176.0
+        : 120.0;
     const padding = 16.0; // 离屏幕边缘的间距
 
     // 计算中心点判断靠左还是靠右

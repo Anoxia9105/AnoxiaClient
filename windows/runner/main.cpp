@@ -13,6 +13,7 @@ namespace {
 
 constexpr wchar_t kSingleInstanceMutexName[] =
   L"Anoxia.NotePadClient.SingleInstance";
+constexpr wchar_t kMainWindowTitle[] = L"anoxia Im";
 constexpr ULONG_PTR kAnoxiaUriCopyDataId = 0x414E4F58;  // 'ANOX'
 
 void RegisterAnoxiaProtocol() {
@@ -56,7 +57,7 @@ void RegisterAnoxiaProtocol() {
 }
 
 HWND FindExistingMainWindow() {
-  return FindWindowW(nullptr, L"notepadclient");
+  return FindWindowW(nullptr, kMainWindowTitle);
 }
 
 void ActivateExistingMainWindow() {
@@ -143,7 +144,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"notepadclient", origin, size)) {
+  if (!window.Create(kMainWindowTitle, origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

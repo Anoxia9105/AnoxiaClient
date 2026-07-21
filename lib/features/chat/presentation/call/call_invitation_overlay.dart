@@ -125,14 +125,15 @@ class _IncomingCallCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _openCall(
-    WidgetRef ref,
-    CallInvitationState invitation,
-  ) async {
+  Future<void> _openCall(WidgetRef ref, CallInvitationState invitation) async {
     if (DeviceUtil.isRealMobile()) {
       ref
           .read(mobileCallSessionControllerProvider.notifier)
-          .start(roomId: invitation.roomId, title: invitation.title);
+          .start(
+            roomId: invitation.roomId,
+            title: invitation.title,
+            initialMedia: invitation.initialMedia,
+          );
       return;
     }
 
@@ -142,6 +143,7 @@ class _IncomingCallCard extends ConsumerWidget {
           title: invitation.title,
           themeIndex: ref.read(themeIndexProvider),
           roomId: invitation.roomId,
+          initialMedia: invitation.initialMedia,
         );
   }
 }
@@ -172,10 +174,7 @@ class _CallNoticeCard extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              child: Text(
-                text,
-                style: TextStyle(color: cs.onInverseSurface),
-              ),
+              child: Text(text, style: TextStyle(color: cs.onInverseSurface)),
             ),
           ),
         ),

@@ -1,8 +1,14 @@
 import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
+import 'package:anoxia/features/chat/presentation/call/mobile/mobile_call_timer.dart';
+import 'package:anoxia/features/chat/presentation/call/mobile/mobile_participant_surface.dart';
+import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:livekit_client/livekit_client.dart';
 import 'package:pip/pip.dart';
 
 /// 全局通话悬浮层组件
@@ -113,7 +119,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    print('AppLifecycleState changed============================>: $state');
+    debugPrint('AppLifecycleState changed: $state');
     if (state != AppLifecycleState.hidden) return;
 
     final session = ref.read(mobileCallSessionControllerProvider);
@@ -123,7 +129,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
       final supported = await _pip.isSupported();
       if (!supported) return;
 
-      final active = await _pip.isActived();
+      final active = await _pip.isActive();
       if (active) return;
 
       await _pip.start();
@@ -139,6 +145,12 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
     if (session == null) {
       return const SizedBox.shrink();
     }
+
+    final token = session.token;
+    final roomState = token == null || token.isEmpty
+        ? null
+        : ref.watch(roomControllerProvider(token)).value;
+    final isVideoCall = session.initialMedia == CallInitialMedia.video;
 
     return Stack(
       children: [
@@ -207,51 +219,118 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                 ),
                 child: Material(
                   elevation: 10,
-                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(isVideoCall ? 16 : 36),
                   clipBehavior: Clip.antiAlias,
                   child: SizedBox(
-                    width: 120,
-                    height: 180,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Container(color: Colors.black),
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.call,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                child: Text(
-                                  session.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
+                    width: isVideoCall ? 120 : 176,
+                    height: isVideoCall ? 180 : 72,
+                    child: isVideoCall
+                        ? _MinimizedVideoCall(roomState: roomState)
+                        : _MinimizedAudioCall(
+                            title: session.title,
+                            joinedAt: roomState?.joinedAt,
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ),
             ),
           ),
       ],
+    );
+  }
+}
+
+class _MinimizedAudioCall extends StatelessWidget {
+  const _MinimizedAudioCall({required this.title, required this.joinedAt});
+
+  final String title;
+  final DateTime? joinedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2B3245), Color(0xFF171B25)],
+        ),
+        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(36),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
+            child: const Icon(
+              Icons.call_rounded,
+              color: Colors.white,
+              size: 25,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                MobileCallTimer(
+                  joinedAt: joinedAt,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MinimizedVideoCall extends StatelessWidget {
+  const _MinimizedVideoCall({required this.roomState});
+
+  final RoomState? roomState;
+
+  @override
+  Widget build(BuildContext context) {
+    final Participant? participant =
+        roomState?.remoteParticipants.firstOrNull ??
+        roomState?.room.localParticipant;
+    if (participant == null) {
+      return const ColoredBox(
+        color: Color(0xFF171A22),
+        child: Center(
+          child: Icon(Icons.videocam_off_rounded, color: Colors.white54),
+        ),
+      );
+    }
+    return MobileParticipantSurface(
+      participant: participant,
+      compact: true,
+      showStatus: false,
+      borderRadius: 16,
     );
   }
 }
