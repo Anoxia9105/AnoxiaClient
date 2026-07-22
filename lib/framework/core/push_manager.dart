@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:anoxia/common/utils/SPUtil.dart';
+import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import 'package:jpush_flutter/jpush_interface.dart';
-import 'package:uuid/uuid.dart';
 
 typedef PushTokenChangedCallback = FutureOr<void> Function(String token);
 typedef PushNotificationCallback =
@@ -23,7 +22,6 @@ class PushManager {
   static const Duration _jpushQueryTimeout = Duration(seconds: 5);
   static const String _appId = 'cn.anoxia';
   static const int _env = 0;
-  static const String _deviceUidKey = 'push_device_uid';
 
   bool _initialized = false;
   String? _latestFcmToken;
@@ -167,14 +165,7 @@ class PushManager {
   }
 
   Future<String> getOrCreateDeviceUid() async {
-    final cached = SPUtil.instance.get(_deviceUidKey);
-    if (cached != null && cached.isNotEmpty) {
-      return cached;
-    }
-
-    final uid = const Uuid().v4();
-    await SPUtil.instance.set(_deviceUidKey, uid);
-    return uid;
+    return DeviceIdentity.instance.getOrCreate();
   }
 
   Future<Map<String, dynamic>> buildDeviceBindPayload({

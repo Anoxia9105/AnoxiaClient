@@ -3,6 +3,7 @@ import 'dart:io' as io;
 import 'dart:math' as math;
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/core/network_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -140,7 +141,10 @@ class WsController extends _$WsController {
     state = WsState(status: WsStatus.connecting);
 
     try {
-      final url = '${API.wsBaseUrl}$token';
+      final deviceId = await DeviceIdentity.instance.getPlatformQualifiedId();
+      final url =
+          '${API.wsBaseUrl}${Uri.encodeQueryComponent(token)}'
+          '&deviceId=${Uri.encodeQueryComponent(deviceId)}';
       log.info('[WsController] 正在尝试建立 WebSocket 连接');
 
       if (kIsWeb) {

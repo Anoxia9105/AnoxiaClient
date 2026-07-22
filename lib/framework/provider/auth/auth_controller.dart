@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:io' as io;
 
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
+import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/CaptchaModel.dart';
@@ -80,7 +79,7 @@ class AuthController extends _$AuthController {
           'password': password,
           'code': code,
           'uuid': uuid,
-          'deviceId': _buildDeviceId(),
+          'deviceId': await DeviceIdentity.instance.getPlatformQualifiedId(),
         },
         auth: false,
       );
@@ -255,27 +254,6 @@ class AuthController extends _$AuthController {
 
   /// 登录操作（Mutation 预留）
   static final loginMutation = Mutation<void>();
-
-  /// 构建设备标识
-  ///
-  /// 用于后端识别客户端类型和平台
-  String _buildDeviceId() {
-    if (kIsWeb) return 'web';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'android';
-      case TargetPlatform.iOS:
-        return 'ios';
-      case TargetPlatform.windows:
-        return 'windows';
-      case TargetPlatform.macOS:
-        return 'macos';
-      case TargetPlatform.linux:
-        return 'linux';
-      default:
-        return io.Platform.operatingSystem;
-    }
-  }
 
   Future<void> _bindPushDevice(UserInfo user) async {
     if (!_shouldReportPushDevice()) return;
