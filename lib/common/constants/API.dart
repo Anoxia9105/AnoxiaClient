@@ -86,6 +86,11 @@ class API {
 
   /// 创建群聊
   static const String chatCreateGroup = '/chat/createGroup';
+  static const String chatGroupPreview = '/chat/group/preview';
+  static const String chatGroupJoin = '/chat/group/join';
+  static const String chatGroupJoinRequests = '/chat/group/joinRequests';
+  static const String chatGroupJoinRequestHandle =
+      '/chat/group/joinRequest/handle';
 
   /// 离开聊天室
   static const String chatRoomLeave = '/chat/room/leave';

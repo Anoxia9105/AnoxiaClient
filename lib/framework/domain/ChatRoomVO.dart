@@ -28,6 +28,7 @@ class ChatRoomVO {
 
   /// 聊天室类型：0=单聊，1=群聊，2=AI 对话
   final int? roomType;
+  final int? joinPolicy;
 
   /// 创建时间
   final DateTime? createdAt;
@@ -54,6 +55,7 @@ class ChatRoomVO {
     this.roomDescription,
     this.roomStatus,
     this.roomType,
+    this.joinPolicy,
     this.createdAt,
     this.lastReadSeq,
     this.peerId,
@@ -70,6 +72,7 @@ class ChatRoomVO {
     String? roomDescription,
     int? roomStatus,
     int? roomType,
+    int? joinPolicy,
     DateTime? createdAt,
     int? lastReadSeq,
     int? peerId,
@@ -84,6 +87,7 @@ class ChatRoomVO {
       roomDescription: roomDescription ?? this.roomDescription,
       roomStatus: roomStatus ?? this.roomStatus,
       roomType: roomType ?? this.roomType,
+      joinPolicy: joinPolicy ?? this.joinPolicy,
       createdAt: createdAt ?? this.createdAt,
       lastReadSeq: lastReadSeq ?? this.lastReadSeq,
       peerId: peerId ?? this.peerId,
@@ -108,6 +112,9 @@ class ChatRoomVO {
       roomType: json['roomType'] is int
           ? json['roomType']
           : int.tryParse(json['roomType']?.toString() ?? ''),
+      joinPolicy: json['joinPolicy'] is int
+          ? json['joinPolicy']
+          : int.tryParse(json['joinPolicy']?.toString() ?? ''),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
           : null,

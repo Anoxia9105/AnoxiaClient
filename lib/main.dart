@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
@@ -20,7 +19,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
@@ -57,11 +55,6 @@ Future<void> main(List<String> args) async {
       SPUtil.instance.init(), // 本地存储初始化
     ]);
 
-    // 移动端启动时尝试申请关键权限，但不阻断进入 App。
-    if (DeviceUtil.isRealMobile()) {
-      unawaited(_ensureMobilePermissionsOnStartup());
-    }
-
     _backgroundAsyncInit();
 
     // 桌面端窗口初始化（区分主/子窗口）
@@ -76,50 +69,6 @@ Future<void> main(List<String> args) async {
     // 启动失败兜底（显示错误页面）
     runApp(_buildErrorPage('应用启动失败：$e'));
   }
-}
-
-Future<bool> _ensureMobilePermissionsOnStartup() async {
-  try {
-    final permissions = <Permission>[
-      Permission.microphone,
-      Permission.camera,
-      Permission.notification,
-      Permission.bluetooth,
-      Permission.bluetoothConnect,
-    ];
-
-    // 相册/存储权限：用于保存图片到系统相册。
-    if (Platform.isIOS) {
-      permissions.addAll([Permission.photosAddOnly, Permission.photos]);
-    }
-
-    final pending = <Permission>[];
-    for (final permission in permissions) {
-      final status = await permission.status;
-      if (!_isPermissionAccepted(status)) {
-        pending.add(permission);
-      }
-    }
-
-    if (pending.isEmpty) {
-      return true;
-    }
-
-    final result = await pending.request();
-    final allGranted = result.values.every(_isPermissionAccepted);
-    if (!allGranted) {
-      log.info('启动权限申请未全部通过(继续进入应用): $result');
-    }
-    return true;
-  } catch (e, stack) {
-    log.error('启动权限申请异常', e, stack);
-    return true;
-  }
-}
-
-bool _isPermissionAccepted(PermissionStatus status) {
-  // iOS 的照片权限可能返回 limited，视为可用。
-  return status.isGranted || status.isLimited;
 }
 
 void _backgroundAsyncInit() {

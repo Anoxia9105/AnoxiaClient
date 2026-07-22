@@ -171,22 +171,37 @@ class PushManager {
   Future<Map<String, dynamic>> buildDeviceBindPayload({
     required int userId,
   }) async {
-    final rid = await getRegistrationId().timeout(
-      _jpushQueryTimeout,
-      onTimeout: () => '',
-    );
+    // 1. 安全获取 JPush Registration ID
+    String rid = '';
+    try {
+      rid = await getRegistrationId().timeout(
+        _jpushQueryTimeout,
+        onTimeout: () => '',
+      );
+    } catch (e) {
+      // 容错处理：记录日志或忽略
+      print('获取 JPush RID 异常: $e');
+    }
 
-    final token =
-        _latestFcmToken ??
-        await FirebaseMessaging.instance.getToken().timeout(
+    // 2. 安全获取 FCM Token（防止 FirebaseInstallationsException 导致 Crash）
+    if (_latestFcmToken == null || _latestFcmToken!.isEmpty) {
+      try {
+        final token = await FirebaseMessaging.instance.getToken().timeout(
           _fcmTokenTimeout,
           onTimeout: () => null,
         );
 
-    if (token != null && token.isNotEmpty) {
-      _latestFcmToken = token;
+        if (token != null && token.isNotEmpty) {
+          _latestFcmToken = token;
+        }
+      } catch (e) {
+        // 当国内网络打不通 Google 服务或缺少 GMS 时，优雅降级，防止应用崩溃
+        print('获取 FCM Token 失败 (可能无 GMS 或网络不可达): $e');
+        _latestFcmToken = null;
+      }
     }
 
+    // 3. 构建并返回 Payload
     return {
       'appId': _appId,
       'env': _env,
@@ -194,7 +209,9 @@ class PushManager {
       'userId': userId,
       'deviceUid': await getOrCreateDeviceUid(),
       'jpushRid': rid.isEmpty ? null : rid,
-      'fcmToken': _latestFcmToken,
+      'fcmToken': (_latestFcmToken != null && _latestFcmToken!.isNotEmpty)
+          ? _latestFcmToken
+          : null,
       'vendorToken': null,
       'pushEnabled': 1,
       'status': 1,

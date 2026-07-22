@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
@@ -68,9 +69,19 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
       LocalVideoTrack track;
       if (_source == LiveSource.camera) {
         _screenSourceId = null;
-        final camera = await Permission.camera.request();
-        final mic = await Permission.microphone.request();
-        if (!camera.isGranted || !mic.isGranted) {
+        if (!mounted) return;
+        final camera = await ensureAppPermission(
+          context,
+          Permission.camera,
+          permissionName: '摄像头',
+        );
+        if (!mounted) return;
+        final mic = await ensureAppPermission(
+          context,
+          Permission.microphone,
+          permissionName: '麦克风',
+        );
+        if (!camera || !mic) {
           throw Exception('需要开启摄像头和麦克风权限');
         }
         track = await LocalVideoTrack.createCameraTrack(
@@ -89,8 +100,13 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
           sourceId = source.id?.toString();
         }
         _screenSourceId = sourceId;
-        final mic = await Permission.microphone.request();
-        if (!mic.isGranted) {
+        if (!mounted) return;
+        final mic = await ensureAppPermission(
+          context,
+          Permission.microphone,
+          permissionName: '麦克风',
+        );
+        if (!mic) {
           throw Exception('需要开启麦克风权限');
         }
         track = await LocalVideoTrack.createScreenShareTrack(

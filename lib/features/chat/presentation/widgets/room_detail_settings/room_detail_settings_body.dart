@@ -1,14 +1,18 @@
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chat_room_picker_dialog.dart';
 import 'package:anoxia/features/chat/presentation/pages/add_member_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_member_list_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_join_requests_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -204,6 +208,61 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                 onTap: () {},
               ),
+              _buildMaterialListTile(
+                context,
+                leading: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedShare08,
+                  size: 22,
+                ),
+                title: Text('chat_share_group'.tr()),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                onTap: () async {
+                  if (currentRoom.roomStatus == 2 ||
+                      currentRoom.roomStatus == 3) {
+                    BotToast.showText(text: 'group_card_unavailable'.tr());
+                    return;
+                  }
+                  final destination = await showChatRoomPicker(context);
+                  if (destination?.roomId == null) return;
+                  final members = ref.read(roomMembersProvider(roomId));
+                  final card = CardPayload(
+                    cardType: 'group',
+                    entityId: roomId,
+                    title: currentRoom.roomName,
+                    summary: currentRoom.roomDescription,
+                    thumbnailUrl: currentRoom.roomAvatar,
+                    properties: {
+                      'memberCount': members.length.toString(),
+                      'roomStatus': (currentRoom.roomStatus ?? -1).toString(),
+                      'joinPolicy': (currentRoom.joinPolicy ?? 1).toString(),
+                    },
+                  );
+                  final sent = ref
+                      .read(
+                        chatInputControllerProvider(
+                          destination!.roomId!,
+                        ).notifier,
+                      )
+                      .sendCardMessage(card);
+                  BotToast.showText(
+                    text: sent
+                        ? 'group_card_shared'.tr()
+                        : 'contact_recommend_send_failed'.tr(),
+                  );
+                },
+              ),
+              if (isAdmin)
+                _buildMaterialListTile(
+                  context,
+                  leading: const Icon(Icons.how_to_reg_outlined, size: 22),
+                  title: Text('group_join_requests_title'.tr()),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => GroupJoinRequestsPage(roomId: roomId),
+                    ),
+                  ),
+                ),
             ],
           ],
         ),

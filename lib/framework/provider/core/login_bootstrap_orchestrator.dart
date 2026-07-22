@@ -111,8 +111,7 @@ class LoginBootstrapOrchestrator {
     try {
       await _ref
           .read(roomMemberServiceProvider.notifier)
-          .syncMembers(targetRoomId)
-          .timeout(_warmUpTimeout);
+          .syncMembers(targetRoomId, timeout: _warmUpTimeout);
     } on TimeoutException catch (e, st) {
       log.warning('[Bootstrap] 房间成员预热超时，继续后续流程', e, st);
     } catch (e, st) {

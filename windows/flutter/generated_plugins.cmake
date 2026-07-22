@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   flutter_secure_storage_windows
   flutter_webrtc
+  geolocator_windows
   hotkey_manager_windows
   livekit_client
   pasteboard

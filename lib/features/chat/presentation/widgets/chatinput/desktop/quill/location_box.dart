@@ -1,153 +1,266 @@
-import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
 class LocationBox extends StatefulWidget {
+  const LocationBox({super.key, required this.onSubmit, this.onCancel});
+
   final ValueChanged<LocationPayload> onSubmit;
   final VoidCallback? onCancel;
-
-  const LocationBox({super.key, required this.onSubmit, this.onCancel});
 
   @override
   State<LocationBox> createState() => _LocationBoxState();
 }
 
 class _LocationBoxState extends State<LocationBox> {
-  final _titleController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
+  final MapController _mapController = MapController();
+  LatLng _selectedPoint = const LatLng(0, 0);
+  MapTileSource? _tileSource;
+  String? _languageCode;
+  String? _statusKey;
+  bool _locating = false;
+  bool _hasSelection = false;
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    _addressController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = context.locale.languageCode;
+    if (_languageCode != languageCode) {
+      _languageCode = languageCode;
+      _tileSource = MapTileSource.preferredFor(context);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _locateUser());
+  }
+
+  Future<void> _locateUser() async {
+    if (_locating || !mounted) return;
+    setState(() {
+      _locating = true;
+      _statusKey = null;
+    });
+
+    try {
+      final granted = await _ensureLocationPermission();
+      if (!mounted) return;
+      if (!granted) {
+        setState(() => _statusKey = 'location_permission_denied');
+        return;
+      }
+
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (mounted) setState(() => _statusKey = 'location_service_disabled');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
+      if (!mounted) return;
+      final point = LatLng(position.latitude, position.longitude);
+      setState(() {
+        _selectedPoint = point;
+        _hasSelection = true;
+        _statusKey = null;
+      });
+      _mapController.move(point, 16);
+    } catch (_) {
+      if (mounted) setState(() => _statusKey = 'location_failed');
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  Future<bool> _ensureLocationPermission() async {
+    // Browsers request permission as part of getCurrentPosition. Some browsers
+    // do not implement the Permissions API, so pre-checking would reject a
+    // request that can still succeed.
+    if (kIsWeb) return true;
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
+      return true;
+    }
+    if (permission != LocationPermission.deniedForever || !mounted) {
+      return false;
+    }
+
+    final openSettings = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'permission_required_title'.tr(
+            args: ['location_permission_name'.tr()],
+          ),
+        ),
+        content: Text(
+          'permission_settings_required'.tr(
+            args: ['location_permission_name'.tr()],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('dialog_cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('permission_go_to_settings'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (openSettings == true) await Geolocator.openAppSettings();
+    return false;
+  }
+
+  void _cycleTileSource() {
+    final current = _tileSource ?? MapTileSource.preferredFor(context);
+    final index = MapTileSource.all.indexWhere((item) => item.id == current.id);
+    setState(() {
+      _tileSource = MapTileSource.all[(index + 1) % MapTileSource.all.length];
+    });
   }
 
   void _submit() {
-    final latitude = double.tryParse(_latitudeController.text.trim());
-    final longitude = double.tryParse(_longitudeController.text.trim());
-    if (latitude == null ||
-        longitude == null ||
-        latitude < -90 ||
-        latitude > 90 ||
-        longitude < -180 ||
-        longitude > 180) {
-      Toast.showToast('location_coordinate_invalid'.tr());
-      return;
-    }
-
-    final title = _emptyToNull(_titleController.text);
-    final address = _emptyToNull(_addressController.text);
-    if (title == null && address == null) {
-      Toast.showToast('location_title_required'.tr());
-      return;
-    }
-
+    if (!_hasSelection) return;
+    final latitude = _selectedPoint.latitude;
+    final longitude = _selectedPoint.longitude;
     widget.onSubmit(
       LocationPayload(
         latitude: latitude,
         longitude: longitude,
-        title: title,
-        address: address,
+        title: 'location_selected_point'.tr(),
+        address:
+            '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
       ),
     );
-  }
-
-  String? _emptyToNull(String value) {
-    final text = value.trim();
-    return text.isEmpty ? null : text;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final source = _tileSource ?? MapTileSource.preferredFor(context);
 
     return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: 340,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colorScheme.outlineVariant, width: 0.8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+      color: colorScheme.surface,
+      child: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'toolbar_location'.tr(),
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+            _Header(onClose: widget.onCancel),
+            Expanded(
+              child: Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: _selectedPoint,
+                      initialZoom: 2,
+                      minZoom: 2,
+                      maxZoom: 19,
+                      onPositionChanged: (camera, hasGesture) {
+                        if (hasGesture && mounted) {
+                          setState(() {
+                            _selectedPoint = camera.center;
+                            _hasSelection = true;
+                          });
+                        }
+                      },
+                    ),
+                    children: [
+                      TileLayer(
+                        key: ValueKey(source.id),
+                        urlTemplate: source.urlTemplate,
+                        subdomains: source.subdomains,
+                        userAgentPackageName: 'cn.anoxia',
+                      ),
+                    ],
+                  ),
+                  const IgnorePointer(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 42),
+                        child: Icon(
+                          Icons.location_pin,
+                          size: 48,
+                          color: Colors.redAccent,
+                          shadows: [
+                            Shadow(blurRadius: 6, color: Colors.black38),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    right: 12,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: _HintCard(
+                        statusKey: _locating ? 'location_locating' : _statusKey,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Column(
+                      children: [
+                        FloatingActionButton.small(
+                          heroTag: null,
+                          tooltip: 'location_current_position'.tr(),
+                          onPressed: _locating ? null : _locateUser,
+                          child: _locating
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location),
+                        ),
+                        const SizedBox(height: 8),
+                        FloatingActionButton.small(
+                          heroTag: null,
+                          tooltip: 'map_source'.tr(
+                            args: [source.localizedName],
+                          ),
+                          onPressed: _cycleTileSource,
+                          child: const Icon(Icons.layers_outlined),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 12,
+                    child: _SelectionCard(
+                      point: _selectedPoint,
+                      source: source,
+                      onSend: _hasSelection ? _submit : null,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            _Input(
-              controller: _titleController,
-              label: 'location_title_label'.tr(),
-              autofocus: true,
-            ),
-            const SizedBox(height: 8),
-            _Input(
-              controller: _addressController,
-              label: 'location_address_label'.tr(),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _Input(
-                    controller: _latitudeController,
-                    label: 'location_latitude_label'.tr(),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Input(
-                    controller: _longitudeController,
-                    label: 'location_longitude_label'.tr(),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    onSubmitted: (_) => _submit(),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: widget.onCancel,
-                  child: Text('dialog_cancel'.tr()),
-                ),
-                const SizedBox(width: 6),
-                FilledButton(
-                  onPressed: _submit,
-                  child: Text('toolbar_send'.tr()),
-                ),
-              ],
             ),
           ],
         ),
@@ -156,37 +269,113 @@ class _LocationBoxState extends State<LocationBox> {
   }
 }
 
-class _Input extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final bool autofocus;
-  final int maxLines;
-  final TextInputType? keyboardType;
-  final ValueChanged<String>? onSubmitted;
-
-  const _Input({
-    required this.controller,
-    required this.label,
-    this.autofocus = false,
-    this.maxLines = 1,
-    this.keyboardType,
-    this.onSubmitted,
-  });
+class _Header extends StatelessWidget {
+  const _Header({this.onClose});
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      autofocus: autofocus,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      onSubmitted: onSubmitted,
-      textInputAction: maxLines == 1 ? TextInputAction.next : null,
-      decoration: InputDecoration(
-        labelText: label,
-        isDense: true,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
+          Expanded(
+            child: Text(
+              'location_picker_title'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HintCard extends StatelessWidget {
+  const _HintCard({this.statusKey});
+  final String? statusKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Text((statusKey ?? 'location_drag_hint').tr()),
+      ),
+    );
+  }
+}
+
+class _SelectionCard extends StatelessWidget {
+  const _SelectionCard({
+    required this.point,
+    required this.source,
+    this.onSend,
+  });
+
+  final LatLng point;
+  final MapTileSource source;
+  final VoidCallback? onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 5,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'location_selected_point'.tr(),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'location_coordinates'.tr(
+                      args: [
+                        point.latitude.toStringAsFixed(6),
+                        point.longitude.toStringAsFixed(6),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  Text(
+                    'map_source'.tr(args: [source.localizedName]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                  Text(
+                    source.attribution,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: onSend,
+              icon: const Icon(Icons.send_outlined),
+              label: Text('toolbar_send'.tr()),
+            ),
+          ],
+        ),
       ),
     );
   }

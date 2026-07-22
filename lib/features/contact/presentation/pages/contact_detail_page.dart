@@ -4,12 +4,15 @@ import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail_widgets.dart';
 import 'package:anoxia/framework/domain/ChatContactDetailVO.dart';
+import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
+import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +51,7 @@ class ContactDetail extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor:Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         actionsPadding: const EdgeInsets.symmetric(horizontal: 8),
         actions: [
@@ -199,9 +202,25 @@ class ContactDetail extends ConsumerWidget {
           const SizedBox(height: 40),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _recommendToFriend(context, ref, detail),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedUserAdd01,
+                      size: 20,
+                    ),
+                    label: Text('contact_recommend_to_friend'.tr()),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: isCreating
                         ? null
@@ -264,6 +283,49 @@ class ContactDetail extends ConsumerWidget {
       default:
         return 'contact_unknown_gender'.tr();
     }
+  }
+
+  Future<void> _recommendToFriend(
+    BuildContext context,
+    WidgetRef ref,
+    ChatContactDetailVO detail,
+  ) async {
+    final userId = detail.userId;
+    if (userId == null) return;
+
+    final room = await showDialog<ChatRoomVO>(
+      context: context,
+      builder: (_) => const _RecommendRoomDialog(),
+    );
+    final roomId = room?.roomId;
+    if (roomId == null || !context.mounted) return;
+
+    final card = CardPayload(
+      cardType: 'contact',
+      entityId: userId.toString(),
+      title: detail.nickName?.trim().isNotEmpty == true
+          ? detail.nickName!.trim()
+          : (detail.userName?.trim().isNotEmpty == true
+                ? detail.userName!.trim()
+                : userId.toString()),
+      summary: detail.userName,
+      thumbnailUrl: detail.avatar,
+      properties: {
+        if (detail.userName?.trim().isNotEmpty == true)
+          'userName': detail.userName!.trim(),
+        if (detail.sex?.trim().isNotEmpty == true) 'sex': detail.sex!.trim(),
+      },
+    );
+
+    final sent = ref
+        .read(chatInputControllerProvider(roomId).notifier)
+        .sendCardMessage(card);
+    Toast.showToast(
+      sent
+          ? 'contact_recommend_sent'.tr(args: [room?.roomName ?? ''])
+          : 'contact_recommend_send_failed'.tr(),
+      type: sent ? ToastType.success : ToastType.error,
+    );
   }
 
   Future<void> _showEditRemarkDialog(
@@ -421,5 +483,85 @@ class ContactDetail extends ConsumerWidget {
     if (latest != null) {
       ref.read(contactSelectionProvider.notifier).selectContact(latest);
     }
+  }
+}
+
+class _RecommendRoomDialog extends ConsumerWidget {
+  const _RecommendRoomDialog();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roomsAsync = ref.watch(roomListServiceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final screenSize = MediaQuery.sizeOf(context);
+    final dialogWidth = (screenSize.width - 80).clamp(260.0, 420.0);
+    final dialogHeight = (screenSize.height * 0.62).clamp(280.0, 440.0);
+
+    return AlertDialog(
+      title: Text('contact_recommend_select_chat'.tr()),
+      content: SizedBox(
+        width: dialogWidth,
+        height: dialogHeight,
+        child: roomsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => Center(
+            child: TextButton.icon(
+              onPressed: () => ref
+                  .read(roomListServiceProvider.notifier)
+                  .refresh(silent: false),
+              icon: const Icon(Icons.refresh),
+              label: Text('contact_recommend_load_failed'.tr()),
+            ),
+          ),
+          data: (allRooms) {
+            final rooms = allRooms
+                .where(
+                  (room) =>
+                      room.roomId?.isNotEmpty == true &&
+                      room.roomType != RoomType.aiChat.index &&
+                      (room.roomStatus == null || room.roomStatus == 0),
+                )
+                .toList();
+            if (rooms.isEmpty) {
+              return Center(child: Text('contact_recommend_no_chat'.tr()));
+            }
+            return ListView.separated(
+              itemCount: rooms.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final room = rooms[index];
+                return ListTile(
+                  leading: AvatarWidget(
+                    url: room.roomAvatar,
+                    name: room.roomName,
+                    size: 42,
+                  ),
+                  title: Text(
+                    room.roomName?.trim().isNotEmpty == true
+                        ? room.roomName!
+                        : 'contact_recommend_unnamed_chat'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    room.roomType == RoomType.groupChat.index
+                        ? 'contact_recommend_group_chat'.tr()
+                        : 'contact_recommend_single_chat'.tr(),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                  onTap: () => Navigator.pop(context, room),
+                );
+              },
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('dialog_cancel'.tr()),
+        ),
+      ],
+    );
   }
 }

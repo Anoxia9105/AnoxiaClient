@@ -77,9 +77,13 @@ class DioClient {
         /// 错误拦截器：记录错误信息
         onError: (e, handler) async {
           final uri = e.requestOptions.uri;
-          log.error(
-            '【onError拦截器】Dio 发生错误 -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
-          );
+          if (CancelToken.isCancel(e)) {
+            log.info('Dio 请求已取消 -> uri: $uri, reason: ${e.error}');
+          } else {
+            log.error(
+              '【onError拦截器】Dio 发生错误 -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
+            );
+          }
           return handler.next(e);
         },
       ),

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:anoxia/common/constants/API.dart';
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/ChatRoomMemberVO.dart';
 import '../../../network/DioClient.dart';
@@ -67,7 +70,7 @@ bool isRoomAdmin(Ref ref, (String, int) args) {
 
 /// 房间成员服务
 ///
-/// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
+/// 数据结构：`Map<roomId, Map<userId, ChatRoomMemberVO>>`
 /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
 /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
@@ -75,6 +78,7 @@ bool isRoomAdmin(Ref ref, (String, int) args) {
 class RoomMemberService extends _$RoomMemberService {
   /// 已同步过的房间 ID 集合，用于避免重复请求
   final Set<String> _syncedRoomIds = {};
+  final Map<String, Future<void>> _syncingRoomIds = {};
 
   @override
   Map<String, Map<int, ChatRoomMemberVO>> build() => {};
@@ -87,8 +91,36 @@ class RoomMemberService extends _$RoomMemberService {
   /// 以下场景需要 force=true：
   /// - 添加/踢出成员后
   /// - 收到成员变化的 WebSocket 推送后
-  Future<void> syncMembers(String roomId, {bool force = false}) async {
+  Future<void> syncMembers(
+    String roomId, {
+    bool force = false,
+    Duration? timeout,
+  }) async {
     if (_syncedRoomIds.contains(roomId) && !force) return;
+
+    final existing = _syncingRoomIds[roomId];
+    if (existing != null) return existing;
+
+    final task = _syncMembers(roomId, timeout: timeout);
+    _syncingRoomIds[roomId] = task;
+    try {
+      await task;
+    } finally {
+      if (identical(_syncingRoomIds[roomId], task)) {
+        _syncingRoomIds.remove(roomId);
+      }
+    }
+  }
+
+  Future<void> _syncMembers(String roomId, {Duration? timeout}) async {
+    final cancelToken = CancelToken();
+    final timeoutTimer = timeout == null
+        ? null
+        : Timer(timeout, () {
+            if (!cancelToken.isCancelled) {
+              cancelToken.cancel('room member warm-up timed out');
+            }
+          });
 
     log.info('🚀 拉取房间 $roomId 成员列表');
 
@@ -96,6 +128,7 @@ class RoomMemberService extends _$RoomMemberService {
       final res = await DioClient().get(
         API.chatMembers,
         queryParameters: {'roomId': roomId},
+        cancelToken: cancelToken,
       );
 
       final data = res.data['data'];
@@ -113,8 +146,16 @@ class RoomMemberService extends _$RoomMemberService {
       _syncedRoomIds.add(roomId);
 
       log.info('✅ 房间 $roomId 成员同步完成，共 ${members.length} 人');
+    } on DioException catch (e, st) {
+      if (CancelToken.isCancel(e)) {
+        log.info('[RoomMember] 房间 $roomId 成员同步已超时取消');
+        return;
+      }
+      log.error('❌ 同步成员失败', e, st);
     } catch (e, st) {
       log.error('❌ 同步成员失败', e, st);
+    } finally {
+      timeoutTimer?.cancel();
     }
   }
 
@@ -218,6 +259,7 @@ class RoomMemberService extends _$RoomMemberService {
   /// 清空所有缓存（退出登录时调用）
   void clearAll() {
     _syncedRoomIds.clear();
+    _syncingRoomIds.clear();
     state = {};
   }
 

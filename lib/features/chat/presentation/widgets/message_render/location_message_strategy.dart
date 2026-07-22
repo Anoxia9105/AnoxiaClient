@@ -1,7 +1,11 @@
+import 'package:anoxia/features/chat/presentation/pages/location_message_detail_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'base/message_render_strategy.dart';
 
@@ -13,115 +17,139 @@ class LocationMessageStrategy extends MessageRenderStrategy {
     Color textColor,
   ) {
     final location = message.payload?.location;
-    if (location == null) {
+    if (location == null || !location.hasCoordinate) {
       final fallback = message.payload?.content ?? message.content;
       return Text(fallback, style: TextStyle(color: textColor, fontSize: 15));
     }
-
     return _LocationMessage(location: location);
   }
 }
 
 class _LocationMessage extends StatelessWidget {
-  final LocationPayload location;
-
   const _LocationMessage({required this.location});
+  final LocationPayload location;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final title = location.displayTitle;
-    final address = location.displayAddress;
+    final point = LatLng(location.latitude!, location.longitude!);
+    final source = MapTileSource.preferredFor(context);
+    final title = location.displayTitle.trim().isEmpty
+        ? 'location_selected_point'.tr()
+        : location.displayTitle;
 
     return Material(
       color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: location.hasCoordinate ? _openMap : null,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => LocationMessageDetailPage(location: location),
+          ),
+        ),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320, minWidth: 220),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.location_on_outlined,
-                    color: colorScheme.onPrimaryContainer,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title.isNotEmpty ? title : '[location]',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                          height: 1.25,
+          constraints: const BoxConstraints(maxWidth: 320, minWidth: 240),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 145,
+                child: Stack(
+                  children: [
+                    IgnorePointer(
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: point,
+                          initialZoom: 14,
+                          interactionOptions: const InteractionOptions(
+                            flags: InteractiveFlag.none,
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: source.urlTemplate,
+                            subdomains: source.subdomains,
+                            userAgentPackageName: 'cn.anoxia',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: point,
+                                width: 38,
+                                height: 38,
+                                alignment: Alignment.topCenter,
+                                child: const Icon(
+                                  Icons.location_pin,
+                                  size: 36,
+                                  color: Colors.redAccent,
+                                  shadows: [
+                                    Shadow(
+                                      blurRadius: 4,
+                                      color: Colors.black38,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      left: 3,
+                      bottom: 2,
+                      child: Text(
+                        source.attribution,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 8,
+                          color: colorScheme.onSurfaceVariant,
+                          backgroundColor: colorScheme.surface.withValues(
+                            alpha: 0.75,
+                          ),
                         ),
                       ),
-                      if (address.isNotEmpty && address != title) ...[
-                        const SizedBox(height: 5),
-                        Text(
-                          address,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            height: 1.25,
-                          ),
-                        ),
-                      ],
-                      if (location.hasCoordinate) ...[
-                        const SizedBox(height: 7),
-                        Text(
-                          '${location.latitude}, ${location.longitude}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'location_coordinates'.tr(
+                        args: [
+                          point.latitude.toStringAsFixed(5),
+                          point.longitude.toStringAsFixed(5),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  Future<void> _openMap() async {
-    final latitude = location.latitude;
-    final longitude = location.longitude;
-    if (latitude == null || longitude == null) return;
-
-    final uri = Uri.https('www.google.com', '/maps/search/', {
-      'api': '1',
-      'query': '$latitude,$longitude',
-    });
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

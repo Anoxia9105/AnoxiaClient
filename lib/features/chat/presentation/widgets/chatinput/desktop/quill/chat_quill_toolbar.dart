@@ -1,7 +1,6 @@
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/card_box.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
@@ -34,7 +33,6 @@ import 'colors_box.dart';
 class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final VoidCallback onSend;
-  final ValueChanged<CardPayload> onCardSubmit;
   final ValueChanged<LocationPayload> onLocationSubmit;
   final VoidCallback? onImagePressed;
   final VoidCallback? onFilePressed;
@@ -43,7 +41,6 @@ class ChatQuillToolbar extends ConsumerWidget {
     super.key,
     required this.controller,
     required this.onSend,
-    required this.onCardSubmit,
     required this.onLocationSubmit,
     this.onImagePressed,
     this.onFilePressed,
@@ -190,47 +187,37 @@ class ChatQuillToolbar extends ConsumerWidget {
                       },
                     ),
 
-                    // Card
-                    IconButton(
-                      mouseCursor: SystemMouseCursors.click,
-                      tooltip: 'toolbar_card'.tr(),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        Function? onCancel;
-                        onCancel = Toast.showWidget(
-                          context,
-                          child: CardBox(
-                            onCancel: () => onCancel?.call(),
-                            onSubmit: (card) {
-                              onCardSubmit(card);
-                              onCancel?.call();
-                            },
-                          ),
-                        );
-                      },
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedCardExchange01,
-                        size: 14,
-                      ),
-                    ),
                     IconButton(
                       mouseCursor: SystemMouseCursors.click,
                       tooltip: 'toolbar_location'.tr(),
                       padding: EdgeInsets.zero,
                       visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        Function? onCancel;
-                        onCancel = Toast.showWidget(
-                          context,
-                          child: LocationBox(
-                            onCancel: () => onCancel?.call(),
-                            onSubmit: (location) {
-                              onLocationSubmit(location);
-                              onCancel?.call();
-                            },
-                          ),
+                      onPressed: () async {
+                        final location = await showDialog<LocationPayload>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (dialogContext) {
+                            final content = LocationBox(
+                              onCancel: () => Navigator.of(dialogContext).pop(),
+                              onSubmit: (value) =>
+                                  Navigator.of(dialogContext).pop(value),
+                            );
+                            if (MediaQuery.sizeOf(dialogContext).width < 700) {
+                              return Dialog.fullscreen(child: content);
+                            }
+                            return Dialog(
+                              clipBehavior: Clip.antiAlias,
+                              child: SizedBox(
+                                width: 760,
+                                height: 620,
+                                child: content,
+                              ),
+                            );
+                          },
                         );
+                        if (location != null && context.mounted) {
+                          onLocationSubmit(location);
+                        }
                       },
                       icon: const Icon(Icons.location_on_outlined, size: 16),
                     ),

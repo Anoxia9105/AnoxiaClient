@@ -47,6 +47,8 @@
 	<string>$(PRODUCT_NAME) uses your camera for calls</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>$(PRODUCT_NAME) uses your microphone for calls</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used to place your current location on the map before sharing.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We need permission to save photos and videos to your library for your convenience.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

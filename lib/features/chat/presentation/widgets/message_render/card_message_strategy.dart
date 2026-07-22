@@ -1,5 +1,8 @@
 import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
 import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'base/message_render_strategy.dart';
@@ -35,63 +38,83 @@ class _CardMessage extends StatelessWidget {
     final thumbnailUrl = card.thumbnailUrl?.trim();
     final hasThumbnail = thumbnailUrl != null && thumbnailUrl.isNotEmpty;
 
+    final isContactCard =
+        card.cardType == 'contact' && int.tryParse(card.entityId ?? '') != null;
+    final isGroupCard =
+        card.cardType == 'group' && card.entityId?.isNotEmpty == true;
+
     return Material(
       color: colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 320, minWidth: 220),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _CardThumbnail(url: hasThumbnail ? thumbnailUrl : null),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title.isNotEmpty ? title : '[card]',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        height: 1.25,
-                      ),
-                    ),
-                    if (summary.isNotEmpty) ...[
-                      const SizedBox(height: 5),
+      child: InkWell(
+        onTap: isContactCard || isGroupCard
+            ? () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => isGroupCard
+                      ? GroupCardPreviewPage(roomId: card.entityId!)
+                      : RecommendedContactDetailPage(card: card),
+                ),
+              )
+            : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320, minWidth: 220),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _CardThumbnail(url: hasThumbnail ? thumbnailUrl : null),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        summary,
+                        title.isNotEmpty ? title : '[card]',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
                           height: 1.25,
                         ),
                       ),
-                    ],
-                    if (card.cardType?.isNotEmpty == true) ...[
-                      const SizedBox(height: 7),
-                      Text(
-                        card.cardType!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                      if (summary.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          summary,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.25,
+                          ),
                         ),
-                      ),
+                      ],
+                      if (card.cardType?.isNotEmpty == true) ...[
+                        const SizedBox(height: 7),
+                        Text(
+                          isContactCard
+                              ? 'contact_card_label'.tr()
+                              : (isGroupCard
+                                    ? 'group_card_label'.tr()
+                                    : card.cardType!),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

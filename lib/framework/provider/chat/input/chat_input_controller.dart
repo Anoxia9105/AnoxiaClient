@@ -361,15 +361,16 @@ class ChatInputController extends _$ChatInputController {
   }
 
   /// 发送卡片消息
-  void sendCardMessage(CardPayload card) {
+  bool sendCardMessage(CardPayload card) {
     final room = ref.read(currentRoomProvider(roomId));
     final title = card.displayTitle.trim();
-    if (room == null || title.isEmpty) return;
+    if (room == null || title.isEmpty) return false;
 
     _doSend(
       type: MessageType.card,
       payload: MessagePayload(content: title, card: card),
     );
+    return true;
   }
 
   /// 发送位置消息

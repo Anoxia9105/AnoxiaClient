@@ -241,12 +241,6 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
                 .sendMessage();
             widget.bottomSheet();
           },
-          onCardSubmit: (card) {
-            ref
-                .read(chatInputControllerProvider(widget.roomId).notifier)
-                .sendCardMessage(card);
-            widget.bottomSheet();
-          },
           onLocationSubmit: (location) {
             ref
                 .read(chatInputControllerProvider(widget.roomId).notifier)

@@ -4,12 +4,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
@@ -110,6 +112,14 @@ class NotificationHelper {
   Future<void> _ensureInitialized() async {
     if (_initialized) return;
     await init();
+  }
+
+  Future<bool> _ensureNotificationPermission() async {
+    if (!DeviceUtil.isRealMobile()) return true;
+    final result = await appPermissionService.request(Permission.notification);
+    if (result == AppPermissionResult.granted) return true;
+    log.info('通知权限不可用，本次通知已跳过: $result');
+    return false;
   }
 
   /// 获取通知图标路径
@@ -312,6 +322,7 @@ class NotificationHelper {
     if (kIsWeb) return;
 
     await _ensureInitialized();
+    if (!await _ensureNotificationPermission()) return;
 
     /// 桌面端如果窗口可见且聚焦，且未强制发送，则不显示通知
     if (DeviceUtil.isRealDesktop() && !await _shouldNotify(force: force)) {
@@ -358,6 +369,7 @@ class NotificationHelper {
   }) async {
     if (kIsWeb) return;
     await _ensureInitialized();
+    if (!await _ensureNotificationPermission()) return;
 
     final notificationId = incomingCallNotificationId(
       payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '',

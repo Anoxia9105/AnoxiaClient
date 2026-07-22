@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/protocol/message/Attachment.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 
 /// 图片查看器组件
@@ -194,17 +192,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
 
   /// 确保拥有相册存储权限（iOS 和 Android 分别处理）
   Future<bool> _ensureGalleryPermission() async {
-    if (Platform.isIOS) {
-      final status = await Permission.photosAddOnly.request();
-      return status.isGranted || status.isLimited;
-    }
-
-    if (Platform.isAndroid) {
-      final status = await Permission.storage.request();
-      return status.isGranted;
-    }
-
-    return true; // 其他平台默认允许
+    return ensureGalleryWritePermission(context);
   }
 
   @override

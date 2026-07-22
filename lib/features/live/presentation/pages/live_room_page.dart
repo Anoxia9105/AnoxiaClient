@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/live/live_room_controller.dart';
@@ -107,11 +108,20 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
 
   Future<void> _enterRoom() async {
     if (widget.isHost) {
-      final mic = await Permission.microphone.request();
+      final mic = await ensureAppPermission(
+        context,
+        Permission.microphone,
+        permissionName: '麦克风',
+      );
+      if (!mounted) return;
       final camera = widget.source == LiveSource.camera
-          ? await Permission.camera.request()
+          ? await ensureAppPermission(
+              context,
+              Permission.camera,
+              permissionName: '摄像头',
+            )
           : null;
-      if (!mic.isGranted || (camera != null && !camera.isGranted)) {
+      if (!mic || camera == false) {
         if (!mounted) return;
         Toast.showNotificationNow(
           widget.source == LiveSource.camera ? '需要开启摄像头和麦克风权限' : '需要开启麦克风权限',
@@ -381,8 +391,12 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   }
 
   Future<void> _enableAudienceMic() async {
-    final mic = await Permission.microphone.request();
-    if (!mic.isGranted) {
+    final mic = await ensureAppPermission(
+      context,
+      Permission.microphone,
+      permissionName: '麦克风',
+    );
+    if (!mic) {
       Toast.showNotificationNow('需要开启麦克风权限才能连麦');
       return;
     }

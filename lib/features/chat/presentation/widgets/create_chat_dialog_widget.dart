@@ -31,6 +31,7 @@ class _CreateChatDialogWidgetState
   final _nameController = TextEditingController();
   bool _isNameEmpty = true;
   bool _showNameError = false;
+  int _joinPolicy = 1;
 
   @override
   void initState() {
@@ -101,12 +102,27 @@ class _CreateChatDialogWidgetState
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: colorScheme.primary,
-                  width: 1.2,
-                ),
+                borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
               ),
             ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+          child: SegmentedButton<int>(
+            segments: [
+              ButtonSegment(
+                value: 0,
+                label: Text('create_group_join_free'.tr()),
+              ),
+              ButtonSegment(
+                value: 1,
+                label: Text('create_group_join_approval'.tr()),
+              ),
+            ],
+            selected: {_joinPolicy},
+            onSelectionChanged: (value) =>
+                setState(() => _joinPolicy = value.first),
           ),
         ),
         Expanded(
@@ -118,7 +134,10 @@ class _CreateChatDialogWidgetState
     );
 
     if (widget.asPage) {
-      return Scaffold(backgroundColor: colorScheme.surface, body: SafeArea(child: content));
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(child: content),
+      );
     }
 
     return Dialog(
@@ -205,10 +224,12 @@ class _CreateChatDialogWidgetState
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            'create_group_selected_count'.tr(args: [selectedIds.length.toString()]),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+            'create_group_selected_count'.tr(
+              args: [selectedIds.length.toString()],
             ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -287,6 +308,7 @@ class _CreateChatDialogWidgetState
         .createGroup(
           name: name,
           userIds: ref.read(selectedContactIdsProvider).toList(),
+          joinPolicy: _joinPolicy,
           onSuccess: () async {
             await ref
                 .read(roomListServiceProvider.notifier)

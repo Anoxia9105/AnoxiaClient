@@ -40,6 +40,7 @@ class CreateGroupController extends _$CreateGroupController {
   Future<void> createGroup({
     required String name,
     required List<int> userIds,
+    required int joinPolicy,
     required VoidCallback onSuccess,
   }) async {
     // 1. 进入加载状态
@@ -49,7 +50,7 @@ class CreateGroupController extends _$CreateGroupController {
     state = await AsyncValue.guard(() async {
       final res = await DioClient().post(
         API.chatCreateGroup,
-        data: {'name': name, 'ids': userIds},
+        data: {'name': name, 'ids': userIds, 'joinPolicy': joinPolicy},
       );
 
       // 根据你后端 AjaxResult 的结构解析

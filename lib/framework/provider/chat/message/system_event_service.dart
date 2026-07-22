@@ -10,6 +10,8 @@ import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:bot_toast/bot_toast.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../../protocol/PacketType.dart';
 import '../../../protocol/message/EventMessage.dart';
@@ -133,6 +135,19 @@ class SystemEventService extends _$SystemEventService {
         break;
       case SystemEventType.contactRequest:
         ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
+        break;
+      case SystemEventType.groupJoinRequest:
+        log.info('收到新的入群申请');
+        BotToast.showText(text: 'group_join_request_notification'.tr());
+        break;
+      case SystemEventType.groupJoinRequestHandled:
+        ref.read(roomListServiceProvider.notifier).refresh(silent: true);
+        final approved = event.extra?['approved'] == true;
+        BotToast.showText(
+          text: approved
+              ? 'group_join_request_approved_notification'.tr()
+              : 'group_join_request_rejected_notification'.tr(),
+        );
         break;
     }
   }

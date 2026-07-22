@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
@@ -42,6 +44,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   bool _showScrollDownButton = false;
   bool _isLoadingMore = false;
   bool _historyEdgeArmed = true;
+  bool _historyLoadScheduled = false;
 
   /// 构建时间分隔 UI
   ///
@@ -87,6 +90,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (oldWidget.roomId != widget.roomId) {
       _isLoadingMore = false;
       _historyEdgeArmed = true;
+      _historyLoadScheduled = false;
       _showScrollDownButton = false;
     }
   }
@@ -131,9 +135,20 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           final hasMore = ref.read(chatHasMoreProvider)[currentRoomId] ?? false;
           if (hasMore && _historyEdgeArmed && !_isLoadingMore) {
             _historyEdgeArmed = false;
-            _loadMoreHistory(currentRoomId);
+            _scheduleHistoryLoad(currentRoomId);
           }
         };
+  }
+
+  void _scheduleHistoryLoad(String roomId) {
+    if (_historyLoadScheduled) return;
+    _historyLoadScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _historyLoadScheduled = false;
+      if (!mounted || widget.roomId != roomId) return;
+      unawaited(_loadMoreHistory(roomId));
+    });
   }
 
   Future<void> _loadMoreHistory(String roomId) async {
@@ -237,45 +252,51 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     if (currentRoom.roomStatus == 2) return const BannedContentPage();
     if (flatItems.isEmpty) return const EmptyMessagesPage();
 
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-      child: FlutterListView(
-        controller: _listViewController,
-        reverse: true, // 保持反转状态
-        delegate: FlutterListViewDelegate(
-          (context, index) {
-            // 由于列表反转，加载更多（旧消息）的 Loading 骨架屏出现在列表的最后一项
-            if (_isLoadingMore && index == flatItems.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Center(
-                  child: SkeletonBox(width: 120, height: 12, radius: 10),
-                ),
-              );
-            }
+    return Stack(
+      children: [
+        Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          child: FlutterListView(
+            controller: _listViewController,
+            reverse: true, // 保持反转状态
+            delegate: FlutterListViewDelegate(
+              (context, index) {
+                // 关键变动：无需再用 flatItems.length - 1 - index 倒序计算
+                // 因为 flatItems 在 Provider 里已经被反转过了，此处直接一一映射即可！
+                final item = flatItems[index];
 
-            // 关键变动：无需再用 flatItems.length - 1 - index 倒序计算
-            // 因为 flatItems 在 Provider 里已经被反转过了，此处直接一一映射即可！
-            final item = flatItems[index];
-
-            return switch (item) {
-              TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
-                timestamp,
-                context,
-              ),
-              MessageItem(:final message) => ChatMessageBubble(
-                key: ValueKey(message.messageId ?? message.clientMsgId),
-                message: message,
-              ),
-              // ignore: unreachable_switch_case
-              _ => const SizedBox.shrink(),
-            };
-          },
-          childCount: flatItems.length + (_isLoadingMore ? 1 : 0),
-          keepPosition: true,
+                return switch (item) {
+                  TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
+                    timestamp,
+                    context,
+                  ),
+                  MessageItem(:final message) => ChatMessageBubble(
+                    key: ValueKey(message.messageId ?? message.clientMsgId),
+                    message: message,
+                  ),
+                  // ignore: unreachable_switch_case
+                  _ => const SizedBox.shrink(),
+                };
+              },
+              // 分页期间保持 childCount 稳定，避免 keepPosition 在绘制阶段反复校正。
+              childCount: flatItems.length,
+              keepPosition: true,
+            ),
+          ),
         ),
-      ),
+        if (_isLoadingMore)
+          const Positioned(
+            top: 8,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Center(
+                child: SkeletonBox(width: 120, height: 12, radius: 10),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

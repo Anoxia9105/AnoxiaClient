@@ -54,7 +54,9 @@ enum SystemEventType {
   roomCreated(18),
 
   /// 聊天室解散（event_type = 19）
-  roomDissolved(19);
+  roomDissolved(19),
+  groupJoinRequest(24),
+  groupJoinRequestHandled(25);
 
   /// 对应的 V5 协议数字事件码
   final int code;
@@ -73,10 +75,16 @@ enum SystemEventType {
       2 => SystemEventType.userLeft,
       3 => SystemEventType.userKicked,
       4 => SystemEventType.roomCreatedGroup, // GROUP_CREATED
-      5 || 6 || 20 => SystemEventType.roomUpdated, // GROUP_NAME_CHANGED / ANNOUNCEMENT / ROOM_UPDATED
-      7 || 22 => SystemEventType.userRoleChanged, // ADMIN_CHANGED / USER_ROLE_CHANGED
-      8 || 9 || 21 => SystemEventType.roomMuted, // USER_BANNED / UNBANNED / ROOM_MUTED
-      10 || 11 => SystemEventType.messageRecall, // MESSAGE_RECALL / MESSAGE_EDIT
+      5 || 6 || 20 =>
+        SystemEventType
+            .roomUpdated, // GROUP_NAME_CHANGED / ANNOUNCEMENT / ROOM_UPDATED
+      7 || 22 =>
+        SystemEventType.userRoleChanged, // ADMIN_CHANGED / USER_ROLE_CHANGED
+      8 ||
+      9 ||
+      21 => SystemEventType.roomMuted, // USER_BANNED / UNBANNED / ROOM_MUTED
+      10 ||
+      11 => SystemEventType.messageRecall, // MESSAGE_RECALL / MESSAGE_EDIT
       12 => SystemEventType.callStarted,
       13 => SystemEventType.callEnded,
       14 => SystemEventType.contactUpdated,
@@ -85,6 +93,8 @@ enum SystemEventType {
       17 => SystemEventType.userOffline,
       18 => SystemEventType.roomCreated,
       19 => SystemEventType.roomDissolved,
+      24 => SystemEventType.groupJoinRequest,
+      25 => SystemEventType.groupJoinRequestHandled,
       _ => SystemEventType.contactRequest, // 默认回退
     };
   }

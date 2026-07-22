@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_background/flutter_background.dart' as rtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:window_manager/window_manager.dart';
@@ -298,12 +301,29 @@ class RoomController extends _$RoomController {
       final initialMedia = roomName == null || roomName.isEmpty
           ? CallInitialMedia.audio
           : ref.read(callInitialMediaProvider(roomName));
-      await localParticipant.setCameraEnabled(
-        initialMedia == CallInitialMedia.video,
-      );
-      await localParticipant.setMicrophoneEnabled(
-        initialMedia == CallInitialMedia.audio || DeviceUtil.isRealMobile(),
-      );
+      var enableCamera = initialMedia == CallInitialMedia.video;
+      var enableMicrophone =
+          initialMedia == CallInitialMedia.audio || DeviceUtil.isRealMobile();
+
+      if (DeviceUtil.isRealMobile()) {
+        if (enableMicrophone) {
+          enableMicrophone =
+              await appPermissionService.request(Permission.microphone) ==
+              AppPermissionResult.granted;
+        }
+        if (enableCamera) {
+          enableCamera =
+              await appPermissionService.request(Permission.camera) ==
+              AppPermissionResult.granted;
+        }
+        if (Platform.isAndroid) {
+          // Bluetooth denial must not block the call; the next call retries.
+          await appPermissionService.request(Permission.bluetoothConnect);
+        }
+      }
+
+      await localParticipant.setCameraEnabled(enableCamera);
+      await localParticipant.setMicrophoneEnabled(enableMicrophone);
       log.info(
         '本地轨道初始化 → mic: ${localParticipant.isMicrophoneEnabled()}, '
         'video: ${localParticipant.isCameraEnabled()}',
@@ -512,6 +532,15 @@ class RoomController extends _$RoomController {
       final currentState = state.value;
       if (currentState == null) return;
       final next = !currentState.micEnabled;
+      if (next && DeviceUtil.isRealMobile()) {
+        final permission = await appPermissionService.request(
+          Permission.microphone,
+        );
+        if (permission != AppPermissionResult.granted) {
+          Toast.showNotificationNow('需要开启麦克风权限');
+          return;
+        }
+      }
       await currentState.room.localParticipant?.setMicrophoneEnabled(next);
       state = AsyncData(currentState.copyWith(micEnabled: next));
       log.info("麦克风${next ? "开启" : "关闭"}");
@@ -531,6 +560,15 @@ class RoomController extends _$RoomController {
       final currentState = state.value;
       if (currentState == null) return;
       final next = !currentState.cameraEnabled;
+      if (next && DeviceUtil.isRealMobile()) {
+        final permission = await appPermissionService.request(
+          Permission.camera,
+        );
+        if (permission != AppPermissionResult.granted) {
+          Toast.showNotificationNow('需要开启摄像头权限');
+          return;
+        }
+      }
       await currentState.room.localParticipant?.setCameraEnabled(next);
       state = AsyncData(currentState.copyWith(cameraEnabled: next));
       log.info("摄像头${next ? "开启" : "关闭"}");
