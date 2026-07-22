@@ -1,6 +1,6 @@
 {
-    "name": "notepadclient",
-    "short_name": "notepadclient",
+    "name": "Anoxia Client",
+    "short_name": "Anoxia",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

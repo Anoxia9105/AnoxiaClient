@@ -1,6 +1,6 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(notepadclient LANGUAGES CXX)
+project(anoxiaclient LANGUAGES CXX)
 
 
 # 强制全局压制 MSVC 编译器对旧版 C++ 协程的弃用报错
@@ -8,7 +8,7 @@ add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "notepadclient")
+set(BINARY_NAME "anoxiaclient")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

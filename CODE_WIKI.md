@@ -1144,7 +1144,7 @@ sendReaction(emoji)
 ```bash
 # 克隆项目
 git clone https://github.com/your-account/Anoxia-IM.git
-cd Anoxia-IM/NotePadClient
+cd Anoxia-IM/AnoxiaClient
 
 # 安装依赖
 flutter pub get

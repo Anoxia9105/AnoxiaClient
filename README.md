@@ -7,11 +7,11 @@
 
 `Anoxia IM` 是一个基于 Flutter 的跨平台即时通讯客户端，支持聊天、联系人、富文本输入、桌面增强能力与音视频通话场景。
 
-> 这是客户端仓库目录 `NotePadClient` 的说明文档（可独立开发与运行）。
+> 这是客户端仓库目录 `AnoxiaClient` 的说明文档（可独立开发与运行）。
 
-**仓库地址：** https://github.com/zhang52514/NotePadClient.git
+**仓库地址：** https://gitee.com/crazydavet/AnoxiaClient.git
 
-**在线访问：** https://github.com/zhang52514/NotePadClient
+**在线访问：** https://gitee.com/crazydavet/AnoxiaClient
 
 **官网地址：** https://www.anoxia.cn/
 
@@ -46,7 +46,7 @@
 ## 📁 目录结构（精简）
 
 ```text
-NotePadClient/
+AnoxiaClient/
   lib/
     main.dart           # 入口
     app.dart            # App 根组件
@@ -69,8 +69,8 @@ NotePadClient/
 ### 1) 克隆并进入客户端目录
 
 ```bash
-git clone https://github.com/zhang52514/NotePadClient.git
-cd NotePadClient
+git clone https://gitee.com/crazydavet/AnoxiaClient.git
+cd AnoxiaClient
 ```
 
 ### 2) 安装依赖
@@ -130,8 +130,8 @@ dart run build_runner watch --delete-conflicting-outputs
 你也可以直接通过以下入口参与：
 
 - 官网: https://www.anoxia.cn/
-- Issue: https://github.com/zhang52514/NotePadClient/issues
-- Pull Requests: https://github.com/zhang52514/NotePadClient/pulls
+- Issues: https://gitee.com/crazydavet/AnoxiaClient/issues
+- Pull Requests: https://gitee.com/crazydavet/AnoxiaClient/pulls
 
 ---
 

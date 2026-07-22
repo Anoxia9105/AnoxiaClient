@@ -12,7 +12,7 @@
 namespace {
 
 constexpr wchar_t kSingleInstanceMutexName[] =
-  L"Anoxia.NotePadClient.SingleInstance";
+  L"Anoxia.Client.SingleInstance";
 constexpr wchar_t kMainWindowTitle[] = L"anoxia Im";
 constexpr ULONG_PTR kAnoxiaUriCopyDataId = 0x414E4F58;  // 'ANOX'
 

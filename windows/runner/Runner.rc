@@ -92,9 +92,9 @@ BEGIN
             VALUE "CompanyName", "cn.anoxia" "\0"
             VALUE "FileDescription", "anoxia Im" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "notepadclient" "\0"
+            VALUE "InternalName", "anoxiaclient" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 cn.anoxia. All rights reserved." "\0"
-            VALUE "OriginalFilename", "notepadclient.exe" "\0"
+            VALUE "OriginalFilename", "anoxiaclient.exe" "\0"
             VALUE "ProductName", "anoxia Im" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
