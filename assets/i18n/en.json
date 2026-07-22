@@ -164,6 +164,7 @@
   "chat_unpin": "Unpin conversation",
   "chat_pin": "Pin conversation",
   "chat_do_not_disturb": "Do not disturb",
+  "chat_enable_notifications": "Enable alerts",
   "chat_do_not_disturb_hint": "New messages will not show notifications",
   "chat_mark_as_read": "Mark as read",
   "chat_leave_group": "Leave group",

@@ -65,10 +65,10 @@ class ChatRoomMemberVO {
           : int.tryParse(json['roleId']?.toString() ?? ''),
       // 兼容后端 yyyy-MM-dd HH:mm:ss 格式的日期字符串
       joinTime: _parseDate(json['joinTime']),
-      nickName: json['nickName'],
-      avatar: json['avatar'],
+      nickName: json['nickName']?.toString(),
+      avatar: json['avatar']?.toString(),
       sex: json['sex']?.toString(),
-      phoneNumber: json['phoneNumber'],
+      phoneNumber: (json['phoneNumber'] ?? json['phonenumber'])?.toString(),
       status: json['status']?.toString(),
       loginDate: _parseDate(json['loginDate']),
       onlineStatus: json['onlineStatus'] ?? false,
@@ -105,14 +105,18 @@ class ChatRoomMemberVO {
   /// 创建当前实例的变体副本
   ///
   /// 用于响应式状态管理中的局部更新（如在线状态变更）
-  ChatRoomMemberVO copyWith({bool? onlineStatus, String? nickName}) {
+  ChatRoomMemberVO copyWith({
+    bool? onlineStatus,
+    String? nickName,
+    String? avatar,
+  }) {
     return ChatRoomMemberVO(
       roomId: roomId,
       userId: userId,
       roleId: roleId,
       joinTime: joinTime,
-      nickName: nickName,
-      avatar: avatar,
+      nickName: nickName ?? this.nickName,
+      avatar: avatar ?? this.avatar,
       sex: sex,
       phoneNumber: phoneNumber,
       status: status,

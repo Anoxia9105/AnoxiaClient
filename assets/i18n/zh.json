@@ -164,6 +164,7 @@
   "chat_unpin": "取消置顶",
   "chat_pin": "置顶会话",
   "chat_do_not_disturb": "免打扰",
+  "chat_enable_notifications": "恢复通知",
   "chat_do_not_disturb_hint": "开启后新消息不会弹出通知",
   "chat_mark_as_read": "标为已读",
   "chat_leave_group": "退出群聊",

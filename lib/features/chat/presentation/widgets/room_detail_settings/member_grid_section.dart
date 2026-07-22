@@ -55,23 +55,22 @@ class MemberGridSection extends ConsumerWidget {
 
           if (index >= members.length) return const SizedBox.shrink();
           final member = members[index];
+          final displayName = member.nickName?.trim().isNotEmpty == true
+              ? member.nickName!.trim()
+              : 'chat_unknown_user'.tr();
 
           return GestureDetector(
             onTap: onMemberTap == null ? null : () => onMemberTap!(member),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AvatarWidget(
-                  url: member.avatar,
-                  name: member.nickName,
-                  size: 36,
-                ),
+                AvatarWidget(url: member.avatar, name: displayName, size: 36),
                 const SizedBox(height: 4),
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      member.nickName ?? '?',
+                      displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

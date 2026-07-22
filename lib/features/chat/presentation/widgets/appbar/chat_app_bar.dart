@@ -6,6 +6,7 @@ import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_call_butto
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -35,6 +36,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     // 用新的 Provider：只有当前房间成员变化才重建，不受其他房间影响
     final members = ref.watch(roomMembersProvider(roomId));
+    final contactMap = ref.watch(contactListServiceProvider).value;
 
     /// 是否有人正在输入（通过高优消息监听）
     final isTyping = ref.watch(
@@ -51,9 +53,30 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         data: (_) {
           if (room == null) return const SizedBox.shrink();
 
+          final peerContact = room.peerId == null
+              ? null
+              : contactMap?[room.peerId];
+          final peerDisplayName = peerContact?.remark?.trim().isNotEmpty == true
+              ? peerContact!.remark!.trim()
+              : peerContact?.nickName?.trim();
           final displayTitle = room.roomType == 1
               ? '${room.roomName} (${members.length})'
-              : (room.roomName ?? 'appbar_conversation_detail'.tr());
+              : (peerDisplayName?.isNotEmpty == true
+                    ? peerDisplayName!
+                    : (room.roomName ?? 'appbar_conversation_detail'.tr()));
+
+          // 手机端标题保持简洁：只显示名字；对方输入时用输入状态替换名字。
+          if (DeviceUtil.isRealMobile()) {
+            return Text(
+              room.roomType == 0 && isTyping
+                  ? 'appbar_user_typing'.tr()
+                  : displayTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            );
+          }
+
           return Padding(
             padding: const EdgeInsets.all(10.0),
             child: Row(

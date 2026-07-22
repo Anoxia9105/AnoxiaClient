@@ -40,7 +40,7 @@ class ContactSelectionState {
 /// 联系人选择控制器
 ///
 /// 管理联系人页面的导航状态，支持切换不同视图
-@riverpod
+@Riverpod(keepAlive: true)
 class ContactSelection extends _$ContactSelection {
   @override
   ContactSelectionState build() => ContactSelectionState();

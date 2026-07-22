@@ -29,7 +29,7 @@ final class ContactSelectionProvider
         argument: null,
         retry: null,
         name: r'contactSelectionProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );

@@ -13,6 +13,7 @@ import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 
 /// 消息展示视图数据（不可变）
 class MessageBubbleViewData {
@@ -56,6 +57,13 @@ class MessageBubbleViewData {
     final senderMember = roomMembers
         .where((member) => member.userId == message.senderId)
         .firstOrNull;
+    final senderContact = ref
+        .watch(contactListServiceProvider)
+        .value?[message.senderId];
+    final memberName = senderMember?.nickName?.trim();
+    final contactName = senderContact?.remark?.trim().isNotEmpty == true
+        ? senderContact!.remark
+        : senderContact?.nickName;
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -76,8 +84,15 @@ class MessageBubbleViewData {
       needsBubble: message.needsBubble,
       senderName: isCurrentUser
           ? user?.nickName
-          : _displaySenderName(message.senderId, senderMember?.nickName),
-      senderAvatar: isCurrentUser ? user?.avatar : senderMember?.avatar,
+          : _displaySenderName(
+              message.senderId,
+              memberName?.isNotEmpty == true ? memberName : contactName,
+            ),
+      senderAvatar: isCurrentUser
+          ? user?.avatar
+          : ((senderMember?.avatar?.trim().isNotEmpty == true)
+                ? senderMember?.avatar
+                : senderContact?.avatar),
       bubbleColor: bubbleColor,
       textColor: textColor,
       horizontalPadding: DeviceUtil.isRealMobile() ? 8 : 50,

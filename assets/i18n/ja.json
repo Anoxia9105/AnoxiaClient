@@ -164,6 +164,7 @@
   "chat_unpin": "ピンを外す",
   "chat_pin": "会話をピン留め",
   "chat_do_not_disturb": "通知しない",
+  "chat_enable_notifications": "通知を再開",
   "chat_do_not_disturb_hint": "オンにすると新着メッセージ通知を表示しません",
   "chat_mark_as_read": "既読にする",
   "chat_leave_group": "グループを離れる",

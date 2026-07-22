@@ -3,6 +3,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/ChatRoomMemberVO.dart';
 import '../../../network/DioClient.dart';
 import '../../../logs/talker.dart';
+import '../../auth/auth_controller.dart';
+import '../../contact/contact_list_controller.dart';
 
 part 'room_member_service.g.dart';
 
@@ -10,7 +12,33 @@ part 'room_member_service.g.dart';
 @riverpod
 List<ChatRoomMemberVO> roomMembers(Ref ref, String roomId) {
   final state = ref.watch(roomMemberServiceProvider);
-  return state[roomId]?.values.toList() ?? [];
+  final members = state[roomId]?.values.toList() ?? [];
+  final contacts = ref.watch(contactListServiceProvider).value;
+  final currentUser = ref.watch(authControllerProvider).value;
+
+  // 成员接口刚返回空资料或本地仍在同步时，用已缓存的本人/联系人资料补齐，
+  // 避免消息和成员列表短暂显示“？”、“用户1”之类的占位内容。
+  return members.map((member) {
+    final rawName = member.nickName?.trim() ?? '';
+    final rawAvatar = member.avatar?.trim() ?? '';
+    if (rawName.isNotEmpty && rawAvatar.isNotEmpty) return member;
+
+    final isCurrentUser = member.userId == currentUser?.userId;
+    final contact = contacts?[member.userId];
+    final fallbackName = isCurrentUser
+        ? currentUser?.nickName
+        : (contact?.remark?.trim().isNotEmpty == true
+              ? contact!.remark
+              : contact?.nickName);
+    final fallbackAvatar = isCurrentUser
+        ? currentUser?.avatar
+        : contact?.avatar;
+
+    return member.copyWith(
+      nickName: rawName.isEmpty ? fallbackName : member.nickName,
+      avatar: rawAvatar.isEmpty ? fallbackAvatar : member.avatar,
+    );
+  }).toList();
 }
 
 /// 获取指定房间的成员数量
@@ -74,11 +102,12 @@ class RoomMemberService extends _$RoomMemberService {
       if (data is! List) return;
 
       // 构建 userId -> ChatRoomMemberVO 的 Map，实现 O(1) 查询
-      final Map<int, ChatRoomMemberVO> members = {
-        for (final e in data)
-          if (ChatRoomMemberVO.fromJson(e).userId != null)
-            ChatRoomMemberVO.fromJson(e).userId!: ChatRoomMemberVO.fromJson(e),
-      };
+      final Map<int, ChatRoomMemberVO> members = {};
+      for (final e in data) {
+        if (e is! Map) continue;
+        final member = ChatRoomMemberVO.fromJson(Map<String, dynamic>.from(e));
+        if (member.userId != null) members[member.userId!] = member;
+      }
 
       state = {...state, roomId: members};
       _syncedRoomIds.add(roomId);
