@@ -4,6 +4,7 @@ import 'package:anoxia/common/constants/API.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
@@ -168,10 +169,14 @@ class RoomListService extends _$RoomListService {
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
         if (shouldShowLocalNotification) {
+          final notificationBody =
+              SystemMessageFormatter.isSystemMessage(newMessage)
+              ? SystemMessageFormatter.display(newMessage).text
+              : newMessage.content;
           NotificationHelper().show(
             id: newMessage.roomId.hashCode,
             title: oldRoom.roomName ?? tr('chat_new_message'),
-            body: newMessage.content,
+            body: notificationBody,
             payload: newMessage.roomId,
             avatarUrl: oldRoom.roomAvatar,
           );
