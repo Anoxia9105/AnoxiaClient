@@ -38,7 +38,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: false,
+        centerTitle: DeviceUtil.isRealMobile() ? true : false,
         titleSpacing: 16,
         leading: () {
           /// 如果是移动端 显示菜单按钮 打开个人中心抽屉
