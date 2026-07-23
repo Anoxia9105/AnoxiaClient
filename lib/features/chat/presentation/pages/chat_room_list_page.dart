@@ -119,6 +119,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
           Builder(
             builder: (context) {
               return IconButton(
+                mouseCursor: SystemMouseCursors.click,
                 icon: const HugeIcon(
                   icon: HugeIcons.strokeRoundedLayerAdd,
                   size: 20,

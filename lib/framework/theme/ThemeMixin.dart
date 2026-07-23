@@ -122,6 +122,7 @@ mixin ThemeMixin {
     // IconButton
     final iconButtonTheme = IconButtonThemeData(
       style: ButtonStyle(
+        mouseCursor: const WidgetStatePropertyAll(SystemMouseCursors.click),
         foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.disabled)) {
             return colorWithAlpha(colorScheme.onSurface, 0.38);

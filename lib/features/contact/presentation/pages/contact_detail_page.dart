@@ -58,36 +58,47 @@ class ContactDetail extends ConsumerWidget {
           Builder(
             builder: (context) {
               return IconButton(
+                mouseCursor: SystemMouseCursors.click,
                 onPressed: () {
                   Function? close;
                   close = Toast.showWidget(
                     context,
-                    direction: PreferDirection.rightTop,
+                    direction: PreferDirection.bottomRight,
                     child: Material(
                       color: Colors.transparent,
                       child: BubbleWidget(
-                        arrowDirection: AxisDirection.right,
-                        arrowOffset: 25,
+                        arrowDirection: AxisDirection.up,
+                        arrowOffset: 95,
+                        arrowWidth: 13,
+
                         backgroundColor: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        shadows: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                         border: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                           width: 0.5,
                         ),
                         contentBuilder: (context) => Container(
-                          constraints: const BoxConstraints(
-                            maxWidth: 200,
-                            maxHeight: 400,
+                          // 限制宽度，高改为自动适应
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 2,
                           ),
-                          padding: const EdgeInsets.all(8),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              ListTile(
-                                leading: const HugeIcon(
-                                  icon: HugeIcons.strokeRoundedEdit01,
-                                  size: 20,
-                                ),
-                                title: Text('contact_edit_remark'.tr()),
+                              _buildMenuItem(
+                                icon: HugeIcons.strokeRoundedEdit01,
+                                title: 'contact_edit_remark'.tr(),
                                 onTap: () async {
                                   close?.call();
                                   await _showEditRemarkDialog(
@@ -97,15 +108,11 @@ class ContactDetail extends ConsumerWidget {
                                     detailAsync.asData?.value.remark,
                                   );
                                 },
-                                dense: true,
                               ),
-                              ListTile(
-                                dense: true,
-                                leading: const HugeIcon(
-                                  icon: HugeIcons.strokeRoundedDelete01,
-                                  size: 20,
-                                ),
-                                title: Text('contact_delete'.tr()),
+                              _buildMenuItem(
+                                icon: HugeIcons.strokeRoundedDelete01,
+                                title: 'contact_delete'.tr(),
+                                isDestructive: true, // 可选：删除项标红
                                 onTap: () async {
                                   close?.call();
                                   await _showDeleteConfirmDialog(
@@ -136,6 +143,43 @@ class ContactDetail extends ConsumerWidget {
           child: Text(
             'contact_load_failed_with_error'.tr(args: [err.toString()]),
           ),
+        ),
+      ),
+    );
+  }
+
+  // 提取精简的菜单项组件，替代默认较厚重的 ListTile
+  Widget _buildMenuItem({
+    required dynamic icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return InkWell(
+      mouseCursor: SystemMouseCursors.click,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            HugeIcon(
+              icon: icon,
+              size: 15,
+              color: isDestructive ? Colors.red : null,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDestructive ? Colors.red : null,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

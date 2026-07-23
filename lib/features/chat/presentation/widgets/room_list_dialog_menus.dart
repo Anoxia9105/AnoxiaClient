@@ -40,93 +40,118 @@ class RoomListDialogMenus {
           padding: const EdgeInsets.only(right: 4),
           child: BubbleWidget(
             arrowDirection: AxisDirection.up,
-            arrowOffset: isMobile ? 140 : 25,
+            arrowOffset: isMobile ? 130 : 25,
             backgroundColor: Theme.of(context).colorScheme.surface,
+            // 1. 增加精致圆角与柔和阴影
+            borderRadius: BorderRadius.circular(10),
+            shadows: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
             border: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.4),
               width: 0.5,
             ),
             contentBuilder: (context) => Container(
-              constraints: BoxConstraints(
-                maxWidth: isMobile ? 160 : 220,
-                maxHeight: 600,
-              ),
-              padding: const EdgeInsets.all(8),
+              // 2. 紧凑的宽度与高度控制
+              constraints: BoxConstraints(maxWidth: isMobile ? 120 : 140),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 3),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 创建群聊按钮
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        /// 移动端跳转页面，桌面端显示对话框
-                        if (DeviceUtil.isRealMobile()) {
-                          const CreateGroupRoute().push(
-                            appNavigatorKey.currentContext!,
-                          );
-                          close?.call();
-                          return;
-                        }
-
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) {
-                            return const CreateChatDialogWidget();
-                          },
-                        );
-                        close?.call();
-                      },
-                      label: Text('chat_create_group'.tr()),
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedChatting01,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  // 添加好友按钮
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        presentAdaptivePage(
+                  // 创建群聊
+                  _buildMenuItem(
+                    context: context,
+                    icon: HugeIcons.strokeRoundedChatting01,
+                    title: 'chat_create_group'.tr(),
+                    onTap: () {
+                      close?.call();
+                      if (DeviceUtil.isRealMobile()) {
+                        const CreateGroupRoute().push(
                           appNavigatorKey.currentContext!,
-                          builder: (_) => const AddFriendPage(),
                         );
-                        close?.call();
-                      },
-                      label: Text('chat_add_friend'.tr()),
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedUserAdd01,
-                        size: 18,
-                      ),
-                    ),
+                        return;
+                      }
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const CreateChatDialogWidget(),
+                      );
+                    },
+                  ),
+                  // 添加好友
+                  _buildMenuItem(
+                    context: context,
+                    icon: HugeIcons.strokeRoundedUserAdd01,
+                    title: 'chat_add_friend'.tr(),
+                    onTap: () {
+                      close?.call();
+                      presentAdaptivePage(
+                        appNavigatorKey.currentContext!,
+                        builder: (_) => const AddFriendPage(),
+                      );
+                    },
                   ),
                   // 扫一扫
                   if (isMobile)
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          close?.call();
-                          Navigator.of(appNavigatorKey.currentContext!).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ScanQrPage(),
-                            ),
-                          );
-                        },
-                        label: Text('chat_scan_qr_code'.tr()),
-                        icon: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedScan,
-                          size: 18,
-                        ),
-                      ),
+                    _buildMenuItem(
+                      context: context,
+                      icon: HugeIcons.strokeRoundedScan,
+                      title: 'chat_scan_qr_code'.tr(),
+                      onTap: () {
+                        close?.call();
+                        Navigator.of(appNavigatorKey.currentContext!).push(
+                          MaterialPageRoute(builder: (_) => const ScanQrPage()),
+                        );
+                      },
                     ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildMenuItem({
+    required BuildContext context,
+    required dynamic icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final color = Theme.of(context).colorScheme.onSurface;
+    return InkWell(
+      mouseCursor: SystemMouseCursors.click,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        child: Row(
+          // 核心：设置水平居中
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            HugeIcon(
+              icon: icon,
+              size: 16,
+              color: color.withValues(alpha: 0.85),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w400,
+                color: color,
+              ),
+              maxLines: 1,
+            ),
+          ],
         ),
       ),
     );

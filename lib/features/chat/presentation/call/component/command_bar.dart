@@ -266,6 +266,7 @@ class CommandBar extends ConsumerWidget {
               Tooltip(
                 message: label,
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
@@ -329,6 +330,7 @@ class CommandBar extends ConsumerWidget {
         child: Tooltip(
           message: label,
           child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
             borderRadius: BorderRadius.circular(10),
             onTap: onTap,
             child: Padding(

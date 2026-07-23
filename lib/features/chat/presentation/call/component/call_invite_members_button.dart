@@ -9,6 +9,7 @@ import 'package:anoxia/framework/provider/chat/call/Channel.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class CallInviteMembersButton extends ConsumerWidget {
   const CallInviteMembersButton({super.key, required this.state});
@@ -17,10 +18,31 @@ class CallInviteMembersButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton.filledTonal(
-      tooltip: '邀请成员',
-      onPressed: () => _showMembers(context, ref),
-      icon: const Icon(Icons.person_add_alt_1_rounded),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.15),
+          width: 0.5,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Tooltip(
+          message: '邀请成员',
+          child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => _showMembers(context, ref),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedAddTeam, size: 18),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
