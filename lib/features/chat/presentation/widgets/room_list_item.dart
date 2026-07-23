@@ -188,28 +188,6 @@ class RoomListItem extends ConsumerWidget {
       ),
     );
 
-    final mobileTile = roomId == null
-        ? tile
-        : _MobileSwipeActionPane(
-            isPinned: isPinned,
-            isDoNotDisturb: isDoNotDisturb,
-            onToggleNotifications: () =>
-                ref.read(doNotDisturbRoomsProvider.notifier).toggle(roomId),
-            onTogglePin: () =>
-                ref.read(pinnedRoomsProvider.notifier).toggle(roomId),
-            onDelete: () async {
-              final confirmed = await _showDeleteConversationConfirm(context);
-              if (!confirmed || !context.mounted) return;
-              await ref
-                  .read(roomListServiceProvider.notifier)
-                  .leaveRoom(roomId);
-              if (ref.read(activeRoomIdProvider) == roomId) {
-                ref.read(activeRoomIdProvider.notifier).setActive(null);
-              }
-            },
-            child: tile,
-          );
-
     return GestureDetector(
       // 右键点击（桌面端）显示上下文菜单
       onSecondaryTapDown: (details) async {
@@ -240,7 +218,7 @@ class RoomListItem extends ConsumerWidget {
           );
         }
       },
-      child: DeviceUtil.isRealMobile() ? mobileTile : tile,
+      child: tile,
     );
   }
 
@@ -270,6 +248,7 @@ class RoomListItem extends ConsumerWidget {
     final isAdmin = ref.read(
       isRoomAdminProvider((roomId, currentUser?.userId ?? 0)),
     );
+    final isDoNotDisturb = ref.read(doNotDisturbRoomsProvider).contains(roomId);
 
     final position = RelativeRect.fromLTRB(
       globalPosition.dx,
@@ -285,6 +264,15 @@ class RoomListItem extends ConsumerWidget {
             : HugeIcons.strokeRoundedPin,
         label: isPinned ? 'chat_unpin'.tr() : 'chat_pin'.tr(),
         value: 'pin',
+      ),
+      _buildMenuItem(
+        icon: isDoNotDisturb
+            ? Icons.notifications_active_outlined
+            : Icons.notifications_off_outlined,
+        label: isDoNotDisturb
+            ? 'chat_enable_notifications'.tr()
+            : 'chat_do_not_disturb'.tr(),
+        value: 'notifications',
       ),
       _buildMenuItem(
         icon: HugeIcons.strokeRoundedCheckmarkBadge01,
@@ -325,6 +313,9 @@ class RoomListItem extends ConsumerWidget {
     switch (result) {
       case 'pin':
         await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
+        break;
+      case 'notifications':
+        await ref.read(doNotDisturbRoomsProvider.notifier).toggle(roomId);
         break;
       case 'read':
         roomList.markAsRead(roomId);
@@ -388,171 +379,13 @@ class RoomListItem extends ConsumerWidget {
       height: 36,
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 16, color: color),
+          if (icon is IconData)
+            Icon(icon, size: 16, color: color)
+          else
+            HugeIcon(icon: icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(label, style: TextStyle(fontSize: 13, color: color)),
         ],
-      ),
-    );
-  }
-}
-
-class _MobileSwipeActionPane extends StatefulWidget {
-  const _MobileSwipeActionPane({
-    required this.isPinned,
-    required this.isDoNotDisturb,
-    required this.onToggleNotifications,
-    required this.onTogglePin,
-    required this.onDelete,
-    required this.child,
-  });
-
-  final bool isPinned;
-  final bool isDoNotDisturb;
-  final Future<void> Function() onToggleNotifications;
-  final Future<void> Function() onTogglePin;
-  final Future<void> Function() onDelete;
-  final Widget child;
-
-  @override
-  State<_MobileSwipeActionPane> createState() => _MobileSwipeActionPaneState();
-}
-
-class _MobileSwipeActionPaneState extends State<_MobileSwipeActionPane> {
-  static const double _actionWidth = 76;
-  static const double _menuWidth = _actionWidth * 3;
-  double _offset = 0;
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _offset = (_offset + details.delta.dx).clamp(-_menuWidth, 0).toDouble();
-    });
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    final shouldOpen =
-        _offset.abs() > _menuWidth * 0.28 ||
-        (details.primaryVelocity ?? 0) < -350;
-    setState(() => _offset = shouldOpen ? -_menuWidth : 0);
-  }
-
-  Future<void> _run(Future<void> Function() action) async {
-    setState(() => _offset = 0);
-    await action();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _SwipeAction(
-                    width: _actionWidth,
-                    icon: widget.isDoNotDisturb
-                        ? Icons.notifications_active_outlined
-                        : Icons.notifications_off_outlined,
-                    label: widget.isDoNotDisturb
-                        ? 'chat_enable_notifications'.tr()
-                        : 'chat_do_not_disturb'.tr(),
-                    background: colorScheme.secondaryContainer,
-                    foreground: colorScheme.onSecondaryContainer,
-                    onTap: () => _run(widget.onToggleNotifications),
-                  ),
-                  _SwipeAction(
-                    width: _actionWidth,
-                    icon: widget.isPinned
-                        ? Icons.push_pin_outlined
-                        : Icons.push_pin_rounded,
-                    label: widget.isPinned
-                        ? 'chat_unpin'.tr()
-                        : 'chat_pin'.tr(),
-                    background: colorScheme.primaryContainer,
-                    foreground: colorScheme.onPrimaryContainer,
-                    onTap: () => _run(widget.onTogglePin),
-                  ),
-                  _SwipeAction(
-                    width: _actionWidth,
-                    icon: Icons.delete_outline_rounded,
-                    label: 'chat_delete_conversation'.tr(),
-                    background: colorScheme.errorContainer,
-                    foreground: colorScheme.onErrorContainer,
-                    onTap: () => _run(widget.onDelete),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            transform: Matrix4.translationValues(_offset, 0, 0),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onHorizontalDragUpdate: _handleDragUpdate,
-              onHorizontalDragEnd: _handleDragEnd,
-              child: widget.child,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SwipeAction extends StatelessWidget {
-  const _SwipeAction({
-    required this.width,
-    required this.icon,
-    required this.label,
-    required this.background,
-    required this.foreground,
-    required this.onTap,
-  });
-
-  final double width;
-  final IconData icon;
-  final String label;
-  final Color background;
-  final Color foreground;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox(
-          width: width,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 21, color: foreground),
-              const SizedBox(height: 5),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: foreground,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
