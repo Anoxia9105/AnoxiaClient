@@ -113,7 +113,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth = _safeMaxWidth(constraints.maxWidth);
+        final maxWidth = _safeMaxWidth(context, constraints.maxWidth);
         final targetWidth = _resolveTargetWidth(context, maxWidth);
         final previewSource = _linkPreviewSource();
 
@@ -180,53 +180,146 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   /// 计算消息内容的目标宽度
-  double _safeMaxWidth(double constraintWidth) {
+  double _safeMaxWidth(BuildContext context, double constraintWidth) {
     if (!constraintWidth.isFinite || constraintWidth <= 0) {
       return MessageLinkPreview.maxCardWidth;
     }
-    return (constraintWidth * 0.72).clamp(64.0, constraintWidth).toDouble();
+    if (constraintWidth <= 64) return constraintWidth;
+
+    final viewportLimit = MediaQuery.sizeOf(context).width * 0.72;
+    final availableWidth = viewportLimit < constraintWidth
+        ? viewportLimit
+        : constraintWidth;
+    return availableWidth.clamp(64.0, constraintWidth).toDouble();
   }
 
   double _resolveTargetWidth(BuildContext context, double maxWidth) {
-    if (_hasEmbed()) return maxWidth;
-
-    final plain = _controller?.document.toPlainText() ?? '';
-    final trimmed = plain.replaceAll(RegExp(r'\n+$'), '').trim();
-    if (trimmed.isEmpty) {
-      return 64;
-    }
-
-    if (trimmed.contains('\n')) {
-      return maxWidth;
-    }
+    if (_hasBlockEmbed()) return maxWidth;
 
     final hasLinkPreview =
         MessageLinkPreview.extractFirstUrl(_linkPreviewSource()) != null;
-
-    final textStyle = DefaultTextStyle.of(
-      context,
-    ).style.copyWith(fontSize: 15, height: 1.35);
-
-    final painter = TextPainter(
-      text: TextSpan(text: trimmed, style: textStyle),
-      textDirection: ui.TextDirection.ltr,
-      maxLines: 1,
-    )..layout();
-
-    final estimated = painter.width.ceilToDouble();
     final minWidth = hasLinkPreview ? MessageLinkPreview.minCardWidth : 64;
     final effectiveMinWidth = minWidth.clamp(0.0, maxWidth).toDouble();
-    return estimated.clamp(effectiveMinWidth, maxWidth).toDouble();
+    final measuredWidth = _measureInlineContentWidth(context, maxWidth);
+    return measuredWidth.clamp(effectiveMinWidth, maxWidth).toDouble();
   }
 
-  bool _hasEmbed() {
+  double _measureInlineContentWidth(BuildContext context, double maxWidth) {
+    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    if (opsJson is! List) return 64;
+
+    final baseStyle = TextStyle(
+      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+      fontSize: 14,
+      height: 1,
+    );
+    final textScaler = MediaQuery.textScalerOf(context);
+    final spans = <InlineSpan>[];
+    final placeholders = <PlaceholderDimensions>[];
+    var hasVisibleContent = false;
+
+    for (final op in opsJson) {
+      if (op is! Map) continue;
+      final insert = op['insert'];
+      final attributes = op['attributes'];
+
+      if (insert is String) {
+        if (insert.replaceAll('\n', '').isNotEmpty) hasVisibleContent = true;
+        spans.add(
+          TextSpan(
+            text: insert,
+            style: _measurementStyle(baseStyle, attributes),
+          ),
+        );
+        continue;
+      }
+
+      if (insert is! Map || !insert.containsKey('mention')) continue;
+      hasVisibleContent = true;
+
+      final mentionText = _mentionText(insert['mention']);
+      final mentionStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
+      final mentionPainter = TextPainter(
+        text: TextSpan(text: mentionText, style: mentionStyle),
+        textDirection: ui.TextDirection.ltr,
+        textScaler: textScaler,
+        maxLines: 1,
+      )..layout();
+
+      // 与 QuillMentionBuild 的左右 margin(4) + padding(8) 保持一致。
+      final mentionWidth = mentionPainter.width + 12;
+      final mentionHeight = mentionPainter.height + 4;
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: SizedBox(width: mentionWidth, height: mentionHeight),
+        ),
+      );
+      placeholders.add(
+        PlaceholderDimensions(
+          size: Size(mentionWidth, mentionHeight),
+          alignment: PlaceholderAlignment.middle,
+        ),
+      );
+    }
+
+    if (!hasVisibleContent) return 64;
+
+    final painter = TextPainter(
+      text: TextSpan(style: baseStyle, children: spans),
+      textDirection: ui.TextDirection.ltr,
+      textScaler: textScaler,
+    );
+    painter
+      ..setPlaceholderDimensions(placeholders)
+      ..layout(maxWidth: maxWidth);
+
+    var widestLine = 0.0;
+    for (final line in painter.computeLineMetrics()) {
+      if (line.width > widestLine) widestLine = line.width;
+    }
+
+    // 给字形取整和 Quill 行布局留少量余量，避免临界宽度提前换行。
+    return (widestLine.ceilToDouble() + 2).clamp(0.0, maxWidth).toDouble();
+  }
+
+  TextStyle _measurementStyle(TextStyle baseStyle, dynamic attributes) {
+    if (attributes is! Map) return baseStyle;
+
+    return baseStyle.copyWith(
+      fontWeight: attributes['bold'] == true ? FontWeight.bold : null,
+      fontStyle: attributes['italic'] == true ? FontStyle.italic : null,
+      decoration:
+          attributes['underline'] == true || attributes['strike'] == true
+          ? TextDecoration.combine([
+              if (attributes['underline'] == true) TextDecoration.underline,
+              if (attributes['strike'] == true) TextDecoration.lineThrough,
+            ])
+          : null,
+    );
+  }
+
+  String _mentionText(dynamic rawData) {
+    try {
+      final dynamic data = rawData is String ? jsonDecode(rawData) : rawData;
+      if (data is Map) {
+        final userName = data['userName']?.toString().trim();
+        if (userName != null && userName.isNotEmpty) return '@$userName';
+      }
+    } catch (_) {
+      // 渲染器会使用占位名称；测量失败时保持相同的安全回退。
+    }
+    return '@--';
+  }
+
+  bool _hasBlockEmbed() {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
     if (opsJson is! List) return false;
 
     for (final op in opsJson) {
-      if (op['insert'] is Map) {
-        return true;
-      }
+      if (op is! Map) continue;
+      final insert = op['insert'];
+      if (insert is Map && !insert.containsKey('mention')) return true;
     }
     return false;
   }

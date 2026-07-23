@@ -251,10 +251,10 @@ class ContactDetail extends ConsumerWidget {
                                   .set(false);
                             }
                           },
-                    icon: const HugeIcon(
+                    icon: HugeIcon(
                       icon: HugeIcons.strokeRoundedChatting01,
                       size: 20,
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                     ),
                     label: isCreating
                         ? const CircularProgressIndicator()

@@ -1,6 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
@@ -131,8 +132,9 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
     if (!mounted) return;
 
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ContactDetail()),
+    await presentAdaptivePage(
+      context,
+      builder: (_) => const ContactDetail(),
     );
   }
 }

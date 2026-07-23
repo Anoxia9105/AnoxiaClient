@@ -37,60 +37,75 @@ class AddFriendSearchBar extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'add_friend_search_hint'.tr(),
-                hintStyle: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.outline,
-                  fontSize: 14.5,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: 'add_friend_search_hint'.tr(),
+                  hintStyle: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.outline,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                  suffixIcon: controller.text.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.clear_rounded,
+                            color: colorScheme.outline,
+                            size: 18,
+                          ),
+                          onPressed: onClear,
+                          splashRadius: 18,
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: colorScheme.outline,
-                  size: 19,
-                ),
-                suffixIcon: controller.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear_rounded,
-                          color: colorScheme.outline,
-                          size: 18,
-                        ),
-                        onPressed: onClear,
-                        splashRadius: 18,
-                      )
-                    : null,
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+                onSubmitted: onSubmitted,
+                onChanged: onChanged,
               ),
-              style: textTheme.bodyMedium?.copyWith(fontSize: 15),
-              onSubmitted: onSubmitted,
-              onChanged: onChanged,
             ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: isSearching ? null : onSearch,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(42, 42),
-              shape: const CircleBorder(),
-              padding: EdgeInsets.zero,
+            Padding(
+              padding: const EdgeInsets.all(5),
+              child: FilledButton(
+                onPressed: isSearching ? null : onSearch,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(42, 42),
+                  maximumSize: const Size(42, 42),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+                child: isSearching
+                    ? const SizedBox.square(
+                        dimension: 17,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.arrow_forward_rounded, size: 20),
+              ),
             ),
-            child: isSearching
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.arrow_forward_rounded, size: 20),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -103,7 +118,7 @@ class AddFriendSearchSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       itemCount: 6,
       separatorBuilder: (context, index) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
@@ -111,14 +126,14 @@ class AddFriendSearchSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: colorScheme.outlineVariant.withValues(alpha: 0.6),
             ),
           ),
           child: const Row(
             children: [
-              SkeletonBox(width: 52, height: 52, circle: true),
+              SkeletonBox(width: 46, height: 46, circle: true),
               SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -162,7 +177,7 @@ class AddFriendUserCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.7),
         ),
@@ -170,13 +185,13 @@ class AddFriendUserCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           onTap: isFriend ? null : onTapAdd,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                AvatarWidget(url: user.avatar, name: user.nickName, size: 52),
+                AvatarWidget(url: user.avatar, name: user.nickName, size: 46),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -278,13 +293,13 @@ class AddFriendEmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: colorScheme.shadow.withValues(alpha: 0.08),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -292,17 +307,17 @@ class AddFriendEmptyState extends StatelessWidget {
               ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedSearch02,
-                size: 72,
+                size: 48,
                 color: colorScheme.outline.withValues(alpha: 0.6),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
             Text(
               'add_friend_not_found'.tr(),
               style: textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
-                fontSize: 18,
+                fontSize: 17,
               ),
             ),
             const SizedBox(height: 10),
@@ -323,10 +338,10 @@ class AddFriendEmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(40),
+            padding: const EdgeInsets.all(26),
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(40),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
                   color: colorScheme.primary.withValues(alpha: 0.1),
@@ -337,17 +352,17 @@ class AddFriendEmptyState extends StatelessWidget {
             ),
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedUserAdd02,
-              size: 96,
+              size: 58,
               color: colorScheme.primary.withValues(alpha: 0.6),
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
           Text(
             'add_friend_search_to_add'.tr(),
             style: textTheme.titleLarge?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
-              fontSize: 20,
+              fontSize: 18,
             ),
           ),
           const SizedBox(height: 12),

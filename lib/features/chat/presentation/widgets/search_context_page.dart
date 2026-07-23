@@ -196,7 +196,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: colorScheme.shadow.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -421,7 +421,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
         TextSpan(
           text: keyword,
           style: textTheme.bodyMedium?.copyWith(
-            color: Colors.white,
+            color: colorScheme.onPrimary,
             backgroundColor: colorScheme.primary,
             fontWeight: FontWeight.w600,
           ),
@@ -681,14 +681,13 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     );
 
     return Scaffold(
-      backgroundColor: isDesktop
-          ? colorScheme.surfaceContainerLow
-          : colorScheme.surface,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           'search_context_title'.tr(),
           style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
+        centerTitle: DeviceUtil.isRealMobile(),
       ),
       body: SafeArea(
         child: isDesktop

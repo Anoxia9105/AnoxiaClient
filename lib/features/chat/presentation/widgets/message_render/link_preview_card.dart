@@ -368,8 +368,8 @@ class _ResolvedLinkPreview extends StatelessWidget {
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,
             onTap: () => _openLink(link),
-            child: SizedBox(
-              height: 92,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 92),
               child: Row(
                 children: [
                   _PreviewThumbnail(

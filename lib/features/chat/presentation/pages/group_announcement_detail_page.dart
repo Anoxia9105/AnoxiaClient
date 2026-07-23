@@ -11,10 +11,12 @@ class GroupAnnouncementDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final content =
         ref.watch(currentRoomProvider(roomId))?.roomDescription?.trim() ?? '';
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('chat_group_announcement_detail'.tr()),
         centerTitle: DeviceUtil.isRealMobile(),

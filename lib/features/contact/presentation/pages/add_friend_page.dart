@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend_widgets.dart';
 import 'package:anoxia/framework/domain/UserVO.dart';
@@ -56,6 +57,9 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     final contactListAsync = ref.watch(contactListServiceProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDesktop =
+        DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isWeb && DeviceUtil.isDesktop(context));
 
     final contactMap = contactListAsync.value ?? {};
     final contactIds = contactMap.keys.toSet();
@@ -76,7 +80,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
+            isDesktop ? Icons.close_rounded : Icons.arrow_back_ios_new_rounded,
             color: colorScheme.onSurface,
             size: 22,
           ),
@@ -86,59 +90,62 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         centerTitle: false,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            AddFriendSearchBar(
-              controller: _searchController,
-              isSearching: _isSearching,
-              onSearch: () => _performSearch(_searchController.text),
-              onClear: () {
-                _searchController.clear();
-                ref.read(userSearchServiceProvider.notifier).clearResults();
-                setState(() {});
-              },
-              onSubmitted: _performSearch,
-              onChanged: (_) => setState(() {}),
-            ),
-            Expanded(
-              child: _isSearching
-                  ? const AddFriendSearchSkeleton()
-                  : searchService.rows.isNotEmpty
-                  ? AnimationLimiter(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 12.0,
-                        ),
-                        itemCount: searchService.rows.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final user = searchService.rows[index];
-                          final isFriend = contactIds.contains(user.userId);
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: Column(
+              children: [
+                AddFriendSearchBar(
+                  controller: _searchController,
+                  isSearching: _isSearching,
+                  onSearch: () => _performSearch(_searchController.text),
+                  onClear: () {
+                    _searchController.clear();
+                    ref.read(userSearchServiceProvider.notifier).clearResults();
+                    setState(() {});
+                  },
+                  onSubmitted: _performSearch,
+                  onChanged: (_) => setState(() {}),
+                ),
+                Expanded(
+                  child: _isSearching
+                      ? const AddFriendSearchSkeleton()
+                      : searchService.rows.isNotEmpty
+                      ? AnimationLimiter(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                            itemCount: searchService.rows.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final user = searchService.rows[index];
+                              final isFriend = contactIds.contains(user.userId);
 
-                          return AnimationConfiguration.staggeredList(
-                            position: index,
-                            duration: const Duration(milliseconds: 260),
-                            child: SlideAnimation(
-                              verticalOffset: 28,
-                              child: FadeInAnimation(
-                                child: AddFriendUserCard(
-                                  user: user,
-                                  isFriend: isFriend,
-                                  onTapAdd: () => _showAddFriendDialog(user),
+                              return AnimationConfiguration.staggeredList(
+                                position: index,
+                                duration: const Duration(milliseconds: 220),
+                                child: SlideAnimation(
+                                  verticalOffset: 16,
+                                  child: FadeInAnimation(
+                                    child: AddFriendUserCard(
+                                      user: user,
+                                      isFriend: isFriend,
+                                      onTapAdd: () =>
+                                          _showAddFriendDialog(user),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                  : AddFriendEmptyState(
-                      hasKeyword: _searchController.text.isNotEmpty,
-                    ),
+                              );
+                            },
+                          ),
+                        )
+                      : AddFriendEmptyState(
+                          hasKeyword: _searchController.text.isNotEmpty,
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -184,6 +191,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: Container(
+            constraints: const BoxConstraints(maxWidth: 460),
             decoration: BoxDecoration(
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
@@ -193,7 +201,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
+                  color: colorScheme.shadow.withValues(alpha: 0.18),
                   blurRadius: 28,
                   offset: const Offset(0, 10),
                 ),
@@ -377,13 +385,13 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                             ),
                           ),
                           child: _isSending
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 24,
                                   width: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.5,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                                      colorScheme.onPrimary,
                                     ),
                                   ),
                                 )

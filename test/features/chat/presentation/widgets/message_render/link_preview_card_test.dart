@@ -62,6 +62,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('allows a narrow loading card to grow without overflowing', (
+      tester,
+    ) async {
+      final metadata = Completer<LinkPreviewMetadata>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: MessageLinkPreview(
+                text: 'https://example.com/a-very-long-preview-path',
+                maxWidth: 260,
+                metadataLoader: (_) => metadata.future,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     test('fetches and parses metadata in a background isolate', () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       addTearDown(() => server.close(force: true));

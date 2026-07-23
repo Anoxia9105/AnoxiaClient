@@ -1,6 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/BubbleDialog.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/pages/scan_qr_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
@@ -89,20 +90,9 @@ class RoomListDialogMenus {
                     width: double.infinity,
                     child: TextButton.icon(
                       onPressed: () {
-                        /// 移动端跳转页面，桌面端显示对话框
-                        if (DeviceUtil.isRealMobile()) {
-                          const AddFriendRoute().push(
-                            appNavigatorKey.currentContext!,
-                          );
-                          close?.call();
-                          return;
-                        }
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) {
-                            return const AddFriendPage();
-                          },
+                        presentAdaptivePage(
+                          appNavigatorKey.currentContext!,
+                          builder: (_) => const AddFriendPage(),
                         );
                         close?.call();
                       },

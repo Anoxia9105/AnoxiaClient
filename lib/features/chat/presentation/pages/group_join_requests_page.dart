@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -18,7 +19,11 @@ class _GroupJoinRequestsPageState extends State<GroupJoinRequestsPage> {
       setState(() => _future = GroupJoinService.requests(widget.roomId));
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('group_join_requests_title'.tr())),
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    appBar: AppBar(
+      title: Text('group_join_requests_title'.tr()),
+      centerTitle: DeviceUtil.isRealMobile(),
+    ),
     body: FutureBuilder<List<Map<String, dynamic>>>(
       future: _future,
       builder: (context, snapshot) {

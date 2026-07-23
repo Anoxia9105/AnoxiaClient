@@ -30,6 +30,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
   @override
   Widget build(BuildContext context) {
     final contactListAsync = ref.watch(contactListServiceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     final members = ref.watch(
       roomMemberServiceProvider.select(
         (s) => s[widget.roomId]?.values.toList() ?? const <ChatRoomMemberVO>[],
@@ -38,7 +39,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
     final currentMemberIds = members.map((e) => e.userId).toSet();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('member_add_title'.tr()),
         centerTitle: DeviceUtil.isRealMobile(),
@@ -50,7 +51,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceBright,
+                color: colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -59,10 +60,14 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.group, color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.group,
+                      color: colorScheme.onPrimary,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -79,7 +84,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                           'member_group_chat'.tr(),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.outline,
+                            color: colorScheme.outline,
                           ),
                         ),
                       ],
@@ -160,7 +165,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
+                    color: colorScheme.outlineVariant,
                   ),
                 ),
               ),
@@ -183,12 +188,13 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.surface,
+                                    color: colorScheme.surface,
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withAlpha(10),
+                                        color: colorScheme.shadow.withValues(
+                                          alpha: 0.08,
+                                        ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),

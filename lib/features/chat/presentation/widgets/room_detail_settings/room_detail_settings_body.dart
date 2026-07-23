@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
@@ -67,12 +68,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
             onAddMemberTap: !isGroup
                 ? null
                 : () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => AddMemberPage(
-                          roomId: roomId,
-                          roomName: currentRoom.roomName ?? '',
-                        ),
+                    presentAdaptivePage(
+                      context,
+                      builder: (_) => AddMemberPage(
+                        roomId: roomId,
+                        roomName: currentRoom.roomName ?? '',
                       ),
                     );
                   },
@@ -106,12 +106,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () async {
                 if (isGroup) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => GroupMemberListPage(
-                        roomId: roomId,
-                        roomName: currentRoom.roomName ?? '',
-                      ),
+                  await presentAdaptivePage(
+                    context,
+                    builder: (_) => GroupMemberListPage(
+                      roomId: roomId,
+                      roomName: currentRoom.roomName ?? '',
                     ),
                   );
                   return;
@@ -143,8 +142,9 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                     .selectContact(contact);
 
                 if (context.mounted) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ContactDetail()),
+                  await presentAdaptivePage(
+                    context,
+                    builder: (_) => const ContactDetail(),
                   );
                 }
               },
@@ -162,12 +162,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => GroupEditNamePage(
-                        roomId: roomId,
-                        initialName: currentRoom.roomName ?? '',
-                      ),
+                  presentAdaptivePage(
+                    context,
+                    builder: (_) => GroupEditNamePage(
+                      roomId: roomId,
+                      initialName: currentRoom.roomName ?? '',
                     ),
                   );
                 },
@@ -185,16 +184,15 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   size: isAdmin ? 18 : 14,
                 ),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => isAdmin
-                          ? GroupEditAnnouncementPage(
-                              roomId: roomId,
-                              initialAnnouncement:
-                                  currentRoom.roomDescription ?? '',
-                            )
-                          : GroupAnnouncementDetailPage(roomId: roomId),
-                    ),
+                  presentAdaptivePage(
+                    context,
+                    builder: (_) => isAdmin
+                        ? GroupEditAnnouncementPage(
+                            roomId: roomId,
+                            initialAnnouncement:
+                                currentRoom.roomDescription ?? '',
+                          )
+                        : GroupAnnouncementDetailPage(roomId: roomId),
                   );
                 },
               ),
@@ -257,10 +255,9 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   leading: const Icon(Icons.how_to_reg_outlined, size: 22),
                   title: Text('group_join_requests_title'.tr()),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => GroupJoinRequestsPage(roomId: roomId),
-                    ),
+                  onTap: () => presentAdaptivePage(
+                    context,
+                    builder: (_) => GroupJoinRequestsPage(roomId: roomId),
                   ),
                 ),
             ],
@@ -278,12 +275,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
             title: Text('search_context_title'.tr()),
             trailing: const Icon(Icons.arrow_forward_ios, size: 14),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SearchContextPage(
-                    roomId: roomId,
-                    roomName: currentRoom.roomName ?? '',
-                  ),
+              presentAdaptivePage(
+                context,
+                builder: (_) => SearchContextPage(
+                  roomId: roomId,
+                  roomName: currentRoom.roomName ?? '',
                 ),
               );
             },
@@ -388,9 +384,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
 
     if (context.mounted) {
-      Navigator.of(
+      await presentAdaptivePage(
         context,
-      ).push(MaterialPageRoute(builder: (_) => const ContactDetail()));
+        builder: (_) => const ContactDetail(),
+      );
     }
   }
 
