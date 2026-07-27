@@ -22,12 +22,24 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
     with WindowListener {
   _LiveRoomWindowData? _room;
   String? _screenSourceId;
+  String _initialTitle = '';
+  LiveVisibility _initialVisibility = LiveVisibility.public;
+  LiveSource _initialSource = LiveSource.camera;
 
   @override
   void initState() {
     super.initState();
     windowManager.setPreventClose(true);
     windowManager.addListener(this);
+
+    final args = jsonDecode(widget.controller.arguments);
+    _initialTitle = args['title']?.toString() ?? '';
+    _initialVisibility = args['visibility']?.toString() == 'PRIVATE'
+        ? LiveVisibility.private
+        : LiveVisibility.public;
+    _initialSource = args['source']?.toString() == 'SCREEN'
+        ? LiveSource.screen
+        : LiveSource.camera;
   }
 
   @override
@@ -58,7 +70,9 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
       locale: context.locale,
       home: room == null
           ? LivePreviewPage(
-              visibility: LiveVisibility.public,
+            visibility: _initialVisibility,
+            initialTitle: _initialTitle,
+            initialSource: _initialSource,
               onStart:
                   ({
                     required title,
@@ -75,7 +89,6 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
                       _room = room;
                       _screenSourceId = sourceId;
                     });
-                    await _openDanmakuWindow(room: room);
                   },
             )
           : LiveRoomPage(
@@ -123,34 +136,6 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
     );
   }
 
-  Future<void> _openDanmakuWindow({required _LiveRoomWindowData room}) async {
-    Rect? anchorBounds;
-    try {
-      anchorBounds = await windowManager.getBounds();
-    } catch (_) {}
-
-    final controller = await WindowController.create(
-      WindowConfiguration(
-        hiddenAtLaunch: true,
-        arguments: jsonEncode({
-          'type': 'live-danmaku',
-          'title': room.title,
-          'roomId': room.roomId,
-          'isHost': true,
-          'clientId': 'host-danmaku-${DateTime.now().millisecondsSinceEpoch}',
-          if (anchorBounds != null)
-            'anchorBounds': {
-              'left': anchorBounds.left,
-              'top': anchorBounds.top,
-              'right': anchorBounds.right,
-              'height': anchorBounds.height,
-            },
-        }),
-      ),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    await controller.show();
-  }
 }
 
 class _LiveRoomWindowData {

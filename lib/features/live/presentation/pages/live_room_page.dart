@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/network/DioClient.dart';
 import 'package:anoxia/framework/provider/live/live_room_controller.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
+
+part 'live_room_widgets.dart';
+part 'live_room_models.dart';
 
 enum LiveVisibility {
   public,
@@ -74,6 +78,9 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   static const _danmakuTopic = 'live-danmaku';
   static const _cohostRequestTopic = 'live-cohost-request';
   static const _cohostResponseTopic = 'live-cohost-response';
+  static const int _maxMessageCount = 200;
+  static const int _messageCharLimit = 300;
+  static const Duration _cohostRequestTimeout = Duration(seconds: 20);
 
   final TextEditingController _chatController = TextEditingController();
   final List<_LiveChatMessage> _messages = [
@@ -87,6 +94,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   bool _cohostActive = false;
   bool _initialMediaStarted = false;
   bool _joinMessageSent = false;
+  bool _handledAudienceDisconnected = false;
+  String _lastSentText = '';
+  DateTime? _lastSentAt;
+  Timer? _cohostRequestTimer;
 
   @override
   void initState() {
@@ -98,6 +109,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
 
   @override
   void dispose() {
+    _cohostRequestTimer?.cancel();
     _roomListener?.dispose();
     _chatController.dispose();
     if (widget.isHost) {
@@ -214,15 +226,29 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
           if (!widget.isHost) return;
           final identity = payload['identity']?.toString() ?? '';
           if (identity.isEmpty) return;
+          final action = payload['action']?.toString() ?? 'request';
+
+          if (action == 'cancel') {
+            final removed = _cohostRequests.remove(identity);
+            if (removed != null && mounted) {
+              setState(() {});
+              Toast.showNotificationNow('${removed.name} 取消了连麦申请');
+            }
+            return;
+          }
+
+          final existed = _cohostRequests.containsKey(identity);
           setState(() {
             _cohostRequests[identity] = _CohostRequest(
               identity: identity,
               name: payload['name']?.toString() ?? identity,
             );
           });
-          Toast.showNotificationNow(
-            '${_cohostRequests[identity]?.name ?? identity} 申请连麦',
-          );
+          if (!existed) {
+            Toast.showNotificationNow(
+              '${_cohostRequests[identity]?.name ?? identity} 申请连麦',
+            );
+          }
           break;
         case _cohostResponseTopic:
           if (widget.isHost) return;
@@ -230,11 +256,16 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
           final localIdentity = _localIdentity;
           if (identity != localIdentity) return;
           final accepted = payload['accepted'] == true;
+          final reason = payload['reason']?.toString();
+          _clearCohostRequestState();
           setState(() {
-            _cohostRequested = false;
             _cohostActive = accepted;
           });
-          Toast.showNotificationNow(accepted ? '主播已同意连麦' : '主播拒绝了连麦申请');
+          if (accepted) {
+            Toast.showNotificationNow('主播已同意连麦');
+          } else {
+            Toast.showNotificationNow(reason?.isNotEmpty == true ? reason! : '主播拒绝了连麦申请');
+          }
           if (accepted) {
             unawaited(_enableAudienceMic());
           }
@@ -314,15 +345,33 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   }
 
   void _addMessage(_LiveChatMessage message) {
-    if (message.text.trim().isEmpty) return;
+    final trimmed = message.text.trim();
+    if (trimmed.isEmpty) return;
+    final normalized = trimmed.length > _messageCharLimit
+        ? '${trimmed.substring(0, _messageCharLimit)}...'
+        : trimmed;
+
     setState(() {
-      _messages.add(message);
+      _messages.add(message.copyWith(text: normalized));
+      if (_messages.length > _maxMessageCount) {
+        _messages.removeRange(0, _messages.length - _maxMessageCount);
+      }
     });
   }
 
   Future<void> _sendMessage() async {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
+
+    final now = DateTime.now();
+    if (_lastSentText == text &&
+        _lastSentAt != null &&
+        now.difference(_lastSentAt!) < const Duration(seconds: 2)) {
+      Toast.showNotificationNow('发送过快，请稍后再试');
+      return;
+    }
+    _lastSentText = text;
+    _lastSentAt = now;
 
     final message = _LiveChatMessage(
       text: text,
@@ -351,16 +400,66 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     final identity = _localIdentity;
     if (identity.isEmpty) return;
 
+    final current = ref.read(
+      liveRoomControllerProvider(widget.roomId, widget.isHost),
+    );
+    if (current.value?.connectionState.name != 'connected') {
+      Toast.showNotificationNow('连接未就绪，请稍后再试');
+      return;
+    }
+
     setState(() => _cohostRequested = true);
+    _startCohostRequestTimer();
     try {
+      final participant = current.value?.room.localParticipant;
+      final name = _participantName(participant);
       await _publishLiveEvent(
         topic: _cohostRequestTopic,
-        payload: {'identity': identity, 'name': '观众 $identity'},
+        payload: {'identity': identity, 'name': name, 'action': 'request'},
       );
       Toast.showNotificationNow('已发送连麦申请');
     } catch (e) {
-      setState(() => _cohostRequested = false);
+      _clearCohostRequestState();
       Toast.showNotificationNow('连麦申请发送失败：$e');
+    }
+  }
+
+  Future<void> _cancelCohostRequest() async {
+    if (!_cohostRequested || _cohostActive) return;
+    final identity = _localIdentity;
+    if (identity.isEmpty) {
+      _clearCohostRequestState();
+      return;
+    }
+
+    _clearCohostRequestState();
+    try {
+      await _publishLiveEvent(
+        topic: _cohostRequestTopic,
+        payload: {'identity': identity, 'action': 'cancel'},
+      );
+      Toast.showNotificationNow('已取消连麦申请');
+    } catch (e) {
+      Toast.showNotificationNow('取消连麦申请失败：$e');
+    }
+  }
+
+  void _startCohostRequestTimer() {
+    _cohostRequestTimer?.cancel();
+    _cohostRequestTimer = Timer(_cohostRequestTimeout, () {
+      if (!mounted || !_cohostRequested || _cohostActive) return;
+      _clearCohostRequestState();
+      Toast.showNotificationNow('连麦申请超时，请稍后重试');
+    });
+  }
+
+  void _clearCohostRequestState() {
+    _cohostRequestTimer?.cancel();
+    _cohostRequestTimer = null;
+    if (mounted && _cohostRequested) {
+      setState(() => _cohostRequested = false);
+    } else {
+      _cohostRequested = false;
     }
   }
 
@@ -383,7 +482,11 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       }
       await _publishLiveEvent(
         topic: _cohostResponseTopic,
-        payload: {'identity': request.identity, 'accepted': accepted},
+        payload: {
+          'identity': request.identity,
+          'accepted': accepted,
+          'reason': accepted ? '主播已同意连麦' : '主播拒绝了连麦申请',
+        },
       );
     } catch (e) {
       Toast.showNotificationNow('处理连麦申请失败：$e');
@@ -405,515 +508,186 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         .toggleMic();
   }
 
+  Future<void> _toggleCamera() {
+    return ref
+        .read(liveRoomControllerProvider(widget.roomId, widget.isHost).notifier)
+        .toggleCamera();
+  }
+
+  Future<void> _toggleMic() {
+    return ref
+        .read(liveRoomControllerProvider(widget.roomId, widget.isHost).notifier)
+        .toggleMic();
+  }
+
+  Future<void> _shareScreen() {
+    return ref
+        .read(liveRoomControllerProvider(widget.roomId, widget.isHost).notifier)
+        .toggleScreenShare(context);
+  }
+
+  void _syncAudienceDisconnectedState(RoomState roomState) {
+    final disconnected = roomState.connectionState.name == 'disconnected';
+    if (widget.isHost || !disconnected) {
+      _handledAudienceDisconnected = false;
+      return;
+    }
+    if (_handledAudienceDisconnected) return;
+
+    _handledAudienceDisconnected = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Toast.showNotificationNow('直播已结束或连接已断开');
+      unawaited(_leaveRoom());
+    });
+  }
+
+  AppBar _buildAppBar(bool isDesktop) {
+    return AppBar(
+      title: Text(widget.isHost ? '正在直播' : '直播间'),
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      centerTitle: DeviceUtil.isRealMobile(),
+      leading: isDesktop
+          ? null
+          : IconButton(
+              onPressed: _leaveRoom,
+              icon: const Icon(Icons.arrow_back),
+            ),
+      automaticallyImplyLeading: !isDesktop,
+      flexibleSpace: isDesktop
+          ? const DragToMoveArea(child: SizedBox.expand())
+          : null,
+      actions: [
+        if (isDesktop) ...[
+          IconButton(
+            tooltip: '最小化',
+            onPressed: () => windowManager.minimize(),
+            icon: const Icon(Icons.minimize),
+          ),
+          IconButton(
+            tooltip: '关闭',
+            onPressed: _leaveRoom,
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStateBody(AsyncValue<RoomState> state) {
+    return state.when(
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: Colors.white)),
+      error: (err, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            '进入直播失败: $err',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+      data: _buildConnectedBody,
+    );
+  }
+
+  Widget _buildConnectedBody(RoomState roomState) {
+    _bindRoomDataListener(roomState.room);
+    unawaited(_startInitialMedia());
+    _syncAudienceDisconnectedState(roomState);
+
+    final showDesktopSidePanel = DeviceUtil.isRealDesktop();
+    final participants = <Participant>[
+      if (roomState.room.localParticipant != null)
+        roomState.room.localParticipant!,
+      ...roomState.remoteParticipants,
+    ];
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            color: Colors.black,
+            child: participants.isEmpty
+                ? const Center(
+                    child: Icon(
+                      Icons.live_tv,
+                      size: 72,
+                      color: Colors.white70,
+                    ),
+                  )
+                : _LiveVideoSurface(
+                    participant: participants.first,
+                    label: widget.isHost ? '主播画面' : '当前画面',
+                  ),
+          ),
+        ),
+        Positioned(
+          top: 12,
+          left: 12,
+          right: showDesktopSidePanel ? 364 : 12,
+          child: _RoomHeader(
+            isHost: widget.isHost,
+            roomId: widget.roomId,
+            title: widget.title,
+            visibility: widget.visibility,
+            source: widget.source,
+            connectionState: roomState.connectionState.name,
+            participantCount: participants.length,
+          ),
+        ),
+        if (showDesktopSidePanel)
+          Positioned(
+            top: 88,
+            right: 12,
+            bottom: 12,
+            width: 340,
+            child: _LiveSidePanel(
+              messages: _messages,
+              chatController: _chatController,
+              isHost: widget.isHost,
+              onSend: _sendMessage,
+            ),
+          ),
+        Positioned(
+          bottom: 12,
+          left: 12,
+          right: showDesktopSidePanel ? 364 : 12,
+          child: _BottomControlSection(
+            isHost: widget.isHost,
+            cohostRequests: _cohostRequests.values.toList(),
+            cohostRequested: _cohostRequested,
+            cohostActive: _cohostActive,
+            showMobileChat: !widget.isHost && !showDesktopSidePanel,
+            messages: _messages,
+            chatController: _chatController,
+            onSendMessage: _sendMessage,
+            onAcceptCohost: (request) => _respondCohost(request, true),
+            onRejectCohost: (request) => _respondCohost(request, false),
+            onRequestCohost: _requestCohost,
+            onCancelCohostRequest: _cancelCohostRequest,
+            onToggleCamera: _toggleCamera,
+            onToggleMic: _toggleMic,
+            onShareScreen: _shareScreen,
+            onLeave: _leaveRoom,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(
       liveRoomControllerProvider(widget.roomId, widget.isHost),
     );
+    final isDesktop = DeviceUtil.isRealDesktop();
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.isHost ? '正在直播' : '直播间'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        centerTitle: DeviceUtil.isRealMobile(),
-      ),
-      body: state.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              '进入直播失败: $err',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ),
-        data: (roomState) {
-          _bindRoomDataListener(roomState.room);
-          unawaited(_startInitialMedia());
-
-          final participants = <Participant>[
-            if (roomState.room.localParticipant != null)
-              roomState.room.localParticipant!,
-            ...roomState.remoteParticipants,
-          ];
-
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black,
-                  child: participants.isEmpty
-                      ? const Center(
-                          child: Icon(
-                            Icons.live_tv,
-                            size: 72,
-                            color: Colors.white70,
-                          ),
-                        )
-                      : _LiveVideoSurface(
-                          participant: participants.first,
-                          label: widget.isHost ? '主播画面' : '当前画面',
-                        ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                right: 12,
-                child: _RoomHeader(
-                  isHost: widget.isHost,
-                  roomId: widget.roomId,
-                  title: widget.title,
-                  visibility: widget.visibility,
-                  source: widget.source,
-                  connectionState: roomState.connectionState.name,
-                  participantCount: participants.length,
-                ),
-              ),
-              Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: Column(
-                  children: [
-                    if (widget.isHost && _cohostRequests.isNotEmpty) ...[
-                      _CohostRequestBar(
-                        requests: _cohostRequests.values.toList(),
-                        onAccept: (request) => _respondCohost(request, true),
-                        onReject: (request) => _respondCohost(request, false),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    if (!widget.isHost) ...[
-                      _ChatPanel(messages: _messages),
-                      const SizedBox(height: 8),
-                    ],
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: [
-                          if (!widget.isHost) ...[
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _chatController,
-                                    style: const TextStyle(color: Colors.white),
-                                    decoration: const InputDecoration(
-                                      hintText: '说点什么...',
-                                      hintStyle: TextStyle(
-                                        color: Colors.white54,
-                                      ),
-                                      border: InputBorder.none,
-                                    ),
-                                    onSubmitted: (_) => _sendMessage(),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  onPressed: _sendMessage,
-                                  icon: const Icon(
-                                    Icons.send,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                          ],
-                          _LiveControls(
-                            isHost: widget.isHost,
-                            cohostRequested: _cohostRequested,
-                            cohostActive: _cohostActive,
-                            onRequestCohost: _requestCohost,
-                            onToggleCamera: () => ref
-                                .read(
-                                  liveRoomControllerProvider(
-                                    widget.roomId,
-                                    widget.isHost,
-                                  ).notifier,
-                                )
-                                .toggleCamera(),
-                            onToggleMic: () => ref
-                                .read(
-                                  liveRoomControllerProvider(
-                                    widget.roomId,
-                                    widget.isHost,
-                                  ).notifier,
-                                )
-                                .toggleMic(),
-                            onShareScreen: () => ref
-                                .read(
-                                  liveRoomControllerProvider(
-                                    widget.roomId,
-                                    widget.isHost,
-                                  ).notifier,
-                                )
-                                .toggleScreenShare(context),
-                            onLeave: _leaveRoom,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+      appBar: _buildAppBar(isDesktop),
+      body: _buildStateBody(state),
     );
   }
-}
-
-class _RoomHeader extends StatelessWidget {
-  final bool isHost;
-  final String roomId;
-  final String title;
-  final LiveVisibility visibility;
-  final LiveSource source;
-  final String connectionState;
-  final int participantCount;
-
-  const _RoomHeader({
-    required this.isHost,
-    required this.roomId,
-    required this.title,
-    required this.visibility,
-    required this.source,
-    required this.connectionState,
-    required this.participantCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _Badge(
-                label: isHost ? '主播' : '观众',
-                color: isHost ? Colors.redAccent : Colors.blueAccent,
-              ),
-              const SizedBox(width: 8),
-              _Badge(
-                label: visibility.label,
-                color: visibility == LiveVisibility.public
-                    ? Colors.green
-                    : Colors.deepPurpleAccent,
-              ),
-              const SizedBox(width: 8),
-              _Badge(label: source.label, color: Colors.teal),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title.isEmpty
-                      ? (isHost ? '你正在直播 $roomId' : '你正在观看 $roomId')
-                      : title,
-                  style: const TextStyle(color: Colors.white),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '房间号: $roomId · 状态: $connectionState · 参与者: $participantCount',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-    );
-  }
-}
-
-class _ChatPanel extends StatelessWidget {
-  final List<_LiveChatMessage> messages;
-
-  const _ChatPanel({required this.messages});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 180,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '弹幕互动',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView.builder(
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${message.name}: ',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          message.text,
-                          style: TextStyle(
-                            color: message.isHost
-                                ? Colors.white
-                                : Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LiveControls extends StatelessWidget {
-  final bool isHost;
-  final bool cohostRequested;
-  final bool cohostActive;
-  final VoidCallback onRequestCohost;
-  final VoidCallback onToggleCamera;
-  final VoidCallback onToggleMic;
-  final VoidCallback onShareScreen;
-  final VoidCallback onLeave;
-
-  const _LiveControls({
-    required this.isHost,
-    required this.cohostRequested,
-    required this.cohostActive,
-    required this.onRequestCohost,
-    required this.onToggleCamera,
-    required this.onToggleMic,
-    required this.onShareScreen,
-    required this.onLeave,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        if (isHost || cohostActive)
-          FilledButton.icon(
-            onPressed: onToggleCamera,
-            icon: const Icon(Icons.videocam),
-            label: const Text('摄像头'),
-          ),
-        if (isHost || cohostActive)
-          FilledButton.icon(
-            onPressed: onToggleMic,
-            icon: const Icon(Icons.mic),
-            label: const Text('麦克风'),
-          ),
-        if (isHost)
-          FilledButton.icon(
-            onPressed: onShareScreen,
-            icon: const Icon(Icons.screen_share),
-            label: const Text('共享屏幕'),
-          ),
-        if (!isHost)
-          FilledButton.tonalIcon(
-            onPressed: cohostRequested || cohostActive ? null : onRequestCohost,
-            icon: Icon(cohostActive ? Icons.record_voice_over : Icons.call),
-            label: Text(
-              cohostActive ? '连麦中' : (cohostRequested ? '申请中' : '申请连麦'),
-            ),
-          ),
-        FilledButton.icon(
-          onPressed: onLeave,
-          icon: const Icon(Icons.exit_to_app),
-          label: Text(isHost ? '结束直播' : '离开'),
-        ),
-      ],
-    );
-  }
-}
-
-class _CohostRequestBar extends StatelessWidget {
-  final List<_CohostRequest> requests;
-  final ValueChanged<_CohostRequest> onAccept;
-  final ValueChanged<_CohostRequest> onReject;
-
-  const _CohostRequestBar({
-    required this.requests,
-    required this.onAccept,
-    required this.onReject,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final request = requests.first;
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.record_voice_over, color: Colors.white),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '${request.name} 申请连麦',
-              style: const TextStyle(color: Colors.white),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          TextButton(
-            onPressed: () => onReject(request),
-            child: const Text('拒绝'),
-          ),
-          FilledButton(
-            onPressed: () => onAccept(request),
-            child: const Text('同意'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LiveVideoSurface extends StatelessWidget {
-  final Participant participant;
-  final String label;
-
-  const _LiveVideoSurface({required this.participant, required this.label});
-
-  VideoTrack? _visibleVideoTrack() {
-    for (final publication in participant.videoTrackPublications) {
-      if (publication.isScreenShare &&
-          !publication.muted &&
-          publication.subscribed &&
-          publication.track is VideoTrack) {
-        return publication.track as VideoTrack;
-      }
-    }
-    for (final publication in participant.videoTrackPublications) {
-      if (!publication.isScreenShare &&
-          !publication.muted &&
-          publication.subscribed &&
-          publication.track is VideoTrack) {
-        return publication.track as VideoTrack;
-      }
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final track = _visibleVideoTrack();
-    return Stack(
-      children: [
-        if (track != null)
-          VideoTrackRenderer(track, fit: VideoViewFit.contain)
-        else
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.videocam_off, size: 72, color: Colors.white54),
-                const SizedBox(height: 8),
-                Text(label, style: const TextStyle(color: Colors.white70)),
-              ],
-            ),
-          ),
-        Positioned(
-          left: 12,
-          bottom: 12,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              participant.identity,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LiveChatMessage {
-  final String name;
-  final String text;
-  final bool isHost;
-
-  const _LiveChatMessage({
-    required this.name,
-    required this.text,
-    required this.isHost,
-  });
-}
-
-class _CohostRequest {
-  final String identity;
-  final String name;
-
-  const _CohostRequest({required this.identity, required this.name});
 }

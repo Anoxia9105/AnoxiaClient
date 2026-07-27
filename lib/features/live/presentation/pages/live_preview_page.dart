@@ -6,9 +6,12 @@ import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:window_manager/window_manager.dart';
 
 class LivePreviewPage extends StatefulWidget {
   final LiveVisibility visibility;
+  final LiveSource initialSource;
+  final String initialTitle;
   final Future<void> Function({
     required String title,
     required LiveVisibility visibility,
@@ -20,6 +23,8 @@ class LivePreviewPage extends StatefulWidget {
   const LivePreviewPage({
     super.key,
     required this.visibility,
+    this.initialSource = LiveSource.camera,
+    this.initialTitle = '',
     required this.onStart,
   });
 
@@ -41,6 +46,8 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
   void initState() {
     super.initState();
     _visibility = widget.visibility;
+    _source = widget.initialSource;
+    _titleController.text = widget.initialTitle;
     _startPreview();
   }
 
@@ -178,12 +185,38 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = DeviceUtil.isRealDesktop();
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('直播预览'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        leading: isDesktop
+            ? null
+            : IconButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.arrow_back),
+              ),
+        automaticallyImplyLeading: !isDesktop,
+        flexibleSpace: isDesktop
+            ? const DragToMoveArea(child: SizedBox.expand())
+            : null,
+        actions: [
+          if (isDesktop) ...[
+            IconButton(
+              tooltip: '最小化',
+              onPressed: () => windowManager.minimize(),
+              icon: const Icon(Icons.minimize),
+            ),
+            IconButton(
+              tooltip: '关闭',
+              onPressed: () => windowManager.close(),
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ],
       ),
       body: Stack(
         children: [

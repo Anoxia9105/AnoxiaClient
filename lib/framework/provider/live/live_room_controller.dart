@@ -47,6 +47,32 @@ class LiveRoomController extends _$LiveRoomController {
       listener
         ..on<RoomConnectedEvent>((_) {
           log.info('直播房间已连接: $roomId');
+          state = AsyncData(
+            _buildState(room, token, isReconnecting: false, connectionError: null),
+          );
+        })
+        ..on<RoomReconnectingEvent>((_) {
+          state = AsyncData(
+            _buildState(room, token, isReconnecting: true, connectionError: null),
+          );
+        })
+        ..on<RoomReconnectedEvent>((_) {
+          state = AsyncData(
+            _buildState(room, token, isReconnecting: false, connectionError: null),
+          );
+        })
+        ..on<RoomDisconnectedEvent>((event) {
+          final reason = event.reason?.toString();
+          state = AsyncData(
+            _buildState(
+              room,
+              token,
+              isReconnecting: false,
+              connectionError: (reason == null || reason.isEmpty)
+                  ? 'disconnected'
+                  : reason,
+            ),
+          );
         })
         ..on<ParticipantConnectedEvent>((_) {
           state = AsyncData(_buildState(room, token));
@@ -177,11 +203,19 @@ class LiveRoomController extends _$LiveRoomController {
     throw Exception(res.data?['message'] ?? '获取直播 token 失败');
   }
 
-  RoomState _buildState(Room room, String token) {
+  RoomState _buildState(
+    Room room,
+    String token, {
+    bool? isReconnecting,
+    String? connectionError,
+  }) {
+    final previous = state.value;
+
     return RoomState(
       room: room,
       token: token,
       connectionState: room.connectionState,
+      connectionError: connectionError ?? previous?.connectionError,
       micEnabled: room.localParticipant?.isMicrophoneEnabled() ?? false,
       cameraEnabled: room.localParticipant?.isCameraEnabled() ?? false,
       screenSharing:
@@ -190,6 +224,7 @@ class LiveRoomController extends _$LiveRoomController {
           ) ??
           false,
       speakerOn: true,
+      isReconnecting: isReconnecting ?? previous?.isReconnecting ?? false,
       audioInputs: const [],
       audioOutputs: const [],
       videoInputs: const [],
@@ -197,7 +232,7 @@ class LiveRoomController extends _$LiveRoomController {
       currentAudioOutput: null,
       currentVideoInput: null,
       remoteParticipants: room.remoteParticipants.values.toList(),
-      joinedAt: DateTime.now(),
+      joinedAt: previous?.joinedAt ?? DateTime.now(),
       participantQuality: {},
       participantVolumes: {},
       handRaiseMap: {},

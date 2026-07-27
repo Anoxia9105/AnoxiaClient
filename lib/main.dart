@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
-import 'package:anoxia/features/live/presentation/pages/window_live_danmaku_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
@@ -255,7 +254,6 @@ Future<void> runSubApp(WindowController controller) async {
     final Widget child = switch (args['type']) {
       'live-preview' => WindowLivePreviewPage(controller: controller),
       'live' => WindowLivePage(controller: controller),
-      'live-danmaku' => WindowLiveDanmakuPage(controller: controller),
       _ => WindowCallPage(controller: controller),
     };
 
