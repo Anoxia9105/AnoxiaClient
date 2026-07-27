@@ -457,16 +457,23 @@ class ActiveRoomId extends _$ActiveRoomId {
 
   /// 设置当前活跃的房间
   ///
-  /// 离开旧房间时会自动调用 [RoomListService.markAsRead] 上报已读
+  /// 离开旧房间与进入新房间时都会调用 [RoomListService.markAsRead]，
+  /// 确保未读角标可以在进入会话后立即清零。
   void setActive(String? roomId) {
     if (state == roomId) return;
 
     final oldRoomId = state;
+    final roomList = ref.read(roomListServiceProvider.notifier);
+
     if (oldRoomId != null) {
-      ref.read(roomListServiceProvider.notifier).markAsRead(oldRoomId);
+      roomList.markAsRead(oldRoomId);
     }
 
     state = roomId;
+
+    if (roomId != null) {
+      roomList.markAsRead(roomId);
+    }
   }
 }
 
