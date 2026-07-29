@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -123,7 +124,7 @@ class _IncomingCallCard extends ConsumerWidget {
                               .reject(invitation);
                         },
                         icon: const Icon(Icons.call_end),
-                        label: const Text('拒绝'),
+                        label: Text('notification_call_reject'.tr()),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -135,7 +136,7 @@ class _IncomingCallCard extends ConsumerWidget {
                               .acceptAndOpen(invitation);
                         },
                         icon: const Icon(Icons.call),
-                        label: const Text('接听'),
+                        label: Text('notification_call_accept'.tr()),
                       ),
                     ),
                   ],

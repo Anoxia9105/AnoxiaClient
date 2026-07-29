@@ -7,6 +7,7 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -66,12 +67,12 @@ class NotificationHelper {
           actions: <DarwinNotificationAction>[
             DarwinNotificationAction.plain(
               callAcceptAction,
-              '接听',
+              'notification_call_accept'.tr(),
               options: const <DarwinNotificationActionOption>{
                 DarwinNotificationActionOption.foreground,
               },
             ),
-            DarwinNotificationAction.plain(callRejectAction, '拒绝'),
+            DarwinNotificationAction.plain(callRejectAction, 'notification_call_reject'.tr()),
           ],
         ),
       ],
@@ -392,7 +393,7 @@ class NotificationHelper {
           ];
 
     final details = NotificationDetails(
-      android: const AndroidNotificationDetails(
+      android: AndroidNotificationDetails(
         'incoming_call_channel',
         '来电通知',
         channelDescription: '语音和视频通话邀请',
@@ -405,12 +406,12 @@ class NotificationHelper {
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
             callRejectAction,
-            '拒绝',
+            'notification_call_reject'.tr(),
             cancelNotification: true,
           ),
           AndroidNotificationAction(
             callAcceptAction,
-            '接听',
+            'notification_call_accept'.tr(),
             showsUserInterface: true,
             cancelNotification: true,
           ),
@@ -434,7 +435,7 @@ class NotificationHelper {
         images: windowsImages,
         actions: <WindowsAction>[
           WindowsAction(
-            content: '接听',
+            content: 'notification_call_accept'.tr(),
             arguments: jsonEncode(<String, dynamic>{
               ...payload,
               'kind': 'incoming_call',
@@ -442,7 +443,7 @@ class NotificationHelper {
             }),
           ),
           WindowsAction(
-            content: '拒绝',
+            content: 'notification_call_reject'.tr(),
             arguments: jsonEncode(<String, dynamic>{
               ...payload,
               'kind': 'incoming_call',

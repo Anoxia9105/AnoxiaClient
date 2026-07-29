@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -73,12 +74,12 @@ class CallInviteMembersButton extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('邀请成员加入通话'),
+          title: Text('call_invite_members_title'.tr()),
           content: SizedBox(
             width: 420,
             height: 420,
             child: members.isEmpty
-                ? const Center(child: Text('所有成员都已加入'))
+                ? Center(child: Text('call_all_members_joined'.tr()))
                 : ListView.builder(
                     itemCount: members.length,
                     itemBuilder: (context, index) {
@@ -96,9 +97,9 @@ class CallInviteMembersButton extends ConsumerWidget {
                           url: member.avatar ?? '',
                           name: member.nickName ?? '',
                         ),
-                        title: Text(member.nickName ?? '成员$id'),
+                        title: Text(member.nickName ?? 'call_member_id_prefix'.tr(args: [id.toString()])),
                         subtitle: Text(
-                          member.onlineStatus == true ? '在线' : '离线',
+                          member.onlineStatus == true ? 'contact_online'.tr() : 'contact_offline'.tr(),
                         ),
                       );
                     },
@@ -107,7 +108,7 @@ class CallInviteMembersButton extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('取消'),
+              child: Text('cancel'.tr()),
             ),
             FilledButton(
               onPressed: selected.isEmpty
@@ -139,10 +140,10 @@ class CallInviteMembersButton extends ConsumerWidget {
                       }
                       Navigator.pop(dialogContext);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('已邀请 ${selected.length} 位成员')),
+                        SnackBar(content: Text('call_invite_sent_count'.tr(args: [selected.length.toString()]))),
                       );
                     },
-              child: const Text('发送邀请'),
+              child: Text('call_send_invitation'.tr()),
             ),
           ],
         ),

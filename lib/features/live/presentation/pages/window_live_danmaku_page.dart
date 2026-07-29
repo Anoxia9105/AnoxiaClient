@@ -170,7 +170,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
         ),
       );
     } catch (e) {
-      Toast.showNotificationNow('弹幕解析失败：$e');
+      Toast.showNotificationNow('live_danmaku_parse_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -202,7 +202,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
         topic: _danmakuTopic,
       );
     } catch (e) {
-      Toast.showNotificationNow('弹幕发送失败：$e');
+      Toast.showNotificationNow('live_danmaku_send_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -222,7 +222,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
           title: Text(_title.isEmpty ? '直播弹幕' : _title),
           actions: [
             IconButton(
-              tooltip: '重连',
+              tooltip: 'live_reconnect_tooltip'.tr(),
               onPressed: _loading ? null : _connect,
               icon: const Icon(Icons.refresh),
             ),
@@ -245,9 +245,9 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('弹幕窗口连接失败：$_error', textAlign: TextAlign.center),
+              Text('live_danmaku_connect_failed'.tr(args: [(_error ?? '').toString()]), textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _connect, child: const Text('重试')),
+              FilledButton(onPressed: _connect, child: Text('live_action_retry'.tr())),
             ],
           ),
         ),
@@ -296,8 +296,8 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: '发送主播弹幕...',
+                    decoration: InputDecoration(
+                      hintText: 'live_danmaku_placeholder'.tr(),
                       border: OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -307,7 +307,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
                 FilledButton.icon(
                   onPressed: _sendMessage,
                   icon: const Icon(Icons.send),
-                  label: const Text('发送'),
+                  label: Text('toolbar_send'.tr()),
                 ),
               ],
             ),

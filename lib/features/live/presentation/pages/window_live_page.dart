@@ -69,7 +69,7 @@ class _WindowLivePageState extends State<WindowLivePage> with WindowListener {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       home: _roomId.isEmpty
-          ? const Scaffold(body: Center(child: Text('直播窗口参数错误：缺少房间号')))
+          ? Scaffold(body: Center(child: Text('live_window_params_missing_room_id'.tr())))
           : LiveRoomPage(
               roomId: _roomId,
               title: _title,

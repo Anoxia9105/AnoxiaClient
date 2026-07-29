@@ -3,6 +3,7 @@ import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -88,7 +89,7 @@ class ReplyPreviewBar extends ConsumerWidget {
           if (onClear != null) ...[
             const SizedBox(width: 8),
             IconButton(
-              tooltip: '取消引用',
+              tooltip: 'chat_reply_cancel_tooltip'.tr(),
               onPressed: onClear,
               icon: const Icon(Icons.close, size: 16),
               visualDensity: VisualDensity.compact,

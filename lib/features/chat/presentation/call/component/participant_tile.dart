@@ -391,7 +391,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                             builder: (btnCtx) => IconButton(
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.all(2),
-                              tooltip: '更多',
+                              tooltip: 'call_more_tooltip'.tr(),
                               onPressed: () =>
                                   _showMoreMenu(btnCtx, p.identity),
                               icon: const HugeIcon(

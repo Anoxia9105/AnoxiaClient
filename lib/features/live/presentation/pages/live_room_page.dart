@@ -7,6 +7,7 @@ import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/live/live_room_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -19,8 +20,11 @@ part 'live_room_models.dart';
 enum LiveVisibility {
   public,
   private;
+}
 
+extension LiveVisibilityX on LiveVisibility {
   String get label => this == LiveVisibility.public ? '公开' : '私密';
+  String trLabel() => this == LiveVisibility.public ? 'live_visibility_public'.tr() : 'live_visibility_private'.tr();
 }
 
 extension LiveVisibilityCodec on LiveVisibility {
@@ -37,8 +41,11 @@ extension LiveVisibilityCodec on LiveVisibility {
 enum LiveSource {
   camera,
   screen;
+}
 
+extension LiveSourceX on LiveSource {
   String get label => this == LiveSource.camera ? '摄像头' : '屏幕共享';
+  String trLabel() => this == LiveSource.camera ? 'live_source_camera'.tr() : 'live_source_screen'.tr();
 }
 
 extension LiveSourceCodec on LiveSource {
@@ -174,7 +181,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       }
     } catch (e) {
       _initialMediaStarted = false;
-      Toast.showNotificationNow('启动直播画面失败：$e');
+      Toast.showNotificationNow('live_start_video_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -232,7 +239,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
             final removed = _cohostRequests.remove(identity);
             if (removed != null && mounted) {
               setState(() {});
-              Toast.showNotificationNow('${removed.name} 取消了连麦申请');
+              Toast.showNotificationNow('live_cohost_request_cancelled'.tr(args: [removed.name]));
             }
             return;
           }
@@ -262,9 +269,9 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
             _cohostActive = accepted;
           });
           if (accepted) {
-            Toast.showNotificationNow('主播已同意连麦');
+            Toast.showNotificationNow('live_cohost_request_accepted'.tr());
           } else {
-            Toast.showNotificationNow(reason?.isNotEmpty == true ? reason! : '主播拒绝了连麦申请');
+            Toast.showNotificationNow(reason?.isNotEmpty == true ? reason! : 'live_cohost_request_rejected'.tr());
           }
           if (accepted) {
             unawaited(_enableAudienceMic());
@@ -272,7 +279,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
           break;
       }
     } catch (e) {
-      Toast.showNotificationNow('处理直播互动消息失败：$e');
+      Toast.showNotificationNow('live_interact_message_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -327,7 +334,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       );
     } catch (e) {
       _joinMessageSent = false;
-      Toast.showNotificationNow('进入直播间提示发送失败：$e');
+      Toast.showNotificationNow('live_enter_notify_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -367,7 +374,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     if (_lastSentText == text &&
         _lastSentAt != null &&
         now.difference(_lastSentAt!) < const Duration(seconds: 2)) {
-      Toast.showNotificationNow('发送过快，请稍后再试');
+      Toast.showNotificationNow('live_send_too_fast'.tr());
       return;
     }
     _lastSentText = text;
@@ -391,7 +398,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         },
       );
     } catch (e) {
-      Toast.showNotificationNow('弹幕发送失败：$e');
+      Toast.showNotificationNow('live_danmaku_send_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -404,7 +411,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       liveRoomControllerProvider(widget.roomId, widget.isHost),
     );
     if (current.value?.connectionState.name != 'connected') {
-      Toast.showNotificationNow('连接未就绪，请稍后再试');
+      Toast.showNotificationNow('live_not_ready_retry'.tr());
       return;
     }
 
@@ -417,10 +424,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         topic: _cohostRequestTopic,
         payload: {'identity': identity, 'name': name, 'action': 'request'},
       );
-      Toast.showNotificationNow('已发送连麦申请');
+      Toast.showNotificationNow('live_cohost_request_sent'.tr());
     } catch (e) {
       _clearCohostRequestState();
-      Toast.showNotificationNow('连麦申请发送失败：$e');
+      Toast.showNotificationNow('live_cohost_request_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -438,9 +445,9 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         topic: _cohostRequestTopic,
         payload: {'identity': identity, 'action': 'cancel'},
       );
-      Toast.showNotificationNow('已取消连麦申请');
+      Toast.showNotificationNow('live_cohost_request_cancelled_success'.tr());
     } catch (e) {
-      Toast.showNotificationNow('取消连麦申请失败：$e');
+      Toast.showNotificationNow('live_cohost_request_cancel_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -449,7 +456,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     _cohostRequestTimer = Timer(_cohostRequestTimeout, () {
       if (!mounted || !_cohostRequested || _cohostActive) return;
       _clearCohostRequestState();
-      Toast.showNotificationNow('连麦申请超时，请稍后重试');
+      Toast.showNotificationNow('live_cohost_request_timeout'.tr());
     });
   }
 
@@ -489,7 +496,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         },
       );
     } catch (e) {
-      Toast.showNotificationNow('处理连麦申请失败：$e');
+      Toast.showNotificationNow('live_cohost_request_process_error'.tr(args: [e.toString()]));
     }
   }
 
@@ -500,7 +507,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       permissionName: '麦克风',
     );
     if (!mic) {
-      Toast.showNotificationNow('需要开启麦克风权限才能连麦');
+      Toast.showNotificationNow('live_mic_permission_required_for_cohost'.tr());
       return;
     }
     await ref
@@ -537,7 +544,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     _handledAudienceDisconnected = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Toast.showNotificationNow('直播已结束或连接已断开');
+      Toast.showNotificationNow('live_ended_or_disconnected'.tr());
       unawaited(_leaveRoom());
     });
   }
@@ -561,12 +568,12 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       actions: [
         if (isDesktop) ...[
           IconButton(
-            tooltip: '最小化',
+            tooltip: 'call_minimize_tooltip'.tr(),
             onPressed: () => windowManager.minimize(),
             icon: const Icon(Icons.minimize),
           ),
           IconButton(
-            tooltip: '关闭',
+            tooltip: 'call_close_tooltip'.tr(),
             onPressed: _leaveRoom,
             icon: const Icon(Icons.close),
           ),

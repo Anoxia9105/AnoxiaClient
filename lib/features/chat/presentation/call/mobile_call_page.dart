@@ -71,7 +71,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
                 overflow: TextOverflow.ellipsis,
               ),
               leading: IconButton(
-                tooltip: '最小化',
+                tooltip: 'call_minimize_tooltip'.tr(),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
 
                 /// 最小化

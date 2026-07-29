@@ -68,9 +68,9 @@ class _BottomControlSection extends StatelessWidget {
                       child: TextField(
                         controller: chatController,
                         style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: '说点什么...',
-                          hintStyle: TextStyle(color: Colors.white54),
+                        decoration: InputDecoration(
+                          hintText: 'live_chat_placeholder'.tr(),
+                          hintStyle: const TextStyle(color: Colors.white54),
                           border: InputBorder.none,
                         ),
                         onSubmitted: (_) => onSendMessage(),
@@ -346,7 +346,7 @@ class _LiveSidePanel extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onSend,
                 icon: const Icon(Icons.send, size: 16),
-                label: const Text('发送'),
+                label: Text('toolbar_send'.tr()),
               ),
             ],
           ),
@@ -389,19 +389,19 @@ class _LiveControls extends StatelessWidget {
           FilledButton.icon(
             onPressed: onToggleCamera,
             icon: const Icon(Icons.videocam),
-            label: const Text('摄像头'),
+            label: Text('live_source_camera'.tr()),
           ),
         if (isHost || cohostActive)
           FilledButton.icon(
             onPressed: onToggleMic,
             icon: const Icon(Icons.mic),
-            label: const Text('麦克风'),
+            label: Text('live_microphone'.tr()),
           ),
         if (isHost)
           FilledButton.icon(
             onPressed: onShareScreen,
             icon: const Icon(Icons.screen_share),
-            label: const Text('共享屏幕'),
+            label: Text('live_share_screen'.tr()),
           ),
         if (!isHost)
           FilledButton.tonalIcon(
@@ -460,11 +460,11 @@ class _CohostRequestBar extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => onReject(request),
-            child: const Text('拒绝'),
+            child: Text('notification_call_reject'.tr()),
           ),
           FilledButton(
             onPressed: () => onAccept(request),
-            child: const Text('同意'),
+            child: Text('notification_call_accept'.tr()),
           ),
         ],
       ),

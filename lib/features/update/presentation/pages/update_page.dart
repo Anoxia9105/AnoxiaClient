@@ -196,7 +196,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
                         child: TextButton.icon(
                           onPressed: () => context.pop(),
                           icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                          label: Text('back'.tr()),
+                          label: Text('common_back'.tr()),
                           style: TextButton.styleFrom(
                             foregroundColor: Theme.of(
                               context,

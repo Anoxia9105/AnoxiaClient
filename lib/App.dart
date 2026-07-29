@@ -116,16 +116,16 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
                   ? invitation.callerName.trim()
                   : invitation.title.trim());
         final mediaLabel = invitation.initialMedia.value == 'video'
-            ? '视频通话'
-            : '语音通话';
+            ? 'call_media_video'.tr()
+            : 'call_media_audio'.tr();
         final body =
             invitation.isGroup && invitation.callerName.trim().isNotEmpty
-            ? '${invitation.callerName.trim()} 邀请你加入$mediaLabel'
-            : '正在邀请你进行$mediaLabel';
+            ? 'call_invitation_group_body'.tr(args: [invitation.callerName.trim(), mediaLabel])
+            : 'call_invitation_p2p_body'.tr(args: [mediaLabel]);
         unawaited(
           NotificationHelper().showIncomingCall(
             payload: invitation.toNotificationPayload(),
-            title: displayName.isEmpty ? '新的通话邀请' : displayName,
+            title: displayName.isEmpty ? 'call_invitation_new_title'.tr() : displayName,
             body: body,
             avatarUrl:
                 invitation.isGroup && invitation.roomAvatar.trim().isNotEmpty

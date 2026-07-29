@@ -7,6 +7,7 @@ import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/logs/talker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_background/flutter_background.dart' as rtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
@@ -396,7 +397,7 @@ class RoomController extends _$RoomController {
     log.info("✋ $uid ${raised ? '举手' : '放手'}");
 
     // Toast 提示
-    Toast.showNotificationNow(raised ? '$name 举手了 ✋' : '$name 放手了');
+    Toast.showNotificationNow(raised ? 'call_hand_raised'.tr(args: [name]) : 'call_hand_lowered'.tr(args: [name]));
   }
 
   /// 处理远端表情/弹幕消息
@@ -537,7 +538,7 @@ class RoomController extends _$RoomController {
           Permission.microphone,
         );
         if (permission != AppPermissionResult.granted) {
-          Toast.showNotificationNow('需要开启麦克风权限');
+          Toast.showNotificationNow('call_mic_permission_required'.tr());
           return;
         }
       }
@@ -565,7 +566,7 @@ class RoomController extends _$RoomController {
           Permission.camera,
         );
         if (permission != AppPermissionResult.granted) {
-          Toast.showNotificationNow('需要开启摄像头权限');
+          Toast.showNotificationNow('call_camera_permission_required'.tr());
           return;
         }
       }
@@ -990,18 +991,18 @@ class RoomController extends _$RoomController {
       );
       final code = res.data?['code'];
       if (code == 200) {
-        Toast.showNotificationNow('已将该用户移出通话');
+        Toast.showNotificationNow('call_user_removed'.tr());
         log.info('✅ 踢出参与者 $identity 成功');
         return true;
       } else {
         final msg = res.data?['msg'] ?? '未知错误';
-        Toast.showNotificationNow('踢出失败: $msg');
+        Toast.showNotificationNow('call_kick_error'.tr(args: [msg]));
         log.warning('踢出参与者 $identity 失败: $msg');
         return false;
       }
     } catch (e) {
       log.error('踢出参与者失败: $e');
-      Toast.showNotificationNow('踢出失败，请重试');
+      Toast.showNotificationNow('call_kick_retry'.tr());
       return false;
     }
   }

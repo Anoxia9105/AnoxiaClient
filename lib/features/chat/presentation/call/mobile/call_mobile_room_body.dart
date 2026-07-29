@@ -2,6 +2,7 @@ import 'package:anoxia/features/chat/presentation/call/component/reaction_overla
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -253,7 +254,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
                   color: Colors.black54,
                   shape: const CircleBorder(),
                   child: IconButton(
-                    tooltip: '返回宫格',
+                    tooltip: 'call_back_to_grid_tooltip'.tr(),
                     onPressed: () =>
                         setState(() => _focusedParticipantIdentity = null),
                     icon: const Icon(

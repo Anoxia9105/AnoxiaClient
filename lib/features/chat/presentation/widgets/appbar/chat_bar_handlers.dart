@@ -54,7 +54,7 @@ class ChatBarHandlers {
               .read(mobileCallSessionControllerProvider.notifier)
               .enterCallPage();
         } else {
-          Toast.showToast('当前正在其他通话中');
+          Toast.showToast('call_already_in_other'.tr());
         }
         return;
       }

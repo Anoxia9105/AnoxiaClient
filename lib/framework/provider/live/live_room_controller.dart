@@ -7,6 +7,7 @@ import 'package:anoxia/features/chat/presentation/call/component/window_screen_s
 import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -109,9 +110,9 @@ class LiveRoomController extends _$LiveRoomController {
       final next = !current.cameraEnabled;
       await current.room.localParticipant?.setCameraEnabled(next);
       state = AsyncData(current.copyWith(cameraEnabled: next));
-      Toast.showNotificationNow(next ? '摄像头已开启' : '摄像头已关闭');
+      Toast.showNotificationNow(next ? 'live_camera_turned_on'.tr() : 'live_camera_turned_off'.tr());
     } catch (e) {
-      Toast.showNotificationNow('切换摄像头失败：$e');
+      Toast.showNotificationNow('live_switch_camera_error'.tr(args: [e.toString()]));
     } finally {
       _isTogglingCamera = false;
     }
@@ -127,7 +128,7 @@ class LiveRoomController extends _$LiveRoomController {
       await current.room.localParticipant?.setMicrophoneEnabled(next);
       state = AsyncData(current.copyWith(micEnabled: next));
     } catch (e) {
-      Toast.showNotificationNow('切换麦克风失败：$e');
+      Toast.showNotificationNow('live_switch_microphone_error'.tr(args: [e.toString()]));
     } finally {
       _isTogglingMic = false;
     }
@@ -167,7 +168,7 @@ class LiveRoomController extends _$LiveRoomController {
         state = AsyncData(
           current.copyWith(screenSharing: true, screenShareTrack: screenTrack),
         );
-        Toast.showNotificationNow('屏幕共享已开启');
+        Toast.showNotificationNow('live_screen_share_started'.tr());
       } else {
         TrackPublication? screenPub;
         for (final publication in localParticipant.videoTrackPublications) {
@@ -182,10 +183,10 @@ class LiveRoomController extends _$LiveRoomController {
         state = AsyncData(
           current.copyWith(screenSharing: false, screenShareTrack: null),
         );
-        Toast.showNotificationNow('屏幕共享已关闭');
+        Toast.showNotificationNow('live_screen_share_stopped'.tr());
       }
     } catch (e) {
-      Toast.showNotificationNow('切换屏幕共享失败：$e');
+      Toast.showNotificationNow('live_switch_screen_share_error'.tr(args: [e.toString()]));
     } finally {
       _isTogglingScreen = false;
     }

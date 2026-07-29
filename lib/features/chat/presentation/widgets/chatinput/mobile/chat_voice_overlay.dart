@@ -1,5 +1,6 @@
 import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 /// 语音录制覆盖层组件
@@ -89,7 +90,7 @@ class _VoiceIndicator extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              willCancel ? '松开手指，取消发送' : '手指上滑，取消发送',
+              willCancel ? 'voice_release_to_cancel'.tr() : 'voice_slide_up_to_cancel'.tr(),
               style: const TextStyle(color: Colors.white, fontSize: 13),
               textAlign: TextAlign.center,
             ),

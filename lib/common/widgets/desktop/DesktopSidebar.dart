@@ -71,16 +71,16 @@ class DesktopSidebar extends ConsumerWidget {
                 final shouldLogout = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text('确认退出'.tr()),
-                    content: Text('确定要退出登录吗？'.tr()),
+                    title: Text('logout'.tr()),
+                    content: Text('logout_confirm_hint'.tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('取消'.tr()),
+                        child: Text('cancel'.tr()),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        child: Text('确定'.tr()),
+                        child: Text('confirm'.tr()),
                       ),
                     ],
                   ),

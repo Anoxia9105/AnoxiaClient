@@ -47,7 +47,7 @@ class _LiveListPageState extends State<LiveListPage> {
         });
       }
     } catch (e) {
-      Toast.showNotificationNow('获取直播间列表失败：$e');
+      Toast.showNotificationNow('live_list_load_error'.tr(args: [e.toString()]));
     } finally {
       if (mounted) {
         setState(() => _loadingRooms = false);
@@ -66,7 +66,7 @@ class _LiveListPageState extends State<LiveListPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('新建直播'),
+              title: Text('live_create_new'.tr()),
               content: _StartLiveDialogBody(
                 titleController: titleController,
                 visibility: visibility,
@@ -81,13 +81,13 @@ class _LiveListPageState extends State<LiveListPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('取消'),
+                  child: Text('cancel'.tr()),
                 ),
                 FilledButton.icon(
                   onPressed: () {
                     final title = titleController.text.trim();
                     if (title.isEmpty) {
-                      Toast.showNotificationNow('请填写直播标题');
+                      Toast.showNotificationNow('live_title_required'.tr());
                       return;
                     }
                     Navigator.of(dialogContext).pop(
@@ -99,7 +99,7 @@ class _LiveListPageState extends State<LiveListPage> {
                     );
                   },
                   icon: const Icon(Icons.live_tv),
-                  label: const Text('去预览开播'),
+                  label: Text('live_go_preview_start'.tr()),
                 ),
               ],
             );
@@ -205,25 +205,25 @@ class _LiveListPageState extends State<LiveListPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('进入直播间'),
+          title: Text('live_join_room_title'.tr()),
           content: TextField(
             controller: controller,
             autofocus: true,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: '房间号',
-              hintText: '请输入 8 位数字房间号',
+            decoration: InputDecoration(
+              labelText: 'live_room_id'.tr(),
+              hintText: 'live_room_id_hint'.tr(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('取消'),
+              child: Text('cancel'.tr()),
             ),
             FilledButton(
               onPressed: () =>
                   Navigator.of(dialogContext).pop(controller.text.trim()),
-              child: const Text('进入'),
+              child: Text('live_enter'.tr()),
             ),
           ],
         );
@@ -245,7 +245,7 @@ class _LiveListPageState extends State<LiveListPage> {
         source: room.source,
       );
     } catch (e) {
-      Toast.showNotificationNow('进入直播间失败：$e');
+      Toast.showNotificationNow('live_enter_failed'.tr(args: [e.toString()]));
     }
   }
 
@@ -255,14 +255,14 @@ class _LiveListPageState extends State<LiveListPage> {
       queryParameters: {'roomId': roomId},
     );
     if (res.data?['code'] != 200) {
-      throw Exception(res.data?['msg'] ?? res.data?['message'] ?? '直播间不存在');
+      throw Exception(res.data?['msg'] ?? res.data?['message'] ?? 'live_room_not_found'.tr());
     }
 
     final data = res.data?['data'];
     if (data is Map) {
       return _RoomSummary.fromJson(data);
     }
-    throw Exception('服务端未返回直播间信息');
+    throw Exception('live_room_no_server_data'.tr());
   }
 
   Future<void> _openLiveWindow({
@@ -319,7 +319,7 @@ class _LiveListPageState extends State<LiveListPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openStartLiveDialog,
         icon: const Icon(Icons.add_to_photos_outlined),
-        label: const Text('开播'),
+        label: Text('live_start_action'.tr()),
       ),
       body: RefreshIndicator(
         onRefresh: _loadPublicRooms,
@@ -329,8 +329,8 @@ class _LiveListPageState extends State<LiveListPage> {
             _LiveActionCard(
               icon: HugeIcons.strokeRoundedVideo01,
               title: 'live_rooms_title'.tr(),
-              subtitle: '观看公开直播，可通过右上角输入房间号进入私密直播',
-              actionLabel: '通过房间号进入',
+              subtitle: 'live_rooms_custom_subtitle'.tr(),
+              actionLabel: 'live_join_by_room_id'.tr(),
               color: cs.tertiary,
               onTap: _openJoinDialog,
             ),
@@ -384,12 +384,12 @@ class _LiveListAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       actions: [
         IconButton(
-          tooltip: '通过房间号进入',
+          tooltip: 'live_join_by_room_id'.tr(),
           onPressed: onJoinTap,
           icon: const Icon(Icons.meeting_room_outlined),
         ),
         IconButton(
-          tooltip: '刷新',
+          tooltip: 'live_refresh_tooltip'.tr(),
           onPressed: loadingRooms ? null : onRefreshTap,
           icon: const Icon(Icons.refresh),
         ),
@@ -532,24 +532,24 @@ class _StartLiveDialogBody extends StatelessWidget {
             controller: titleController,
             autofocus: true,
             maxLength: 60,
-            decoration: const InputDecoration(
-              labelText: '直播标题',
-              hintText: '例如：今晚聊一下架构优化',
+            decoration: InputDecoration(
+              labelText: 'live_title_label'.tr(),
+              hintText: 'live_title_hint_dialog'.tr(),
             ),
           ),
           const SizedBox(height: 8),
           _LiveSegmentBlock<LiveVisibility>(
-            title: '可见性',
-            segments: const [
+            title: 'live_visibility'.tr(),
+            segments: [
               ButtonSegment(
                 value: LiveVisibility.public,
-                icon: Icon(Icons.public),
-                label: Text('公开'),
+                icon: const Icon(Icons.public),
+                label: Text('live_visibility_public'.tr()),
               ),
               ButtonSegment(
                 value: LiveVisibility.private,
-                icon: Icon(Icons.lock_outline),
-                label: Text('私密'),
+                icon: const Icon(Icons.lock_outline),
+                label: Text('live_visibility_private'.tr()),
               ),
             ],
             selected: visibility,
@@ -557,17 +557,17 @@ class _StartLiveDialogBody extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _LiveSegmentBlock<LiveSource>(
-            title: '画面来源',
-            segments: const [
+            title: 'live_source'.tr(),
+            segments: [
               ButtonSegment(
                 value: LiveSource.camera,
-                icon: Icon(Icons.videocam),
-                label: Text('摄像头'),
+                icon: const Icon(Icons.videocam),
+                label: Text('live_source_camera'.tr()),
               ),
               ButtonSegment(
                 value: LiveSource.screen,
-                icon: Icon(Icons.screen_share),
-                label: Text('屏幕共享'),
+                icon: const Icon(Icons.screen_share),
+                label: Text('live_source_screen'.tr()),
               ),
             ],
             selected: source,

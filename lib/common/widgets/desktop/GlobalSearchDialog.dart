@@ -62,7 +62,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       children: [
-                        const _ResultSectionTitle(title: '会话'),
+                        _ResultSectionTitle(title: 'global_search_section_conversations'.tr()),
                         if (searchState.rooms.isEmpty)
                           const _ResultEmpty(text: '未找到相关会话')
                         else
@@ -91,7 +91,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                             ),
                           ),
                         const SizedBox(height: 8),
-                        const _ResultSectionTitle(title: '联系人'),
+                        _ResultSectionTitle(title: 'global_search_section_contacts'.tr()),
                         if (searchState.contacts.isEmpty)
                           const _ResultEmpty(text: '未找到相关联系人')
                         else

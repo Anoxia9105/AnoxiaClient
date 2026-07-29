@@ -3,6 +3,7 @@ import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -156,11 +157,11 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
     if (_starting) return;
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      Toast.showNotificationNow('请填写直播标题');
+      Toast.showNotificationNow('live_title_required'.tr());
       return;
     }
     if (title.length > 60) {
-      Toast.showNotificationNow('直播标题不能超过 60 个字符');
+      Toast.showNotificationNow('live_title_max_length'.tr());
       return;
     }
 
@@ -175,7 +176,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      Toast.showNotificationNow('开播失败：$e');
+      Toast.showNotificationNow('live_start_error'.tr(args: [e.toString()]));
       setState(() => _starting = false);
       if (_previewTrack == null) {
         await _startPreview();
@@ -190,7 +191,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('直播预览'),
+        title: Text('live_preview_title'.tr()),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         leading: isDesktop
@@ -206,12 +207,12 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
         actions: [
           if (isDesktop) ...[
             IconButton(
-              tooltip: '最小化',
+              tooltip: 'call_minimize_tooltip'.tr(),
               onPressed: () => windowManager.minimize(),
               icon: const Icon(Icons.minimize),
             ),
             IconButton(
-              tooltip: '关闭',
+              tooltip: 'call_close_tooltip'.tr(),
               onPressed: () => windowManager.close(),
               icon: const Icon(Icons.close),
             ),
@@ -239,11 +240,11 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                     enabled: !_starting,
                     style: const TextStyle(color: Colors.white),
                     maxLength: 60,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       counterStyle: TextStyle(color: Colors.white54),
-                      labelText: '直播标题',
+                      labelText: 'live_title_label'.tr(),
                       labelStyle: TextStyle(color: Colors.white70),
-                      hintText: '例如：今晚一起聊产品设计',
+                      hintText: 'live_title_hint_preview'.tr(),
                       hintStyle: TextStyle(color: Colors.white38),
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white24),
@@ -258,16 +259,16 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                     children: [
                       Expanded(
                         child: SegmentedButton<LiveVisibility>(
-                          segments: const [
+                          segments: [
                             ButtonSegment(
                               value: LiveVisibility.public,
                               icon: Icon(Icons.public),
-                              label: Text('公开'),
+                              label: Text('live_visibility_public'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveVisibility.private,
                               icon: Icon(Icons.lock_outline),
-                              label: Text('私密'),
+                              label: Text('live_visibility_private'.tr()),
                             ),
                           ],
                           selected: {_visibility},
@@ -281,16 +282,16 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: SegmentedButton<LiveSource>(
-                          segments: const [
+                          segments: [
                             ButtonSegment(
                               value: LiveSource.camera,
                               icon: Icon(Icons.videocam),
-                              label: Text('摄像头'),
+                              label: Text('live_source_camera'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveSource.screen,
                               icon: Icon(Icons.screen_share),
-                              label: Text('屏幕'),
+                              label: Text('live_source_screen_short'.tr()),
                             ),
                           ],
                           selected: {_source},
@@ -306,7 +307,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${_visibility.label}直播 · ${_source.label} · 房间号由服务端生成',
+                          'live_info_template'.tr(args: [_visibility.trLabel(), _source.trLabel()]),
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ),
@@ -324,7 +325,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                                 ),
                               )
                             : const Icon(Icons.live_tv),
-                        label: Text(_starting ? '开播中' : '开始直播'),
+                        label: Text(_starting ? 'live_starting'.tr() : 'live_start_now'.tr()),
                       ),
                     ],
                   ),
@@ -361,7 +362,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
               const SizedBox(height: 16),
               FilledButton.tonal(
                 onPressed: _startPreview,
-                child: const Text('重试'),
+                child: Text('live_action_retry'.tr()),
               ),
             ],
           ),
