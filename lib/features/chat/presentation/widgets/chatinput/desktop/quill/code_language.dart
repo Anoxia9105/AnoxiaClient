@@ -92,7 +92,8 @@ abstract final class CodeLanguageDetector {
       return fromId('typescript')!;
     }
     if (RegExp(
-      r'\bpackage:|@override\b|\bWidget\s+build\b|\blate\s+final\b',
+      r'\bpackage:|@override\b|\bWidget\s+build\b|\blate\s+final\b|'
+      r'\bvoid\s+main\s*\(|\b(?:Future|Stream)<[^>]+>\s+\w+\s*\(',
     ).hasMatch(text)) {
       return fromId('dart')!;
     }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class MobileParticipantSurface extends StatefulWidget {
   const MobileParticipantSurface({
@@ -216,7 +217,7 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                 bottom: widget.compact ? 6 : 10,
                 child: Text(
                   participant is LocalParticipant
-                      ? '${meta.name}（我）'
+                      ? '${meta.name}${'call_me_label'.tr()}'
                       : meta.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

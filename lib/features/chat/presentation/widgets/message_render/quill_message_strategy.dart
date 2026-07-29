@@ -148,6 +148,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                         customStyles: QuillStyleConfig.get(
                           context,
                           color: widget.textColor,
+                          compact: true,
                         ),
                         textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
                         // ignore: experimental_member_use

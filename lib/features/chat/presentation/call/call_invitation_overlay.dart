@@ -15,14 +15,14 @@ class CallInvitationOverlay extends ConsumerWidget {
     return switch (invitation.phase) {
       CallInvitationPhase.incoming => _IncomingCallCard(invitation: invitation),
       CallInvitationPhase.acceptedElsewhere => const _CallNoticeCard(
-        text: '已在其他设备接听',
+        text: 'call_answered_elsewhere',
       ),
       CallInvitationPhase.rejectedElsewhere => const _CallNoticeCard(
-        text: '已在其他设备拒绝',
+        text: 'call_rejected_elsewhere',
       ),
-      CallInvitationPhase.canceled => const _CallNoticeCard(text: '通话邀请已取消'),
-      CallInvitationPhase.busy => const _CallNoticeCard(text: '对方忙线中'),
-      CallInvitationPhase.ended => const _CallNoticeCard(text: '通话已结束'),
+      CallInvitationPhase.canceled => const _CallNoticeCard(text: 'call_invitation_cancelled'),
+      CallInvitationPhase.busy => const _CallNoticeCard(text: 'call_peer_busy'),
+      CallInvitationPhase.ended => const _CallNoticeCard(text: 'call_ended'),
       CallInvitationPhase.outgoing => const SizedBox.shrink(),
     };
   }
@@ -107,8 +107,8 @@ class _IncomingCallCard extends ConsumerWidget {
                 const SizedBox(height: 6),
                 Text(
                   invitation.initialMedia.value == 'video'
-                      ? '邀请你进行视频通话'
-                      : '邀请你进行语音通话',
+                      ? 'call_invite_video_title'.tr()
+                      : 'call_invite_audio_title'.tr(),
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
@@ -176,7 +176,7 @@ class _CallNoticeCard extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              child: Text(text, style: TextStyle(color: cs.onInverseSurface)),
+              child: Text(text.tr(), style: TextStyle(color: cs.onInverseSurface)),
             ),
           ),
         ),

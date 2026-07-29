@@ -10,6 +10,10 @@ void main() {
       ).id,
       'dart',
     );
+    expect(
+      CodeLanguageDetector.detect('void main() {\n  print("hello");\n}').id,
+      'dart',
+    );
     expect(CodeLanguageDetector.detect('{"name":"anoxia"}').id, 'json');
     expect(
       CodeLanguageDetector.detect('def greet(name):\n  print(name)').id,

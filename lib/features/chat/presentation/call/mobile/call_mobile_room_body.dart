@@ -331,9 +331,9 @@ class _AudioCallBackground extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    '语音通话中',
-                    style: TextStyle(color: Colors.white60, fontSize: 14),
+                  Text(
+                    'call_voice_call_in_progress'.tr(),
+                    style: const TextStyle(color: Colors.white60, fontSize: 14),
                   ),
                 ],
               ),

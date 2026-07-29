@@ -32,7 +32,7 @@ class CallInviteMembersButton extends ConsumerWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: Tooltip(
-          message: '邀请成员',
+          message: 'call_invite_members'.tr(),
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,
             borderRadius: BorderRadius.circular(10),

@@ -67,14 +67,14 @@ class MobileCallControls extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 _CallControlButton(
-                  tooltip: state.micEnabled ? '麦克风静音' : '开启麦克风',
+                  tooltip: state.micEnabled ? 'call_mic_mute'.tr() : 'call_mic_unmute'.tr(),
                   icon: state.micEnabled ? Icons.mic : Icons.mic_off,
                   active: state.micEnabled,
                   onPressed: notifier.toggleMic,
                 ),
                 const SizedBox(width: 10),
                 _CallControlButton(
-                  tooltip: state.speakerOn ? '切换到听筒' : '切换到扬声器',
+                  tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
                   icon: state.speakerOn
                       ? Icons.volume_up_rounded
                       : Icons.hearing_rounded,
@@ -84,7 +84,7 @@ class MobileCallControls extends ConsumerWidget {
                 if (isVideoCall) ...[
                   const SizedBox(width: 10),
                   _CallControlButton(
-                    tooltip: state.cameraEnabled ? '关闭摄像头' : '开启摄像头',
+                    tooltip: state.cameraEnabled ? 'call_camera_off'.tr() : 'call_camera_on'.tr(),
                     icon: state.cameraEnabled
                         ? Icons.videocam_rounded
                         : Icons.videocam_off_rounded,

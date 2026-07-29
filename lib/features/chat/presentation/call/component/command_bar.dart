@@ -135,7 +135,7 @@ class CommandBar extends ConsumerWidget {
                     _soloButton(
                       context: context,
                       icon: HugeIcons.strokeRoundedHold03,
-                      label: '举手',
+                      label: 'call_hand_raise'.tr(),
                       active:
                           state.handRaiseMap?[state
                               .room
@@ -154,7 +154,7 @@ class CommandBar extends ConsumerWidget {
                       builder: (context) => _soloButton(
                         context: context,
                         icon: HugeIcons.strokeRoundedRubberDuck,
-                        label: '表情',
+                        label: 'call_reaction'.tr(),
                         active: false,
                         onTap: () =>
                             _showReactionPicker(context, notifier, state),

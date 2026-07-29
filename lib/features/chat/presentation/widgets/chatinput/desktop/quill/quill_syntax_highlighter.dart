@@ -6,6 +6,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:highlight/highlight.dart' as syntax;
 
 import 'code_language.dart';
+import 'quill_style_config.dart';
 
 /// Builds Quill text spans with syntax colors while preserving Quill's
 /// standard `code-block` and `code` attributes (and therefore editability).
@@ -21,6 +22,11 @@ abstract final class QuillSyntaxHighlighter {
     final isCodeBlock =
         node.parent?.style.containsKey(Attribute.codeBlock.key) ?? false;
     final isInlineCode = node.style.containsKey(Attribute.inlineCode.key);
+    final codeStyle = (isCodeBlock || isInlineCode)
+        ? (style ?? const TextStyle()).merge(
+            QuillStyleConfig.codeTextStyle(context),
+          )
+        : style;
     final language = isCodeBlock
         ? CodeLanguageDetector.resolveForLine(node.parent!)
         : CodeLanguageDetector.detect(text);
@@ -30,7 +36,7 @@ abstract final class QuillSyntaxHighlighter {
         language.id == CodeLanguageDetector.plainText.id ||
         trimmedText.isEmpty ||
         !_hasHighlightableContent(trimmedText)) {
-      return _plainSpan(text, style, recognizer);
+      return _plainSpan(text, codeStyle, recognizer);
     }
 
     try {
@@ -39,15 +45,15 @@ abstract final class QuillSyntaxHighlighter {
           ? monokaiSublimeTheme
           : githubTheme;
       return TextSpan(
-        style: style,
+        style: codeStyle,
         recognizer: recognizer,
         mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
-        children: _convertNodes(result.nodes ?? const [], style, theme),
+        children: _convertNodes(result.nodes ?? const [], codeStyle, theme),
       );
     } catch (_) {
       // Highlighting is presentation-only; malformed or unknown code must
       // never prevent Quill from rendering/editing the original text.
-      return _plainSpan(text, style, recognizer);
+      return _plainSpan(text, codeStyle, recognizer);
     }
   }
 

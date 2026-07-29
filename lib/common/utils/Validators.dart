@@ -1,13 +1,15 @@
 /// 表单验证工具类
 ///
 /// 提供常用的表单验证方法，包括邮箱、手机号、密码等。
+import 'package:easy_localization/easy_localization.dart';
+
 class Validators {
   Validators._();
 
   /// 验证是否为空
   static String? required(String? value, {String? message}) {
     if (value == null || value.trim().isEmpty) {
-      return message ?? '此字段不能为空';
+      return message ?? 'validator_required'.tr();
     }
     return null;
   }
@@ -15,13 +17,13 @@ class Validators {
   /// 验证邮箱格式
   static String? email(String? value, {String? message}) {
     if (value == null || value.trim().isEmpty) {
-      return message ?? '请输入邮箱';
+      return message ?? 'validator_email_required'.tr();
     }
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     if (!emailRegex.hasMatch(value)) {
-      return message ?? '请输入有效的邮箱地址';
+      return message ?? 'validator_email_invalid'.tr();
     }
     return null;
   }
@@ -29,11 +31,11 @@ class Validators {
   /// 验证手机号格式
   static String? phone(String? value, {String? message}) {
     if (value == null || value.trim().isEmpty) {
-      return message ?? '请输入手机号';
+      return message ?? 'validator_phone_required'.tr();
     }
     final phoneRegex = RegExp(r'^1[3-9]\d{9}$');
     if (!phoneRegex.hasMatch(value)) {
-      return message ?? '请输入有效的手机号';
+      return message ?? 'validator_phone_invalid'.tr();
     }
     return null;
   }
@@ -52,19 +54,19 @@ class Validators {
         String? message,
       }) {
     if (value == null || value.isEmpty) {
-      return message ?? '请输入密码';
+      return message ?? 'validator_password_required'.tr();
     }
 
     if (value.length < minLength) {
-      return message ?? '密码长度不能少于 $minLength 位';
+      return message ?? 'validator_password_min_length'.tr(args: [minLength.toString()]);
     }
 
     if (requireDigit && !RegExp(r'\d').hasMatch(value)) {
-      return message ?? '密码必须包含数字';
+      return message ?? 'validator_password_digit'.tr();
     }
 
     if (requireLetter && !RegExp(r'[a-zA-Z]').hasMatch(value)) {
-      return message ?? '密码必须包含字母';
+      return message ?? 'validator_password_letter'.tr();
     }
 
     return null;
@@ -73,10 +75,10 @@ class Validators {
   /// 验证两次密码是否一致
   static String? confirmPassword(String? value, String? password, {String? message}) {
     if (value == null || value.isEmpty) {
-      return message ?? '请确认密码';
+      return message ?? 'validator_confirm_password_required'.tr();
     }
     if (value != password) {
-      return message ?? '两次输入的密码不一致';
+      return message ?? 'validator_confirm_password_mismatch'.tr();
     }
     return null;
   }
@@ -93,19 +95,19 @@ class Validators {
         String? message,
       }) {
     if (value == null || value.trim().isEmpty) {
-      return message ?? '请输入用户名';
+      return message ?? 'validator_username_required'.tr();
     }
 
     if (value.length < minLength) {
-      return message ?? '用户名长度不能少于 $minLength 位';
+      return message ?? 'validator_username_min_length'.tr(args: [minLength.toString()]);
     }
 
     if (value.length > maxLength) {
-      return message ?? '用户名长度不能超过 $maxLength 位';
+      return message ?? 'validator_username_max_length'.tr(args: [maxLength.toString()]);
     }
 
     if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-      return message ?? '用户名只能包含字母、数字和下划线';
+      return message ?? 'validator_username_format'.tr();
     }
 
     return null;

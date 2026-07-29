@@ -11,7 +11,21 @@ import 'quill_code_line_number.dart';
 /// - 链接样式
 /// - 代码块样式
 class QuillStyleConfig {
-  static DefaultStyles get(BuildContext context, {Color? color}) {
+  static TextStyle codeTextStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextStyle(
+      fontFamily: 'HarmonyOS',
+      fontSize: QuillCodeLineNumber.fontSize,
+      height: QuillCodeLineNumber.lineHeight,
+      color: theme.colorScheme.onSurface,
+    );
+  }
+
+  static DefaultStyles get(
+    BuildContext context, {
+    Color? color,
+    bool compact = false,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final String? fontFamily = theme.textTheme.bodyLarge?.fontFamily;
@@ -25,16 +39,12 @@ class QuillStyleConfig {
 
     // 基础间距配置
     const baseHorizontalSpacing = HorizontalSpacing(0, 0);
-    const baseVerticalSpacing = VerticalSpacing(6, 0);
+    final baseVerticalSpacing = compact
+        ? VerticalSpacing.zero
+        : const VerticalSpacing(6, 0);
 
     // 代码块样式
-    final codeTextStyle = baseTextStyle.copyWith(
-      fontFamily: 'HarmonyOS',
-      fontSize: QuillCodeLineNumber.fontSize,
-      height: QuillCodeLineNumber.lineHeight,
-      // Code uses one theme color in both the composer and message bubbles.
-      color: colorScheme.onSurface,
-    );
+    final codeTextStyle = QuillStyleConfig.codeTextStyle(context);
 
     return DefaultStyles(
       // 正文段落样式

@@ -41,19 +41,23 @@ class CallRoomPage extends ConsumerWidget {
 
   /// 构建加载中状态
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 24,
             height: 24,
             child: CircularProgressIndicator(strokeWidth: 3),
           ),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           Text(
-            '加载中...',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            'call_loading'.tr(),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Colors.grey[300],
+            ),
             textAlign: TextAlign.center,
           ),
         ],

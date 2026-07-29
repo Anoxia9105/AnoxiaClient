@@ -203,7 +203,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
       _MoreMenuItem(
         icon: HugeIcons.strokeRoundedMicOff01,
         iconColor: null,
-        label: '静音',
+        label: 'call_mute'.tr(),
         onTap: () {
           widget.onMute?.call(identity);
           close?.call();
@@ -212,7 +212,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
       _MoreMenuItem(
         icon: HugeIcons.strokeRoundedUserRemove01,
         iconColor: Colors.redAccent,
-        label: '踢出',
+        label: 'call_kick'.tr(),
         labelColor: Colors.redAccent,
         onTap: () {
           widget.onKick?.call(identity);
