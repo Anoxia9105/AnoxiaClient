@@ -391,6 +391,7 @@
   "toolbar_italic": "斜体 (Ctrl+I)",
   "toolbar_underline": "下划线 (Ctrl+U)",
   "toolbar_strikethrough": "删除线",
+  "toolbar_inline_code": "行内代码",
   "toolbar_clear_format": "清除格式",
   "toolbar_quote": "引用",
   "toolbar_code_block": "代码块",

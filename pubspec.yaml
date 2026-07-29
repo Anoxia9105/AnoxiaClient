@@ -54,6 +54,8 @@ dependencies:
   tray_manager: ^0.5.2
   # 富文本
   flutter_quill: ^11.5.1
+  flutter_highlight: ^0.7.0
+  highlight: ^0.7.0
   # 图片缓存
   #cached_network_image: ^3.4.1
   cross_cache: ^1.1.0

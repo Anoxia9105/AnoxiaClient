@@ -6,6 +6,13 @@ project(anoxiaclient LANGUAGES CXX)
 # 强制全局压制 MSVC 编译器对旧版 C++ 协程的弃用报错
 add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
+# Flutter plugins are built in parallel on Windows. Serialize access to MSVC
+# program database files to prevent C1041 errors when compiler processes write
+# debug information concurrently.
+if(MSVC)
+  add_compile_options(/FS)
+endif()
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "anoxiaclient")

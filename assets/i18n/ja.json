@@ -391,6 +391,7 @@
   "toolbar_italic": "斜体 (Ctrl+I)",
   "toolbar_underline": "下線 (Ctrl+U)",
   "toolbar_strikethrough": "取り消し線",
+  "toolbar_inline_code": "インラインコード",
   "toolbar_clear_format": "書式をクリア",
   "toolbar_quote": "引用",
   "toolbar_code_block": "コードブロック",

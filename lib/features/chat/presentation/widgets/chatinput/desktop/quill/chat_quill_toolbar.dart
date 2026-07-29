@@ -93,6 +93,12 @@ class ChatQuillToolbar extends ConsumerWidget {
                       'toolbar_strikethrough'.tr(),
                       iconColor,
                     ),
+                    _buildActionButton(
+                      HugeIcons.strokeRoundedSourceCode,
+                      Attribute.inlineCode,
+                      'toolbar_inline_code'.tr(),
+                      iconColor,
+                    ),
 
                     // 清除格式按钮
                     IconButton(
@@ -335,14 +341,18 @@ class ChatQuillToolbar extends ConsumerWidget {
     String tooltip,
     Color color,
   ) {
-    final isSelected = controller.getSelectionStyle().attributes.containsKey(
-      attr.key,
-    );
     return IconButton(
       mouseCursor: SystemMouseCursors.click,
       tooltip: tooltip,
       visualDensity: VisualDensity.compact,
       onPressed: () {
+        // Read the current style at click time. The toolbar does not rebuild
+        // for every Quill selection/style change, so a value captured during
+        // build becomes stale after the first click.
+        final isSelected = controller
+            .getSelectionStyle()
+            .attributes
+            .containsKey(attr.key);
         controller.formatSelection(
           isSelected ? Attribute.clone(attr, null) : attr,
         );
