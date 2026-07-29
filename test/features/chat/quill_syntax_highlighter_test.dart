@@ -36,7 +36,12 @@ void main() {
                 customStyles: QuillStyleConfig.get(context),
                 textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
                 // ignore: experimental_member_use
-                customLeadingBlockBuilder: QuillCodeLineNumber.build,
+                customLeadingBlockBuilder: (node, config) =>
+                    QuillCodeLineNumber.build(
+                      node,
+                      config,
+                      controller: controller,
+                    ),
               ),
             ),
           ),
@@ -78,7 +83,12 @@ void main() {
                 customStyles: QuillStyleConfig.get(context),
                 textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
                 // ignore: experimental_member_use
-                customLeadingBlockBuilder: QuillCodeLineNumber.build,
+                customLeadingBlockBuilder: (node, config) =>
+                    QuillCodeLineNumber.build(
+                      node,
+                      config,
+                      controller: controller,
+                    ),
               ),
             ),
           ),
@@ -89,6 +99,73 @@ void main() {
     expect(controller.document.toPlainText(), '^\n=\n');
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
+
+    final firstCodeText = find.byWidgetPredicate(
+      (widget) =>
+          widget is RichText &&
+          widget.text.toPlainText(includeSemanticsLabels: false) == '^',
+    );
+    final lineNumberRect = tester.getRect(find.text('1'));
+    final lineNumberGutter = find
+        .ancestor(of: find.text('1'), matching: find.byType(Container))
+        .first;
+    final gutterRect = tester.getRect(lineNumberGutter);
+    final codeTextRect = tester.getRect(firstCodeText);
+    expect(lineNumberRect.right, lessThanOrEqualTo(codeTextRect.left));
+    expect(gutterRect.width, QuillCodeLineNumber.gutterWidth);
+    expect(lineNumberRect.left, gutterRect.left);
+    expect(gutterRect.right, lessThanOrEqualTo(codeTextRect.left));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('language badge updates the code block language attribute', (
+    tester,
+  ) async {
+    final controller = QuillController(
+      document: Document.fromJson([
+        {'insert': '@override Widget build() {}'},
+        {
+          'insert': '\n',
+          'attributes': {'code-block': true},
+        },
+      ]),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => QuillEditor.basic(
+              controller: controller,
+              config: QuillEditorConfig(
+                customStyles: QuillStyleConfig.get(context),
+                textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
+                // ignore: experimental_member_use
+                customLeadingBlockBuilder: (node, config) =>
+                    QuillCodeLineNumber.build(
+                      node,
+                      config,
+                      controller: controller,
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Dart'), findsOneWidget);
+    await tester.tap(find.text('Dart'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Python').last);
+    await tester.pumpAndSettle();
+
+    final operations = controller.document.toDelta().toJson();
+    expect(operations.last['attributes']?['code-block'], 'python');
+    expect(find.text('Python'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

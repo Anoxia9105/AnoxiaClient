@@ -542,6 +542,7 @@
   "chat_room_dissolved": "ルームは解散されました",
   "chat_unknown_user_label": "不明なユーザー",
   "chat_input_placeholder": "メッセージを入力...",
+  "chat_input_length_limit": "メッセージは最大{}文字まで入力できます。",
   "member_add_title": "メンバーを追加",
   "member_group_chat": "グループチャット",
   "create_group_selected_count": "{} 人を選択",

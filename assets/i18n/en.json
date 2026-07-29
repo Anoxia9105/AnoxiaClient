@@ -542,6 +542,7 @@
   "chat_room_dissolved": "Room has been dissolved",
   "chat_unknown_user_label": "Unknown user",
   "chat_input_placeholder": "Type a message...",
+  "chat_input_length_limit": "Messages are limited to {} characters.",
   "member_add_title": "Add Members",
   "member_group_chat": "Group Chat",
   "create_group_selected_count": "{} selected",

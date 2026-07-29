@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
+import 'quill_code_line_number.dart';
+
 /// Quill 编辑器样式配置类
 ///
 /// 提供统一的富文本编辑器样式配置，适配应用主题：
@@ -14,58 +16,97 @@ class QuillStyleConfig {
     final colorScheme = theme.colorScheme;
     final String? fontFamily = theme.textTheme.bodyLarge?.fontFamily;
 
+    //  基础文本样式
     final baseTextStyle = TextStyle(
       fontFamily: fontFamily,
       fontSize: 14,
       color: color ?? colorScheme.onSurface,
     );
+
+    // 基础间距配置
+    const baseHorizontalSpacing = HorizontalSpacing(0, 0);
+    const baseVerticalSpacing = VerticalSpacing(6, 0);
+
+    // 代码块样式
     final codeTextStyle = baseTextStyle.copyWith(
-      fontFamily: 'monospace',
-      fontSize: 13.5,
-      height: 1.45,
-    );
-    final codeBackground = colorScheme.surfaceContainerHighest.withValues(
-      alpha: theme.brightness == Brightness.dark ? 0.72 : 0.82,
+      fontFamily: 'HarmonyOS',
+      fontSize: QuillCodeLineNumber.fontSize,
+      height: QuillCodeLineNumber.lineHeight,
+      // Code uses one theme color in both the composer and message bubbles.
+      color: colorScheme.onSurface,
     );
 
     return DefaultStyles(
+      // 正文段落样式
       paragraph: DefaultTextBlockStyle(
         baseTextStyle,
-        const HorizontalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        baseHorizontalSpacing,
+        baseVerticalSpacing,
+        VerticalSpacing.zero,
         null,
       ),
+      // 占位符样式
       placeHolder: DefaultTextBlockStyle(
         baseTextStyle.copyWith(color: colorScheme.onSurfaceVariant),
-        const HorizontalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        baseHorizontalSpacing,
+        baseVerticalSpacing,
+        VerticalSpacing.zero,
         null,
       ),
+      // 链接样式
       link: baseTextStyle.copyWith(
         color: Colors.blueAccent,
         decoration: TextDecoration.underline,
       ),
+      // 代码块样式
       inlineCode: InlineCodeStyle(
-        backgroundColor: codeBackground,
+        backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+          alpha: theme.brightness == Brightness.dark ? 0.72 : 0.82,
+        ),
         radius: const Radius.circular(4),
         style: codeTextStyle,
         header1: codeTextStyle,
         header2: codeTextStyle,
         header3: codeTextStyle,
       ),
+      // 列表样式
+      lists: DefaultListBlockStyle(
+        baseTextStyle,
+        baseHorizontalSpacing,
+        baseVerticalSpacing,
+        VerticalSpacing.zero,
+        null,
+        null,
+        indentWidthBuilder: QuillCodeLineNumber.indentWidth,
+        numberPointWidthBuilder: QuillCodeLineNumber.numberPointWidth,
+      ),
+      // 代码块样式
       code: DefaultListBlockStyle(
         codeTextStyle,
-        const HorizontalSpacing(10, 10),
-        const VerticalSpacing(8, 8),
-        const VerticalSpacing(0, 0),
+        baseHorizontalSpacing,
+        baseVerticalSpacing,
+        VerticalSpacing.zero,
         BoxDecoration(
-          color: codeBackground,
+          color: colorScheme.surfaceContainerHighest.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.72 : 0.82,
+          ),
           border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(4),
         ),
         null,
+      ),
+      // 引用样式
+      quote: DefaultTextBlockStyle(
+        baseTextStyle,
+        baseHorizontalSpacing,
+        baseVerticalSpacing,
+        VerticalSpacing.zero,
+        BoxDecoration(
+          border: Border(
+            left: BorderSide(width: 4, color: colorScheme.outlineVariant),
+          ),
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
     );
   }

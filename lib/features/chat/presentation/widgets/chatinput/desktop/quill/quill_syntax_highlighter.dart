@@ -5,6 +5,8 @@ import 'package:flutter_highlight/themes/monokai-sublime.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:highlight/highlight.dart' as syntax;
 
+import 'code_language.dart';
+
 /// Builds Quill text spans with syntax colors while preserving Quill's
 /// standard `code-block` and `code` attributes (and therefore editability).
 abstract final class QuillSyntaxHighlighter {
@@ -19,20 +21,20 @@ abstract final class QuillSyntaxHighlighter {
     final isCodeBlock =
         node.parent?.style.containsKey(Attribute.codeBlock.key) ?? false;
     final isInlineCode = node.style.containsKey(Attribute.inlineCode.key);
+    final language = isCodeBlock
+        ? CodeLanguageDetector.resolveForLine(node.parent!)
+        : CodeLanguageDetector.detect(text);
 
     final trimmedText = text.trim();
     if ((!isCodeBlock && !isInlineCode) ||
+        language.id == CodeLanguageDetector.plainText.id ||
         trimmedText.isEmpty ||
         !_hasHighlightableContent(trimmedText)) {
       return _plainSpan(text, style, recognizer);
     }
 
     try {
-      // Auto detection invokes every registered language parser. Some of them
-      // print FormatExceptions for valid, incomplete editor input (for example
-      // "^" and "="). A fixed C-style grammar keeps highlighting deterministic
-      // while the user is typing.
-      final result = syntax.highlight.parse(text, language: 'dart');
+      final result = syntax.highlight.parse(text, language: language.id);
       final theme = Theme.of(context).brightness == Brightness.dark
           ? monokaiSublimeTheme
           : githubTheme;

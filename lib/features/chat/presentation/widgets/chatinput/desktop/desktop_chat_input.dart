@@ -13,6 +13,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
@@ -185,6 +186,14 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     final textData = await Clipboard.getData(Clipboard.kTextPlain);
     if (textData?.text != null && textData!.text!.isNotEmpty) {
       final text = textData.text!;
+      if (!ChatInputLimit.canPaste(controller, text)) {
+        Toast.showToast(
+          'chat_input_length_limit'.tr(
+            args: [ChatInputLimit.maxCharacters.toString()],
+          ),
+        );
+        return;
+      }
       final selection = controller.selection;
       final start = selection.baseOffset;
 
@@ -271,7 +280,12 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               customStyles: QuillStyleConfig.get(context),
               textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
               // ignore: experimental_member_use
-              customLeadingBlockBuilder: QuillCodeLineNumber.build,
+              customLeadingBlockBuilder: (node, config) =>
+                  QuillCodeLineNumber.build(
+                    node,
+                    config,
+                    controller: controller,
+                  ),
               // ignore: experimental_member_use
               onKeyPressed: (event, node) => _handleKeyPress(event, controller),
               embedBuilders: [

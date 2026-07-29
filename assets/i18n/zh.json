@@ -542,6 +542,7 @@
   "chat_room_dissolved": "房间已解散",
   "chat_unknown_user_label": "未知用户",
   "chat_input_placeholder": "输入消息...",
+  "chat_input_length_limit": "消息最多可输入 {} 个字符。",
   "member_add_title": "添加成员",
   "member_group_chat": "群聊",
   "create_group_selected_count": "已选择 {} 人",

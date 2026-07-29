@@ -5,6 +5,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -125,39 +126,58 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Listener(
-                onPointerDown: (_) => _clearSiblingSelections(),
-                child: QuillEditor.basic(
-                  focusNode: _focusNode,
-                  controller: _controller!,
-                  config: QuillEditorConfig(
-                    textSelectionThemeData: TextSelectionThemeData(
-                      selectionColor: Colors.blueAccent.withValues(alpha: 0.5),
+              Stack(
+                children: [
+                  Listener(
+                    onPointerDown: (_) => _clearSiblingSelections(),
+                    child: QuillEditor.basic(
+                      focusNode: _focusNode,
+                      controller: _controller!,
+                      config: QuillEditorConfig(
+                        textSelectionThemeData: TextSelectionThemeData(
+                          selectionColor: Colors.blueAccent.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                        enableSelectionToolbar: false,
+                        showCursor: false,
+                        autoFocus: false,
+                        expands: false,
+                        scrollable: false,
+                        padding: EdgeInsets.zero,
+                        customStyles: QuillStyleConfig.get(
+                          context,
+                          color: widget.textColor,
+                        ),
+                        textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
+                        // ignore: experimental_member_use
+                        customLeadingBlockBuilder: (node, config) =>
+                            QuillCodeLineNumber.build(
+                              node,
+                              config,
+                              showLanguageBadge: false,
+                            ),
+                        onTapOutside: (_, focusNode) {
+                          focusNode.unfocus();
+                          _clearSelection();
+                        },
+                        embedBuilders: [
+                          QuillImageBuild(),
+                          QuillFileBuild(),
+                          QuillMentionBuild(),
+                        ],
+                      ),
                     ),
-                    enableSelectionToolbar: false,
-                    showCursor: false,
-                    autoFocus: false,
-                    expands: false,
-                    scrollable: false,
-                    padding: EdgeInsets.zero,
-                    customStyles: QuillStyleConfig.get(
-                      context,
-                      color: widget.textColor,
-                    ),
-                    textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
-                    // ignore: experimental_member_use
-                    customLeadingBlockBuilder: QuillCodeLineNumber.build,
-                    onTapOutside: (_, focusNode) {
-                      focusNode.unfocus();
-                      _clearSelection();
-                    },
-                    embedBuilders: [
-                      QuillImageBuild(),
-                      QuillFileBuild(),
-                      QuillMentionBuild(),
-                    ],
                   ),
-                ),
+                  if (_codeLanguage() case final language?)
+                    Positioned(
+                      top: 2,
+                      right: 8,
+                      child: IgnorePointer(
+                        child: QuillCodeLanguageBadge(language: language),
+                      ),
+                    ),
+                ],
               ),
               MessageLinkPreview(text: previewSource, maxWidth: targetWidth),
             ],
@@ -199,7 +219,10 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   double _resolveTargetWidth(BuildContext context, double maxWidth) {
-    if (_hasBlockEmbed()) return maxWidth;
+    // Code blocks need a stable content column next to their fixed line-number
+    // gutter. Treat them like other block content instead of shrinking the
+    // message bubble to the measured width of a short code line.
+    if (_requiresFullWidth()) return maxWidth;
 
     final hasLinkPreview =
         MessageLinkPreview.extractFirstUrl(_linkPreviewSource()) != null;
@@ -222,11 +245,16 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     final spans = <InlineSpan>[];
     final placeholders = <PlaceholderDimensions>[];
     var hasVisibleContent = false;
+    var hasBlockQuote = false;
 
     for (final op in opsJson) {
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
+      if (attributes is Map &&
+          attributes.containsKey(Attribute.blockQuote.key)) {
+        hasBlockQuote = true;
+      }
 
       if (insert is String) {
         if (insert.replaceAll('\n', '').isNotEmpty) hasVisibleContent = true;
@@ -285,7 +313,12 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     }
 
     // 给字形取整和 Quill 行布局留少量余量，避免临界宽度提前换行。
-    return (widestLine.ceilToDouble() + 2).clamp(0.0, maxWidth).toDouble();
+    // Leave room for the quote bar and its inset, but keep short quotes
+    // compact instead of forcing them to occupy the full message width.
+    final blockQuoteInset = hasBlockQuote ? 24.0 : 0.0;
+    return (widestLine.ceilToDouble() + blockQuoteInset + 2)
+        .clamp(0.0, maxWidth)
+        .toDouble();
   }
 
   TextStyle _measurementStyle(TextStyle baseStyle, dynamic attributes) {
@@ -317,13 +350,19 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     return '@--';
   }
 
-  bool _hasBlockEmbed() {
+  bool _requiresFullWidth() {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
     if (opsJson is! List) return false;
 
     for (final op in opsJson) {
       if (op is! Map) continue;
       final insert = op['insert'];
+      final attributes = op['attributes'];
+      if (attributes is Map) {
+        if (attributes.containsKey(Attribute.codeBlock.key)) {
+          return true;
+        }
+      }
       if (insert is Map && !insert.containsKey('mention')) return true;
     }
     return false;
@@ -345,5 +384,40 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         ..write(link);
     }
     return buffer.toString();
+  }
+
+  CodeLanguage? _codeLanguage() {
+    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    if (opsJson is! List) return null;
+
+    final source = StringBuffer();
+    String? selectedLanguage;
+    var pendingText = '';
+    var foundCodeBlock = false;
+
+    for (final op in opsJson) {
+      if (op is! Map) continue;
+      final insert = op['insert'];
+      if (insert is String) pendingText += insert;
+
+      final attributes = op['attributes'];
+      final codeValue = attributes is Map
+          ? attributes[Attribute.codeBlock.key]
+          : null;
+      if (codeValue != null) {
+        foundCodeBlock = true;
+        source.write(pendingText);
+        pendingText = '';
+        if (codeValue is String) selectedLanguage ??= codeValue;
+      } else if (insert is String && insert.contains('\n') && foundCodeBlock) {
+        break;
+      }
+    }
+
+    if (!foundCodeBlock) return null;
+    return selectedLanguage == null
+        ? CodeLanguageDetector.detect(source.toString())
+        : CodeLanguageDetector.fromId(selectedLanguage) ??
+              CodeLanguageDetector.plainText;
   }
 }

@@ -41,36 +41,22 @@ class CallRoomPage extends ConsumerWidget {
 
   /// 构建加载中状态
   Widget _buildLoadingState() {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 34,
-              height: 34,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
-            SizedBox(height: 14),
-            Text(
-              '正在进入通话',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 8),
-            Text(
-              '正在准备音视频连接，请稍候',
-              style: TextStyle(fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 3),
+          ),
+          SizedBox(height: 14),
+          Text(
+            '加载中...',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

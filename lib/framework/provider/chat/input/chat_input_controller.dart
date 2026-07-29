@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
@@ -18,6 +19,7 @@ import 'package:anoxia/framework/protocol/message/room_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
 import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
@@ -25,6 +27,7 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -44,6 +47,8 @@ part 'chat_input_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ChatInputController extends _$ChatInputController {
   bool _isTyping = false;
+  bool _isEnforcingInputLimit = false;
+  DateTime? _lastLimitNoticeAt;
   Timer? _typingTimer;
 
   /// 计算发送超时时间（秒）
@@ -97,7 +102,10 @@ class ChatInputController extends _$ChatInputController {
 
           // 普通文本粘贴直接返回原文本
           onPlainTextPaste: (String plainText) async {
-            log.info('onPlainTextPaste: $plainText');
+            if (!ChatInputLimit.canPaste(controller, plainText)) {
+              _showInputLimitNotice();
+              return '';
+            }
             return plainText;
           },
         ),
@@ -125,6 +133,7 @@ class ChatInputController extends _$ChatInputController {
   void _onTextChanged() {
     if (!ref.mounted) return;
     final controller = state;
+    if (_enforceInputLimit(controller)) return;
     final bool hasContent = controller.document.length > 1;
 
     if (hasContent && !_isTyping) {
@@ -202,6 +211,43 @@ class ChatInputController extends _$ChatInputController {
   ///
   /// 通过 WebSocket 发送 HighMessage 类型 TYPING_STATUS，
   /// 前提是对方在线且房间成员已同步。
+  bool _enforceInputLimit(QuillController controller) {
+    if (_isEnforcingInputLimit) return true;
+    if (controller.document.length <= ChatInputLimit.maxCharacters + 1) {
+      return false;
+    }
+
+    _isEnforcingInputLimit = true;
+    try {
+      final excess =
+          controller.document.length - ChatInputLimit.maxCharacters - 1;
+      controller.replaceText(
+        ChatInputLimit.maxCharacters,
+        excess,
+        '',
+        const TextSelection.collapsed(offset: ChatInputLimit.maxCharacters),
+      );
+      _showInputLimitNotice();
+    } finally {
+      _isEnforcingInputLimit = false;
+    }
+    return true;
+  }
+
+  void _showInputLimitNotice() {
+    final now = DateTime.now();
+    if (_lastLimitNoticeAt != null &&
+        now.difference(_lastLimitNoticeAt!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastLimitNoticeAt = now;
+    Toast.showToast(
+      'chat_input_length_limit'.tr(
+        args: [ChatInputLimit.maxCharacters.toString()],
+      ),
+    );
+  }
+
   void _sendTypingStatus(bool isTyping) {
     if (!ref.mounted) return;
     final room = ref.read(currentRoomProvider(roomId));
