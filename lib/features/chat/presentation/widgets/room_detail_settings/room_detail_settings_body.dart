@@ -13,7 +13,7 @@ import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.d
 import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
-import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';

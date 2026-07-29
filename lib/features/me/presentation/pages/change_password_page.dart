@@ -1,6 +1,6 @@
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 

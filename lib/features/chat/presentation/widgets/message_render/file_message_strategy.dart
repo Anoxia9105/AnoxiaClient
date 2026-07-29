@@ -2,14 +2,14 @@ import 'dart:io';
 
 import 'package:anoxia/common/utils/fileUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
-import '../../../../../framework/protocol/message/Attachment.dart';
+import '../../../../../framework/protocol/message/attachment.dart';
 import 'base/message_render_strategy.dart';
 
 /// 文件消息渲染策略

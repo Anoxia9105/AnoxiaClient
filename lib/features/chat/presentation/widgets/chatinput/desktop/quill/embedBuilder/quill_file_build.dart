@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:anoxia/framework/domain/upload_entry.dart';
-import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

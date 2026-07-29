@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';

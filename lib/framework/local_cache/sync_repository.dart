@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../domain/ChatMessage.dart';
 import '../domain/ChatRoomVO.dart';
 import '../logs/talker.dart';
-import '../protocol/message/MessageEunm.dart';
+import '../protocol/message/message_eunm.dart';
 import 'local_data_source.dart';
 import 'remote_data_source.dart';
 

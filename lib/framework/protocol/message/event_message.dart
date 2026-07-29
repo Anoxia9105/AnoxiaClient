@@ -1,4 +1,4 @@
-import '../IPacket.dart';
+import '../i_packet.dart';
 
 /// 系统事件类型枚举（V5 协议对齐）
 ///

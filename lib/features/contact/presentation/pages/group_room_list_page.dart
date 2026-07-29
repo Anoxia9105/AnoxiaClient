@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/widgets/group_room_widgets.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
@@ -23,7 +24,7 @@ class GroupRoomListPage extends ConsumerWidget {
     final groups = ref.watch(groupRoomListProvider);
 
     return Scaffold(
-      backgroundColor:Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           '${'contact_joined_groups'.tr()} ${groups.isNotEmpty ? '(${groups.length})' : ''}',
@@ -51,9 +52,10 @@ class GroupRoomListPage extends ConsumerWidget {
                 return GroupRoomTile(
                   avatar: room.roomAvatar ?? '',
                   roomName: room.roomName ?? 'group_unnamed'.tr(),
-                  subtitle:
-                      room.lastMessage?.content ??
-                      'chat_no_messages_in_group'.tr(),
+                  subtitle: MessagePreviewFormatter.format(
+                    room.lastMessage,
+                    fallback: 'chat_no_messages_in_group'.tr(),
+                  ),
                   unreadCount: room.unreadCount ?? 0,
                   memberCount: memberCount,
                   onTap: roomId == null

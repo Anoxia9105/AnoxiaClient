@@ -13,8 +13,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-import '../../../protocol/PacketType.dart';
-import '../../../protocol/message/EventMessage.dart';
+import '../../../protocol/packet_type.dart';
+import '../../../protocol/message/event_message.dart';
 
 part 'system_event_service.g.dart';
 

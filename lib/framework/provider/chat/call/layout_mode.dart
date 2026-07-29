@@ -2,7 +2,7 @@ import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
 
-part 'LayoutMode.g.dart';
+part 'layout_mode.g.dart';
 
 enum LayoutMode {
   grid, // 多人

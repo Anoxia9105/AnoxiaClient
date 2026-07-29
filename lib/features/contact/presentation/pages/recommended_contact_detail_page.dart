@@ -1,7 +1,7 @@
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
-import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

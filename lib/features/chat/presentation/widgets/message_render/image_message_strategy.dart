@@ -3,7 +3,7 @@ import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/ChatMessage.dart';
-import '../../../../../framework/protocol/message/Attachment.dart';
+import '../../../../../framework/protocol/message/attachment.dart';
 import 'base/message_render_strategy.dart';
 
 /// 鍥剧墖娑堟伅娓叉煋绛栫暐

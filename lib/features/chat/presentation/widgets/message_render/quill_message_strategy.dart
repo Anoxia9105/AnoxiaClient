@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -144,6 +145,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                       color: widget.textColor,
                     ),
                     textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
+                    // ignore: experimental_member_use
+                    customLeadingBlockBuilder: QuillCodeLineNumber.build,
                     onTapOutside: (_, focusNode) {
                       focusNode.unfocus();
                       _clearSelection();

@@ -2,7 +2,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';

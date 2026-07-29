@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import '../IPacket.dart';
-import '../PacketType.dart';
+import '../i_packet.dart';
+import '../packet_type.dart';
 
 /// 二进制数据包解析器类型定义（V5 协议）
 typedef BinaryPacketParser = IPacket? Function(Uint8List payload, int codecId);

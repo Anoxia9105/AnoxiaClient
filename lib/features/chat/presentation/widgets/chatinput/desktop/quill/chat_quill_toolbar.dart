@@ -4,7 +4,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_w
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
-import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 

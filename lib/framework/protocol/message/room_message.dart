@@ -1,6 +1,6 @@
-import '../IPacket.dart';
-import 'MessageEunm.dart';
-import 'MessagePayload.dart';
+import '../i_packet.dart';
+import 'message_eunm.dart';
+import 'message_payload.dart';
 import 'package:flutter/foundation.dart';
 
 /// 聊天室消息（V5 协议对齐）

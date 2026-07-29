@@ -1,8 +1,8 @@
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/domain/ChatRoomVO.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 
 class RemoteSendResult {
   const RemoteSendResult({

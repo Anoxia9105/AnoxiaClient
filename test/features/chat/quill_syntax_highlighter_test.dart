@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,8 @@ void main() {
               config: QuillEditorConfig(
                 customStyles: QuillStyleConfig.get(context),
                 textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
+                // ignore: experimental_member_use
+                customLeadingBlockBuilder: QuillCodeLineNumber.build,
               ),
             ),
           ),
@@ -74,6 +77,8 @@ void main() {
               config: QuillEditorConfig(
                 customStyles: QuillStyleConfig.get(context),
                 textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
+                // ignore: experimental_member_use
+                customLeadingBlockBuilder: QuillCodeLineNumber.build,
               ),
             ),
           ),
@@ -82,6 +87,8 @@ void main() {
     );
 
     expect(controller.document.toPlainText(), '^\n=\n');
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

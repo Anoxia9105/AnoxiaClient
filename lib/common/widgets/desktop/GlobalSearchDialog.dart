@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/framework/provider/desktop/desktop_search_controller.dart';
@@ -73,7 +74,9 @@ class GlobalSearchDialog extends ConsumerWidget {
                               title:
                                   room.roomName ??
                                   'chat_unknown_conversation'.tr(),
-                              subtitle: room.lastMessage?.content ?? '',
+                              subtitle: MessagePreviewFormatter.format(
+                                room.lastMessage,
+                              ),
                               onTap: () {
                                 ref
                                     .read(layoutControllerProvider.notifier)

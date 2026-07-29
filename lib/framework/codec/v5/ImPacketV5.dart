@@ -3,13 +3,13 @@ import 'dart:typed_data';
 import '../ProtoReader.dart';
 import '../ProtoWriter.dart';
 import '../FrameCodec.dart';
-import '../../protocol/message/Attachment.dart';
-import '../../protocol/message/EventMessage.dart';
-import '../../protocol/message/HighMessage.dart';
-import '../../protocol/message/MessageEunm.dart';
-import '../../protocol/message/MessagePayload.dart';
-import '../../protocol/message/RoomMessage.dart';
-import '../../protocol/PacketType.dart';
+import '../../protocol/message/attachment.dart';
+import '../../protocol/message/event_message.dart';
+import '../../protocol/message/high_message.dart';
+import '../../protocol/message/message_eunm.dart';
+import '../../protocol/message/message_payload.dart';
+import '../../protocol/message/room_message.dart';
+import '../../protocol/packet_type.dart';
 import '../../logs/talker.dart';
 
 /// IM V5 鍗忚鍏ㄩ噺缂栬В鐮佸櫒

@@ -11,7 +11,7 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';

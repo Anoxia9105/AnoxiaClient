@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'LayoutMode.dart';
+part of 'layout_mode.dart';
 
 // **************************************************************************
 // RiverpodGenerator

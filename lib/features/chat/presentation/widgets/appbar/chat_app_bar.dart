@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-import '../../../../../framework/protocol/message/HighMessage.dart';
+import '../../../../../framework/protocol/message/high_message.dart';
 import '../../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../../framework/provider/chat/room/room_list_service.dart';
 

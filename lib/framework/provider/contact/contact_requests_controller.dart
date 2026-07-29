@@ -1,6 +1,6 @@
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/ChatContactRequestVO.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'contact_list_controller.dart';

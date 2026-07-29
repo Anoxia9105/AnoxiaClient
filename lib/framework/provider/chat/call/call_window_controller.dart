@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
-import 'package:anoxia/framework/protocol/message/HighMessage.dart';
+import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 
 import '../../../logs/talker.dart';
-import 'Channel.dart';
+import 'channel.dart';
 import 'call_initial_media.dart';
 
 part 'call_window_controller.g.dart';

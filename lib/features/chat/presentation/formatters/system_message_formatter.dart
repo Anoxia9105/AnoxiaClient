@@ -1,5 +1,5 @@
 import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 

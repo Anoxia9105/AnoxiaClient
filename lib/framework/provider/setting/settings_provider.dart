@@ -1,5 +1,5 @@
-import 'package:anoxia/common/constants/API.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

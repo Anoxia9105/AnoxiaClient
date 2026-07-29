@@ -10,7 +10,7 @@ import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
 import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
-import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';

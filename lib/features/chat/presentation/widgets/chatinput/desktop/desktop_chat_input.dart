@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/framework/extensions/QuillCursorX.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:flutter/material.dart';
@@ -269,6 +270,8 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               padding: const EdgeInsets.all(8),
               customStyles: QuillStyleConfig.get(context),
               textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
+              // ignore: experimental_member_use
+              customLeadingBlockBuilder: QuillCodeLineNumber.build,
               // ignore: experimental_member_use
               onKeyPressed: (event, node) => _handleKeyPress(event, controller),
               embedBuilders: [

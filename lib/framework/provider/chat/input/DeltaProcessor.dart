@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:characters/characters.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'dart:math' as math;

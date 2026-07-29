@@ -1,4 +1,4 @@
-import '../IPacket.dart';
+import '../i_packet.dart';
 
 /// 高优先级消息类型枚举（V5 协议对齐）
 ///

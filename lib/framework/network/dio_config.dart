@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../common/constants/API.dart';
+import '../../common/constants/api.dart';
 
 /// Dio 配置类
 ///

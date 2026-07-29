@@ -1,7 +1,7 @@
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
-import 'package:anoxia/framework/protocol/message/MessagePayload.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 

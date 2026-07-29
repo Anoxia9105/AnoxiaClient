@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../network/TokenManager.dart';
+import '../../network/token_manager.dart';
 
 part 'token_provider.g.dart';
 

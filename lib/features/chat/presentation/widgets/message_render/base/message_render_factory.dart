@@ -7,7 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../framework/domain/ChatMessage.dart';
-import '../../../../../../framework/protocol/message/MessageEunm.dart';
+import '../../../../../../framework/protocol/message/message_eunm.dart';
 import '../file_message_strategy.dart';
 import '../image_message_strategy.dart';
 import 'message_render_strategy.dart';

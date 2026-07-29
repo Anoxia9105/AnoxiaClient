@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/ChatRoomMemberVO.dart';
-import '../../../network/DioClient.dart';
+import '../../../network/dio_client.dart';
 import '../../../logs/talker.dart';
 import '../../auth/auth_controller.dart';
 import '../../contact/contact_list_controller.dart';

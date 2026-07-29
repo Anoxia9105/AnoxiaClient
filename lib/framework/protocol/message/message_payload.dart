@@ -1,5 +1,5 @@
-import 'Attachment.dart';
-import 'MessageEunm.dart';
+import 'attachment.dart';
+import 'message_eunm.dart';
 
 /// 卡片消息载荷（V5 协议）
 ///
@@ -435,22 +435,41 @@ class MessagePayload {
     final imagePayload = _asMap(json['image']);
     if (imagePayload != null) {
       final interaction = _asMap(imagePayload['interaction']);
+      final nestedContent = _readString(imagePayload, ['caption', 'content']);
       return MessagePayload(
-        content: _readString(imagePayload, ['caption', 'content']),
-        image: _readAttachment(imagePayload['image'])?.copyWith(kind: 'IMAGE'),
-        replyTo: _readReplyTo(interaction),
-        mentions: _readMentions(interaction),
+        content: nestedContent.isNotEmpty
+            ? nestedContent
+            : _readString(json, ['content']),
+        // Typed wire JSON wraps the attachment in `image.image`, while the
+        // local-cache/debug representation stores the attachment directly in
+        // the top-level `image` field. Support both forms.
+        image: _readAttachment(
+          imagePayload['image'] ?? imagePayload,
+        )?.copyWith(kind: 'IMAGE'),
+        replyTo: _readReplyTo(interaction).isNotEmpty
+            ? _readReplyTo(interaction)
+            : _readString(json, ['replyTo', 'reply_to']),
+        mentions: _readMentions(interaction) ?? _readIntList(json['mentions']),
       );
     }
 
     final filePayload = _asMap(json['file']);
     if (filePayload != null) {
       final interaction = _asMap(filePayload['interaction']);
+      final nestedContent = _readString(filePayload, ['caption', 'content']);
       return MessagePayload(
-        content: _readString(filePayload, ['caption', 'content']),
-        file: _readAttachment(filePayload['file'])?.copyWith(kind: 'FILE'),
-        replyTo: _readReplyTo(interaction),
-        mentions: _readMentions(interaction),
+        content: nestedContent.isNotEmpty
+            ? nestedContent
+            : _readString(json, ['content']),
+        // See the image branch above: persisted flat payloads do not contain
+        // an additional `file` wrapper.
+        file: _readAttachment(
+          filePayload['file'] ?? filePayload,
+        )?.copyWith(kind: 'FILE'),
+        replyTo: _readReplyTo(interaction).isNotEmpty
+            ? _readReplyTo(interaction)
+            : _readString(json, ['replyTo', 'reply_to']),
+        mentions: _readMentions(interaction) ?? _readIntList(json['mentions']),
       );
     }
 

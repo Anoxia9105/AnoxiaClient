@@ -1,5 +1,5 @@
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
-import 'package:anoxia/framework/protocol/message/Attachment.dart';
+import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/AppPermission.dart';

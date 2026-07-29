@@ -1,5 +1,5 @@
-import 'IPacket.dart';
-import 'PacketType.dart';
+import 'i_packet.dart';
+import 'packet_type.dart';
 
 /// WebSocket 数据包帧
 ///

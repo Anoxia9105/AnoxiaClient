@@ -1,9 +1,9 @@
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/domain/UserInfo.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

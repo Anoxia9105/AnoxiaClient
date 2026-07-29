@@ -1,7 +1,7 @@
 import 'package:anoxia/framework/domain/ChatMessage.dart';
 import 'package:anoxia/framework/local_cache/database.dart';
 import 'package:anoxia/framework/local_cache/local_data_source.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 

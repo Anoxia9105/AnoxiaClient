@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,7 +14,7 @@ import '../../domain/CaptchaModel.dart';
 import '../../domain/UserInfo.dart';
 import '../../local_cache/cache_providers.dart';
 import '../../logs/talker.dart';
-import '../../network/TokenManager.dart';
+import '../../network/token_manager.dart';
 import '../chat/room/room_list_service.dart';
 import '../contact/contact_list_controller.dart';
 import '../core/app_initializer.dart';

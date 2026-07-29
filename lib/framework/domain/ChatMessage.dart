@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:anoxia/framework/protocol/message/RoomMessage.dart';
+import 'package:anoxia/framework/protocol/message/room_message.dart';
 
-import '../protocol/message/MessageEunm.dart';
-import '../protocol/message/MessagePayload.dart';
+import '../protocol/message/message_eunm.dart';
+import '../protocol/message/message_payload.dart';
 
 class ChatMessage {
   final String? messageId;

@@ -21,13 +21,13 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
-import 'common/constants/API.dart';
+import 'common/constants/api.dart';
 import 'common/utils/DeviceUtil.dart';
 import 'common/utils/SPUtil.dart';
 import 'framework/extensions/window_controller.dart';
 import 'framework/logs/talker.dart';
-import 'framework/network/DioClient.dart';
-import 'framework/network/TokenManager.dart';
+import 'framework/network/dio_client.dart';
+import 'framework/network/token_manager.dart';
 import 'framework/provider/auth/token_provider.dart';
 import 'framework/provider/auth/auth_controller.dart';
 import 'framework/provider/core/session_reset_service.dart';

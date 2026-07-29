@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../logs/talker.dart';
-import '../../../protocol/PacketType.dart';
-import '../../../protocol/message/HighMessage.dart';
+import '../../../protocol/packet_type.dart';
+import '../../../protocol/message/high_message.dart';
 import '../../ws/ws_controller.dart';
 
 part 'high_message_service.g.dart';

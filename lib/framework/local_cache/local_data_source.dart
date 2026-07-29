@@ -6,9 +6,9 @@ import '../domain/ChatContactVO.dart';
 import '../domain/ChatMessage.dart';
 import '../domain/ChatRoomVO.dart';
 import '../domain/UserInfo.dart';
-import '../protocol/message/MessageEunm.dart';
+import '../protocol/message/message_eunm.dart';
 import '../logs/talker.dart';
-import '../protocol/message/MessagePayload.dart';
+import '../protocol/message/message_payload.dart';
 import 'database.dart';
 
 class LocalDataSource {

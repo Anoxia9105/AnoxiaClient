@@ -4,7 +4,7 @@
 /// 统一管理消息侧边状态展示。
 library;
 
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

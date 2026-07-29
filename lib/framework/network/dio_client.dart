@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:anoxia/framework/network/TokenManager.dart';
+import 'package:anoxia/framework/network/token_manager.dart';
 
 import '../logs/talker.dart';
-import 'DioConfig.dart';
+import 'dio_config.dart';
 
 /// HTTP 客户端封装
 ///

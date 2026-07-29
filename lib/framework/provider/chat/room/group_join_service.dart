@@ -1,6 +1,6 @@
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
-import 'package:anoxia/framework/network/DioClient.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
 
 class GroupJoinService {
   static Future<GroupPreview> preview(String roomId) async {

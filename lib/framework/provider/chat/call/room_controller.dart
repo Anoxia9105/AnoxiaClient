@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:anoxia/common/constants/API.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
@@ -17,7 +17,7 @@ import 'package:anoxia/features/chat/presentation/call/component/window_screen_s
 import 'package:window_manager/window_manager.dart';
 
 import '../../../domain/RoomState.dart';
-import '../../../network/DioClient.dart';
+import '../../../network/dio_client.dart';
 import 'call_initial_media.dart';
 import 'mobile_call_session_provider.dart';
 

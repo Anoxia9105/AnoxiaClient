@@ -5,7 +5,7 @@ import 'package:anoxia/framework/domain/RoomState.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
-import 'package:anoxia/framework/provider/chat/call/Channel.dart';
+import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

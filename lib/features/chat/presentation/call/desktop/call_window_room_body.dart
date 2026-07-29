@@ -4,7 +4,7 @@ import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layou
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_screen_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_widget.dart';
 import 'package:anoxia/framework/domain/RoomState.dart';
-import 'package:anoxia/framework/provider/chat/call/LayoutMode.dart';
+import 'package:anoxia/framework/provider/chat/call/layout_mode.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

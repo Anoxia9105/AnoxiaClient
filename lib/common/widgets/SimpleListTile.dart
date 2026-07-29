@@ -36,7 +36,7 @@ class SimpleListTile extends StatelessWidget {
 
     final effectiveBgColor = selected
         ? (selectedTileColor ??
-              theme.colorScheme.primaryContainer.withValues(alpha: 0.2))
+              theme.colorScheme.primaryContainer.withValues(alpha: 0.5))
         : tileColor;
 
     final Widget content = Padding(

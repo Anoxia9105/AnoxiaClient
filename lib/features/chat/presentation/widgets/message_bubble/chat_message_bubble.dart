@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/MessageEunm.dart';
+import 'package:anoxia/framework/protocol/message/message_eunm.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 
 // 导入拆分后的子组件
