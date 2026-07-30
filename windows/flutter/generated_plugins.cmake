@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  app_links
   connectivity_plus
   desktop_multi_window
   emoji_picker_flutter

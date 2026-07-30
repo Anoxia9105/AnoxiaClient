@@ -293,13 +293,11 @@
 
         <div id="status" class="status"></div>
 
-        <div class="footer" id="footer-tip" data-i18n="footer_tip">注册完成后将自动返回客户端登录</div>
+        <div class="footer" id="footer-tip" data-i18n="footer_tip">注册完成后请打开客户端登录</div>
     </main>
 
     <script>
         const API_BASE = 'https://chat.anoxia.cn/api';
-        const params = new URLSearchParams(window.location.search);
-        const callback = params.get('callback') || 'anoxia://auth/register-complete';
 
         const I18N = {
             zh: {
@@ -325,8 +323,8 @@
                 btn_register_submit: '完成注册',
                 btn_register_submitting: '提交中...',
                 btn_back_home: '返回官网',
-                footer_tip: '注册完成后将自动返回客户端登录',
-                footer_tip_success: '注册成功，正在尝试返回客户端...',
+                footer_tip: '注册完成后请打开客户端登录',
+                footer_tip_success: '注册成功，请打开客户端登录',
                 err_captcha_load_retry: '验证码加载失败，请重试',
                 err_captcha_load_network: '验证码加载失败，请检查网络',
                 err_username_format: '用户名格式不正确',
@@ -370,8 +368,8 @@
                 btn_register_submit: 'Complete registration',
                 btn_register_submitting: 'Submitting...',
                 btn_back_home: 'Back to home',
-                footer_tip: 'You will be redirected to the client after registration',
-                footer_tip_success: 'Registration successful, trying to open the client...',
+                footer_tip: 'After registration, open the client to sign in',
+                footer_tip_success: 'Registration successful. Open the client to sign in',
                 err_captcha_load_retry: 'Failed to load captcha, please retry',
                 err_captcha_load_network: 'Failed to load captcha, check your network',
                 err_username_format: 'Invalid username format',
@@ -415,8 +413,8 @@
                 btn_register_submit: '登録完了',
                 btn_register_submitting: '送信中...',
                 btn_back_home: 'ホームへ戻る',
-                footer_tip: '登録後にクライアントへ自動で戻ります',
-                footer_tip_success: '登録成功、クライアントを起動しています...',
+                footer_tip: '登録後、クライアントを開いてログインしてください',
+                footer_tip_success: '登録成功。クライアントを開いてログインしてください',
                 err_captcha_load_retry: '画像認証の読み込みに失敗しました。再試行してください',
                 err_captcha_load_network: '画像認証の読み込みに失敗しました。ネットワークを確認してください',
                 err_username_format: 'ユーザー名の形式が正しくありません',
@@ -495,7 +493,6 @@
         const sendEmailCodeBtn = document.getElementById('send-email-code-btn');
 
         let captchaUuid = '';
-        let registeredUsername = '';
         let emailCodeCountdown = 0;
         let emailCodeTimer = null;
 
@@ -548,21 +545,11 @@
             return '';
         }
 
-        function buildReturnUri(username) {
-            const separator = callback.includes('?') ? '&' : '?';
-            return `${callback}${separator}username=${encodeURIComponent(username)}`;
-        }
-
-        function onRegisterSuccess(username) {
-            registeredUsername = username;
+        function onRegisterSuccess() {
             footerTip.textContent = t('footer_tip_success');
-            setTimeout(() => {
-                window.location.href = buildReturnUri(username);
-            }, 650);
         }
 
         function clearRegisterSuccessState() {
-            registeredUsername = '';
             footerTip.textContent = t('footer_tip');
         }
 
@@ -704,16 +691,31 @@
             setStatus(t('status_register_submitting'), 'warn');
 
             try {
+                const verifyRes = await fetch(`${API_BASE}/register/verify-email-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: payload.email,
+                        emailCode: payload.emailCode,
+                    }),
+                });
+                const verifyData = await verifyRes.json();
+                const verifyResult = normalizeApiResult(verifyData, verifyRes.ok);
+                const emailVerificationToken = verifyData?.data;
+                if (!verifyResult.isSuccess || !emailVerificationToken) {
+                    clearRegisterSuccessState();
+                    setStatus(verifyResult.msg || t('err_register_failed'), 'error');
+                    return;
+                }
+
                 const res = await fetch(`${API_BASE}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         username: payload.username,
                         email: payload.email,
-                        emailCode: payload.emailCode,
+                        emailVerificationToken,
                         password: payload.password,
-                        code: payload.code,
-                        uuid: payload.uuid,
                     }),
                 });
 
@@ -737,7 +739,7 @@
 
                 const successMsg = result.msg || t('status_register_success');
                 setStatus(`${successMsg}${t('status_register_success_suffix')}`, 'success');
-                onRegisterSuccess(payload.username);
+                onRegisterSuccess();
             } catch (err) {
                 clearRegisterSuccessState();
                 setStatus(t('err_register_network'), 'error');

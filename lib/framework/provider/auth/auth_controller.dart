@@ -57,14 +57,14 @@ class AuthController extends _$AuthController {
 
   /// 用户登录
   ///
-  /// [username] 用户名
+  /// [account] 用户名或邮箱
   /// [password] 密码
   /// [code] 图形验证码
   /// [uuid] 验证码 UUID
   ///
   /// 登录成功后自动恢复会话，并触发 [AppInitializer] 重置。
   Future<void> login(
-    String username,
+    String account,
     String password,
     String code,
     String uuid,
@@ -75,7 +75,7 @@ class AuthController extends _$AuthController {
       final res = await DioClient().post(
         API.login,
         data: {
-          'username': username,
+          'username': account,
           'password': password,
           'code': code,
           'uuid': uuid,
@@ -106,6 +106,58 @@ class AuthController extends _$AuthController {
       log.info('[AuthController] 登录成功，重新触发 App 初始化序列...');
       ref.invalidate(appInitializerProvider);
     }
+  }
+
+  Future<String> sendRegisterEmailCode({
+    required String email,
+    required String captchaCode,
+    required String uuid,
+  }) async {
+    final res = await DioClient().post(
+      API.registerSendEmailCode,
+      data: {'email': email, 'code': captchaCode, 'uuid': uuid},
+      auth: false,
+    );
+    final msg = _extractApiMsg(res.data, fallback: '操作成功');
+    if (!_isApiSuccess(res.data)) throw Exception(msg);
+    return msg;
+  }
+
+  Future<String> verifyRegisterEmailCode({
+    required String email,
+    required String emailCode,
+  }) async {
+    final res = await DioClient().post(
+      API.registerVerifyEmailCode,
+      data: {'email': email, 'emailCode': emailCode},
+      auth: false,
+    );
+    final msg = _extractApiMsg(res.data, fallback: '邮箱验证失败');
+    if (!_isApiSuccess(res.data)) throw Exception(msg);
+    final token = res.data is Map ? res.data['data']?.toString() : null;
+    if (token == null || token.isEmpty) throw Exception('邮箱验证凭证无效');
+    return token;
+  }
+
+  Future<String> register({
+    required String username,
+    required String email,
+    required String emailVerificationToken,
+    required String password,
+  }) async {
+    final res = await DioClient().post(
+      API.register,
+      data: {
+        'username': username,
+        'email': email,
+        'emailVerificationToken': emailVerificationToken,
+        'password': password,
+      },
+      auth: false,
+    );
+    final msg = _extractApiMsg(res.data, fallback: '注册成功');
+    if (!_isApiSuccess(res.data)) throw Exception(msg);
+    return msg;
   }
 
   /// 忘记密码：发送邮箱验证码

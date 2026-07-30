@@ -1,18 +1,15 @@
 import 'dart:convert';
-import 'dart:async';
-
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
+import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
-import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// 登录页面
 ///
@@ -45,23 +42,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
   /// 是否正在执行登录操作
   bool _isLoading = false;
 
-  AppLinks? _appLinks;
-  StreamSubscription<Uri>? _linkSub;
-  static const MethodChannel _registerReturnChannel = MethodChannel(
-    'anoxia/register_return',
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _registerReturnChannel.setMethodCallHandler(_handleWindowsRegisterReturn);
-    _initRegisterReturnLink();
-  }
-
   @override
   void dispose() {
-    _registerReturnChannel.setMethodCallHandler(null);
-    _linkSub?.cancel();
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     _codeCtrl.dispose();
@@ -166,12 +148,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
     return TextFormField(
       controller: _usernameCtrl,
       textInputAction: TextInputAction.next,
-      inputFormatters: [LengthLimitingTextInputFormatter(20)],
+      keyboardType: TextInputType.emailAddress,
+      autofillHints: const [AutofillHints.username, AutofillHints.email],
+      inputFormatters: [LengthLimitingTextInputFormatter(60)],
       decoration: InputDecoration(
-        hintText: 'login_page_name'.tr(),
+        hintText: 'login_page_account_or_email'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.never,
         prefixIcon: Icon(
-          Icons.person_outline_rounded,
+          Icons.alternate_email_rounded,
           color: colorScheme.onSurfaceVariant,
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -187,9 +171,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'login_page_username_validator_notnull'.tr();
-        }
-        if (!RegExp(r'^[a-zA-Z_]\w{1,19}$').hasMatch(value.trim())) {
-          return 'login_page_username_validator_regex'.tr();
         }
         return null;
       },
@@ -327,9 +308,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
         Text('·', style: TextStyle(color: colorScheme.outline)),
         TextButton(
-          onPressed: () {
-            _openRegisterPage();
-          },
+          onPressed: _openRegisterPage,
           child: Text(
             'login_page_register'.tr(),
             style: TextStyle(color: colorScheme.primary, fontSize: 13),
@@ -353,54 +332,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Future<void> _openRegisterPage() async {
-    const callback = 'anoxia://auth/register-complete';
-    final registerUri = Uri.parse(
-      'https://www.anoxia.cn/register.html?callback=${Uri.encodeComponent(callback)}',
-    );
-
-    await launchUrl(registerUri, mode: LaunchMode.externalApplication);
-  }
-
-  Future<void> _initRegisterReturnLink() async {
-    _appLinks = AppLinks();
-
-    try {
-      final initial = await _appLinks!.getInitialLink();
-      if (initial != null) {
-        _handleRegisterReturn(initial);
-      }
-    } catch (_) {}
-
-    _linkSub = _appLinks!.uriLinkStream.listen(
-      _handleRegisterReturn,
-      onError: (_) {},
-    );
-  }
-
-  Future<void> _handleWindowsRegisterReturn(MethodCall call) async {
-    if (call.method != 'onLink') return;
-
-    final raw = call.arguments;
-    if (raw is! String || raw.trim().isEmpty) return;
-
-    final uri = Uri.tryParse(raw.trim());
-    if (uri == null) return;
-    _handleRegisterReturn(uri);
-  }
-
-  void _handleRegisterReturn(Uri uri) {
-    if (uri.scheme != 'anoxia') return;
-    if (uri.host != 'auth' || uri.path != '/register-complete') return;
-
-    final username = (uri.queryParameters['username'] ?? '').trim();
-    if (username.isEmpty) return;
-
-    _usernameCtrl.text = username;
+    final account = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const RegisterPage()));
+    if (!mounted || account == null || account.trim().isEmpty) return;
+    _usernameCtrl.text = account.trim();
     _passwordCtrl.clear();
     _codeCtrl.clear();
     ref.invalidate(getCaptchaProvider);
-
-    if (!mounted) return;
   }
 
   Future<void> _handleLogin() async {

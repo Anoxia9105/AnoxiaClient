@@ -36,10 +36,6 @@ class FlutterWindow : public Win32Window {
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
 
-  // Method channel used to forward deep-link events to Dart.
-  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
-      register_return_channel_;
-
   // Method channel and native state for the Windows taskbar unread badge.
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
       taskbar_badge_channel_;

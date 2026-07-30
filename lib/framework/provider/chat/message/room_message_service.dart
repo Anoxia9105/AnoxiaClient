@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:anoxia/common/constants/api.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/message_eunm.dart';
@@ -72,6 +74,28 @@ final roomMessageIndexProvider =
       return index;
     });
 
+/// 历史消息加载状态追踪
+///
+/// value 为 null 表示无错误，非 null 表示加载失败的错误信息
+final historyLoadErrorProvider =
+    NotifierProvider<HistoryLoadErrorNotifier, Map<String, String?>>(
+      HistoryLoadErrorNotifier.new,
+    );
+
+class HistoryLoadErrorNotifier extends Notifier<Map<String, String?>> {
+  @override
+  Map<String, String?> build() => {};
+
+  void setError(String roomId, String? error) {
+    if (error == null) {
+      if (!state.containsKey(roomId)) return;
+      state = {...state}..remove(roomId);
+    } else {
+      state = {...state, roomId: error};
+    }
+  }
+}
+
 @Riverpod(keepAlive: true)
 class ChatMessages extends _$ChatMessages {
   static const int _pageSize = 50;
@@ -80,6 +104,10 @@ class ChatMessages extends _$ChatMessages {
   final Map<String, int> _lastLoadedHistoryBoundary = {};
   final Set<String> _syncedRoomIds = {};
   final Map<String, int> _syncedSeqByRoom = {};
+
+  /// 暴露当前正在加载历史消息的房间集合，供 UI 层读取
+  Set<String> get fetchingHistoryRoomIds =>
+      UnmodifiableSetView(_fetchingHistoryRoomIds);
 
   @override
   void build() {
@@ -197,6 +225,13 @@ class ChatMessages extends _$ChatMessages {
   }
 
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
+    // 先检查是否已同步到最新，避免不必要的 DB 查询
+    if (_syncedRoomIds.contains(roomId) &&
+        serverLastSeq != null &&
+        (_syncedSeqByRoom[roomId] ?? 0) >= serverLastSeq) {
+      return;
+    }
+
     final syncRepo = ref.read(syncRepositoryProvider);
     final localMessages = await syncRepo.getMessagesForConversation(
       roomId,
@@ -208,12 +243,6 @@ class ChatMessages extends _$ChatMessages {
     ref
         .read(chatHasMoreProvider.notifier)
         .setHasMore(roomId, localMessages.length >= _pageSize);
-
-    if (_syncedRoomIds.contains(roomId) &&
-        (serverLastSeq == null ||
-            (_syncedSeqByRoom[roomId] ?? localMaxSeq) >= serverLastSeq)) {
-      return;
-    }
 
     if (serverLastSeq == null || localMaxSeq >= serverLastSeq) {
       _syncedRoomIds.add(roomId);
@@ -246,6 +275,8 @@ class ChatMessages extends _$ChatMessages {
     // 必须在第一个 await 前加锁；否则首次缓存尚未就绪时，同一帧的多次
     // onPaint 回调会同时进入分页，造成数据库写入和列表重建风暴。
     _fetchingHistoryRoomIds.add(roomId);
+    // 清除之前的错误状态
+    ref.read(historyLoadErrorProvider.notifier).setError(roomId, null);
 
     try {
       final syncRepo = ref.read(syncRepositoryProvider);
@@ -309,9 +340,18 @@ class ChatMessages extends _$ChatMessages {
           .setHasMore(roomId, expanded && history.length >= _pageSize);
     } catch (e) {
       log.error('加载历史消息失败: $e');
+      ref
+          .read(historyLoadErrorProvider.notifier)
+          .setError(roomId, 'chat_history_load_failed'.tr());
     } finally {
       _fetchingHistoryRoomIds.remove(roomId);
     }
+  }
+
+  /// 重试加载历史消息
+  Future<void> retryHistoryLoad(String roomId) async {
+    _lastLoadedHistoryBoundary.remove(roomId);
+    await loadMoreHistory(roomId);
   }
 
   Future<void> clearRoom(String roomId) async {

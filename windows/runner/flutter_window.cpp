@@ -9,28 +9,6 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "desktop_multi_window/desktop_multi_window_plugin.h"
 
-namespace {
-constexpr ULONG_PTR kAnoxiaUriCopyDataId = 0x414E4F58;  // 'ANOX'
-
-std::string WideToUtf8(const std::wstring &input) {
-    if (input.empty()) {
-        return "";
-    }
-
-    const int required = WideCharToMultiByte(
-            CP_UTF8, 0, input.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (required <= 1) {
-        return "";
-    }
-
-    std::string output(required - 1, '\0');
-    WideCharToMultiByte(
-            CP_UTF8, 0, input.c_str(), -1, output.data(), required, nullptr,
-            nullptr);
-    return output;
-}
-} // namespace
-
 FlutterWindow::FlutterWindow(const flutter::DartProject &project)
         : project_(project) {}
 
@@ -59,12 +37,6 @@ bool FlutterWindow::OnCreate() {
         RegisterPlugins(registry);
     });
     SetChildContent(flutter_controller_->view()->GetNativeWindow());
-
-    register_return_channel_ =
-            std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-                flutter_controller_->engine()->messenger(),
-                "anoxia/register_return",
-                &flutter::StandardMethodCodec::GetInstance());
 
     taskbar_button_created_message_ =
             RegisterWindowMessageW(L"TaskbarButtonCreated");
@@ -138,7 +110,6 @@ void FlutterWindow::OnDestroy() {
         taskbar_list_ = nullptr;
     }
     taskbar_badge_channel_.reset();
-    register_return_channel_.reset();
     if (flutter_controller_) {
         flutter_controller_ = nullptr;
     }
@@ -297,26 +268,6 @@ switch (message) {
 case WM_FONTCHANGE:
 flutter_controller_->engine()->ReloadSystemFonts();
 break;
-case WM_COPYDATA: {
-    const auto *cds = reinterpret_cast<const COPYDATASTRUCT *>(lparam);
-    if (cds != nullptr && cds->dwData == kAnoxiaUriCopyDataId &&
-        cds->lpData != nullptr && cds->cbData >= sizeof(wchar_t) &&
-        register_return_channel_ != nullptr) {
-        const auto *raw = reinterpret_cast<const wchar_t *>(cds->lpData);
-        std::wstring uri(raw, cds->cbData / sizeof(wchar_t));
-        if (!uri.empty() && uri.back() == L'\0') {
-            uri.pop_back();
-        }
-
-        const std::string utf8_uri = WideToUtf8(uri);
-        if (!utf8_uri.empty()) {
-            register_return_channel_->InvokeMethod(
-                    "onLink",
-                    std::make_unique<flutter::EncodableValue>(utf8_uri));
-        }
-    }
-    return 0;
-}
 }
 
 return

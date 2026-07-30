@@ -26,6 +26,15 @@ class API {
   /// 用户登录接口
   static const String login = '/login';
 
+  /// 用户注册
+  static const String register = '/register';
+
+  /// 注册邮箱验证码
+  static const String registerSendEmailCode = '/register/send-email-code';
+
+  /// 校验注册邮箱验证码并获取短期注册凭证
+  static const String registerVerifyEmailCode = '/register/verify-email-code';
+
   /// 用户登出接口
   static const String logout = '/logout';
 
