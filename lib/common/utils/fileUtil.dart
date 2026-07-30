@@ -75,8 +75,15 @@ class FileUtil {
   }
 
   /// 构建文件类型图标
-  static Widget buildFileIcon(String fileType) {
-    final ext = fileType.trim().toLowerCase().replaceFirst('.', '');
+  static Widget buildFileIcon(String fileType, {String? fileName}) {
+    var ext = fileType.trim().toLowerCase().replaceFirst('.', '');
+    if (ext.contains('/')) {
+      ext = ext.split('/').last;
+    }
+    final nameExtension = fileName == null
+        ? ''
+        : p.extension(fileName).toLowerCase().replaceFirst('.', '');
+    if (nameExtension.isNotEmpty) ext = nameExtension;
 
     IconData icon;
     Color color;
@@ -94,12 +101,39 @@ class FileUtil {
     } else if (['pdf'].contains(ext)) {
       icon = Icons.picture_as_pdf_rounded;
       color = Colors.redAccent;
-    } else if (['doc', 'docx'].contains(ext)) {
+    } else if (['doc', 'docx', 'odt', 'rtf', 'txt', 'md'].contains(ext)) {
       icon = Icons.description_rounded;
       color = Colors.indigo;
-    } else if (['xls', 'xlsx', 'csv'].contains(ext)) {
+    } else if (['xls', 'xlsx', 'csv', 'ods'].contains(ext)) {
       icon = Icons.table_chart_rounded;
       color = Colors.teal;
+    } else if (['ppt', 'pptx', 'odp'].contains(ext)) {
+      icon = Icons.slideshow_rounded;
+      color = Colors.deepOrange;
+    } else if ([
+      'dart',
+      'js',
+      'ts',
+      'jsx',
+      'tsx',
+      'java',
+      'kt',
+      'swift',
+      'py',
+      'go',
+      'rs',
+      'c',
+      'cpp',
+      'h',
+      'html',
+      'css',
+      'json',
+      'xml',
+      'yaml',
+      'yml',
+    ].contains(ext)) {
+      icon = Icons.code_rounded;
+      color = Colors.cyan.shade700;
     } else if (['zip', 'rar', '7z', 'tar', 'gz'].contains(ext)) {
       icon = Icons.folder_zip_rounded;
       color = Colors.orange;

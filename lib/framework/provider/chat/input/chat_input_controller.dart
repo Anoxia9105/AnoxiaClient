@@ -332,12 +332,14 @@ class ChatInputController extends _$ChatInputController {
 
     // --- 发送文件 ---
     if (processor.files.isNotEmpty) {
-      _doSend(
-        type: MessageType.file,
-        payload: const MessagePayload(content: '[file]'),
-        attachments: processor.files,
-        clearReplyAfterSend: false,
-      );
+      for (final file in processor.files) {
+        _doSend(
+          type: MessageType.file,
+          payload: const MessagePayload(content: '[file]'),
+          attachments: [file],
+          clearReplyAfterSend: false,
+        );
+      }
     }
 
     // --- 发送文本/富文本/表情 ---
@@ -479,7 +481,7 @@ class ChatInputController extends _$ChatInputController {
 
   /// 发送选中的文件（从文件选择器）
   ///
-  /// 先上传文件，再发送 File 消息（可包含多个附件）。
+  /// 先批量上传文件，再逐个发送 File 消息。
   Future<void> sendPickedFiles(List<PlatformFile> files) async {
     if (files.isEmpty) return;
 
@@ -491,7 +493,7 @@ class ChatInputController extends _$ChatInputController {
           id: const Uuid().v4(),
           kind: 'FILE',
           url: file.path!,
-          name: _basenameWithoutExtension(file.name),
+          name: file.name,
           size: file.size,
           type: file.extension ?? 'bin',
         ),
@@ -510,11 +512,16 @@ class ChatInputController extends _$ChatInputController {
 
     if (uploaded.isEmpty) return;
 
-    _doSend(
-      type: MessageType.file,
-      payload: const MessagePayload(content: '[file]'),
-      attachments: uploaded,
-    );
+    // The V5 file payload contains one `file` field. Sending the whole list in
+    // one payload silently kept only the first attachment.
+    for (var i = 0; i < uploaded.length; i++) {
+      _doSend(
+        type: MessageType.file,
+        payload: const MessagePayload(content: '[file]'),
+        attachments: [uploaded[i]],
+        clearReplyAfterSend: i == uploaded.length - 1,
+      );
+    }
   }
 
   /// 纯文本变更处理（用于 Android 等平台，类似 _onTextChanged 的简化版）

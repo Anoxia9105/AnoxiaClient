@@ -54,6 +54,7 @@ class QuillFileBuild implements EmbedBuilder {
                     children: [
                       FileUtil.buildFileIcon(
                         entry.isFailed ? 'error' : (attachment.type ?? ''),
+                        fileName: attachment.name,
                       ),
                       const SizedBox(width: 12),
                       Expanded(

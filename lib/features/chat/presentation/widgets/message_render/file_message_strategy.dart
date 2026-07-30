@@ -189,7 +189,45 @@ class _FileMessageListState extends State<_FileMessageList> {
     }
   }
 
-  Future<void> _handleFileTap(BuildContext context, Attachment file) async {
+  Future<String?> _resolveExistingPath(Attachment file) async {
+    final key = _fileKey(file);
+    final cachedPath = _downloadedPathMap[key];
+    if (cachedPath != null && File(cachedPath).existsSync()) return cachedPath;
+    final existingPath = await _findExistingFile(file);
+    if (existingPath != null && mounted) {
+      setState(() {
+        _downloadedPathMap[key] = existingPath;
+        _progressMap.remove(key);
+      });
+    }
+    return existingPath;
+  }
+
+  Future<void> _openLocalFile(Attachment file) async {
+    final path = await _resolveExistingPath(file);
+    if (path == null) {
+      await _downloadFile(file, openAfterDownload: true);
+      return;
+    }
+    final result = await OpenFilex.open(path);
+    if (result.type != ResultType.done) {
+      Toast.showToast('file_open_failed'.tr(args: [result.message]));
+    }
+  }
+
+  Future<void> _showFileLocation(Attachment file) async {
+    final path = await _resolveExistingPath(file);
+    if (path == null) {
+      Toast.showToast('file_not_found'.tr());
+      return;
+    }
+    await _openFileLocation(path);
+  }
+
+  Future<void> _downloadFile(
+    Attachment file, {
+    bool openAfterDownload = false,
+  }) async {
     final key = _fileKey(file);
 
     if (_downloadingMap[key] == true) {
@@ -206,7 +244,9 @@ class _FileMessageListState extends State<_FileMessageList> {
           _progressMap.remove(key);
         });
       }
-      await _openFileLocation(existingPath);
+      if (openAfterDownload) {
+        await _openLocalFile(file);
+      }
       return;
     }
 
@@ -259,6 +299,12 @@ class _FileMessageListState extends State<_FileMessageList> {
       });
 
       Toast.showToast('file_download_complete'.tr(args: [fileName]));
+      if (openAfterDownload) {
+        final openResult = await OpenFilex.open(savePath);
+        if (openResult.type != ResultType.done) {
+          Toast.showToast('file_open_failed'.tr(args: [openResult.message]));
+        }
+      }
     } catch (e) {
       Toast.showToast('file_download_failed'.tr(args: [e.toString()]));
       if (!mounted) return;
@@ -315,7 +361,9 @@ class _FileMessageListState extends State<_FileMessageList> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _handleFileTap(context, file),
+        onTap: () => isDownloaded
+            ? _openLocalFile(file)
+            : _downloadFile(file),
         borderRadius: BorderRadius.circular(10),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -327,7 +375,19 @@ class _FileMessageListState extends State<_FileMessageList> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 文件图标
-              FileUtil.buildFileIcon(file.type ?? ''),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: FileUtil.buildFileIcon(
+                  file.type ?? '',
+                  fileName: file.name,
+                ),
+              ),
               const SizedBox(width: 10),
 
               // 文件信息
@@ -418,6 +478,7 @@ class _FileMessageListState extends State<_FileMessageList> {
               // 右侧操作按钮
               _buildTrailingIcon(
                 context,
+                file,
                 isDownloading,
                 isDownloaded,
                 progress,
@@ -431,6 +492,7 @@ class _FileMessageListState extends State<_FileMessageList> {
 
   Widget _buildTrailingIcon(
     BuildContext context,
+    Attachment file,
     bool isDownloading,
     bool isDownloaded,
     double? progress,
@@ -450,17 +512,27 @@ class _FileMessageListState extends State<_FileMessageList> {
     }
 
     if (isDownloaded) {
-      return Icon(
-        Icons.folder_open_rounded,
-        size: 18,
-        color: colorScheme.primary.withValues(alpha: 0.8),
+      return IconButton(
+        tooltip: 'file_show_in_folder'.tr(),
+        visualDensity: VisualDensity.compact,
+        onPressed: () => _showFileLocation(file),
+        icon: Icon(
+          Icons.folder_open_rounded,
+          size: 19,
+          color: colorScheme.primary,
+        ),
       );
     }
 
-    return Icon(
-      Icons.download_rounded,
-      size: 18,
-      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+    return IconButton(
+      tooltip: 'file_download'.tr(),
+      visualDensity: VisualDensity.compact,
+      onPressed: () => _downloadFile(file),
+      icon: Icon(
+        Icons.download_rounded,
+        size: 19,
+        color: colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }

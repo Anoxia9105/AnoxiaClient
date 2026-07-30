@@ -52,7 +52,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
         Attachment(
           id: const Uuid().v4(),
           url: file.path!,
-          name: p.basenameWithoutExtension(file.path!),
+          name: p.basename(file.path!),
           size: file.size,
           type: file.extension ?? 'bin',
         ),
