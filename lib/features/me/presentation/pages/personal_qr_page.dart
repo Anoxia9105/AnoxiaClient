@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -14,20 +14,37 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+/// 个人二维码页面
+///
+/// 展示用户的个人二维码，支持保存到相册和分享功能。
+
+/// 个人二维码页面组件
+///
+/// 显示用户信息编码的二维码，提供保存到相册和分享按钮。
 class PersonalQrPage extends StatefulWidget {
   const PersonalQrPage({super.key, required this.user});
 
+  /// 用户信息
   final UserInfo user;
 
   @override
   State<PersonalQrPage> createState() => _PersonalQrPageState();
 }
 
+/// 二维码页面状态
+///
+/// 管理二维码的截取、保存和分享操作。
 class _PersonalQrPageState extends State<PersonalQrPage> {
+  /// 二维码区域 Key
   final GlobalKey _qrBoundaryKey = GlobalKey();
+
+  /// 是否正在保存
   bool _saving = false;
+
+  /// 是否正在分享
   bool _sharing = false;
 
+  /// 截取二维码图片字节数据
   Future<Uint8List?> _captureQrBytes() async {
     final context = _qrBoundaryKey.currentContext;
     if (context == null) return null;
@@ -40,6 +57,9 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
     return byteData?.buffer.asUint8List();
   }
 
+  /// 保存二维码到相册
+  ///
+  /// 请求相册权限后将二维码图片保存到设备相册。
   Future<void> _saveToGallery() async {
     if (_saving) return;
 
@@ -82,10 +102,14 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
     }
   }
 
+  /// 确保相册写入权限
   Future<bool> _ensureGalleryPermission() async {
     return ensureGalleryWritePermission(context);
   }
 
+  /// 分享二维码图片
+  ///
+  /// 将二维码图片保存到临时文件后通过系统分享功能分享。
   Future<void> _shareQrImage() async {
     if (_sharing) return;
 

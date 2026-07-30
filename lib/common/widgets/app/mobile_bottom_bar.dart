@@ -1,4 +1,4 @@
-﻿import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -9,6 +9,10 @@ import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/setting/update_check_provider.dart';
 import '../vibrating_badge.dart';
 
+/// 移动端底部导航栏
+///
+/// 根据 [LayoutController] 的配置动态生成导航项，
+/// 在聊天、联系人、设置等 Tab 上显示未读角标和更新提示。
 class MobileBottomBar extends ConsumerWidget {
   const MobileBottomBar({super.key});
 

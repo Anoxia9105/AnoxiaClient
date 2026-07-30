@@ -1,11 +1,21 @@
+/// 功能页面欢迎/空状态面板组件。
+///
+/// 提供带进场动画的欢迎页，包含图标、标题、描述和功能特性卡片，
+/// 用于聊天、联系人等功能页面的空状态展示。
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 欢迎页功能特性数据模型。
 class WelcomeFeature {
+  /// 功能特性图标。
   final List<List<dynamic>> icon;
+
+  /// 功能特性标题的国际化键。
   final String titleKey;
+
+  /// 功能特性描述的国际化键。
   final String descriptionKey;
 
   const WelcomeFeature({
@@ -17,11 +27,22 @@ class WelcomeFeature {
 
 /// Reusable welcome and empty-state panel for feature pages.
 class Welcome extends StatefulWidget {
+  /// 欢迎页图标。
   final List<List<dynamic>> icon;
+
+  /// 标题的国际化键。
   final String titleKey;
+
+  /// 描述的国际化键。
   final String descriptionKey;
+
+  /// 功能特性列表。
   final List<WelcomeFeature> features;
+
+  /// 底部操作按钮。
   final Widget? action;
+
+  /// 卡片最大宽度。
   final double maxWidth;
 
   const Welcome({
@@ -34,6 +55,7 @@ class Welcome extends StatefulWidget {
     this.maxWidth = 560,
   });
 
+  /// 聊天页欢迎面板的预设构造器。
   const Welcome.chat({super.key})
     : icon = HugeIcons.strokeRoundedChatting01,
       titleKey = 'welcome_chat_title',
@@ -58,6 +80,7 @@ class Welcome extends StatefulWidget {
       action = null,
       maxWidth = 620;
 
+  /// 联系人页欢迎面板的预设构造器。
   const Welcome.contacts({super.key})
     : icon = HugeIcons.strokeRoundedUserGroup,
       titleKey = 'welcome_contacts_title',

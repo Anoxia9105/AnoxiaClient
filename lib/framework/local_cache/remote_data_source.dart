@@ -1,10 +1,18 @@
-﻿import 'package:anoxia/common/constants/api.dart';
+/// 远程数据源
+///
+/// 通过 HTTP API 与后端交互，获取会话列表、消息历史和发送消息，
+/// 为同步仓库提供远程数据。同时定义远程发送结果的数据类。
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 
+/// 远程发送结果
 class RemoteSendResult {
+  /// 创建远程发送结果实例
+  ///
+  /// [messageId] 消息 ID；[seq] 服务端序号；[sentAt] 发送时间；[message] 远程消息对象。
   const RemoteSendResult({
     required this.messageId,
     this.seq,
@@ -12,17 +20,30 @@ class RemoteSendResult {
     this.message,
   });
 
+  /// 消息 ID
   final String messageId;
+
+  /// 服务端消息序号
   final int? seq;
+
+  /// 服务端发送时间
   final DateTime? sentAt;
+
+  /// 远程消息对象
   final ChatMessage? message;
 }
 
+/// 远程数据源
+///
+/// 封装所有 IM 相关的 HTTP API 调用，提供会话、消息的获取和发送能力。
 class RemoteDataSource {
   RemoteDataSource({DioClient? client}) : _client = client ?? DioClient();
 
   final DioClient _client;
 
+  /// 获取会话列表
+  ///
+  /// [since] 可选，获取该时间之后更新的会话，用于增量同步。
   Future<List<ChatRoomVO>> fetchConversations({DateTime? since}) async {
     final res = await _client.get(
       API.chatRooms,
@@ -37,6 +58,10 @@ class RemoteDataSource {
         .toList();
   }
 
+  /// 获取消息历史
+  ///
+  /// [convId] 会话 ID；[since] 获取该时间之后的消息；[lastSeq] 获取该序号之后的消息；
+  /// [beforeSeq] 获取该序号之前的消息（分页向前加载）；[pageSize] 每页数量。
   Future<List<ChatMessage>> fetchMessages(
     String convId, {
     DateTime? since,
@@ -62,6 +87,9 @@ class RemoteDataSource {
         .toList();
   }
 
+  /// 发送消息
+  ///
+  /// [message] 要发送的消息对象，返回包含服务端 ID 和序号的发送结果。
   Future<RemoteSendResult> sendMessage(ChatMessage message) async {
     final res = await _client.post(
       API.chatSendMessage,
@@ -104,6 +132,9 @@ class RemoteDataSource {
     );
   }
 
+  /// 标记会话已读
+  ///
+  /// [seq] 可选，已读到的最大消息序号。
   Future<void> markAsRead(String conversationId, {int? seq}) {
     final queryParameters = <String, dynamic>{'roomId': conversationId};
     if (seq != null) queryParameters['seq'] = seq;

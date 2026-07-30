@@ -1,4 +1,8 @@
-﻿import 'package:anoxia/common/utils/date_util.dart';
+/// 回复预览栏组件
+///
+/// 在聊天输入框上方显示被引用消息的预览条，展示发送者、时间和内容摘要。
+/// 支持点击跳转到原消息、清除引用等操作。
+import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -7,11 +11,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 回复预览栏
+///
+/// 在输入框上方以紧凑的卡片形式展示被引用消息的预览信息，
+/// 包括发送者名称、发送时间和消息内容摘要。
+/// 支持紧凑模式（[dense]）和可选的操作按钮。
 class ReplyPreviewBar extends ConsumerWidget {
+  /// 被引用的消息对象，为 null 时显示回退文本
   final ChatMessage? message;
+  /// 当 [message] 为 null 时使用的回退消息 ID
   final String? fallbackMessageId;
+  /// 清除引用回调，不为 null 时显示关闭按钮
   final VoidCallback? onClear;
+  /// 点击预览栏的回调，不为 null 时启用点击效果
   final VoidCallback? onTap;
+  /// 是否使用紧凑布局，减少间距和字号
   final bool dense;
 
   const ReplyPreviewBar({

@@ -1,4 +1,8 @@
-﻿import 'package:anoxia/common/utils/sp_util.dart';
+/// 设备身份标识管理。
+///
+/// 提供安装级别的稳定设备标识，供 HTTP 登录、WebSocket 和推送服务共享。
+/// 重新安装会生成新的标识，账号登出不会清除该标识。
+import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -7,10 +11,14 @@ import 'package:uuid/uuid.dart';
 class DeviceIdentity {
   DeviceIdentity._();
 
+  /// 单例实例。
   static final DeviceIdentity instance = DeviceIdentity._();
   static const String _storageKey = 'client_device_uid';
   static const String _legacyPushStorageKey = 'push_device_uid';
 
+  /// 获取或创建设备唯一标识。
+  ///
+  /// 优先返回已持久化的标识，不存在时创建新的 UUID 并持久化。
   Future<String> getOrCreate() async {
     final current = SPUtil.instance.get(_storageKey);
     if (current != null && current.trim().isNotEmpty) return current.trim();
@@ -25,6 +33,7 @@ class DeviceIdentity {
     return deviceUid;
   }
 
+  /// 获取带平台前缀的完整设备标识，格式为 `平台:UUID`。
   Future<String> getPlatformQualifiedId() async {
     final platform = kIsWeb ? 'web' : defaultTargetPlatform.name.toLowerCase();
     return '$platform:${await getOrCreate()}';

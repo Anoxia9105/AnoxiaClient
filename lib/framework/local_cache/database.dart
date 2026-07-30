@@ -1,3 +1,7 @@
+/// 本地数据库层
+///
+/// 基于 Drift 的 SQLite 数据库，管理用户、会话、消息、联系人等缓存表，
+/// 包含数据库迁移策略和各个 DAO 访问器。
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -35,12 +39,19 @@ LazyDatabase _openConnection() {
     ContactDao,
   ],
 )
+/// 应用数据库
+///
+/// 基于 Drift 框架的 SQLite 数据库，管理所有本地缓存表。
+/// 支持数据库迁移、会话缓存清理和索引优化。
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 3;
 
+  /// 清除会话缓存
+  ///
+  /// 在事务中清空所有缓存表，用于登出或切换账号时重置本地数据。
   Future<void> clearSessionCache() async {
     await transaction(() async {
       await delete(messages).go();
@@ -99,31 +110,39 @@ class AppDatabase extends _$AppDatabase {
 }
 
 @DriftAccessor(tables: [CachedUsers])
+/// 用户数据访问对象
+///
+/// 提供用户缓存的增删改查与流式监听。
 class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   UserDao(super.db);
 
+  /// 根据用户 ID 获取单个用户
   Future<CachedUser?> getUser(int userId) {
     return (select(
       cachedUsers,
     )..where((tbl) => tbl.userId.equals(userId))).getSingleOrNull();
   }
 
+  /// 根据用户 ID 列表批量获取用户
   Future<List<CachedUser>> getUsersByIds(Iterable<int> userIds) {
     final ids = userIds.toSet().toList();
     if (ids.isEmpty) return Future.value(const []);
     return (select(cachedUsers)..where((tbl) => tbl.userId.isIn(ids))).get();
   }
 
+  /// 流式监听单个用户的变化
   Stream<CachedUser?> watchUser(int userId) {
     return (select(
       cachedUsers,
     )..where((tbl) => tbl.userId.equals(userId))).watchSingleOrNull();
   }
 
+  /// 插入或更新单个用户
   Future<void> insertOrUpdateUser(CachedUsersCompanion user) {
     return into(cachedUsers).insertOnConflictUpdate(user);
   }
 
+  /// 批量插入或更新用户
   Future<void> insertOrUpdateUsers(Iterable<CachedUsersCompanion> users) async {
     await batch((batch) {
       batch.insertAllOnConflictUpdate(cachedUsers, users.toList());
@@ -132,10 +151,14 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
 }
 
 @DriftAccessor(tables: [Conversations])
+/// 会话数据访问对象
+///
+/// 提供会话缓存的增删改查、流式监听、已读标记和最后消息更新。
 class ConversationDao extends DatabaseAccessor<AppDatabase>
     with _$ConversationDaoMixin {
   ConversationDao(super.db);
 
+  /// 获取所有未删除的会话列表
   Future<List<CachedConversation>> getConversations() {
     return (select(conversations)
           ..where((tbl) => tbl.isDeleted.equals(false))
@@ -148,6 +171,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  /// 流式监听会话列表变化
   Stream<List<CachedConversation>> watchConversations() {
     return (select(conversations)
           ..where((tbl) => tbl.isDeleted.equals(false))
@@ -160,12 +184,14 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  /// 根据会话 ID 获取单个会话
   Future<CachedConversation?> getConversation(String id) {
     return (select(
       conversations,
     )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
+  /// 获取会话表中最新的更新时间
   Future<DateTime?> getLatestUpdatedAt() async {
     final row =
         await (select(conversations)
@@ -180,10 +206,12 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     return row?.updatedAt;
   }
 
+  /// 插入或更新单个会话
   Future<void> insertOrUpdateConversation(ConversationsCompanion conversation) {
     return into(conversations).insertOnConflictUpdate(conversation);
   }
 
+  /// 批量插入或更新会话
   Future<void> insertOrUpdateConversations(
     Iterable<ConversationsCompanion> items,
   ) async {
@@ -192,6 +220,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// 标记会话为已读
+  ///
+  /// [lastReadSeq] 可选，最后已读的消息序号。
   Future<void> markAsRead(String conversationId, {int? lastReadSeq}) async {
     await (update(
       conversations,
@@ -206,6 +237,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// 标记会话为已删除
   Future<void> markDeleted(String conversationId) async {
     await (update(
       conversations,
@@ -218,6 +250,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// 更新会话状态
   Future<void> updateStatus(String conversationId, int status) async {
     await (update(
       conversations,
@@ -230,6 +263,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// 更新收到新消息时的会话信息
+  ///
+  /// [incrementUnread] 是否递增未读计数；[clearUnread] 是否清空未读计数。
   Future<void> updateIncomingMessage({
     required String conversationId,
     required String messageId,
@@ -263,6 +299,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// 更新最后一条消息
   Future<void> updateLastMessage({
     required String conversationId,
     required String messageId,
@@ -288,9 +325,15 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
 }
 
 @DriftAccessor(tables: [Messages])
+/// 消息数据访问对象
+///
+/// 提供消息缓存的增删改查、流式监听、发送状态管理和临时 ID 替换。
 class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   MessageDao(super.db);
 
+  /// 获取指定会话的消息列表
+  ///
+  /// [beforeSeq] 可选，获取该序号之前的消息用于分页加载。
   Future<List<CachedMessage>> getMessagesForConversation(
     String conversationId, {
     int limit = 50,
@@ -336,6 +379,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     return query.watch();
   }
 
+  /// 获取指定会话的最大消息序号
   Future<int> getMaxSeq(String conversationId) async {
     final row =
         await (select(messages)
@@ -349,6 +393,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     return row?.seq ?? 0;
   }
 
+  /// 获取指定会话中所有消息的序号列表
   Future<List<int>> getMessageSeqsForConversation(String conversationId) async {
     final rows =
         await (select(messages)
@@ -363,6 +408,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     return rows.map((row) => row.seq).toList();
   }
 
+  /// 获取指定会话中最新的消息发送时间
   Future<DateTime?> getLatestSentAt(String conversationId) async {
     final row =
         await (select(messages)
@@ -378,6 +424,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     return row?.sentAt;
   }
 
+  /// 获取所有待发送或发送失败的消息
   Future<List<CachedMessage>> getPendingOutgoingMessages() {
     return (select(messages)
           ..where((tbl) => tbl.deliveryStatus.isIn(['SENDING', 'FAILED']))
@@ -385,6 +432,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         .get();
   }
 
+  /// 插入或更新单条消息
+  ///
+  /// 若存在相同 client_msg_id 但不同 id 的旧记录，先删除旧记录再插入。
   Future<void> insertOrUpdateMessage(CachedMessage message) async {
     // 若存在相同 client_msg_id 但不同 id 的旧记录（临时 ID → 服务端 ID），先删除
     if (message.clientMsgId != null) {
@@ -398,6 +448,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     await into(messages).insertOnConflictUpdate(message);
   }
 
+  /// 批量插入或更新消息
   Future<void> insertOrUpdateMessages(Iterable<CachedMessage> items) async {
     final list = items.toList();
     await transaction(() async {
@@ -416,6 +467,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     });
   }
 
+  /// 用服务端 ID 替换临时消息 ID
+  ///
+  /// [temporaryId] 客户端生成的临时 ID；[serverId] 服务端返回的真实 ID。
   Future<void> replaceTemporaryMessageId({
     required String temporaryId,
     required String serverId,
@@ -441,6 +495,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     });
   }
 
+  /// 更新消息发送状态
+  ///
+  /// [serverMessageId] 若与本地 ID 不同，则先替换临时 ID。
   Future<void> updateDeliveryStatus(
     String messageId,
     String status, {
@@ -469,18 +526,21 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     );
   }
 
+  /// 根据客户端消息 ID 获取消息
   Future<CachedMessage?> getMessageByClientMsgId(String clientMsgId) {
     return (select(
       messages,
     )..where((tbl) => tbl.clientMsgId.equals(clientMsgId))).getSingleOrNull();
   }
 
+  /// 根据消息 ID 获取消息
   Future<CachedMessage?> getMessageById(String messageId) {
     return (select(
       messages,
     )..where((tbl) => tbl.id.equals(messageId))).getSingleOrNull();
   }
 
+  /// 软删除单条消息
   Future<void> deleteMessage(String messageId) async {
     await (update(messages)..where((tbl) => tbl.id.equals(messageId))).write(
       MessagesCompanion(
@@ -490,6 +550,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     );
   }
 
+  /// 软删除指定会话的所有消息
   Future<void> deleteMessagesForConversation(String conversationId) async {
     await (update(
       messages,
@@ -503,10 +564,14 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 }
 
 @DriftAccessor(tables: [SyncStates])
+/// 同步状态数据访问对象
+///
+/// 管理增量同步的范围和进度状态。
 class SyncStateDao extends DatabaseAccessor<AppDatabase>
     with _$SyncStateDaoMixin {
   SyncStateDao(super.db);
 
+  /// 获取指定范围的同步状态
   Future<SyncState?> getState(String scope, [String scopeId = 'global']) {
     return (select(syncStates)..where(
           (tbl) => tbl.scope.equals(scope) & tbl.scopeId.equals(scopeId),
@@ -514,6 +579,7 @@ class SyncStateDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
   }
 
+  /// 插入或更新同步状态
   Future<void> upsertState({
     required String scope,
     String scopeId = 'global',
@@ -534,9 +600,13 @@ class SyncStateDao extends DatabaseAccessor<AppDatabase>
 }
 
 @DriftAccessor(tables: [SyncLogs])
+/// 同步日志数据访问对象
+///
+/// 管理同步失败日志的记录和重试策略。
 class SyncLogDao extends DatabaseAccessor<AppDatabase> with _$SyncLogDaoMixin {
   SyncLogDao(super.db);
 
+  /// 获取可重试的同步日志
   Future<List<SyncLogEntry>> getRetryableLogs(DateTime now) {
     return (select(syncLogs)
           ..where(
@@ -549,15 +619,20 @@ class SyncLogDao extends DatabaseAccessor<AppDatabase> with _$SyncLogDaoMixin {
         .get();
   }
 
+  /// 插入一条同步日志
   Future<int> insertLog(SyncLogsCompanion log) {
     return into(syncLogs).insert(log);
   }
 }
 
 @DriftAccessor(tables: [CachedContacts])
+/// 联系人数据访问对象
+///
+/// 提供联系人缓存的增删改查、流式监听和在线状态更新。
 class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
   ContactDao(super.db);
 
+  /// 获取所有联系人
   Future<List<CachedContact>> getAllContacts() {
     return (select(cachedContacts)..orderBy([
           (tbl) =>
@@ -566,6 +641,7 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
         .get();
   }
 
+  /// 流式监听所有联系人变化
   Stream<List<CachedContact>> watchAllContacts() {
     return (select(cachedContacts)..orderBy([
           (tbl) =>
@@ -574,6 +650,7 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
         .watch();
   }
 
+  /// 根据联系人 ID 获取单个联系人
   Future<CachedContact?> getContact(int contactId) {
     return (select(
       cachedContacts,
@@ -584,6 +661,7 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
     return into(cachedContacts).insertOnConflictUpdate(contact);
   }
 
+  /// 批量插入或更新联系人
   Future<void> insertOrUpdateContacts(
     Iterable<CachedContactsCompanion> contacts,
   ) async {
@@ -592,18 +670,21 @@ class ContactDao extends DatabaseAccessor<AppDatabase> with _$ContactDaoMixin {
     );
   }
 
+  /// 删除单个联系人
   Future<void> deleteContact(int contactId) {
     return (delete(
       cachedContacts,
     )..where((tbl) => tbl.contactId.equals(contactId))).go();
   }
 
+  /// 更新联系人在线状态
   Future<void> updateOnlineStatus(int contactId, bool isOnline) {
     return (update(cachedContacts)
           ..where((tbl) => tbl.contactId.equals(contactId)))
         .write(CachedContactsCompanion(onlineStatus: Value(isOnline)));
   }
 
+  /// 获取联系人表中最新的更新时间
   Future<DateTime?> getLatestUpdatedAt() async {
     final row =
         await (select(cachedContacts)

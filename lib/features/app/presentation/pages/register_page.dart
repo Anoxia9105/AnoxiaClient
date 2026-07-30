@@ -1,4 +1,7 @@
-﻿import 'dart:async';
+/// 注册页面，提供两步注册流程：邮箱验证和账号信息填写。
+///
+/// 第一步验证邮箱并获取验证码，第二步填写用户名和密码完成注册。
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/validators.dart';
@@ -9,6 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 注册页面
+///
+/// 使用 Riverpod 管理状态，支持两步注册流程：先通过图形验证码获取邮箱验证码并验证邮箱，
+/// 再填写用户名和密码完成注册。支持响应式布局，适配移动端和桌面端。
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
@@ -16,6 +23,10 @@ class RegisterPage extends ConsumerStatefulWidget {
   ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
+/// 注册页面状态
+///
+/// 管理两步注册流程的状态：邮箱验证码发送、邮箱验证、账号信息填写和提交。
+/// 包含邮箱是否已验证的切换，以及密码可见性控制。
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _emailFormKey = GlobalKey<FormState>();
   final _accountFormKey = GlobalKey<FormState>();
@@ -271,19 +282,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ? null
           : 'register_email_code_invalid'.tr(),
     );
-    final button = SizedBox(
-      height: 56,
-      child: OutlinedButton(
-        onPressed: _isSendingCode || _countdown > 0 ? null : _sendEmailCode,
-        child: _isSendingCode
-            ? const SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Text(
-                _countdown > 0 ? '${_countdown}s' : 'register_send_code'.tr(),
-              ),
+    final button = OutlinedButton(
+      onPressed: _isSendingCode || _countdown > 0 ? null : _sendEmailCode,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 56),
       ),
+      child: _isSendingCode
+          ? const SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text(
+              _countdown > 0 ? '${_countdown}s' : 'register_send_code'.tr(),
+            ),
     );
     if (isMobile) {
       return Column(
@@ -291,13 +302,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         children: [field, const SizedBox(height: 10), button],
       );
     }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: field),
-        const SizedBox(width: 10),
-        button,
-      ],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: field),
+          const SizedBox(width: 10),
+          button,
+        ],
+      ),
     );
   }
 
@@ -443,49 +456,51 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         },
   );
 
-  Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: _field(
-          controller: _captchaCtrl,
-          hint: 'login_page_captcha'.tr(),
-          icon: Icons.shield_outlined,
-          maxLength: 4,
+  Widget _captchaRow(ColorScheme scheme, bool isMobile) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _field(
+            controller: _captchaCtrl,
+            hint: 'login_page_captcha'.tr(),
+            icon: Icons.shield_outlined,
+            maxLength: 4,
+          ),
         ),
-      ),
-      SizedBox(width: isMobile ? 8 : 10),
-      ref
-          .watch(getCaptchaProvider)
-          .when(
-            data: (captcha) => InkWell(
-              onTap: _refreshCaptcha,
-              borderRadius: BorderRadius.circular(12),
-              child: ClipRRect(
+        SizedBox(width: isMobile ? 8 : 10),
+        ref
+            .watch(getCaptchaProvider)
+            .when(
+              data: (captcha) => InkWell(
+                onTap: _refreshCaptcha,
                 borderRadius: BorderRadius.circular(12),
-                child: Image.memory(
-                  base64Decode(captcha.imgBase64),
-                  width: isMobile ? 104 : 120,
-                  height: 56,
-                  fit: BoxFit.cover,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    base64Decode(captcha.imgBase64),
+                    width: isMobile ? 104 : 120,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            loading: () => _captchaPlaceholder(
-              const CircularProgressIndicator(strokeWidth: 2),
-              scheme,
-              isMobile,
-            ),
-            error: (_, _) => _captchaPlaceholder(
-              IconButton(
-                onPressed: _refreshCaptcha,
-                icon: const Icon(Icons.refresh_rounded),
+              loading: () => _captchaPlaceholder(
+                const CircularProgressIndicator(strokeWidth: 2),
+                scheme,
+                isMobile,
               ),
-              scheme,
-              isMobile,
+              error: (_, _) => _captchaPlaceholder(
+                IconButton(
+                  onPressed: _refreshCaptcha,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+                scheme,
+                isMobile,
+              ),
             ),
-          ),
-    ],
+      ],
+    ),
   );
 
   Widget _captchaPlaceholder(Widget child, ColorScheme scheme, bool isMobile) =>

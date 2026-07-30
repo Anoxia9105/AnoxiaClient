@@ -1,3 +1,7 @@
+/// Quill 编辑器语法高亮渲染器。
+///
+/// 为 Quill 代码块和内联代码构建带有语法着色属性的文本跨度，
+/// 同时保留 Quill 标准的 code-block 和 code 属性以保持可编辑性。
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/themes/github.dart';
@@ -11,6 +15,14 @@ import 'quill_style_config.dart';
 /// Builds Quill text spans with syntax colors while preserving Quill's
 /// standard `code-block` and `code` attributes (and therefore editability).
 abstract final class QuillSyntaxHighlighter {
+  /// 构建语法高亮文本跨度。
+  ///
+  /// [context] 当前构建上下文，用于获取主题。
+  /// [node] 当前 Quill 节点。
+  /// [nodeOffset] 节点偏移量。
+  /// [text] 原始文本。
+  /// [style] 基础文本样式。
+  /// [recognizer] 手势识别器。
   static InlineSpan buildSpan(
     BuildContext context,
     Node node,

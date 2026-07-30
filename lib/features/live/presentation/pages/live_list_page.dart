@@ -1,4 +1,8 @@
-﻿import 'dart:convert';
+/// 直播列表页面
+///
+/// 展示公开直播间列表，提供创建直播、加入指定直播间等功能。
+/// 支持桌面端多窗口模式和移动端页面内导航两种进入方式。
+import 'dart:convert';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -10,6 +14,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 直播列表页面
+///
+/// 直播功能的主入口页面，展示公开直播间列表并提供创建和加入直播的功能。
+/// 桌面端通过独立窗口打开直播，移动端则在页面内导航。
 class LiveListPage extends StatefulWidget {
   const LiveListPage({super.key});
 

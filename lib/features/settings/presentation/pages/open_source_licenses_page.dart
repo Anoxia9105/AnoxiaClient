@@ -4,6 +4,15 @@ import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 开源许可证页面
+///
+/// 展示项目所使用的开源依赖库列表及其许可证信息，
+/// 支持点击查看详细许可证文本。
+
+/// 开源许可证列表页面
+///
+/// 列出所有已声明的开源依赖，按名称排序，每个条目显示版本号、
+/// SPDX 标识和简要描述，点击可查看完整许可证文本。
 class OpenSourceLicensesPage extends StatelessWidget {
   const OpenSourceLicensesPage({super.key});
 
@@ -119,7 +128,11 @@ class OpenSourceLicensesPage extends StatelessWidget {
   }
 }
 
+/// 开源许可证详情页面
+///
+/// 显示指定依赖包的完整许可证文本，包含版本号和 SPDX 标识信息。
 class OpenSourceLicenseDetailPage extends StatelessWidget {
+  /// 包名称
   final String packageName;
 
   const OpenSourceLicenseDetailPage({super.key, required this.packageName});

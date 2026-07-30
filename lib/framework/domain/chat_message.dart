@@ -1,24 +1,47 @@
-﻿import 'dart:convert';
+/// 聊天消息领域模型。
+///
+/// 表示一条聊天消息的完整数据，包含消息 ID、内容、发送者、
+/// 消息类型、投递状态等属性，支持 JSON 反序列化和 RoomMessage 转换。
+import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 
 import '../protocol/message/message_enum.dart';
 import '../protocol/message/message_payload.dart';
 
+/// 聊天消息数据类。
 class ChatMessage {
+  /// 服务端消息 ID。
   final String? messageId;
+
+  /// 客户端消息 ID。
   final String? clientMsgId;
+
+  /// 聊天房间 ID。
   final String? roomId;
+
+  /// 发送者 ID。
   final int? senderId;
+
+  /// 消息类型。
   final MessageType? messageType;
+
+  /// 消息文本内容。
   final String content;
+
+  /// 消息载荷，包含富文本、附件等扩展数据。
   final MessagePayload? payload;
+
+  /// 消息扩展属性。
   final Map<String, String> properties;
 
   /// Local UI delivery state. It is not part of the backend RoomMessage.
   final DeliveryStatus deliveryStatus;
 
+  /// 消息时间戳。
   final int? timestamp;
+
+  /// 消息序号。
   final int? seq;
 
   ChatMessage({
@@ -35,6 +58,7 @@ class ChatMessage {
     this.deliveryStatus = DeliveryStatus.sent,
   });
 
+  /// 创建消息的副本，可选择性替换部分字段。
   ChatMessage copyWith({
     String? messageId,
     String? clientMsgId,
@@ -57,6 +81,7 @@ class ChatMessage {
     );
   }
 
+  /// 从 JSON 数据创建消息对象。
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     dynamic rawPayload = _decodeMaybeJson(json['payload']);
     if (rawPayload is String && rawPayload.isNotEmpty) {
@@ -91,6 +116,7 @@ class ChatMessage {
     );
   }
 
+  /// 从 [RoomMessage] 协议对象创建消息对象。
   static ChatMessage fromRoomMessage(RoomMessage msg) {
     return ChatMessage(
       messageId: msg.messageId.isEmpty ? null : msg.messageId,

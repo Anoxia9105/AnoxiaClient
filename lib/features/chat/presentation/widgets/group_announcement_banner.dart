@@ -1,11 +1,20 @@
+/// 群组公告横幅组件，在聊天页面顶部以横幅形式展示群组公告。
+///
+/// 支持查看公告详情和关闭横幅，关闭后相同内容的公告不再显示。
 import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
 import 'package:anoxia/framework/provider/chat/room/group_announcement_dismissal_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 群组公告横幅。
+///
+/// 在群组聊天页面顶部显示公告内容摘要，点击可查看详情，支持关闭。
 class GroupAnnouncementBanner extends ConsumerWidget {
+  /// 群组房间 ID。
   final String roomId;
+
+  /// 公告内容。
   final String announcement;
 
   const GroupAnnouncementBanner({
@@ -14,6 +23,7 @@ class GroupAnnouncementBanner extends ConsumerWidget {
     required this.announcement,
   });
 
+  /// 打开公告详情页面。
   void _openDetail(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(

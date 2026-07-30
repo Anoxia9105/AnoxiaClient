@@ -1,4 +1,8 @@
-﻿import 'dart:convert';
+/// 通话窗口控制器
+///
+/// 管理桌面端通话独立窗口的创建、显示、设置同步和成员邀请。
+/// 基于 Riverpod 的 KeepAlive Provider，通过多窗口框架实现子窗口通信。
+import 'dart:convert';
 
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -13,6 +17,10 @@ import 'call_initial_media.dart';
 
 part 'call_window_controller.g.dart';
 
+/// 通话窗口控制器
+///
+/// 负责桌面端通话窗口的创建、管理、设置同步和通话成员邀请。
+/// 通过 [WindowController] 实现多窗口通信。
 @Riverpod(keepAlive: true)
 class CallWindowController extends _$CallWindowController {
   @override
@@ -61,6 +69,11 @@ class CallWindowController extends _$CallWindowController {
     }
   }
 
+  /// 打开通话窗口
+  ///
+  /// 若窗口已存在则显示并同步设置，否则创建新窗口。
+  /// [themeIndex] 主题索引；[title] 窗口标题；[roomId] 房间 ID；
+  /// [initialMedia] 初始媒体类型；[isGroup] 是否为群组通话；[token] 可选认证令牌。
   Future<void> openCallWindow({
     required int themeIndex,
     required String title,
@@ -95,6 +108,9 @@ class CallWindowController extends _$CallWindowController {
     controller.show();
   }
 
+  /// 更新通话窗口设置
+  ///
+  /// 同步主题索引和语言设置到通话子窗口。若子窗口引擎尚未就绪则忽略本次更新。
   Future<void> updateSettings({int? themeIndex, String? localeCode}) async {
     final payload = <String, Object>{};
     if (themeIndex != null) payload['themeIndex'] = themeIndex;

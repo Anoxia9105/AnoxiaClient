@@ -1,4 +1,8 @@
-﻿import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
+/// 聊天通话按钮组件，在聊天页面顶部工具栏中显示语音/视频通话入口。
+///
+/// 根据当前通话状态动态切换按钮样式：有进行中的通话时显示"返回通话"按钮，
+/// 有呼入时显示"接听"按钮，否则显示语音和视频两个独立按钮。
+import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -10,7 +14,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 聊天通话按钮组件。
+///
+/// 通过 [roomId] 关联对应聊天房间，根据通话状态动态渲染按钮。
 class ChatCallButtonWidget extends ConsumerWidget {
+  /// 聊天房间 ID。
   final String roomId;
 
   const ChatCallButtonWidget({super.key, required this.roomId});

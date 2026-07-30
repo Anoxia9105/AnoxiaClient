@@ -1,4 +1,7 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+/// 群组成员列表页面，展示群组中的所有成员信息。
+///
+/// 进入页面时自动同步成员列表，点击成员可跳转至联系人详情页。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
@@ -10,8 +13,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 群组成员列表页面。
+///
+/// 通过 [roomId] 标识目标群组，[roomName] 为群组名称（预留）。
 class GroupMemberListPage extends ConsumerStatefulWidget {
+  /// 群组房间 ID。
   final String roomId;
+
+  /// 群组名称。
   final String roomName;
 
   const GroupMemberListPage({
@@ -113,6 +122,10 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
     );
   }
 
+  /// 通过群组成员信息打开联系人详情页。
+  ///
+  /// 先在联系人列表中查找该成员，如果未找到则刷新联系人列表后重试。
+  /// [member] 群组成员信息。
   Future<void> _openContactDetailByMember(
     BuildContext context,
     ChatRoomMemberVO member,

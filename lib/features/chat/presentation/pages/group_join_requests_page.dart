@@ -1,12 +1,21 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+/// 群组入群申请管理页面，用于查看和处理群组的入群申请。
+///
+/// 展示所有待处理、已批准和已拒绝的入群申请，管理员可以批准或拒绝申请。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+/// 群组入群申请管理页面。
+///
+/// 通过 [roomId] 指定目标群组，加载并展示该群组的入群申请列表。
 class GroupJoinRequestsPage extends StatefulWidget {
+  /// 群组房间 ID。
   final String roomId;
+
   const GroupJoinRequestsPage({super.key, required this.roomId});
+
   @override
   State<GroupJoinRequestsPage> createState() => _GroupJoinRequestsPageState();
 }
@@ -15,8 +24,11 @@ class _GroupJoinRequestsPageState extends State<GroupJoinRequestsPage> {
   late Future<List<Map<String, dynamic>>> _future = GroupJoinService.requests(
     widget.roomId,
   );
+
+  /// 重新加载入群申请列表。
   void _reload() =>
       setState(() => _future = GroupJoinService.requests(widget.roomId));
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Theme.of(context).colorScheme.surface,
@@ -86,6 +98,10 @@ class _GroupJoinRequestsPageState extends State<GroupJoinRequestsPage> {
       },
     ),
   );
+
+  /// 处理入群申请（批准或拒绝）。
+  ///
+  /// [row] 申请数据行，[approved] 为 true 表示批准，false 表示拒绝。
   Future<void> _handle(Map<String, dynamic> row, bool approved) async {
     try {
       await GroupJoinService.handleRequest(

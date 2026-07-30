@@ -1,3 +1,7 @@
+/// 消息链接预览卡片组件。
+///
+/// 自动提取消息中的 URL，通过后台 Isolate 异步获取网页元数据，
+/// 并以卡片形式展示标题、描述、缩略图等信息。
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -8,13 +12,24 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+/// 链接预览元数据加载器类型定义。
 typedef LinkPreviewLoader = Future<LinkPreviewMetadata> Function(String link);
 
+/// 链接预览元数据。
 class LinkPreviewMetadata {
+  /// 页面标题。
   final String title;
+
+  /// 页面描述。
   final String description;
+
+  /// 预览图片 URL。
   final String? imageUrl;
+
+  /// 站点名称。
   final String siteName;
+
+  /// 是否已从远程加载。
   final bool loadedRemotely;
 
   const LinkPreviewMetadata({
@@ -25,11 +40,13 @@ class LinkPreviewMetadata {
     this.loadedRemotely = false,
   });
 
+  /// 创建仅包含域名和链接的兜底元数据。
   factory LinkPreviewMetadata.fallback(String link) {
     final host = _displayHost(link);
     return LinkPreviewMetadata(title: host, description: link, siteName: host);
   }
 
+  /// 从后台 Isolate 返回的数据中创建元数据。
   factory LinkPreviewMetadata.fromWorker(
     String link,
     Map<Object?, Object?> data,
@@ -45,12 +62,21 @@ class LinkPreviewMetadata {
   }
 }
 
+/// 消息链接预览卡片组件。
 class MessageLinkPreview extends StatefulWidget {
+  /// 卡片最小宽度。
   static const double minCardWidth = 260;
+
+  /// 卡片最大宽度。
   static const double maxCardWidth = 420;
 
+  /// 消息文本，用于提取 URL。
   final String text;
+
+  /// 卡片最大宽度限制。
   final double? maxWidth;
+
+  /// 自定义元数据加载器，为 `null` 时使用默认加载器。
   final LinkPreviewLoader? metadataLoader;
 
   const MessageLinkPreview({
@@ -63,6 +89,9 @@ class MessageLinkPreview extends StatefulWidget {
   @override
   State<MessageLinkPreview> createState() => _MessageLinkPreviewState();
 
+  /// 从文本中提取第一个有效 URL。
+  ///
+  /// 自动处理末尾标点符号，并为 `www.` 前缀补全 `https://` 协议。
   static String? extractFirstUrl(String text) {
     final match = RegExp(
       r'((?:https?:\/\/|www\.)[^\s<>"\]\)]+)',

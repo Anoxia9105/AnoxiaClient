@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -10,7 +10,17 @@ import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// 独立窗口弹幕页面
+///
+/// 在桌面端独立窗口中显示直播弹幕，支持实时收发弹幕消息，
+/// 自动定位到主直播窗口旁边。
+
+/// 独立窗口弹幕页面组件
+///
+/// 桌面端通过独立窗口显示弹幕，连接 LiveKit 房间接收实时弹幕数据，
+/// 主播可在此窗口发送弹幕。
 class WindowLiveDanmakuPage extends StatefulWidget {
+  /// 窗口控制器
   final WindowController controller;
 
   const WindowLiveDanmakuPage({super.key, required this.controller});
@@ -19,20 +29,42 @@ class WindowLiveDanmakuPage extends StatefulWidget {
   State<WindowLiveDanmakuPage> createState() => _WindowLiveDanmakuPageState();
 }
 
+/// 弹幕页面状态
+///
+/// 管理弹幕窗口的完整生命周期，包括连接房间、接收弹幕、发送弹幕和窗口定位。
 class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     with WindowListener {
+  /// 弹幕消息主题
   static const _danmakuTopic = 'live-danmaku';
 
+  /// 弹幕输入控制器
   final TextEditingController _controller = TextEditingController();
+
+  /// 弹幕消息列表
   final List<_DanmakuMessage> _messages = [];
 
+  /// 房间对象
   Room? _room;
+
+  /// 房间事件监听器
   EventsListener<RoomEvent>? _listener;
+
+  /// 房间 ID
   String _roomId = '';
+
+  /// 房间标题
   String _title = '';
+
+  /// 客户端 ID
   String _clientId = '';
+
+  /// 主窗口边界信息
   Map<String, dynamic>? _anchorBounds;
+
+  /// 是否加载中
   bool _loading = true;
+
+  /// 错误信息
   Object? _error;
 
   @override
@@ -72,6 +104,9 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     super.dispose();
   }
 
+  /// 连接房间
+  ///
+  /// 获取 LiveKit Token 并连接到直播房间，注册数据事件监听。
   Future<void> _connect() async {
     if (_roomId.isEmpty) {
       setState(() {
@@ -121,6 +156,9 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     }
   }
 
+  /// 定位弹幕窗口到直播窗口旁边
+  ///
+  /// 根据主窗口的边界信息，将弹幕窗口放置在右侧。
   Future<void> _placeBesideLiveWindow() async {
     final anchor = _anchorBounds;
     if (anchor == null) return;
@@ -141,6 +179,10 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     } catch (_) {}
   }
 
+  /// 获取 LiveKit Token
+  ///
+  /// 向服务端请求进入房间的 Token。
+  /// [roomId] 房间 ID。
   Future<String> _fetchToken(String roomId) async {
     final res = await DioClient().get(
       '/live/token',
@@ -157,6 +199,10 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     );
   }
 
+  /// 处理数据事件
+  ///
+  /// 解析弹幕主题消息并添加到消息列表。
+  /// [event] 接收到的数据事件。
   void _handleDataEvent(DataReceivedEvent event) {
     if (event.topic != _danmakuTopic) return;
     try {
@@ -174,11 +220,18 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     }
   }
 
+  /// 添加弹幕消息
+  ///
+  /// 将非空消息添加到列表中。
+  /// [message] 弹幕消息对象。
   void _addMessage(_DanmakuMessage message) {
     if (message.text.trim().isEmpty) return;
     setState(() => _messages.add(message));
   }
 
+  /// 发送弹幕消息
+  ///
+  /// 通过 LiveKit 数据通道广播弹幕内容。
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -233,6 +286,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
     );
   }
 
+  /// 构建页面主体内容
   Widget _buildBody() {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
@@ -318,9 +372,15 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
   }
 }
 
+/// 弹幕消息数据类
 class _DanmakuMessage {
+  /// 发送者名称
   final String name;
+
+  /// 消息文本
   final String text;
+
+  /// 是否为主播消息
   final bool isHost;
 
   const _DanmakuMessage({

@@ -1,3 +1,7 @@
+/// 位置选取器组件
+///
+/// 桌面端聊天输入框中的位置分享组件，提供地图选点发送位置消息的功能。
+/// 支持定位当前位置、拖拽选点、切换瓦片图源等操作。
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,10 +11,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+/// 位置选取组件
+///
+/// 基于 [FlutterMap] 实现的位置选取器，用户可以通过拖拽地图或点击
+/// 定位按钮来选择一个位置，确认后通过 [onSubmit] 回调发送位置消息。
 class LocationBox extends StatefulWidget {
   const LocationBox({super.key, required this.onSubmit, this.onCancel});
 
+  /// 位置提交回调，用户确认选点后触发
   final ValueChanged<LocationPayload> onSubmit;
+  /// 取消回调，用户点击关闭时触发
   final VoidCallback? onCancel;
 
   @override

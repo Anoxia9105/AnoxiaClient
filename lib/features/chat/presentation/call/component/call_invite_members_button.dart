@@ -1,4 +1,7 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+/// 通话中邀请成员按钮组件，用于群组通话中邀请其他群成员加入。
+///
+/// 点击按钮弹出成员选择对话框，允许从群成员中选择未加入当前通话的成员进行邀请。
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
@@ -12,9 +15,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 通话邀请成员按钮
+///
+/// 在群组通话中显示，点击后弹出成员选择对话框，支持多选并发送邀请。
+/// 桌面端通过 [Channel] 调用原生方法，移动端通过 [callInvitationControllerProvider] 处理。
 class CallInviteMembersButton extends ConsumerWidget {
   const CallInviteMembersButton({super.key, required this.state});
 
+  /// 当前房间状态
   final RoomState state;
 
   @override

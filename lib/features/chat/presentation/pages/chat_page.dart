@@ -1,4 +1,7 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+/// 聊天主页面，负责桌面端聊天布局：左侧房间列表、中间聊天详情、右侧详情面板。
+///
+/// 在移动端直接显示聊天室列表，桌面端支持三栏布局及响应式右侧面板（内联/叠加模式）。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/welcome.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_list_page.dart';
@@ -7,6 +10,11 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 聊天主页面
+///
+/// 桌面端采用三栏布局：左侧聊天室列表、中间聊天详情、右侧房间详情面板。
+/// 右侧面板支持响应式切换：宽屏时内联显示，窄屏时叠加显示。
+/// 移动端直接显示聊天室列表。
 class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({super.key});
 
@@ -14,6 +22,9 @@ class ChatPage extends ConsumerStatefulWidget {
   ConsumerState<ChatPage> createState() => _ChatPageState();
 }
 
+/// 聊天主页面状态
+///
+/// 监听当前活跃房间和右侧面板显示状态，根据屏幕宽度动态切换布局模式。
 class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   Widget build(BuildContext context) {

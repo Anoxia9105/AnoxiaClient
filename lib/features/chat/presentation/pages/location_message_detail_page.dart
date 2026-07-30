@@ -1,3 +1,6 @@
+/// 位置消息详情页面，在地图上展示收到的位置消息。
+///
+/// 使用 flutter_map 渲染地图，支持切换地图源，显示位置标题、地址和坐标信息。
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -5,9 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+/// 位置消息详情页面。
+///
+/// 接收 [location] 参数，在地图上标注位置点并展示位置详细信息。
 class LocationMessageDetailPage extends StatefulWidget {
   const LocationMessageDetailPage({super.key, required this.location});
 
+  /// 位置信息载荷。
   final LocationPayload location;
 
   @override
@@ -17,9 +24,14 @@ class LocationMessageDetailPage extends StatefulWidget {
 
 class _LocationMessageDetailPageState extends State<LocationMessageDetailPage> {
   final MapController _mapController = MapController();
+
+  /// 当前使用的地图源。
   MapTileSource? _source;
+
+  /// 上次使用的语言代码，用于检测语言切换。
   String? _languageCode;
 
+  /// 获取位置的经纬度坐标点。
   LatLng get _point =>
       LatLng(widget.location.latitude ?? 0, widget.location.longitude ?? 0);
 
@@ -33,6 +45,7 @@ class _LocationMessageDetailPageState extends State<LocationMessageDetailPage> {
     }
   }
 
+  /// 循环切换地图源。
   void _cycleSource() {
     final current = _source ?? MapTileSource.preferredFor(context);
     final index = MapTileSource.all.indexWhere((item) => item.id == current.id);

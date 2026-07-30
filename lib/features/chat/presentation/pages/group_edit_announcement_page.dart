@@ -1,12 +1,21 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+/// 群组公告编辑页面，用于修改群组的公告内容。
+///
+/// 提供文本输入框用于编辑公告，支持提交更新到服务器。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 群组公告编辑页面。
+///
+/// 通过 [roomId] 标识目标群组，[initialAnnouncement] 为当前公告内容作为初始值。
 class GroupEditAnnouncementPage extends ConsumerStatefulWidget {
+  /// 群组房间 ID。
   final String roomId;
+
+  /// 当前公告内容，作为编辑的初始值。
   final String initialAnnouncement;
 
   const GroupEditAnnouncementPage({
@@ -37,6 +46,9 @@ class _GroupEditAnnouncementPageState
     super.dispose();
   }
 
+  /// 提交公告更新。
+  ///
+  /// 如果公告内容未变化则直接返回，否则调用服务更新公告。
   Future<void> _submit() async {
     final nextAnnouncement = _controller.text.trim();
     final oldAnnouncement = widget.initialAnnouncement.trim();

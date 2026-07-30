@@ -19,6 +19,11 @@ class DioClient {
         /// 请求拦截器：注入鉴权 Token
         onRequest: (options, handler) async {
           log.info('Dio request -> ${options.method} ${options.uri}');
+          // 确保 Content-Type 被正确设置
+          options.contentType = 'application/json';
+          options.headers['Content-Type'] = 'application/json';
+          log.info('Dio request headers -> ${options.headers}');
+          log.info('Dio request data -> ${options.data}');
           // 默认需要鉴权，除非显式指定 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
@@ -299,6 +304,9 @@ class DioClient {
   Options _mergeOptions(Options? options, {required bool auth}) {
     final extra = Map<String, dynamic>.from(options?.extra ?? {});
     extra['auth'] = auth;
-    return (options ?? Options()).copyWith(extra: extra);
+    return (options ?? Options()).copyWith(
+      extra: extra,
+      contentType: 'application/json',
+    );
   }
 }

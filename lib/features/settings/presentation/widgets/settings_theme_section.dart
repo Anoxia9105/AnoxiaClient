@@ -1,14 +1,29 @@
-﻿import 'package:anoxia/framework/theme/app_theme.dart';
+import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
+/// 设置-主题区块
+///
+/// 提供亮暗主题切换和强调色选择功能，包含亮度模式选择卡片
+/// 和强调色色块列表。
+
+/// 设置-主题区块组件
+///
+/// 提供亮度模式（亮色/暗色）和强调色选择的 UI 控件。
 class SettingsThemeSection extends StatelessWidget {
+  /// 当前选中的亮度
   final Brightness selectedBrightness;
+
+  /// 当前选中的强调色索引
   final int selectedAccentIndex;
+
+  /// 亮度变更回调
   final ValueChanged<Brightness> onBrightnessChanged;
+
+  /// 强调色变更回调
   final ValueChanged<int> onAccentChanged;
 
   const SettingsThemeSection({
@@ -83,7 +98,11 @@ class SettingsThemeSection extends StatelessWidget {
   }
 }
 
+/// 分区标签组件
+///
+/// 用于主题区块内分组的标签文字。
 class _SectionLabel extends StatelessWidget {
+  /// 标签文本
   final String text;
 
   const _SectionLabel({required this.text});
@@ -100,11 +119,23 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
+/// 亮度选择卡片
+///
+/// 用于选择亮色或暗色主题的可点击卡片，选中时高亮显示。
 class _BrightnessTile extends StatelessWidget {
+  /// 标签文本
   final String label;
+
+  /// 图标
   final List<List<dynamic>> icon;
+
+  /// 亮度值
   final Brightness brightness;
+
+  /// 当前选中的亮度
   final Brightness selectedBrightness;
+
+  /// 变更回调
   final ValueChanged<Brightness> onChanged;
 
   const _BrightnessTile({
@@ -163,10 +194,20 @@ class _BrightnessTile extends StatelessWidget {
   }
 }
 
+/// 强调色色块
+///
+/// 圆形渐变色块，用于选择主题强调色，选中时显示边框和勾选图标。
 class _AccentSwatch extends StatelessWidget {
+  /// 颜色值
   final Color color;
+
+  /// 颜色名称
   final String label;
+
+  /// 是否选中
   final bool selected;
+
+  /// 点击回调
   final VoidCallback onTap;
 
   const _AccentSwatch({

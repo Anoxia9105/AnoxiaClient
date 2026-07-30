@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 
+/// 简化版列表项组件
+///
+/// 提供类似 [ListTile] 的布局，额外支持自定义圆角、选中状态背景色等。
+/// 适用于聊天列表、设置页面等场景。
 class SimpleListTile extends StatelessWidget {
+  /// 左侧图标或组件
   final Widget? leading;
+  /// 标题
   final Widget title;
+  /// 副标题
   final Widget? subtitle;
+  /// 右侧尾部组件
   final Widget? trailing;
+  /// 点击回调
   final VoidCallback? onTap;
+  /// 内边距
   final EdgeInsetsGeometry? padding;
+  /// 内容间距
   final double contentSpacing;
+  /// 是否选中
   final bool selected;
+  /// 背景色
   final Color? tileColor;
+  /// 选中时背景色
   final Color? selectedTileColor;
-
-  // 新增圆角属性
+  /// 圆角半径
   final BorderRadius? borderRadius;
 
   const SimpleListTile({

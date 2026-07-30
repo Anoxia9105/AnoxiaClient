@@ -1,4 +1,8 @@
-﻿import 'dart:async';
+/// 直播房间控制器
+///
+/// 基于 LiveKit 管理直播房间的连接、音视频控制和屏幕共享功能。
+/// 保持活跃状态，不随 UI 销毁而释放。
+import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -14,6 +18,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'live_room_controller.g.dart';
 
+/// 直播房间控制器
+///
+/// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+/// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
 @Riverpod(keepAlive: true)
 class LiveRoomController extends _$LiveRoomController {
   EventsListener<RoomEvent>? _listener;
@@ -21,6 +29,13 @@ class LiveRoomController extends _$LiveRoomController {
   bool _isTogglingMic = false;
   bool _isTogglingScreen = false;
 
+  /// 初始化并连接直播房间
+  ///
+  /// [roomId] 房间 ID
+  /// [isHost] 是否为房主
+  ///
+  /// 获取 token 后连接 LiveKit 房间，注册各类房间事件监听器。
+  /// 返回初始化后的 [RoomState]。
   @override
   Future<RoomState> build(String roomId, bool isHost) async {
     final room = Room(
@@ -101,6 +116,10 @@ class LiveRoomController extends _$LiveRoomController {
     }
   }
 
+  /// 切换摄像头开关
+  ///
+  /// 切换本地摄像头的启用状态，并显示对应的 Toast 提示。
+  /// 通过 [_isTogglingCamera] 防止重复操作。
   Future<void> toggleCamera() async {
     if (_isTogglingCamera) return;
     _isTogglingCamera = true;
@@ -118,6 +137,10 @@ class LiveRoomController extends _$LiveRoomController {
     }
   }
 
+  /// 切换麦克风开关
+  ///
+  /// 切换本地麦克风的启用状态，并显示对应的 Toast 提示。
+  /// 通过 [_isTogglingMic] 防止重复操作。
   Future<void> toggleMic() async {
     if (_isTogglingMic) return;
     _isTogglingMic = true;
@@ -134,6 +157,14 @@ class LiveRoomController extends _$LiveRoomController {
     }
   }
 
+  /// 切换屏幕共享
+  ///
+  /// [context] 构建上下文，用于弹出屏幕选择对话框
+  /// [sourceId] 屏幕源 ID，桌面端为 null 时会弹出选择对话框
+  ///
+  /// 开启屏幕共享时，桌面端会先弹出屏幕/窗口选择对话框。
+  /// 关闭屏幕共享时，会移除已发布的屏幕共享轨道。
+  /// 通过 [_isTogglingScreen] 防止重复操作。
   Future<void> toggleScreenShare(
     BuildContext context, {
     String? sourceId,
@@ -192,6 +223,12 @@ class LiveRoomController extends _$LiveRoomController {
     }
   }
 
+  /// 获取直播房间 token
+  ///
+  /// [roomId] 房间 ID
+  ///
+  /// 从服务端获取用于连接 LiveKit 房间的 token。
+  /// 请求失败时抛出异常。
   Future<String> _fetchToken(String roomId) async {
     final res = await DioClient().get(
       '/live/token',
@@ -204,6 +241,14 @@ class LiveRoomController extends _$LiveRoomController {
     throw Exception(res.data?['message'] ?? '获取直播 token 失败');
   }
 
+  /// 构建房间状态快照
+  ///
+  /// [room] LiveKit 房间实例
+  /// [token] 连接 token
+  /// [isReconnecting] 是否正在重连
+  /// [connectionError] 连接错误信息
+  ///
+  /// 从当前房间和参与者信息构建 [RoomState] 快照，保留部分历史状态字段。
   RoomState _buildState(
     Room room,
     String token, {

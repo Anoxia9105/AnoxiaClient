@@ -1,3 +1,6 @@
+/// 移动端通话参与者画面组件，渲染单个参与者的视频/音频画面。
+///
+/// 支持视频渲染、画面替代占位、麦克风静音指示、说话状态动画、连接质量指示等功能。
 import 'dart:convert';
 
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_placeholder.dart';
@@ -6,6 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+/// 移动端参与者画面
+///
+/// 根据参与者状态渲染视频轨道或头像占位，显示参与者名称、麦克风状态、
+/// 说话状态动画和连接质量。使用 [AnimatedContainer] 和 [AnimatedBuilder] 实现平滑过渡。
 class MobileParticipantSurface extends StatefulWidget {
   const MobileParticipantSurface({
     super.key,
@@ -16,10 +23,19 @@ class MobileParticipantSurface extends StatefulWidget {
     this.borderRadius = 18,
   });
 
+  /// 参与者对象
   final Participant participant;
+
+  /// 是否使用紧凑模式，适用于小窗口或网格布局
   final bool compact;
+
+  /// 是否显示状态指示器（麦克风、连接质量等）
   final bool showStatus;
+
+  /// 视频画面填充模式
   final VideoViewFit fit;
+
+  /// 画面圆角半径
   final double borderRadius;
 
   @override
@@ -27,6 +43,10 @@ class MobileParticipantSurface extends StatefulWidget {
       _MobileParticipantSurfaceState();
 }
 
+/// 移动端参与者画面状态
+///
+/// 监听参与者事件（说话状态、音视频轨道变更等），管理说话动画控制器，
+/// 并实时更新参与者画面渲染。
 class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     with SingleTickerProviderStateMixin {
   EventsListener<ParticipantEvent>? _listener;

@@ -1,21 +1,59 @@
+/// 直播间页面组件库
+///
+/// 包含直播间 UI 的所有子组件，如底部控制栏、房间头部、弹幕面板、
+/// 侧边栏、连麦控制、视频画面渲染等。
 part of 'live_room_page.dart';
 
+/// 底部控制区域组件
+///
+/// 整合连麦请求栏、移动端聊天面板、聊天输入框和直播控制按钮。
 class _BottomControlSection extends StatelessWidget {
+  /// 是否为主播
   final bool isHost;
+
+  /// 连麦请求列表
   final List<_CohostRequest> cohostRequests;
+
+  /// 是否已发起连麦请求
   final bool cohostRequested;
+
+  /// 连麦是否激活
   final bool cohostActive;
+
+  /// 是否显示移动端聊天面板
   final bool showMobileChat;
+
+  /// 聊天消息列表
   final List<_LiveChatMessage> messages;
+
+  /// 聊天输入控制器
   final TextEditingController chatController;
+
+  /// 发送消息回调
   final VoidCallback onSendMessage;
+
+  /// 接受连麦回调
   final ValueChanged<_CohostRequest> onAcceptCohost;
+
+  /// 拒绝连麦回调
   final ValueChanged<_CohostRequest> onRejectCohost;
+
+  /// 发起连麦请求回调
   final VoidCallback onRequestCohost;
+
+  /// 取消连麦请求回调
   final VoidCallback onCancelCohostRequest;
+
+  /// 切换摄像头回调
   final Future<void> Function() onToggleCamera;
+
+  /// 切换麦克风回调
   final Future<void> Function() onToggleMic;
+
+  /// 屏幕共享回调
   final Future<void> Function() onShareScreen;
+
+  /// 离开回调
   final VoidCallback onLeave;
 
   const _BottomControlSection({
@@ -104,13 +142,29 @@ class _BottomControlSection extends StatelessWidget {
   }
 }
 
+/// 房间头部信息组件
+///
+/// 显示主播/观众身份标签、可见性、直播来源、房间标题和连接状态。
 class _RoomHeader extends StatelessWidget {
+  /// 是否为主播
   final bool isHost;
+
+  /// 房间 ID
   final String roomId;
+
+  /// 房间标题
   final String title;
+
+  /// 直播可见性
   final LiveVisibility visibility;
+
+  /// 直播来源
   final LiveSource source;
+
+  /// 连接状态
   final String connectionState;
+
+  /// 参与者数量
   final int participantCount;
 
   const _RoomHeader({
@@ -173,8 +227,14 @@ class _RoomHeader extends StatelessWidget {
   }
 }
 
+/// 标签徽章组件
+///
+/// 圆角矩形彩色标签，用于标识状态、角色等信息。
 class _Badge extends StatelessWidget {
+  /// 标签文本
   final String label;
+
+  /// 标签颜色
   final Color color;
 
   const _Badge({required this.label, required this.color});
@@ -195,7 +255,11 @@ class _Badge extends StatelessWidget {
   }
 }
 
+/// 聊天面板组件
+///
+/// 移动端使用的弹幕消息列表，以列表形式展示聊天记录。
 class _ChatPanel extends StatelessWidget {
+  /// 聊天消息列表
   final List<_LiveChatMessage> messages;
 
   const _ChatPanel({required this.messages});
@@ -257,10 +321,20 @@ class _ChatPanel extends StatelessWidget {
   }
 }
 
+/// 直播侧边面板组件
+///
+/// 桌面端使用的侧边弹幕面板，包含消息列表、聊天输入框和发送按钮。
 class _LiveSidePanel extends StatelessWidget {
+  /// 聊天消息列表
   final List<_LiveChatMessage> messages;
+
+  /// 聊天输入控制器
   final TextEditingController chatController;
+
+  /// 是否为主播
   final bool isHost;
+
+  /// 发送消息回调
   final VoidCallback onSend;
 
   const _LiveSidePanel({
@@ -356,15 +430,35 @@ class _LiveSidePanel extends StatelessWidget {
   }
 }
 
+/// 直播控制按钮组
+///
+/// 提供摄像头、麦克风、屏幕共享、连麦和离开等控制按钮。
 class _LiveControls extends StatelessWidget {
+  /// 是否为主播
   final bool isHost;
+
+  /// 是否已发起连麦请求
   final bool cohostRequested;
+
+  /// 连麦是否激活
   final bool cohostActive;
+
+  /// 发起连麦请求回调
   final VoidCallback onRequestCohost;
+
+  /// 取消连麦请求回调
   final VoidCallback onCancelCohostRequest;
+
+  /// 切换摄像头回调
   final VoidCallback onToggleCamera;
+
+  /// 切换麦克风回调
   final VoidCallback onToggleMic;
+
+  /// 屏幕共享回调
   final VoidCallback onShareScreen;
+
+  /// 离开回调
   final VoidCallback onLeave;
 
   const _LiveControls({
@@ -427,9 +521,17 @@ class _LiveControls extends StatelessWidget {
   }
 }
 
+/// 连麦请求栏组件
+///
+/// 显示观众的连麦申请，主播可接受或拒绝。
 class _CohostRequestBar extends StatelessWidget {
+  /// 连麦请求列表
   final List<_CohostRequest> requests;
+
+  /// 接受回调
   final ValueChanged<_CohostRequest> onAccept;
+
+  /// 拒绝回调
   final ValueChanged<_CohostRequest> onReject;
 
   const _CohostRequestBar({
@@ -472,12 +574,22 @@ class _CohostRequestBar extends StatelessWidget {
   }
 }
 
+/// 直播视频画面组件
+///
+/// 渲染参与者的视频轨道，优先显示屏幕共享，其次显示摄像头画面。
+/// 无视频时显示占位图标。
 class _LiveVideoSurface extends StatelessWidget {
+  /// 参与者对象
   final Participant participant;
+
+  /// 画面标签
   final String label;
 
   const _LiveVideoSurface({required this.participant, required this.label});
 
+  /// 获取当前可显示的视频轨道
+  ///
+  /// 优先返回屏幕共享轨道，其次返回摄像头轨道。
   VideoTrack? _visibleVideoTrack() {
     for (final publication in participant.videoTrackPublications) {
       if (publication.isScreenShare &&

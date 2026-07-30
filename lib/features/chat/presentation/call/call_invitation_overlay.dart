@@ -1,9 +1,16 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+/// 通话邀请浮层组件，根据不同的通话邀请阶段显示对应的 UI 卡片。
+///
+/// 支持来电接听/拒绝、通话已被他处接听/拒绝、邀请取消、对方忙线、通话结束等状态展示。
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 通话邀请浮层
+///
+/// 监听 [callInvitationControllerProvider] 获取当前邀请状态，
+/// 根据 [CallInvitationPhase] 切换展示不同的 UI 卡片。
 class CallInvitationOverlay extends ConsumerWidget {
   const CallInvitationOverlay({super.key});
 
@@ -28,6 +35,9 @@ class CallInvitationOverlay extends ConsumerWidget {
   }
 }
 
+/// 来电通知卡片
+///
+/// 显示来电者的头像、名称和通话类型（音频/视频），并提供接听和拒绝按钮。
 class _IncomingCallCard extends ConsumerWidget {
   const _IncomingCallCard({required this.invitation});
 
@@ -150,6 +160,10 @@ class _IncomingCallCard extends ConsumerWidget {
   }
 }
 
+/// 通话通知提示卡片
+///
+/// 在通话被其他地方接听/拒绝、邀请取消、对方忙线、通话结束等场景下，
+/// 显示简短的通知文本。
 class _CallNoticeCard extends StatelessWidget {
   const _CallNoticeCard({required this.text});
 

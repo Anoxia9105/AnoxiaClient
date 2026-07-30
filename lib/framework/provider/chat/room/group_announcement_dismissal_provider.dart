@@ -1,9 +1,13 @@
-﻿import 'dart:convert';
+/// 群公告关闭状态管理。
+///
+/// 记录每个房间中被关闭的公告内容，当公告内容变更时自动重新显示。
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../common/utils/sp_util.dart';
 
+/// 群公告关闭状态的全局提供者。
 final groupAnnouncementDismissalProvider =
     NotifierProvider<GroupAnnouncementDismissal, Map<String, String>>(
       GroupAnnouncementDismissal.new,
@@ -30,10 +34,18 @@ class GroupAnnouncementDismissal extends Notifier<Map<String, String>> {
     }
   }
 
+  /// 检查指定房间的公告是否已被关闭。
+  ///
+  /// [roomId] 房间 ID。
+  /// [announcement] 公告内容，与关闭时记录的内容完全匹配才视为已关闭。
   bool isDismissed(String roomId, String announcement) {
     return state[roomId] == announcement;
   }
 
+  /// 关闭指定房间的公告。
+  ///
+  /// [roomId] 房间 ID。
+  /// [announcement] 公告内容，将持久化存储。
   Future<void> dismiss(String roomId, String announcement) async {
     state = <String, String>{...state, roomId: announcement};
     await SPUtil.instance.set(_storageKey, jsonEncode(state));

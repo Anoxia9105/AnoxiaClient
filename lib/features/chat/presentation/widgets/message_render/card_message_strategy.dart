@@ -1,4 +1,8 @@
-﻿import 'package:anoxia/framework/domain/chat_message.dart';
+/// 卡片消息渲染策略
+///
+/// 实现卡片类型消息的渲染逻辑，将 CardPayload 数据渲染为可点击的卡片组件。
+/// 支持联系人卡片和群组卡片的识别与跳转。
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -7,6 +11,10 @@ import 'package:flutter/material.dart';
 
 import 'base/message_render_strategy.dart';
 
+/// 卡片消息渲染策略
+///
+/// 处理 [CardPayload] 类型消息的渲染，将卡片数据展示为包含标题、
+/// 摘要、缩略图的可点击卡片。支持跳转到联系人详情页或群组预览页。
 class CardMessageStrategy extends MessageRenderStrategy {
   @override
   Widget buildContent(

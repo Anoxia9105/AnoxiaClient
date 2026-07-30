@@ -1,3 +1,6 @@
+/// 忘记密码页面，提供用户名验证、图形验证码、邮箱验证码及密码重置功能。
+///
+/// 用户通过输入用户名、图形验证码获取邮箱验证码，然后输入新密码完成密码重置。
 import 'dart:async';
 import 'dart:convert';
 
@@ -8,6 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 忘记密码页面
+///
+/// 使用 Riverpod 管理状态，支持图形验证码刷新、邮箱验证码发送倒计时、
+/// 密码重置提交等完整流程。
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
 
@@ -15,6 +22,9 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
   ConsumerState<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
+/// 忘记密码页面状态
+///
+/// 管理用户名、验证码、邮箱验证码、新密码等输入框的控制器，以及提交状态和倒计时逻辑。
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _usernameCtrl = TextEditingController();
   final _captchaCtrl = TextEditingController();
@@ -373,9 +383,15 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   }
 }
 
+/// 图形验证码数据
+///
+/// 保存验证码的唯一标识符和 Base64 编码的图片数据。
 class _SimpleCaptchaData {
   const _SimpleCaptchaData({required this.uuid, required this.imgBase64});
 
+  /// 验证码唯一标识
   final String uuid;
+
+  /// Base64 编码的验证码图片
   final String imgBase64;
 }

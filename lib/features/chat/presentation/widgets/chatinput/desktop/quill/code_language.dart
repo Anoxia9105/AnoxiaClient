@@ -1,9 +1,17 @@
+/// Quill 编辑器代码语言定义与检测工具。
+///
+/// 提供代码语言数据模型和基于正则的代码语言自动检测，
+/// 不依赖 highlight.js 的 auto-detect 以避免安全风险。
 import 'dart:convert';
 
 import 'package:flutter_quill/flutter_quill.dart';
 
+/// 代码语言数据模型。
 class CodeLanguage {
+  /// 语言标识符，如 'dart'、'python'。
   final String id;
+
+  /// 语言显示名称，如 'Dart'、'Python'。
   final String label;
 
   const CodeLanguage(this.id, this.label);
@@ -11,8 +19,10 @@ class CodeLanguage {
 
 /// Safe code-language detection that never invokes highlight.js auto-detect.
 abstract final class CodeLanguageDetector {
+  /// 纯文本（默认语言）。
   static const plainText = CodeLanguage('plaintext', 'Plain Text');
 
+  /// 支持的代码语言列表。
   static const supported = <CodeLanguage>[
     CodeLanguage('dart', 'Dart'),
     CodeLanguage('javascript', 'JavaScript'),
@@ -30,6 +40,10 @@ abstract final class CodeLanguageDetector {
     plainText,
   ];
 
+  /// 根据 Quill 节点的属性解析代码语言。
+  ///
+  /// 优先读取节点上的 [Attribute.codeBlock] 属性，
+  /// 未设置时对文本内容进行自动检测。
   static CodeLanguage resolveForLine(Node line) {
     final attribute = line.style.attributes[Attribute.codeBlock.key];
     final selected = attribute?.value;
@@ -42,6 +56,9 @@ abstract final class CodeLanguageDetector {
     return detect(block?.toPlainText() ?? line.toPlainText());
   }
 
+  /// 根据语言标识符查找对应的 [CodeLanguage]。
+  ///
+  /// [id] 语言标识符（不区分大小写），找不到时返回 `null`。
   static CodeLanguage? fromId(String id) {
     final normalized = id.toLowerCase();
     for (final language in supported) {
@@ -50,6 +67,9 @@ abstract final class CodeLanguageDetector {
     return null;
   }
 
+  /// 基于正则表达式自动检测源代码的语言类型。
+  ///
+  /// [source] 源代码文本，无法识别时返回 [plainText]。
   static CodeLanguage detect(String source) {
     final text = source.trim();
     if (text.isEmpty) return plainText;

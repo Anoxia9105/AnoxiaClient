@@ -1,4 +1,8 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+/// 直播预览页面
+///
+/// 在正式开播前提供预览和配置界面，用户可以选择摄像头或屏幕共享源、
+/// 设置直播可见性，并通过预览确认画面效果后再开播。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
@@ -9,10 +13,19 @@ import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// 直播预览页面
+///
+/// 开播前的预览与配置页面，支持摄像头和屏幕共享两种直播源。
+/// 预览画面通过 LiveKit 本地视频轨道渲染，用户可在此设置标题、
+/// 可见性和直播源，确认无误后点击开播按钮进入直播间。
 class LivePreviewPage extends StatefulWidget {
+  /// 直播的可见性设置
   final LiveVisibility visibility;
+  /// 初始直播源类型
   final LiveSource initialSource;
+  /// 初始标题文本
   final String initialTitle;
+  /// 开播回调，传入标题、可见性、直播源和屏幕源 ID 后由父级处理开播逻辑
   final Future<void> Function({
     required String title,
     required LiveVisibility visibility,

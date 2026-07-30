@@ -4,6 +4,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 开发者致敬页面
+///
+/// 通过连续点击版本号触发的彩蛋页面，展示开发者致敬信息，
+/// 带有动态渐变背景和闪烁粒子动画效果。
+
+/// 开发者致敬页面组件
+///
+/// 全屏彩蛋页面，通过动画散发渐变背景和浮动粒子效果，
+/// 展示对开发者的感谢和致敬。
 class DeveloperTributePage extends StatefulWidget {
   const DeveloperTributePage({super.key});
 
@@ -11,8 +20,12 @@ class DeveloperTributePage extends StatefulWidget {
   State<DeveloperTributePage> createState() => _DeveloperTributePageState();
 }
 
+/// 致敬页面状态
+///
+/// 管理渐变背景动画和粒子效果动画的控制器。
 class _DeveloperTributePageState extends State<DeveloperTributePage>
     with SingleTickerProviderStateMixin {
+  /// 动画控制器
   late final AnimationController _controller;
 
   @override
@@ -148,8 +161,14 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
   }
 }
 
+/// 闪烁粒子画笔
+///
+/// 在画布上绘制多个浮动闪烁的粒子点，用于致敬页面的装饰效果。
 class _SparklePainter extends CustomPainter {
+  /// 动画进度（0.0 - 1.0）
   final double progress;
+
+  /// 粒子颜色
   final Color color;
 
   const _SparklePainter({required this.progress, required this.color});

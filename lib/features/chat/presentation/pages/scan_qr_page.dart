@@ -1,4 +1,7 @@
-﻿import 'dart:convert';
+/// 扫码页面，用于扫描二维码添加好友或识别其他内容。
+///
+/// 支持识别用户名片二维码（直接跳转添加好友页面）和普通二维码/链接（展示解析结果）。
+import 'dart:convert';
 
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
@@ -10,6 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// 扫码页面。
+///
+/// 使用摄像头实时扫描二维码，识别后根据内容类型执行相应操作。
 class ScanQrPage extends ConsumerStatefulWidget {
   const ScanQrPage({super.key});
 
@@ -22,6 +28,7 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
 
+  /// 是否正在处理扫码结果，防止重复处理。
   bool _handling = false;
 
   @override
@@ -30,6 +37,10 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
     super.dispose();
   }
 
+  /// 扫码检测回调。
+  ///
+  /// 识别到二维码后，如果是用户名片则跳转添加好友页面，
+  /// 否则跳转到结果展示页面。
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (_handling) return;
 
@@ -79,6 +90,9 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
     await _controller.start();
   }
 
+  /// 尝试将扫码结果解析为用户名片。
+  ///
+  /// 返回 [_UserCardPayload] 如果内容为有效的用户名片 JSON，否则返回 null。
   _UserCardPayload? _tryParseUserCard(String raw) {
     try {
       final decoded = jsonDecode(raw);
@@ -159,11 +173,16 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
   }
 }
 
+/// 扫码结果展示页面。
+///
+/// 展示扫码得到的原始内容，支持复制到剪贴板和在浏览器中打开链接。
 class ScanQrResultPage extends StatelessWidget {
   const ScanQrResultPage({super.key, required this.rawContent});
 
+  /// 扫码得到的原始内容字符串。
   final String rawContent;
 
+  /// 格式化 JSON 内容为可读的缩进格式。
   String _prettyContent(String raw) {
     try {
       final decoded = jsonDecode(raw);
@@ -174,6 +193,7 @@ class ScanQrResultPage extends StatelessWidget {
     }
   }
 
+  /// 尝试将内容解析为可打开的 URI（http/https）。
   Uri? _tryParseOpenableUri(String value) {
     final uri = Uri.tryParse(value.trim());
     if (uri == null || !uri.hasScheme) return null;
@@ -258,9 +278,13 @@ class ScanQrResultPage extends StatelessWidget {
   }
 }
 
+/// 用户名片扫码结果数据模型。
 class _UserCardPayload {
   const _UserCardPayload({required this.userName, this.userId});
 
+  /// 用户名。
   final String userName;
+
+  /// 用户 ID（可选）。
   final int? userId;
 }

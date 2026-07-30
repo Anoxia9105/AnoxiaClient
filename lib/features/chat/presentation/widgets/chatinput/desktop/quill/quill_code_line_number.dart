@@ -1,3 +1,7 @@
+/// Quill 代码块行号与语言标签渲染组件。
+///
+/// 为 Quill 编辑器中的代码块提供固定宽度的行号栏
+/// 和悬浮的语言选择标签。
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -5,11 +9,16 @@ import 'code_language.dart';
 
 /// Builds a clearly visible leading number for every code-block line.
 abstract final class QuillCodeLineNumber {
+  /// 行号栏宽度。
   static const double gutterWidth = 44;
+
+  /// 行号字体大小。
   static const double fontSize = 14;
+
+  /// 行号行高。
   static const double lineHeight = 1.15;
 
-  /// Keeps code text in a separate column to the right of the fixed gutter.
+  /// 计算文本缩进宽度，将代码文本保持在固定间距的右侧列中。
   static HorizontalSpacing indentWidth(
     Block block,
     BuildContext context,
@@ -37,8 +46,15 @@ abstract final class QuillCodeLineNumber {
     return HorizontalSpacing(extraIndent, 0);
   }
 
+  /// 计算列表编号点宽度。
   static double numberPointWidth(double fontSize, int count) => gutterWidth;
 
+  /// 构建代码块行号前导组件。
+  ///
+  /// [node] 当前 Quill 节点。
+  /// [config] 前导配置。
+  /// [controller] Quill 编辑器控制器，用于语言切换。
+  /// [showLanguageBadge] 是否在第一行显示语言标签。
   static Widget? build(
     Node node,
     LeadingConfig config, {
@@ -201,8 +217,12 @@ class _CodeBlockLeadingState extends State<_CodeBlockLeading> {
   }
 }
 
+/// 代码语言标签组件，显示当前代码块的语言并可切换。
 class QuillCodeLanguageBadge extends StatelessWidget {
+  /// 当前语言。
   final CodeLanguage language;
+
+  /// 语言切换回调，为 `null` 时不可切换。
   final ValueChanged<String>? onSelected;
 
   const QuillCodeLanguageBadge({

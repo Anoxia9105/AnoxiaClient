@@ -1,4 +1,7 @@
-﻿import 'package:anoxia/framework/domain/room_state.dart';
+/// 移动端通话控制栏组件，提供通话中的麦克风、扬声器、摄像头、挂断等控制按钮。
+///
+/// 支持音频通话和视频通话两种模式，群组通话中额外显示邀请成员按钮。
+import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -11,6 +14,10 @@ import 'mobile_call_timer.dart';
 import '../component/call_invite_members_button.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 
+/// 移动端通话控制栏
+///
+/// 包含通话计时器、麦克风开关、扬声器切换、摄像头开关、前后摄像头切换、
+/// 邀请成员以及挂断按钮。支持画中画模式下处理挂断逻辑。
 class MobileCallControls extends ConsumerWidget {
   const MobileCallControls({
     super.key,
@@ -20,9 +27,16 @@ class MobileCallControls extends ConsumerWidget {
     required this.isVideoCall,
   });
 
+  /// 当前房间状态
   final RoomState state;
+
+  /// 房间 ID
   final String roomId;
+
+  /// 通话标题
   final String title;
+
+  /// 是否为视频通话
   final bool isVideoCall;
 
   @override
@@ -133,6 +147,9 @@ class MobileCallControls extends ConsumerWidget {
   }
 }
 
+/// 通话控制按钮
+///
+/// 圆形按钮，支持激活/非激活状态样式切换，带 Tooltip 和语义标签。
 class _CallControlButton extends StatelessWidget {
   const _CallControlButton({
     required this.tooltip,
@@ -144,12 +161,25 @@ class _CallControlButton extends StatelessWidget {
     this.foregroundColor,
   });
 
+  /// 按钮提示文本
   final String tooltip;
+
+  /// 按钮图标
   final IconData icon;
+
+  /// 点击回调
   final Future<void> Function() onPressed;
+
+  /// 是否处于激活状态
   final bool active;
+
+  /// 是否可用
   final bool enabled;
+
+  /// 背景颜色
   final Color? backgroundColor;
+
+  /// 前景颜色
   final Color? foregroundColor;
 
   @override

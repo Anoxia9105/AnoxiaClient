@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:anoxia/features/live/presentation/pages/live_preview_page.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
@@ -9,7 +9,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// 独立窗口直播预览页面
+///
+/// 桌面端独立窗口中的直播开播预览页面，先显示直播预览配置界面，
+/// 开播后切换到 LiveRoomPage 进行直播。
+
+/// 独立窗口直播预览页面组件
+///
+/// 桌面端主播开播的入口页面，先展示预览配置，再进入直播房间。
 class WindowLivePreviewPage extends StatefulWidget {
+  /// 窗口控制器
   final WindowController controller;
 
   const WindowLivePreviewPage({super.key, required this.controller});
@@ -18,12 +27,24 @@ class WindowLivePreviewPage extends StatefulWidget {
   State<WindowLivePreviewPage> createState() => _WindowLivePreviewPageState();
 }
 
+/// 预览页面状态
+///
+/// 管理开播预览和直播房间的切换，处理开播请求。
 class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
     with WindowListener {
+  /// 直播房间数据
   _LiveRoomWindowData? _room;
+
+  /// 屏幕共享源 ID
   String? _screenSourceId;
+
+  /// 初始标题
   String _initialTitle = '';
+
+  /// 初始可见性
   LiveVisibility _initialVisibility = LiveVisibility.public;
+
+  /// 初始直播来源
   LiveSource _initialSource = LiveSource.camera;
 
   @override
@@ -102,6 +123,12 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
     );
   }
 
+  /// 开始直播
+  ///
+  /// 向服务端发起开播请求，创建直播房间。
+  /// [title] 直播标题。
+  /// [visibility] 直播可见性。
+  /// [source] 直播来源。
   Future<_LiveRoomWindowData> _startLive({
     required String title,
     required LiveVisibility visibility,
@@ -138,10 +165,20 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
 
 }
 
+/// 直播房间窗口数据
+///
+/// 存储直播房间的基本信息，用于窗口间传递。
 class _LiveRoomWindowData {
+  /// 房间 ID
   final String roomId;
+
+  /// 房间标题
   final String title;
+
+  /// 直播可见性
   final LiveVisibility visibility;
+
+  /// 直播来源
   final LiveSource source;
 
   const _LiveRoomWindowData({

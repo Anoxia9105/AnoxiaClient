@@ -1,4 +1,8 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+/// 自适应页面展示工具。
+///
+/// 在移动端使用全屏路由，在桌面端使用尺寸受限的模态对话框，
+/// 实现跨平台统一的页面展示体验。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:flutter/material.dart';
 
 /// Uses a page route on mobile and a size-constrained modal on desktop.

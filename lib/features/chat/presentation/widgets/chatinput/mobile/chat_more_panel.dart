@@ -1,4 +1,7 @@
-﻿import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
+/// 移动端聊天附件和通话操作面板。
+///
+/// 提供图片、文件、@提及、语音通话和视频通话等快捷操作入口。
+import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -15,8 +18,14 @@ import 'chat_action_item.dart';
 
 /// Mobile chat attachment and call actions.
 class ChatMorePanel extends ConsumerWidget {
+  /// 聊天房间 ID。
   final String roomId;
+
+  /// 文件选择回调。
+  /// [type] 文件类型，[isImage] 是否为图片。
   final Function(FileType type, bool isImage) onPickFile;
+
+  /// @提及点击回调。
   final VoidCallback onMentionTap;
 
   const ChatMorePanel({
