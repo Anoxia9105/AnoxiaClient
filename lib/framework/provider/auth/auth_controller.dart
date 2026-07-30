@@ -84,7 +84,10 @@ class AuthController extends _$AuthController {
         auth: false,
       );
       if (res.data['token'] == null) {
-        Toast.showToast('login_failed'.tr(), type: ToastType.error);
+        Toast.showToast(
+          res.data['msg'] ?? 'login_failed'.tr(),
+          type: ToastType.error,
+        );
         return null;
       }
       String token = res.data['token'];

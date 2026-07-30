@@ -1,8 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
+
 /// 表单验证工具类
 ///
 /// 提供常用的表单验证方法，包括邮箱、手机号、密码等。
-import 'package:easy_localization/easy_localization.dart';
-
 class Validators {
   Validators._();
 
