@@ -76,7 +76,7 @@ final class RoomMembersProvider
   }
 }
 
-String _$roomMembersHash() => r'2a790f6413245bf6a6921b0dbbf7365b59827693';
+String _$roomMembersHash() => r'f6c63d4f462681bbce36ddefe802c9d3256dd5b5';
 
 /// 获取指定房间的成员列表
 
@@ -374,7 +374,7 @@ final class IsRoomAdminFamily extends $Family
 
 /// 房间成员服务
 ///
-/// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
+/// 数据结构：`Map<roomId, Map<userId, ChatRoomMemberVO>>`
 /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
 /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
@@ -384,7 +384,7 @@ final roomMemberServiceProvider = RoomMemberServiceProvider._();
 
 /// 房间成员服务
 ///
-/// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
+/// 数据结构：`Map<roomId, Map<userId, ChatRoomMemberVO>>`
 /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
 /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
@@ -396,7 +396,7 @@ final class RoomMemberServiceProvider
         > {
   /// 房间成员服务
   ///
-  /// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
+  /// 数据结构：`Map<roomId, Map<userId, ChatRoomMemberVO>>`
   /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
   ///
   /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取
@@ -428,11 +428,11 @@ final class RoomMemberServiceProvider
   }
 }
 
-String _$roomMemberServiceHash() => r'af27d283debf8fb65018789a95b479c42333e0b7';
+String _$roomMemberServiceHash() => r'1fefda31a3081b30468995da83dfded76a7c4f6a';
 
 /// 房间成员服务
 ///
-/// 数据结构：Map<roomId, Map<userId, ChatRoomMemberVO>>
+/// 数据结构：`Map<roomId, Map<userId, ChatRoomMemberVO>>`
 /// 双层 Map 实现 O(1) 按房间、按用户 ID 查询
 ///
 /// 采用 keepAlive 模式，跨页面保持缓存避免重复拉取

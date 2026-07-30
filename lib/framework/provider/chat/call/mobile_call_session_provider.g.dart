@@ -43,7 +43,7 @@ final class MobileCallSessionControllerProvider
 }
 
 String _$mobileCallSessionControllerHash() =>
-    r'd1ddb718e742fa6810504958ab425fe1502ee906';
+    r'27bf10348b5a6eb3e139cff7a2e4f1dd77a9859d';
 
 abstract class _$MobileCallSessionController
     extends $Notifier<MobileCallSession?> {

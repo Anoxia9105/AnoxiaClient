@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'create_new_group_controller.dart';
 
@@ -102,7 +102,7 @@ final class CreateGroupControllerProvider
 }
 
 String _$createGroupControllerHash() =>
-    r'd607555be4da764d4b90d1f83966eda10d9acfec';
+    r'27129299470b5a80e28920fba3e1133d47253411';
 
 /// 创建群聊控制器
 ///

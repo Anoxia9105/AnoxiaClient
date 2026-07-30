@@ -16,6 +16,10 @@ part of 'room_message_ui_item_service.dart';
 /// 该服务会自动在消息之间插入时间分隔条，规则如下：
 /// - 第一条消息前显示时间分隔条
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
+///
+/// 缓存策略：基于消息列表的引用相等性（identity）做缓存。
+/// 当 window 扩大或新消息到达时，消息列表引用会变化，此时全量重算；
+/// 当引用未变时，直接返回缓存结果，避免不必要的 O(n) 计算。
 
 @ProviderFor(chatUiList)
 final chatUiListProvider = ChatUiListFamily._();
@@ -28,6 +32,10 @@ final chatUiListProvider = ChatUiListFamily._();
 /// 该服务会自动在消息之间插入时间分隔条，规则如下：
 /// - 第一条消息前显示时间分隔条
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
+///
+/// 缓存策略：基于消息列表的引用相等性（identity）做缓存。
+/// 当 window 扩大或新消息到达时，消息列表引用会变化，此时全量重算；
+/// 当引用未变时，直接返回缓存结果，避免不必要的 O(n) 计算。
 
 final class ChatUiListProvider
     extends
@@ -45,6 +53,10 @@ final class ChatUiListProvider
   /// 该服务会自动在消息之间插入时间分隔条，规则如下：
   /// - 第一条消息前显示时间分隔条
   /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
+  ///
+  /// 缓存策略：基于消息列表的引用相等性（identity）做缓存。
+  /// 当 window 扩大或新消息到达时，消息列表引用会变化，此时全量重算；
+  /// 当引用未变时，直接返回缓存结果，避免不必要的 O(n) 计算。
   ChatUiListProvider._({
     required ChatUiListFamily super.from,
     required String super.argument,
@@ -96,7 +108,7 @@ final class ChatUiListProvider
   }
 }
 
-String _$chatUiListHash() => r'b84c1885622926b41c32d3a1ee055b864b4403aa';
+String _$chatUiListHash() => r'd95c1bbe62e5592e384a42000c37e329788165c5';
 
 /// 聊天 UI 列表计算服务
 ///
@@ -106,6 +118,10 @@ String _$chatUiListHash() => r'b84c1885622926b41c32d3a1ee055b864b4403aa';
 /// 该服务会自动在消息之间插入时间分隔条，规则如下：
 /// - 第一条消息前显示时间分隔条
 /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
+///
+/// 缓存策略：基于消息列表的引用相等性（identity）做缓存。
+/// 当 window 扩大或新消息到达时，消息列表引用会变化，此时全量重算；
+/// 当引用未变时，直接返回缓存结果，避免不必要的 O(n) 计算。
 
 final class ChatUiListFamily extends $Family
     with $FunctionalFamilyOverride<ChatUiListResult, String> {
@@ -126,6 +142,10 @@ final class ChatUiListFamily extends $Family
   /// 该服务会自动在消息之间插入时间分隔条，规则如下：
   /// - 第一条消息前显示时间分隔条
   /// - 两条消息时间间隔超过 30 分钟时显示时间分隔条
+  ///
+  /// 缓存策略：基于消息列表的引用相等性（identity）做缓存。
+  /// 当 window 扩大或新消息到达时，消息列表引用会变化，此时全量重算；
+  /// 当引用未变时，直接返回缓存结果，避免不必要的 O(n) 计算。
 
   ChatUiListProvider call(String roomId) =>
       ChatUiListProvider._(argument: roomId, from: this);

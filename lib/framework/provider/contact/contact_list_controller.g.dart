@@ -53,7 +53,7 @@ final class ContactListServiceProvider
 }
 
 String _$contactListServiceHash() =>
-    r'12f9e10d9789c0d44d1556c10928d92f8378c4d8';
+    r'4c7e4150bdb80d716dcc2dd7b2084d6c39d11150';
 
 /// 联系人列表服务
 ///

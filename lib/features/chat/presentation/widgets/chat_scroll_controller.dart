@@ -37,36 +37,23 @@ class ChatScrollController {
   /// 设置滚动监听，检测历史消息边缘并触发加载
   void setupScrollListeners() {
     listViewController.addListener(_onScrollOffsetChanged);
-
-    listViewController.sliverController.onPaintItemPositionsCallback =
-        (height, positions) {
-          _onPaintItemPositions(height, positions);
-        };
   }
 
   void _onScrollOffsetChanged() {
+    // 滚动到底部按钮的显示/隐藏
     final bool isFarFromBottom = listViewController.offset > 300;
     if (isFarFromBottom != _showScrollDownButton) {
       _showScrollDownButton = isFarFromBottom;
       onChanged();
     }
-  }
 
-  void _onPaintItemPositions(
-    double height,
-    List positions,
-  ) {
-    if (positions.isEmpty) return;
-    if (roomId.isEmpty) return;
+    // 历史消息边缘检测：当滚动位置接近顶部（maxScrollExtent）时触发加载
+    if (!listViewController.hasClients) return;
+    final maxScroll = listViewController.position.maxScrollExtent;
+    if (maxScroll <= 0) return;
 
-    // 像素级边缘检测：当可见区域底部接近内容顶部 2 倍视口高度时触发
-    // positions 中最大 trailing 对应最靠近历史边缘的 item
-    double maxTrailing = 0;
-    for (final p in positions) {
-      final trailing = (p as dynamic).itemTrailing as double? ?? 0;
-      if (trailing > maxTrailing) maxTrailing = trailing;
-    }
-    final nearHistoryEdge = maxTrailing > height * 2;
+    final distanceToHistoryEdge = maxScroll - listViewController.offset;
+    final nearHistoryEdge = distanceToHistoryEdge < 300;
 
     if (!nearHistoryEdge) {
       _historyEdgeArmed = true;

@@ -105,60 +105,64 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                         inputFormatters: [LengthLimitingTextInputFormatter(20)],
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _captchaCtrl,
-                              decoration: InputDecoration(
-                                labelText: 'login_page_captcha'.tr(),
-                                hintText: 'login_page_captcha'.tr(),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _captchaCtrl,
+                                decoration: InputDecoration(
+                                  labelText: 'login_page_captcha'.tr(),
+                                  hintText: 'login_page_captcha'.tr(),
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(4),
+                                ],
                               ),
-                              inputFormatters: [
-                                LengthLimitingTextInputFormatter(4),
-                              ],
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          _buildDialogCaptcha(colorScheme),
-                        ],
+                            const SizedBox(width: 10),
+                            _buildDialogCaptcha(colorScheme),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _emailCodeCtrl,
-                              decoration: InputDecoration(
-                                labelText: 'login_page_forget_email_code'.tr(),
-                                hintText: 'login_page_forget_email_code'.tr(),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _emailCodeCtrl,
+                                decoration: InputDecoration(
+                                  labelText: 'login_page_forget_email_code'.tr(),
+                                  hintText: 'login_page_forget_email_code'.tr(),
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(6),
+                                ],
                               ),
-                              inputFormatters: [
-                                LengthLimitingTextInputFormatter(6),
-                              ],
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          FilledButton.tonal(
-                            onPressed: (_sendingCode || _countdown > 0)
-                                ? null
-                                : _handleSendCode,
-                            child: _sendingCode
-                                ? const SizedBox.square(
-                                    dimension: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                            const SizedBox(width: 10),
+                            FilledButton.tonal(
+                              onPressed: (_sendingCode || _countdown > 0)
+                                  ? null
+                                  : _handleSendCode,
+                              child: _sendingCode
+                                  ? const SizedBox.square(
+                                      dimension: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      _countdown > 0
+                                          ? '${_countdown}s'
+                                          : 'login_page_forget_send_code'.tr(),
                                     ),
-                                  )
-                                : Text(
-                                    _countdown > 0
-                                        ? '${_countdown}s'
-                                        : 'login_page_forget_send_code'.tr(),
-                                  ),
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -209,17 +213,18 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Widget _buildDialogCaptcha(ColorScheme colorScheme) {
     if (_captcha == null) {
-      return Container(
+      return SizedBox(
         width: 120,
-        height: 46,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Center(
-          child: SizedBox.square(
-            dimension: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Center(
+            child: SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           ),
         ),
       );
@@ -233,7 +238,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         onTap: _loadCaptcha,
         child: SizedBox(
           width: 120,
-          height: 46,
           child: Image.memory(
             base64Decode(_captcha!.imgBase64),
             fit: BoxFit.cover,

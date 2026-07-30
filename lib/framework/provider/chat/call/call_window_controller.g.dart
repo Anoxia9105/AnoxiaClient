@@ -8,24 +8,24 @@ part of 'call_window_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// 桌面端通话窗口控制器
+/// 通话窗口控制器
 ///
-/// 管理通话窗口的创建、显示和设置更新，支持窗口关闭监听。
-/// 通话窗口是一个独立的子窗口，用于显示音视频通话界面。
+/// 负责桌面端通话窗口的创建、管理、设置同步和通话成员邀请。
+/// 通过 [WindowController] 实现多窗口通信。
 
 @ProviderFor(CallWindowController)
 final callWindowControllerProvider = CallWindowControllerProvider._();
 
-/// 桌面端通话窗口控制器
+/// 通话窗口控制器
 ///
-/// 管理通话窗口的创建、显示和设置更新，支持窗口关闭监听。
-/// 通话窗口是一个独立的子窗口，用于显示音视频通话界面。
+/// 负责桌面端通话窗口的创建、管理、设置同步和通话成员邀请。
+/// 通过 [WindowController] 实现多窗口通信。
 final class CallWindowControllerProvider
     extends $NotifierProvider<CallWindowController, WindowController?> {
-  /// 桌面端通话窗口控制器
+  /// 通话窗口控制器
   ///
-  /// 管理通话窗口的创建、显示和设置更新，支持窗口关闭监听。
-  /// 通话窗口是一个独立的子窗口，用于显示音视频通话界面。
+  /// 负责桌面端通话窗口的创建、管理、设置同步和通话成员邀请。
+  /// 通过 [WindowController] 实现多窗口通信。
   CallWindowControllerProvider._()
     : super(
         from: null,
@@ -54,12 +54,12 @@ final class CallWindowControllerProvider
 }
 
 String _$callWindowControllerHash() =>
-    r'6ee3dc9316449225cddba8c2ca65a3f1a951dfed';
+    r'0b0e1484ad9f67658e79f2780ef9bc2edbfbcf54';
 
-/// 桌面端通话窗口控制器
+/// 通话窗口控制器
 ///
-/// 管理通话窗口的创建、显示和设置更新，支持窗口关闭监听。
-/// 通话窗口是一个独立的子窗口，用于显示音视频通话界面。
+/// 负责桌面端通话窗口的创建、管理、设置同步和通话成员邀请。
+/// 通过 [WindowController] 实现多窗口通信。
 
 abstract class _$CallWindowController extends $Notifier<WindowController?> {
   WindowController? build();

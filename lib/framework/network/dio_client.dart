@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
 
 import '../logs/talker.dart';
@@ -22,6 +23,7 @@ class DioClient {
           // 确保 Content-Type 被正确设置
           options.contentType = 'application/json';
           options.headers['Content-Type'] = 'application/json';
+          options.headers['Accept-Language'] = _acceptLanguage;
           log.info('Dio request headers -> ${options.headers}');
           log.info('Dio request data -> ${options.data}');
           // 默认需要鉴权，除非显式指定 auth=false
@@ -56,8 +58,13 @@ class DioClient {
 
               if (needAuth && !skipAuthFailureLogout && !isLogoutApi) {
                 final handler = _onUnauthorized;
-                if (handler != null) unawaited(handler());
-                log.info('鉴权失败，已触发登出并跳转登录页');
+                if (handler != null && !_isUnauthorizedHandling) {
+                  _isUnauthorizedHandling = true;
+                  unawaited(
+                    handler().whenComplete(() => _isUnauthorizedHandling = false),
+                  );
+                  log.info('鉴权失败，已触发登出并跳转登录页');
+                }
               }
 
               return handler.reject(
@@ -65,7 +72,7 @@ class DioClient {
                   requestOptions: response.requestOptions,
                   response: response,
                   type: DioExceptionType.badResponse,
-                  error: '登录过期',
+                  error: 'api_login_expired'.tr(),
                 ),
               );
             }
@@ -103,6 +110,10 @@ class DioClient {
   final Dio _dio;
   Future<String?> Function() _tokenLoader = TokenManager.instance.getToken;
   Future<void> Function()? _onUnauthorized;
+  String _acceptLanguage = 'zh-CN';
+
+  /// 防止 401 响应触发递归登出（如 ContactList 在登出过程中又发起请求导致 401）
+  bool _isUnauthorizedHandling = false;
 
   void configureAuth({
     required Future<String?> Function() tokenLoader,
@@ -110,6 +121,11 @@ class DioClient {
   }) {
     _tokenLoader = tokenLoader;
     _onUnauthorized = onUnauthorized;
+  }
+
+  /// 设置 Accept-Language 请求头，用于后端国际化
+  void setLocale(String locale) {
+    _acceptLanguage = locale;
   }
 
   /// GET 请求

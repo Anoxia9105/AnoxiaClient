@@ -68,7 +68,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     borderRadius: BorderRadius.circular(14),
                     child: room == null
                         ? const Welcome.chat()
-                        : ChatRoomDetail(roomId: activeRoomId!),
+                        : ChatRoomDetail(
+                            key: ValueKey('chat-$activeRoomId'),
+                            roomId: activeRoomId!,
+                          ),
                   ),
                 ),
               ),

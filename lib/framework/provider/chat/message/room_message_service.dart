@@ -415,7 +415,7 @@ class ChatMessages extends _$ChatMessages {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class ChatHasMore extends _$ChatHasMore {
   @override
   Map<String, bool> build() => {};

@@ -477,11 +477,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 borderRadius: BorderRadius.circular(12),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(
-                    base64Decode(captcha.imgBase64),
+                  child: SizedBox(
                     width: isMobile ? 104 : 120,
-                    height: 56,
-                    fit: BoxFit.cover,
+                    child: Image.memory(
+                      base64Decode(captcha.imgBase64),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -504,15 +505,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   );
 
   Widget _captchaPlaceholder(Widget child, ColorScheme scheme, bool isMobile) =>
-      Container(
+      SizedBox(
         width: isMobile ? 104 : 120,
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(12),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: child,
         ),
-        child: child,
       );
 
   void _refreshCaptcha() {

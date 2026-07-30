@@ -8,12 +8,24 @@ part of 'live_room_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 直播房间控制器
+///
+/// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+/// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
 
 @ProviderFor(LiveRoomController)
 final liveRoomControllerProvider = LiveRoomControllerFamily._();
 
+/// 直播房间控制器
+///
+/// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+/// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
 final class LiveRoomControllerProvider
     extends $AsyncNotifierProvider<LiveRoomController, RoomState> {
+  /// 直播房间控制器
+  ///
+  /// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+  /// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
   LiveRoomControllerProvider._({
     required LiveRoomControllerFamily super.from,
     required (String, bool) super.argument,
@@ -51,7 +63,12 @@ final class LiveRoomControllerProvider
 }
 
 String _$liveRoomControllerHash() =>
-    r'1925f26ea8c90170365c2f18be00fcf698f96c25';
+    r'0b12845f289c088ed2c1801fa81c76cd87e6371b';
+
+/// 直播房间控制器
+///
+/// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+/// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
 
 final class LiveRoomControllerFamily extends $Family
     with
@@ -71,12 +88,22 @@ final class LiveRoomControllerFamily extends $Family
         isAutoDispose: false,
       );
 
+  /// 直播房间控制器
+  ///
+  /// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+  /// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
+
   LiveRoomControllerProvider call(String roomId, bool isHost) =>
       LiveRoomControllerProvider._(argument: (roomId, isHost), from: this);
 
   @override
   String toString() => r'liveRoomControllerProvider';
 }
+
+/// 直播房间控制器
+///
+/// 管理 LiveKit 房间的完整生命周期：连接、重连、音视频开关、屏幕共享。
+/// 监听房间事件并更新状态，包括参与者进出、轨道发布订阅等。
 
 abstract class _$LiveRoomController extends $AsyncNotifier<RoomState> {
   late final _$args = ref.$arg as (String, bool);

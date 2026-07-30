@@ -62,40 +62,44 @@ class DesktopSidebar extends ConsumerWidget {
             ),
           ),
 
-          SizedBox(
-            width: double.infinity,
-            child: IconButton(
-              tooltip: 'sidebar_logout'.tr(),
-              onPressed: () async {
-                // 弹出确认对话框
-                final shouldLogout = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('logout'.tr()),
-                    content: Text('logout_confirm_hint'.tr()),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('cancel'.tr()),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text('confirm'.tr()),
-                      ),
-                    ],
-                  ),
-                );
-                // 如果用户点击了“确定”且对话框未关闭，执行登出
-                if (shouldLogout == true) {
-                  ref.read(authControllerProvider.notifier).logout();
-                }
-              },
-              icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedLogout01,
-                color: Colors.red,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: IconButton(
+                tooltip: 'sidebar_logout'.tr(),
+                onPressed: () async {
+                  // 弹出确认对话框
+                  final shouldLogout = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('logout'.tr()),
+                      content: Text('logout_confirm_hint'.tr()),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text('cancel'.tr()),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: Text('confirm'.tr()),
+                        ),
+                      ],
+                    ),
+                  );
+                  // 如果用户点击了“确定”且对话框未关闭，执行登出
+                  if (shouldLogout == true) {
+                    ref.read(authControllerProvider.notifier).logout();
+                  }
+                },
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedLogout01,
+                  color: Colors.red,
+                ),
               ),
             ),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );

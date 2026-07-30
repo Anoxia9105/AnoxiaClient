@@ -1,10 +1,12 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:anoxia/common/utils/file_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -36,14 +38,18 @@ class FileMessageStrategy extends MessageRenderStrategy {
       return const SizedBox.shrink();
     }
 
-    return _FileMessageList(fileList: fileList);
+    final currentUser = ProviderScope.containerOf(context).read(authControllerProvider).value;
+    final isSelf = message.senderId == currentUser?.userId;
+
+    return _FileMessageList(fileList: fileList, isSelf: isSelf);
   }
 }
 
 class _FileMessageList extends StatefulWidget {
   final List<Attachment> fileList;
+  final bool isSelf;
 
-  const _FileMessageList({required this.fileList});
+  const _FileMessageList({required this.fileList, required this.isSelf});
 
   @override
   State<_FileMessageList> createState() => _FileMessageListState();
@@ -53,6 +59,25 @@ class _FileMessageListState extends State<_FileMessageList> {
   final Map<String, double> _progressMap = {};
   final Map<String, bool> _downloadingMap = {};
   final Map<String, String> _downloadedPathMap = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isSelf) {
+      _checkExistingFiles();
+    }
+  }
+
+  Future<void> _checkExistingFiles() async {
+    for (final file in widget.fileList) {
+      final existingPath = await _findExistingFile(file);
+      if (existingPath != null && mounted) {
+        setState(() {
+          _downloadedPathMap[_fileKey(file)] = existingPath;
+        });
+      }
+    }
+  }
 
   String _fileKey(Attachment file) {
     return file.id ?? file.url ?? file.name ?? file.hashCode.toString();
@@ -435,11 +460,15 @@ class _FileMessageListState extends State<_FileMessageList> {
                             color: colorScheme.primary,
                           ),
                           const SizedBox(width: 3),
-                          Text(
-                            'file_downloaded_open_location'.tr(),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.primary,
-                              fontSize: 11,
+                          Flexible(
+                            child: Text(
+                              'file_downloaded_open_location'.tr(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],

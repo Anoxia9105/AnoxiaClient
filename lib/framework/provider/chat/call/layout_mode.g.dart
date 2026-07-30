@@ -8,13 +8,26 @@ part of 'layout_mode.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 通话布局模式 Provider
+///
+/// 根据 [RoomState] 中的参与者数量和屏幕共享状态自动计算布局模式。
+/// 规则：有屏幕共享 → 焦点模式；参与者 ≤2 → 轮播模式；其余 → 网格模式。
 
 @ProviderFor(layoutMode)
 final layoutModeProvider = LayoutModeFamily._();
 
+/// 通话布局模式 Provider
+///
+/// 根据 [RoomState] 中的参与者数量和屏幕共享状态自动计算布局模式。
+/// 规则：有屏幕共享 → 焦点模式；参与者 ≤2 → 轮播模式；其余 → 网格模式。
+
 final class LayoutModeProvider
     extends $FunctionalProvider<LayoutMode, LayoutMode, LayoutMode>
     with $Provider<LayoutMode> {
+  /// 通话布局模式 Provider
+  ///
+  /// 根据 [RoomState] 中的参与者数量和屏幕共享状态自动计算布局模式。
+  /// 规则：有屏幕共享 → 焦点模式；参与者 ≤2 → 轮播模式；其余 → 网格模式。
   LayoutModeProvider._({
     required LayoutModeFamily super.from,
     required RoomState super.argument,
@@ -68,6 +81,11 @@ final class LayoutModeProvider
 
 String _$layoutModeHash() => r'50f4baa4e1f6e14d38982aa4a7bdc667d600f3c7';
 
+/// 通话布局模式 Provider
+///
+/// 根据 [RoomState] 中的参与者数量和屏幕共享状态自动计算布局模式。
+/// 规则：有屏幕共享 → 焦点模式；参与者 ≤2 → 轮播模式；其余 → 网格模式。
+
 final class LayoutModeFamily extends $Family
     with $FunctionalFamilyOverride<LayoutMode, RoomState> {
   LayoutModeFamily._()
@@ -78,6 +96,11 @@ final class LayoutModeFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
+
+  /// 通话布局模式 Provider
+  ///
+  /// 根据 [RoomState] 中的参与者数量和屏幕共享状态自动计算布局模式。
+  /// 规则：有屏幕共享 → 焦点模式；参与者 ≤2 → 轮播模式；其余 → 网格模式。
 
   LayoutModeProvider call(RoomState roomState) =>
       LayoutModeProvider._(argument: roomState, from: this);

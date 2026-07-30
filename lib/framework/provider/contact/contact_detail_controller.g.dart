@@ -76,7 +76,7 @@ final class ContactDetailDataProvider
   }
 }
 
-String _$contactDetailDataHash() => r'f93acf54fc456d3f0479bbd3adf6b7dd6692d384';
+String _$contactDetailDataHash() => r'90a72f86399e00862f929dae831bbe1db36a7828';
 
 /// 获取联系人详情
 ///

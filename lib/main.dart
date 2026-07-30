@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/notification_helper.dart';
@@ -192,6 +192,10 @@ Future<void> runMainApp() async {
             notifyBackend: false,
           ),
     );
+
+    // 初始化 DioClient 的国际化语言
+    final savedLocale = SPUtil.instance.get('locale', defValue: 'zh') ?? 'zh';
+    DioClient().setLocale(savedLocale);
 
     log.info('''
  _______

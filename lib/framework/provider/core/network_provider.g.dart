@@ -8,9 +8,18 @@ part of 'network_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 网络状态变化流
+///
+/// 监听设备网络连接状态的变化，返回 [ConnectivityResult] 列表。
+/// 例如：WiFi 连接、移动数据连接或无网络等状态。
 
 @ProviderFor(networkStatus)
 final networkStatusProvider = NetworkStatusProvider._();
+
+/// 网络状态变化流
+///
+/// 监听设备网络连接状态的变化，返回 [ConnectivityResult] 列表。
+/// 例如：WiFi 连接、移动数据连接或无网络等状态。
 
 final class NetworkStatusProvider
     extends
@@ -22,6 +31,10 @@ final class NetworkStatusProvider
     with
         $FutureModifier<List<ConnectivityResult>>,
         $StreamProvider<List<ConnectivityResult>> {
+  /// 网络状态变化流
+  ///
+  /// 监听设备网络连接状态的变化，返回 [ConnectivityResult] 列表。
+  /// 例如：WiFi 连接、移动数据连接或无网络等状态。
   NetworkStatusProvider._()
     : super(
         from: null,

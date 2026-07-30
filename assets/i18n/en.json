@@ -794,5 +794,13 @@
   "validator_username_format": "Username can only contain letters, digits, and underscores",
   "no_data_title": "No data available",
   "chat_history_load_failed": "Failed to load history",
-  "chat_history_retry": "Click to retry"
+  "chat_history_retry": "Click to retry",
+  "api_network_error": "Network error, please try again later",
+  "api_request_timeout": "Request timeout, please check your network and try again",
+  "api_unauthorized": "Login expired, please log in again",
+  "api_forbidden": "No permission for this operation",
+  "api_not_found": "The requested resource does not exist",
+  "api_server_error": "Service temporarily unavailable, please try again later",
+  "api_request_failed": "Request failed, please try again later",
+  "api_login_expired": "Login expired"
 }

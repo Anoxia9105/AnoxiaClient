@@ -794,5 +794,13 @@
   "validator_username_format": "用户名只能包含字母、数字和下划线",
   "no_data_title": "暂无数据哦",
   "chat_history_load_failed": "历史消息加载失败",
-  "chat_history_retry": "点击重试"
+  "chat_history_retry": "点击重试",
+  "api_network_error": "网络异常，请稍后重试",
+  "api_request_timeout": "请求超时，请检查网络后重试",
+  "api_unauthorized": "登录状态已失效，请重新登录",
+  "api_forbidden": "当前账号没有此操作权限",
+  "api_not_found": "请求的资源不存在",
+  "api_server_error": "服务暂时不可用，请稍后重试",
+  "api_request_failed": "请求失败，请稍后重试",
+  "api_login_expired": "登录过期"
 }

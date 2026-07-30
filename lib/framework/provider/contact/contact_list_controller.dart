@@ -1,10 +1,11 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,6 +41,12 @@ class ContactListService extends _$ContactListService {
     }
 
     // ─── Step 2: 本地无数据（首次），从远端全量拉取 ───────────────────────
+    // 检查是否已登录，防止登出过程中因 DB 已清空而再次发起请求导致 401 死循环
+    final token = ref.read(tokenCacheProvider);
+    if (token == null || token.isEmpty) {
+      log.debug('[Cache] ContactListService: no token, skip remote fetch');
+      return {};
+    }
     log.debug('[Cache] ContactListService: local empty, fetch from remote');
     return await _syncFromRemote() ?? {};
   }

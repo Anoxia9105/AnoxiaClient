@@ -254,15 +254,15 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                     style: const TextStyle(color: Colors.white),
                     maxLength: 60,
                     decoration: InputDecoration(
-                      counterStyle: TextStyle(color: Colors.white54),
+                      counterStyle: const TextStyle(color: Colors.white54),
                       labelText: 'live_title_label'.tr(),
-                      labelStyle: TextStyle(color: Colors.white70),
+                      labelStyle: const TextStyle(color: Colors.white70),
                       hintText: 'live_title_hint_preview'.tr(),
-                      hintStyle: TextStyle(color: Colors.white38),
-                      enabledBorder: UnderlineInputBorder(
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      enabledBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white24),
                       ),
-                      focusedBorder: UnderlineInputBorder(
+                      focusedBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
@@ -275,12 +275,12 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                           segments: [
                             ButtonSegment(
                               value: LiveVisibility.public,
-                              icon: Icon(Icons.public),
+                              icon: const Icon(Icons.public),
                               label: Text('live_visibility_public'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveVisibility.private,
-                              icon: Icon(Icons.lock_outline),
+                              icon: const Icon(Icons.lock_outline),
                               label: Text('live_visibility_private'.tr()),
                             ),
                           ],
@@ -298,12 +298,12 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                           segments: [
                             ButtonSegment(
                               value: LiveSource.camera,
-                              icon: Icon(Icons.videocam),
+                              icon: const Icon(Icons.videocam),
                               label: Text('live_source_camera'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveSource.screen,
-                              icon: Icon(Icons.screen_share),
+                              icon: const Icon(Icons.screen_share),
                               label: Text('live_source_screen_short'.tr()),
                             ),
                           ],
