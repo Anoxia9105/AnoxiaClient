@@ -56,23 +56,13 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final text = DateUtil.formatWeChatTimeDivider(timestamp, locale);
 
     return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
           color: Theme.of(
             context,
-          ).colorScheme.onSurface.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.45),
-          ),
+          ).colorScheme.onSurface.withValues(alpha: 0.45),
         ),
       ),
     );
