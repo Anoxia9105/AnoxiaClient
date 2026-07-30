@@ -43,7 +43,7 @@ class ImageMessageStrategy extends MessageRenderStrategy {
 
       return GestureDetector(
         onTap: () => ImageMessageDetailRoute(
-          attachment: attachment,
+          $extra: attachment,
           heroTag: heroTag,
           roomId: message.roomId,
           currentUrl: attachment.url,
@@ -80,7 +80,7 @@ class ImageMessageStrategy extends MessageRenderStrategy {
             'image-${attachment.url}-${message.messageId}'; // 澶氬浘甯︿笂娑堟伅ID闃叉Tag鍐茬獊
         return GestureDetector(
           onTap: () => ImageMessageDetailRoute(
-            attachment: attachment,
+            $extra: attachment,
             heroTag: heroTag,
             roomId: message.roomId,
             currentUrl: attachment.url,

@@ -41,9 +41,7 @@ class $AssetsImagesGen {
   List<dynamic> get values => [appIconIco, appIconPng];
 }
 
-class Assets {
-  const Assets._();
-
+abstract final class Assets {
   static const $AssetsI18nGen i18n = $AssetsI18nGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
 }

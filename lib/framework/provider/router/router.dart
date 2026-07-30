@@ -1,6 +1,4 @@
-﻿import 'dart:convert';
-
-import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
+﻿import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
@@ -146,12 +144,12 @@ class ErrorRoute extends GoRouteData with $ErrorRoute {
 @TypedGoRoute<ImageMessageDetailRoute>(path: '/imageView')
 class ImageMessageDetailRoute extends GoRouteData
     with $ImageMessageDetailRoute {
-  final Attachment attachment;
+  final Attachment $extra;
   final String heroTag;
   final String? roomId;
   final String? currentUrl;
   const ImageMessageDetailRoute({
-    required this.attachment,
+    required this.$extra,
     required this.heroTag,
     this.roomId,
     this.currentUrl,
@@ -159,7 +157,7 @@ class ImageMessageDetailRoute extends GoRouteData
 
   @override
   Widget build(BuildContext context, GoRouterState state) => ImageViewer(
-    attachment: attachment,
+    attachment: $extra,
     heroTag: heroTag,
     roomId: roomId,
     currentUrl: currentUrl,
