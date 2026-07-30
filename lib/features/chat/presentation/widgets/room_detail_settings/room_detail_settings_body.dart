@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
@@ -10,7 +10,7 @@ import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dar
 import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
-import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';

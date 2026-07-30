@@ -1,6 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+﻿// GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'create_new_gropu_controller.dart';
+part of 'create_new_group_controller.dart';
 
 // **************************************************************************
 // RiverpodGenerator

@@ -1,11 +1,11 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
-import 'package:anoxia/framework/domain/ChatFavorite.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+import 'package:anoxia/framework/domain/chat_favorite.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

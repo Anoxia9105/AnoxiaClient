@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
@@ -11,11 +11,11 @@ import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
-import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
+import 'package:anoxia/framework/domain/app_update_info.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:anoxia/framework/domain/UserInfo.dart';
+import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';

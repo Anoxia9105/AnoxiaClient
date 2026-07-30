@@ -1,6 +1,6 @@
-import 'package:livekit_client/livekit_client.dart';
+﻿import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/domain/room_state.dart';
 
 part 'layout_mode.g.dart';
 

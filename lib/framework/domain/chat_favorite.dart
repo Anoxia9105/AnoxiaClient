@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import '../protocol/message/attachment.dart';
-import '../protocol/message/message_eunm.dart';
+import '../protocol/message/message_enum.dart';
 import '../protocol/message/message_payload.dart';
-import 'ChatMessage.dart';
+import 'chat_message.dart';
 
 /// 收藏消息模型
 ///

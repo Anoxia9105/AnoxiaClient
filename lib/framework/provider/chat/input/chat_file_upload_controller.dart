@@ -1,11 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
-import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
+import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';

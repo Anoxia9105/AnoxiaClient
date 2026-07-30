@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../domain/AiChatMessage.dart';
+import '../../domain/ai_chat_message.dart';
 
 part 'ai_chat_controller.g.dart';
 

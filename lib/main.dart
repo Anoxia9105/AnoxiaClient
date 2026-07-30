@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/NotificationHelper.dart';
@@ -33,7 +33,7 @@ import 'framework/provider/auth/auth_controller.dart';
 import 'framework/provider/core/session_reset_service.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/layout/layout_controller.dart';
-import 'framework/provider/core/AppUpdateInfo.dart';
+import 'framework/domain/app_update_info.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 

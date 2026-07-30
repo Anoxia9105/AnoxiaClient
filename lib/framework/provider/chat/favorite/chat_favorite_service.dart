@@ -1,5 +1,5 @@
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/domain/ChatFavorite.dart';
+﻿import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/framework/domain/chat_favorite.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

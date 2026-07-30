@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
-import '../../../../../../framework/domain/ChatMessage.dart';
+import '../../../../../../framework/domain/chat_message.dart';
 
 /// 消息渲染策略接口
 ///

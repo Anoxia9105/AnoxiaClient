@@ -1,7 +1,7 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/domain/chat_room_vo.dart';
+import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';

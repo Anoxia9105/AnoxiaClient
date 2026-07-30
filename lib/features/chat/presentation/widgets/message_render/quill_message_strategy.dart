@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
@@ -12,7 +12,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
-import '../../../../../framework/domain/ChatMessage.dart';
+import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 import 'link_preview_card.dart';
 

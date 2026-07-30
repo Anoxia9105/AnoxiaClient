@@ -1,8 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 
-import '../protocol/message/message_eunm.dart';
+import '../protocol/message/message_enum.dart';
 import '../protocol/message/message_payload.dart';
 
 class ChatMessage {

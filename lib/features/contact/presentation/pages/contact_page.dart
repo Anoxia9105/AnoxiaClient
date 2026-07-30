@@ -3,6 +3,7 @@ import 'package:anoxia/common/widgets/Welcome.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_page/contact_detail_panel.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_list.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:flutter/material.dart';
@@ -40,45 +41,17 @@ class ContactPage extends ConsumerWidget {
     );
   }
 
-  /// 构建右侧详情内容
-  ///
-  /// 根据 [viewType] 显示不同的内容页面
-  ///
-  /// [viewType] 视图类型
-  /// 返回 对应的详情页面 Widget
+  /// 根据视图类型构建右侧详情内容
   Widget _buildRightContent(ContactViewType viewType) {
     switch (viewType) {
       case ContactViewType.newFriends:
-        return const NewFriendsPage();
+        return const ContactDetailPanel(child: NewFriendsPage());
       case ContactViewType.contactDetail:
-        return const _DetailPanel(child: ContactDetail());
+        return const ContactDetailPanel(child: ContactDetail());
       case ContactViewType.groups:
-        return const GroupRoomListPage();
+        return const ContactDetailPanel(child: GroupRoomListPage());
       case ContactViewType.none:
-        return const Welcome.contacts();
+        return const ContactDetailPanel(child: Welcome.contacts());
     }
-  }
-}
-
-class _DetailPanel extends StatelessWidget {
-  final Widget child;
-
-  const _DetailPanel({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.18)),
-        ),
-        child: ClipRRect(borderRadius: BorderRadius.circular(14), child: child),
-      ),
-    );
   }
 }

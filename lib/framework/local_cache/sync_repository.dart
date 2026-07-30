@@ -1,12 +1,12 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:uuid/uuid.dart';
 
-import '../domain/ChatMessage.dart';
-import '../domain/ChatRoomVO.dart';
+import '../domain/chat_message.dart';
+import '../domain/chat_room_vo.dart';
 import '../logs/talker.dart';
-import '../protocol/message/message_eunm.dart';
+import '../protocol/message/message_enum.dart';
 import 'local_data_source.dart';
 import 'remote_data_source.dart';
 

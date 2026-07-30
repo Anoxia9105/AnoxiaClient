@@ -2,6 +2,9 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:flutter/material.dart';
 
+/// 群聊列表项组件
+///
+/// 展示群聊头像、名称、最新消息、成员数和未读数
 class GroupRoomTile extends StatelessWidget {
   final String avatar;
   final String roomName;

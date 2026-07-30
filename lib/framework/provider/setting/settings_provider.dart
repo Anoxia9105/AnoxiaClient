@@ -1,12 +1,12 @@
-import 'package:anoxia/common/constants/api.dart';
+﻿import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
-import 'package:anoxia/framework/provider/core/AppUpdateInfo.dart';
+import 'package:anoxia/framework/domain/app_update_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-// AppUpdateInfo is re-exported from core/AppUpdateInfo.dart
-export 'package:anoxia/framework/provider/core/AppUpdateInfo.dart' show AppUpdateInfo;
+// AppUpdateInfo is re-exported from domain/app_update_info.dart
+export 'package:anoxia/framework/domain/app_update_info.dart' show AppUpdateInfo;
 
 /// 反馈提交结果
 class FeedbackSubmitResult {

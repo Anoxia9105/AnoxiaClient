@@ -1,4 +1,4 @@
-import '../../../domain/ChatRoomVO.dart';
+﻿import '../../../domain/chat_room_vo.dart';
 
 /// 房间安全查找工具，统一“查询不抛异常”的约束。
 class RoomLookupHelper {

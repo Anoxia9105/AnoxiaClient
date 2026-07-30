@@ -1,4 +1,4 @@
-import 'ChatMessage.dart';
+import 'chat_message.dart';
 
 /// 聊天室类型枚举
 enum RoomType {

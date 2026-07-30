@@ -1,8 +1,8 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
-import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';

@@ -1,7 +1,7 @@
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:flutter/material.dart';
 
 /// 表情反应全屏特效叠加层

@@ -1,5 +1,5 @@
-import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
+﻿import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/framework/provider/chat/input/delta_processor.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';

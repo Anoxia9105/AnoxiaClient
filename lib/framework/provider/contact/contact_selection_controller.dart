@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/domain/ChatContactVO.dart';
+﻿import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'contact_selection_controller.g.dart';

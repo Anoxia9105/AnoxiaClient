@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../domain/ChatRoomMemberVO.dart';
+import '../../../domain/chat_room_member_vo.dart';
 import '../../../network/dio_client.dart';
 import '../../../logs/talker.dart';
 import '../../auth/auth_controller.dart';

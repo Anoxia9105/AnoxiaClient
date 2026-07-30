@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
+import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';

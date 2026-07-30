@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/NotificationHelper.dart';
@@ -19,8 +19,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../domain/ChatMessage.dart';
-import '../../../domain/ChatRoomVO.dart';
+import '../../../domain/chat_message.dart';
+import '../../../domain/chat_room_vo.dart';
 import '../../../logs/talker.dart';
 
 part 'room_list_service.g.dart';

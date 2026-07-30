@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
@@ -10,8 +10,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
-import '../../domain/CaptchaModel.dart';
-import '../../domain/UserInfo.dart';
+import '../../domain/captcha_model.dart';
+import '../../domain/user_info.dart';
 import '../../local_cache/cache_providers.dart';
 import '../../logs/talker.dart';
 import '../../network/token_manager.dart';

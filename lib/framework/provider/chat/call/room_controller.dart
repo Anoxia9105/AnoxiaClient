@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -17,7 +17,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../domain/RoomState.dart';
+import '../../../domain/room_state.dart';
 import '../../../network/dio_client.dart';
 import 'call_initial_media.dart';
 import 'mobile_call_session_provider.dart';

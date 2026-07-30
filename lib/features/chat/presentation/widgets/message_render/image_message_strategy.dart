@@ -1,8 +1,8 @@
-import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../framework/domain/ChatMessage.dart';
+import '../../../../../framework/domain/chat_message.dart';
 import '../../../../../framework/protocol/message/attachment.dart';
 import 'base/message_render_strategy.dart';
 

@@ -1,6 +1,6 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../framework/domain/ChatContactVO.dart';
-import '../../../framework/domain/ChatRoomVO.dart';
+﻿import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../framework/domain/chat_contact_vo.dart';
+import '../../../framework/domain/chat_room_vo.dart';
 import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/contact/contact_list_controller.dart';
 

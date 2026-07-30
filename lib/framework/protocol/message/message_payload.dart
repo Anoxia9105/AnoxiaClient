@@ -1,5 +1,5 @@
 import 'attachment.dart';
-import 'message_eunm.dart';
+import 'message_enum.dart';
 
 /// 卡片消息载荷（V5 协议）
 ///

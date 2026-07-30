@@ -1,4 +1,4 @@
-import 'UserVO.dart';
+import 'user_vo.dart';
 
 /// 用户搜索响应模型
 ///

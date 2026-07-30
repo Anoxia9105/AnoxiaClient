@@ -1,12 +1,12 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
-import '../domain/ChatContactVO.dart';
-import '../domain/ChatMessage.dart';
-import '../domain/ChatRoomVO.dart';
-import '../domain/UserInfo.dart';
-import '../protocol/message/message_eunm.dart';
+import '../domain/chat_contact_vo.dart';
+import '../domain/chat_message.dart';
+import '../domain/chat_room_vo.dart';
+import '../domain/user_info.dart';
+import '../protocol/message/message_enum.dart';
 import '../logs/talker.dart';
 import '../protocol/message/message_payload.dart';
 import 'database.dart';

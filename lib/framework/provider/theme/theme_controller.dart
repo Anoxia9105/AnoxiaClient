@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../gen/fonts.gen.dart';
 import '../../../common/utils/SPUtil.dart';
-import '../../theme/AppTheme.dart';
+import '../../theme/app_theme.dart';
 
 part 'theme_controller.g.dart';
 

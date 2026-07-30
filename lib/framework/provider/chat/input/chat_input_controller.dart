@@ -1,4 +1,4 @@
-// ignore_for_file: experimental_member_use
+﻿// ignore_for_file: experimental_member_use
 
 import 'dart:async';
 import 'dart:convert';
@@ -8,20 +8,20 @@ import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/chat/input/DeltaProcessor.dart';
-import 'package:anoxia/framework/provider/chat/input/UploadValidator.dart';
+import 'package:anoxia/framework/provider/chat/input/delta_processor.dart';
+import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
-import 'package:anoxia/framework/provider/chat/input/files/chat_file_upload_controller.dart';
-import 'package:anoxia/framework/provider/chat/input/images/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';

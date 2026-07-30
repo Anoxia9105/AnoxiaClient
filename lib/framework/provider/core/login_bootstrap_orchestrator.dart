@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/ChatRoomVO.dart';
+import '../../domain/chat_room_vo.dart';
 import '../../logs/talker.dart';
 import '../auth/auth_controller.dart';
 import '../chat/message/room_message_service.dart';

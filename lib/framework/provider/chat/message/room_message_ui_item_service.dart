@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+﻿import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'room_message_service.dart';

@@ -1,4 +1,4 @@
-/// 聊天消息气泡组件 - 主入口
+﻿/// 聊天消息气泡组件 - 主入口
 ///
 /// 职责：根据消息类型选择渲染策略，分发到系统消息或用户消息布局。
 /// 依赖：通过 Riverpod 获取当前用户、房间成员等数据，使用策略模式渲染不同消息类型。
@@ -7,8 +7,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 
 // 导入拆分后的子组件

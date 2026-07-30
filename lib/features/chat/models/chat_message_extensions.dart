@@ -1,6 +1,6 @@
-import 'package:characters/characters.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+﻿import 'package:characters/characters.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 
 /// 消息相关的 UI 判断扩展
 extension ChatMessageUIExtension on ChatMessage {

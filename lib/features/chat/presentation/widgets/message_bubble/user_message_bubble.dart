@@ -1,4 +1,4 @@
-/// 用户消息气泡（含头像、昵称、内容、状态指示器）
+﻿/// 用户消息气泡（含头像、昵称、内容、状态指示器）
 ///
 /// 包含完整的用户消息布局组件：
 /// - UserMessageBubble：顶层布局，控制整体对齐
@@ -17,7 +17,7 @@ import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

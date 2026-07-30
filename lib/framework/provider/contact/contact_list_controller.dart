@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/domain/ChatContactVO.dart';
+import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';

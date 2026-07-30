@@ -1,5 +1,5 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/framework/domain/UserInfo.dart';
+﻿import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 

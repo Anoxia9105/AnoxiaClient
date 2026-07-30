@@ -1,7 +1,7 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
+import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';

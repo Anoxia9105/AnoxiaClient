@@ -1,14 +1,11 @@
 import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
-import 'package:anoxia/features/chat/presentation/call/mobile/mobile_call_timer.dart';
-import 'package:anoxia/features/chat/presentation/call/mobile/mobile_participant_surface.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/features/chat/presentation/call/minimized_call_widgets.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:livekit_client/livekit_client.dart';
 import 'package:pip/pip.dart';
 
 /// 全局通话悬浮层组件
@@ -154,13 +151,9 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
     return Stack(
       children: [
-        /// ─────────────────────────────
         /// 全屏通话层
-        /// ─────────────────────────────
         ///
-        /// ⚠️ PiP时不能销毁
-        /// 必须保持Widget存活
-        ///
+        /// PiP时不能销毁，必须保持Widget存活
         Positioned.fill(
           child: IgnorePointer(
             ignoring: session.minimized && !session.isInPipMode,
@@ -177,12 +170,9 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
           ),
         ),
 
-        /// ─────────────────────────────
         /// Flutter悬浮窗
-        /// ─────────────────────────────
         ///
         /// PiP状态隐藏
-        ///
         if (session.minimized && !session.isInPipMode)
           Positioned(
             left: session.position.dx,
@@ -207,7 +197,6 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                     .read(mobileCallSessionControllerProvider.notifier)
                     .enterCallPage();
               },
-              // 加层动画
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 300),
@@ -226,8 +215,8 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                     width: isVideoCall ? 120 : 176,
                     height: isVideoCall ? 180 : 72,
                     child: isVideoCall
-                        ? _MinimizedVideoCall(roomState: roomState)
-                        : _MinimizedAudioCall(
+                        ? MinimizedVideoCall(roomState: roomState)
+                        : MinimizedAudioCall(
                             title: session.title,
                             joinedAt: roomState?.joinedAt,
                           ),
@@ -237,100 +226,6 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
             ),
           ),
       ],
-    );
-  }
-}
-
-class _MinimizedAudioCall extends StatelessWidget {
-  const _MinimizedAudioCall({required this.title, required this.joinedAt});
-
-  final String title;
-  final DateTime? joinedAt;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2B3245), Color(0xFF171B25)],
-        ),
-        border: Border.all(color: Colors.white12),
-        borderRadius: BorderRadius.circular(36),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-            child: const Icon(
-              Icons.call_rounded,
-              color: Colors.white,
-              size: 25,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                MobileCallTimer(
-                  joinedAt: joinedAt,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MinimizedVideoCall extends StatelessWidget {
-  const _MinimizedVideoCall({required this.roomState});
-
-  final RoomState? roomState;
-
-  @override
-  Widget build(BuildContext context) {
-    final Participant? participant =
-        roomState?.remoteParticipants.firstOrNull ??
-        roomState?.room.localParticipant;
-    if (participant == null) {
-      return const ColoredBox(
-        color: Color(0xFF171A22),
-        child: Center(
-          child: Icon(Icons.videocam_off_rounded, color: Colors.white54),
-        ),
-      );
-    }
-    return MobileParticipantSurface(
-      participant: participant,
-      compact: true,
-      showStatus: false,
-      borderRadius: 16,
     );
   }
 }

@@ -1,12 +1,12 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../domain/ChatRoomVO.dart';
+import '../../../domain/chat_room_vo.dart';
 
-part 'create_new_gropu_controller.g.dart';
+part 'create_new_group_controller.g.dart';
 
 /// 多选框选择用
 @riverpod

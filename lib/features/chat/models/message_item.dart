@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+﻿import 'package:anoxia/framework/domain/chat_message.dart';
 
 /// 聊天列表项的展平条目类型
 ///

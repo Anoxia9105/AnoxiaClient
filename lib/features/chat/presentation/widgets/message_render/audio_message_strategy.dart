@@ -1,9 +1,9 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../../framework/domain/ChatMessage.dart';
+import '../../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 
 /// 语音消息渲染策略

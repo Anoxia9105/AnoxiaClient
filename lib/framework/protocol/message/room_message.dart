@@ -1,5 +1,5 @@
 import '../i_packet.dart';
-import 'message_eunm.dart';
+import 'message_enum.dart';
 import 'message_payload.dart';
 import 'package:flutter/foundation.dart';
 

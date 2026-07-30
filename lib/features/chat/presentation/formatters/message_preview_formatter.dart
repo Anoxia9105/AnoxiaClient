@@ -1,6 +1,6 @@
-import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+﻿import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /// Produces localized, user-facing text for compact message previews.

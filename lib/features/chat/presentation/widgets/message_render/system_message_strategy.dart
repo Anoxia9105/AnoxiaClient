@@ -1,6 +1,6 @@
-import 'package:anoxia/common/utils/DateUtil.dart';
+﻿import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 

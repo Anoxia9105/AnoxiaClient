@@ -1,80 +1,12 @@
 import 'dart:convert';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:bot_toast/bot_toast.dart';
+import 'package:anoxia/features/chat/presentation/call/component/participant_signal_icon.dart';
+import 'package:anoxia/features/chat/presentation/call/component/participant_more_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
-
-/// 根据参与者连接质量构建信号强度图标
-///
-/// 根据不同的连接质量显示不同颜色和信号条数量：
-/// - 优秀/良好：绿色，3格信号
-/// - 较差：橙色，2格信号
-/// - 丢失：红色，1格信号
-/// - 未知：灰色，0格信号
-Widget _buildSignalIconForParticipant(Participant p) {
-  final quality = p.connectionQuality;
-
-  Color color;
-  int level;
-  String qualityLabel;
-
-  switch (quality) {
-    case ConnectionQuality.lost:
-      color = Colors.redAccent;
-      level = 1;
-      qualityLabel = 'call_quality_lost'.tr();
-      break;
-    case ConnectionQuality.poor:
-      color = Colors.orange;
-      level = 2;
-      qualityLabel = 'call_quality_poor'.tr();
-      break;
-    case ConnectionQuality.good:
-    case ConnectionQuality.excellent:
-      color = Colors.green;
-      level = 3;
-      qualityLabel = quality == ConnectionQuality.excellent
-          ? 'call_quality_excellent'.tr()
-          : 'call_quality_good'.tr();
-      break;
-    default:
-      color = Colors.grey;
-      level = 0;
-      qualityLabel = 'call_quality_unknown'.tr();
-  }
-
-  Widget bar(int idx) {
-    final active = level >= idx;
-    final double h = 4.0 + idx * 3.0;
-    return Container(
-      width: 2.5,
-      height: h,
-      margin: const EdgeInsets.symmetric(horizontal: 1.0),
-      decoration: BoxDecoration(
-        color: active ? color : Colors.white10,
-        borderRadius: BorderRadius.circular(1),
-      ),
-    );
-  }
-
-  return Tooltip(
-    message: qualityLabel,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [bar(1), bar(2), bar(3)],
-      ),
-    ),
-  );
-}
 
 /// 通话参与者磁贴组件
 ///
@@ -114,9 +46,6 @@ class ParticipantTile extends StatefulWidget {
 }
 
 class _ParticipantTileState extends State<ParticipantTile> {
-  /// 当前应该显示的视频轨道
-  VideoTrack? videoTrack;
-
   /// 监听参与者事件，变化时触发 rebuild
   EventsListener<ParticipantEvent>? _participantListener;
 
@@ -191,92 +120,6 @@ class _ParticipantTileState extends State<ParticipantTile> {
     }
 
     return null;
-  }
-
-  /// 弹出"更多"操作菜单
-  ///
-  /// 提供静音和踢出功能（仅对远端参与者显示）
-  void _showMoreMenu(BuildContext context, String identity) {
-    Function? close;
-
-    final items = [
-      _MoreMenuItem(
-        icon: HugeIcons.strokeRoundedMicOff01,
-        iconColor: null,
-        label: 'call_mute'.tr(),
-        onTap: () {
-          widget.onMute?.call(identity);
-          close?.call();
-        },
-      ),
-      _MoreMenuItem(
-        icon: HugeIcons.strokeRoundedUserRemove01,
-        iconColor: Colors.redAccent,
-        label: 'call_kick'.tr(),
-        labelColor: Colors.redAccent,
-        onTap: () {
-          widget.onKick?.call(identity);
-          close?.call();
-        },
-      ),
-    ];
-
-    close = Toast.showWidget(
-      context,
-      direction: PreferDirection.topCenter,
-      child: Material(
-        color: Colors.transparent,
-        child: BubbleWidget(
-          arrowDirection: AxisDirection.down,
-          arrowOffset: 70,
-          arrowLength: 0,
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          border: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 0.5,
-          ),
-          contentBuilder: (ctx) => Container(
-            constraints: const BoxConstraints(minWidth: 100),
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: items.map((item) {
-                return InkWell(
-                  mouseCursor: SystemMouseCursors.click,
-                  onTap: item.onTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        HugeIcon(
-                          icon: item.icon,
-                          size: 15,
-                          color:
-                              item.iconColor ??
-                              Theme.of(context).colorScheme.onSurface,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          item.label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: item.labelColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -385,15 +228,19 @@ class _ParticipantTileState extends State<ParticipantTile> {
                             fontSize: 12,
                           ),
                         ),
-                        _buildSignalIconForParticipant(p),
+                        buildParticipantSignalIcon(p),
                         if (!isCurrentUser)
                           Builder(
                             builder: (btnCtx) => IconButton(
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.all(2),
                               tooltip: 'call_more_tooltip'.tr(),
-                              onPressed: () =>
-                                  _showMoreMenu(btnCtx, p.identity),
+                              onPressed: () => showParticipantMoreMenu(
+                                btnCtx,
+                                identity: p.identity,
+                                onMute: widget.onMute ?? (_) {},
+                                onKick: widget.onKick ?? (_) {},
+                              ),
                               icon: const HugeIcon(
                                 icon: HugeIcons.strokeRoundedMoreHorizontal,
                                 size: 16,
@@ -412,30 +259,4 @@ class _ParticipantTileState extends State<ParticipantTile> {
       ),
     );
   }
-}
-
-/// 更多菜单项数据
-class _MoreMenuItem {
-  /// 图标
-  final List<List<dynamic>> icon;
-
-  /// 图标颜色
-  final Color? iconColor;
-
-  /// 标签文字
-  final String label;
-
-  /// 标签颜色
-  final Color? labelColor;
-
-  /// 点击回调
-  final VoidCallback onTap;
-
-  const _MoreMenuItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.iconColor,
-    this.labelColor,
-  });
 }

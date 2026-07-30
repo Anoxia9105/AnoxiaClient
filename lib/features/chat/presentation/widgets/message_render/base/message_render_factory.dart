@@ -1,4 +1,4 @@
-import 'package:anoxia/features/chat/presentation/widgets/message_render/audio_message_strategy.dart';
+﻿import 'package:anoxia/features/chat/presentation/widgets/message_render/audio_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/card_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/location_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/quill_message_strategy.dart';
@@ -6,8 +6,8 @@ import 'package:anoxia/features/chat/presentation/widgets/message_render/system_
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../../framework/domain/ChatMessage.dart';
-import '../../../../../../framework/protocol/message/message_eunm.dart';
+import '../../../../../../framework/domain/chat_message.dart';
+import '../../../../../../framework/protocol/message/message_enum.dart';
 import '../file_message_strategy.dart';
 import '../image_message_strategy.dart';
 import 'message_render_strategy.dart';

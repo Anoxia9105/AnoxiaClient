@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io' as io;
 import 'dart:math' as math;
 import 'package:anoxia/common/widgets/Toast.dart';
@@ -13,13 +13,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/api.dart';
-import '../../codec/FrameCodec.dart';
-import '../../codec/v5/ImPacketV5.dart';
+import '../../codec/frame_codec.dart';
+import '../../codec/v5/im_packet_v5.dart';
 import '../../logs/talker.dart';
 import '../../network/token_manager.dart';
 import '../../protocol/i_packet.dart';
 import '../../protocol/packet_frame.dart';
-import '../../protocol/register/packet_registry.dart';
+import '../../protocol/packet_registry.dart';
 import 'ws_state.dart';
 
 part 'ws_controller.g.dart';

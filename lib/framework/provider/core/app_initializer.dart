@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
-import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
+import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
-import 'package:anoxia/framework/protocol/register/packet_registry.dart';
+import 'package:anoxia/framework/protocol/packet_registry.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../logs/talker.dart';

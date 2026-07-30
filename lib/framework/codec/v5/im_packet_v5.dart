@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import '../ProtoReader.dart';
-import '../ProtoWriter.dart';
-import '../FrameCodec.dart';
+import '../proto_reader.dart';
+import '../proto_writer.dart';
+import '../frame_codec.dart';
 import '../../protocol/message/attachment.dart';
 import '../../protocol/message/event_message.dart';
 import '../../protocol/message/high_message.dart';
-import '../../protocol/message/message_eunm.dart';
+import '../../protocol/message/message_enum.dart';
 import '../../protocol/message/message_payload.dart';
 import '../../protocol/message/room_message.dart';
 import '../../protocol/packet_type.dart';

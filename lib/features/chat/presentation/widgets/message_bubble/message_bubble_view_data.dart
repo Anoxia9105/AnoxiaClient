@@ -1,4 +1,4 @@
-/// 消息气泡视图数据聚合类
+﻿/// 消息气泡视图数据聚合类
 ///
 /// 职责：集中计算每个消息所需的所有展示属性（颜色、昵称、头像、是否@我等），
 /// 将业务逻辑与 UI 解耦，便于单元测试和复用。
@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
-import 'package:anoxia/framework/domain/ChatRoomMemberVO.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';

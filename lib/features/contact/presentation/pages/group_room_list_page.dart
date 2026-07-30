@@ -1,7 +1,7 @@
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
-import 'package:anoxia/features/contact/presentation/widgets/group_room_widgets.dart';
+import 'package:anoxia/features/contact/presentation/widgets/group_room/group_room_tile.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +12,7 @@ import '../../../../framework/provider/chat/room/room_list_service.dart';
 
 /// 群聊列表页面
 ///
-/// 显示用户加入的所有群聊，支持：
-/// - 展示群聊列表（头像、名称、最新消息、成员数、未读数）
-/// - 点击进入群聊
-/// - 桌面端/移动端适配
+/// 显示用户加入的所有群聊，支持点击进入群聊并适配桌面端/移动端。
 class GroupRoomListPage extends ConsumerWidget {
   const GroupRoomListPage({super.key});
 
@@ -61,17 +58,13 @@ class GroupRoomListPage extends ConsumerWidget {
                   onTap: roomId == null
                       ? null
                       : () async {
-                          /// 选中聊天室，设置当前活跃房间 ID
                           ref
                               .read(activeRoomIdProvider.notifier)
                               .setActive(roomId);
-
-                          /// 跳转到聊天页面
                           ref
                               .read(layoutControllerProvider.notifier)
                               .setIndex(0);
 
-                          /// 仅在移动端导航到聊天详情页，桌面端保持当前页面不变（聊天详情在侧边栏展示）
                           if (DeviceUtil.isRealMobile()) {
                             await Navigator.of(context).push(
                               MaterialPageRoute(

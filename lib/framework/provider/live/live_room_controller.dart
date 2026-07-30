@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';

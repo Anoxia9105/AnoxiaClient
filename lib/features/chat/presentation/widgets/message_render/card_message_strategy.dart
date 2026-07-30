@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+﻿import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';

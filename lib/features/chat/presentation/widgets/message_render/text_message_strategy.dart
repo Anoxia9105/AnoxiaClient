@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
-import '../../../../../framework/domain/ChatMessage.dart';
+import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 import 'link_preview_card.dart';
 

@@ -1,5 +1,6 @@
-import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+﻿import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
+import 'package:anoxia/features/chat/presentation/call/mobile/audio_call_background.dart';
+import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -66,10 +67,16 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
           if (isVideoCall)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 148),
-              child: _buildVideoLayout(participants),
+              child: MobileVideoLayout(
+                participants: participants,
+                focusedParticipantIdentity: _focusedParticipantIdentity,
+                onFocusChanged: (identity) {
+                  setState(() => _focusedParticipantIdentity = identity);
+                },
+              ),
             )
           else
-            _AudioCallBackground(title: title),
+            AudioCallBackground(title: title),
           Align(
             alignment: Alignment.bottomCenter,
             child: MobileCallControls(
@@ -107,8 +114,28 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       borderRadius: 0,
     );
   }
+}
 
-  Widget _buildVideoLayout(List<Participant> participants) {
+/// 移动端视频布局组件
+///
+/// 根据参与者数量自动切换布局模式：
+/// - 1-2人：一对一布局（主画面 + 小窗）
+/// - 3人以上：网格布局
+/// - 点击参与者可进入聚焦模式
+class MobileVideoLayout extends StatelessWidget {
+  const MobileVideoLayout({
+    super.key,
+    required this.participants,
+    required this.focusedParticipantIdentity,
+    required this.onFocusChanged,
+  });
+
+  final List<Participant> participants;
+  final String? focusedParticipantIdentity;
+  final void Function(String? identity) onFocusChanged;
+
+  @override
+  Widget build(BuildContext context) {
     if (participants.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
@@ -116,21 +143,21 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     }
 
     if (participants.length <= 2) {
-      return _buildOneToOneLayout(participants);
+      return _buildOneToOneLayout();
     }
 
     final focused = participants
         .where(
-          (participant) => participant.identity == _focusedParticipantIdentity,
+          (participant) => participant.identity == focusedParticipantIdentity,
         )
         .firstOrNull;
     if (focused != null) {
-      return _buildFocusLayout(focused, participants);
+      return _buildFocusLayout(focused);
     }
-    return _buildGridLayout(participants);
+    return _buildGridLayout();
   }
 
-  Widget _buildOneToOneLayout(List<Participant> participants) {
+  Widget _buildOneToOneLayout() {
     final remote = participants.whereType<RemoteParticipant>().firstOrNull;
     final local = participants.whereType<LocalParticipant>().firstOrNull;
     Participant primary = participants.first;
@@ -165,7 +192,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     );
   }
 
-  Widget _buildGridLayout(List<Participant> participants) {
+  Widget _buildGridLayout() {
     final columns = participants.length <= 4 ? 2 : 3;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -187,9 +214,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
           itemBuilder: (context, index) {
             final participant = participants[index];
             return GestureDetector(
-              onTap: () => setState(
-                () => _focusedParticipantIdentity = participant.identity,
-              ),
+              onTap: () => onFocusChanged(participant.identity),
               child: MobileParticipantSurface(
                 key: ValueKey('mobile-grid-${participant.sid}'),
                 participant: participant,
@@ -203,10 +228,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     );
   }
 
-  Widget _buildFocusLayout(
-    Participant focused,
-    List<Participant> participants,
-  ) {
+  Widget _buildFocusLayout(Participant focused) {
     final thumbnails = participants
         .where((participant) => participant.sid != focused.sid)
         .toList();
@@ -221,9 +243,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
             itemBuilder: (context, index) {
               final participant = thumbnails[index];
               return GestureDetector(
-                onTap: () => setState(
-                  () => _focusedParticipantIdentity = participant.identity,
-                ),
+                onTap: () => onFocusChanged(participant.identity),
                 child: SizedBox(
                   width: 76,
                   child: MobileParticipantSurface(
@@ -255,8 +275,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
                   shape: const CircleBorder(),
                   child: IconButton(
                     tooltip: 'call_back_to_grid_tooltip'.tr(),
-                    onPressed: () =>
-                        setState(() => _focusedParticipantIdentity = null),
+                    onPressed: () => onFocusChanged(null),
                     icon: const Icon(
                       Icons.grid_view_rounded,
                       color: Colors.white,
@@ -268,99 +287,6 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AudioCallBackground extends StatelessWidget {
-  const _AudioCallBackground({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF202638), Color(0xFF11141D), Color(0xFF080A0F)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            top: -90,
-            right: -70,
-            child: _GlowOrb(size: 260, color: Color(0x334F7DFF)),
-          ),
-          const Positioned(
-            bottom: 100,
-            left: -90,
-            child: _GlowOrb(size: 240, color: Color(0x2256E39F)),
-          ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 116),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 104,
-                    height: 104,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.08),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    child: const Icon(
-                      Icons.call_rounded,
-                      color: Colors.white,
-                      size: 46,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'call_voice_call_in_progress'.tr(),
-                    style: const TextStyle(color: Colors.white60, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        boxShadow: [BoxShadow(color: color, blurRadius: 90, spreadRadius: 25)],
-      ),
     );
   }
 }

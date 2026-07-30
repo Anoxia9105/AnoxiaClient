@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/utils/AppPermission.dart';
 import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/framework/domain/RoomState.dart';
+import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/live/live_room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';

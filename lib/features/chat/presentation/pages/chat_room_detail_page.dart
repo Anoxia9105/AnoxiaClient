@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/DateUtil.dart';
+﻿import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
@@ -11,7 +11,7 @@ import 'package:anoxia/features/chat/presentation/widgets/message_bubble/chat_me
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_announcement_banner.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
+import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
 import 'package:flutter/material.dart';

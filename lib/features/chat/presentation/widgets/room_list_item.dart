@@ -1,12 +1,12 @@
-import 'package:anoxia/common/utils/DateUtil.dart';
+﻿import 'package:anoxia/common/utils/DateUtil.dart';
 import 'package:anoxia/common/utils/DeviceUtil.dart';
 import 'package:anoxia/common/widgets/AvatarWidget.dart';
 import 'package:anoxia/common/widgets/SimpleListTile.dart';
 import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/domain/chat_room_vo.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';

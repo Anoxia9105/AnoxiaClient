@@ -1,14 +1,14 @@
-/// 消息状态指示器集合
+﻿/// 消息状态指示器集合
 ///
 /// 包含：@提及标识、发送状态（发送中/失败/已发送）。
 /// 统一管理消息侧边状态展示。
 library;
 
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'message_resender.dart';
 
 /// 消息状态指示器（组合 @标识 和 发送状态）

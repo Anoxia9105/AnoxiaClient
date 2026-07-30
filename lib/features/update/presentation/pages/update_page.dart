@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../../../common/utils/DeviceUtil.dart';
 import '../../../../framework/logs/talker.dart';
 import '../../../../framework/network/dio_client.dart';
-import '../../../../framework/provider/core/AppUpdateInfo.dart';
+import '../../../../framework/domain/app_update_info.dart';
 import '../../../../framework/provider/layout/layout_controller.dart';
 import '../../../../common/widgets/app/app_scaffold.dart';
 import '../widgets/update_sections.dart';

@@ -1,4 +1,4 @@
-/// 消息重发器
+﻿/// 消息重发器
 ///
 /// 职责：处理发送失败消息的重发逻辑，包括状态更新、重新发送、超时检测。
 /// 独立封装便于单元测试和复用。
@@ -6,10 +6,10 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:anoxia/framework/codec/v5/ImPacketV5.dart';
-import 'package:anoxia/framework/domain/ChatMessage.dart';
+import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/logs/talker.dart';
-import 'package:anoxia/framework/protocol/message/message_eunm.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';

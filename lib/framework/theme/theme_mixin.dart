@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'AppColors.dart';
+import 'app_colors.dart';
 
 mixin ThemeMixin {
   /// 工具：基于整数 alpha (0.0-1.0 -> 0-255) 返回带透明度的颜色。

@@ -1,33 +1,21 @@
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/features/contact/presentation/widgets/contact_detail_widgets.dart';
-import 'package:anoxia/framework/domain/ChatContactDetailVO.dart';
-import 'package:anoxia/framework/domain/ChatRoomVO.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
-import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
-import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+﻿import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_delete_confirm_dialog.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_actions.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_empty_state.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_header.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_popup_menu.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_skeleton.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_edit_remark_dialog.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_info_section.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
-import 'package:anoxia/framework/provider/layout/layout_controller.dart';
-import 'package:anoxia/framework/protocol/message/message_payload.dart';
-import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 联系人详情页面
 ///
-/// 显示联系人的详细信息，支持：
-/// - 查看联系人基本信息（头像、昵称、备注、签名等）
-/// - 在线状态显示
-/// - 编辑备注
-/// - 删除联系人
-/// - 发起聊天
-/// - 发起通话
+/// 显示联系人的详细信息，支持查看资料、编辑备注、删除联系人、发起聊天和推荐名片。
 class ContactDetail extends ConsumerWidget {
   const ContactDetail({super.key});
 
@@ -55,89 +43,39 @@ class ContactDetail extends ConsumerWidget {
       appBar: AppBar(
         actionsPadding: const EdgeInsets.symmetric(horizontal: 8),
         actions: [
-          Builder(
-            builder: (context) {
-              return IconButton(
-                mouseCursor: SystemMouseCursors.click,
-                onPressed: () {
-                  Function? close;
-                  close = Toast.showWidget(
-                    context,
-                    direction: PreferDirection.bottomRight,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: BubbleWidget(
-                        arrowDirection: AxisDirection.up,
-                        arrowOffset: 95,
-                        arrowWidth: 13,
-
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(10),
-                        shadows: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                          width: 0.5,
-                        ),
-                        contentBuilder: (context) => Container(
-                          // 限制宽度，高改为自动适应
-                          constraints: const BoxConstraints(maxWidth: 120),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 4,
-                            horizontal: 2,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildMenuItem(
-                                icon: HugeIcons.strokeRoundedEdit01,
-                                title: 'contact_edit_remark'.tr(),
-                                onTap: () async {
-                                  close?.call();
-                                  await _showEditRemarkDialog(
-                                    context,
-                                    ref,
-                                    contact.contactId!,
-                                    detailAsync.asData?.value.remark,
-                                  );
-                                },
-                              ),
-                              _buildMenuItem(
-                                icon: HugeIcons.strokeRoundedDelete01,
-                                title: 'contact_delete'.tr(),
-                                isDestructive: true, // 可选：删除项标红
-                                onTap: () async {
-                                  close?.call();
-                                  await _showDeleteConfirmDialog(
-                                    context,
-                                    ref,
-                                    contact.contactId!,
-                                    detailAsync.asData?.value.nickName,
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.more_horiz),
-              );
-            },
+          ContactDetailPopupMenuButton(
+            onEditRemark: () => _handleEditRemark(
+              context,
+              ref,
+              contact.contactId!,
+              detailAsync.asData?.value.remark,
+            ),
+            onDelete: () => _handleDelete(
+              context,
+              ref,
+              contact.contactId!,
+              detailAsync.asData?.value.nickName,
+            ),
           ),
         ],
       ),
       body: detailAsync.when(
-        data: (detail) => _buildDetailContent(context, detail, isOnline, ref),
+        data: (detail) => SingleChildScrollView(
+          child: Column(
+            children: [
+              ContactDetailHeader(
+                avatar: detail.avatar,
+                nickName: detail.nickName,
+                remark: detail.remark,
+                isOnline: isOnline,
+              ),
+              ContactInfoSection(detail: detail, isOnline: isOnline),
+              const SizedBox(height: 24),
+              ContactDetailActions(detail: detail),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
         loading: () => const ContactDetailSkeleton(),
         error: (err, _) => Center(
           child: Text(
@@ -148,377 +86,42 @@ class ContactDetail extends ConsumerWidget {
     );
   }
 
-  // 提取精简的菜单项组件，替代默认较厚重的 ListTile
-  Widget _buildMenuItem({
-    required dynamic icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            HugeIcon(
-              icon: icon,
-              size: 15,
-              color: isDestructive ? Colors.red : null,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDestructive ? Colors.red : null,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailContent(
-    BuildContext context,
-    ChatContactDetailVO detail,
-    bool isOnline,
-    WidgetRef ref,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isCreating = ref.watch(contactChatLoadingProvider);
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              children: [
-                AvatarWidget(
-                  url: detail.avatar,
-                  name: detail.nickName,
-                  size: 100,
-                  borderRadius: 12,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  detail.nickName ?? '',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          ContactInfoTile(
-            label: 'contact_status'.tr(),
-            value: isOnline ? 'contact_online'.tr() : 'contact_offline'.tr(),
-          ),
-          ContactInfoTile(
-            label: 'contact_remark'.tr(),
-            value: detail.remark ?? 'contact_no_remark'.tr(),
-          ),
-          ContactInfoTile(
-            label: 'contact_username'.tr(),
-            value: detail.userName ?? '',
-          ),
-          ContactInfoTile(
-            label: 'contact_gender'.tr(),
-            value: _getTranslatedGender(detail.sex),
-          ),
-          ContactInfoTile(
-            label: 'contact_phone'.tr(),
-            value: detail.phoneNumber ?? 'contact_no_phone'.tr(),
-          ),
-          ContactInfoTile(
-            label: 'contact_became_friends'.tr(),
-            value: detail.formattedDate,
-          ),
-          const SizedBox(height: 40),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _recommendToFriend(context, ref, detail),
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedUserAdd01,
-                      size: 20,
-                    ),
-                    label: Text('contact_recommend_to_friend'.tr()),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: isCreating
-                        ? null
-                        : () async {
-                            final targetId = detail.userId;
-                            if (targetId == null) return;
-
-                            ref
-                                .read(contactChatLoadingProvider.notifier)
-                                .set(true);
-
-                            try {
-                              final roomId = await ref
-                                  .read(roomListServiceProvider.notifier)
-                                  .getOrCreateRoom(detail.userId!);
-
-                              if (roomId != null) {
-                                ref
-                                    .read(activeRoomIdProvider.notifier)
-                                    .setActive(roomId);
-                                ref
-                                    .read(layoutControllerProvider.notifier)
-                                    .setIndex(0);
-                              }
-                            } finally {
-                              ref
-                                  .read(contactChatLoadingProvider.notifier)
-                                  .set(false);
-                            }
-                          },
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedChatting01,
-                      size: 20,
-                      color: colorScheme.onPrimary,
-                    ),
-                    label: isCreating
-                        ? const CircularProgressIndicator()
-                        : Text('chat_send_message'.tr()),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _getTranslatedGender(String? sex) {
-    switch (sex) {
-      case '0':
-        return 'contact_male'.tr();
-      case '1':
-        return 'contact_female'.tr();
-      default:
-        return 'contact_unknown_gender'.tr();
-    }
-  }
-
-  Future<void> _recommendToFriend(
-    BuildContext context,
-    WidgetRef ref,
-    ChatContactDetailVO detail,
-  ) async {
-    final userId = detail.userId;
-    if (userId == null) return;
-
-    final room = await showDialog<ChatRoomVO>(
-      context: context,
-      builder: (_) => const _RecommendRoomDialog(),
-    );
-    final roomId = room?.roomId;
-    if (roomId == null || !context.mounted) return;
-
-    final card = CardPayload(
-      cardType: 'contact',
-      entityId: userId.toString(),
-      title: detail.nickName?.trim().isNotEmpty == true
-          ? detail.nickName!.trim()
-          : (detail.userName?.trim().isNotEmpty == true
-                ? detail.userName!.trim()
-                : userId.toString()),
-      summary: detail.userName,
-      thumbnailUrl: detail.avatar,
-      properties: {
-        if (detail.userName?.trim().isNotEmpty == true)
-          'userName': detail.userName!.trim(),
-        if (detail.sex?.trim().isNotEmpty == true) 'sex': detail.sex!.trim(),
-      },
-    );
-
-    final sent = ref
-        .read(chatInputControllerProvider(roomId).notifier)
-        .sendCardMessage(card);
-    Toast.showToast(
-      sent
-          ? 'contact_recommend_sent'.tr(args: [room?.roomName ?? ''])
-          : 'contact_recommend_send_failed'.tr(),
-      type: sent ? ToastType.success : ToastType.error,
-    );
-  }
-
-  Future<void> _showEditRemarkDialog(
+  Future<void> _handleEditRemark(
     BuildContext context,
     WidgetRef ref,
     int contactId,
     String? initialRemark,
   ) async {
-    final controller = TextEditingController(text: initialRemark ?? '');
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        final colorScheme = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text('contact_edit_remark'.tr()),
-          content: TextField(
-            controller: controller,
-            maxLength: 30,
-            decoration: InputDecoration(
-              hintText: 'contact_edit_remark'.tr(),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.35,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text('dialog_cancel'.tr()),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, controller.text.trim()),
-              child: Text('chat_confirm_btn'.tr()),
-            ),
-          ],
-        );
-      },
+    final success = await showContactEditRemarkDialog(
+      context,
+      ref,
+      contactId,
+      initialRemark,
     );
+    if (!success) return;
 
-    controller.dispose();
-    if (result == null) return;
-
-    try {
-      final encodedRemark = Uri.encodeComponent(result);
-      final response = await DioClient().put(
-        '${API.contactRemarkUpdate}?contactId=$contactId&remark=$encodedRemark',
-      );
-
-      final ok = response.data is Map && response.data['code'] == 200;
-      if (!ok) {
-        final msg = response.data is Map
-            ? response.data['msg']?.toString()
-            : null;
-        Toast.showToast(
-          msg?.isNotEmpty == true ? msg! : 'chat_operation_retry_failed'.tr(),
-        );
-        return;
-      }
-
-      ref.invalidate(contactDetailDataProvider(contactId));
-      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
-      _syncSelectedContact(ref, contactId);
-      Toast.showToast(
-        'contact_edit_remark_success'.tr(),
-        type: ToastType.success,
-      );
-    } catch (_) {
-      Toast.showToast('contact_edit_remark_failed'.tr(), type: ToastType.error);
-    }
+    ref.invalidate(contactDetailDataProvider(contactId));
+    await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
+    _syncSelectedContact(ref, contactId);
   }
 
-  Future<void> _showDeleteConfirmDialog(
+  Future<void> _handleDelete(
     BuildContext context,
     WidgetRef ref,
     int contactId,
     String? nickName,
   ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        final colorScheme = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text('contact_delete'.tr()),
-          content: Text(
-            'contact_delete_confirm_content'.tr(args: [nickName ?? '']),
-            style: TextStyle(color: colorScheme.onSurface),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text('dialog_cancel'.tr()),
-            ),
-            FilledButton.tonal(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text('chat_confirm_btn'.tr()),
-            ),
-          ],
-        );
-      },
+    final success = await showContactDeleteConfirmDialog(
+      context,
+      ref,
+      contactId,
+      nickName,
     );
+    if (!success) return;
 
-    if (confirm != true) return;
-
-    try {
-      final response = await DioClient().delete(
-        '${API.contactDelete}?contactId=$contactId',
-      );
-
-      final ok = response.data is Map && response.data['code'] == 200;
-      if (!ok) {
-        final msg = response.data is Map
-            ? response.data['msg']?.toString()
-            : null;
-        Toast.showToast(
-          msg?.isNotEmpty == true ? msg! : 'chat_operation_retry_failed'.tr(),
-        );
-        return;
-      }
-
-      ref.invalidate(contactDetailDataProvider(contactId));
-      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
-      ref.read(contactSelectionProvider.notifier).clearSelection();
-      Toast.showToast('contact_delete_success'.tr(), type: ToastType.success);
-    } catch (_) {
-      Toast.showToast('contact_delete_failed'.tr(), type: ToastType.error);
-    }
+    ref.invalidate(contactDetailDataProvider(contactId));
+    await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
+    ref.read(contactSelectionProvider.notifier).clearSelection();
   }
 
   void _syncSelectedContact(WidgetRef ref, int contactId) {
@@ -527,85 +130,5 @@ class ContactDetail extends ConsumerWidget {
     if (latest != null) {
       ref.read(contactSelectionProvider.notifier).selectContact(latest);
     }
-  }
-}
-
-class _RecommendRoomDialog extends ConsumerWidget {
-  const _RecommendRoomDialog();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final roomsAsync = ref.watch(roomListServiceProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final screenSize = MediaQuery.sizeOf(context);
-    final dialogWidth = (screenSize.width - 80).clamp(260.0, 420.0);
-    final dialogHeight = (screenSize.height * 0.62).clamp(280.0, 440.0);
-
-    return AlertDialog(
-      title: Text('contact_recommend_select_chat'.tr()),
-      content: SizedBox(
-        width: dialogWidth,
-        height: dialogHeight,
-        child: roomsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => Center(
-            child: TextButton.icon(
-              onPressed: () => ref
-                  .read(roomListServiceProvider.notifier)
-                  .refresh(silent: false),
-              icon: const Icon(Icons.refresh),
-              label: Text('contact_recommend_load_failed'.tr()),
-            ),
-          ),
-          data: (allRooms) {
-            final rooms = allRooms
-                .where(
-                  (room) =>
-                      room.roomId?.isNotEmpty == true &&
-                      room.roomType != RoomType.aiChat.index &&
-                      (room.roomStatus == null || room.roomStatus == 0),
-                )
-                .toList();
-            if (rooms.isEmpty) {
-              return Center(child: Text('contact_recommend_no_chat'.tr()));
-            }
-            return ListView.separated(
-              itemCount: rooms.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final room = rooms[index];
-                return ListTile(
-                  leading: AvatarWidget(
-                    url: room.roomAvatar,
-                    name: room.roomName,
-                    size: 42,
-                  ),
-                  title: Text(
-                    room.roomName?.trim().isNotEmpty == true
-                        ? room.roomName!
-                        : 'contact_recommend_unnamed_chat'.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    room.roomType == RoomType.groupChat.index
-                        ? 'contact_recommend_group_chat'.tr()
-                        : 'contact_recommend_single_chat'.tr(),
-                    style: TextStyle(color: colorScheme.onSurfaceVariant),
-                  ),
-                  onTap: () => Navigator.pop(context, room),
-                );
-              },
-            );
-          },
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('dialog_cancel'.tr()),
-        ),
-      ],
-    );
   }
 }

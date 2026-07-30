@@ -3,7 +3,7 @@ import 'package:anoxia/common/widgets/VibratingBadge.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';
-import 'package:anoxia/features/contact/presentation/widgets/sorted_contact_groups_widget.dart';
+import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/sorted_contact_groups_widget.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
