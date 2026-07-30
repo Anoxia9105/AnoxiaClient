@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/volume_indicator.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';

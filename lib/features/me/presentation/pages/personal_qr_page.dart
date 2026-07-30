@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/common/utils/AppPermission.dart';
+import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

@@ -1,5 +1,5 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/widgets/VibratingBadge.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:flutter/material.dart';
 
 /// 群聊列表项组件

@@ -1,6 +1,6 @@
-﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/desktop/DesktopAppBar.dart';
-import 'package:anoxia/common/widgets/desktop/GlobalSearchDialog.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
+import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';

@@ -1,5 +1,5 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/Welcome.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/welcome.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/new_friends_page.dart';

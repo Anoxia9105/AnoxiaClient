@@ -1,7 +1,7 @@
 ﻿import 'dart:async';
 import 'dart:io' as io;
 import 'dart:math' as math;
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';

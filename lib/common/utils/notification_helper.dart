@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/utils/AppPermission.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:easy_localization/easy_localization.dart';

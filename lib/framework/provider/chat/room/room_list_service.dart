@@ -1,7 +1,7 @@
 ﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/common/utils/NotificationHelper.dart';
+import 'package:anoxia/common/utils/notification_helper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';

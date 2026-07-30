@@ -1,7 +1,7 @@
-﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/widgets/SkeletonBox.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 import 'package:anoxia/framework/domain/chat_favorite.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';

@@ -1,6 +1,6 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/desktop/DesktopSidebar.dart';
-import 'package:anoxia/common/widgets/app/MobileBottomBar.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/desktop/desktop_sidebar.dart';
+import 'package:anoxia/common/widgets/app/mobile_bottom_bar.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';

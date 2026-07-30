@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
-import 'package:anoxia/common/utils/Validators.dart';
+import 'package:anoxia/common/utils/validators.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';

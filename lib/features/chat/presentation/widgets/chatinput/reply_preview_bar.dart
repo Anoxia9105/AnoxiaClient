@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/DateUtil.dart';
+﻿import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';

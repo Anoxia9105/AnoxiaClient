@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:anoxia/common/widgets/AcrylicContainer.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:anoxia/common/widgets/acrylic_container.dart';
 
 /// 全屏焦点遮罩管理工具
 ///

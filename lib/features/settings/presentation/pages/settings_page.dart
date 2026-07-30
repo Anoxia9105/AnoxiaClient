@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/Toast.dart';
+﻿import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
@@ -16,7 +16,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../common/utils/DeviceUtil.dart';
+import '../../../../common/utils/device_util.dart';
 
 /// 设置页面
 ///

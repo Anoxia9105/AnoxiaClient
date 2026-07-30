@@ -1,6 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';

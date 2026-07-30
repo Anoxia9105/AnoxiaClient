@@ -6,8 +6,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/network/dio_client.dart';

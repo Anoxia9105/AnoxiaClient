@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/SkeletonBox.dart';
+﻿import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:flutter/material.dart';
 
 /// 新好友请求骨架屏

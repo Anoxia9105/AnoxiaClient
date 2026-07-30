@@ -1,7 +1,7 @@
 ﻿import 'dart:async';
 import 'dart:convert';
 
-import 'package:anoxia/common/utils/NotificationHelper.dart';
+import 'package:anoxia/common/utils/notification_helper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
@@ -22,8 +22,8 @@ import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'app.dart';
 import 'common/constants/api.dart';
-import 'common/utils/DeviceUtil.dart';
-import 'common/utils/SPUtil.dart';
+import 'common/utils/device_util.dart';
+import 'common/utils/sp_util.dart';
 import 'framework/extensions/window_controller.dart';
 import 'framework/logs/talker.dart';
 import 'framework/network/dio_client.dart';

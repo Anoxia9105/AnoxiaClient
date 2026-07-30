@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart' show DeviceUtil;
+﻿import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_detail_settings_body.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';

@@ -1,7 +1,7 @@
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+﻿import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../common/utils/DeviceUtil.dart';
+import '../../../../common/utils/device_util.dart';
 
 /// 通话窗口通信通道
 ///

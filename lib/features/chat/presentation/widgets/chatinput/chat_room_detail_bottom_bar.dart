@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_input_field.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_status_tag.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_input_skeleton.dart';

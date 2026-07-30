@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/contact/presentation/widgets/recommended_contact/public_info_row.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';

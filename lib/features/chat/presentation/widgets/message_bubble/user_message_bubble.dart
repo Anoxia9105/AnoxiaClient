@@ -13,7 +13,7 @@ import 'package:easy_localization/easy_localization.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';

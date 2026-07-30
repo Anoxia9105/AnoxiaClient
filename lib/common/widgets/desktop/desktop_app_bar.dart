@@ -1,6 +1,6 @@
-import 'package:anoxia/common/widgets/desktop/ConnectionStatusTag.dart';
-import 'package:anoxia/common/widgets/desktop/GlobalSearchDialog.dart';
-import 'package:anoxia/common/widgets/desktop/HeaderSearchEntry.dart';
+﻿import 'package:anoxia/common/widgets/desktop/connection_status_tag.dart';
+import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
+import 'package:anoxia/common/widgets/desktop/header_search_entry.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

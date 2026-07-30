@@ -1,8 +1,8 @@
 ﻿import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/network/dio_client.dart';

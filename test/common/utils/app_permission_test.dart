@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/AppPermission.dart';
+import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 

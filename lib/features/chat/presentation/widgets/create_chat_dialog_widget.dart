@@ -1,6 +1,6 @@
-﻿import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/sorted_contact_groups_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/create_new_group_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';

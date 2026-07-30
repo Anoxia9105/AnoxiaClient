@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:flutter/material.dart';
 
 /// 好友请求列表项组件

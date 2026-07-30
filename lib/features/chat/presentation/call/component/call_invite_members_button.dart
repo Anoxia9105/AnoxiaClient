@@ -1,5 +1,5 @@
-﻿import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';

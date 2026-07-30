@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:flutter/material.dart';

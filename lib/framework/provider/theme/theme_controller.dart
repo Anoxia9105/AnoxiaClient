@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../gen/fonts.gen.dart';
-import '../../../common/utils/SPUtil.dart';
+import '../../../common/utils/sp_util.dart';
 import '../../theme/app_theme.dart';
 
 part 'theme_controller.g.dart';

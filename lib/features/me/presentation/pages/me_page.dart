@@ -1,7 +1,7 @@
 ﻿import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';

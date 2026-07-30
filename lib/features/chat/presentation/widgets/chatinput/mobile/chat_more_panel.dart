@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart' show DeviceUtil;
+﻿import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';

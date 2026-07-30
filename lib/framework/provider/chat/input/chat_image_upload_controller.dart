@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
+import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';

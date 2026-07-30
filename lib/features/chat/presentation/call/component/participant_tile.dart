@@ -1,6 +1,6 @@
-import 'dart:convert';
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'dart:convert';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/component/participant_signal_icon.dart';
 import 'package:anoxia/features/chat/presentation/call/component/participant_more_menu.dart';
 import 'package:flutter/material.dart';

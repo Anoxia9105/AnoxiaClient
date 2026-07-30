@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+﻿import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -7,7 +7,7 @@ import '../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../framework/provider/contact/contact_requests_controller.dart';
 import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/setting/update_check_provider.dart';
-import '../VibratingBadge.dart';
+import '../vibrating_badge.dart';
 
 class MobileBottomBar extends ConsumerWidget {
   const MobileBottomBar({super.key});

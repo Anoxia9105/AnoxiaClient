@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_empty_state.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';

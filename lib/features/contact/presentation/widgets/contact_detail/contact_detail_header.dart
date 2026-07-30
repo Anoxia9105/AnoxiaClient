@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:flutter/material.dart';
 
 /// 联系人详情头部组件

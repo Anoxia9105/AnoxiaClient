@@ -1,7 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';

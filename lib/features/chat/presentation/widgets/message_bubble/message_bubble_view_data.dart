@@ -8,7 +8,7 @@ import 'package:anoxia/features/chat/models/chat_message_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';

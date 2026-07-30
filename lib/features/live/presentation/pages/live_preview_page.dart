@@ -1,6 +1,6 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/utils/AppPermission.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/app_permission.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:easy_localization/easy_localization.dart';

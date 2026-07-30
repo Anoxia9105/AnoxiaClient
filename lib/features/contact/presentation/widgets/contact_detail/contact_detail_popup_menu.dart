@@ -1,5 +1,5 @@
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+﻿import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

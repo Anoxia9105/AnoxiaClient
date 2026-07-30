@@ -1,6 +1,6 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/pages/scan_qr_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';

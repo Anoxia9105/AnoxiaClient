@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
@@ -15,14 +15,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'common/utils/DeviceUtil.dart';
+import 'common/utils/device_util.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
 import 'framework/provider/ws/ws_controller.dart';
 import 'gen/assets.gen.dart';
-import 'common/utils/NotificationHelper.dart';
+import 'common/utils/notification_helper.dart';
 
 /// 应用根组件
 ///

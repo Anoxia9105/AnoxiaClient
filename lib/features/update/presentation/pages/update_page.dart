@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../common/utils/DeviceUtil.dart';
+import '../../../../common/utils/device_util.dart';
 import '../../../../framework/logs/talker.dart';
 import '../../../../framework/network/dio_client.dart';
 import '../../../../framework/domain/app_update_info.dart';

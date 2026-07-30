@@ -1,5 +1,5 @@
-﻿import 'package:anoxia/common/utils/QuillEmbedUtil.dart';
-import 'package:anoxia/common/widgets/BubbleDialog.dart';
+﻿import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
@@ -14,7 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import '../../../../../../../common/widgets/Toast.dart';
+import '../../../../../../../common/widgets/toast.dart';
 import 'colors_box.dart';
 
 /// 富文本编辑器工具栏组件

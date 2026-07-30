@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/VibratingBadge.dart';
+﻿import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';

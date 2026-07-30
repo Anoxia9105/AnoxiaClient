@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';

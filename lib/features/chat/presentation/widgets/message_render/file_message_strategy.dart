@@ -1,7 +1,7 @@
 ﻿import 'dart:io';
 
-import 'package:anoxia/common/utils/fileUtil.dart';
-import 'package:anoxia/common/widgets/Toast.dart';
+import 'package:anoxia/common/utils/file_util.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

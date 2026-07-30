@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/DateUtil.dart';
+﻿import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';

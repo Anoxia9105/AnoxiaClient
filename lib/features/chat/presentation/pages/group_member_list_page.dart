@@ -1,5 +1,5 @@
-﻿import 'package:anoxia/common/utils/DeviceUtil.dart';
-import 'package:anoxia/common/widgets/AvatarWidget.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';

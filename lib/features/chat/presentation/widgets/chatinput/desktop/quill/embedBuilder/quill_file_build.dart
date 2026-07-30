@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../../../../common/utils/fileUtil.dart';
+import '../../../../../../../../common/utils/file_util.dart';
 
 /// Quill 文件嵌入构建器
 ///

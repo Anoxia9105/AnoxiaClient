@@ -1,4 +1,4 @@
-import 'package:anoxia/common/utils/DeviceUtil.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
 import 'package:flutter/material.dart';
 
 /// Uses a page route on mobile and a size-constrained modal on desktop.

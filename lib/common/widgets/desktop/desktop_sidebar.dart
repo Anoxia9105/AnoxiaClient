@@ -1,4 +1,4 @@
-import 'package:anoxia/common/widgets/VibratingBadge.dart';
+﻿import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
@@ -11,7 +11,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import '../../../framework/provider/layout/layout_controller.dart';
 import '../../../framework/provider/ws/ws_controller.dart';
 import '../../../framework/provider/ws/ws_state.dart';
-import '../AvatarWidget.dart';
+import '../avatar_widget.dart';
 
 /// 桌面端侧边栏组件
 ///
