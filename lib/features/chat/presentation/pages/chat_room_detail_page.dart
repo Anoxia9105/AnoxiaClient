@@ -1,13 +1,12 @@
-import 'dart:async';
-
 import 'package:anoxia/common/utils/DateUtil.dart';
-import 'package:anoxia/common/widgets/SkeletonBox.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/no_conversation_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chat_scroll_controller.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_bottom_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_scroll_down_button.dart';
+import 'package:anoxia/features/chat/presentation/widgets/history_load_indicator.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_bubble/chat_message_bubble.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
@@ -20,7 +19,6 @@ import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 
 /// 聊天房间详情页面
@@ -40,17 +38,46 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   final FlutterListViewController _listViewController =
       FlutterListViewController();
 
-  /// 是否显示滚动到底部按钮
-  bool _showScrollDownButton = false;
-  bool _isLoadingMore = false;
-  bool _historyEdgeArmed = true;
-  bool _historyLoadScheduled = false;
+  /// 滚动控制器，封装滚动相关的全部逻辑
+  late final ChatScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ChatScrollController(
+      listViewController: _listViewController,
+      roomId: widget.roomId,
+      ref: ref,
+      onChanged: _onScrollStateChanged,
+    );
+    _scrollController.setupScrollListeners();
+  }
+
+  void _onScrollStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatRoomDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.roomId != widget.roomId) {
+      _scrollController = ChatScrollController(
+        listViewController: _listViewController,
+        roomId: widget.roomId,
+        ref: ref,
+        onChanged: _onScrollStateChanged,
+      );
+      _scrollController.setupScrollListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _listViewController.dispose();
+    super.dispose();
+  }
 
   /// 构建时间分隔 UI
-  ///
-  /// [timestamp] 时间戳（毫秒）
-  /// [context] 构建上下文
-  /// 返回 时间分隔条 Widget
   Widget _buildTimeDividerWidget(int timestamp, BuildContext context) {
     final locale = context.locale.languageCode;
     final text = DateUtil.formatWeChatTimeDivider(timestamp, locale);
@@ -69,117 +96,26 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _setupScrollListeners();
-  }
-
-  @override
-  void didUpdateWidget(covariant ChatRoomDetail oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.roomId != widget.roomId) {
-      _isLoadingMore = false;
-      _historyEdgeArmed = true;
-      _historyLoadScheduled = false;
-      _showScrollDownButton = false;
-    }
-  }
-
-  @override
-  void dispose() {
-    _listViewController.dispose();
-    super.dispose();
-  }
-
-  void _setupScrollListeners() {
-    _listViewController.addListener(() {
-      final bool isFarFromBottom = _listViewController.offset > 300;
-      if (isFarFromBottom != _showScrollDownButton) {
-        setState(() => _showScrollDownButton = isFarFromBottom);
-      }
-    });
-
-    _listViewController.sliverController.onPaintItemPositionsCallback =
-        (height, positions) {
-          if (positions.isEmpty) return;
-          final currentRoomId = widget.roomId;
-          if (currentRoomId.isEmpty) return;
-
-          // 直接看滑动到的 maxVisibleIndex
-          int maxVisibleIndex = positions
-              .map((p) => p.index)
-              .reduce((a, b) => a > b ? a : b);
-
-          // 通过 Riverpod 异步高效读取平铺列表长度
-          final flatItemsLength = ref
-              .read(chatUiListProvider(currentRoomId))
-              .items
-              .length;
-
-          final nearHistoryEdge =
-              flatItemsLength >= 10 && maxVisibleIndex >= flatItemsLength - 5;
-          if (!nearHistoryEdge) {
-            _historyEdgeArmed = true;
-            return;
-          }
-          final hasMore = ref.read(chatHasMoreProvider)[currentRoomId] ?? false;
-          if (hasMore && _historyEdgeArmed && !_isLoadingMore) {
-            _historyEdgeArmed = false;
-            _scheduleHistoryLoad(currentRoomId);
-          }
-        };
-  }
-
-  void _scheduleHistoryLoad(String roomId) {
-    if (_historyLoadScheduled) return;
-    _historyLoadScheduled = true;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _historyLoadScheduled = false;
-      if (!mounted || widget.roomId != roomId) return;
-      unawaited(_loadMoreHistory(roomId));
-    });
-  }
-
-  Future<void> _loadMoreHistory(String roomId) async {
-    if (_isLoadingMore || !mounted) return;
-    setState(() => _isLoadingMore = true);
-    try {
-      await ref.read(chatMessagesProvider.notifier).loadMoreHistory(roomId);
-    } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final currentRoom = ref.watch(currentRoomProvider(widget.roomId));
     if (currentRoom == null) return const NoConversationPage();
 
-    /// 监听房间详情初始化状态
     final entryTask = ref.watch(roomEntryTaskProvider(widget.roomId));
 
-    /// 监听 WebSocket 连接状态
-    // final wsState = ref.watch(wsControllerProvider);
-
-    // 监听清洗平铺后的 UI 专属混合列表
     final chatUiListResult = ref.watch(chatUiListProvider(widget.roomId));
     final flatItems = chatUiListResult.items;
 
-    /// 加载中且没有缓存消息时显示骨架屏
     final showInitialSkeleton = entryTask.isLoading && flatItems.isEmpty;
 
-    //当房间 ID 改变时，重置滚动按钮状态
-    ref.listen<String?>(activeRoomIdProvider, (prev, next) {
-      if (prev != next) setState(() => _showScrollDownButton = false);
-    });
+    // 当激活房间变化时，新 controller 会重置按钮状态
 
+    // 引用消息跳转
     ref.listen<ReplyJumpRequest?>(replyJumpControllerProvider, (
       previous,
       next,
     ) {
       if (next == null || next.roomId != widget.roomId) return;
-      _scrollToMessage(next.messageId, flatItems);
+      _scrollController.scrollToMessage(next.messageId, flatItems);
     });
 
     return Scaffold(
@@ -209,19 +145,15 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           ),
         ],
       ),
-
-      /// 根据滚动位置显示滚动到底部按钮，点击后平滑滚动到底部（即 index 0）
-      floatingActionButton: _showScrollDownButton
+      floatingActionButton: _scrollController.showScrollDownButton
           ? ChatRoomDetailScrollDownButton(
-              onPressed: () => _scrollToBottom(animated: true),
+              onPressed: () => _scrollController.scrollToBottom(animated: true),
             )
           : null,
-
-      /// 底部输入栏
       bottomNavigationBar: ChatRoomDetailBottomBar(
         showSkeleton: showInitialSkeleton,
         roomStatus: currentRoom.roomStatus,
-        onFieldTap: () => _scrollToBottom(animated: true),
+        onFieldTap: () => _scrollController.scrollToBottom(animated: true),
       ),
     );
   }
@@ -249,11 +181,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           child: FlutterListView(
             controller: _listViewController,
-            reverse: true, // 保持反转状态
+            reverse: true,
             delegate: FlutterListViewDelegate(
               (context, index) {
-                // 关键变动：无需再用 flatItems.length - 1 - index 倒序计算
-                // 因为 flatItems 在 Provider 里已经被反转过了，此处直接一一映射即可！
                 final item = flatItems[index];
 
                 return switch (item) {
@@ -265,69 +195,23 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                     key: ValueKey(message.messageId ?? message.clientMsgId),
                     message: message,
                   ),
-                  // ignore: unreachable_switch_case
-                  _ => const SizedBox.shrink(),
                 };
               },
-              // 分页期间保持 childCount 稳定，避免 keepPosition 在绘制阶段反复校正。
               childCount: flatItems.length,
               keepPosition: true,
             ),
           ),
         ),
-        if (_isLoadingMore)
-          const Positioned(
-            top: 8,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              child: Center(
-                child: SkeletonBox(width: 120, height: 12, radius: 10),
-              ),
-            ),
+        // 历史加载状态指示器，替换原来的内联骨架屏
+        Positioned(
+          top: 8,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            child: HistoryLoadIndicator(roomId: widget.roomId),
           ),
+        ),
       ],
-    );
-  }
-
-  /// 滚动到底部（即 index 0，因为列表是 reverse 的）
-  ///
-  /// [animated] 是否使用动画，默认为 true
-  void _scrollToBottom({bool animated = true}) {
-    if (!_listViewController.hasClients) return;
-    final activeId = ref.read(activeRoomIdProvider);
-    final messageCount = activeId == null
-        ? 0
-        : ref.read(roomMessagesProvider(activeId)).value?.length ?? 0;
-    // 如果没消息直接返回
-    if (messageCount == 0 || messageCount < 10) return;
-    if (animated) {
-      _listViewController.sliverController.animateToIndex(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    } else {
-      _listViewController.sliverController.jumpToIndex(0);
-    }
-  }
-
-  void _scrollToMessage(String messageId, List<ChatListItem> flatItems) {
-    if (!_listViewController.hasClients) return;
-
-    final index = flatItems.indexWhere((item) {
-      return switch (item) {
-        MessageItem(:final message) =>
-          message.messageId == messageId || message.clientMsgId == messageId,
-        _ => false,
-      };
-    });
-
-    if (index < 0) return;
-    _listViewController.sliverController.animateToIndex(
-      index,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
     );
   }
 }

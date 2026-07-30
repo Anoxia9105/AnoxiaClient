@@ -792,5 +792,7 @@
   "validator_username_min_length": "用户名长度不能少于 {} 位",
   "validator_username_max_length": "用户名长度不能超过 {} 位",
   "validator_username_format": "用户名只能包含字母、数字和下划线",
-  "no_data_title": "暂无数据哦"
+  "no_data_title": "暂无数据哦",
+  "chat_history_load_failed": "历史消息加载失败",
+  "chat_history_retry": "点击重试"
 }

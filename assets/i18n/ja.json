@@ -792,5 +792,7 @@
   "validator_username_min_length": "ユーザー名は {} 文字以上必要です",
   "validator_username_max_length": "ユーザー名は {} 文字以内で入力してください",
   "validator_username_format": "ユーザー名は英数字とアンダースコアのみ使用できます",
-  "no_data_title": "データがありません"
+  "no_data_title": "データがありません",
+  "chat_history_load_failed": "履歴の読み込みに失敗しました",
+  "chat_history_retry": "タップして再試行"
 }
