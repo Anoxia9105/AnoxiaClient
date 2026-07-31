@@ -1,14 +1,17 @@
 import 'dart:io';
 
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/file_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
 import '../../../../../framework/protocol/message/attachment.dart';
@@ -63,7 +66,8 @@ class _FileMessageListState extends State<_FileMessageList> {
   @override
   void initState() {
     super.initState();
-    if (widget.isSelf) {
+    // Web 端无本地文件系统，跳过已下载文件检测
+    if (!kIsWeb && widget.isSelf) {
       _checkExistingFiles();
     }
   }
@@ -185,25 +189,33 @@ class _FileMessageListState extends State<_FileMessageList> {
   }
 
   Future<void> _openFileLocation(String filePath) async {
+    // Web 端无文件系统概念，无法"打开所在位置"
+    if (kIsWeb) {
+      Toast.showToast('file_open_dir_failed'.tr(args: ['web']));
+      return;
+    }
+
     final file = File(filePath);
     if (!file.existsSync()) {
       Toast.showToast('file_not_found'.tr());
       return;
     }
 
-    if (Platform.isWindows) {
+    // 使用 DeviceUtil 的 web 安全判断（kIsWeb + defaultTargetPlatform）
+    // 替代 dart:io 的 Platform.isX，避免在 web 端触发 Platform._operatingSystem
+    if (DeviceUtil.isWindows()) {
       final normalized = file.path.replaceAll('/', '\\');
       // explorer /select, 无论成功与否 exitCode 都可能非0，直接 return
       await Process.run('explorer', ['/select,', normalized]);
       return;
     }
 
-    if (Platform.isMacOS) {
+    if (DeviceUtil.isMacOS()) {
       await Process.run('open', ['-R', file.path]);
       return;
     }
 
-    if (Platform.isLinux) {
+    if (DeviceUtil.isLinux()) {
       await Process.run('xdg-open', [file.parent.path]);
       return;
     }
@@ -229,6 +241,16 @@ class _FileMessageListState extends State<_FileMessageList> {
   }
 
   Future<void> _openLocalFile(Attachment file) async {
+    // Web 端通过浏览器直接打开文件 URL，不使用本地路径
+    if (kIsWeb) {
+      final url = file.url;
+      if (url == null || url.isEmpty) {
+        Toast.showToast('file_url_invalid'.tr());
+        return;
+      }
+      await launchUrl(Uri.parse(url));
+      return;
+    }
     final path = await _resolveExistingPath(file);
     if (path == null) {
       await _downloadFile(file, openAfterDownload: true);
@@ -241,6 +263,11 @@ class _FileMessageListState extends State<_FileMessageList> {
   }
 
   Future<void> _showFileLocation(Attachment file) async {
+    // Web 端无"打开所在位置"概念
+    if (kIsWeb) {
+      Toast.showToast('file_open_dir_failed'.tr(args: ['web']));
+      return;
+    }
     final path = await _resolveExistingPath(file);
     if (path == null) {
       Toast.showToast('file_not_found'.tr());
@@ -253,6 +280,17 @@ class _FileMessageListState extends State<_FileMessageList> {
     Attachment file, {
     bool openAfterDownload = false,
   }) async {
+    // Web 端通过浏览器下载文件，不写入本地磁盘
+    if (kIsWeb) {
+      final url = file.url;
+      if (url == null || url.isEmpty) {
+        Toast.showToast('file_url_invalid'.tr());
+        return;
+      }
+      await launchUrl(Uri.parse(url));
+      return;
+    }
+
     final key = _fileKey(file);
 
     if (_downloadingMap[key] == true) {
