@@ -193,22 +193,24 @@ class LocalDataSource {
     log.debug(
       '[DB] upsertMessage id=${message.messageId} room=${message.roomId} seq=${message.seq} status=${message.deliveryStatus}',
     );
-    await _ensureConversationExists(row.conversationId);
-    await _ensureMessageSendersExist([row]);
-    await db.messageDao.insertOrUpdateMessage(row);
-    final roomId = message.roomId;
-    if (roomId != null && roomId.isNotEmpty) {
-      await db.conversationDao.updateLastMessage(
-        conversationId: roomId,
-        messageId: message.messageId ?? message.clientMsgId ?? '',
-        preview: message.content,
-        messageType: message.messageType == null
-            ? null
-            : MessageType.toCode(message.messageType),
-        seq: message.seq,
-        sentAt: _dateTimeFromMillis(message.timestamp),
-      );
-    }
+    await db.transaction(() async {
+      await _ensureConversationExists(row.conversationId);
+      await _ensureMessageSendersExist([row]);
+      await db.messageDao.insertOrUpdateMessage(row);
+      final roomId = message.roomId;
+      if (roomId != null && roomId.isNotEmpty) {
+        await db.conversationDao.updateLastMessage(
+          conversationId: roomId,
+          messageId: message.messageId ?? message.clientMsgId ?? '',
+          preview: message.content,
+          messageType: message.messageType == null
+              ? null
+              : MessageType.toCode(message.messageType),
+          seq: message.seq,
+          sentAt: _dateTimeFromMillis(message.timestamp),
+        );
+      }
+    });
   }
 
   Future<void> upsertMessages(Iterable<ChatMessage> messages) async {

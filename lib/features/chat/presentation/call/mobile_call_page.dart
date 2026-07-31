@@ -1,5 +1,6 @@
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -30,14 +31,18 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-    _keepScreenOn(true);
+    if (!DeviceUtil.isWeb) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+      _keepScreenOn(true);
+    }
   }
 
   @override
   void dispose() {
-    _keepScreenOn(false);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (!DeviceUtil.isWeb) {
+      _keepScreenOn(false);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
     super.dispose();
   }
 

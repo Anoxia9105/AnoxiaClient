@@ -31,8 +31,108 @@
 
   <title>Anoxia</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #f5f7fb;
+    }
+
+    #anoxia-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(79, 70, 229, 0.12), transparent 34%),
+        #f5f7fb;
+      color: #202334;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: opacity 220ms ease, visibility 220ms ease;
+    }
+
+    #anoxia-loading.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .anoxia-loading-card {
+      display: flex;
+      min-width: 176px;
+      padding: 24px 28px;
+      align-items: center;
+      flex-direction: column;
+      gap: 14px;
+      border: 1px solid rgba(79, 70, 229, 0.12);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 50px rgba(25, 30, 55, 0.10);
+      backdrop-filter: blur(12px);
+    }
+
+    .anoxia-loading-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+    }
+
+    .anoxia-loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(79, 70, 229, 0.18);
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: anoxia-spin 0.8s linear infinite;
+    }
+
+    .anoxia-loading-text {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html, body { background: #11131a; }
+
+      #anoxia-loading {
+        color: #f3f4f6;
+        background:
+          radial-gradient(circle at 50% 38%, rgba(129, 140, 248, 0.16), transparent 34%),
+          #11131a;
+      }
+
+      .anoxia-loading-card {
+        border-color: rgba(129, 140, 248, 0.18);
+        background: rgba(30, 33, 44, 0.90);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+    }
+
+    @keyframes anoxia-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <div id="anoxia-loading" role="status" aria-live="polite">
+    <div class="anoxia-loading-card">
+      <img class="anoxia-loading-logo" src="icons/Icon-192.png" alt="">
+      <div class="anoxia-loading-spinner" aria-hidden="true"></div>
+      <div class="anoxia-loading-text">Anoxia 正在加载…</div>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      const loading = document.getElementById('anoxia-loading');
+      if (!loading) return;
+      loading.classList.add('is-hidden');
+      window.setTimeout(() => loading.remove(), 240);
+    }, { once: true });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

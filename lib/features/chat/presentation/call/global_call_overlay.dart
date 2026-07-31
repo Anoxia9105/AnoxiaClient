@@ -1,5 +1,6 @@
 import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
 import 'package:anoxia/features/chat/presentation/call/minimized_call_widgets.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -32,6 +33,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
   void initState() {
     super.initState();
 
+    if (DeviceUtil.isWeb) return;
     WidgetsBinding.instance.addObserver(this);
 
     _listenNativePip();
@@ -41,9 +43,10 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-
-    _pip.unregisterStateChangedObserver();
+    if (!DeviceUtil.isWeb) {
+      WidgetsBinding.instance.removeObserver(this);
+      _pip.unregisterStateChangedObserver();
+    }
 
     super.dispose();
   }

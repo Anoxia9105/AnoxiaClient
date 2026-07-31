@@ -60,6 +60,8 @@ class QrScannerController {
   bool _detecting = false;
   bool _started = false;
   bool _active = false;
+  bool _disposed = false;
+  int _startGeneration = 0;
 
   /// 错误信息（不支持的浏览器 / 摄像头权限被拒），非空时上层应展示降级 UI。
   String? error;
@@ -67,42 +69,61 @@ class QrScannerController {
   /// 状态变化回调，用于在 error 变化时触发上层重建。
   VoidCallback? onStateChanged;
 
-  void attachVideoElement(HTMLVideoElement video) => _video = video;
+  void attachVideoElement(HTMLVideoElement video) {
+    if (_disposed) return;
+    _video = video;
+  }
 
   Future<void> start() async {
-    if (_video == null) return;
+    if (_disposed || _video == null) return;
     if (_started) {
       _active = true;
       _scheduleDetection();
       return;
     }
     _started = true;
+    final generation = ++_startGeneration;
 
     if (!_isBarcodeDetectorSupported()) {
       _setError('chat_scan_web_unsupported'.tr());
       return;
     }
 
+    MediaStream acquiredStream;
     try {
       final constraints = MediaStreamConstraints(
         video: _VideoConstraints(facingMode: 'environment'.toJS),
       );
-      _stream = await window.navigator.mediaDevices!
+      acquiredStream = await window.navigator.mediaDevices
           .getUserMedia(constraints)
           .toDart;
     } catch (_) {
+      if (!_isCurrentStart(generation)) return;
+      _started = false;
       _setError('chat_scan_camera_permission_denied'.tr());
       return;
     }
 
-    _video!.srcObject = _stream;
+    if (!_isCurrentStart(generation)) {
+      _stopStream(acquiredStream);
+      return;
+    }
+
+    _stream = acquiredStream;
+    final video = _video;
+    if (video == null) {
+      _releaseStream();
+      return;
+    }
+    video.srcObject = acquiredStream;
     try {
       // play() 返回 JS Promise，浏览器拒绝自动播放（无用户手势/策略限制）时会被
       // reject。这里用普通 try/catch 显式捕获并进入“播放失败”状态，而不是用空
       // catchError——后者的 onError 返回 void，既不满足 JSAny? 类型又会吞掉异常，
       // 在自动播放被拒时可能再次抛出类型错误。
-      await _video!.play().toDart;
+      await video.play().toDart;
     } catch (_) {
+      if (!_isCurrentStart(generation)) return;
       // 播放失败：getUserMedia 已成功、摄像头已开启。必须主动停止 tracks 并清空
       // srcObject，否则浏览器摄像头指示灯会一直亮到页面销毁；同时把 _started 复位，
       // 允许用户在“播放失败”提示下重新进入扫码页重试。
@@ -111,9 +132,16 @@ class QrScannerController {
       _setError('chat_scan_play_failed'.tr());
       return;
     }
+    if (!_isCurrentStart(generation)) {
+      _releaseStream();
+      return;
+    }
     _active = true;
     _scheduleDetection();
   }
+
+  bool _isCurrentStart(int generation) =>
+      !_disposed && generation == _startGeneration;
 
   bool _isBarcodeDetectorSupported() => _barcodeDetectorCtor != null;
 
@@ -163,21 +191,30 @@ class QrScannerController {
   /// 停止摄像头轨道并清空视频源引用。getUserMedia 成功后必须显式调用，否则浏览器
   /// 摄像头指示灯会一直亮到页面销毁。
   void _releaseStream() {
-    _stream?.getTracks().toDart.forEach((track) => track.stop());
+    _stopStream(_stream);
     _video?.srcObject = null;
     _stream = null;
   }
 
+  void _stopStream(MediaStream? stream) {
+    stream?.getTracks().toDart.forEach((track) => track.stop());
+  }
+
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _startGeneration++;
     _active = false;
     _timer?.cancel();
     _timer = null;
     _releaseStream();
     _video = null;
     _started = false;
+    onStateChanged = null;
   }
 
   void _setError(String message) {
+    if (_disposed) return;
     error = message;
     onStateChanged?.call();
   }
@@ -212,8 +249,18 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
       _factoryRegistered = true;
     }
     widget.controller.attachVideoElement(_sharedVideo!);
-    widget.controller.onStateChanged = () => setState(() {});
-    widget.controller.start();
+    widget.controller.onStateChanged = _handleStateChanged;
+    unawaited(widget.controller.start());
+  }
+
+  void _handleStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.onStateChanged = null;
+    super.dispose();
   }
 
   @override

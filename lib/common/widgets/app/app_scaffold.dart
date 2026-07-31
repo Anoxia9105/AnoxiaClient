@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/framework/logs/talker.dart';
@@ -19,6 +19,7 @@ class AppScaffold extends StatefulWidget {
   final Widget? bottomNavigationBar;
   final bool hideAppBarLogo;
   final bool showDesktopHeaderEnhancements;
+  final bool showWebNavigationBar;
 
   const AppScaffold({
     super.key,
@@ -27,6 +28,7 @@ class AppScaffold extends StatefulWidget {
     this.bottomNavigationBar,
     this.hideAppBarLogo = false,
     this.showDesktopHeaderEnhancements = false,
+    this.showWebNavigationBar = false,
   });
 
   @override
@@ -77,7 +79,7 @@ class _AppScaffoldState extends State<AppScaffold> {
 
     /// 如果已经打开搜索弹窗，则不再重复打开，避免多个弹窗叠加
     if (_isSearchDialogOpen) return;
-    
+
     /// 上锁状态，直到弹窗关闭时才允许再次打开
     _isSearchDialogOpen = true;
     showDialog(context: context, builder: (_) => GlobalSearchDialog()).then((
@@ -101,6 +103,18 @@ class _AppScaffoldState extends State<AppScaffold> {
   Widget build(BuildContext context) {
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final PreferredSizeWidget? appBar;
+    if (DeviceUtil.isRealDesktop()) {
+      appBar = DesktopAppBar(
+        hideAppBarLogo: widget.hideAppBarLogo,
+        showHeaderEnhancements: widget.showDesktopHeaderEnhancements,
+        title: widget.title,
+      );
+    } else if (DeviceUtil.isWeb && widget.showWebNavigationBar) {
+      appBar = AppBar(automaticallyImplyLeading: true, title: widget.title);
+    } else {
+      appBar = null;
+    }
 
     final overlayStyle = SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -113,16 +127,7 @@ class _AppScaffoldState extends State<AppScaffold> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
-          appBar: () {
-            if (DeviceUtil.isRealDesktop()) {
-              return DesktopAppBar(
-                hideAppBarLogo: widget.hideAppBarLogo,
-                showHeaderEnhancements: widget.showDesktopHeaderEnhancements,
-                title: widget.title,
-              );
-            }
-            return null;
-          }(),
+          appBar: appBar,
           body: widget.body,
           bottomNavigationBar: widget.bottomNavigationBar,
         ),

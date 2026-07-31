@@ -20,8 +20,12 @@ part 'room_message_ui_item_service.g.dart';
 @riverpod
 ChatUiListResult chatUiList(Ref ref, String roomId) {
   final messages = ref.watch(roomMessagesProvider(roomId)).value ?? const [];
+  final optimistic =
+      ref.watch(optimisticRoomMessagesProvider)[roomId] ?? const [];
 
-  return _chatUiListCache.compute(messages);
+  return _chatUiListCache.compute(
+    mergeOptimisticMessages(messages, optimistic),
+  );
 }
 
 /// 时间分隔条计算缓存

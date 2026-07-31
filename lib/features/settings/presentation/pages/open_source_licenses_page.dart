@@ -26,6 +26,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
 
     return AppScaffold(
       hideAppBarLogo: true,
+      showWebNavigationBar: true,
       title: Text('settings_open_source_title'.tr()),
       body: packages.isEmpty
           ? Center(child: Text('settings_open_source_empty'.tr()))
@@ -164,6 +165,7 @@ class OpenSourceLicenseDetailPage extends StatelessWidget {
 
     return AppScaffold(
       hideAppBarLogo: true,
+      showWebNavigationBar: true,
       title: Text(title),
       body: ListView(
         padding: const EdgeInsets.all(12),

@@ -89,9 +89,10 @@ class ChatScrollController {
   /// 滚动到底部（index 0，因为列表是 reverse 的）
   void scrollToBottom({bool animated = true}) {
     if (!listViewController.hasClients) return;
-    final messages =
-        ref.read(roomMessagesProvider(roomId)).value ?? const [];
-    if (messages.isEmpty) return;
+    final messages = ref.read(roomMessagesProvider(roomId)).value ?? const [];
+    final optimistic =
+        ref.read(optimisticRoomMessagesProvider)[roomId] ?? const [];
+    if (messages.isEmpty && optimistic.isEmpty) return;
 
     if (animated) {
       listViewController.sliverController.animateToIndex(

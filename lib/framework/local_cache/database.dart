@@ -425,7 +425,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// 若存在相同 client_msg_id 但不同 id 的旧记录，先删除旧记录再插入。
   Future<void> insertOrUpdateMessage(CachedMessage message) async {
     // 若存在相同 client_msg_id 但不同 id 的旧记录（临时 ID → 服务端 ID），先删除
-    if (message.clientMsgId != null) {
+    if (message.clientMsgId != null && message.clientMsgId != message.id) {
       await (delete(messages)..where(
             (tbl) =>
                 tbl.clientMsgId.equals(message.clientMsgId!) &

@@ -358,10 +358,9 @@ Future<void> setupDesktopWindow({
 
 /// 公共 UI 包装器（多语言 + 屏幕适配）
 Widget _buildAppWrapper(Widget home) {
-  String path = DeviceUtil.isWeb ? 'i18n' : 'assets/i18n';
   return EasyLocalization(
     supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
-    path: path,
+    path: 'assets/i18n',
     fallbackLocale: const Locale('en'),
     saveLocale: true,
 

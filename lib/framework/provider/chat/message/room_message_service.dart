@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:anoxia/common/constants/api.dart';
@@ -27,6 +27,95 @@ final chatMessageWindowLimitsProvider =
     NotifierProvider<ChatMessageWindowLimits, Map<String, int>>(
       ChatMessageWindowLimits.new,
     );
+
+final optimisticRoomMessagesProvider =
+    NotifierProvider<OptimisticRoomMessages, Map<String, List<ChatMessage>>>(
+      OptimisticRoomMessages.new,
+    );
+
+class OptimisticRoomMessages extends Notifier<Map<String, List<ChatMessage>>> {
+  static const int _maximumPerRoom = 100;
+
+  @override
+  Map<String, List<ChatMessage>> build() => const {};
+
+  void upsert(ChatMessage message) {
+    final roomId = message.roomId;
+    final key = message.clientMsgId ?? message.messageId;
+    if (roomId == null || roomId.isEmpty || key == null || key.isEmpty) return;
+
+    final messages = [...?state[roomId]];
+    final index = messages.indexWhere(
+      (item) =>
+          item.clientMsgId == key ||
+          item.messageId == key ||
+          (message.messageId != null &&
+              (item.messageId == message.messageId ||
+                  item.clientMsgId == message.messageId)),
+    );
+    if (index >= 0) {
+      messages[index] = message;
+    } else {
+      messages.add(message);
+    }
+    if (messages.length > _maximumPerRoom) {
+      messages.removeRange(0, messages.length - _maximumPerRoom);
+    }
+    state = {...state, roomId: messages};
+  }
+
+  void remove(ChatMessage message) {
+    final roomId = message.roomId;
+    if (roomId == null || !state.containsKey(roomId)) return;
+    final ids = {message.messageId, message.clientMsgId}
+      ..removeWhere((id) => id == null || id.isEmpty);
+    final messages = state[roomId]!
+        .where(
+          (item) =>
+              !ids.contains(item.messageId) && !ids.contains(item.clientMsgId),
+        )
+        .toList();
+    final next = {...state};
+    if (messages.isEmpty) {
+      next.remove(roomId);
+    } else {
+      next[roomId] = messages;
+    }
+    state = next;
+  }
+
+  void markFailed(ChatMessage message) {
+    upsert(message.copyWith(deliveryStatus: DeliveryStatus.failed));
+  }
+}
+
+List<ChatMessage> mergeOptimisticMessages(
+  List<ChatMessage> persisted,
+  List<ChatMessage> optimistic,
+) {
+  if (optimistic.isEmpty) return persisted;
+  final knownIds = <String>{};
+  for (final message in persisted) {
+    final messageId = message.messageId;
+    final clientMsgId = message.clientMsgId;
+    if (messageId != null && messageId.isNotEmpty) knownIds.add(messageId);
+    if (clientMsgId != null && clientMsgId.isNotEmpty) {
+      knownIds.add(clientMsgId);
+    }
+  }
+
+  final merged = [...persisted];
+  for (final message in optimistic) {
+    final duplicate =
+        (message.messageId?.isNotEmpty == true &&
+            knownIds.contains(message.messageId)) ||
+        (message.clientMsgId?.isNotEmpty == true &&
+            knownIds.contains(message.clientMsgId));
+    if (!duplicate) merged.add(message);
+  }
+  merged.sort((a, b) => (a.timestamp ?? 0).compareTo(b.timestamp ?? 0));
+  return merged;
+}
 
 class ChatMessageWindowLimits extends Notifier<Map<String, int>> {
   @override
@@ -64,8 +153,10 @@ final roomMessageIndexProvider =
     Provider.family<Map<String, ChatMessage>, String>((ref, roomId) {
       final messages =
           ref.watch(roomMessagesProvider(roomId)).value ?? const [];
+      final optimistic =
+          ref.watch(optimisticRoomMessagesProvider)[roomId] ?? const [];
       final index = <String, ChatMessage>{};
-      for (final message in messages) {
+      for (final message in mergeOptimisticMessages(messages, optimistic)) {
         final messageId = message.messageId;
         final clientMsgId = message.clientMsgId;
         if (messageId != null) index[messageId] = message;
@@ -104,6 +195,7 @@ class ChatMessages extends _$ChatMessages {
   final Map<String, int> _lastLoadedHistoryBoundary = {};
   final Set<String> _syncedRoomIds = {};
   final Map<String, int> _syncedSeqByRoom = {};
+  Future<void> _messageWriteQueue = Future<void>.value();
 
   /// 暴露当前正在加载历史消息的房间集合，供 UI 层读取
   Set<String> get fetchingHistoryRoomIds =>
@@ -180,7 +272,16 @@ class ChatMessages extends _$ChatMessages {
         msg.clientMsgId?.isNotEmpty != true) {
       return;
     }
-    unawaited(ref.read(syncRepositoryProvider).cacheLocalMessage(msg));
+    ref.read(optimisticRoomMessagesProvider.notifier).upsert(msg);
+    _messageWriteQueue = _messageWriteQueue.then((_) async {
+      try {
+        await ref.read(syncRepositoryProvider).cacheLocalMessage(msg);
+        ref.read(optimisticRoomMessagesProvider.notifier).remove(msg);
+      } catch (error, stackTrace) {
+        ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
+        log.error('缓存本地发送消息失败', error, stackTrace);
+      }
+    });
   }
 
   Future<void> handleTimeout(String roomId, String clientMsgId) async {

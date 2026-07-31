@@ -37,7 +37,8 @@ class ChatCallButtonWidget extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final hasActiveCall =
         callWindow != null ||
-        (DeviceUtil.isRealMobile() && mobileCallSession != null);
+        ((DeviceUtil.isRealMobile() || DeviceUtil.isWeb) &&
+            mobileCallSession != null);
     final isCallingNow = callStatus.calling;
 
     if (hasActiveCall || isCallingNow) {

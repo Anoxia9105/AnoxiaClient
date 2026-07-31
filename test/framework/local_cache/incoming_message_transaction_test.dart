@@ -75,4 +75,39 @@ void main() {
     expect(messages.last.messageId, 'pending-message');
     expect(messages.any((message) => message.messageId == 'message-1'), false);
   });
+
+  test('burst local writes remain complete', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final local = LocalDataSource(database);
+
+    await Future.wait(
+      List.generate(
+        30,
+        (index) => local.upsertMessage(
+          ChatMessage(
+            messageId: 'pending-$index',
+            clientMsgId: 'pending-$index',
+            roomId: 'room-burst',
+            senderId: 42,
+            messageType: MessageType.text,
+            content: 'message $index',
+            seq: 0,
+            timestamp: 1000 + index,
+            deliveryStatus: DeliveryStatus.sending,
+          ),
+        ),
+      ),
+    );
+
+    final messages = await local.getMessagesForConversation(
+      'room-burst',
+      limit: 50,
+    );
+    expect(messages, hasLength(30));
+    expect(
+      messages.map((message) => message.messageId).toSet(),
+      {for (var index = 0; index < 30; index++) 'pending-$index'},
+    );
+  });
 }
