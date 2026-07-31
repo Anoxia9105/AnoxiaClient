@@ -34,22 +34,10 @@ class ChatInputField extends ConsumerWidget {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            width: 1,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-        ),
-        child: DesktopChatInput(
-          key: ValueKey('desktop_$roomId'),
-          roomId: roomId,
-          bottomSheet: bottomSheet,
-        ),
-      ),
+    return DesktopChatInput(
+      key: ValueKey('desktop_$roomId'),
+      roomId: roomId,
+      bottomSheet: bottomSheet,
     );
   }
 }

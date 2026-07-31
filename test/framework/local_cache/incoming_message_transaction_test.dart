@@ -1,4 +1,6 @@
-﻿import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
+import 'dart:async';
+
 import 'package:anoxia/framework/local_cache/database.dart';
 import 'package:anoxia/framework/local_cache/local_data_source.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
@@ -105,9 +107,106 @@ void main() {
       limit: 50,
     );
     expect(messages, hasLength(30));
-    expect(
-      messages.map((message) => message.messageId).toSet(),
-      {for (var index = 0; index < 30; index++) 'pending-$index'},
+    expect(messages.map((message) => message.messageId).toSet(), {
+      for (var index = 0; index < 30; index++) 'pending-$index',
+    });
+  });
+
+  test(
+    'server id replacement never emits a missing-message snapshot',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final local = LocalDataSource(database);
+      const roomId = 'room-replace';
+      const clientMsgId = 'client-message';
+
+      await local.upsertMessage(
+        ChatMessage(
+          messageId: clientMsgId,
+          clientMsgId: clientMsgId,
+          roomId: roomId,
+          senderId: 42,
+          messageType: MessageType.text,
+          content: 'pending',
+          seq: 0,
+          timestamp: 1000,
+          deliveryStatus: DeliveryStatus.sending,
+        ),
+      );
+
+      final snapshots = <List<ChatMessage>>[];
+      final firstSnapshot = Completer<void>();
+      final subscription = local
+          .watchMessagesForConversation(roomId, limit: 100)
+          .listen((messages) {
+            snapshots.add(messages);
+            if (!firstSnapshot.isCompleted) firstSnapshot.complete();
+          });
+      addTearDown(subscription.cancel);
+      await firstSnapshot.future;
+      snapshots.clear();
+
+      await local.applyIncomingMessage(
+        ChatMessage(
+          messageId: 'server-message',
+          clientMsgId: clientMsgId,
+          roomId: roomId,
+          senderId: 42,
+          messageType: MessageType.text,
+          content: 'sent',
+          seq: 157,
+          timestamp: 1100,
+        ),
+        incrementUnread: false,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(snapshots, isNotEmpty);
+      expect(snapshots.every((messages) => messages.isNotEmpty), true);
+      expect(snapshots.last, hasLength(1));
+      expect(snapshots.last.single.messageId, 'server-message');
+      expect(snapshots.last.single.clientMsgId, clientMsgId);
+    },
+  );
+
+  test('late seq-zero echo does not overwrite ack sequence', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final local = LocalDataSource(database);
+    const roomId = 'room-ack-race';
+    const clientMsgId = 'client-message';
+
+    await local.upsertMessage(
+      ChatMessage(
+        messageId: 'server-message',
+        clientMsgId: clientMsgId,
+        roomId: roomId,
+        senderId: 42,
+        messageType: MessageType.text,
+        content: 'sent',
+        seq: 157,
+        timestamp: 1100,
+        deliveryStatus: DeliveryStatus.sent,
+      ),
     );
+
+    await local.applyIncomingMessage(
+      ChatMessage(
+        messageId: 'server-message',
+        clientMsgId: clientMsgId,
+        roomId: roomId,
+        senderId: 42,
+        messageType: MessageType.text,
+        content: 'sent',
+        seq: 0,
+        timestamp: 1100,
+      ),
+      incrementUnread: false,
+    );
+
+    final messages = await local.getMessagesForConversation(roomId);
+    expect(messages, hasLength(1));
+    expect(messages.single.seq, 157);
   });
 }

@@ -15,7 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// - 历史消息边缘检测（像素级阈值）
 /// - 历史加载触发调度
 class ChatScrollController {
-  final FlutterListViewController listViewController;
+  final ScrollController listViewController;
   final String roomId;
   final WidgetRef ref;
   final void Function() onChanged;
@@ -98,14 +98,25 @@ class ChatScrollController {
         ref.read(optimisticRoomMessagesProvider)[roomId] ?? const [];
     if (messages.isEmpty && optimistic.isEmpty) return;
 
-    if (animated) {
-      listViewController.sliverController.animateToIndex(
+    final indexedController = listViewController;
+    if (indexedController is FlutterListViewController) {
+      if (animated) {
+        indexedController.sliverController.animateToIndex(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        indexedController.sliverController.jumpToIndex(0);
+      }
+    } else if (animated) {
+      listViewController.animateTo(
         0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } else {
-      listViewController.sliverController.jumpToIndex(0);
+      listViewController.jumpTo(0);
     }
   }
 
@@ -122,8 +133,23 @@ class ChatScrollController {
     });
 
     if (index < 0) return;
-    listViewController.sliverController.animateToIndex(
-      index,
+    final indexedController = listViewController;
+    if (indexedController is FlutterListViewController) {
+      indexedController.sliverController.animateToIndex(
+        index,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+
+    final itemCount = flatItems.length;
+    final maxScrollExtent = listViewController.position.maxScrollExtent;
+    final targetOffset = itemCount <= 1
+        ? 0.0
+        : maxScrollExtent * index / (itemCount - 1);
+    listViewController.animateTo(
+      targetOffset.clamp(0.0, maxScrollExtent),
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );

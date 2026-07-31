@@ -424,16 +424,19 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   ///
   /// 若存在相同 client_msg_id 但不同 id 的旧记录，先删除旧记录再插入。
   Future<void> insertOrUpdateMessage(CachedMessage message) async {
-    // 若存在相同 client_msg_id 但不同 id 的旧记录（临时 ID → 服务端 ID），先删除
-    if (message.clientMsgId != null && message.clientMsgId != message.id) {
-      await (delete(messages)..where(
-            (tbl) =>
-                tbl.clientMsgId.equals(message.clientMsgId!) &
-                tbl.id.isNotValue(message.id),
-          ))
-          .go();
-    }
-    await into(messages).insertOnConflictUpdate(message);
+    // 临时 ID → 服务端 ID 必须在同一个事务中完成。否则 Drift 的 watch
+    // 会在 delete 和 insert 之间发出一份缺少该消息的快照，导致消息闪退。
+    await transaction(() async {
+      if (message.clientMsgId != null && message.clientMsgId != message.id) {
+        await (delete(messages)..where(
+              (tbl) =>
+                  tbl.clientMsgId.equals(message.clientMsgId!) &
+                  tbl.id.isNotValue(message.id),
+            ))
+            .go();
+      }
+      await into(messages).insertOnConflictUpdate(message);
+    });
   }
 
   /// 批量插入或更新消息

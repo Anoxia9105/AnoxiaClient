@@ -35,9 +35,8 @@ class ChatRoomDetail extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
-  /// FlutterListView 控制器，用于控制列表滚动和定位
-  final FlutterListViewController _listViewController =
-      FlutterListViewController();
+  /// Web 使用标准 ScrollController；其他平台保留支持按索引定位的控制器。
+  late final ScrollController _listViewController;
 
   /// 滚动控制器，封装滚动相关的全部逻辑
   late ChatScrollController _scrollController;
@@ -45,6 +44,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   @override
   void initState() {
     super.initState();
+    _listViewController = DeviceUtil.isWeb
+        ? ScrollController()
+        : FlutterListViewController();
     _scrollController = ChatScrollController(
       listViewController: _listViewController,
       roomId: widget.roomId,
@@ -222,7 +224,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     }
 
     return FlutterListView(
-      controller: _listViewController,
+      controller: _listViewController as FlutterListViewController,
       reverse: true,
       delegate: FlutterListViewDelegate(
         itemBuilder,

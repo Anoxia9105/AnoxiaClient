@@ -244,6 +244,18 @@ class ChatMessages extends _$ChatMessages {
   final Map<String, int> _syncedSeqByRoom = {};
   Future<void> _messageWriteQueue = Future<void>.value();
 
+  Future<T> _enqueueMessageWrite<T>(Future<T> Function() operation) {
+    final completer = Completer<T>();
+    _messageWriteQueue = _messageWriteQueue.then((_) async {
+      try {
+        completer.complete(await operation());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
+
   /// 暴露当前正在加载历史消息的房间集合，供 UI 层读取
   Set<String> get fetchingHistoryRoomIds =>
       UnmodifiableSetView(_fetchingHistoryRoomIds);
@@ -271,13 +283,15 @@ class ChatMessages extends _$ChatMessages {
         activeRoomId != chatMessage.roomId &&
         currentUser?.userId != chatMessage.senderId;
     try {
-      final inserted = await ref
-          .read(localDataSourceProvider)
-          .applyIncomingMessage(
-            chatMessage,
-            incrementUnread: incrementUnread,
-            clearUnread: activeRoomId == chatMessage.roomId,
-          );
+      final inserted = await _enqueueMessageWrite(
+        () => ref
+            .read(localDataSourceProvider)
+            .applyIncomingMessage(
+              chatMessage,
+              incrementUnread: incrementUnread,
+              clearUnread: activeRoomId == chatMessage.roomId,
+            ),
+      );
       if (!inserted) return;
     } catch (error, stackTrace) {
       log.error('缓存入站消息失败', error, stackTrace);
@@ -320,25 +334,27 @@ class ChatMessages extends _$ChatMessages {
       return;
     }
     ref.read(optimisticRoomMessagesProvider.notifier).upsert(msg);
-    _messageWriteQueue = _messageWriteQueue.then((_) async {
-      try {
-        await ref.read(syncRepositoryProvider).cacheLocalMessage(msg);
-      } catch (error, stackTrace) {
+    unawaited(
+      _enqueueMessageWrite(
+        () => ref.read(syncRepositoryProvider).cacheLocalMessage(msg),
+      ).catchError((Object error, StackTrace stackTrace) {
         ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
         log.error('缓存本地发送消息失败', error, stackTrace);
-      }
-    });
+      }),
+    );
   }
 
   Future<void> handleTimeout(String roomId, String clientMsgId) async {
-    final local = ref.read(localDataSourceProvider);
-    final message = await local.getMessageByClientMsgId(clientMsgId);
-    if (message == null || message.deliveryStatus != DeliveryStatus.sending) {
-      return;
-    }
-    await local.upsertMessage(
-      message.copyWith(deliveryStatus: DeliveryStatus.failed),
-    );
+    await _enqueueMessageWrite(() async {
+      final local = ref.read(localDataSourceProvider);
+      final message = await local.getMessageByClientMsgId(clientMsgId);
+      if (message == null || message.deliveryStatus != DeliveryStatus.sending) {
+        return;
+      }
+      await local.upsertMessage(
+        message.copyWith(deliveryStatus: DeliveryStatus.failed),
+      );
+    });
   }
 
   Future<void> markAcked({
@@ -348,27 +364,31 @@ class ChatMessages extends _$ChatMessages {
     int? seq,
     int? timestamp,
   }) async {
-    final local = ref.read(localDataSourceProvider);
-    final message = await local.getMessageByClientMsgId(clientMsgId);
-    if (message == null) return;
+    await _enqueueMessageWrite(() async {
+      final local = ref.read(localDataSourceProvider);
+      final message = await local.getMessageByClientMsgId(clientMsgId);
+      if (message == null) return;
 
-    await local.upsertMessage(
-      message.copyWith(
-        messageId: messageId,
-        seq: seq,
-        timestamp: timestamp,
-        deliveryStatus: DeliveryStatus.sent,
-      ),
-    );
+      await local.upsertMessage(
+        message.copyWith(
+          messageId: messageId,
+          seq: seq,
+          timestamp: timestamp,
+          deliveryStatus: DeliveryStatus.sent,
+        ),
+      );
+    });
   }
 
   Future<void> markFailedByClientMsgId(String clientMsgId) async {
-    final local = ref.read(localDataSourceProvider);
-    final message = await local.getMessageByClientMsgId(clientMsgId);
-    if (message == null) return;
-    await local.upsertMessage(
-      message.copyWith(deliveryStatus: DeliveryStatus.failed),
-    );
+    await _enqueueMessageWrite(() async {
+      final local = ref.read(localDataSourceProvider);
+      final message = await local.getMessageByClientMsgId(clientMsgId);
+      if (message == null) return;
+      await local.upsertMessage(
+        message.copyWith(deliveryStatus: DeliveryStatus.failed),
+      );
+    });
   }
 
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {

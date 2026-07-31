@@ -71,9 +71,24 @@ class LocalDataSource {
 
     return db.transaction(() async {
       final existing = await db.messageDao.getMessageById(messageId);
+      final previous =
+          existing ??
+          (row.clientMsgId == null
+              ? null
+              : await db.messageDao.getMessageByClientMsgId(row.clientMsgId!));
+      final rowToPersist = previous == null
+          ? row
+          : row.copyWith(
+              // ACK 和服务端回显是两个独立帧，抵达顺序不固定。较晚抵达
+              // 的 seq=0 回显不能把 ACK 已写入的真实序号覆盖掉。
+              seq: row.seq > previous.seq ? row.seq : previous.seq,
+              clientMsgId: Value(row.clientMsgId ?? previous.clientMsgId),
+              sentAt: Value(row.sentAt ?? previous.sentAt),
+              localCreatedAt: previous.localCreatedAt,
+            );
       await _ensureConversationExists(row.conversationId);
-      await _ensureMessageSendersExist([row]);
-      await db.messageDao.insertOrUpdateMessage(row);
+      await _ensureMessageSendersExist([rowToPersist]);
+      await db.messageDao.insertOrUpdateMessage(rowToPersist);
       await db.conversationDao.updateIncomingMessage(
         conversationId: row.conversationId,
         messageId: messageId,
