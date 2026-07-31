@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
@@ -206,15 +207,22 @@ class _LinkPreviewQueue {
     while (_activeWorkers < _maximumConcurrentWorkers && _pending.isNotEmpty) {
       final job = _pending.removeFirst();
       _activeWorkers++;
-      _LinkPreviewWorker.fetch(job.link)
-          .then(job.completer.complete)
-          .catchError((Object _) {
-            job.completer.complete(LinkPreviewMetadata.fallback(job.link));
-          })
-          .whenComplete(() {
-            _activeWorkers--;
-            _pump();
-          });
+      unawaited(_run(job));
+    }
+  }
+
+  static Future<void> _run(_LinkPreviewJob job) async {
+    try {
+      final metadata = await _LinkPreviewWorker.fetch(job.link);
+      if (!job.completer.isCompleted) job.completer.complete(metadata);
+    } catch (error, stackTrace) {
+      debugPrint('[LinkPreview] ${job.link} failed: $error\n$stackTrace');
+      if (!job.completer.isCompleted) {
+        job.completer.complete(LinkPreviewMetadata.fallback(job.link));
+      }
+    } finally {
+      _activeWorkers--;
+      scheduleMicrotask(_pump);
     }
   }
 }
@@ -230,6 +238,10 @@ class _LinkPreviewWorker {
   static const Duration _hardTimeout = Duration(seconds: 10);
 
   static Future<LinkPreviewMetadata> fetch(String link) async {
+    // dart2js 暴露了 ReceivePort API，但浏览器不支持 sendPort。跨域网页
+    // 通常也无法直接抓取元数据，因此 Web 保留安全的域名/链接兜底卡片。
+    if (kIsWeb) return LinkPreviewMetadata.fallback(link);
+
     final responsePort = ReceivePort();
     Isolate? isolate;
     try {

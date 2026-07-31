@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -122,10 +122,34 @@
     <div class="anoxia-loading-card">
       <img class="anoxia-loading-logo" src="icons/Icon-192.png" alt="">
       <div class="anoxia-loading-spinner" aria-hidden="true"></div>
-      <div class="anoxia-loading-text">Anoxia 正在加载…</div>
+      <div class="anoxia-loading-text">Anoxia is loading…</div>
     </div>
   </div>
   <script>
+    (function localizeLoadingText() {
+      const translations = {
+        en: 'Anoxia is loading…',
+        zh: 'Anoxia 正在加载…',
+        'zh-tw': 'Anoxia 載入中…',
+        ja: 'Anoxia を読み込んでいます…'
+      };
+      const languages = navigator.languages && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || 'en'];
+      const normalized = languages.map(language => language.toLowerCase());
+      let locale = 'en';
+      if (normalized.some(language => language.startsWith('zh-tw') || language.startsWith('zh-hk'))) {
+        locale = 'zh-tw';
+      } else if (normalized.some(language => language.startsWith('zh'))) {
+        locale = 'zh';
+      } else if (normalized.some(language => language.startsWith('ja'))) {
+        locale = 'ja';
+      }
+      document.documentElement.lang = locale;
+      const loadingText = document.querySelector('.anoxia-loading-text');
+      if (loadingText) loadingText.textContent = translations[locale];
+    })();
+
     window.addEventListener('flutter-first-frame', function () {
       const loading = document.getElementById('anoxia-loading');
       if (!loading) return;
