@@ -223,13 +223,22 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       );
     }
 
+    // 注意：此处刻意不使用 keepPosition: true。
+    // 原因：本列表为 reverse: true 的聊天消息流，第二个房间在「切换瞬间」仍在
+    // 实时加载（roomEntryTask 同步 + drift 流增量推送），childCount 会频繁变化。
+    // 在 reverse + 动态 item 高度下，keepPosition 会在每次 childCount 变化时反复
+    // 重算并保持滚动锚点，引发主线程布局抖动直至 ANR（表现为「第二次切换列表
+    // 直接卡死、无 log」）。逆向聊天列表的正确语义本就是「停在最新消息底部」，
+    // 关闭 keepPosition 后：切换/新消息到达自动停在底部，上滑看历史也不跳位，
+    // 且不再触发锚点重算抖动。flutter_list_view 包保留，行为更符合聊天场景。
     return FlutterListView(
+      key: ValueKey(widget.roomId),
       controller: _listViewController as FlutterListViewController,
       reverse: true,
       delegate: FlutterListViewDelegate(
         itemBuilder,
         childCount: flatItems.length,
-        keepPosition: true,
+        keepPosition: false,
       ),
     );
   }
