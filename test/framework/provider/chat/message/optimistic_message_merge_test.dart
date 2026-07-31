@@ -1,6 +1,7 @@
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -45,5 +46,22 @@ void main() {
 
     expect(merged, hasLength(1));
     expect(merged.single.deliveryStatus, DeliveryStatus.sent);
+  });
+
+  test('optimistic row is cleared only after a matching DB snapshot', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(optimisticRoomMessagesProvider.notifier);
+    final pending = message('pending-id', 100, status: DeliveryStatus.sending);
+
+    notifier.upsert(pending);
+    notifier.removePersisted([message('other-id', 90)]);
+    expect(container.read(optimisticRoomMessagesProvider)['room-1'], [pending]);
+
+    notifier.removePersisted([message('pending-id', 100)]);
+    expect(
+      container.read(optimisticRoomMessagesProvider).containsKey('room-1'),
+      false,
+    );
   });
 }

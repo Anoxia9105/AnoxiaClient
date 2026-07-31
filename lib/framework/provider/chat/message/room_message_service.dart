@@ -87,6 +87,42 @@ class OptimisticRoomMessages extends Notifier<Map<String, List<ChatMessage>>> {
   void markFailed(ChatMessage message) {
     upsert(message.copyWith(deliveryStatus: DeliveryStatus.failed));
   }
+
+  void removePersisted(Iterable<ChatMessage> persisted) {
+    final persistedIdsByRoom = <String, Set<String>>{};
+    for (final message in persisted) {
+      final roomId = message.roomId;
+      if (roomId == null || roomId.isEmpty) continue;
+      final ids = persistedIdsByRoom.putIfAbsent(roomId, () => <String>{});
+      final messageId = message.messageId;
+      final clientMsgId = message.clientMsgId;
+      if (messageId != null && messageId.isNotEmpty) ids.add(messageId);
+      if (clientMsgId != null && clientMsgId.isNotEmpty) ids.add(clientMsgId);
+    }
+    if (persistedIdsByRoom.isEmpty) return;
+
+    final next = {...state};
+    var changed = false;
+    for (final entry in persistedIdsByRoom.entries) {
+      final optimistic = next[entry.key];
+      if (optimistic == null || optimistic.isEmpty) continue;
+      final remaining = optimistic
+          .where(
+            (message) =>
+                !entry.value.contains(message.messageId) &&
+                !entry.value.contains(message.clientMsgId),
+          )
+          .toList();
+      if (remaining.length == optimistic.length) continue;
+      changed = true;
+      if (remaining.isEmpty) {
+        next.remove(entry.key);
+      } else {
+        next[entry.key] = remaining;
+      }
+    }
+    if (changed) state = next;
+  }
 }
 
 List<ChatMessage> mergeOptimisticMessages(
@@ -146,7 +182,18 @@ Stream<List<ChatMessage>> roomMessages(Ref ref, String roomId) {
       (limits) => limits[roomId] ?? _initialMessageWindowSize,
     ),
   );
-  return ref.read(syncRepositoryProvider).watchMessages(roomId, limit: limit);
+  return ref
+      .read(syncRepositoryProvider)
+      .watchMessages(roomId, limit: limit)
+      .map((messages) {
+        scheduleMicrotask(() {
+          if (!ref.mounted) return;
+          ref
+              .read(optimisticRoomMessagesProvider.notifier)
+              .removePersisted(messages);
+        });
+        return messages;
+      });
 }
 
 final roomMessageIndexProvider =
@@ -276,7 +323,6 @@ class ChatMessages extends _$ChatMessages {
     _messageWriteQueue = _messageWriteQueue.then((_) async {
       try {
         await ref.read(syncRepositoryProvider).cacheLocalMessage(msg);
-        ref.read(optimisticRoomMessagesProvider.notifier).remove(msg);
       } catch (error, stackTrace) {
         ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
         log.error('缓存本地发送消息失败', error, stackTrace);

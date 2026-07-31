@@ -1,5 +1,6 @@
 ﻿import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/no_conversation_page.dart';
@@ -39,7 +40,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       FlutterListViewController();
 
   /// 滚动控制器，封装滚动相关的全部逻辑
-  late final ChatScrollController _scrollController;
+  late ChatScrollController _scrollController;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   void didUpdateWidget(covariant ChatRoomDetail oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.roomId != widget.roomId) {
+      _scrollController.dispose();
       _scrollController = ChatScrollController(
         listViewController: _listViewController,
         roomId: widget.roomId,
@@ -73,6 +75,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _listViewController.dispose();
     super.dispose();
   }
@@ -179,28 +182,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          child: FlutterListView(
-            controller: _listViewController,
-            reverse: true,
-            delegate: FlutterListViewDelegate(
-              (context, index) {
-                final item = flatItems[index];
-
-                return switch (item) {
-                  TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
-                    timestamp,
-                    context,
-                  ),
-                  MessageItem(:final message) => ChatMessageBubble(
-                    key: ValueKey(message.messageId ?? message.clientMsgId),
-                    message: message,
-                  ),
-                };
-              },
-              childCount: flatItems.length,
-              keepPosition: true,
-            ),
-          ),
+          child: _buildMessageList(flatItems),
         ),
         // 历史加载状态指示器，替换原来的内联骨架屏
         Positioned(
@@ -212,6 +194,41 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMessageList(List<ChatListItem> flatItems) {
+    Widget itemBuilder(BuildContext context, int index) {
+      final item = flatItems[index];
+      return switch (item) {
+        TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
+          timestamp,
+          context,
+        ),
+        MessageItem(:final message) => ChatMessageBubble(
+          key: ValueKey(message.messageId ?? message.clientMsgId),
+          message: message,
+        ),
+      };
+    }
+
+    if (DeviceUtil.isWeb) {
+      return ListView.builder(
+        controller: _listViewController,
+        reverse: true,
+        itemCount: flatItems.length,
+        itemBuilder: itemBuilder,
+      );
+    }
+
+    return FlutterListView(
+      controller: _listViewController,
+      reverse: true,
+      delegate: FlutterListViewDelegate(
+        itemBuilder,
+        childCount: flatItems.length,
+        keepPosition: true,
+      ),
     );
   }
 }

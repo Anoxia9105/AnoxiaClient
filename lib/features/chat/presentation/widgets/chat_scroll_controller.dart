@@ -39,6 +39,10 @@ class ChatScrollController {
     listViewController.addListener(_onScrollOffsetChanged);
   }
 
+  void dispose() {
+    listViewController.removeListener(_onScrollOffsetChanged);
+  }
+
   void _onScrollOffsetChanged() {
     // 滚动到底部按钮的显示/隐藏
     final bool isFarFromBottom = listViewController.offset > 300;
