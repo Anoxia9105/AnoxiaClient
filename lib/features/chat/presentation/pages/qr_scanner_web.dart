@@ -56,6 +56,8 @@ class QrScannerController {
   HTMLVideoElement? _video;
   MediaStream? _stream;
   Timer? _timer;
+  _BarcodeDetector? _detector;
+  bool _detecting = false;
   bool _started = false;
   bool _active = false;
 
@@ -94,7 +96,21 @@ class QrScannerController {
     }
 
     _video!.srcObject = _stream;
-    await _video!.play().toDart.catchError((_) {});
+    try {
+      // play() 返回 JS Promise，浏览器拒绝自动播放（无用户手势/策略限制）时会被
+      // reject。这里用普通 try/catch 显式捕获并进入“播放失败”状态，而不是用空
+      // catchError——后者的 onError 返回 void，既不满足 JSAny? 类型又会吞掉异常，
+      // 在自动播放被拒时可能再次抛出类型错误。
+      await _video!.play().toDart;
+    } catch (_) {
+      // 播放失败：getUserMedia 已成功、摄像头已开启。必须主动停止 tracks 并清空
+      // srcObject，否则浏览器摄像头指示灯会一直亮到页面销毁；同时把 _started 复位，
+      // 允许用户在“播放失败”提示下重新进入扫码页重试。
+      _releaseStream();
+      _started = false;
+      _setError('chat_scan_play_failed'.tr());
+      return;
+    }
     _active = true;
     _scheduleDetection();
   }
@@ -112,9 +128,18 @@ class QrScannerController {
   Future<void> _detectOnce() async {
     if (!_active || _video == null) return;
     if (_barcodeDetectorCtor == null) return;
+    // 布尔锁：保证同一时间只有一次检测在跑。若单次 detect() 超过 250ms 仍未结束，
+    // 本帧直接跳过，避免并发创建多个 Detector / Promise 堆积导致高 CPU、重复结果
+    // 或浏览器卡顿。
+    if (_detecting) return;
+    _detecting = true;
     try {
-      final detector = _BarcodeDetector();
-      final detected = (await detector.detect(_video!).toDart).toDart;
+      // 复用同一个 Detector 实例，避免每帧新建对象。
+      _detector ??= _BarcodeDetector();
+      final detected = (await _detector!.detect(_video!).toDart).toDart;
+      // 检测可能在 await 期间用户已退出扫码页；再次确认仍活跃，避免把过期结果
+      // 通过 onDetect 回调出去（此处 return 仍会执行 finally 复位 _detecting）。
+      if (!_active) return;
       for (final barcode in detected) {
         final raw = barcode.rawValue;
         if (raw != null && raw.isNotEmpty) {
@@ -124,6 +149,8 @@ class QrScannerController {
       }
     } catch (_) {
       // 单帧识别失败忽略，等待下一帧。
+    } finally {
+      _detecting = false;
     }
   }
 
@@ -133,12 +160,19 @@ class QrScannerController {
     _timer = null;
   }
 
+  /// 停止摄像头轨道并清空视频源引用。getUserMedia 成功后必须显式调用，否则浏览器
+  /// 摄像头指示灯会一直亮到页面销毁。
+  void _releaseStream() {
+    _stream?.getTracks().toDart.forEach((track) => track.stop());
+    _video?.srcObject = null;
+    _stream = null;
+  }
+
   void dispose() {
     _active = false;
     _timer?.cancel();
     _timer = null;
-    _stream?.getTracks().toDart.forEach((track) => track.stop());
-    _video?.srcObject = null;
+    _releaseStream();
     _video = null;
     _started = false;
   }

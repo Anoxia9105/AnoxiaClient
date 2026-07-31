@@ -72,6 +72,7 @@
   "chat_scan_cannot_add_self": "不能添加自己",
   "chat_scan_web_unsupported": "当前浏览器不支持扫码，请使用 Chrome 或 Edge",
   "chat_scan_camera_permission_denied": "摄像头权限被拒绝，无法扫码",
+  "chat_scan_play_failed": "视频播放失败，请刷新页面或检查浏览器自动播放设置",
   "login_page_title": "欢迎登录",
   "login_page_name": "请输入用户名",
   "login_page_account_or_email": "请输入账号或邮箱",

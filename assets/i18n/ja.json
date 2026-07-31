@@ -72,6 +72,7 @@
   "chat_scan_cannot_add_self": "自分自身は追加できません",
   "chat_scan_web_unsupported": "現在のブラウザはスキャンに対応していません（Chrome/Edgeをご利用ください）",
   "chat_scan_camera_permission_denied": "カメラの権限が拒否されました",
+  "chat_scan_play_failed": "動画の再生に失敗しました。ページを再読み込みするか、ブラウザの自動再生設定を確認してください",
   "login_page_title": "ログインへようこそ",
   "login_page_name": "ユーザー名を入力してください",
   "login_page_account_or_email": "アカウントまたはメールを入力",

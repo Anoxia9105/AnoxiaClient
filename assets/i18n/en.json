@@ -72,6 +72,7 @@
   "chat_scan_cannot_add_self": "You cannot add yourself",
   "chat_scan_web_unsupported": "Scanning is not supported in this browser. Use Chrome or Edge.",
   "chat_scan_camera_permission_denied": "Camera permission denied, cannot scan",
+  "chat_scan_play_failed": "Video playback failed. Refresh the page or check your browser autoplay settings",
   "login_page_title": "Welcome to login",
   "login_page_name": "Please enter your username",
   "login_page_account_or_email": "Enter username or email",
