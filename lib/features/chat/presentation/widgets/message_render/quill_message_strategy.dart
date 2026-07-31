@@ -51,6 +51,27 @@ class _QuillInternalRenderer extends StatefulWidget {
 class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   static final Set<_QuillInternalRendererState> _mountedRenderers = {};
 
+  /// 防止「清理兄弟气泡选区」链路重入。
+  ///
+  /// flutter_quill 的 `QuillRawEditorState` 会**无条件**监听 controller
+  /// (`controller.addListener(_didChangeTextEditingValueListener)`)，并且
+  /// `_didChangeTextEditingValue` 里有 Web 专属分支：
+  ///
+  /// ```dart
+  /// if (kIsWeb) {
+  ///   _onChangeTextEditingValue(ignoreFocus);
+  ///   if (!ignoreFocus) requestKeyboard(); // -> focusNode.requestFocus()
+  ///   return;
+  /// }
+  /// ```
+  ///
+  /// 也就是说在 Web 上，对只读气泡调用一次 `updateSelection` 就会让它把焦点抢回去。
+  /// 于是会出现：A 获得焦点 -> 清空所有兄弟选区 -> 兄弟 requestFocus ->
+  /// 兄弟获得焦点 -> 再清空所有兄弟选区 …… 同步无限互抢，主线程被打死，
+  /// 表现为「切换聊天列表后页面直接卡死、无任何日志」。桌面/移动端不走该分支，
+  /// 所以只在 Web 复现。
+  static bool _clearingSiblings = false;
+
   QuillController? _controller;
   bool _isError = false;
   late final FocusNode _focusNode;
@@ -189,20 +210,43 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   void _clearSiblingSelections() {
-    for (final renderer in _mountedRenderers) {
-      if (identical(renderer, this)) continue;
-      renderer._clearSelection();
+    if (_clearingSiblings) return;
+    _clearingSiblings = true;
+    try {
+      // 迭代前先快照：_clearSelection 会触发 Quill 重建，期间可能有气泡
+      // mount/dispose 从而增删 _mountedRenderers，直接遍历会抛
+      // ConcurrentModificationError。
+      for (final renderer in _mountedRenderers.toList(growable: false)) {
+        if (identical(renderer, this)) continue;
+        renderer._clearSelection();
+      }
+    } finally {
+      _clearingSiblings = false;
     }
   }
 
   void _clearSelection() {
     final controller = _controller;
-    if (controller == null || !controller.selection.isValid) return;
+    if (controller == null) return;
 
-    controller.updateSelection(
-      const TextSelection.collapsed(offset: 0),
-      ChangeSource.local,
-    );
+    final selection = controller.selection;
+    // `TextSelection.collapsed(offset: 0)` 本身也是 isValid，原先的判断等价于
+    // 「永远执行」，导致每次焦点变化都会对全部气泡写一次 selection。
+    // 只有真正存在可见选区时才需要清理。
+    if (!selection.isValid || selection.isCollapsed) return;
+
+    // 抑制 Web 分支里的 requestKeyboard() -> focusNode.requestFocus()，
+    // 否则被清理的气泡会把焦点抢回来，形成焦点/选区死循环。
+    final previousIgnoreFocus = controller.ignoreFocusOnTextChange;
+    controller.ignoreFocusOnTextChange = true;
+    try {
+      controller.updateSelection(
+        const TextSelection.collapsed(offset: 0),
+        ChangeSource.local,
+      );
+    } finally {
+      controller.ignoreFocusOnTextChange = previousIgnoreFocus;
+    }
   }
 
   /// 计算消息内容的目标宽度

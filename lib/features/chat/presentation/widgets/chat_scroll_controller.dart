@@ -27,6 +27,11 @@ class ChatScrollController {
   bool _historyEdgeArmed = true;
   bool _historyLoadScheduled = false;
 
+  /// `scrollToBottom` 在消息未 settle 时的重试次数上限，
+  /// 避免 provider 长时间处于 loading 时每帧无限自我调度。
+  static const int _maxBottomScrollRetries = 10;
+  int _bottomScrollRetries = 0;
+
   ChatScrollController({
     required this.listViewController,
     required this.roomId,
@@ -44,6 +49,10 @@ class ChatScrollController {
   }
 
   void _onScrollOffsetChanged() {
+    // ScrollController 未 attach（或同时 attach 了多个 position）时读取 offset
+    // 会直接抛异常，房间切换的过渡帧非常容易命中，必须先守卫再取值。
+    if (!listViewController.hasClients) return;
+
     // 滚动到底部按钮的显示/隐藏
     final bool isFarFromBottom = listViewController.offset > 300;
     if (isFarFromBottom != _showScrollDownButton) {
@@ -52,7 +61,6 @@ class ChatScrollController {
     }
 
     // 历史消息边缘检测：当滚动位置接近顶部（maxScrollExtent）时触发加载
-    if (!listViewController.hasClients) return;
     final maxScroll = listViewController.position.maxScrollExtent;
     if (maxScroll <= 0) return;
 
@@ -98,15 +106,18 @@ class ChatScrollController {
     final optimistic =
         ref.read(optimisticRoomMessagesProvider)[roomId] ?? const [];
     if (messages.isEmpty && optimistic.isEmpty) {
-      // 仍处于加载态（.value 为 null）时，等 provider settle 后重试一次，
+      // 仍处于加载态（.value 为 null）时，等 provider settle 后重试，
       // 避免“点击跳转底部无反应”；已稳定但确实为空则直接返回。
-      if (messageState.isLoading) {
+      if (messageState.isLoading &&
+          _bottomScrollRetries < _maxBottomScrollRetries) {
+        _bottomScrollRetries++;
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => scrollToBottom(animated: animated),
         );
       }
       return;
     }
+    _bottomScrollRetries = 0;
 
     final indexedController = listViewController;
     if (indexedController is FlutterListViewController) {
