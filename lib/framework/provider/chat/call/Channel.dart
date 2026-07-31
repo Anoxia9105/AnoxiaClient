@@ -1,4 +1,4 @@
-﻿import 'package:desktop_multi_window/desktop_multi_window.dart';
+﻿import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../common/utils/device_util.dart';

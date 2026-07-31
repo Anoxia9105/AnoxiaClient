@@ -2,24 +2,12 @@
 ///
 /// 基于 Drift 的 SQLite 数据库，管理用户、会话、消息、联系人等缓存表，
 /// 包含数据库迁移策略和各个 DAO 访问器。
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import 'database_native.dart' if (dart.library.html) 'database_web.dart';
 import 'tables.dart';
 
 part 'database.g.dart';
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'anoxia_im.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
-}
 
 @DriftDatabase(
   tables: [
@@ -44,7 +32,7 @@ LazyDatabase _openConnection() {
 /// 基于 Drift 框架的 SQLite 数据库，管理所有本地缓存表。
 /// 支持数据库迁移、会话缓存清理和索引优化。
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? openConnection());
 
   @override
   int get schemaVersion => 3;

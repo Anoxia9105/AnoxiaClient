@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 part 'live_room_widgets.dart';
 part 'live_room_models.dart';

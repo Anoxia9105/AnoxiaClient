@@ -9,7 +9,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/live/presentation/pages/live_preview_page.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';

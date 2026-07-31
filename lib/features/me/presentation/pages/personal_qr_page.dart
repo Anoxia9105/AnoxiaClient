@@ -3,13 +3,14 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:anoxia/platform/shims/image_gallery_saver_plus_shim.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -63,13 +64,17 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
   Future<void> _saveToGallery() async {
     if (_saving) return;
 
-    final granted = await _ensureGalleryPermission();
-    if (!granted) {
-      Toast.showToast(
-        'gallery_permission_required'.tr(),
-        type: ToastType.error,
-      );
-      return;
+    // Web 端“保存到相册”等价于浏览器下载，无需相册权限；
+    // 原生端才需要走系统相册权限流程。
+    if (!DeviceUtil.isWeb) {
+      final granted = await _ensureGalleryPermission();
+      if (!granted) {
+        Toast.showToast(
+          'gallery_permission_required'.tr(),
+          type: ToastType.error,
+        );
+        return;
+      }
     }
 
     setState(() => _saving = true);
@@ -109,7 +114,8 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
 
   /// 分享二维码图片
   ///
-  /// 将二维码图片保存到临时文件后通过系统分享功能分享。
+  /// 原生端写入临时文件后调用系统分享；Web 端用 [XFile.fromData] 走 Web Share API，
+  /// 不支持文件分享的浏览器回退为下载。
   Future<void> _shareQrImage() async {
     if (_sharing) return;
 
@@ -121,10 +127,32 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
         return;
       }
 
+      final baseName = 'anoxia_qr_${widget.user.userId}';
+      final name = '$baseName.png';
+      if (DeviceUtil.isWeb) {
+        final xfile = XFile.fromData(
+          bytes,
+          name: name,
+          mimeType: 'image/png',
+        );
+        final result = await SharePlus.instance.share(
+          ShareParams(files: [xfile], text: 'me_my_qr'.tr()),
+        );
+        // 仅在浏览器“不支持/不可用”文件分享时回退为下载；用户主动取消（dismissed）
+        // 或未知状态不应触发下载，避免产生非预期的文件落地。
+        // 下载桩会自动追加 .png，这里传不带扩展名的 baseName 避免 xxx.png.png。
+        if (result.status == ShareResultStatus.unavailable) {
+          await ImageGallerySaverPlus.saveImage(
+            bytes,
+            quality: 100,
+            name: baseName,
+          );
+        }
+        return;
+      }
+
       final tempDir = await getTemporaryDirectory();
-      final file = File(
-        '${tempDir.path}${Platform.pathSeparator}anoxia_qr_${widget.user.userId}.png',
-      );
+      final file = File('${tempDir.path}${Platform.pathSeparator}$name');
       await file.writeAsBytes(bytes, flush: true);
 
       await SharePlus.instance.share(

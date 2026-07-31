@@ -8,11 +8,11 @@ import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'component/deesktop/call_desktop_app_bar.dart';
 

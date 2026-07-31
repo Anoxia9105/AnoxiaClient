@@ -5,7 +5,7 @@ import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:anoxia/platform/shims/hotkey_manager_shim.dart';
 
 /// 应用通用 Scaffold 组件
 /// 根据设备类型自动适配：

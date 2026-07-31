@@ -11,7 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'package:anoxia/platform/shims/image_cropper_shim.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 

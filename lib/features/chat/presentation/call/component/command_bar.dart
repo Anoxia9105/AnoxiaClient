@@ -12,8 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:pip/pip.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/pip_shim.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 /// 通话命令栏组件
 ///

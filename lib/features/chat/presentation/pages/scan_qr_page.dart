@@ -10,7 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:anoxia/features/chat/presentation/pages/qr_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 扫码页面。
@@ -24,12 +24,16 @@ class ScanQrPage extends ConsumerStatefulWidget {
 }
 
 class _ScanQrPageState extends ConsumerState<ScanQrPage> {
-  final MobileScannerController _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
-  );
+  late final QrScannerController _controller;
 
   /// 是否正在处理扫码结果，防止重复处理。
   bool _handling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = QrScannerController(onDetect: _onDetect);
+  }
 
   @override
   void dispose() {
@@ -41,11 +45,9 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
   ///
   /// 识别到二维码后，如果是用户名片则跳转添加好友页面，
   /// 否则跳转到结果展示页面。
-  Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_handling) return;
-
-    final raw = capture.barcodes.firstOrNull?.rawValue?.trim();
-    if (raw == null || raw.isEmpty) return;
+  Future<void> _onDetect(String raw) async {
+    raw = raw.trim();
+    if (raw.isEmpty || _handling) return;
 
     _handling = true;
     await _controller.stop();
@@ -131,7 +133,7 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect),
+          QrScannerWidget(controller: _controller),
           Center(
             child: Container(
               width: 240,

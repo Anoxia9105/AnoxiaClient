@@ -45,7 +45,7 @@ class ChatBarHandlers {
     }
     final tokenFuture = ref.read(roomTokenProvider(room.roomId ?? '').future);
 
-    if (DeviceUtil.isRealMobile()) {
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
       final currentSession = ref.read(mobileCallSessionControllerProvider);
       if (currentSession != null) {
         if (currentSession.roomId == room.roomId) {

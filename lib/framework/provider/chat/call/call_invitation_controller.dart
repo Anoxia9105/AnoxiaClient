@@ -213,7 +213,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
 
   Future<void> acceptAndOpen(CallInvitationState invite) async {
     await accept(invite);
-    if (DeviceUtil.isRealMobile()) {
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
       ref
           .read(mobileCallSessionControllerProvider.notifier)
           .start(

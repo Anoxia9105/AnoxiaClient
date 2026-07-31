@@ -4,7 +4,7 @@
 /// 基于 Riverpod 的 KeepAlive Provider，通过多窗口框架实现子窗口通信。
 import 'dart:convert';
 
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';

@@ -12,8 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tray_manager/tray_manager.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/tray_manager_shim.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'common/utils/device_util.dart';
 import 'framework/provider/layout/layout_controller.dart';
@@ -265,7 +265,8 @@ class _AppOverlays extends ConsumerWidget {
     return Stack(
       children: [
         child,
-        if (DeviceUtil.isAndroid() && hasMobileCall) const GlobalCallOverlay(),
+        if ((DeviceUtil.isAndroid() || DeviceUtil.isWeb) && hasMobileCall)
+          const GlobalCallOverlay(),
         const Positioned.fill(child: CallInvitationOverlay()),
       ],
     );

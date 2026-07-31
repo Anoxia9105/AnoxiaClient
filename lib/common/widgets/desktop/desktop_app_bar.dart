@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import '../../../gen/assets.gen.dart';
 
 /// 桌面端应用栏

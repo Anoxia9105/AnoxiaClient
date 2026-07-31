@@ -6,6 +6,7 @@ import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_
 import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_theme_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_web_notification_section.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
@@ -195,6 +196,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ref.read(appFontProvider.notifier).setFont(selectedFont);
             },
           ),
+          // 浏览器通知权限必须在用户手势中申请，这里提供显式入口；原生端不显示。
+          if (DeviceUtil.isWeb) const SettingsWebNotificationSection(),
           SettingsFeedbackSection(
             formKey: _feedbackFormKey,
             titleController: _feedbackTitleController,

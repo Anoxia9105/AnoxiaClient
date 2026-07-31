@@ -6,7 +6,7 @@ import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pip/pip.dart';
+import 'package:anoxia/platform/shims/pip_shim.dart';
 
 /// 全局通话悬浮层组件
 ///

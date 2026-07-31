@@ -9,13 +9,13 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart' hide ConnectionState;
-import 'package:flutter_background/flutter_background.dart' as rtc;
+import 'package:anoxia/platform/shims/flutter_background_shim.dart' as rtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import '../../../domain/room_state.dart';
 import '../../../network/dio_client.dart';
@@ -304,7 +304,9 @@ class RoomController extends _$RoomController {
           : ref.read(callInitialMediaProvider(roomName));
       var enableCamera = initialMedia == CallInitialMedia.video;
       var enableMicrophone =
-          initialMedia == CallInitialMedia.audio || DeviceUtil.isRealMobile();
+          initialMedia == CallInitialMedia.audio ||
+          DeviceUtil.isRealMobile() ||
+          DeviceUtil.isWeb;
 
       if (DeviceUtil.isRealMobile()) {
         if (enableMicrophone) {
@@ -478,7 +480,7 @@ class RoomController extends _$RoomController {
       await current?.room.disconnect().timeout(const Duration(seconds: 1));
     } catch (_) {}
 
-    if (DeviceUtil.isRealMobile()) {
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
       ref.read(mobileCallSessionControllerProvider.notifier).end();
       ref.invalidateSelf();
       return;

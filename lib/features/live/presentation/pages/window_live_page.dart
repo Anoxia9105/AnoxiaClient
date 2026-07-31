@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 /// 独立窗口直播页面
 ///

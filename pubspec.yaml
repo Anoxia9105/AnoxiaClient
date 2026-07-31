@@ -94,6 +94,8 @@ dependencies:
   characters: ^1.4.0
   intl: ^0.20.2
   share_plus: ^12.0.2
+  # Web 端 JS 互操作（替代已废弃的 dart:js / dart:js_util），并提供 Wasm 兼容路径
+  web: ^1.0.0
   # 处理图片格式
   image: ^4.7.2
   # emoji 选择器

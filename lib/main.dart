@@ -10,15 +10,15 @@ import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:anoxia/platform/shims/hotkey_manager_shim.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:window_manager/window_manager.dart' as desktop;
+import 'package:anoxia/platform/shims/window_manager_shim.dart' as desktop;
 
 import 'app.dart';
 import 'common/constants/api.dart';

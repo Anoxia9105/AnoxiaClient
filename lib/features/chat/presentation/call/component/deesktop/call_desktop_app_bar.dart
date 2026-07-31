@@ -3,7 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 /// 桌面端通话应用栏组件
 ///

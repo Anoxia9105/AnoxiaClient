@@ -4,11 +4,11 @@ import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 /// 独立窗口弹幕页面
 ///

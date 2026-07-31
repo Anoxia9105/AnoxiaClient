@@ -28,7 +28,10 @@ class ChatPage extends ConsumerStatefulWidget {
 class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   Widget build(BuildContext context) {
-    if (DeviceUtil.isRealMobile()) {
+    // 布局按屏幕宽度（响应式）决定，而不是按“真实移动设备”判断：
+    // Web 上的手机浏览器 isRealMobile() 永远为 false，会错误地进入桌面三栏。
+    // 平台能力（窗口插件等）用 isRealDesktop/isRealMobile，UI 布局用宽度断点。
+    if (DeviceUtil.isMobile(context)) {
       return const ChatRoomList();
     }
 

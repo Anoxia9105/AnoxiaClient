@@ -8,7 +8,7 @@ import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pip/pip.dart';
+import 'package:anoxia/platform/shims/pip_shim.dart';
 
 import 'mobile_call_timer.dart';
 import '../component/call_invite_members_button.dart';
