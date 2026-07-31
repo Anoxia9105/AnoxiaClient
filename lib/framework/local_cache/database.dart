@@ -4,7 +4,11 @@
 /// 包含数据库迁移策略和各个 DAO 访问器。
 import 'package:drift/drift.dart';
 
-import 'database_native.dart' if (dart.library.html) 'database_web.dart';
+// 用 dart.library.io 判定平台而非 dart.library.html：
+// dart.library.html 仅在 JS 版 Web 为 true，WASM 版 Web 为 false，
+// 会导致 --wasm 构建回退到 database_native.dart（依赖 dart:ffi）而编译失败。
+// dart.library.io 在原生为 true、两种 Web 均为 false，故 Web(JS/WASM) 都走 database_web.dart。
+import 'database_web.dart' if (dart.library.io) 'database_native.dart';
 import 'tables.dart';
 
 part 'database.g.dart';
@@ -422,18 +426,19 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// 插入或更新单条消息
   ///
-  /// 若存在相同 client_msg_id 但不同 id 的旧记录，先删除旧记录再插入。
+  /// 若存在相同 client_msg_id 但不同 id 的旧记录（发送方 ACK/回声做
+  /// 临时 ID → 服务端 ID 换绑），采用「原地 UPDATE 主键」而非「先删后插」：
+  /// 单行 UPDATE 语句不会让 Drift 的 watch 在 delete/insert 之间发出一份
+  /// 缺少该消息的快照，从而根治 Web(Worker) 上的消息闪退。
   Future<void> insertOrUpdateMessage(CachedMessage message) async {
-    // 临时 ID → 服务端 ID 必须在同一个事务中完成。否则 Drift 的 watch
-    // 会在 delete 和 insert 之间发出一份缺少该消息的快照，导致消息闪退。
     await transaction(() async {
       if (message.clientMsgId != null && message.clientMsgId != message.id) {
-        await (delete(messages)..where(
-              (tbl) =>
-                  tbl.clientMsgId.equals(message.clientMsgId!) &
-                  tbl.id.isNotValue(message.id),
-            ))
-            .go();
+        // 主键换绑：把 clientMsgId 对应的旧行原地更新为服务端 id，避免空窗。
+        final updated = await (update(messages)
+              ..where((tbl) => tbl.id.equals(message.clientMsgId!)))
+            .write(message.toCompanion(true));
+        if (updated > 0) return;
+        // 旧行不存在（异常竞态）时退化为普通 upsert。
       }
       await into(messages).insertOnConflictUpdate(message);
     });

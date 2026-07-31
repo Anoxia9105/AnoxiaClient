@@ -93,10 +93,20 @@ class ChatScrollController {
   /// 滚动到底部（index 0，因为列表是 reverse 的）
   void scrollToBottom({bool animated = true}) {
     if (!listViewController.hasClients) return;
-    final messages = ref.read(roomMessagesProvider(roomId)).value ?? const [];
+    final messageState = ref.read(roomMessagesProvider(roomId));
+    final messages = messageState.value ?? const [];
     final optimistic =
         ref.read(optimisticRoomMessagesProvider)[roomId] ?? const [];
-    if (messages.isEmpty && optimistic.isEmpty) return;
+    if (messages.isEmpty && optimistic.isEmpty) {
+      // 仍处于加载态（.value 为 null）时，等 provider settle 后重试一次，
+      // 避免“点击跳转底部无反应”；已稳定但确实为空则直接返回。
+      if (messageState.isLoading) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => scrollToBottom(animated: animated),
+        );
+      }
+      return;
+    }
 
     final indexedController = listViewController;
     if (indexedController is FlutterListViewController) {

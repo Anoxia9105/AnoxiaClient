@@ -79,15 +79,19 @@ class ProtoReader {
   }
 
   int _readVarint() {
-    int result = 0;
+    // ⚠️ dart2js 下 `<<` 与 `|` 均为 32 位语义：当 shift >= 32 时 `(b & 0x7F) << shift`
+    // 直接归零，导致毫秒时间戳(~41 位)、seq、senderId 等 int64 字段高位字节全部丢失，
+    // 解出垃圾值，最终让消息在 UI 合并时错乱/消失。改用 BigInt 保证 VM/dart2js 一致。
+    BigInt result = BigInt.zero;
     int shift = 0;
     while (_pos < _data.length) {
       final b = _data[_pos++];
-      result |= (b & 0x7F) << shift;
+      result |= BigInt.from(b & 0x7F) << shift;
       if ((b & 0x80) == 0) break;
       shift += 7;
     }
-    return result;
+    // varint 是补码表示：bit63 置位时为负数，需用 toSigned(64) 还原成有符号 int64。
+    return result.toSigned(64).toInt();
   }
 }
 

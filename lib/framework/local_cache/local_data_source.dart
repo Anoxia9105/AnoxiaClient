@@ -63,11 +63,35 @@ class LocalDataSource {
     required bool incrementUnread,
     bool clearUnread = false,
   }) async {
+    // 服务端给非发送方广播时可能不带 messageId/clientMsgId，用稳定派生 id 兜底，
+    // 避免消息被静默丢弃（曾导致“对方收到但不显示”且无任何日志）。
+    ChatMessage msg = message;
+    final String messageId;
+    {
+      final candidate = message.messageId ?? message.clientMsgId;
+      if (candidate == null || candidate.isEmpty) {
+        final roomId = message.roomId ?? '';
+        final senderId = message.senderId?.toString() ?? '';
+        final seq = message.seq?.toString() ?? '';
+        final ts = message.timestamp?.toString() ?? '';
+        if (roomId.isEmpty) {
+          log.warning(
+            '[DB] applyIncomingMessage: 丢弃入站消息，messageId/clientMsgId 与 roomId 均为空',
+          );
+          return false;
+        }
+        messageId = 'fallback_${roomId}_${senderId}_${seq}_$ts';
+        log.warning(
+          '[DB] applyIncomingMessage: 入站消息缺 messageId，使用派生兜底 id=$messageId',
+        );
+        msg = message.copyWith(messageId: messageId);
+      } else {
+        messageId = candidate;
+      }
+    }
     final row = _messageToRow(
-      message.copyWith(deliveryStatus: DeliveryStatus.sent),
+      msg.copyWith(deliveryStatus: DeliveryStatus.sent),
     );
-    final messageId = message.messageId ?? message.clientMsgId;
-    if (messageId == null || messageId.isEmpty) return false;
 
     return db.transaction(() async {
       final existing = await db.messageDao.getMessageById(messageId);
@@ -92,12 +116,12 @@ class LocalDataSource {
       await db.conversationDao.updateIncomingMessage(
         conversationId: row.conversationId,
         messageId: messageId,
-        preview: message.content,
-        messageType: message.messageType == null
+        preview: msg.content,
+        messageType: msg.messageType == null
             ? null
-            : MessageType.toCode(message.messageType),
-        seq: message.seq,
-        sentAt: _dateTimeFromMillis(message.timestamp),
+            : MessageType.toCode(msg.messageType),
+        seq: msg.seq,
+        sentAt: _dateTimeFromMillis(msg.timestamp),
         incrementUnread: incrementUnread && existing == null,
         clearUnread: clearUnread,
       );

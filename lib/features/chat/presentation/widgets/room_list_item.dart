@@ -87,7 +87,10 @@ class RoomListItem extends ConsumerWidget {
         if (room.roomId != null) {
           ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
 
-          if (DeviceUtil.isRealMobile()) {
+          // 用宽度断点判定布局（与 chat_page.dart 一致），而非 isRealMobile()。
+          // 否则 Web 上的窄屏（手机浏览器）会被判为“非真实移动设备”，
+          // 点击会话既不 push 路由、页面上也没有 ChatRoomDetail，表现为“点击无响应”。
+          if (DeviceUtil.isMobile(context)) {
             await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ChatRoomDetail(roomId: room.roomId!),

@@ -104,16 +104,21 @@ class ProtoWriter {
     _writeVarint((fieldNum << 3) | wireType);
   }
 
-  /// 通用 varint 编码（支持有符号 64 位 — 使用无符号右移避免符号扩展）
+  /// 通用 varint 编码（支持有符号 64 位 —— 使用 BigInt 保证跨平台一致）。
+  ///
+  /// ⚠️ dart2js 下 `>>>` / `>>` 为 32 位语义：原实现 `value >>> 7` 会把 clientTimestamp
+  /// (~1.75e12，约 41 位) 这类大于 2^32 的值截断成垃圾，导致对方/UI 拿到错乱时间戳。
+  /// 改用 BigInt.toUnsigned(64) 做真正的无符号 64 位右移。
   void _writeVarint(int value) {
+    BigInt v = BigInt.from(value).toUnsigned(64);
     while (true) {
-      // 检查是否还有超出低 7 位的数据
-      if ((value & ~0x7F) == 0) {
-        _buf.add(value & 0xFF);
+      final int chunk = (v & BigInt.from(0x7F)).toInt();
+      v = v >> 7;
+      if (v == BigInt.zero) {
+        _buf.add(chunk & 0xFF);
         return;
       }
-      _buf.add((value & 0x7F) | 0x80);
-      value = value >>> 7; // 无符号右移，保证负数正确编码为 10 字节
+      _buf.add((chunk | 0x80) & 0xFF);
     }
   }
 }
