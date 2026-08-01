@@ -43,6 +43,22 @@ Future<void> main(List<String> args) async {
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
+
+    // 捕获 Flutter 框架在构建/布局/绘制阶段抛出的错误（含渲染异常的原始堆栈）。
+    //
+    // WASM 打包后若某 widget build 抛错，二次异常（如错误处理链路里触发的
+    // Platform._operatingSystem）会把控制台刷屏，掩盖真正的原始错误。这里先把
+    // 原始异常完整记录到 talker，再走默认处理（控制台输出 + ErrorWidget），
+    // 便于定位真正出错的 widget。
+    FlutterError.onError = (FlutterErrorDetails details) {
+      log.error(
+        'FlutterError: ${details.exceptionAsString()}',
+        details.exception,
+        details.stack,
+      );
+      FlutterError.presentError(details);
+    };
+
     if (DeviceUtil.isRealDesktop()) {
       // 热键管理器初始化（桌面端全局快捷键注册）
       await hotKeyManager.unregisterAll();
