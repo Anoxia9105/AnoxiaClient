@@ -5,6 +5,7 @@ import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,7 @@ class QuillImageBuild implements EmbedBuilder {
                 borderRadius: BorderRadius.circular(8),
                 child: Opacity(
                   opacity: entry.isFailed ? 0.5 : 1.0,
-                  child: Image.file(File(attachment.url!), fit: BoxFit.cover),
+                  child: _buildEmbeddedImage(attachment.url),
                 ),
               ),
             ),
@@ -74,6 +75,33 @@ class QuillImageBuild implements EmbedBuilder {
         );
       },
     );
+  }
+
+  /// Web 端不支持 dart:io 的 File / Image.file。
+  /// 富文本内的图片嵌入统一优先按远程地址（http/https）用 Image.network 渲染；
+  /// 仅非 Web 且为本地路径时才回退到 Image.file，避免触发
+  /// "Unsupported operation: Platform._operatingSystem"。
+  Widget _buildEmbeddedImage(String? url) {
+    if (url == null || url.isEmpty) {
+      return const Center(
+        child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+      );
+    }
+
+    final isRemote =
+        url.startsWith('http://') || url.startsWith('https://');
+
+    if (isRemote || kIsWeb) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const Center(
+          child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+        ),
+      );
+    }
+
+    return Image.file(File(url), fit: BoxFit.cover);
   }
 
   @override
