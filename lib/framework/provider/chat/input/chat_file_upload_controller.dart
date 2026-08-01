@@ -1,5 +1,4 @@
 ﻿import 'dart:async';
-import 'dart:io';
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/framework/logs/talker.dart';
@@ -7,9 +6,9 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -27,6 +26,10 @@ part 'chat_file_upload_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ChatFileUploadController extends _$ChatFileUploadController {
   static const int _maxUploadRetries = 3;
+
+  /// Web 端 PlatformFile.path 为 null，文件内容在 bytes 中，
+  /// 按附件 ID 暂存，供上传时构建 XFile 使用
+  final Map<String, PlatformFile> _filesById = {};
 
   @override
   Map<String, UploadEntry> build() => {};
@@ -46,13 +49,15 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     if (!UploadValidator.validate(controller, result.files)) return;
 
     final List<Attachment> uploadList = [];
-    for (final file in result.files.where((f) => f.path != null)) {
+    for (final file in result.files) {
       if (!UploadValidator.validateSingleFile(file)) continue;
+      final id = const Uuid().v4();
+      if (file.bytes != null) _filesById[id] = file;
       uploadList.add(
         Attachment(
-          id: const Uuid().v4(),
-          url: file.path!,
-          name: p.basename(file.path!),
+          id: id,
+          url: file.path,
+          name: file.name,
           size: file.size,
           type: file.extension ?? 'bin',
         ),
@@ -76,12 +81,32 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   /// 上传文件到服务器
   ///
   /// [attachments] 要上传的文件附件列表
+  /// [pickedFiles] 外部传入的文件选择结果（Web 端必传，否则无法读取 bytes）
   ///
   /// 使用批量上传接口，上传成功后更新状态为成功，失败则标记为失败
-  Future<void> uploadFiles(List<Attachment> attachments) async {
+  Future<void> uploadFiles(
+    List<Attachment> attachments, {
+    Map<String, PlatformFile>? pickedFiles,
+  }) async {
     if (attachments.isEmpty) return;
+    if (pickedFiles != null) _filesById.addAll(pickedFiles);
 
-    final files = attachments.map((a) => File(a.url!)).toList();
+    final files = <XFile>[];
+    for (final a in attachments) {
+      final local = _filesById[a.id];
+      if (local?.bytes != null) {
+        files.add(
+          XFile.fromData(local!.bytes!, name: a.name ?? local.name),
+        );
+      } else if (a.url != null && a.url!.isNotEmpty) {
+        files.add(XFile(a.url!));
+      }
+    }
+    if (files.isEmpty) {
+      _markFailed(attachments);
+      return;
+    }
+
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {

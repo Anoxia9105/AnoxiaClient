@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
+import 'package:cross_file/cross_file.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
@@ -78,7 +78,7 @@ class DioClient {
             }
 
             // 非 200 状态码：记录错误日志
-            if (bizCode != HttpStatus.ok) {
+            if (bizCode != 200) {
               final String? errorMsg = response.data['msg']?.toString();
               log.error('请求错误: $errorMsg, 业务码: $bizCode');
             }
@@ -210,11 +210,11 @@ class DioClient {
 
   /// 单文件上传
   ///
-  /// [file] 要上传的文件
+  /// [file] 要上传的文件（全平台兼容，Web 端使用 XFile.fromData 传 bytes）
   /// [fileField] 服务端接收的字段名，默认为 "file"
   Future<Response> uploadFile(
     String path, {
-    required File file,
+    required XFile file,
     String fileField = 'file',
     Map<String, dynamic>? data,
     bool auth = true,
@@ -222,10 +222,11 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     try {
-      final fileName = file.path.split('/').last;
-
       final formData = FormData.fromMap({
-        fileField: await MultipartFile.fromFile(file.path, filename: fileName),
+        fileField: MultipartFile.fromBytes(
+          await file.readAsBytes(),
+          filename: file.name,
+        ),
         ...?data,
       });
 
@@ -245,11 +246,11 @@ class DioClient {
 
   /// 多文件上传
   ///
-  /// [files] 要上传的文件列表
+  /// [files] 要上传的文件列表（全平台兼容，Web 端使用 XFile.fromData 传 bytes）
   /// [fileField] 服务端接收的字段名，默认为 "files"
   Future<Response> uploadFiles(
     String path, {
-    required List<File> files,
+    required List<XFile> files,
     String fileField = 'files',
     Map<String, dynamic>? data,
     bool auth = true,
@@ -257,12 +258,14 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     try {
-      final List<MultipartFile> multipartFiles = [];
+      final multipartFiles = <MultipartFile>[];
 
       for (final file in files) {
-        final fileName = file.path.split('/').last;
         multipartFiles.add(
-          await MultipartFile.fromFile(file.path, filename: fileName),
+          MultipartFile.fromBytes(
+            await file.readAsBytes(),
+            filename: file.name,
+          ),
         );
       }
 

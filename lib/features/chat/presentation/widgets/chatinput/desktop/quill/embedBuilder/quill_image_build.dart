@@ -48,7 +48,12 @@ class QuillImageBuild implements EmbedBuilder {
                 borderRadius: BorderRadius.circular(8),
                 child: Opacity(
                   opacity: entry.isFailed ? 0.5 : 1.0,
-                  child: _buildEmbeddedImage(attachment.url),
+                  child: _buildEmbeddedImage(
+                    attachment.url,
+                    ref
+                        .read(chatImageUploadControllerProvider.notifier)
+                        .bytesOf(attachment.id),
+                  ),
                 ),
               ),
             ),
@@ -81,7 +86,18 @@ class QuillImageBuild implements EmbedBuilder {
   /// 富文本内的图片嵌入统一优先按远程地址（http/https）用 Image.network 渲染；
   /// 仅非 Web 且为本地路径时才回退到 Image.file，避免触发
   /// "Unsupported operation: Platform._operatingSystem"。
-  Widget _buildEmbeddedImage(String? url) {
+  /// Web 端本地待上传图片（url 为空）回退到 bytes 内存预览。
+  Widget _buildEmbeddedImage(String? url, Uint8List? bytes) {
+    if (bytes != null && bytes.isNotEmpty && kIsWeb) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const Center(
+          child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+        ),
+      );
+    }
+
     if (url == null || url.isEmpty) {
       return const Center(
         child: Icon(Icons.broken_image, size: 36, color: Colors.grey),

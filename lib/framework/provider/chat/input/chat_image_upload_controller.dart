@@ -1,6 +1,5 @@
 ﻿import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
@@ -9,7 +8,9 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -29,6 +30,10 @@ part 'chat_image_upload_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ChatImageUploadController extends _$ChatImageUploadController {
   static const int _maxUploadRetries = 3;
+
+  /// Web 端 PlatformFile.path 为 null，文件内容在 bytes 中，
+  /// 按附件 ID 暂存，供上传时构建 XFile 使用
+  final Map<String, PlatformFile> _filesById = {};
 
   @override
   Map<String, UploadEntry> build() => {};
@@ -53,14 +58,22 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       if (!UploadValidator.validateSingleFile(tempFile)) return;
 
       final id = const Uuid().v4();
-      final rawFile = File(p.join(Directory.systemTemp.path, 'pasted_$id.jpg'));
-      await rawFile.writeAsBytes(imageBytes);
       final imageSize = await _readImageSizeFromBytes(imageBytes);
+      String? localUrl;
+      if (kIsWeb) {
+        _filesById[id] = tempFile;
+      } else {
+        final rawFile = File(
+          p.join(Directory.systemTemp.path, 'pasted_$id.jpg'),
+        );
+        await rawFile.writeAsBytes(imageBytes);
+        localUrl = rawFile.path;
+      }
 
       final attachment = Attachment(
         id: id,
         kind: 'IMAGE',
-        url: rawFile.path,
+        url: localUrl,
         name: 'pasted_image',
         size: imageBytes.lengthInBytes,
         type: 'image/jpeg',
@@ -98,15 +111,19 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     if (!UploadValidator.validate(controller, result.files)) return;
 
     final List<Attachment> uploadList = [];
-    for (final file in result.files.where((f) => f.path != null)) {
+    for (final file in result.files) {
       if (!UploadValidator.validateSingleFile(file)) continue;
-      final imageSize = await _readImageSizeFromFile(file.path!);
+      final id = const Uuid().v4();
+      if (file.bytes != null) _filesById[id] = file;
+      final imageSize = file.path != null
+          ? await _readImageSizeFromFile(file.path!)
+          : await _readImageSizeFromBytes(file.bytes ?? Uint8List(0));
       uploadList.add(
         Attachment(
-          id: const Uuid().v4(),
+          id: id,
           kind: 'IMAGE',
-          url: file.path!,
-          name: p.basenameWithoutExtension(file.path!),
+          url: file.path,
+          name: file.name,
           size: file.size,
           type: _imageMimeType(file.extension),
           width: imageSize.$1,
@@ -138,10 +155,17 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   Future<void> uploadImages(List<Attachment> images) async {
     if (images.isEmpty) return;
 
-    final files = images
-        .where((i) => i.url != null)
-        .map((i) => File(i.url!))
-        .toList();
+    final files = <XFile>[];
+    for (final i in images) {
+      final local = _filesById[i.id];
+      if (local?.bytes != null) {
+        files.add(
+          XFile.fromData(local!.bytes!, name: i.name ?? local.name),
+        );
+      } else if (i.url != null && i.url!.isNotEmpty) {
+        files.add(XFile(i.url!));
+      }
+    }
     if (files.isEmpty) return;
 
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
@@ -194,6 +218,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     for (final e in state.entries)
       if (e.value.isSuccess) e.key: e.value.serverUrl!,
   };
+
+  /// 获取附件对应的内存字节（Web 端本地预览用），无则返回 null
+  Uint8List? bytesOf(String? id) => _filesById[id]?.bytes;
 
   /// 消息发送后调用，清理 state
   void clear() => state = {};

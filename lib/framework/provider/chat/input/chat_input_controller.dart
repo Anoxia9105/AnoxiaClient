@@ -26,6 +26,7 @@ import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart'
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -486,13 +487,16 @@ class ChatInputController extends _$ChatInputController {
     if (files.isEmpty) return;
 
     final List<Attachment> uploadList = [];
-    for (final file in files.where((f) => f.path != null)) {
+    final filesById = <String, PlatformFile>{};
+    for (final file in files) {
       if (!UploadValidator.validateSingleFile(file)) continue;
+      final id = const Uuid().v4();
+      if (file.bytes != null) filesById[id] = file;
       uploadList.add(
         Attachment(
-          id: const Uuid().v4(),
+          id: id,
           kind: 'FILE',
-          url: file.path!,
+          url: file.path,
           name: file.name,
           size: file.size,
           type: file.extension ?? 'bin',
@@ -502,7 +506,7 @@ class ChatInputController extends _$ChatInputController {
     if (uploadList.isEmpty) return;
 
     final uploader = ref.read(chatFileUploadControllerProvider.notifier);
-    await uploader.uploadFiles(uploadList);
+    await uploader.uploadFiles(uploadList, pickedFiles: filesById);
 
     final urlMap = uploader.urlMap;
     final uploaded = uploadList
@@ -599,7 +603,7 @@ class ChatInputController extends _$ChatInputController {
       // 2. 上传语音文件
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
-        files: [file],
+        files: [XFile(file.path)],
       );
 
       final rawList = res.data is Map ? res.data['data'] : res.data;
