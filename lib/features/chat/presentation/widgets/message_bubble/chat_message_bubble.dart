@@ -27,23 +27,45 @@ class ChatMessageBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. 根据消息类型获取对应的渲染策略（文本、图片、文件等）
-    final strategy = MessageRenderFactory.getStrategy(message.messageType);
+    try {
+      // 1. 根据消息类型获取对应的渲染策略（文本、图片、文件等）
+      final strategy = MessageRenderFactory.getStrategy(message.messageType);
 
-    // 2. 聚合所有展示所需的视图数据（颜色、是否自己、是否@我等）
-    final view = MessageBubbleViewData.resolve(context, ref, message);
+      // 2. 聚合所有展示所需的视图数据（颜色、是否自己、是否@我等）
+      final view = MessageBubbleViewData.resolve(context, ref, message);
 
-    // 3. 系统消息单独处理（无头像、无气泡、居中显示）
-    if (message.messageType == MessageType.system) {
-      return SystemMessageBubble(
-        message: message,
-        strategy: strategy,
-        textColor: view.textColor,
-        horizontalPadding: view.horizontalPadding,
+      // 3. 系统消息单独处理（无头像、无气泡、居中显示）
+      if (message.messageType == MessageType.system) {
+        return SystemMessageBubble(
+          message: message,
+          strategy: strategy,
+          textColor: view.textColor,
+          horizontalPadding: view.horizontalPadding,
+        );
+      }
+
+      // 4. 普通用户消息（含头像、昵称、气泡、状态指示器）
+      return UserMessageBubble(message: message, strategy: strategy, view: view);
+    } catch (e, stack) {
+      // 单条消息渲染失败不影响整个列表。WASM 下可能因 Platform._operatingSystem
+      // 等异常导致渲染中断，这里隔离错误并显示降级 UI，同时记录原始堆栈以便定位。
+      debugPrint('消息渲染失败 [type=${message.messageType}]: $e\n$stack');
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 4),
+        child: Material(
+          color: const Color(0x1AFF0000),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              '消息渲染失败: $e',
+              style: const TextStyle(fontSize: 11, color: Colors.red),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
       );
     }
-
-    // 4. 普通用户消息（含头像、昵称、气泡、状态指示器）
-    return UserMessageBubble(message: message, strategy: strategy, view: view);
   }
 }

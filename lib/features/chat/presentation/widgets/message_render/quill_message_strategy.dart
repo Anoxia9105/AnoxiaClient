@@ -17,6 +17,12 @@ import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 import 'link_preview_card.dart';
 
+/// 是否为 WASM 编译模式。
+///
+/// `kIsWeb` 在 JS 和 WASM 版 Web 均为 true，无法区分。利用
+/// `dart.library.html` 仅在 JS 版 Web 为 true、WASM 版为 false 的特性来判定。
+const _kIsWasm = kIsWeb && !bool.fromEnvironment('dart.library.html');
+
 /// 富文本消息渲染策略
 ///
 /// 使用 Quill 编辑器渲染富文本消息，支持：
@@ -143,6 +149,31 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   Widget build(BuildContext context) {
     if (_isError || _controller == null) {
       return Text('chat_message_format_error'.tr());
+    }
+
+    // WASM 降级：QuillEditor.basic 在 WASM 下可能触发 Platform._operatingSystem
+    // 等不兼容问题，降级为纯文本渲染确保消息内容可读。
+    if (_kIsWasm) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = _safeMaxWidth(context, constraints.maxWidth);
+          final previewSource = _linkPreviewSource();
+          return SizedBox(
+            width: maxWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SelectableText(
+                  _controller?.document.toPlainText() ?? '',
+                  style: TextStyle(color: widget.textColor, fontSize: 14),
+                ),
+                MessageLinkPreview(text: previewSource, maxWidth: maxWidth),
+              ],
+            ),
+          );
+        },
+      );
     }
 
     return LayoutBuilder(

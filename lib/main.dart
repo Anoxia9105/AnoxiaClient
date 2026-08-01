@@ -46,17 +46,49 @@ Future<void> main(List<String> args) async {
 
     // 捕获 Flutter 框架在构建/布局/绘制阶段抛出的错误（含渲染异常的原始堆栈）。
     //
-    // WASM 打包后若某 widget build 抛错，二次异常（如错误处理链路里触发的
-    // Platform._operatingSystem）会把控制台刷屏，掩盖真正的原始错误。这里先把
-    // 原始异常完整记录到 talker，再走默认处理（控制台输出 + ErrorWidget），
-    // 便于定位真正出错的 widget。
+    // WASM 下错误处理链路（如 FlutterError.presentError → dumpErrorToConsole）
+    // 可能触发二次异常 Platform._operatingSystem，把控制台刷屏并掩盖原始错误。
+    // 用 try-catch 包裹确保原始错误被完整记录到 Talker；不再调用
+    // presentError（会递归触发 onError），改由 ErrorWidget.builder + Talker
+    // 控制台输出负责展示。
     FlutterError.onError = (FlutterErrorDetails details) {
-      log.error(
-        'FlutterError: ${details.exceptionAsString()}',
-        details.exception,
-        details.stack,
+      try {
+        log.error(
+          'FlutterError: ${details.exceptionAsString()}',
+          details.exception,
+          details.stack,
+        );
+      } catch (_) {
+        // Talker 日志记录本身失败时，用 debugPrint 兜底（WASM 安全）
+        debugPrint('FlutterError (log failed): ${details.exception}');
+      }
+    };
+
+    // WASM 安全的 ErrorWidget：不访问 dart:io Platform，避免渲染错误时触发
+    // 二次 Platform._operatingSystem 异常。
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        color: const Color(0x1AFF0000),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Text(
+            details.exceptionAsString(),
+            style: const TextStyle(fontSize: 11, color: Colors.red),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       );
-      FlutterError.presentError(details);
+    };
+
+    // 捕获 Zone 外未处理的异步错误（返回 true 阻止默认处理，避免触发 Platform）
+    PlatformDispatcher.instance.onError = (error, stack) {
+      try {
+        log.error('未捕获异步错误', error, stack);
+      } catch (_) {
+        debugPrint('Async error: $error');
+      }
+      return true;
     };
 
     if (DeviceUtil.isRealDesktop()) {
