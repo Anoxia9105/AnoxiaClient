@@ -718,6 +718,7 @@
   "voice_slide_up_to_cancel": "Slide up to cancel sending",
   "global_search_section_conversations": "Conversations",
   "global_search_section_contacts": "Contacts",
+  "chat_reply": "Reply",
   "chat_reply_cancel_tooltip": "Cancel reply",
   "call_minimize_tooltip": "Minimize",
   "call_switch_camera_tooltip": "Switch camera",

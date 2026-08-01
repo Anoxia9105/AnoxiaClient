@@ -718,6 +718,7 @@
   "voice_slide_up_to_cancel": "上にスライドして送信をキャンセル",
   "global_search_section_conversations": "会話",
   "global_search_section_contacts": "連絡先",
+  "chat_reply": "返信",
   "chat_reply_cancel_tooltip": "返信をキャンセル",
   "call_minimize_tooltip": "最小化",
   "call_switch_camera_tooltip": "カメラを切り替え",

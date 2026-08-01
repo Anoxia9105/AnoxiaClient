@@ -718,6 +718,7 @@
   "voice_slide_up_to_cancel": "手指上滑，取消发送",
   "global_search_section_conversations": "会话",
   "global_search_section_contacts": "联系人",
+  "chat_reply": "引用",
   "chat_reply_cancel_tooltip": "取消引用",
   "call_minimize_tooltip": "最小化",
   "call_switch_camera_tooltip": "切换前后摄像头",

@@ -120,7 +120,7 @@ class _ChatMessageContextMenuState
         _buildItem(
           'reply',
           HugeIcons.strokeRoundedMessageCircleReply,
-          '引用',
+          'chat_reply'.tr(),
         ),
       );
     }
