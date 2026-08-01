@@ -179,7 +179,6 @@ class MessageContentFrame extends ConsumerWidget {
 
     return ChatMessageContextMenu(
       message: message,
-      ref: ref,
       child: view.needsBubble
           ? BubbleShell(
               isCurrentUser: view.isCurrentUser,

@@ -413,10 +413,16 @@ Widget _buildAppWrapper(Widget home) {
     saveLocale: true,
 
     /// 通过 ScreenUtilInit 包裹，提供屏幕适配功能
+    ///
+    /// rebuildFactor 设为 none：禁用 resize 时 _updateTree 递归遍历整个 widget 树
+    /// 调用 markNeedsBuild 的行为。该递归在 WASM 模式下因调用栈较小会导致
+    /// "Maximum call stack size exceeded" 崩溃（resize 时触发）。
+    /// .w/.h/.sp 等扩展仅为数学计算，widget 的响应式重建由 MediaQuery 自然驱动即可。
     child: ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
+      rebuildFactor: RebuildFactors.none,
       builder: (context, child) => MaterialApp(
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
