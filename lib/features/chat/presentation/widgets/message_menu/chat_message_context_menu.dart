@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:custom_pop_up_menu_fork/custom_pop_up_menu.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -19,34 +18,32 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 
 /// 聊天消息上下文菜单组件
 ///
-/// 为消息提供右键菜单（桌面端）和长按菜单（移动端）功能，支持：
+/// 为消息提供右键菜单（桌面端）和长按菜单（移动端/Web）功能，支持：
 /// - 复制消息内容
 /// - 收藏消息
 /// - 撤回消息（仅自己发送的消息）
-class ChatMessageContextMenu extends StatefulWidget {
+///
+/// 全平台使用 Flutter 原生 [showMenu] 实现，无第三方依赖，WASM 安全。
+class ChatMessageContextMenu extends ConsumerStatefulWidget {
   /// 包裹的子组件
   final Widget child;
 
   /// 消息数据
   final ChatMessage message;
 
-  /// Riverpod 状态引用
-  final WidgetRef ref;
-
   const ChatMessageContextMenu({
     super.key,
     required this.child,
     required this.message,
-    required this.ref,
   });
 
   @override
-  State<ChatMessageContextMenu> createState() => _ChatMessageContextMenuState();
+  ConsumerState<ChatMessageContextMenu> createState() =>
+      _ChatMessageContextMenuState();
 }
 
-class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
-  final CustomPopupMenuController _menuController = CustomPopupMenuController();
-
+class _ChatMessageContextMenuState
+    extends ConsumerState<ChatMessageContextMenu> {
   @override
   Widget build(BuildContext context) {
     // 失败状态下不显示上下文菜单
@@ -55,32 +52,31 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     }
 
     if (DeviceUtil.isRealDesktop()) {
+      // 桌面端：右键菜单
       return GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onSecondaryTapDown: (details) =>
-            _showDesktopMenu(context, details.globalPosition),
+            _showMenuAtPosition(context, details.globalPosition),
         child: widget.child,
       );
     }
 
-    final popup = CustomPopupMenu(
-      controller: _menuController,
-      pressType: PressType.longPress,
-      barrierColor: Colors.transparent,
-      showArrow: false,
-      horizontalMargin: 8,
-      verticalMargin: 8,
-      menuBuilder: () => _buildMenuPanel(context),
+    // 移动端 / Web：长按菜单
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPressStart: (details) =>
+          _showMenuAtPosition(context, details.globalPosition),
       child: widget.child,
     );
-
-    return popup;
   }
 
-  Future<void> _showDesktopMenu(
+  /// 在指定全局位置弹出原生菜单（桌面右键 / 移动端长按通用）
+  Future<void> _showMenuAtPosition(
     BuildContext context,
     Offset globalPosition,
   ) async {
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       globalPosition & const Size(40, 40),
       Offset.zero & overlay.size,
@@ -91,7 +87,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
-      items: _buildDesktopMenuItems(context),
+      items: _buildMenuItems(context),
       menuPadding: const EdgeInsets.symmetric(vertical: 6),
     );
 
@@ -99,15 +95,15 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     _handleAction(context, action);
   }
 
-  List<PopupMenuEntry<String>> _buildDesktopMenuItems(BuildContext context) {
-    final currentUser = widget.ref.read(authControllerProvider).value;
+  List<PopupMenuEntry<String>> _buildMenuItems(BuildContext context) {
+    final currentUser = ref.read(authControllerProvider).value;
     final bool isMe = widget.message.senderId == currentUser?.userId;
     final items = <PopupMenuEntry<String>>[];
 
     if (widget.message.messageType == MessageType.text ||
         widget.message.messageType == MessageType.richText) {
       items.add(
-        _buildDesktopItem(
+        _buildItem(
           'copy',
           HugeIcons.strokeRoundedCopy01,
           'chat_copy'.tr(),
@@ -121,7 +117,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
 
     if (canReply) {
       items.add(
-        _buildDesktopItem(
+        _buildItem(
           'reply',
           HugeIcons.strokeRoundedMessageCircleReply,
           '引用',
@@ -130,7 +126,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     }
 
     items.add(
-      _buildDesktopItem(
+      _buildItem(
         'favorite',
         HugeIcons.strokeRoundedFavourite,
         'chat_favorite'.tr(),
@@ -139,7 +135,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
 
     if (isMe) {
       items.add(
-        _buildDesktopItem(
+        _buildItem(
           'revoke',
           HugeIcons.strokeRoundedUndo,
           'chat_revoke'.tr(),
@@ -151,7 +147,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     return items;
   }
 
-  PopupMenuItem<String> _buildDesktopItem(
+  PopupMenuItem<String> _buildItem(
     String value,
     List<List<dynamic>> icon,
     String label, {
@@ -172,89 +168,6 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
               Text(label, style: TextStyle(fontSize: 12, color: color)),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuPanel(BuildContext context) {
-    final currentUser = widget.ref.read(authControllerProvider).value;
-    final bool isMe = widget.message.senderId == currentUser?.userId;
-
-    final items = <Widget>[
-      if (widget.message.messageType == MessageType.text ||
-          widget.message.messageType == MessageType.richText)
-        _buildMenuItem(
-          context,
-          action: 'copy',
-          icon: HugeIcons.strokeRoundedCopy01,
-          label: 'chat_copy'.tr(),
-        ),
-      if (widget.message.deliveryStatus == DeliveryStatus.sent &&
-          widget.message.messageId?.isNotEmpty == true)
-        _buildMenuItem(
-          context,
-          action: 'reply',
-          icon: HugeIcons.strokeRoundedMessageCircleReply,
-          label: '引用',
-        ),
-      _buildMenuItem(
-        context,
-        action: 'favorite',
-        icon: HugeIcons.strokeRoundedFavourite,
-        label: 'chat_favorite'.tr(),
-      ),
-      if (isMe)
-        _buildMenuItem(
-          context,
-          action: 'revoke',
-          icon: HugeIcons.strokeRoundedUndo,
-          label: 'chat_revoke'.tr(),
-          color: Colors.redAccent,
-        ),
-    ];
-
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 130),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 0.5,
-          ),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: items),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required String action,
-    required List<List<dynamic>> icon,
-    required String label,
-    Color? color,
-  }) {
-    final c = color ?? Theme.of(context).colorScheme.onSurface;
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      onTap: () {
-        _menuController.hideMenu();
-        _handleAction(context, action);
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HugeIcon(icon: icon, size: 16, color: c),
-            const SizedBox(width: 10),
-            Text(label, style: TextStyle(fontSize: 12, color: c)),
-          ],
         ),
       ),
     );
@@ -335,10 +248,10 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
       return;
     }
 
-    widget.ref
+    ref
         .read(replyTargetControllerProvider.notifier)
         .set(roomId, widget.message);
-    widget.ref.read(chatFocusNodeProvider(roomId)).requestFocus();
+    ref.read(chatFocusNodeProvider(roomId)).requestFocus();
   }
 
   Future<void> _handleFavorite(BuildContext context) async {
@@ -346,7 +259,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     if (messageId == null) return;
 
     try {
-      final success = await widget.ref
+      final success = await ref
           .read(chatMessagesProvider.notifier)
           .addFavorite(messageId);
       if (context.mounted) {
@@ -366,7 +279,7 @@ class _ChatMessageContextMenuState extends State<ChatMessageContextMenu> {
     if (messageId == null) return;
 
     try {
-      final success = await widget.ref
+      final success = await ref
           .read(chatMessagesProvider.notifier)
           .recallMessage(messageId, widget.message.roomId ?? '');
       if (context.mounted) {
