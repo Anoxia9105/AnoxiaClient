@@ -9,6 +9,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -80,7 +81,16 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   void initState() {
     super.initState();
     _mountedRenderers.add(this);
-    _focusNode = FocusNode();
+    // Web 端只读气泡：禁止 FocusNode 抢占焦点。
+    //
+    // flutter_quill 的 Web 分支在 _didChangeTextEditingValue 中会无条件调用
+    // requestKeyboard() -> focusNode.requestFocus()（见本文件上方长注释）。
+    // 现有的 _clearingSiblings 标志只能拦住「应用侧」清选区触发的 requestFocus，
+    // 拦不住 quill 内部（手势/选区叠加层）直接 updateSelection 触发的 requestFocus。
+    // 多个只读气泡因此会同步互抢焦点 -> 无限递归 -> Maximum call stack size exceeded，
+    // 表现为「聊天消息渲染卡死」。让 FocusNode 不可抢焦点后 requestFocus 变为 no-op，
+    // 从根本上掐断互抢链路；桌面/移动端不受 kIsWeb 分支影响，保留完整选区交互。
+    _focusNode = FocusNode(canRequestFocus: !kIsWeb);
     _focusNode.addListener(_onFocusChanged);
     _initController();
   }
