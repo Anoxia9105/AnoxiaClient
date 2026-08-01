@@ -38,11 +38,11 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: DeviceUtil.isRealMobile() ? true : false,
+        centerTitle: DeviceUtil.isMobile(context),
         titleSpacing: 16,
         leading: () {
-          /// 如果是移动端 显示菜单按钮 打开个人中心抽屉
-          if (DeviceUtil.isRealMobile()) {
+          /// 移动端（含窄屏 Web）显示菜单按钮 打开个人中心抽屉
+          if (DeviceUtil.isMobile(context)) {
             return IconButton(
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedMenuTwoLine),
               onPressed: () => ZoomDrawer.of(context)?.toggle(),
@@ -137,7 +137,9 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref) {
-    final showSearch = DeviceUtil.isRealDesktop();
+    // 桌面布局（真实桌面 + 宽屏 Web）显示搜索栏，与底部输入栏的桌面判定一致
+    final showSearch = DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context));
     return Column(
       children: [
         if (showSearch) _buildSearchBar(context, ref),

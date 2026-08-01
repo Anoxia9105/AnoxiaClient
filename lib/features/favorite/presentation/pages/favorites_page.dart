@@ -41,7 +41,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     );
     return Scaffold(
       appBar: AppBar(
-        centerTitle: DeviceUtil.isRealMobile(),
+        centerTitle: DeviceUtil.isMobile(context),
         title: Text('sidebar_favorites'.tr()),
       ),
       body: body,
@@ -56,7 +56,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   void _syncSelection(List<ChatFavorite> items) {
     if (items.isEmpty) return;
 
-    final isMobile = DeviceUtil.isRealMobile();
+    final isMobile = DeviceUtil.isMobile(context);
 
     if (isMobile) {
       final stillExists =
@@ -89,7 +89,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   /// [context] 上下文
   /// 返回 加载状态 Widget
   Widget _buildLoading(BuildContext context) {
-    final mobile = DeviceUtil.isRealMobile();
+    final mobile = DeviceUtil.isMobile(context);
     if (mobile) {
       return const _FavoriteListSkeleton();
     }
@@ -146,7 +146,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   /// [items] 收藏项列表
   /// 返回 已加载状态 Widget
   Widget _buildLoaded(BuildContext context, List<ChatFavorite> items) {
-    final mobile = DeviceUtil.isRealMobile();
+    final mobile = DeviceUtil.isMobile(context);
 
     if (items.isEmpty) {
       return _EmptyFavorites(

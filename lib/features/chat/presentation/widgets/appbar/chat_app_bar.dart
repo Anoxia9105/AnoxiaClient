@@ -47,7 +47,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     return AppBar(
-      centerTitle: DeviceUtil.isRealMobile(),
+      centerTitle: DeviceUtil.isMobile(context),
       actionsPadding: const EdgeInsets.all(4),
       title: roomListAsync.when(
         data: (_) {
@@ -66,7 +66,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     : (room.roomName ?? 'appbar_conversation_detail'.tr()));
 
           // 手机端标题保持简洁：只显示名字；对方输入时用输入状态替换名字。
-          if (DeviceUtil.isRealMobile()) {
+          if (DeviceUtil.isMobile(context)) {
             return Text(
               room.roomType == 0 && isTyping
                   ? 'appbar_user_typing'.tr()
@@ -125,7 +125,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (room == null) return <Widget>[];
 
         /// 移动端暂不显示通话和成员管理按钮，放在更多菜单里
-        if (DeviceUtil.isRealMobile()) {
+        if (DeviceUtil.isMobile(context)) {
           return [
             IconButton(
               mouseCursor: SystemMouseCursors.click,

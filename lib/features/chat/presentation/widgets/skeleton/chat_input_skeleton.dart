@@ -9,7 +9,10 @@ class ChatInputSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DeviceUtil.isRealDesktop()
+    // 与 ChatRoomDetailBottomBar 的桌面判定保持一致：真实桌面 + 宽屏 Web
+    final isDesktop = DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context));
+    return isDesktop
         ? const _DesktopChatInputSkeleton()
         : const _MobileChatInputSkeleton();
   }

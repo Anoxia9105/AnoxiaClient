@@ -42,7 +42,7 @@ class ContactList extends ConsumerWidget {
     );
     return Scaffold(
       appBar: AppBar(
-        centerTitle: DeviceUtil.isRealMobile(),
+        centerTitle: DeviceUtil.isMobile(context),
         titleSpacing: 16,
         title: Text('contact_contacts'.tr()),
       ),
@@ -57,7 +57,7 @@ class ContactList extends ConsumerWidget {
               title: Text('contact_new_friends'.tr()),
               onTap: () {
                 ref.read(contactSelectionProvider.notifier).selectNewFriends();
-                if (DeviceUtil.isRealMobile()) {
+                if (DeviceUtil.isMobile(context)) {
                   _openMobileDetail(context, const NewFriendsPage());
                 }
               },
@@ -73,7 +73,7 @@ class ContactList extends ConsumerWidget {
               title: Text('contact_joined_groups'.tr()),
               onTap: () {
                 ref.read(contactSelectionProvider.notifier).selectGroups();
-                if (DeviceUtil.isRealMobile()) {
+                if (DeviceUtil.isMobile(context)) {
                   _openMobileDetail(context, const GroupRoomListPage());
                 }
               },
@@ -87,7 +87,7 @@ class ContactList extends ConsumerWidget {
             Expanded(
               child: SortedContactGroupsWidget(
                 onContactTap: () {
-                  if (DeviceUtil.isRealMobile()) {
+                  if (DeviceUtil.isMobile(context)) {
                     _openMobileDetail(context, const ContactDetail());
                   }
                 },

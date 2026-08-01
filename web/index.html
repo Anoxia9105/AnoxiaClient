@@ -156,6 +156,11 @@
       loading.classList.add('is-hidden');
       window.setTimeout(() => loading.remove(), 240);
     }, { once: true });
+
+    // 禁用浏览器默认右键菜单，右键交互全部交由 Flutter 处理（消息/会话等）
+    window.addEventListener('contextmenu', function (event) {
+      event.preventDefault();
+    }, false);
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

@@ -1,6 +1,5 @@
 ﻿import 'dart:async';
 import 'dart:convert';
-import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,19 +50,13 @@ class _ChatMessageContextMenuState
       return widget.child;
     }
 
-    if (DeviceUtil.isRealDesktop()) {
-      // 桌面端：右键菜单
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onSecondaryTapDown: (details) =>
-            _showMenuAtPosition(context, details.globalPosition),
-        child: widget.child,
-      );
-    }
-
-    // 移动端 / Web：长按菜单
+    // 全平台同时注册右键和长按：
+    // - 桌面端（含桌面 Web）右键弹出菜单
+    // - 移动端 / 触屏 Web 长按弹出菜单
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      onSecondaryTapDown: (details) =>
+          _showMenuAtPosition(context, details.globalPosition),
       onLongPressStart: (details) =>
           _showMenuAtPosition(context, details.globalPosition),
       child: widget.child,
