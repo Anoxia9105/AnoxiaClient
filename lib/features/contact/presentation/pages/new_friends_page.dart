@@ -113,24 +113,22 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 96,
-              height: 96,
+              padding: const EdgeInsets.all(26),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    cs.primary.withValues(alpha: 0.14),
-                    cs.primary.withValues(alpha: 0.05),
-                  ],
-                ),
-                shape: BoxShape.circle,
-                border: Border.all(color: cs.primary.withValues(alpha: 0.18)),
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.primary.withValues(alpha: 0.12),
+                    blurRadius: 26,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedUserAdd02,
-                size: 42,
-                color: cs.primary.withValues(alpha: 0.85),
+                size: 58,
+                color: cs.primary.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 20),
@@ -185,16 +183,22 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: cs.errorContainer.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.error.withValues(alpha: 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedAlert02,
-                size: 32,
-                color: cs.error,
+                size: 44,
+                color: cs.error.withValues(alpha: 0.85),
               ),
             ),
             const SizedBox(height: 16),
