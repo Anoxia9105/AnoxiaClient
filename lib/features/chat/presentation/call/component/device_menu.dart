@@ -148,9 +148,11 @@ class _CallBubbleMenuState extends State<CallBubbleMenu> {
       widget.arrowWidth / 2 + 8,
       bubbleRect.width - widget.arrowWidth / 2 - 8,
     );
+    // 气泡在按钮上方 → 箭头在气泡底部指向按钮（AxisDirection.down）
+    // 气泡在按钮下方 → 箭头在气泡顶部指向按钮（AxisDirection.up）
     final direction = anchorCenter.dy >= bubbleRect.bottom
-        ? AxisDirection.up
-        : AxisDirection.down;
+        ? AxisDirection.down
+        : AxisDirection.up;
 
     if (direction == _arrowDirection && (offset - _arrowOffset).abs() < 0.5) {
       return;
