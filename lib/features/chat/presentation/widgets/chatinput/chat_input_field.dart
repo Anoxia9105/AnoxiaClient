@@ -25,10 +25,15 @@ class ChatInputField extends ConsumerWidget {
     final roomId = ref.watch(activeRoomIdProvider);
     if (roomId == null) return const SizedBox.shrink();
 
-    /// 根据设备类型选择不同的输入组件
-    if (DeviceUtil.isRealMobile()) {
+    /// 根据设备类型选择不同的输入组件。
+    ///
+    /// 布局按屏幕宽度（响应式）决定，而不是按“真实移动设备”判断：
+    /// Web 上的窄窗口 / 手机浏览器 isRealMobile() 永远为 false，会错误地
+    /// 一直使用桌面端输入框。平台能力（窗口插件等）用 isRealMobile，
+    /// UI 布局用宽度断点（与 chat_page.dart 保持一致）。
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isMobile(context)) {
       return MobileChatInput(
-        key: ValueKey('android_$roomId'),
+        key: ValueKey('mobile_$roomId'),
         roomId: roomId,
         bottomSheet: bottomSheet,
       );

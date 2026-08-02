@@ -27,7 +27,9 @@ class RoomListDialogMenus {
   /// [ref] 可选的回调函数，用于处理添加好友对话框
   static void showTopRightDialog(BuildContext context, {Function? ref}) {
     Function? close;
-    bool isMobile = DeviceUtil.isRealMobile();
+    // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()，
+    // 否则 Web 上缩小窗口后气泡角与菜单形态仍停留在桌面端。
+    bool isMobile = DeviceUtil.isMobile(context);
 
     close = Toast.showWidget(
       context,
@@ -71,7 +73,7 @@ class RoomListDialogMenus {
                     title: 'chat_create_group'.tr(),
                     onTap: () {
                       close?.call();
-                      if (DeviceUtil.isRealMobile()) {
+                      if (isMobile) {
                         const CreateGroupRoute().push(
                           appNavigatorKey.currentContext!,
                         );
