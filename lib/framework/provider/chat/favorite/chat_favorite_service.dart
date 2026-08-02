@@ -1,5 +1,6 @@
-﻿import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/chat_favorite.dart';
+import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -46,6 +47,23 @@ class ChatFavoriteService {
     });
 
     return list;
+  }
+
+  /// 取消收藏消息
+  ///
+  /// [favoriteId] 收藏记录 ID（[ChatFavorite.id]）
+  ///
+  /// 返回是否操作成功
+  Future<bool> removeFavorite(int favoriteId) async {
+    try {
+      final response = await DioClient().post(
+        '${API.chatFavoriteRemove}/$favoriteId',
+      );
+      return response.data['code'] == 200;
+    } catch (e) {
+      log.error('取消收藏失败: $e');
+      return false;
+    }
   }
 
   /// 兼容多种后端响应格式
