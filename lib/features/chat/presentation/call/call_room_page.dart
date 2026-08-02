@@ -28,7 +28,9 @@ class CallRoomPage extends ConsumerWidget {
       error: (err, _) => _buildErrorState(err.toString(), ref, token),
       data: (roomState) {
         //  在这里根据设备类型进行端隔离分流！
-        if (DeviceUtil.isRealMobile()) {
+        //  Web 端通话入口与移动端一致（GlobalCallOverlay 全屏浮层），
+        //  同样走移动端布局，否则会渲染桌面窗口版黑屏界面。
+        if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
           // 移动端：走专门为移动端设计的布局，传入 token 和 roomState
           return CallMobileRoomBody(roomState: roomState, token: token);
         } else {
