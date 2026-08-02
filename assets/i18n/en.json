@@ -543,6 +543,7 @@
   "call_network_good": "Network connection is good",
   "call_device_select": "Device selection",
   "call_device_label": "Device",
+  "call_no_device": "No available devices",
   "call_hangup": "Hang up",
   "call_mute": "Mute",
   "call_unmute": "Unmute",

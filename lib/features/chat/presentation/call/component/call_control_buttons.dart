@@ -1,6 +1,7 @@
-﻿import 'package:anoxia/common/widgets/bubble_dialog.dart';
-import 'package:anoxia/common/widgets/toast.dart';
+﻿import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/features/chat/presentation/call/component/device_menu.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -124,28 +125,57 @@ void showReactionPicker(
     direction: PreferDirection.topRight,
     child: Material(
       color: Colors.transparent,
-      child: BubbleWidget(
-        arrowDirection: AxisDirection.up,
-        arrowOffset: 410,
+      child: CallBubbleMenu(
+        anchorContext: context,
+        borderRadius: BorderRadius.circular(12),
         backgroundColor: Theme.of(context).colorScheme.surface,
         border: BorderSide(
           color: Theme.of(context).colorScheme.outlineVariant,
           width: 0.5,
         ),
+        shadows: const [
+          BoxShadow(
+            color: Color(0x2E000000),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
+        ],
         contentBuilder: (context) => Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           child: Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: emojis.map((emoji) {
-              return InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  onReaction(emoji);
-                  close?.call();
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
+              return Tooltip(
+                message: 'call_reaction'.tr(),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  hoverColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.08),
+                  onTap: () {
+                    onReaction(emoji);
+                    close?.call();
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                  ),
                 ),
               );
             }).toList(),

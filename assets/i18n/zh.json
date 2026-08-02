@@ -543,6 +543,7 @@
   "call_network_good": "网络连接良好",
   "call_device_select": "设备选择",
   "call_device_label": "设备",
+  "call_no_device": "未检测到可用设备",
   "call_hangup": "挂断",
   "call_mute": "静音",
   "call_unmute": "取消静音",

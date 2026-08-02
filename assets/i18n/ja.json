@@ -543,6 +543,7 @@
   "call_network_good": "ネットワーク接続良好",
   "call_device_select": "デバイス選択",
   "call_device_label": "デバイス",
+  "call_no_device": "利用可能なデバイスがありません",
   "call_hangup": "切断",
   "call_mute": "ミュート",
   "call_unmute": "ミュート解除",

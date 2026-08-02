@@ -255,11 +255,13 @@ class RoomController extends _$RoomController {
       // 绑定设备热插拔监听（耳机插拔、摄像头连接等）
       _bindDeviceEvents();
 
+      // 初始化本地轨道（默认关闭麦克风和摄像头，由用户手动开启）
+      // 注意：必须先初始化轨道再枚举设备——Web 端只有获得媒体权限后
+      // enumerateDevices 才会返回带名称的设备列表，否则菜单里全是空名称
+      await _initLocalTracks(room);
+
       // 获取初始设备列表
       final devices = await _getInitialDevices();
-
-      // 初始化本地轨道（默认关闭麦克风和摄像头，由用户手动开启）
-      await _initLocalTracks(room);
 
       return RoomState(
         room: room,
@@ -306,13 +308,24 @@ class RoomController extends _$RoomController {
   }
 
   /// 枚举系统可用媒体设备
+  /// 过滤掉无名称设备（Web 端未授权时 enumerateDevices 返回空 label）并去重
   Future<List<MediaDevice>> _getInitialDevices() async {
     try {
-      return await Hardware.instance.enumerateDevices();
+      final devices = await Hardware.instance.enumerateDevices();
+      return _filterUsableDevices(devices);
     } catch (e) {
       log.error('获取设备列表失败: $e');
       return [];
     }
+  }
+
+  /// 过滤空名称设备并去重
+  List<MediaDevice> _filterUsableDevices(List<MediaDevice> devices) {
+    final seen = <String>{};
+    return devices.where((d) {
+      final key = '${d.kind}:${d.deviceId}';
+      return d.label.trim().isNotEmpty && seen.add(key);
+    }).toList();
   }
 
   /// 初始化本地轨道
@@ -545,6 +558,11 @@ class RoomController extends _$RoomController {
       ),
     );
   }
+
+  /// 手动刷新设备列表
+  ///
+  /// 打开设备选择菜单前调用，确保 Web 端获取到授权后的完整设备列表
+  Future<void> refreshDevices() => _loadDeviceList();
 
   /// 清理资源
   /// 释放 listener 和设备订阅等本地资源，不访问 provider state。
@@ -795,15 +813,19 @@ class RoomController extends _$RoomController {
     final currentState = state.value;
     if (currentState == null) return;
     try {
-      await Hardware.instance.selectAudioInput(device);
-      // 重启轨道使新设备立即生效
-      final localParticipant = currentState.room.localParticipant;
-      if (localParticipant != null &&
-          localParticipant.audioTrackPublications.isNotEmpty) {
-        final audioTrack =
-            localParticipant.audioTrackPublications.first.track
-                as LocalAudioTrack;
-        await audioTrack.restartTrack();
+      // Web 端 Hardware.selectAudioInput 不支持，
+      // room.setAudioInputDevice 内部会按平台分发（Web 走 track.setDeviceId 并重启轨道）
+      await currentState.room.setAudioInputDevice(device);
+      // 原生端切换后手动重启轨道使新设备立即生效
+      if (!DeviceUtil.isWeb) {
+        final localParticipant = currentState.room.localParticipant;
+        if (localParticipant != null &&
+            localParticipant.audioTrackPublications.isNotEmpty) {
+          final audioTrack =
+              localParticipant.audioTrackPublications.first.track
+                  as LocalAudioTrack;
+          await audioTrack.restartTrack();
+        }
       }
       state = AsyncData(currentState.copyWith(currentAudioInput: device));
       log.info('切换麦克风至: ${device.label}');

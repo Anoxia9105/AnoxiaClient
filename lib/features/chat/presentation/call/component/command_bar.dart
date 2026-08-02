@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:livekit_client/livekit_client.dart';
 import 'package:anoxia/platform/shims/pip_shim.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
@@ -87,7 +88,7 @@ class CommandBar extends ConsumerWidget {
                           active: state.micEnabled,
                           onTap: () => notifier.toggleMic(),
                           onArrowTap: () => _showAudioInputMenu(
-                            context, notifier, state,
+                            context, ref, notifier, state,
                           ),
                         );
                       },
@@ -106,7 +107,7 @@ class CommandBar extends ConsumerWidget {
                           active: state.cameraEnabled,
                           onTap: () => notifier.toggleCamera(),
                           onArrowTap: () => _showVideoInputMenu(
-                            context, notifier, state,
+                            context, ref, notifier, state,
                           ),
                         );
                       },
@@ -127,7 +128,7 @@ class CommandBar extends ConsumerWidget {
                           active: state.speakerOn,
                           onTap: () => notifier.toggleSpeaker(),
                           onArrowTap: () => _showAudioOutputMenu(
-                            context, notifier, state,
+                            context, ref, notifier, state,
                           ),
                         );
                       },
@@ -245,65 +246,96 @@ class CommandBar extends ConsumerWidget {
   }
 
   /// 显示音频输入设备选择菜单
-  void _showAudioInputMenu(
+  ///
+  /// 打开前先刷新设备列表，确保 Web 端拿到授权后的完整设备名称
+  Future<void> _showAudioInputMenu(
     BuildContext context,
+    WidgetRef ref,
     RoomController notifier,
     RoomState state,
-  ) {
+  ) async {
+    await notifier.refreshDevices();
+    if (!context.mounted) return;
+    final fresh =
+        ref.read(roomControllerProvider(state.token)).value ?? state;
     showDeviceMenu(
       context: context,
-      items: state.audioInputs
-          .map(
-            (d) => DeviceMenuItem(
-              label: d.label,
-              selected: state.currentAudioInput?.deviceId == d.deviceId,
-              onTap: () => notifier.switchAudioInput(d),
-            ),
-          )
-          .toList(),
-      footer: state.room.localParticipant != null
-          ? LocalVolumeFooter(localParticipant: state.room.localParticipant!)
+      title: 'call_microphone'.tr(),
+      icon: HugeIcons.strokeRoundedMic01,
+      items: _buildDeviceItems(
+        fresh.audioInputs,
+        fresh.currentAudioInput,
+        notifier.switchAudioInput,
+      ),
+      footer: fresh.room.localParticipant != null
+          ? LocalVolumeFooter(localParticipant: fresh.room.localParticipant!)
           : null,
     );
   }
 
   /// 显示视频输入设备选择菜单
-  void _showVideoInputMenu(
+  Future<void> _showVideoInputMenu(
     BuildContext context,
+    WidgetRef ref,
     RoomController notifier,
     RoomState state,
-  ) {
+  ) async {
+    await notifier.refreshDevices();
+    if (!context.mounted) return;
+    final fresh =
+        ref.read(roomControllerProvider(state.token)).value ?? state;
     showDeviceMenu(
       context: context,
-      items: state.videoInputs
-          .map(
-            (d) => DeviceMenuItem(
-              label: d.label,
-              selected: state.currentVideoInput?.deviceId == d.deviceId,
-              onTap: () => notifier.switchVideoInput(d),
-            ),
-          )
-          .toList(),
+      title: 'call_camera'.tr(),
+      icon: HugeIcons.strokeRoundedVideo01,
+      items: _buildDeviceItems(
+        fresh.videoInputs,
+        fresh.currentVideoInput,
+        notifier.switchVideoInput,
+      ),
     );
   }
 
   /// 显示音频输出设备选择菜单
-  void _showAudioOutputMenu(
+  Future<void> _showAudioOutputMenu(
     BuildContext context,
+    WidgetRef ref,
     RoomController notifier,
     RoomState state,
-  ) {
+  ) async {
+    await notifier.refreshDevices();
+    if (!context.mounted) return;
+    final fresh =
+        ref.read(roomControllerProvider(state.token)).value ?? state;
     showDeviceMenu(
       context: context,
-      items: state.audioOutputs
-          .map(
-            (d) => DeviceMenuItem(
-              label: d.label,
-              selected: state.currentAudioOutput?.deviceId == d.deviceId,
-              onTap: () => notifier.switchAudioOutput(d),
-            ),
-          )
-          .toList(),
+      title: 'call_speaker'.tr(),
+      icon: HugeIcons.strokeRoundedVolumeUp,
+      items: _buildDeviceItems(
+        fresh.audioOutputs,
+        fresh.currentAudioOutput,
+        notifier.switchAudioOutput,
+      ),
     );
+  }
+
+  /// 构建设备菜单项列表
+  ///
+  /// 设备名称为空时（浏览器未授权）显示"设备 N"兜底文案
+  List<DeviceMenuItem> _buildDeviceItems(
+    List<MediaDevice> devices,
+    MediaDevice? current,
+    void Function(MediaDevice) onSelect,
+  ) {
+    return [
+      for (var i = 0; i < devices.length; i++)
+        DeviceMenuItem(
+          label: devices[i].label.trim().isEmpty
+              ? '${'call_device_label'.tr()} ${i + 1}'
+              : devices[i].label,
+          selected: current?.deviceId == devices[i].deviceId,
+          onTap: () => onSelect(devices[i]),
+        ),
+    ];
   }
 }
