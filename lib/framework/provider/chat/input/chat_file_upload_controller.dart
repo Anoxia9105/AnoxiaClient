@@ -117,10 +117,15 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
         final rawList = res.data is Map ? res.data['data'] : res.data;
         if (rawList is List && rawList.isNotEmpty) {
+          // 只回写仍在编辑器中的条目：用户删除 embed 后对应记录已被
+          // retain() 清理，不能再把成功/失败状态加回来阻塞发送按钮
           state = {
             ...state,
             for (int i = 0; i < attachments.length && i < rawList.length; i++)
-              attachments[i].id!: UploadEntry.success(rawList[i].toString()),
+              if (state.containsKey(attachments[i].id))
+                attachments[i].id!: UploadEntry.success(
+                  rawList[i].toString(),
+                ),
           };
           return;
         }
@@ -152,7 +157,25 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
   /// 标记文件为上传失败状态
   void _markFailed(List<Attachment> attachments) {
-    state = {...state, for (final a in attachments) a.id!: UploadEntry.failed};
+    final failed = <String, UploadEntry>{
+      for (final a in attachments)
+        if (state.containsKey(a.id)) a.id!: UploadEntry.failed,
+    };
+    if (failed.isEmpty) return;
+    state = {...state, ...failed};
+  }
+
+  /// 只保留仍在编辑器中的附件上传状态
+  ///
+  /// 用户退格删除正在上传/已失败的 embed 时，若不清理对应记录，
+  /// 工具栏发送按钮会一直处于禁用状态（Web/桌面端）。
+  void retain(Set<String> ids) {
+    final removed = state.keys.where((id) => !ids.contains(id)).toList();
+    if (removed.isEmpty) return;
+    for (final id in removed) {
+      _filesById.remove(id);
+    }
+    state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));
   }
 
   /// 供 DeltaProcessor 使用：只返回上传成功的 id -> url 映射

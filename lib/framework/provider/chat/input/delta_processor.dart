@@ -56,6 +56,12 @@ class DeltaProcessor {
         .toList();
   }
 
+  /// 获取文档中所有附件 ID（用于清理已从编辑器中删除的上传记录）
+  Set<String> get attachmentIds => _allAttachments
+      .map((a) => a.id)
+      .whereType<String>()
+      .toSet();
+
   /// 检查是否所有附件都已上传成功
   ///
   /// 遍历所有嵌入对象，检查每个附件的 ID 是否在 uploadState 中存在对应的服务器 URL

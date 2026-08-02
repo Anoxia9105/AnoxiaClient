@@ -134,6 +134,7 @@ class ChatInputController extends _$ChatInputController {
   void _onTextChanged() {
     if (!ref.mounted) return;
     final controller = state;
+    _pruneDeletedUploads(controller);
     if (_enforceInputLimit(controller)) return;
     final bool hasContent = controller.document.length > 1;
 
@@ -206,6 +207,19 @@ class ChatInputController extends _$ChatInputController {
         }
       }
     });
+  }
+
+  /// 清理已从编辑器中删除的附件上传记录。
+  ///
+  /// 用户退格删除图片/文件 embed 后，上传控制器中仍残留 uploading/failed
+  /// 记录，导致发送按钮永久禁用（Web/桌面端 Quill 输入框）。每次文档变更
+  /// 时按当前文档内的附件 ID 裁剪两个上传控制器，移动端不插入 embed，
+  /// 文档里没有附件 ID 也不会误清（其上传走 sendPicked* 即时链路）。
+  void _pruneDeletedUploads(QuillController controller) {
+    final ids = DeltaProcessor(controller.document.toDelta(), const {})
+        .attachmentIds;
+    ref.read(chatImageUploadControllerProvider.notifier).retain(ids);
+    ref.read(chatFileUploadControllerProvider.notifier).retain(ids);
   }
 
   /// 发送输入状态（正在输入/结束输入）给聊天对方
