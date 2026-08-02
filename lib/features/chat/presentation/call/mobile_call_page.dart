@@ -2,6 +2,7 @@ import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,16 +59,19 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(mobileCallSessionControllerProvider);
-
     final inPip = session?.isInPipMode ?? false;
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0F14),
+    // Web 端通话承载桌面布局（CommandBar + 磁贴），外壳跟随应用主题，
+    // 不再使用移动端的深色全屏壳；真实移动端保持原有深色沉浸式样式。
+    final isWeb = DeviceUtil.isWeb;
+    final darkShell = isWeb ? null : const Color(0xFF0D0F14);
+    final scaffold = Scaffold(
+      backgroundColor: darkShell,
 
       appBar: inPip
           ? null
           : AppBar(
-              backgroundColor: const Color(0xFF0D0F14),
-              foregroundColor: Colors.white,
+              backgroundColor: darkShell,
+              foregroundColor: isWeb ? null : Colors.white,
               elevation: 0,
               centerTitle: true,
               title: Text(
@@ -89,6 +93,14 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
             ),
 
       body: _buildBody(session?.token),
+    );
+    if (!isWeb) return scaffold;
+    return Container(
+      decoration: BoxDecoration(
+        gradient:
+            Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+      ),
+      child: scaffold,
     );
   }
 

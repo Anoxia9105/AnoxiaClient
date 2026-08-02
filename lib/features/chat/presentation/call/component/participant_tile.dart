@@ -191,8 +191,8 @@ class _ParticipantTileState extends State<ParticipantTile> {
                   ),
                 ),
 
-              /// 参与者信息和操作菜单（仅桌面显示）
-              if (DeviceUtil.isRealDesktop())
+              /// 参与者信息和操作菜单（桌面端及 Web 端显示）
+              if (DeviceUtil.isRealDesktop() || DeviceUtil.isWeb)
                 Positioned(
                   left: 8,
                   bottom: 8,
