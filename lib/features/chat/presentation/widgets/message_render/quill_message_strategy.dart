@@ -324,7 +324,13 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
     if (opsJson is! List) return 64;
 
-    final baseStyle = _wasmBaseStyle(context);
+    // WASM 分支渲染使用 SelectableText.rich，Flutter 会把
+    // `DefaultTextStyle.of(context).style.merge(spanStyle)` 应用到最终样式上
+    // （见 selectable_text.dart），于是 span 中为 null 的字形属性（如
+    // letterSpacing）会继承气泡默认样式。测量时必须使用同一份已合并的样式，
+    // 否则继承下来的 letterSpacing 会让实际渲染行宽大于测量值，最后一个字
+    // 被挤到下一行。桌面分支用 QuillEditor，样式不走此合并路径，故保持原样。
+    final baseStyle = _kIsWasm ? _wasmRenderStyle(context) : _wasmBaseStyle(context);
     final textScaler = MediaQuery.textScalerOf(context);
     final spans = <InlineSpan>[];
     final placeholders = <PlaceholderDimensions>[];
@@ -409,7 +415,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   /// 这里逐个解释 Delta operation，保留常用行内样式，并显式渲染 mention embed。
   Widget _buildWasmRichText(BuildContext context) {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
-    final baseStyle = _wasmBaseStyle(context);
+    final baseStyle = _wasmRenderStyle(context);
     if (opsJson is! List) {
       return SelectableText('', style: baseStyle);
     }
@@ -451,6 +457,17 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       fontSize: 14,
       height: 1.4,
     );
+  }
+
+  /// 与 SelectableText 内部合并逻辑一致的渲染样式。
+  ///
+  /// SelectableText.rich 在构建时会执行
+  /// `DefaultTextStyle.of(context).style.merge(spanStyle)`，所以 span 中为 null
+  /// 的属性会继承气泡默认样式（例如 M3 bodyMedium 的 letterSpacing 0.25）。
+  /// 测量宽度时用同一个已合并的样式，可以保证「测出宽度 == 实际渲染宽度」，
+  /// 避免气泡因为样式继承而比文字本身窄，最后一个字被挤换行。
+  TextStyle _wasmRenderStyle(BuildContext context) {
+    return DefaultTextStyle.of(context).style.merge(_wasmBaseStyle(context));
   }
 
   /// Quill 文档总会以一个终止换行结尾。编辑器把它作为文档边界而非空白行，
