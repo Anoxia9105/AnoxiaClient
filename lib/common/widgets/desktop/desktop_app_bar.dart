@@ -50,9 +50,10 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
             )
           : Center(
-              child: Assets.images.appIconPng.image(
+              child: Assets.images.appLogo.image(
                 width: 24,
                 height: 24,
+                filterQuality: FilterQuality.high,
                 // fit: BoxFit.cover
               ),
             ),
