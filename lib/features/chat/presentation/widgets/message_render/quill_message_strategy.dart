@@ -312,7 +312,9 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     final hasLinkPreview =
         MessageLinkPreview.extractFirstUrl(_linkPreviewSource()) != null;
-    final minWidth = hasLinkPreview ? MessageLinkPreview.minCardWidth : 64;
+    // 普通富文本按实际内容收缩；原来的 64px 下限会让 "111" 这类短消息
+    // 无缘由地多出大块空白。链接预览仍保留卡片自身需要的最小宽度。
+    final minWidth = hasLinkPreview ? MessageLinkPreview.minCardWidth : 1;
     final effectiveMinWidth = minWidth.clamp(0.0, maxWidth).toDouble();
     final measuredWidth = _measureInlineContentWidth(context, maxWidth);
     return measuredWidth.clamp(effectiveMinWidth, maxWidth).toDouble();
@@ -322,18 +324,15 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
     if (opsJson is! List) return 64;
 
-    final baseStyle = TextStyle(
-      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
-      fontSize: 14,
-      height: 1,
-    );
+    final baseStyle = _wasmBaseStyle(context);
     final textScaler = MediaQuery.textScalerOf(context);
     final spans = <InlineSpan>[];
     final placeholders = <PlaceholderDimensions>[];
     var hasVisibleContent = false;
     var hasBlockQuote = false;
 
-    for (final op in opsJson) {
+    for (var index = 0; index < opsJson.length; index++) {
+      final op = opsJson[index];
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
@@ -343,11 +342,14 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       }
 
       if (insert is String) {
-        if (insert.replaceAll('\n', '').isNotEmpty) hasVisibleContent = true;
+        final displayText = _displayText(opsJson, index, insert);
+        if (displayText.replaceAll('\n', '').isNotEmpty) {
+          hasVisibleContent = true;
+        }
         spans.add(
           TextSpan(
-            text: insert,
-            style: _measurementStyle(baseStyle, attributes),
+            text: displayText,
+            style: _inlineStyle(context, baseStyle, attributes),
           ),
         );
         continue;
@@ -356,27 +358,20 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       if (insert is! Map || !insert.containsKey('mention')) continue;
       hasVisibleContent = true;
 
-      final mentionText = _mentionText(insert['mention']);
-      final mentionStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
-      final mentionPainter = TextPainter(
-        text: TextSpan(text: mentionText, style: mentionStyle),
-        textDirection: ui.TextDirection.ltr,
-        textScaler: textScaler,
-        maxLines: 1,
-      )..layout();
-
-      // 与 QuillMentionBuild 的左右 margin(4) + padding(8) 保持一致。
-      final mentionWidth = mentionPainter.width + 12;
-      final mentionHeight = mentionPainter.height + 4;
+      final mentionSize = _wasmMentionSize(
+        context,
+        insert['mention'],
+        textScaler,
+      );
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
-          child: SizedBox(width: mentionWidth, height: mentionHeight),
+          child: SizedBox.fromSize(size: mentionSize),
         ),
       );
       placeholders.add(
         PlaceholderDimensions(
-          size: Size(mentionWidth, mentionHeight),
+          size: mentionSize,
           alignment: PlaceholderAlignment.middle,
         ),
       );
@@ -414,18 +409,14 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   /// 这里逐个解释 Delta operation，保留常用行内样式，并显式渲染 mention embed。
   Widget _buildWasmRichText(BuildContext context) {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
-    final baseStyle = TextStyle(
-      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
-      color: widget.textColor,
-      fontSize: 14,
-      height: 1.4,
-    );
+    final baseStyle = _wasmBaseStyle(context);
     if (opsJson is! List) {
       return SelectableText('', style: baseStyle);
     }
 
     final spans = <InlineSpan>[];
-    for (final op in opsJson) {
+    for (var index = 0; index < opsJson.length; index++) {
+      final op = opsJson[index];
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
@@ -433,7 +424,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       if (insert is String) {
         spans.add(
           TextSpan(
-            text: insert,
+            text: _displayText(opsJson, index, insert),
             style: _inlineStyle(context, baseStyle, attributes),
           ),
         );
@@ -444,7 +435,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         spans.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
-            child: _buildWasmMention(insert['mention']),
+            child: _buildWasmMention(context, insert['mention']),
           ),
         );
       }
@@ -453,40 +444,75 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     return SelectableText.rich(TextSpan(style: baseStyle, children: spans));
   }
 
-  Widget _buildWasmMention(dynamic rawData) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        _mentionText(rawData),
-        style: const TextStyle(
-          color: Colors.red,
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
+  TextStyle _wasmBaseStyle(BuildContext context) {
+    return TextStyle(
+      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+      color: widget.textColor,
+      fontSize: 14,
+      height: 1.4,
     );
   }
 
-  TextStyle _measurementStyle(TextStyle baseStyle, dynamic attributes) {
-    if (attributes is! Map) return baseStyle;
+  /// Quill 文档总会以一个终止换行结尾。编辑器把它作为文档边界而非空白行，
+  /// 手动构造 TextSpan 时也必须去掉，否则消息气泡底部会多出一行高度。
+  String _displayText(List<dynamic> ops, int index, String text) {
+    if (index == ops.length - 1 && text.endsWith('\n')) {
+      return text.substring(0, text.length - 1);
+    }
+    return text;
+  }
 
-    return baseStyle.copyWith(
-      fontWeight: attributes['bold'] == true ? FontWeight.bold : null,
-      fontStyle: attributes['italic'] == true ? FontStyle.italic : null,
-      fontSize: _quillFontSize(attributes['size']),
-      fontFamily: _quillFontFamily(attributes['font']),
-      decoration:
-          attributes['underline'] == true || attributes['strike'] == true
-          ? TextDecoration.combine([
-              if (attributes['underline'] == true) TextDecoration.underline,
-              if (attributes['strike'] == true) TextDecoration.lineThrough,
-            ])
-          : null,
+  TextStyle _wasmMentionStyle(BuildContext context) {
+    return TextStyle(
+      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+      color: Colors.red,
+      fontWeight: FontWeight.bold,
+      fontSize: 14,
+      height: 1,
+    );
+  }
+
+  Size _wasmMentionSize(
+    BuildContext context,
+    dynamic rawData,
+    TextScaler textScaler,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: _mentionText(rawData),
+        style: _wasmMentionStyle(context),
+      ),
+      textDirection: ui.TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+
+    // 与下方组件的左右 margin(4) + padding(8)、上下 padding(4) 一致。
+    return Size(painter.width + 12, painter.height + 4);
+  }
+
+  Widget _buildWasmMention(BuildContext context, dynamic rawData) {
+    final size = _wasmMentionSize(
+      context,
+      rawData,
+      MediaQuery.textScalerOf(context),
+    );
+    return SizedBox.fromSize(
+      size: size,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.red.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          _mentionText(rawData),
+          maxLines: 1,
+          softWrap: false,
+          style: _wasmMentionStyle(context),
+        ),
+      ),
     );
   }
 
