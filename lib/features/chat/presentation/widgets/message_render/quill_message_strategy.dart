@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
@@ -152,23 +152,23 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     }
 
     // WASM 降级：QuillEditor.basic 在 WASM 下可能触发 Platform._operatingSystem
-    // 等不兼容问题，降级为纯文本渲染确保消息内容可读。
+    // 等不兼容问题，因此不能直接复用编辑器。但这里仍需按 Delta 渲染，不能使用
+    // Document.toPlainText()：该方法会把 mention 等 embed 转成对象替换符 \uFFFC，
+    // 同时会丢失 color/bold/italic 等所有 attributes。
     if (_kIsWasm) {
       return LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = _safeMaxWidth(context, constraints.maxWidth);
+          final targetWidth = _resolveTargetWidth(context, maxWidth);
           final previewSource = _linkPreviewSource();
           return SizedBox(
-            width: maxWidth,
+            width: targetWidth,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText(
-                  _controller?.document.toPlainText() ?? '',
-                  style: TextStyle(color: widget.textColor, fontSize: 14),
-                ),
-                MessageLinkPreview(text: previewSource, maxWidth: maxWidth),
+                _buildWasmRichText(context),
+                MessageLinkPreview(text: previewSource, maxWidth: targetWidth),
               ],
             ),
           );
@@ -407,12 +407,79 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         .toDouble();
   }
 
+  /// WASM 安全的 Quill Delta 渲染器。
+  ///
+  /// Flutter Quill 当前的只读编辑器仍会进入依赖原生平台判断的路径，WASM 下不能
+  /// 使用；直接调用 [Document.toPlainText] 又会显示 embed 的对象图标并丢掉样式。
+  /// 这里逐个解释 Delta operation，保留常用行内样式，并显式渲染 mention embed。
+  Widget _buildWasmRichText(BuildContext context) {
+    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    final baseStyle = TextStyle(
+      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+      color: widget.textColor,
+      fontSize: 14,
+      height: 1.4,
+    );
+    if (opsJson is! List) {
+      return SelectableText('', style: baseStyle);
+    }
+
+    final spans = <InlineSpan>[];
+    for (final op in opsJson) {
+      if (op is! Map) continue;
+      final insert = op['insert'];
+      final attributes = op['attributes'];
+
+      if (insert is String) {
+        spans.add(
+          TextSpan(
+            text: insert,
+            style: _inlineStyle(context, baseStyle, attributes),
+          ),
+        );
+        continue;
+      }
+
+      if (insert is Map && insert.containsKey('mention')) {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: _buildWasmMention(insert['mention']),
+          ),
+        );
+      }
+    }
+
+    return SelectableText.rich(TextSpan(style: baseStyle, children: spans));
+  }
+
+  Widget _buildWasmMention(dynamic rawData) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        _mentionText(rawData),
+        style: const TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
   TextStyle _measurementStyle(TextStyle baseStyle, dynamic attributes) {
     if (attributes is! Map) return baseStyle;
 
     return baseStyle.copyWith(
       fontWeight: attributes['bold'] == true ? FontWeight.bold : null,
       fontStyle: attributes['italic'] == true ? FontStyle.italic : null,
+      fontSize: _quillFontSize(attributes['size']),
+      fontFamily: _quillFontFamily(attributes['font']),
       decoration:
           attributes['underline'] == true || attributes['strike'] == true
           ? TextDecoration.combine([
@@ -421,6 +488,78 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
             ])
           : null,
     );
+  }
+
+  TextStyle _inlineStyle(
+    BuildContext context,
+    TextStyle baseStyle,
+    dynamic attributes,
+  ) {
+    if (attributes is! Map) return baseStyle;
+
+    final link = attributes['link']?.toString();
+    final isInlineCode = attributes['code'] == true;
+    final foreground = _quillColor(attributes['color']);
+    final background = _quillColor(attributes['background']);
+    final decorations = <TextDecoration>[
+      if (attributes['underline'] == true || link?.isNotEmpty == true)
+        TextDecoration.underline,
+      if (attributes['strike'] == true) TextDecoration.lineThrough,
+    ];
+
+    return baseStyle.copyWith(
+      color:
+          foreground ??
+          (link?.isNotEmpty == true ? Colors.blueAccent : baseStyle.color),
+      backgroundColor:
+          background ??
+          (isInlineCode
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : null),
+      fontWeight: attributes['bold'] == true ? FontWeight.bold : null,
+      fontStyle: attributes['italic'] == true ? FontStyle.italic : null,
+      fontSize: _quillFontSize(attributes['size']),
+      fontFamily: isInlineCode
+          ? 'monospace'
+          : _quillFontFamily(attributes['font']),
+      decoration: decorations.isEmpty
+          ? null
+          : TextDecoration.combine(decorations),
+    );
+  }
+
+  double? _quillFontSize(dynamic value) {
+    if (value is num && value > 0) return value.toDouble();
+    switch (value?.toString()) {
+      case 'small':
+        return 10;
+      case 'large':
+        return 18;
+      case 'huge':
+        return 32;
+    }
+    return double.tryParse(value?.toString() ?? '');
+  }
+
+  String? _quillFontFamily(dynamic value) {
+    final font = value?.toString().trim();
+    return font == null || font.isEmpty ? null : font;
+  }
+
+  Color? _quillColor(dynamic value) {
+    if (value is int) return Color(value);
+    final raw = value?.toString().trim();
+    if (raw == null || raw.isEmpty) return null;
+
+    var hex = raw.startsWith('#') ? raw.substring(1) : raw;
+    if (hex.length == 3) {
+      hex = hex.split('').map((char) => '$char$char').join();
+    }
+    if (hex.length == 6) hex = 'FF$hex';
+    if (hex.length != 8) return null;
+
+    final parsed = int.tryParse(hex, radix: 16);
+    return parsed == null ? null : Color(parsed);
   }
 
   String _mentionText(dynamic rawData) {
