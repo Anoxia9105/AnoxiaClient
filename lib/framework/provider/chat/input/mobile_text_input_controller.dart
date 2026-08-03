@@ -1,22 +1,117 @@
 import 'package:flutter/material.dart';
 
+/// 单个 @提及在输入框文本中的区间
+class MentionSpan {
+  final int start;
+  final int end;
+  final String name;
+  final int id;
+
+  const MentionSpan({
+    required this.start,
+    required this.end,
+    required this.name,
+    required this.id,
+  });
+
+  MentionSpan shifted(int delta) =>
+      MentionSpan(start: start + delta, end: end + delta, name: name, id: id);
+}
+
+/// 带 @提及高亮渲染的文本编辑控制器
+///
+/// 重写 [TextEditingController.buildTextSpan]，把 @提及区间渲染成与桌面端
+/// Quill mention embed 一致的样式（红色加粗 + 淡红底色），而底层文本仍是
+/// 纯文本，不影响发送逻辑。
+class MentionHighlightTextEditingController extends TextEditingController {
+  /// 当前有效的 @提及区间（按 start 升序，互不重叠）
+  List<MentionSpan> mentions = const [];
+
+  static TextStyle _mentionStyle(TextStyle? base) {
+    return (base ?? const TextStyle()).copyWith(
+      color: Colors.red,
+      fontWeight: FontWeight.bold,
+      backgroundColor: Colors.red.withValues(alpha: 0.1),
+    );
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final currentValue = value;
+    final text = currentValue.text;
+    final hasComposing =
+        withComposing &&
+        currentValue.composing.isValid &&
+        !currentValue.composing.isCollapsed;
+
+    if (mentions.isEmpty && !hasComposing) {
+      return TextSpan(style: style, text: text);
+    }
+
+    // 以提及区间边界与 IME 组合区间边界切分文本，避免高亮与组合下划线互相覆盖。
+    final points = <int>{0, text.length};
+    if (hasComposing) {
+      final start = currentValue.composing.start;
+      final end = currentValue.composing.end;
+      if (start > 0 && start < text.length) points.add(start);
+      if (end > 0 && end < text.length) points.add(end);
+    }
+    for (final span in mentions) {
+      if (span.start > 0 && span.start < text.length) points.add(span.start);
+      if (span.end > 0 && span.end < text.length) points.add(span.end);
+    }
+    final sorted = points.where((p) => p >= 0 && p <= text.length).toList()
+      ..sort();
+
+    final children = <TextSpan>[];
+    for (var i = 0; i + 1 < sorted.length; i++) {
+      final start = sorted[i];
+      final end = sorted[i + 1];
+      if (end <= start) continue;
+
+      var segStyle = style;
+      if (_mentionAt(start, end) != null) {
+        segStyle = _mentionStyle(style);
+      }
+      if (hasComposing &&
+          start >= currentValue.composing.start &&
+          end <= currentValue.composing.end) {
+        segStyle = (segStyle ?? const TextStyle()).copyWith(
+          decoration: TextDecoration.underline,
+        );
+      }
+      children.add(TextSpan(style: segStyle, text: text.substring(start, end)));
+    }
+    return TextSpan(style: style, children: children);
+  }
+
+  MentionSpan? _mentionAt(int start, int end) {
+    for (final span in mentions) {
+      if (span.start <= start && end <= span.end) return span;
+    }
+    return null;
+  }
+}
+
 /// 移动端文本输入控制器
 ///
 /// 专为移动端设计的文本输入控制器，提供以下功能：
 /// - 管理输入框文本内容
-/// - 支持 @提及用户功能
+/// - 支持 @提及用户功能（插入即高亮，样式与桌面端 Quill 保持一致）
 /// - 追踪输入状态（是否为空）
 /// - 构建发送数据（包含文本和提及用户ID列表）
 ///
 /// 使用 Record 类型返回发送数据，避免定义额外的数据类
 class MobileTextInputController extends ChangeNotifier {
-  /// 文本编辑控制器
-  final TextEditingController textController = TextEditingController();
+  /// 文本编辑控制器（自带 @提及高亮渲染）
+  final MentionHighlightTextEditingController textController =
+      MentionHighlightTextEditingController();
 
-  /// @提及用户映射表：用户名 -> 用户ID
-  final Map<String, int> _mentionMap = {};
-
-  /// 上一次输入的文本（用于检测 @ 输入）
+  /// 上一次输入的文本（用于检测 @ 输入与同步提及区间）
   String _lastText = '';
 
   /// 输入框是否为空
@@ -31,7 +126,8 @@ class MobileTextInputController extends ChangeNotifier {
   ///
   /// 当输入状态（空/非空）变化时通知监听器
   void handleTextChanged(String value) {
-    // 检测空状态变化
+    // 用户输入会改动提及区间的位置，先按编辑区位移同步区间。
+    _syncMentionSpans(_lastText, value);
     if (isEmpty != value.isEmpty) {
       isEmpty = value.isEmpty;
       notifyListeners();
@@ -62,7 +158,7 @@ class MobileTextInputController extends ChangeNotifier {
   /// [id] 被提及用户的ID
   /// [name] 被提及用户的昵称
   ///
-  /// 将 @昵称 插入到当前光标位置，并记录到提及映射表
+  /// 将 @昵称 插入到当前光标位置，并记录为高亮提及区间
   void insertMention(int id, String name) {
     final text = textController.text;
     // 获取光标位置，处理负数情况
@@ -75,25 +171,40 @@ class MobileTextInputController extends ChangeNotifier {
 
     String newText;
     int newOffset;
+    int mentionStart;
 
     // 如果找到 @ 符号，替换它及其后面的内容
     if (atIndex >= 0 && atIndex <= cursor) {
       newText = '${text.substring(0, atIndex)}@$name ${text.substring(cursor)}';
       newOffset = atIndex + name.length + 2; // +2 包含 @ 和空格
+      mentionStart = atIndex;
     } else {
       // 否则在光标位置插入
       newText = '${text.substring(0, cursor)}@$name ${text.substring(cursor)}';
       newOffset = cursor + name.length + 2;
+      mentionStart = cursor;
     }
 
+    final oldText = textController.text;
     // 更新文本控制器
     textController.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: newOffset),
     );
 
-    // 记录提及用户
-    _mentionMap[name] = id;
+    // 同步既有区间位移，再登记新插入的提及区间（@name 不含结尾空格）。
+    _syncMentionSpans(oldText, newText);
+    final next = [
+      ...textController.mentions,
+      MentionSpan(
+        start: mentionStart,
+        end: mentionStart + name.length + 1,
+        name: name,
+        id: id,
+      ),
+    ]..sort((a, b) => a.start.compareTo(b.start));
+    textController.mentions = next;
+
     _lastText = newText;
 
     // 更新空状态
@@ -122,6 +233,8 @@ class MobileTextInputController extends ChangeNotifier {
       selection: TextSelection.collapsed(offset: cursor + insertText.length),
     );
 
+    // 光标之后的提及区间整体后移。
+    _syncMentionSpans(text, newText);
     _lastText = newText;
 
     // 更新空状态
@@ -137,26 +250,68 @@ class MobileTextInputController extends ChangeNotifier {
   ///
   /// 使用 Record 类型：(text: 文本内容, mentionIds: 提及用户ID列表)
   ({String text, List<int> mentionIds})? buildSendData() {
-    final text = textController.text.trim();
+    final full = textController.text;
+    final text = full.trim();
     if (text.isEmpty) return null;
 
-    // 收集所有被提及的用户ID
+    // 只收集文本仍与 @昵称 相符的提及区间，避免用户手动改写后误发提醒。
     final mentionIds = <int>{};
-    for (final entry in _mentionMap.entries) {
-      if (text.contains('@${entry.key}')) {
-        mentionIds.add(entry.value);
+    for (final span in textController.mentions) {
+      if (span.start >= 0 &&
+          span.end <= full.length &&
+          full.substring(span.start, span.end) == '@${span.name}') {
+        mentionIds.add(span.id);
       }
     }
 
     return (text: text, mentionIds: mentionIds.toList());
   }
 
+  /// 同步提及区间
+  ///
+  /// 通过公共前缀/后缀定位编辑区：完全位于编辑区之前的区间保持不变，
+  /// 完全位于其后的区间整体位移 [delta]，与编辑区重叠（被改写）的区间丢弃。
+  void _syncMentionSpans(String oldText, String newText) {
+    if (oldText == newText) return;
+    final spans = textController.mentions;
+    if (spans.isEmpty) return;
+
+    var prefix = 0;
+    final minLen = oldText.length < newText.length
+        ? oldText.length
+        : newText.length;
+    while (prefix < minLen && oldText[prefix] == newText[prefix]) {
+      prefix++;
+    }
+
+    var oldSuffix = oldText.length;
+    var newSuffix = newText.length;
+    while (oldSuffix > prefix &&
+        newSuffix > prefix &&
+        oldText[oldSuffix - 1] == newText[newSuffix - 1]) {
+      oldSuffix--;
+      newSuffix--;
+    }
+    final delta = newText.length - oldText.length;
+
+    final result = <MentionSpan>[];
+    for (final span in spans) {
+      if (span.end <= prefix) {
+        result.add(span);
+      } else if (span.start >= oldSuffix) {
+        result.add(span.shifted(delta));
+      }
+      // 与编辑区重叠的提及被破坏，丢弃高亮，保留纯文本。
+    }
+    textController.mentions = result;
+  }
+
   /// 清空输入框
   ///
-  /// 重置文本、提及映射和状态
+  /// 重置文本、提及区间和状态
   void clear() {
     textController.clear();
-    _mentionMap.clear();
+    textController.mentions = const [];
     _lastText = '';
     isEmpty = true;
     notifyListeners();

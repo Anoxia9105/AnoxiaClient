@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/device_util.dart';
@@ -378,106 +378,112 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       : HugeIcons.strokeRoundedMic01,
                 ),
               Expanded(
-                child: _isVoiceMode
-                    ? GestureDetector(
-                        onLongPressDown: (_) {
-                          if (!mounted) return;
-                          setState(() => _isVoicePressing = true);
-                        },
-                        onLongPressStart: (d) async {
-                          if (context.mounted) {
-                            _voiceController.showOverlay(context);
-                          }
+                // Web 端隐藏语音按钮后，输入区左侧补充内边距，避免文本紧贴屏幕边缘。
+                child: Padding(
+                  padding: EdgeInsets.only(left: DeviceUtil.isWeb ? 8 : 0),
+                  child: _isVoiceMode
+                      ? GestureDetector(
+                          onLongPressDown: (_) {
+                            if (!mounted) return;
+                            setState(() => _isVoicePressing = true);
+                          },
+                          onLongPressStart: (d) async {
+                            if (context.mounted) {
+                              _voiceController.showOverlay(context);
+                            }
 
-                          unawaited(
-                            _voiceController.onStart(d).then((_) {
-                              // 若启动失败（如权限被拒）则立即收起覆盖层。
-                              if (!_voiceController.isRecording) {
-                                _voiceController.hideOverlay();
-                              }
-                            }),
-                          );
-                        },
-                        onLongPressMoveUpdate: _voiceController.onUpdate,
-                        onLongPressCancel: () {
-                          if (!mounted) return;
-                          setState(() => _isVoicePressing = false);
-                          _voiceController.hideOverlay();
-                          unawaited(_voiceController.cancelCurrentRecording());
-                        },
-                        onLongPressEnd: (d) async {
-                          if (mounted) {
+                            unawaited(
+                              _voiceController.onStart(d).then((_) {
+                                // 若启动失败（如权限被拒）则立即收起覆盖层。
+                                if (!_voiceController.isRecording) {
+                                  _voiceController.hideOverlay();
+                                }
+                              }),
+                            );
+                          },
+                          onLongPressMoveUpdate: _voiceController.onUpdate,
+                          onLongPressCancel: () {
+                            if (!mounted) return;
                             setState(() => _isVoicePressing = false);
-                          }
-                          _voiceController.hideOverlay();
-                          final result = await _voiceController.onEnd(d);
-                          if (result != null && mounted) {
-                            ref
-                                .read(
-                                  chatInputControllerProvider(
-                                    widget.roomId,
-                                  ).notifier,
-                                )
-                                .sendVoiceMessage(
-                                  filePath: result.filePath,
-                                  duration: result.duration,
-                                );
-                          }
-                        },
-                        child: ListenableBuilder(
-                          listenable: _voiceController,
-                          builder: (_, _) => Container(
-                            height: 40,
-                            alignment: Alignment.center,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            child: AnimatedScale(
-                              scale: _isVoicePressing ? 0.98 : 1.0,
-                              duration: const Duration(milliseconds: 80),
-                              curve: Curves.easeOut,
-                              child: AnimatedContainer(
+                            _voiceController.hideOverlay();
+                            unawaited(
+                              _voiceController.cancelCurrentRecording(),
+                            );
+                          },
+                          onLongPressEnd: (d) async {
+                            if (mounted) {
+                              setState(() => _isVoicePressing = false);
+                            }
+                            _voiceController.hideOverlay();
+                            final result = await _voiceController.onEnd(d);
+                            if (result != null && mounted) {
+                              ref
+                                  .read(
+                                    chatInputControllerProvider(
+                                      widget.roomId,
+                                    ).notifier,
+                                  )
+                                  .sendVoiceMessage(
+                                    filePath: result.filePath,
+                                    duration: result.duration,
+                                  );
+                            }
+                          },
+                          child: ListenableBuilder(
+                            listenable: _voiceController,
+                            builder: (_, _) => Container(
+                              height: 40,
+                              alignment: Alignment.center,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              child: AnimatedScale(
+                                scale: _isVoicePressing ? 0.98 : 1.0,
                                 duration: const Duration(milliseconds: 80),
                                 curve: Curves.easeOut,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: _voiceController.isRecording
-                                      ? colorScheme.primary
-                                      : _isVoicePressing
-                                      ? colorScheme.surfaceContainerHigh
-                                      : colorScheme.surfaceContainer,
-                                  borderRadius: BorderRadius.circular(8),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 80),
+                                  curve: Curves.easeOut,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: _voiceController.isRecording
+                                        ? colorScheme.primary
+                                        : _isVoicePressing
+                                        ? colorScheme.surfaceContainerHigh
+                                        : colorScheme.surfaceContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text('hold_to_talk'.tr()),
                                 ),
-                                child: Text('hold_to_talk'.tr()),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                    : TextField(
-                        controller: _inputController.textController,
-                        focusNode: focusNode,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.newline,
-                        decoration: InputDecoration(
-                          hintText: 'chat_input_placeholder'.tr(),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 8,
+                        )
+                      : TextField(
+                          controller: _inputController.textController,
+                          focusNode: focusNode,
+                          minLines: 1,
+                          maxLines: 4,
+                          textInputAction: TextInputAction.newline,
+                          decoration: InputDecoration(
+                            hintText: 'chat_input_placeholder'.tr(),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
                           ),
+                          onChanged: _handleTextChanged,
+                          onTap: () {
+                            if (!_focusNode.hasFocus) {
+                              _focusNode.requestFocus();
+                            }
+                            _panelController.updatePanelType(
+                              ChatBottomPanelType.keyboard,
+                            );
+                            widget.bottomSheet();
+                          },
                         ),
-                        onChanged: _handleTextChanged,
-                        onTap: () {
-                          if (!_focusNode.hasFocus) {
-                            _focusNode.requestFocus();
-                          }
-                          _panelController.updatePanelType(
-                            ChatBottomPanelType.keyboard,
-                          );
-                          widget.bottomSheet();
-                        },
-                      ),
+                ),
               ),
               // 表情按钮
               _buildCompactButton(
