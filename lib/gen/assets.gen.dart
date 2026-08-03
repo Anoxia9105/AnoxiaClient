@@ -37,8 +37,12 @@ class $AssetsImagesGen {
   AssetGenImage get appIconPng =>
       const AssetGenImage('assets/images/app_icon.png');
 
+  /// File path: assets/images/app_logo.png
+  AssetGenImage get appLogo =>
+      const AssetGenImage('assets/images/app_logo.png');
+
   /// List of all assets
-  List<dynamic> get values => [appIconIco, appIconPng];
+  List<dynamic> get values => [appIconIco, appIconPng, appLogo];
 }
 
 class Assets {

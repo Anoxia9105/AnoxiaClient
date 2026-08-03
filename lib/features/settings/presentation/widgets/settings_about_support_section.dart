@@ -188,7 +188,9 @@ class _AppIntro extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             alignment: Alignment.center,
-            child: Assets.images.appIconPng.image(),
+            child: Assets.images.appLogo.image(
+              filterQuality: FilterQuality.high,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

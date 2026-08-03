@@ -44,9 +44,10 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
       ),
       leading: Center(
-        child: Assets.images.appIconPng.image(
+        child: Assets.images.appLogo.image(
           width: 24,
           height: 24,
+          filterQuality: FilterQuality.high,
         ),
       ),
       elevation: 0,

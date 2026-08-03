@@ -140,8 +140,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
                       SizedBox(
                         width: 152,
                         height: 152,
-                        child: Assets.images.appIconPng.image(
+                        child: Assets.images.appLogo.image(
                           fit: BoxFit.cover,
+                          filterQuality: FilterQuality.high,
                         ),
                       ),
 

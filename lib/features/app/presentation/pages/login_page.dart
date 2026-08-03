@@ -129,7 +129,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(18),
-            child: Assets.images.appIconPng.image(fit: BoxFit.cover),
+            child: Assets.images.appLogo.image(
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
+            ),
           ),
         ),
         const SizedBox(height: 20),
