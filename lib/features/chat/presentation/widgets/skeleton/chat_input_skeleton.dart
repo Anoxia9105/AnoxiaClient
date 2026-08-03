@@ -9,7 +9,10 @@ class ChatInputSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DeviceUtil.isRealDesktop()
+    // 与 ChatRoomDetailBottomBar 的桌面判定保持一致：真实桌面 + 宽屏 Web
+    final isDesktop = DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context));
+    return isDesktop
         ? const _DesktopChatInputSkeleton()
         : const _MobileChatInputSkeleton();
   }
@@ -26,15 +29,24 @@ class _DesktopChatInputSkeleton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(50, 0, 50, 10),
+      padding: const EdgeInsets.fromLTRB(50, 12, 50, 16),
       child: Container(
+        clipBehavior: Clip.antiAlias,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             width: 1,
-            color: colorScheme.onSurface.withValues(alpha: 0.1),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.6),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: const Column(
           mainAxisSize: MainAxisSize.min,
@@ -79,12 +91,12 @@ class _MobileChatInputSkeleton extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
         child: Material(
           color: colorScheme.surfaceContainerLow,
-          elevation: 8,
-          shadowColor: Colors.black.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(22),
+          elevation: 10,
+          shadowColor: Colors.black.withValues(alpha: 0.28),
+          borderRadius: BorderRadius.circular(24),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(

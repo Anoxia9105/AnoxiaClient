@@ -145,10 +145,19 @@ class ChatFavorite {
   }
 
   /// 从 Payload 内容推断消息类型
+  ///
+  /// 优先识别 V5 协议 typed 结构（text/richText/image/audio/video/file/emoji/
+  /// location/card/system），其次回退到 Quill Delta 与附件推断。
   MessageType? _inferPayloadType() {
     final payloadRaw = payload.trim();
     if (payloadRaw.isNotEmpty) {
       final decoded = _decodeMaybeJson(payloadRaw);
+
+      if (decoded is Map<String, dynamic>) {
+        final typed = _matchTypedPayloadKey(decoded);
+        if (typed != null) return typed;
+      }
+
       if (_containsQuillDelta(decoded)) {
         return MessageType.richText;
       }
@@ -163,7 +172,33 @@ class ChatFavorite {
     return null;
   }
 
+  /// 匹配 V5 协议 typed payload 顶层键，返回对应消息类型
+  MessageType? _matchTypedPayloadKey(Map<String, dynamic> decoded) {
+    const mapping = <String, MessageType>{
+      'text': MessageType.text,
+      'richText': MessageType.richText,
+      'rich_text': MessageType.richText,
+      'image': MessageType.image,
+      'audio': MessageType.audio,
+      'video': MessageType.video,
+      'file': MessageType.file,
+      'emoji': MessageType.emoji,
+      'location': MessageType.location,
+      'card': MessageType.card,
+      'system': MessageType.system,
+    };
+    for (final entry in mapping.entries) {
+      if (decoded[entry.key] is Map<String, dynamic>) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
   /// 检查解码后的数据是否包含 Quill Delta 格式
+  ///
+  /// 兼容 V5 协议（`richText.deltaJson` / `richText.delta`）与平铺格式
+  /// （`quillDelta` / `delta` / `ops` / 顶层 Delta List）。
   bool _containsQuillDelta(dynamic decoded) {
     if (decoded is List) {
       return decoded.any((e) => e is Map && e.containsKey('insert'));
@@ -175,6 +210,16 @@ class ChatFavorite {
       final ops = decoded['ops'];
       if (quillDelta != null || delta != null || ops != null) {
         return true;
+      }
+
+      final richText = decoded['richText'];
+      if (richText is Map<String, dynamic>) {
+        final deltaJson = richText['deltaJson'];
+        final richDelta = richText['delta'];
+        final richOps = richText['ops'];
+        if (deltaJson != null || richDelta != null || richOps != null) {
+          return true;
+        }
       }
     }
 
@@ -219,6 +264,9 @@ class ChatFavorite {
   }
 
   /// 从 Payload 中提取可读的文本内容
+  ///
+  /// 优先通过 [MessagePayload.fromJson] 解析（兼容 V5 协议 typed 结构），
+  /// 再回退到旧版平铺格式的手动提取。
   String _extractPayloadText() {
     if (payload.trim().isEmpty) return '';
 
@@ -226,34 +274,51 @@ class ChatFavorite {
       final decoded = _decodeMaybeJson(payload);
 
       if (decoded is Map<String, dynamic>) {
+        final parsed = MessagePayload.fromJson(decoded);
+
+        final content = parsed.content?.trim() ?? '';
+        if (content.isNotEmpty &&
+            content != '[audio]' &&
+            content != '[video]') {
+          return content;
+        }
+
+        final quillText = _plainTextFromQuill(parsed.quillDelta);
+        if (quillText.isNotEmpty) return quillText;
+
+        final fileText = _attachmentReadableName(parsed.file);
+        if (fileText.isNotEmpty) return fileText;
+
+        if (parsed.image?.url?.isNotEmpty == true) {
+          return '[IMAGE]';
+        }
+        if (parsed.video?.url?.isNotEmpty == true) {
+          return '[VIDEO]';
+        }
+        if (parsed.audio?.url?.isNotEmpty == true) {
+          return '[AUDIO]';
+        }
+
+        // 旧版平铺格式兜底
         for (final key in ['content', 'text', 'title', 'url']) {
           final value = decoded[key]?.toString().trim();
-          if (value != null && value.isNotEmpty) return value;
+          if (value != null &&
+              value.isNotEmpty &&
+              !value.startsWith('{') &&
+              !value.startsWith('[')) {
+            return value;
+          }
         }
 
         final delta = decoded['delta'];
         if (delta is List) {
-          final joined = delta
-              .map(
-                (e) => e is Map<String, dynamic>
-                    ? e['insert']?.toString() ?? ''
-                    : '',
-              )
-              .join('')
-              .trim();
+          final joined = _joinQuillOps(delta);
           if (joined.isNotEmpty) return joined;
         }
       }
 
       if (decoded is List) {
-        final joined = decoded
-            .map(
-              (e) => e is Map<String, dynamic>
-                  ? e['insert']?.toString() ?? ''
-                  : '',
-            )
-            .join('')
-            .trim();
+        final joined = _joinQuillOps(decoded);
         if (joined.isNotEmpty) return joined;
       }
     } catch (_) {
@@ -261,6 +326,49 @@ class ChatFavorite {
     }
 
     return '';
+  }
+
+  /// 从 Quill Delta JSON 字符串提取纯文本
+  String _plainTextFromQuill(String? deltaJson) {
+    if (deltaJson == null || deltaJson.trim().isEmpty) return '';
+    try {
+      final decoded = _decodeMaybeJson(deltaJson);
+      if (decoded is List) return _joinQuillOps(decoded);
+      if (decoded is Map<String, dynamic> && decoded['ops'] is List) {
+        return _joinQuillOps(decoded['ops'] as List);
+      }
+    } catch (_) {
+      // 忽略解析失败
+    }
+    return '';
+  }
+
+  /// 拼接 Quill ops 中的 insert 文本（嵌入内容降级为占位标签）
+  String _joinQuillOps(List<dynamic> ops) {
+    final buffer = StringBuffer();
+    for (final e in ops) {
+      if (e is! Map<String, dynamic>) continue;
+      final insert = e['insert'];
+      if (insert is String) {
+        buffer.write(insert);
+      } else if (insert is Map) {
+        buffer.write('[$insert]');
+      }
+    }
+    return buffer.toString().replaceAll('\n', ' ').trim();
+  }
+
+  /// 获取文件附件的可读名称（优先 name，其次 URL 文件名）
+  String _attachmentReadableName(Attachment? attachment) {
+    if (attachment == null) return '';
+    final name = attachment.name?.trim() ?? '';
+    if (name.isNotEmpty) return name;
+
+    final url = attachment.url ?? '';
+    if (url.isEmpty) return '';
+    final withoutQuery = url.split('?').first;
+    final lastSegment = withoutQuery.split('/').last;
+    return lastSegment.isEmpty ? '' : lastSegment;
   }
 
   /// 转换为标准 [ChatMessage] 格式

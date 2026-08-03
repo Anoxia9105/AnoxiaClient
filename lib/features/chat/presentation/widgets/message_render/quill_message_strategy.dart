@@ -9,12 +9,19 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 import 'link_preview_card.dart';
+
+/// 是否为 WASM 编译模式。
+///
+/// `kIsWeb` 在 JS 和 WASM 版 Web 均为 true，无法区分。利用
+/// `dart.library.html` 仅在 JS 版 Web 为 true、WASM 版为 false 的特性来判定。
+const _kIsWasm = kIsWeb && !bool.fromEnvironment('dart.library.html');
 
 /// 富文本消息渲染策略
 ///
@@ -51,6 +58,27 @@ class _QuillInternalRenderer extends StatefulWidget {
 class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   static final Set<_QuillInternalRendererState> _mountedRenderers = {};
 
+  /// 防止「清理兄弟气泡选区」链路重入。
+  ///
+  /// flutter_quill 的 `QuillRawEditorState` 会**无条件**监听 controller
+  /// (`controller.addListener(_didChangeTextEditingValueListener)`)，并且
+  /// `_didChangeTextEditingValue` 里有 Web 专属分支：
+  ///
+  /// ```dart
+  /// if (kIsWeb) {
+  ///   _onChangeTextEditingValue(ignoreFocus);
+  ///   if (!ignoreFocus) requestKeyboard(); // -> focusNode.requestFocus()
+  ///   return;
+  /// }
+  /// ```
+  ///
+  /// 也就是说在 Web 上，对只读气泡调用一次 `updateSelection` 就会让它把焦点抢回去。
+  /// 于是会出现：A 获得焦点 -> 清空所有兄弟选区 -> 兄弟 requestFocus ->
+  /// 兄弟获得焦点 -> 再清空所有兄弟选区 …… 同步无限互抢，主线程被打死，
+  /// 表现为「切换聊天列表后页面直接卡死、无任何日志」。桌面/移动端不走该分支，
+  /// 所以只在 Web 复现。
+  static bool _clearingSiblings = false;
+
   QuillController? _controller;
   bool _isError = false;
   late final FocusNode _focusNode;
@@ -59,7 +87,16 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   void initState() {
     super.initState();
     _mountedRenderers.add(this);
-    _focusNode = FocusNode();
+    // Web 端只读气泡：禁止 FocusNode 抢占焦点。
+    //
+    // flutter_quill 的 Web 分支在 _didChangeTextEditingValue 中会无条件调用
+    // requestKeyboard() -> focusNode.requestFocus()（见本文件上方长注释）。
+    // 现有的 _clearingSiblings 标志只能拦住「应用侧」清选区触发的 requestFocus，
+    // 拦不住 quill 内部（手势/选区叠加层）直接 updateSelection 触发的 requestFocus。
+    // 多个只读气泡因此会同步互抢焦点 -> 无限递归 -> Maximum call stack size exceeded，
+    // 表现为「聊天消息渲染卡死」。让 FocusNode 不可抢焦点后 requestFocus 变为 no-op，
+    // 从根本上掐断互抢链路；桌面/移动端不受 kIsWeb 分支影响，保留完整选区交互。
+    _focusNode = FocusNode(canRequestFocus: !kIsWeb);
     _focusNode.addListener(_onFocusChanged);
     _initController();
   }
@@ -112,6 +149,31 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   Widget build(BuildContext context) {
     if (_isError || _controller == null) {
       return Text('chat_message_format_error'.tr());
+    }
+
+    // WASM 降级：QuillEditor.basic 在 WASM 下可能触发 Platform._operatingSystem
+    // 等不兼容问题，降级为纯文本渲染确保消息内容可读。
+    if (_kIsWasm) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = _safeMaxWidth(context, constraints.maxWidth);
+          final previewSource = _linkPreviewSource();
+          return SizedBox(
+            width: maxWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SelectableText(
+                  _controller?.document.toPlainText() ?? '',
+                  style: TextStyle(color: widget.textColor, fontSize: 14),
+                ),
+                MessageLinkPreview(text: previewSource, maxWidth: maxWidth),
+              ],
+            ),
+          );
+        },
+      );
     }
 
     return LayoutBuilder(
@@ -189,20 +251,43 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   void _clearSiblingSelections() {
-    for (final renderer in _mountedRenderers) {
-      if (identical(renderer, this)) continue;
-      renderer._clearSelection();
+    if (_clearingSiblings) return;
+    _clearingSiblings = true;
+    try {
+      // 迭代前先快照：_clearSelection 会触发 Quill 重建，期间可能有气泡
+      // mount/dispose 从而增删 _mountedRenderers，直接遍历会抛
+      // ConcurrentModificationError。
+      for (final renderer in _mountedRenderers.toList(growable: false)) {
+        if (identical(renderer, this)) continue;
+        renderer._clearSelection();
+      }
+    } finally {
+      _clearingSiblings = false;
     }
   }
 
   void _clearSelection() {
     final controller = _controller;
-    if (controller == null || !controller.selection.isValid) return;
+    if (controller == null) return;
 
-    controller.updateSelection(
-      const TextSelection.collapsed(offset: 0),
-      ChangeSource.local,
-    );
+    final selection = controller.selection;
+    // `TextSelection.collapsed(offset: 0)` 本身也是 isValid，原先的判断等价于
+    // 「永远执行」，导致每次焦点变化都会对全部气泡写一次 selection。
+    // 只有真正存在可见选区时才需要清理。
+    if (!selection.isValid || selection.isCollapsed) return;
+
+    // 抑制 Web 分支里的 requestKeyboard() -> focusNode.requestFocus()，
+    // 否则被清理的气泡会把焦点抢回来，形成焦点/选区死循环。
+    final previousIgnoreFocus = controller.ignoreFocusOnTextChange;
+    controller.ignoreFocusOnTextChange = true;
+    try {
+      controller.updateSelection(
+        const TextSelection.collapsed(offset: 0),
+        ChangeSource.local,
+      );
+    } finally {
+      controller.ignoreFocusOnTextChange = previousIgnoreFocus;
+    }
   }
 
   /// 计算消息内容的目标宽度

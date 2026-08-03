@@ -25,8 +25,9 @@ import 'package:hugeicons/hugeicons.dart';
 /// - 房间名称（支持备注名优先显示）
 /// - 最后消息预览
 /// - 时间戳
-/// - 未读消息数
+/// - 未读消息数（免打扰时该位置改为展示免打扰图标）
 /// - 置顶标识
+/// - 免打扰标识（位于右下角未读数的位置，所有端统一）
 ///
 /// 支持右键菜单（桌面端）和长按菜单（移动端）
 class RoomListItem extends ConsumerWidget {
@@ -161,16 +162,6 @@ class RoomListItem extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (isDoNotDisturb)
-                    Tooltip(
-                      message: 'chat_do_not_disturb'.tr(),
-                      child: Icon(
-                        Icons.notifications_off_outlined,
-                        size: 15,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  if (isDoNotDisturb && isPinned) const SizedBox(width: 3),
                   if (isPinned)
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedPin02,
@@ -184,7 +175,18 @@ class RoomListItem extends ConsumerWidget {
             const Spacer(),
             SizedBox(
               height: 20,
-              child: VibratingBadge(count: room.unreadCount ?? 0),
+              child: isDoNotDisturb
+                  // 免打扰时，右下角（未读数位置）改为展示免打扰图标，
+                  // 既提示静音状态，又避免未读数角标打扰用户。所有端统一生效。
+                  ? Tooltip(
+                      message: 'chat_do_not_disturb'.tr(),
+                      child: Icon(
+                        Icons.notifications_off_outlined,
+                        size: 15,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    )
+                  : VibratingBadge(count: room.unreadCount ?? 0),
             ),
           ],
         ),

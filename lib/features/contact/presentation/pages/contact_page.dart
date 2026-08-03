@@ -20,7 +20,8 @@ class ContactPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (DeviceUtil.isRealMobile()) {
+    // 布局按宽度断点判定：窄屏（含 Web 手机浏览器）仅显示列表
+    if (DeviceUtil.isMobile(context)) {
       return const ContactList();
     }
 

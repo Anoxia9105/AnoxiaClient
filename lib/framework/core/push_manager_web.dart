@@ -1,11 +1,11 @@
 // Web 端推送管理器桩。Web 没有 JPush/FCM，所有方法为 no-op。
 // 浏览器端消息实时性由 WebSocket 长连接保证，无需独立推送通道。
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:anoxia/framework/core/push_manager_base.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:web/web.dart' as web;
 
 class PushManager {
   PushManager._();
@@ -35,10 +35,10 @@ class PushManager {
     // 浏览器无稳定设备标识，须持久化到 localStorage，否则每次调用都生成新
     // UUID，会导致后端把同一 Web 端识别为多个重复设备。
     const key = 'anoxia_web_device_uid';
-    final existing = html.window.localStorage[key];
+    final existing = web.window.localStorage.getItem(key);
     if (existing != null && existing.isNotEmpty) return existing;
     final uid = const Uuid().v4();
-    html.window.localStorage[key] = uid;
+    web.window.localStorage.setItem(key, uid);
     return uid;
   }
 

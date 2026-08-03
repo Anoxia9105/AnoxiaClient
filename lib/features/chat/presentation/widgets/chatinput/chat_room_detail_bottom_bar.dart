@@ -41,7 +41,11 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (showSkeleton) return const ChatInputSkeleton();
 
-    final isDesktop = DeviceUtil.isRealDesktop();
+    final colorScheme = Theme.of(context).colorScheme;
+
+    /// 桌面布局：真实桌面环境，或宽度超过平板的 Web 页面
+    final isDesktop = DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context));
     final content = switch (roomStatus) {
       0 => ChatInputField(bottomSheet: onFieldTap),
       1 => ChatRoomDetailStatusTag(
@@ -61,18 +65,36 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           isDesktop ? 50 : 12,
-          0,
+          isDesktop ? 12 : 6,
           isDesktop ? 50 : 12,
-          isDesktop ? 0 : 10,
+          isDesktop ? 16 : 12,
         ),
         child: isDesktop
-            ? content
-            : Material(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                elevation: 8,
-                shadowColor: Colors.black.withValues(alpha: 0.18),
+            ? Container(
                 clipBehavior: Clip.antiAlias,
-                borderRadius: BorderRadius.circular(22),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    width: 1,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: content,
+              )
+            : Material(
+                color: colorScheme.surfaceContainerLow,
+                elevation: 10,
+                shadowColor: Colors.black.withValues(alpha: 0.28),
+                clipBehavior: Clip.antiAlias,
+                borderRadius: BorderRadius.circular(24),
                 child: content,
               ),
       ),

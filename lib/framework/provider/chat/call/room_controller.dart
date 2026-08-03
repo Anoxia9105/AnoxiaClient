@@ -32,14 +32,30 @@ part 'room_controller.g.dart';
 ///   - 自定义数据通道（举手、表情、弹幕、主持人静音指令）
 @Riverpod(keepAlive: true)
 class RoomController extends _$RoomController {
+  /// 已主动离开的 token 集合（静态，跨实例共享）。
+  ///
+  /// `leave()` 和 `_handleRemovedFromCall()` 在调用 `ref.invalidateSelf()`
+  /// 之前会将当前 token 加入此集合。`build()` 重建时检查此集合，
+  /// 若 token 已在其中则直接抛异常，阻止重新创建 Room 并连接。
+  ///
+  /// 这是为了防止 Web WASM 环境下 `invalidateSelf` → 重建 → 连接 →
+  /// 断开 → 事件回调 → 再次 `invalidateSelf` 的无限循环导致的栈溢出。
+  static final Set<String> _disposedTokens = <String>{};
+
   /// LiveKit 事件监听器，负责监听房间内所有事件
   EventsListener<RoomEvent>? _listener;
+
+  /// 设备热插拔监听订阅
+  StreamSubscription<dynamic>? _deviceSub;
 
   /// 各操作的独立防抖锁，防止用户快速连续点击导致状态错乱
   bool _isTogglingMic = false;
   bool _isTogglingCamera = false;
   bool _isTogglingScreen = false;
   bool _removedFromCallHandled = false;
+
+  /// 防止 leave() 重入
+  bool _isLeaving = false;
 
   // ================= Riverpod build =================
 
@@ -55,6 +71,12 @@ class RoomController extends _$RoomController {
   ///   6. 返回初始 RoomState
   @override
   Future<RoomState> build(String token) async {
+    // 若此 token 已被 leave()/onDispose 标记为已处理，不再重新连接。
+    // 防止 invalidateSelf 重建后陷入"连接→断开→重建"的无限循环（Web WASM 栈溢出根因）。
+    if (_disposedTokens.remove(token)) {
+      throw StateError('房间已离开，不再重连');
+    }
+
     final room = Room(
       roomOptions: const RoomOptions(
         adaptiveStream: true, // 自适应流：根据网络自动降码率
@@ -64,13 +86,14 @@ class RoomController extends _$RoomController {
 
     // 注册销毁回调（Provider 被销毁时自动执行）
     // 注意：onDispose 中不能访问 provider state，否则会触发 Riverpod 断言
-    ref.onDispose(() async {
+    ref.onDispose(() {
       _disposeResources();
+      // 兜底清理（幂等）：leave() 可能已执行过 disconnect/dispose
       try {
-        await room.disconnect();
+        room.disconnect();
       } catch (_) {}
       try {
-        await room.dispose();
+        room.dispose();
       } catch (_) {}
       log.info('房间控制器已销毁');
     });
@@ -232,11 +255,13 @@ class RoomController extends _$RoomController {
       // 绑定设备热插拔监听（耳机插拔、摄像头连接等）
       _bindDeviceEvents();
 
+      // 初始化本地轨道（默认关闭麦克风和摄像头，由用户手动开启）
+      // 注意：必须先初始化轨道再枚举设备——Web 端只有获得媒体权限后
+      // enumerateDevices 才会返回带名称的设备列表，否则菜单里全是空名称
+      await _initLocalTracks(room);
+
       // 获取初始设备列表
       final devices = await _getInitialDevices();
-
-      // 初始化本地轨道（默认关闭麦克风和摄像头，由用户手动开启）
-      await _initLocalTracks(room);
 
       return RoomState(
         room: room,
@@ -283,13 +308,24 @@ class RoomController extends _$RoomController {
   }
 
   /// 枚举系统可用媒体设备
+  /// 过滤掉无名称设备（Web 端未授权时 enumerateDevices 返回空 label）并去重
   Future<List<MediaDevice>> _getInitialDevices() async {
     try {
-      return await Hardware.instance.enumerateDevices();
+      final devices = await Hardware.instance.enumerateDevices();
+      return _filterUsableDevices(devices);
     } catch (e) {
       log.error('获取设备列表失败: $e');
       return [];
     }
+  }
+
+  /// 过滤空名称设备并去重
+  List<MediaDevice> _filterUsableDevices(List<MediaDevice> devices) {
+    final seen = <String>{};
+    return devices.where((d) {
+      final key = '${d.kind}:${d.deviceId}';
+      return d.label.trim().isNotEmpty && seen.add(key);
+    }).toList();
   }
 
   /// 初始化本地轨道
@@ -476,12 +512,19 @@ class RoomController extends _$RoomController {
     );
 
     final current = state.value;
+    // 先释放 listener，避免 disconnect 同步触发事件回调
+    _disposeResources();
+
     try {
       await current?.room.disconnect().timeout(const Duration(seconds: 1));
     } catch (_) {}
 
     if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
       ref.read(mobileCallSessionControllerProvider.notifier).end();
+      // 标记 token，阻止 invalidateSelf 重建时重新连接
+      if (current != null) {
+        _disposedTokens.add(current.token);
+      }
       ref.invalidateSelf();
       return;
     }
@@ -493,11 +536,10 @@ class RoomController extends _$RoomController {
   /// 绑定设备热插拔监听
   /// 当用户插拔耳机、摄像头等设备时自动刷新设备列表
   void _bindDeviceEvents() {
-    final sub = Hardware.instance.onDeviceChange.stream.listen((_) async {
+    _deviceSub = Hardware.instance.onDeviceChange.stream.listen((_) async {
       await _loadDeviceList();
     });
-    // Provider 销毁时自动取消订阅
-    ref.onDispose(() => sub.cancel());
+    // 订阅在 _disposeResources() 中统一取消（由 leave()/onDispose 调用）
   }
 
   /// 刷新设备列表
@@ -517,10 +559,19 @@ class RoomController extends _$RoomController {
     );
   }
 
+  /// 手动刷新设备列表
+  ///
+  /// 打开设备选择菜单前调用，确保 Web 端获取到授权后的完整设备列表
+  Future<void> refreshDevices() => _loadDeviceList();
+
   /// 清理资源
-  /// 只释放 listener 等本地资源，不访问 provider state
+  /// 释放 listener 和设备订阅等本地资源，不访问 provider state。
+  /// 幂等操作，可安全重复调用。
   void _disposeResources() {
     _listener?.dispose();
+    _listener = null;
+    _deviceSub?.cancel();
+    _deviceSub = null;
     log.info('资源已清理');
   }
 
@@ -762,15 +813,19 @@ class RoomController extends _$RoomController {
     final currentState = state.value;
     if (currentState == null) return;
     try {
-      await Hardware.instance.selectAudioInput(device);
-      // 重启轨道使新设备立即生效
-      final localParticipant = currentState.room.localParticipant;
-      if (localParticipant != null &&
-          localParticipant.audioTrackPublications.isNotEmpty) {
-        final audioTrack =
-            localParticipant.audioTrackPublications.first.track
-                as LocalAudioTrack;
-        await audioTrack.restartTrack();
+      // Web 端 Hardware.selectAudioInput 不支持，
+      // room.setAudioInputDevice 内部会按平台分发（Web 走 track.setDeviceId 并重启轨道）
+      await currentState.room.setAudioInputDevice(device);
+      // 原生端切换后手动重启轨道使新设备立即生效
+      if (!DeviceUtil.isWeb) {
+        final localParticipant = currentState.room.localParticipant;
+        if (localParticipant != null &&
+            localParticipant.audioTrackPublications.isNotEmpty) {
+          final audioTrack =
+              localParticipant.audioTrackPublications.first.track
+                  as LocalAudioTrack;
+          await audioTrack.restartTrack();
+        }
       }
       state = AsyncData(currentState.copyWith(currentAudioInput: device));
       log.info('切换麦克风至: ${device.label}');
@@ -806,9 +861,24 @@ class RoomController extends _$RoomController {
   }
 
   /// 离开房间
+  ///
+  /// 执行顺序：
+  ///   1. 标记 _isLeaving 防止重入
+  ///   2. 先释放 listener 和设备订阅，避免 disconnect 触发事件回调
+  ///   3. disconnect 房间（等待完成或超时）
+  ///   4. dispose 房间
+  ///   5. 标记 token 阻止 invalidateSelf 重建时重新连接
+  ///   6. invalidateSelf 触发 onDispose 兜底清理
   Future<void> leave() async {
+    if (_isLeaving) return;
+    _isLeaving = true;
+
     final currentState = state.value;
     if (currentState != null) {
+      // 先释放 listener，避免 disconnect 同步触发 RoomDisconnectedEvent
+      // 在 Web WASM 上 disconnect 可能同步完成并触发事件回调
+      _disposeResources();
+
       try {
         await currentState.room.disconnect().timeout(
           const Duration(seconds: 2),
@@ -819,6 +889,13 @@ class RoomController extends _$RoomController {
       } catch (e) {
         log.warning('离开房间异常（忽略并继续退出）: $e');
       }
+
+      try {
+        await currentState.room.dispose();
+      } catch (_) {}
+
+      // 标记 token，阻止 invalidateSelf 重建时重新创建 Room 并连接
+      _disposedTokens.add(currentState.token);
     }
     ref.invalidateSelf();
   }

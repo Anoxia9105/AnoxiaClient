@@ -447,17 +447,25 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// 批量插入或更新消息
   Future<void> insertOrUpdateMessages(Iterable<CachedMessage> items) async {
     final list = items.toList();
+    if (list.isEmpty) return;
+
+    final clientMsgIds = <String>{
+      for (final item in list)
+        if (item.clientMsgId != null) item.clientMsgId!,
+    };
+    final ids = <String>{for (final item in list) item.id};
+
     await transaction(() async {
-      // 批量清理 client_msg_id 相同但 id 不同的旧记录
-      for (final item in list) {
-        if (item.clientMsgId != null) {
-          await (delete(messages)..where(
-                (tbl) =>
-                    tbl.clientMsgId.equals(item.clientMsgId!) &
-                    tbl.id.isNotValue(item.id),
-              ))
-              .go();
-        }
+      // 清理 client_msg_id 相同但 id 不同的旧记录。
+      //
+      // 必须一次性批量删除：Web 上 drift 运行在 wasm worker 里，每条 SQL 都是一次
+      // postMessage 往返；逐条 DELETE 会让 100 条历史消息落库耗时数秒，
+      // 并且整个事务期间会阻塞 DB 队列（watch 流、后续查询全部排队）。
+      if (clientMsgIds.isNotEmpty) {
+        await (delete(messages)..where(
+              (tbl) => tbl.clientMsgId.isIn(clientMsgIds) & tbl.id.isNotIn(ids),
+            ))
+            .go();
       }
       await batch((b) => b.insertAllOnConflictUpdate(messages, list));
     });

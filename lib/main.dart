@@ -43,6 +43,54 @@ Future<void> main(List<String> args) async {
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
+
+    // 捕获 Flutter 框架在构建/布局/绘制阶段抛出的错误（含渲染异常的原始堆栈）。
+    //
+    // WASM 下错误处理链路（如 FlutterError.presentError → dumpErrorToConsole）
+    // 可能触发二次异常 Platform._operatingSystem，把控制台刷屏并掩盖原始错误。
+    // 用 try-catch 包裹确保原始错误被完整记录到 Talker；不再调用
+    // presentError（会递归触发 onError），改由 ErrorWidget.builder + Talker
+    // 控制台输出负责展示。
+    FlutterError.onError = (FlutterErrorDetails details) {
+      try {
+        log.error(
+          'FlutterError: ${details.exceptionAsString()}',
+          details.exception,
+          details.stack,
+        );
+      } catch (_) {
+        // Talker 日志记录本身失败时，用 debugPrint 兜底（WASM 安全）
+        debugPrint('FlutterError (log failed): ${details.exception}');
+      }
+    };
+
+    // WASM 安全的 ErrorWidget：不访问 dart:io Platform，避免渲染错误时触发
+    // 二次 Platform._operatingSystem 异常。
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        color: const Color(0x1AFF0000),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Text(
+            details.exceptionAsString(),
+            style: const TextStyle(fontSize: 11, color: Colors.red),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      );
+    };
+
+    // 捕获 Zone 外未处理的异步错误（返回 true 阻止默认处理，避免触发 Platform）
+    PlatformDispatcher.instance.onError = (error, stack) {
+      try {
+        log.error('未捕获异步错误', error, stack);
+      } catch (_) {
+        debugPrint('Async error: $error');
+      }
+      return true;
+    };
+
     if (DeviceUtil.isRealDesktop()) {
       // 热键管理器初始化（桌面端全局快捷键注册）
       await hotKeyManager.unregisterAll();
@@ -365,10 +413,16 @@ Widget _buildAppWrapper(Widget home) {
     saveLocale: true,
 
     /// 通过 ScreenUtilInit 包裹，提供屏幕适配功能
+    ///
+    /// rebuildFactor 设为 none：禁用 resize 时 _updateTree 递归遍历整个 widget 树
+    /// 调用 markNeedsBuild 的行为。该递归在 WASM 模式下因调用栈较小会导致
+    /// "Maximum call stack size exceeded" 崩溃（resize 时触发）。
+    /// .w/.h/.sp 等扩展仅为数学计算，widget 的响应式重建由 MediaQuery 自然驱动即可。
     child: ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
+      rebuildFactor: RebuildFactors.none,
       builder: (context, child) => MaterialApp(
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,

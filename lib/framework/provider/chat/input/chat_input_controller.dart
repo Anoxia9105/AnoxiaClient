@@ -26,6 +26,7 @@ import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart'
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -133,6 +134,7 @@ class ChatInputController extends _$ChatInputController {
   void _onTextChanged() {
     if (!ref.mounted) return;
     final controller = state;
+    _pruneDeletedUploads(controller);
     if (_enforceInputLimit(controller)) return;
     final bool hasContent = controller.document.length > 1;
 
@@ -205,6 +207,19 @@ class ChatInputController extends _$ChatInputController {
         }
       }
     });
+  }
+
+  /// 清理已从编辑器中删除的附件上传记录。
+  ///
+  /// 用户退格删除图片/文件 embed 后，上传控制器中仍残留 uploading/failed
+  /// 记录，导致发送按钮永久禁用（Web/桌面端 Quill 输入框）。每次文档变更
+  /// 时按当前文档内的附件 ID 裁剪两个上传控制器，移动端不插入 embed，
+  /// 文档里没有附件 ID 也不会误清（其上传走 sendPicked* 即时链路）。
+  void _pruneDeletedUploads(QuillController controller) {
+    final ids = DeltaProcessor(controller.document.toDelta(), const {})
+        .attachmentIds;
+    ref.read(chatImageUploadControllerProvider.notifier).retain(ids);
+    ref.read(chatFileUploadControllerProvider.notifier).retain(ids);
   }
 
   /// 发送输入状态（正在输入/结束输入）给聊天对方
@@ -486,13 +501,16 @@ class ChatInputController extends _$ChatInputController {
     if (files.isEmpty) return;
 
     final List<Attachment> uploadList = [];
-    for (final file in files.where((f) => f.path != null)) {
+    final filesById = <String, PlatformFile>{};
+    for (final file in files) {
       if (!UploadValidator.validateSingleFile(file)) continue;
+      final id = const Uuid().v4();
+      if (file.bytes != null) filesById[id] = file;
       uploadList.add(
         Attachment(
-          id: const Uuid().v4(),
+          id: id,
           kind: 'FILE',
-          url: file.path!,
+          url: file.path,
           name: file.name,
           size: file.size,
           type: file.extension ?? 'bin',
@@ -502,7 +520,7 @@ class ChatInputController extends _$ChatInputController {
     if (uploadList.isEmpty) return;
 
     final uploader = ref.read(chatFileUploadControllerProvider.notifier);
-    await uploader.uploadFiles(uploadList);
+    await uploader.uploadFiles(uploadList, pickedFiles: filesById);
 
     final urlMap = uploader.urlMap;
     final uploaded = uploadList
@@ -599,7 +617,7 @@ class ChatInputController extends _$ChatInputController {
       // 2. 上传语音文件
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
-        files: [file],
+        files: [XFile(file.path)],
       );
 
       final rawList = res.data is Map ? res.data['data'] : res.data;

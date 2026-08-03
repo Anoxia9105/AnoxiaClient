@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_item.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_list_skeleton.dart';
@@ -38,11 +38,11 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: DeviceUtil.isRealMobile() ? true : false,
+        centerTitle: DeviceUtil.isMobile(context),
         titleSpacing: 16,
         leading: () {
-          /// 如果是移动端 显示菜单按钮 打开个人中心抽屉
-          if (DeviceUtil.isRealMobile()) {
+          /// 移动端（含窄屏 Web）显示菜单按钮 打开个人中心抽屉
+          if (DeviceUtil.isMobile(context)) {
             return IconButton(
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedMenuTwoLine),
               onPressed: () => ZoomDrawer.of(context)?.toggle(),
@@ -137,7 +137,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref) {
-    final showSearch = DeviceUtil.isRealDesktop();
+    // 桌面布局（真实桌面 + 宽屏 Web）显示搜索栏，与底部输入栏的桌面判定一致
+    final showSearch =
+        DeviceUtil.isRealDesktop() ||
+        (DeviceUtil.isRealWeb() && DeviceUtil.isDesktop(context));
     return Column(
       children: [
         if (showSearch) _buildSearchBar(context, ref),
@@ -226,9 +229,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
 
   /// 构建空状态视图
   Widget _buildEmptyState(BuildContext context, WidgetRef ref, String query) {
+    final theme = Theme.of(context);
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      color: theme.colorScheme.primary,
       onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -239,17 +243,30 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const HugeIcon(
+                  HugeIcon(
                     icon: HugeIcons.strokeRoundedComment01,
                     size: 48,
-                    color: Colors.grey,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.4,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     query.isEmpty
                         ? 'chat_no_conversations'.tr()
                         : 'chat_no_related_conversations'.tr(),
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: () =>
+                        ref.read(roomListServiceProvider.notifier).refresh(),
+                    icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedRefresh,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    label: Text('live_rooms_action'.tr()),
                   ),
                 ],
               ),
@@ -262,9 +279,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
 
   /// 构建错误状态视图
   Widget _buildErrorState(BuildContext context, WidgetRef ref, Object error) {
+    final theme = Theme.of(context);
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      color: theme.colorScheme.primary,
       onRefresh: () => ref.read(roomListServiceProvider.notifier).refresh(),
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -277,21 +295,28 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedAlert02,
                       size: 48,
-                      color: Colors.grey,
+                      color: theme.colorScheme.error.withValues(alpha: 0.6),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'chat_load_failed'.tr(),
-                      style: const TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    FilledButton.tonal(
+                    const SizedBox(height: 16),
+                    FilledButton.tonalIcon(
                       onPressed: () =>
                           ref.read(roomListServiceProvider.notifier).refresh(),
-                      child: Text('call_window_retry'.tr()),
+                      icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedReload,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                      label: Text('call_window_retry'.tr()),
                     ),
                   ],
                 ),

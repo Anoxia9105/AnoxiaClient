@@ -95,7 +95,8 @@ class MessageBubbleViewData {
                 : senderContact?.avatar),
       bubbleColor: bubbleColor,
       textColor: textColor,
-      horizontalPadding: DeviceUtil.isRealMobile() ? 8 : 50,
+      // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()
+      horizontalPadding: DeviceUtil.isMobile(context) ? 8 : 50,
     );
   }
 

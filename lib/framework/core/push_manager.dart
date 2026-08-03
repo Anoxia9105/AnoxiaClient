@@ -6,4 +6,6 @@
 ///
 /// 公共类型（回调定义）统一来自 [push_manager_base]。
 export 'push_manager_base.dart';
-export 'push_manager_io.dart' if (dart.library.html) 'push_manager_web.dart';
+// 用 dart.library.io 判定（dart.library.html 在 WASM 下为 false，会把 push_manager_io
+// 错编进 WASM 触发 Platform._operatingSystem）；dart.library.io 仅原生为 true。
+export 'push_manager_web.dart' if (dart.library.io) 'push_manager_io.dart';

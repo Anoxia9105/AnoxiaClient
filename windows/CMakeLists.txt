@@ -11,6 +11,7 @@ add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 # debug information concurrently.
 if(MSVC)
   add_compile_options(/FS)
+  add_compile_options(/utf-8)
 endif()
 
 # The name of the executable created for the application. Change this to change

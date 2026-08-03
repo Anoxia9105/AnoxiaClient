@@ -145,6 +145,9 @@ class API {
   /// 收藏消息
   static const String chatFavoriteAdd = '/chat/favorite/add';
 
+  /// 取消收藏消息
+  static const String chatFavoriteRemove = '/chat/favorite/remove';
+
   /// 获取收藏列表
   static const String chatFavoriteList = '/chat/favorite/list';
 

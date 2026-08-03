@@ -28,6 +28,8 @@ class CallRoomPage extends ConsumerWidget {
       error: (err, _) => _buildErrorState(err.toString(), ref, token),
       data: (roomState) {
         //  在这里根据设备类型进行端隔离分流！
+        //  仅真实移动端走移动端布局；Web 端与桌面端一致渲染桌面布局
+        //  （CommandBar + 参与者磁贴），由 MobileCallPage 提供主题外壳。
         if (DeviceUtil.isRealMobile()) {
           // 移动端：走专门为移动端设计的布局，传入 token 和 roomState
           return CallMobileRoomBody(roomState: roomState, token: token);
