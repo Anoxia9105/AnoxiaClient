@@ -29,10 +29,15 @@ class _LiveListPageState extends State<LiveListPage> {
   final List<_RoomSummary> _rooms = [];
   bool _loadingRooms = false;
 
+  /// 直播功能建设中，暂时隐藏功能界面；恢复时置为 true 即可。
+  static const bool _featureEnabled = false;
+
   @override
   void initState() {
     super.initState();
-    _loadPublicRooms();
+    if (_featureEnabled) {
+      _loadPublicRooms();
+    }
   }
 
   Future<void> _loadPublicRooms() async {
@@ -55,7 +60,9 @@ class _LiveListPageState extends State<LiveListPage> {
         });
       }
     } catch (e) {
-      Toast.showNotificationNow('live_list_load_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_list_load_error'.tr(args: [e.toString()]),
+      );
     } finally {
       if (mounted) {
         setState(() => _loadingRooms = false);
@@ -181,7 +188,12 @@ class _LiveListPageState extends State<LiveListPage> {
           initialSource: source,
           initialTitle: initialTitle,
           onStart:
-              ({required title, required visibility, required source, sourceId}) async {
+              ({
+                required title,
+                required visibility,
+                required source,
+                sourceId,
+              }) async {
                 final room = await _startLive(
                   title: title,
                   visibility: visibility,
@@ -263,7 +275,9 @@ class _LiveListPageState extends State<LiveListPage> {
       queryParameters: {'roomId': roomId},
     );
     if (res.data?['code'] != 200) {
-      throw Exception(res.data?['msg'] ?? res.data?['message'] ?? 'live_room_not_found'.tr());
+      throw Exception(
+        res.data?['msg'] ?? res.data?['message'] ?? 'live_room_not_found'.tr(),
+      );
     }
 
     final data = res.data?['data'];
@@ -315,6 +329,58 @@ class _LiveListPageState extends State<LiveListPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_featureEnabled) {
+      return _buildUnderConstruction(context);
+    }
+    return _buildFeatureContent(context);
+  }
+
+  Widget _buildUnderConstruction(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isRealMobile(),
+        title: Text('live_page_title'.tr()),
+        backgroundColor: Colors.transparent,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedConstruction,
+                size: 56,
+                color: cs.primary.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'live_under_construction_title'.tr(),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'live_under_construction_description'.tr(),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureContent(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -428,10 +494,7 @@ class _LiveRoomSectionHeader extends StatelessWidget {
           SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: cs.primary,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
           ),
       ],
     );
@@ -478,9 +541,9 @@ class _LiveRoomListItem extends StatelessWidget {
                   children: [
                     Text(
                       room.title,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -498,10 +561,7 @@ class _LiveRoomListItem extends StatelessWidget {
                 ),
                 child: Text(
                   room.visibility == LiveVisibility.private ? '私密' : '公开',
-                  style: TextStyle(
-                    color: cs.onPrimaryContainer,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: cs.onPrimaryContainer, fontSize: 12),
                 ),
               ),
               const SizedBox(width: 8),
@@ -606,10 +666,7 @@ class _LiveSegmentBlock<T> extends StatelessWidget {
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+          child: Text(title, style: Theme.of(context).textTheme.labelLarge),
         ),
         const SizedBox(height: 6),
         SegmentedButton<T>(
@@ -675,9 +732,9 @@ class _LiveActionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -690,10 +747,7 @@ class _LiveActionCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              FilledButton.tonal(
-                onPressed: onTap,
-                child: Text(actionLabel),
-              ),
+              FilledButton.tonal(onPressed: onTap, child: Text(actionLabel)),
             ],
           ),
         ),

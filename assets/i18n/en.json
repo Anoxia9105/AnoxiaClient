@@ -19,6 +19,8 @@
   "sidebar_setting": "Setting",
   "sidebar_game": "Game",
   "live_page_title": "Live",
+  "live_under_construction_title": "Under construction...",
+  "live_under_construction_description": "The live streaming feature is under construction. Stay tuned.",
   "live_start_title": "Start live stream",
   "live_start_subtitle": "Create a LiveKit live room and invite members to watch or join on mic.",
   "live_start_action": "New live",

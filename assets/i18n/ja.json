@@ -19,6 +19,8 @@
   "sidebar_setting": "設定",
   "sidebar_game": "ゲーム",
   "live_page_title": "ライブ",
+  "live_under_construction_title": "準備中...",
+  "live_under_construction_description": "ライブ配信機能は準備中です。もうしばらくお待ちください。",
   "live_start_title": "ライブ配信を開始",
   "live_start_subtitle": "LiveKit のライブルームを作成し、メンバーを視聴や参加に招待します。",
   "live_start_action": "新規ライブ",

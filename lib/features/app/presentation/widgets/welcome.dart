@@ -166,172 +166,155 @@ class _WelcomeState extends State<Welcome> with TickerProviderStateMixin {
         padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 32.h),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: widget.maxWidth),
-          child: Stack(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 氛围底层：柔和的渐变光斑，纯装饰不影响交互
-              const Positioned.fill(child: IgnorePointer(child: _AuroraBg())),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 品牌徽标：小圆点 + 字母间距品牌名
-                  FadeTransition(
-                    opacity: _fade(0.0, 0.4),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.16),
+              // 品牌徽标：小圆点 + 字母间距品牌名
+              FadeTransition(
+                opacity: _fade(0.0, 0.4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
+                      const SizedBox(width: 7),
+                      Text(
+                        'ANOXIA IM',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2.4,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 26.h),
+
+              // 图标：淡入缩放 + 循环漂浮
+              FadeTransition(
+                opacity: _fade(0.0, 0.5),
+                child: ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: _enterCtrl,
+                    curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
+                  ),
+                  child: AnimatedBuilder(
+                    animation: _floatCtrl,
+                    builder: (context, child) {
+                      final dy = -5 * (_floatCtrl.value - 0.5) * 2;
+                      return Transform.translate(
+                        offset: Offset(0, dy),
+                        child: child,
+                      );
+                    },
+                    child: Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.92),
+                            colorScheme.primary.withValues(alpha: 0.45),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.32),
+                            blurRadius: 28,
+                            offset: const Offset(0, 12),
                           ),
-                          const SizedBox(width: 7),
-                          Text(
-                            'ANOXIA IM',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2.4,
-                              color: colorScheme.primary,
-                            ),
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.16),
+                            blurRadius: 64,
+                            offset: const Offset(0, 26),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 26.h),
-
-                  // 图标：淡入缩放 + 循环漂浮
-                  FadeTransition(
-                    opacity: _fade(0.0, 0.5),
-                    child: ScaleTransition(
-                      scale: CurvedAnimation(
-                        parent: _enterCtrl,
-                        curve: const Interval(
-                          0.0,
-                          0.5,
-                          curve: Curves.easeOutBack,
-                        ),
-                      ),
-                      child: AnimatedBuilder(
-                        animation: _floatCtrl,
-                        builder: (context, child) {
-                          final dy = -5 * (_floatCtrl.value - 0.5) * 2;
-                          return Transform.translate(
-                            offset: Offset(0, dy),
-                            child: child,
-                          );
-                        },
-                        child: Container(
-                          width: 88,
-                          height: 88,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                colorScheme.primary.withValues(alpha: 0.92),
-                                colorScheme.primary.withValues(alpha: 0.45),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              width: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.32,
-                                ),
-                                blurRadius: 28,
-                                offset: const Offset(0, 12),
-                              ),
-                              BoxShadow(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.16,
-                                ),
-                                blurRadius: 64,
-                                offset: const Offset(0, 26),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: HugeIcon(
-                              icon: widget.icon,
-                              size: 44,
-                              color: colorScheme.onPrimary,
-                            ),
-                          ),
+                      child: Center(
+                        child: HugeIcon(
+                          icon: widget.icon,
+                          size: 44,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(height: 26.h),
-                  FadeTransition(
-                    opacity: _fade(0.15, 0.65),
-                    child: SlideTransition(
-                      position: _slide(0.15, 0.65),
-                      child: Text(
-                        widget.titleKey.tr(),
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                          height: 1.2,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  FadeTransition(
-                    opacity: _fade(0.25, 0.75),
-                    child: SlideTransition(
-                      position: _slide(0.25, 0.75),
-                      child: Text(
-                        widget.descriptionKey.tr(),
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.55,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (widget.features.isNotEmpty) ...[
-                    SizedBox(height: 28.h),
-                    _FeatureGrid(
-                      features: widget.features,
-                      enterCtrl: _enterCtrl,
-                    ),
-                  ],
-                  if (widget.action != null) ...[
-                    SizedBox(height: 28.h),
-                    FadeTransition(
-                      opacity: _fade(0.55, 1.0),
-                      child: SlideTransition(
-                        position: _slide(0.55, 1.0),
-                        child: widget.action!,
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
+              SizedBox(height: 26.h),
+              FadeTransition(
+                opacity: _fade(0.15, 0.65),
+                child: SlideTransition(
+                  position: _slide(0.15, 0.65),
+                  child: Text(
+                    widget.titleKey.tr(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                      height: 1.2,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              FadeTransition(
+                opacity: _fade(0.25, 0.75),
+                child: SlideTransition(
+                  position: _slide(0.25, 0.75),
+                  child: Text(
+                    widget.descriptionKey.tr(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.55,
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.features.isNotEmpty) ...[
+                SizedBox(height: 28.h),
+                _FeatureGrid(features: widget.features, enterCtrl: _enterCtrl),
+              ],
+              if (widget.action != null) ...[
+                SizedBox(height: 28.h),
+                FadeTransition(
+                  opacity: _fade(0.55, 1.0),
+                  child: SlideTransition(
+                    position: _slide(0.55, 1.0),
+                    child: widget.action!,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -348,40 +331,35 @@ class _FeatureGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 520;
-
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: [
-            for (var i = 0; i < features.length; i++)
-              SizedBox(
-                width: isNarrow ? constraints.maxWidth : 188,
-                child: _FeatureItem(
-                  feature: features[i],
-                  enterCtrl: enterCtrl,
-                  // 每张卡片依次错开进场，形成层次感
-                  start: 0.4 + i * 0.12,
-                  end: 0.75 + i * 0.12,
-                ),
-              ),
-          ],
-        );
-      },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < features.length; i++)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: i == features.length - 1 ? 0 : 14.h,
+            ),
+            child: _FeatureRow(
+              feature: features[i],
+              enterCtrl: enterCtrl,
+              // 每行依次错开进场，形成层次感
+              start: 0.4 + i * 0.12,
+              end: 0.75 + i * 0.12,
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _FeatureItem extends StatefulWidget {
+class _FeatureRow extends StatelessWidget {
   final WelcomeFeature feature;
   final AnimationController enterCtrl;
   final double start;
   final double end;
 
-  const _FeatureItem({
+  const _FeatureRow({
     required this.feature,
     required this.enterCtrl,
     required this.start,
@@ -389,209 +367,84 @@ class _FeatureItem extends StatefulWidget {
   });
 
   @override
-  State<_FeatureItem> createState() => _FeatureItemState();
-}
-
-class _FeatureItemState extends State<_FeatureItem> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final end = widget.end.clamp(0.0, 1.0);
-    final start = widget.start.clamp(0.0, end - 0.01);
+    final end = this.end.clamp(0.0, 1.0);
+    final start = this.start.clamp(0.0, end - 0.01);
 
     final fade = CurvedAnimation(
-      parent: widget.enterCtrl,
+      parent: enterCtrl,
       curve: Interval(start, end, curve: Curves.easeOut),
     );
     final slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
         .animate(
           CurvedAnimation(
-            parent: widget.enterCtrl,
+            parent: enterCtrl,
             curve: Interval(start, end, curve: Curves.easeOutCubic),
           ),
         );
-
-    final scale = _pressed
-        ? 0.97
-        : _hovered
-        ? 1.03
-        : 1.0;
 
     return FadeTransition(
       opacity: fade,
       child: SlideTransition(
         position: slide,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
-            child: AnimatedScale(
-              scale: scale,
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOut,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                constraints: const BoxConstraints(minHeight: 116),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _hovered
-                      ? colorScheme.surfaceContainerHighest
-                      : colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _hovered
-                        ? colorScheme.primary.withValues(alpha: 0.4)
-                        : colorScheme.outlineVariant.withValues(alpha: 0.7),
-                  ),
-                  boxShadow: _hovered
-                      ? [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.14),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 图标：主题色渐变底纹圆角小方块
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary.withValues(alpha: 0.16),
-                            colorScheme.primary.withValues(alpha: 0.06),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(11),
-                        border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.18),
-                        ),
-                      ),
-                      child: HugeIcon(
-                        icon: widget.feature.icon,
-                        size: 20,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.feature.titleKey.tr(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.feature.descriptionKey.tr(),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
-                    ),
+        child: Row(
+          children: [
+            // 图标：主题色渐变底纹圆角小方块
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.16),
+                    colorScheme.primary.withValues(alpha: 0.06),
                   ],
+                ),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Center(
+                child: HugeIcon(
+                  icon: feature.icon,
+                  size: 20,
+                  color: colorScheme.primary,
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 欢迎面板氛围背景：由主题色绘制的柔和渐变光斑。
-///
-/// 纯装饰层，忽略所有指针事件，不影响滚动与点击。
-class _AuroraBg extends StatelessWidget {
-  const _AuroraBg();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Stack(
-      children: [
-        Positioned(
-          top: -70,
-          right: -60,
-          child: _GlowOrb(
-            size: 240,
-            color: cs.primary,
-            alpha: isDark ? 0.20 : 0.14,
-          ),
-        ),
-        Positioned(
-          bottom: -90,
-          left: -70,
-          child: _GlowOrb(
-            size: 280,
-            color: cs.secondary,
-            alpha: isDark ? 0.16 : 0.11,
-          ),
-        ),
-        Positioned(
-          top: -40,
-          left: -50,
-          child: _GlowOrb(
-            size: 180,
-            color: cs.tertiary,
-            alpha: isDark ? 0.12 : 0.08,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// 单个径向渐变光斑
-class _GlowOrb extends StatelessWidget {
-  final double size;
-  final Color color;
-  final double alpha;
-
-  const _GlowOrb({
-    required this.size,
-    required this.color,
-    required this.alpha,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color.withValues(alpha: alpha),
-            color.withValues(alpha: 0),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    feature.titleKey.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    feature.descriptionKey.tr(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
