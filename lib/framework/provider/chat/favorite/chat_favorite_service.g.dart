@@ -52,4 +52,4 @@ final class ChatFavoriteListProvider
   }
 }
 
-String _$chatFavoriteListHash() => r'd91113791eb1ff6b0a0fa2e2df4aaaf7a16ce374';
+String _$chatFavoriteListHash() => r'8f056f01cfaa9bc3ade18aa426a096fcefb12d6e';

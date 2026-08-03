@@ -5,20 +5,18 @@ import 'dart:io';
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
-import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
+import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:anoxia/platform/shims/flutter_background_shim.dart' as rtc;
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import '../../../domain/room_state.dart';
-import '../../../network/dio_client.dart';
 import 'call_initial_media.dart';
 import 'mobile_call_session_provider.dart';
 
@@ -435,7 +433,7 @@ class RoomController extends _$RoomController {
     log.info("✋ $uid ${raised ? '举手' : '放手'}");
 
     // Toast 提示
-    Toast.showNotificationNow(raised ? 'call_hand_raised'.tr(args: [name]) : 'call_hand_lowered'.tr(args: [name]));
+    ref.read(toastServiceProvider).showNotificationNow(raised ? 'call_hand_raised'.tr(args: [name]) : 'call_hand_lowered'.tr(args: [name]));
   }
 
   /// 处理远端表情/弹幕消息
@@ -484,7 +482,7 @@ class RoomController extends _$RoomController {
     log.info("📢 收到主持人指令: ${muted ? '静音' : '取消静音'}");
 
     // Toast 提示
-    Toast.showNotificationNow(
+    ref.read(toastServiceProvider).showNotificationNow(
       muted ? '$senderName 将您静音 🔇' : '$senderName 取消了您的静音 🔈',
     );
   }
@@ -505,7 +503,7 @@ class RoomController extends _$RoomController {
     if (_removedFromCallHandled) return;
     _removedFromCallHandled = true;
 
-    Toast.showNotificationNow(
+    ref.read(toastServiceProvider).showNotificationNow(
       '$senderName 已将你移出通话',
       type: ToastType.warning,
       duration: const Duration(seconds: 2),
@@ -591,7 +589,7 @@ class RoomController extends _$RoomController {
           Permission.microphone,
         );
         if (permission != AppPermissionResult.granted) {
-          Toast.showNotificationNow('call_mic_permission_required'.tr());
+          ref.read(toastServiceProvider).showNotificationNow('call_mic_permission_required'.tr());
           return;
         }
       }
@@ -619,7 +617,7 @@ class RoomController extends _$RoomController {
           Permission.camera,
         );
         if (permission != AppPermissionResult.granted) {
-          Toast.showNotificationNow('call_camera_permission_required'.tr());
+          ref.read(toastServiceProvider).showNotificationNow('call_camera_permission_required'.tr());
           return;
         }
       }
@@ -658,29 +656,20 @@ class RoomController extends _$RoomController {
 
   /// 切换屏幕共享
   /// 精细化管理轨道，单独发布屏幕共享轨道，不影响摄像头轨道
-  /// 桌面端需要用户选择共享窗口/屏幕
-  Future<void> toggleScreenShare(BuildContext context) async {
+  /// 桌面端由 UI 层弹出窗口/屏幕选择对话框，选中后传入 [sourceId]
+  Future<void> toggleScreenShare({String? sourceId}) async {
     if (_isTogglingScreen) return;
     _isTogglingScreen = true;
     try {
       final currentState = state.value;
-      if (currentState == null || !context.mounted) return;
+      if (currentState == null) return;
       final next = !currentState.screenSharing;
       final localParticipant = currentState.room.localParticipant;
       if (localParticipant == null) return;
 
       if (next) {
-        // 桌面端弹出窗口/屏幕选择对话框
-        String? sourceId;
-        if (DeviceUtil.isRealDesktop()) {
-          final source = await showDialog<rtc.DesktopCapturerSource?>(
-            context: context,
-            builder: (context) => const WindowScreenSelectDialog(),
-          );
-          // 用户取消选择，不继续
-          if (source == null) return;
-          sourceId = source.id;
-        }
+        // 桌面端若未提供屏幕源（用户取消选择），直接终止
+        if (DeviceUtil.isRealDesktop() && sourceId == null) return;
 
         /// Android 14+ 安全检查：如果用户拒绝或激活失败，直接阻断不往下走
         if (DeviceUtil.isAndroid()) {
@@ -733,7 +722,7 @@ class RoomController extends _$RoomController {
       log.error('切换屏幕共享失败: $e');
       // 出错时恢复到关闭状态，避免 UI 状态与实际不符
       final currentState = state.value;
-      if (context.mounted && currentState != null) {
+      if (currentState != null) {
         state = AsyncData(
           currentState.copyWith(screenSharing: false, screenShareTrack: null),
         );
@@ -1064,24 +1053,22 @@ class RoomController extends _$RoomController {
       }
       await sendKickCommand(identity);
       await Future<void>.delayed(const Duration(milliseconds: 250));
-      final res = await DioClient().get(
-        API.callRemoveParticipant,
-        queryParameters: {'roomId': roomId, 'identity': identity},
-      );
-      final code = res.data?['code'];
-      if (code == 200) {
-        Toast.showNotificationNow('call_user_removed'.tr());
+      final ok = await ref
+          .read(callRepositoryProvider)
+          .removeParticipant(roomId, identity);
+      if (ok) {
+        ref.read(toastServiceProvider).showNotificationNow('call_user_removed'.tr());
         log.info('✅ 踢出参与者 $identity 成功');
         return true;
       } else {
-        final msg = res.data?['msg'] ?? '未知错误';
-        Toast.showNotificationNow('call_kick_error'.tr(args: [msg]));
+        final msg = '未知错误';
+        ref.read(toastServiceProvider).showNotificationNow('call_kick_error'.tr(args: [msg]));
         log.warning('踢出参与者 $identity 失败: $msg');
         return false;
       }
     } catch (e) {
       log.error('踢出参与者失败: $e');
-      Toast.showNotificationNow('call_kick_retry'.tr());
+      ref.read(toastServiceProvider).showNotificationNow('call_kick_retry'.tr());
       return false;
     }
   }
@@ -1110,17 +1097,9 @@ class RoomController extends _$RoomController {
 Future<String> roomToken(Ref ref, String roomId) async {
   try {
     log.info('请求房间 Token');
-    final res = await DioClient().get(
-      API.callToken,
-      queryParameters: {'roomId': roomId},
-    );
-    if (res.data == null) throw Exception('Token 获取失败，响应数据异常');
-    if (res.data['code'] == 200) {
-      log.info('获取房间 Token 成功');
-      return res.data['data'].toString();
-    } else {
-      throw Exception("Token 获取失败: ${res.data["message"] ?? "未知错误"}");
-    }
+    final token = await ref.read(callRepositoryProvider).fetchCallToken(roomId);
+    log.info('获取房间 Token 成功');
+    return token;
   } catch (e) {
     log.error('获取房间 Token 失败: $e');
     rethrow;

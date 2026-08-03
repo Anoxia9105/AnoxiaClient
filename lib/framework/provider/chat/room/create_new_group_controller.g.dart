@@ -102,7 +102,7 @@ final class CreateGroupControllerProvider
 }
 
 String _$createGroupControllerHash() =>
-    r'27129299470b5a80e28920fba3e1133d47253411';
+    r'f75c861a7bdb1b88724ee5b358f1fcf49c7cd492';
 
 /// 创建群聊控制器
 ///

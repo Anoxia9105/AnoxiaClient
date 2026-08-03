@@ -190,7 +190,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               value: 'common_go_edit'.tr(),
               icon: Icons.lock_outline_rounded,
               onTap: () {
-                if (DeviceUtil.isRealDesktop()) {
+                if (!DeviceUtil.isMobile(context)) {
                   showDialog<bool>(
                     context: context,
                     barrierDismissible: false,
@@ -348,7 +348,7 @@ class _MyPageState extends ConsumerState<MyPage> {
     TextInputType keyboardType = TextInputType.text,
   }) async {
     final String? result;
-    if (DeviceUtil.isRealDesktop()) {
+    if (!DeviceUtil.isMobile(context)) {
       result = await showDialog<String>(
         context: context,
         barrierDismissible: false,
@@ -387,7 +387,7 @@ class _MyPageState extends ConsumerState<MyPage> {
     required void Function(String value) onApplied,
   }) async {
     final String? result;
-    if (DeviceUtil.isRealDesktop()) {
+    if (!DeviceUtil.isMobile(context)) {
       result = await showDialog<String>(
         context: context,
         barrierDismissible: false,

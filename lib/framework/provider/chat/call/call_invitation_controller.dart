@@ -9,8 +9,7 @@ import 'package:anoxia/framework/logs/talker.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
-import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
@@ -258,7 +257,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
 
   Future<void> _persistRejection(String roomId) async {
     try {
-      await DioClient().post(API.callReject, data: {'roomId': roomId});
+      await ref.read(callRepositoryProvider).rejectCall(roomId);
     } catch (error) {
       log.warning('[CallInvitation] failed to persist rejection: $error');
     }

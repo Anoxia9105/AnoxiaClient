@@ -8,6 +8,7 @@ import 'package:anoxia/features/chat/presentation/call/component/call_invite_mem
 import 'package:anoxia/features/chat/presentation/call/component/meeting_timer.dart';
 import 'package:anoxia/features/chat/presentation/call/component/device_menu.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_control_buttons.dart';
+import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -183,7 +184,7 @@ class CommandBar extends ConsumerWidget {
                           : HugeIcons.strokeRoundedComputerScreenShare,
                       label: 'call_share'.tr(),
                       active: state.screenSharing,
-                      onTap: () => notifier.toggleScreenShare(context),
+                      onTap: () => _toggleScreenShare(context, notifier),
                     ),
                     const SizedBox(width: 8),
 
@@ -338,4 +339,20 @@ class CommandBar extends ConsumerWidget {
         ),
     ];
   }
+}
+
+/// 切换屏幕共享
+///
+/// 桌面端先弹出窗口/屏幕选择对话框，选中后传入屏幕源 ID。
+/// 用户取消选择时直接终止，不触发共享。
+Future<void> _toggleScreenShare(
+  BuildContext context,
+  RoomController notifier,
+) async {
+  String? sourceId;
+  if (DeviceUtil.isRealDesktop()) {
+    sourceId = await showDesktopScreenSourcePicker(context);
+    if (sourceId == null) return;
+  }
+  await notifier.toggleScreenShare(sourceId: sourceId);
 }

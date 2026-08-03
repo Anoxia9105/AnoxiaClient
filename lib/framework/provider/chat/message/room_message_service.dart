@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:anoxia/common/constants/api.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/core/favorite_repository_provider.dart';
+import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
+import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -183,8 +184,8 @@ Stream<List<ChatMessage>> roomMessages(Ref ref, String roomId) {
     ),
   );
   return ref
-      .read(syncRepositoryProvider)
-      .watchMessages(roomId, limit: limit)
+       .read(chatRepositoryProvider)
+       .watchMessages(roomId, limit: limit)
       .map((messages) {
         scheduleMicrotask(() {
           if (!ref.mounted) return;
@@ -336,7 +337,7 @@ class ChatMessages extends _$ChatMessages {
     ref.read(optimisticRoomMessagesProvider.notifier).upsert(msg);
     unawaited(
       _enqueueMessageWrite(
-        () => ref.read(syncRepositoryProvider).cacheLocalMessage(msg),
+        () => ref.read(chatRepositoryProvider).cacheLocalMessage(msg),
       ).catchError((Object error, StackTrace stackTrace) {
         ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
         log.error('缓存本地发送消息失败', error, stackTrace);
@@ -399,7 +400,7 @@ class ChatMessages extends _$ChatMessages {
       return;
     }
 
-    final syncRepo = ref.read(syncRepositoryProvider);
+    final syncRepo = ref.read(chatRepositoryProvider);
     final localMessages = await syncRepo.getMessagesForConversation(
       roomId,
       limit: _pageSize,
@@ -446,7 +447,7 @@ class ChatMessages extends _$ChatMessages {
     ref.read(historyLoadErrorProvider.notifier).setError(roomId, null);
 
     try {
-      final syncRepo = ref.read(syncRepositoryProvider);
+      final syncRepo = ref.read(chatRepositoryProvider);
       final currentList =
           ref.read(roomMessagesProvider(roomId)).value ??
           await syncRepo.getMessagesForConversation(
@@ -475,25 +476,16 @@ class ChatMessages extends _$ChatMessages {
       );
 
       if (history.isEmpty) {
-        final res = await DioClient().get(
-          API.chatHistory,
-          queryParameters: {
-            'roomId': roomId,
-            'before_seq': oldestSeq,
-            'lastSeq': oldestSeq,
-            'pageSize': _pageSize,
-            'direction': 0,
-          },
-        );
-        final data = res.data['data'];
-        if (data is! List || data.isEmpty) {
+        history = await ref.read(messageRepositoryProvider).fetchHistory(
+              roomId,
+              beforeSeq: oldestSeq,
+              pageSize: _pageSize,
+            );
+        if (history.isEmpty) {
           _lastLoadedHistoryBoundary[roomId] = oldestSeq;
           ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
           return;
         }
-        history = data
-            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
-            .toList();
         await ref.read(localDataSourceProvider).upsertMessages(history);
       }
 
@@ -547,16 +539,14 @@ class ChatMessages extends _$ChatMessages {
 
   Future<bool> recallMessage(String messageId, String roomId) async {
     try {
-      final res = await DioClient().get(
-        API.chatRecall,
-        queryParameters: {'messageId': messageId},
-      );
+      final ok = await ref
+          .read(messageRepositoryProvider)
+          .recallMessage(messageId);
 
-      if (res.data['code'] == 200) {
+      if (ok) {
         await removeMessage(messageId, roomId);
         return true;
       }
-      log.error("撤回消息失败: ${res.data['msg']}");
       return false;
     } catch (e) {
       log.error('撤回消息请求失败: $e');
@@ -565,13 +555,7 @@ class ChatMessages extends _$ChatMessages {
   }
 
   Future<bool> addFavorite(String messageId) async {
-    try {
-      final res = await DioClient().post('${API.chatFavoriteAdd}/$messageId');
-      return res.data['code'] == 200;
-    } catch (e) {
-      log.error('收藏消息失败: $e');
-      return false;
-    }
+    return ref.read(favoriteRepositoryProvider).addFavorite(messageId);
   }
 
   int _maxSeq(List<ChatMessage> messages) {

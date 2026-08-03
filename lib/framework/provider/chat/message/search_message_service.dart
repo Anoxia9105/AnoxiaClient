@@ -1,8 +1,7 @@
-﻿import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+﻿import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../domain/chat_message.dart';
 import '../../../logs/talker.dart';
 
 part 'search_message_service.g.dart';
@@ -57,52 +56,24 @@ class SearchMessageService extends _$SearchMessageService {
     state = state.copyWith(isLoading: true, keyword: normalizedKeyword);
 
     try {
-      final res = await DioClient().get(
-        API.chatSearch,
-        queryParameters: {
-          'roomId': roomId,
-          'keyword': normalizedKeyword,
-          'contextSize': effectiveContextSize,
-        },
-      );
-
-      final data = res.data['data'];
-      if (data is! Map) return;
-
-      final messagesData = data['messages'] ?? [];
-      final firstMatchIndex = data['firstMatchIndex'] ?? -1;
-      final lastMatchIndex = data['lastMatchIndex'] ?? -1;
-      final hasMoreBefore = data['hasMoreBefore'] ?? false;
-      final hasMoreAfter = data['hasMoreAfter'] ?? false;
-      final minSeq = data['minSeq'] ?? 0;
-      final maxSeq = data['maxSeq'] ?? 0;
-      final totalMatches = data['totalMatches'] ?? 0;
-
-      final List<ChatMessage> messages = [];
-      if (messagesData is List) {
-        for (var item in messagesData) {
-          if (item is Map) {
-            // 将 Map<dynamic, dynamic> 转换为 Map<String, dynamic>
-            final Map<String, dynamic> stringKeyMap = item.map(
-              (key, value) => MapEntry(key.toString(), value),
-            );
-            messages.add(ChatMessage.fromJson(stringKeyMap));
-          }
-        }
-      }
+      final result = await ref.read(messageRepositoryProvider).searchMessages(
+            roomId,
+            normalizedKeyword,
+            contextSize: effectiveContextSize,
+          );
 
       state = state.copyWith(
         isLoading: false,
         keyword: normalizedKeyword,
-        messages: messages,
-        firstMatchIndex: firstMatchIndex,
-        lastMatchIndex: lastMatchIndex,
-        hasMoreBefore: hasMoreBefore,
-        hasMoreAfter: hasMoreAfter,
+        messages: result.messages,
+        firstMatchIndex: result.firstMatchIndex,
+        lastMatchIndex: result.lastMatchIndex,
+        hasMoreBefore: result.hasMoreBefore,
+        hasMoreAfter: result.hasMoreAfter,
         contextSize: effectiveContextSize,
-        minSeq: minSeq,
-        maxSeq: maxSeq,
-        totalMatches: totalMatches,
+        minSeq: result.minSeq,
+        maxSeq: result.maxSeq,
+        totalMatches: result.totalMatches,
       );
     } catch (e) {
       log.error('搜索消息失败: $e');

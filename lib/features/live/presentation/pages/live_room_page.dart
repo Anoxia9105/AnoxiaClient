@@ -7,6 +7,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/live/live_room_controller.dart';
+import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -249,10 +250,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       if (widget.source == LiveSource.screen) {
         await controller.toggleMic();
         if (mounted) {
-          await controller.toggleScreenShare(
-            context,
-            sourceId: widget.screenSourceId,
-          );
+          await controller.toggleScreenShare(sourceId: widget.screenSourceId);
         }
       } else {
         await controller.toggleCamera();
@@ -659,10 +657,15 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
   }
 
   /// 屏幕共享
-  Future<void> _shareScreen() {
-    return ref
+  Future<void> _shareScreen() async {
+    String? sourceId;
+    if (DeviceUtil.isRealDesktop()) {
+      sourceId = await showDesktopScreenSourcePicker(context);
+      if (sourceId == null) return;
+    }
+    await ref
         .read(liveRoomControllerProvider(widget.roomId, widget.isHost).notifier)
-        .toggleScreenShare(context);
+        .toggleScreenShare(sourceId: sourceId);
   }
 
   /// 同步观众断连状态

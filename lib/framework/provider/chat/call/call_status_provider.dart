@@ -1,53 +1,6 @@
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/domain/room_call_status.dart';
+import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// 房间通话状态
-///
-/// 记录指定房间当前是否处于通话中及通话开始时间。
-class RoomCallStatus {
-  /// 是否正在通话
-  final bool calling;
-
-  /// 通话开始时间戳（毫秒）
-  final int startTime;
-
-  const RoomCallStatus({required this.calling, required this.startTime});
-
-  /// 空闲状态常量
-  const RoomCallStatus.idle() : calling = false, startTime = 0;
-
-  /// 从 JSON 构造 [RoomCallStatus] 实例
-  factory RoomCallStatus.fromJson(Map<String, dynamic> json) {
-    return RoomCallStatus(
-      calling: json['calling'] == true,
-      startTime: _readInt(json['startTime']) ?? 0,
-    );
-  }
-}
-
-int? _readInt(dynamic raw) {
-  if (raw == null) return null;
-  if (raw is int) return raw;
-  if (raw is num) return raw.toInt();
-  return int.tryParse(raw.toString());
-}
-
-/// 从后端获取房间通话状态
-Future<RoomCallStatus> _fetchCallStatus(String roomId) async {
-  if (roomId.isEmpty) return const RoomCallStatus.idle();
-
-  final res = await DioClient().get(
-    API.callStatus,
-    queryParameters: {'roomId': roomId},
-  );
-
-  final data = res.data?['data'];
-  if (data is Map<String, dynamic>) {
-    return RoomCallStatus.fromJson(data);
-  }
-  return const RoomCallStatus.idle();
-}
 
 /// 通话状态控制器
 ///
@@ -86,7 +39,7 @@ class CallStatusController extends Notifier<Map<String, RoomCallStatus>> {
 
     _loadingRooms.add(roomId);
     try {
-      final next = await _fetchCallStatus(roomId);
+      final next = await ref.read(callRepositoryProvider).fetchCallStatus(roomId);
       state = {...state, roomId: next};
     } catch (_) {
       // 忽略网络异常，保持旧状态

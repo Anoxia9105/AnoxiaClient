@@ -66,7 +66,7 @@ final class RoomMessagesProvider
   }
 }
 
-String _$roomMessagesHash() => r'd7272d45d8b0f7c704538f94ea7b2245a4049660';
+String _$roomMessagesHash() => r'00a58eea8e04d21c8dba663826547ffd7e56529c';
 
 final class RoomMessagesFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<ChatMessage>>, String> {
@@ -117,7 +117,7 @@ final class ChatMessagesProvider extends $NotifierProvider<ChatMessages, void> {
   }
 }
 
-String _$chatMessagesHash() => r'd1c8ce171f8fc7f637087dd570a48608e7f577d1';
+String _$chatMessagesHash() => r'26aaeaa35432b6737a7e937af134c2ee82097df0';
 
 abstract class _$ChatMessages extends $Notifier<void> {
   void build();

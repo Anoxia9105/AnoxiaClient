@@ -1,7 +1,6 @@
 ﻿import 'dart:ui';
 
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/core/group_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/chat_room_vo.dart';
@@ -48,19 +47,13 @@ class CreateGroupController extends _$CreateGroupController {
 
     // 2. 使用 AsyncValue.guard 捕获异常
     state = await AsyncValue.guard(() async {
-      final res = await DioClient().post(
-        API.chatCreateGroup,
-        data: {'name': name, 'ids': userIds, 'joinPolicy': joinPolicy},
-      );
-
-      // 根据你后端 AjaxResult 的结构解析
-      if (res.data['code'] == 200) {
-        final vo = ChatRoomVO.fromJson(res.data['data']);
-        onSuccess(); // 成功回调
-        return vo;
-      } else {
-        throw res.data['msg'] ?? '创建失败';
-      }
+      final vo = await ref.read(groupRepositoryProvider).createGroup(
+            name: name,
+            userIds: userIds,
+            joinPolicy: joinPolicy,
+          );
+      onSuccess(); // 成功回调
+      return vo;
     });
   }
 }

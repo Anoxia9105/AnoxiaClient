@@ -1,6 +1,5 @@
-﻿import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/domain/chat_contact_request_vo.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+﻿import 'package:anoxia/framework/domain/chat_contact_request_vo.dart';
+import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'contact_list_controller.dart';
@@ -29,14 +28,8 @@ class ContactRequestsService extends _$ContactRequestsService {
   }
 
   Future<List<ChatContactRequestVO>> _doFetchRequests() async {
-    try {
-      final response = await DioClient().get(API.contactRequest);
-      return (response.data['data'] as List)
-          .map((e) => ChatContactRequestVO.fromJson(e))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    final contactRepository = ref.read(contactRepositoryProvider);
+    return contactRepository.fetchContactRequests();
   }
 
   /// 处理好友请求
@@ -44,14 +37,8 @@ class ContactRequestsService extends _$ContactRequestsService {
   /// [requestId] 请求记录ID
   /// [isAccepted] true=同意，false=拒绝
   Future<void> acceptRequest(int requestId, bool isAccepted) async {
-    await DioClient().get(
-      API.contactAcceptRequest,
-      queryParameters: {
-        'requestId': requestId,
-        'status': isAccepted ? 1 : 2,
-        'source': 0,
-      },
-    );
+    final contactRepository = ref.read(contactRepositoryProvider);
+    await contactRepository.handleContactRequest(requestId, isAccepted);
 
     // 操作成功后刷新列表
     refresh(quiet: true);

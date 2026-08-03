@@ -428,7 +428,7 @@ final class RoomMemberServiceProvider
   }
 }
 
-String _$roomMemberServiceHash() => r'1fefda31a3081b30468995da83dfded76a7c4f6a';
+String _$roomMemberServiceHash() => r'c267257cd87eca34463777f4a5c8b6f92e1ac329';
 
 /// 房间成员服务
 ///

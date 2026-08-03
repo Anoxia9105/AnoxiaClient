@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/logs/talker.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/core/sync_contacts_usecase_provider.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -20,7 +19,8 @@ part 'contact_list_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ContactListService extends _$ContactListService {
   /// 正在进行的远端同步 Future，避免并发重复请求
-  Future<Map<int, ChatContactVO>?>? _syncInflight;
+  Future<List<ChatContactVO>?>? _syncInflight;
+
   @override
   FutureOr<Map<int, ChatContactVO>> build() async {
     final local = ref.read(localDataSourceProvider);
@@ -48,24 +48,22 @@ class ContactListService extends _$ContactListService {
       return {};
     }
     log.debug('[Cache] ContactListService: local empty, fetch from remote');
-    return await _syncFromRemote() ?? {};
+    final result = await _syncFromRemote();
+    return {for (final c in (result ?? [])) c.contactId!: c};
   }
 
   /// 从远端拉取联系人并写入本地缓存（自动去重）
-  Future<Map<int, ChatContactVO>?> _syncFromRemote() {
+  Future<List<ChatContactVO>?> _syncFromRemote() {
     return _syncInflight ??=
         _doSyncFromRemote().whenComplete(() => _syncInflight = null);
   }
 
-  Future<Map<int, ChatContactVO>?> _doSyncFromRemote() async {
+  Future<List<ChatContactVO>?> _doSyncFromRemote() async {
     try {
-      final response = await DioClient().get(API.contactList);
-      final list = (response.data['data'] as List)
-          .map((e) => ChatContactVO.fromJson(e as Map<String, dynamic>))
-          .toList();
-      await ref.read(localDataSourceProvider).upsertContacts(list);
-      log.debug('[Cache] ContactListService: synced ${list.length} contacts');
-      return {for (final c in list) c.contactId!: c};
+      final contacts = await ref.read(syncContactsUseCaseProvider)();
+      await ref.read(localDataSourceProvider).upsertContacts(contacts);
+      log.debug('[Cache] ContactListService: synced ${contacts.length} contacts');
+      return contacts;
     } catch (e) {
       log.error('[Cache] ContactListService: sync failed: $e');
       return null;
@@ -98,7 +96,7 @@ class ContactListService extends _$ContactListService {
     if (!quiet) state = const AsyncValue.loading();
     final result = await _syncFromRemote();
     if (result != null) {
-      state = AsyncData(result);
+      state = AsyncData({for (final c in result) c.contactId!: c});
     }
   }
 

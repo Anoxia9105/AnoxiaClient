@@ -1,4 +1,4 @@
-import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/voice_record_controller.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

@@ -2,7 +2,7 @@
 ///
 /// 在移动端直接显示聊天室列表，桌面端支持三栏布局及响应式右侧面板（内联/叠加模式）。
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/common/widgets/welcome.dart';
+import 'package:anoxia/features/app/presentation/widgets/welcome.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_list_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/chat_room_detail_panel.dart';

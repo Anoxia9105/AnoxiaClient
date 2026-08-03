@@ -1,7 +1,7 @@
-import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/data/repositories/favorite_repository_impl.dart';
+import 'package:anoxia/domain/repositories/favorite_repository.dart';
 import 'package:anoxia/framework/domain/chat_favorite.dart';
-import 'package:anoxia/framework/logs/talker.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/core/favorite_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'chat_favorite_service.g.dart';
@@ -9,44 +9,26 @@ part 'chat_favorite_service.g.dart';
 /// 聊天收藏列表 Provider
 @Riverpod(keepAlive: true)
 Future<List<ChatFavorite>> chatFavoriteList(Ref ref) async {
-  return ChatFavoriteService().listFavorites();
+  return ChatFavoriteService(ref.read(favoriteRepositoryProvider))
+      .listFavorites();
 }
 
 /// 聊天收藏服务
 ///
 /// 封装收藏消息的列表查询逻辑。
 class ChatFavoriteService {
+  final FavoriteRepository _repo;
+
+  ChatFavoriteService([FavoriteRepository? repo])
+      : _repo = repo ?? FavoriteRepositoryImpl();
+
   /// 获取收藏消息列表
   ///
   /// [type] 可选的消息类型过滤
   ///
   /// 返回按时间倒序排列的收藏列表
-  Future<List<ChatFavorite>> listFavorites({String? type}) async {
-    final response = await DioClient().get(
-      API.chatFavoriteList,
-      queryParameters: {
-        if (type != null && type.isNotEmpty) 'type': type,
-        'pageNum': 1,
-        'pageSize': 200,
-      },
-    );
-
-    final data = response.data;
-    final List<dynamic> rawList = _extractList(data);
-
-    final list = rawList
-        .map((e) => ChatFavorite.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
-
-    // 按时间倒序，同时间按 ID 倒序
-    list.sort((a, b) {
-      final bTime = b.createdAt?.millisecondsSinceEpoch ?? 0;
-      final aTime = a.createdAt?.millisecondsSinceEpoch ?? 0;
-      if (bTime != aTime) return bTime.compareTo(aTime);
-      return b.id.compareTo(a.id);
-    });
-
-    return list;
+  Future<List<ChatFavorite>> listFavorites({String? type}) {
+    return _repo.listFavorites(type: type);
   }
 
   /// 取消收藏消息
@@ -54,31 +36,7 @@ class ChatFavoriteService {
   /// [favoriteId] 收藏记录 ID（[ChatFavorite.id]）
   ///
   /// 返回是否操作成功
-  Future<bool> removeFavorite(int favoriteId) async {
-    try {
-      final response = await DioClient().post(
-        '${API.chatFavoriteRemove}/$favoriteId',
-      );
-      return response.data['code'] == 200;
-    } catch (e) {
-      log.error('取消收藏失败: $e');
-      return false;
-    }
-  }
-
-  /// 兼容多种后端响应格式
-  dynamic _extractList(dynamic data) {
-    if (data is! Map) return const [];
-
-    final rows = data['rows'];
-    if (rows is List) return rows;
-
-    final rawData = data['data'];
-    if (rawData is List) return rawData;
-    if (rawData is Map && rawData['rows'] is List) {
-      return rawData['rows'] as List;
-    }
-
-    return const [];
+  Future<bool> removeFavorite(int favoriteId) {
+    return _repo.removeFavorite(favoriteId);
   }
 }

@@ -1,5 +1,6 @@
 ﻿import 'dart:async';
 
+import 'package:anoxia/domain/repositories/chat_repository.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,7 +11,7 @@ import '../protocol/message/message_enum.dart';
 import 'local_data_source.dart';
 import 'remote_data_source.dart';
 
-class SyncRepository {
+class SyncRepository implements ChatRepository {
   SyncRepository({
     required LocalDataSource local,
     required RemoteDataSource remote,

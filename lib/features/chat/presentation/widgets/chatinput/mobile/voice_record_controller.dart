@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/chat_voice_overlay.dart';
 import 'package:anoxia/framework/logs/talker.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -94,6 +95,8 @@ class VoiceRecordController extends ChangeNotifier {
   ///
   /// 在录制前应先调用此方法确保有权限
   Future<void> requestPermission() async {
+    // Web 端 audio_waveforms 无实现，直接视为无权限。
+    if (kIsWeb) return;
     if (!waveController.hasPermission) {
       await waveController.checkPermission();
       // 请求后再检查一次
@@ -171,6 +174,7 @@ class VoiceRecordController extends ChangeNotifier {
       if (session != _activeGestureSession) return;
     }
 
+    if (kIsWeb) return;
     if (!waveController.hasPermission) {
       await requestPermission();
       if (session != _activeGestureSession) return;

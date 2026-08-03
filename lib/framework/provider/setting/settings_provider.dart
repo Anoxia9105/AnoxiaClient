@@ -1,6 +1,5 @@
-﻿import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
-import 'package:anoxia/framework/domain/app_update_info.dart';
+﻿import 'package:anoxia/data/repositories/settings_repository_impl.dart';
+import 'package:anoxia/domain/repositories/settings_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -8,95 +7,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 // AppUpdateInfo is re-exported from domain/app_update_info.dart
 export 'package:anoxia/framework/domain/app_update_info.dart' show AppUpdateInfo;
 
-/// 反馈提交结果
-class FeedbackSubmitResult {
-  /// 是否提交成功
-  final bool success;
-
-  /// 结果消息
-  final String? message;
-
-  const FeedbackSubmitResult({required this.success, this.message});
-}
-
-/// 设置仓储层
-///
-/// 封装设置相关的网络请求，包括反馈提交和应用更新检查。
-class SettingsRepository {
-  /// 提交用户反馈
-  Future<FeedbackSubmitResult> submitFeedback({
-    required String title,
-    required String content,
-    required String contact,
-    required String clientType,
-    required String appVersion,
-  }) async {
-    try {
-      final res = await DioClient().post(
-        API.feedbackSubmit,
-        data: {
-          'title': title,
-          'content': content,
-          'contact': contact,
-          'clientType': clientType,
-          'appVersion': appVersion,
-        },
-      );
-
-      final ok = res.data is Map && res.data['code'] == 200;
-      final msg = res.data is Map ? res.data['msg']?.toString() : null;
-      return FeedbackSubmitResult(success: ok, message: msg);
-    } catch (_) {
-      return const FeedbackSubmitResult(success: false);
-    }
-  }
-
-  /// 检查应用更新
-  Future<AppUpdateInfo> checkForUpdate({
-    required String currentVersion,
-    required String clientType,
-  }) async {
-    final res = await DioClient().get(
-      API.appUpdateLatest,
-      auth: false,
-      queryParameters: {
-        'currentVersion': currentVersion,
-        'clientType': clientType,
-      },
-    );
-
-    final payload = res.data;
-    if (payload is! Map) {
-      throw Exception('invalid update response');
-    }
-    if (payload['code'] != 200) {
-      throw Exception(payload['msg']?.toString() ?? 'update check failed');
-    }
-
-    final data = payload['data'];
-    if (data is! Map) {
-      return AppUpdateInfo(
-        hasUpdate: false,
-        forceUpdate: false,
-        latestVersion: '',
-        currentVersion: currentVersion,
-        downloadUrl: '',
-        releaseNotes: '',
-        minSupportVersion: '',
-      );
-    }
-
-    return AppUpdateInfo(
-      hasUpdate: data['hasUpdate'] == true,
-      forceUpdate: data['forceUpdate'] == true,
-      latestVersion: (data['latestVersion'] ?? '').toString(),
-      currentVersion: (data['currentVersion'] ?? currentVersion).toString(),
-      downloadUrl: (data['downloadUrl'] ?? '').toString(),
-      releaseNotes: (data['releaseNotes'] ?? '').toString(),
-      minSupportVersion: (data['minSupportVersion'] ?? '').toString(),
-    );
-  }
-}
+// FeedbackSubmitResult / SettingsRepository are re-exported from domain layer
+export 'package:anoxia/domain/repositories/settings_repository.dart'
+    show FeedbackSubmitResult, SettingsRepository;
 
 /// 获取应用版本号
 final appVersionProvider = FutureProvider<String>((ref) async {
@@ -107,9 +20,9 @@ final appVersionProvider = FutureProvider<String>((ref) async {
   return '$version+$buildNumber';
 });
 
-/// 设置仓储层 Provider
+/// 设置仓库层 Provider
 final settingsRepositoryProvider = Provider<SettingsRepository>(
-  (ref) => SettingsRepository(),
+  (ref) => SettingsRepositoryImpl(),
 );
 
 /// 解析客户端类型标识

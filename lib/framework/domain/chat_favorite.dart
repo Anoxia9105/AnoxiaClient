@@ -229,12 +229,15 @@ class ChatFavorite {
   /// 获取收藏内容的摘要文本
   ///
   /// 优先级：content > payload 文本 > 附件类型标签 > "[empty]"
+  /// 协议中的媒体占位标记（如 `[image]`）会被跳过，避免列表直接显示占位符。
   String get summary {
     final text = content.trim();
-    if (text.isNotEmpty) return text;
+    if (text.isNotEmpty && !_isPlaceholderMarker(text)) return text;
 
     final payloadText = _extractPayloadText();
-    if (payloadText.isNotEmpty) return payloadText;
+    if (payloadText.isNotEmpty && !_isPlaceholderMarker(payloadText)) {
+      return payloadText;
+    }
 
     if (attachments.trim().isNotEmpty) {
       return '[$typeLabel]';
@@ -250,17 +253,34 @@ class ChatFavorite {
     final text = content.trim();
     final payloadText = _extractPayloadText();
 
-    if (payloadText.isNotEmpty && payloadText.length > text.length) {
+    if (payloadText.isNotEmpty &&
+        !_isPlaceholderMarker(payloadText) &&
+        payloadText.length > text.length) {
       return payloadText;
     }
 
-    if (text.isNotEmpty) return text;
-    if (payloadText.isNotEmpty) return payloadText;
+    if (text.isNotEmpty && !_isPlaceholderMarker(text)) return text;
+    if (payloadText.isNotEmpty && !_isPlaceholderMarker(payloadText)) {
+      return payloadText;
+    }
+
+    if (attachments.trim().isNotEmpty) {
+      return '[$typeLabel]';
+    }
 
     if (payload.trim().isNotEmpty) return payload;
     if (attachments.trim().isNotEmpty) return attachments;
 
     return '';
+  }
+
+  /// 是否为协议媒体占位标记（如 `[image]`、`[audio]`、`[video]`）
+  static bool _isPlaceholderMarker(String text) {
+    const markers = {
+      '[image]', '[audio]', '[video]', '[file]',
+      '[emoji]', '[location]', '[card]', '[system]',
+    };
+    return markers.contains(text.trim().toLowerCase());
   }
 
   /// 从 Payload 中提取可读的文本内容
@@ -277,9 +297,7 @@ class ChatFavorite {
         final parsed = MessagePayload.fromJson(decoded);
 
         final content = parsed.content?.trim() ?? '';
-        if (content.isNotEmpty &&
-            content != '[audio]' &&
-            content != '[video]') {
+        if (content.isNotEmpty && !_isPlaceholderMarker(content)) {
           return content;
         }
 

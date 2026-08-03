@@ -7,6 +7,18 @@ import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+/// 桌面端屏幕共享：弹出窗口/屏幕选择对话框
+///
+/// 返回用户选中的屏幕源 ID；用户取消时返回 null。
+/// 调用方需自行判断当前是否为桌面端。
+Future<String?> showDesktopScreenSourcePicker(BuildContext context) async {
+  final source = await showDialog<rtc.DesktopCapturerSource?>(
+    context: context,
+    builder: (context) => const WindowScreenSelectDialog(),
+  );
+  return source?.id;
+}
+
 /// 屏幕选择对话框
 ///
 /// 用于在发起屏幕共享时选择要共享的屏幕或窗口。

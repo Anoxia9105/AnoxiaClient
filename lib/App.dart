@@ -22,7 +22,7 @@ import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
 import 'framework/provider/ws/ws_controller.dart';
 import 'gen/assets.gen.dart';
-import 'common/utils/notification_helper.dart';
+import 'framework/core/notification_helper.dart';
 
 /// 应用根组件
 ///

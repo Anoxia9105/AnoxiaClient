@@ -45,7 +45,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'895dab6e7ddbebb40024a9511a1f908d905ff646';
+String _$authControllerHash() => r'de629a43d4ef59b50169c9a4883af071f1fbcc2f';
 
 /// 认证状态管理器
 ///
@@ -118,4 +118,4 @@ final class GetCaptchaProvider
   }
 }
 
-String _$getCaptchaHash() => r'2164187af2f37df1d4a341b6c802147064f6a31b';
+String _$getCaptchaHash() => r'61a5192da54948445de95278f282ca93dfd07ab4';

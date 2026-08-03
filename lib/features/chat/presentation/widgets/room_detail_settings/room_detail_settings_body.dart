@@ -289,8 +289,8 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         // 区块 3：通知与会话常规开关设置
         RoomCard(
           children: [
-            SwitchListTile.adaptive(
-              secondary: const HugeIcon(
+            _RoomSwitchTile(
+              leading: const HugeIcon(
                 icon: HugeIcons.strokeRoundedPin,
                 size: 22,
               ),
@@ -300,8 +300,8 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
               },
             ),
-            SwitchListTile.adaptive(
-              secondary: const Icon(Icons.notifications_off_outlined, size: 22),
+            _RoomSwitchTile(
+              leading: const Icon(Icons.notifications_off_outlined, size: 22),
               title: Text('chat_do_not_disturb'.tr()),
               subtitle: Text('chat_do_not_disturb_hint'.tr()),
               value: ref.watch(doNotDisturbRoomsProvider).contains(roomId),
@@ -312,8 +312,8 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               },
             ),
             if (isGroup && isAdmin)
-              SwitchListTile.adaptive(
-                secondary: const HugeIcon(
+              _RoomSwitchTile(
+                leading: const HugeIcon(
                   icon: HugeIcons.strokeRoundedVolumeHigh,
                   size: 22,
                 ),
@@ -488,6 +488,45 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 紧凑型开关行：缩小开关控件与行高，适配会话详情侧栏。
+class _RoomSwitchTile extends StatelessWidget {
+  final Widget leading;
+  final Widget title;
+  final Widget? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _RoomSwitchTile({
+    required this.leading,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -2),
+      minVerticalPadding: 8,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      leading: leading,
+      title: title,
+      subtitle: subtitle,
+      trailing: Transform.scale(
+        scale: 0.78,
+        child: Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+      onTap: () => onChanged(!value),
     );
   }
 }

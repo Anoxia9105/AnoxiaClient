@@ -16,9 +16,9 @@ mapping = {
 
 exclude_dirs = ['platform/shims']
 exclude_files = {
-    'common/utils/notification_helper.dart',
-    'common/utils/notification_helper_io.dart',
-    'common/utils/notification_helper_web.dart',
+    'framework/core/notification_helper.dart',
+    'framework/core/notification_helper_io.dart',
+    'framework/core/notification_helper_web.dart',
     'framework/local_cache/database.dart',
     'framework/local_cache/database_native.dart',
     'framework/local_cache/database_web.dart',

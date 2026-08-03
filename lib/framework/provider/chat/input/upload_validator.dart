@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/toast.dart';
+﻿import 'package:anoxia/framework/core/toast_service.dart';
 import 'package:anoxia/framework/provider/chat/input/delta_processor.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
@@ -6,7 +6,8 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 /// 文件上传校验工具
 ///
-/// 校验上传文件的数量和大小限制
+/// 校验上传文件的数量和大小限制。
+/// 通过 [ToastService] 报告校验失败信息，避免直接依赖 UI 代码。
 class UploadValidator {
   // 配置常量
   static const int maxTotalCount = 10; // 总附件数限制
@@ -14,9 +15,11 @@ class UploadValidator {
   static const int maxSingleFileSize = 50 * 1024 * 1024; // 单个文件限制 50MB
 
   /// 检查是否允许插入新选的文件
+  /// [toast] 用于显示校验失败提示
   /// [controller] 用于获取当前富文本框内容
   /// [newFiles] 本次新选择的文件列表
   static bool validate(
+    ToastService toast,
     QuillController controller,
     List<PlatformFile> newFiles,
   ) {
@@ -31,14 +34,14 @@ class UploadValidator {
 
     // 3. 校验总数量
     if (existingCount + selectingCount > maxTotalCount) {
-      Toast.showToast('upload_total_count_exceeded'.tr(args: [maxTotalCount.toString(), existingCount.toString()]));
+      toast.showToast('upload_total_count_exceeded'.tr(args: [maxTotalCount.toString(), existingCount.toString()]));
       return false;
     }
 
     // 4. 校验总大小
     if (existingSize + selectingSize > maxTotalSize) {
       final String limitStr = (maxTotalSize / 1024 / 1024).toStringAsFixed(0);
-      Toast.showToast('upload_total_size_exceeded'.tr(args: [limitStr]));
+      toast.showToast('upload_total_size_exceeded'.tr(args: [limitStr]));
       return false;
     }
 
@@ -46,9 +49,9 @@ class UploadValidator {
   }
 
   /// 校验单个文件是否过大（用于循环内部）
-  static bool validateSingleFile(PlatformFile file) {
+  static bool validateSingleFile(ToastService toast, PlatformFile file) {
     if (file.size > maxSingleFileSize) {
-      Toast.showToast('upload_single_file_too_large'.tr(args: [file.name]));
+      toast.showToast('upload_single_file_too_large'.tr(args: [file.name]));
       return false;
     }
     return true;

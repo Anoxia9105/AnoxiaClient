@@ -340,8 +340,8 @@ class _FavoriteDetailMobilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final copyText = item.detailText.trim().isNotEmpty
-        ? item.detailText
-        : item.summary;
+        ? _displaySummary(item, item.detailText)
+        : _displaySummary(item, item.summary);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -642,7 +642,7 @@ class _FavoriteListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.summary,
+                      _displaySummary(item, item.summary),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -817,7 +817,8 @@ class _FavoriteDetailPanel extends StatelessWidget {
       return null;
     }
     final caption = message.payload?.content?.trim() ?? '';
-    return caption.isEmpty ? null : caption;
+    if (caption.isEmpty || _isPlaceholderSummary(caption)) return null;
+    return caption;
   }
 
   @override
@@ -939,8 +940,8 @@ class _FavoriteDetailPanel extends StatelessWidget {
                 tooltip: 'chat_copy'.tr(),
                 onPressed: () async {
                   final copyText = detailFallback.trim().isNotEmpty
-                      ? detailFallback
-                      : item.summary;
+                      ? _displaySummary(item, detailFallback)
+                      : _displaySummary(item, item.summary);
                   await Clipboard.setData(ClipboardData(text: copyText));
                   if (!context.mounted) return;
                   Toast.showToast('chat_copy_success'.tr());
@@ -1018,9 +1019,9 @@ class _FavoriteDetailPanel extends StatelessWidget {
     }
 
     return _TextDetailCard(
-      text: detailFallback.isEmpty
+      text: _displaySummary(item, detailFallback).isEmpty
           ? 'favorite_empty_placeholder'.tr()
-          : detailFallback,
+          : _displaySummary(item, detailFallback),
     );
   }
 }
@@ -1426,6 +1427,26 @@ String _typeLabel(MessageType type) {
     MessageType.card => 'favorite_type_card'.tr(),
     MessageType.system => 'favorite_type_system'.tr(),
   };
+}
+
+/// 是否为协议媒体占位标记（如 `[image]`、`[IMAGE]`、`[empty]`）
+bool _isPlaceholderSummary(String text) {
+  const markers = {
+    '[image]', '[audio]', '[video]', '[file]',
+    '[emoji]', '[location]', '[card]', '[system]', '[empty]',
+  };
+  return markers.contains(text.trim().toLowerCase());
+}
+
+/// 获取收藏项的展示文本
+///
+/// 协议占位标记（如 `[image]`）对用户无意义，映射为本地化类型标签。
+String _displaySummary(ChatFavorite item, String text) {
+  final trimmed = text.trim();
+  if (_isPlaceholderSummary(trimmed)) {
+    return _typeLabel(item.messageType);
+  }
+  return trimmed;
 }
 
 String _formatDate(DateTime? dt) {

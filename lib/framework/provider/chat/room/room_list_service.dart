@@ -1,13 +1,16 @@
 ﻿import 'dart:async';
 
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/common/utils/notification_helper.dart';
+import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
-import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
+import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
+import 'package:anoxia/framework/provider/core/sync_conversations_usecase_provider.dart';
+import 'package:anoxia/framework/provider/core/mark_as_read_usecase_provider.dart';
+import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
+import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/group_announcement_dismissal_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
@@ -55,7 +58,7 @@ class RoomListService extends _$RoomListService {
       _pendingReadSeqs.clear();
     });
     final subscription = ref
-        .read(syncRepositoryProvider)
+        .read(chatRepositoryProvider)
         .watchConversations()
         .listen((rooms) => state = AsyncValue.data(rooms));
     ref.onDispose(subscription.cancel);
@@ -84,7 +87,7 @@ class RoomListService extends _$RoomListService {
     }
 
     try {
-      return await ref.read(syncRepositoryProvider).getConversations();
+      return await ref.read(syncConversationsUseCaseProvider)();
     } on DioException catch (e) {
       // 处理 401 登录过期错误：在初始化时优雅地返回空列表而不是崩溃
       // DioClient 的拦截器已处理登出逻辑，此处仅需返回空列表
@@ -280,7 +283,7 @@ class RoomListService extends _$RoomListService {
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
       log.info('🚀 上报已读状态: 房间 $roomId, Seq $seq');
-      await ref.read(syncRepositoryProvider).markAsRead(roomId, seq: seq);
+      await ref.read(markAsReadUseCaseProvider)(roomId, seq: seq);
     } catch (e) {
       log.warning('上报已读失败: $e');
     }
@@ -306,15 +309,13 @@ class RoomListService extends _$RoomListService {
 
     try {
       log.info('🚀 正在请求后端创建私聊房间，目标用户: $targetUserId');
-      final res = await DioClient().get(
-        API.chatCreatePrivate,
-        queryParameters: {'targetId': targetUserId},
-      );
+      final newRoom = await ref
+          .read(roomRepositoryProvider)
+          .createPrivateRoom(targetUserId);
 
-      if (res.data['data'] == null) {
+      if (newRoom == null) {
         return null;
       }
-      final newRoom = ChatRoomVO.fromJson(res.data['data']);
 
       // 静默刷新房间列表，确保 UI 侧边栏能同步看到新房间
       await refresh(silent: true);
@@ -330,26 +331,21 @@ class RoomListService extends _$RoomListService {
   Future<void> leaveRoom(String roomId) async {
     try {
       log.info('🚀 正在请求后端删除会话，房间 ID: $roomId');
-      final res = await DioClient().get(
-        API.chatRoomLeave,
-        queryParameters: {'roomId': roomId},
-      );
+      await ref.read(roomRepositoryProvider).leaveRoom(roomId);
 
-      if (res.data['code'] == 200) {
-        log.info('删除会话成功');
-        await ref.read(localDataSourceProvider).deleteConversationCache(roomId);
+      log.info('删除会话成功');
+      await ref.read(localDataSourceProvider).deleteConversationCache(roomId);
 
-        // 删除对应房间缓存的消息
-        ref.read(chatMessagesProvider.notifier).clearRoom(roomId);
+      // 删除对应房间缓存的消息
+      ref.read(chatMessagesProvider.notifier).clearRoom(roomId);
 
-        // 清理加载更多状态
-        ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
-        await ref.read(doNotDisturbRoomsProvider.notifier).remove(roomId);
+      // 清理加载更多状态
+      ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
+      await ref.read(doNotDisturbRoomsProvider.notifier).remove(roomId);
 
-        await refresh(silent: true);
+      await refresh(silent: true);
 
-        log.info('✅ 已删除房间 $roomId 的本地消息缓存和状态');
-      }
+      log.info('✅ 已删除房间 $roomId 的本地消息缓存和状态');
     } catch (e) {
       log.error('❌ 删除会话失败', e);
       rethrow;
@@ -359,12 +355,7 @@ class RoomListService extends _$RoomListService {
   /// 解散群聊
   Future<void> dissolveGroup(String roomId) async {
     try {
-      final res = await DioClient().get(
-        API.chatRoomDisband,
-        queryParameters: {'roomId': roomId},
-      );
-
-      log.info('$res');
+      await ref.read(roomRepositoryProvider).disbandRoom(roomId);
       await refresh(silent: true);
     } catch (e) {
       log.error('❌ 解散群聊失败', e);
@@ -380,17 +371,15 @@ class RoomListService extends _$RoomListService {
     try {
       log.info("🚀 正在${isMute ? '禁言' : '解除禁言'}房间 $roomId");
 
-      final res = await DioClient().get(
-        API.chatRoomMute,
-        queryParameters: {'roomId': roomId, 'isMute': isMute},
-      );
+      final ok = await ref
+          .read(roomRepositoryProvider)
+          .muteRoom(roomId, isMute);
 
-      if (res.data['code'] == 200) {
+      if (ok) {
         log.info("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
         await refresh(silent: true);
-        return true;
       }
-      return false;
+      return ok;
     } catch (e, st) {
       log.error("❌ ${isMute ? '禁言' : '解除禁言'}房间失败", e, st);
       return false;
@@ -399,22 +388,15 @@ class RoomListService extends _$RoomListService {
 
   /// 修改群聊名称
   Future<bool> updateGroupName(String roomId, String roomName) async {
-    final safeName = roomName.trim();
-    if (roomId.isEmpty || safeName.isEmpty) {
-      return false;
-    }
-
     try {
-      final res = await DioClient().post(
-        API.chatRoomUpdateName,
-        data: {'roomId': roomId, 'roomName': safeName},
-      );
+      final ok = await ref
+          .read(roomRepositoryProvider)
+          .updateGroupName(roomId, roomName);
 
-      if (res.data['code'] == 200) {
+      if (ok) {
         await refresh(silent: true);
-        return true;
       }
-      return false;
+      return ok;
     } catch (e, st) {
       log.error('❌ 修改群聊名称失败', e, st);
       return false;
@@ -426,22 +408,20 @@ class RoomListService extends _$RoomListService {
     String roomId,
     String roomAnnouncement,
   ) async {
-    final safeAnnouncement = roomAnnouncement.trim();
-    if (roomId.isEmpty) {
-      return false;
-    }
-
     try {
-      final res = await DioClient().post(
-        API.chatRoomUpdateAnnouncement,
-        data: {'roomId': roomId, 'roomAnnouncement': safeAnnouncement},
-      );
+      final ok = await ref
+          .read(roomRepositoryProvider)
+          .updateGroupAnnouncement(roomId, roomAnnouncement);
 
-      if (res.data['code'] == 200) {
+      if (ok) {
+        // 自己发布公告后本地标记为已关闭，避免 WS 推送回包导致横幅闪现；
+        // 只有他人推送的新公告才会重新显示横幅。
+        await ref
+            .read(groupAnnouncementDismissalProvider.notifier)
+            .dismiss(roomId, roomAnnouncement.trim());
         await refresh(silent: true);
-        return true;
       }
-      return false;
+      return ok;
     } catch (e, st) {
       log.error('❌ 修改群公告失败', e, st);
       return false;

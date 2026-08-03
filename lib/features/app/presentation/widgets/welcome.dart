@@ -444,12 +444,8 @@ class _FeatureItemState extends State<_FeatureItem> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: _hovered
-                      ? colorScheme.surfaceContainerHighest.withValues(
-                          alpha: 0.7,
-                        )
-                      : colorScheme.surfaceContainerHighest.withValues(
-                          alpha: 0.42,
-                        ),
+                      ? colorScheme.surfaceContainerHighest
+                      : colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: _hovered

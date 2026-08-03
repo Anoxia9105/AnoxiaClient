@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:anoxia/common/utils/notification_helper.dart';
+import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
 import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
@@ -24,7 +24,7 @@ import 'app.dart';
 import 'common/constants/api.dart';
 import 'common/utils/device_util.dart';
 import 'common/utils/sp_util.dart';
-import 'framework/extensions/window_controller.dart';
+import 'features/app/presentation/pages/error_page.dart';
 import 'framework/logs/talker.dart';
 import 'framework/network/dio_client.dart';
 import 'framework/network/token_manager.dart';
@@ -65,19 +65,27 @@ Future<void> main(List<String> args) async {
     };
 
     // WASM 安全的 ErrorWidget：不访问 dart:io Platform，避免渲染错误时触发
-    // 二次 Platform._operatingSystem 异常。
+    // 二次 Platform._operatingSystem 异常。渲染失败时展示完整自定义错误页
+    // （ErrorPage），不再显示 Flutter 默认红屏。
     ErrorWidget.builder = (FlutterErrorDetails details) {
-      return Material(
-        color: const Color(0x1AFF0000),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Text(
-            details.exceptionAsString(),
-            style: const TextStyle(fontSize: 11, color: Colors.red),
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
+      try {
+        log.error(
+          'Build 失败: ${details.exceptionAsString()}',
+          details.exception,
+          details.stack,
+        );
+      } catch (_) {
+        debugPrint('Build error: ${details.exception}');
+      }
+      return ErrorPage(
+        details: details.exceptionAsString(),
+        onClose: DeviceUtil.isRealDesktop()
+            ? () {
+                try {
+                  desktop.windowManager.close();
+                } catch (_) {}
+              }
+            : null,
       );
     };
 
@@ -434,28 +442,17 @@ Widget _buildAppWrapper(Widget home) {
   );
 }
 
-/// 启动失败兜底页面
+/// 启动失败兜底页面（复用全局错误页，国际化未就绪时自动回退默认文案）
 Widget _buildErrorPage(String message) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            message,
-            style: const TextStyle(color: Colors.red, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
+    home: ErrorPage(
+      message: message,
+      onClose: () {
+        try {
           desktop.windowManager.close();
-        },
-        child: const Icon(Icons.close),
-      ),
+        } catch (_) {}
+      },
     ),
   );
 }

@@ -1,10 +1,9 @@
 ﻿import 'dart:async';
 
-import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/framework/provider/core/group_repository_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/chat_room_member_vo.dart';
-import '../../../network/dio_client.dart';
 import '../../../logs/talker.dart';
 import '../../auth/auth_controller.dart';
 import '../../contact/contact_list_controller.dart';
@@ -125,20 +124,13 @@ class RoomMemberService extends _$RoomMemberService {
     log.info('🚀 拉取房间 $roomId 成员列表');
 
     try {
-      final res = await DioClient().get(
-        API.chatMembers,
-        queryParameters: {'roomId': roomId},
-        cancelToken: cancelToken,
-      );
-
-      final data = res.data['data'];
-      if (data is! List) return;
+      final membersList = await ref
+          .read(groupRepositoryProvider)
+          .fetchRoomMembers(roomId, cancelToken: cancelToken);
 
       // 构建 userId -> ChatRoomMemberVO 的 Map，实现 O(1) 查询
       final Map<int, ChatRoomMemberVO> members = {};
-      for (final e in data) {
-        if (e is! Map) continue;
-        final member = ChatRoomMemberVO.fromJson(Map<String, dynamic>.from(e));
+      for (final member in membersList) {
         if (member.userId != null) members[member.userId!] = member;
       }
 
@@ -211,12 +203,11 @@ class RoomMemberService extends _$RoomMemberService {
     try {
       log.info('🚀 添加成员 $userIds 到房间 $roomId');
 
-      final res = await DioClient().post(
-        API.chatRoomAddMembers,
-        data: {'roomId': roomId, 'userIds': userIds},
-      );
+      final ok = await ref
+          .read(groupRepositoryProvider)
+          .addRoomMembers(roomId, userIds);
 
-      if (res.data['code'] == 200) {
+      if (ok) {
         await syncMembers(roomId, force: true);
         return true;
       }
@@ -236,12 +227,11 @@ class RoomMemberService extends _$RoomMemberService {
     try {
       log.info('🚀 从房间 $roomId 踢出用户 $targetUserId');
 
-      final res = await DioClient().get(
-        API.chatRoomKickMember,
-        queryParameters: {'roomId': roomId, 'targetUserId': targetUserId},
-      );
+      final ok = await ref
+          .read(groupRepositoryProvider)
+          .kickRoomMember(roomId, targetUserId);
 
-      if (res.data['code'] == 200) {
+      if (ok) {
         // 先乐观更新本地缓存（立即生效）
         removeMember(roomId, targetUserId);
         // 再强制同步确保数据一致

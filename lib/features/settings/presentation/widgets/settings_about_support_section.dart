@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
@@ -120,33 +121,36 @@ class _SettingsAboutSupportSectionState
             onTap: widget.onOpenOpenSourceLicenses,
           ),
           const SizedBox(height: 12),
-          _UpdateCard(
-            updateInfo: updateInfo,
-            checkingUpdate: widget.pageState.checkingUpdate,
-            hasAppUpdate: widget.hasAppUpdate,
-            onCheckUpdate: widget.onCheckUpdate,
-          ),
-          if (widget.pageState.updateErrorKey != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              widget.pageState.updateErrorKey!.tr(),
-              style: TextStyle(color: colorScheme.error, fontSize: 12),
+          // Web 端通过浏览器刷新即可获取最新版本，不提供检查更新入口
+          if (!DeviceUtil.isWeb) ...[
+            _UpdateCard(
+              updateInfo: updateInfo,
+              checkingUpdate: widget.pageState.checkingUpdate,
+              hasAppUpdate: widget.hasAppUpdate,
+              onCheckUpdate: widget.onCheckUpdate,
             ),
-          ],
-          if (updateInfo?.hasUpdate == true &&
-              updateInfo?.downloadUrl.isNotEmpty == true) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => widget.onNavigateToUpdatePage(updateInfo!),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedDownload01,
-                  size: 18,
-                ),
-                label: Text('update_now'.tr()),
+            if (widget.pageState.updateErrorKey != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                widget.pageState.updateErrorKey!.tr(),
+                style: TextStyle(color: colorScheme.error, fontSize: 12),
               ),
-            ),
+            ],
+            if (updateInfo?.hasUpdate == true &&
+                updateInfo?.downloadUrl.isNotEmpty == true) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => widget.onNavigateToUpdatePage(updateInfo!),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedDownload01,
+                    size: 18,
+                  ),
+                  label: Text('update_now'.tr()),
+                ),
+              ),
+            ],
           ],
         ],
       ),

@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:anoxia/framework/core/push_manager_base.dart';
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:web/web.dart' as web;
 

@@ -7,10 +7,10 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
+import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -256,7 +256,7 @@ class ChatInputController extends _$ChatInputController {
       return;
     }
     _lastLimitNoticeAt = now;
-    Toast.showToast(
+    ref.read(toastServiceProvider).showToast(
       'chat_input_length_limit'.tr(
         args: [ChatInputLimit.maxCharacters.toString()],
       ),
@@ -456,7 +456,7 @@ class ChatInputController extends _$ChatInputController {
 
     final List<Attachment> uploadList = [];
     for (final file in files.where((f) => f.path != null)) {
-      if (!UploadValidator.validateSingleFile(file)) continue;
+      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
       final imageSize = await _readImageSizeFromFile(file.path!);
       uploadList.add(
         Attachment(
@@ -503,7 +503,7 @@ class ChatInputController extends _$ChatInputController {
     final List<Attachment> uploadList = [];
     final filesById = <String, PlatformFile>{};
     for (final file in files) {
-      if (!UploadValidator.validateSingleFile(file)) continue;
+      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
       final id = const Uuid().v4();
       if (file.bytes != null) filesById[id] = file;
       uploadList.add(
@@ -615,13 +615,11 @@ class ChatInputController extends _$ChatInputController {
 
     try {
       // 2. 上传语音文件
-      final res = await DioClient().uploadFiles(
-        '/file/uploadBatch',
-        files: [XFile(file.path)],
-      );
+      final urls = await ref.read(uploadRepositoryProvider).uploadFiles([
+        XFile(file.path),
+      ]);
 
-      final rawList = res.data is Map ? res.data['data'] : res.data;
-      if (rawList is! List || rawList.isEmpty) {
+      if (urls.isEmpty) {
         // 上传失败，标记消息为 failed
         ref
             .read(chatMessagesProvider.notifier)
@@ -632,7 +630,7 @@ class ChatInputController extends _$ChatInputController {
         return;
       }
 
-      final url = rawList.first.toString();
+      final url = urls.first;
 
       // 3. 发送真正的语音消息
       _doSendVoice(

@@ -1,9 +1,6 @@
-﻿import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+﻿import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
+import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../../logs/talker.dart';
 
 part 'contact_detail_controller.g.dart';
 
@@ -12,13 +9,8 @@ part 'contact_detail_controller.g.dart';
 /// 根据用户ID获取联系人的详细信息（来自 sys_user 和 chat_contact 表的聚合数据）
 @Riverpod(keepAlive: true)
 Future<ChatContactDetailVO> contactDetailData(Ref ref, int userId) async {
-  final response = await DioClient().get(
-    API.contactUserDetail,
-    queryParameters: {'userId': userId},
-  );
-
-  log.info(response);
-  return ChatContactDetailVO.fromJson(response.data['data']);
+  final contactRepository = ref.read(contactRepositoryProvider);
+  return contactRepository.getContactDetail(userId);
 }
 
 /// 联系人聊天按钮加载状态

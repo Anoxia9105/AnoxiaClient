@@ -53,7 +53,7 @@ final class AiChatControllerProvider
   }
 }
 
-String _$aiChatControllerHash() => r'790b013da2382234e5d86d6cdf7626e70195f2ea';
+String _$aiChatControllerHash() => r'bf9583d3ceca4a3a55245ec51a63d1ffd0cbba10';
 
 /// AI 对话控制器
 ///

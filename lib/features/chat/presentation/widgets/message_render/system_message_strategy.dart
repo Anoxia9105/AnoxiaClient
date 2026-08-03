@@ -3,7 +3,7 @@
 /// 实现系统消息的渲染逻辑，将系统消息以居中的标签形式展示在聊天界面中，
 /// 包含图标、文本和时间戳。
 import 'package:anoxia/common/utils/date_util.dart';
-import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
+import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';

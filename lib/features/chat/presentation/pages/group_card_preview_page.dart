@@ -26,8 +26,12 @@ class GroupCardPreviewPage extends ConsumerStatefulWidget {
 }
 
 class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
-  late Future<GroupPreview> _future = GroupJoinService.preview(widget.roomId);
+  late Future<GroupPreview> _future = _preview();
   bool _busy = false;
+
+  Future<GroupPreview> _preview() {
+    return ref.read(groupJoinServiceProvider).preview(widget.roomId);
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -40,9 +44,7 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
         }
         if (snapshot.hasError) {
           return _Unavailable(
-            onRetry: () => setState(
-              () => _future = GroupJoinService.preview(widget.roomId),
-            ),
+            onRetry: () => setState(() => _future = _preview()),
           );
         }
         final group = snapshot.data!;
@@ -160,16 +162,15 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
     }
     setState(() => _busy = true);
     try {
-      final result = await GroupJoinService.join(
-        group.roomId,
-        verificationMessage: message,
-      );
+      final result = await ref
+          .read(groupJoinServiceProvider)
+          .join(group.roomId, verificationMessage: message);
       if (!mounted) return;
       if (result == 'JOINED' || result == 'ALREADY_MEMBER') {
         await ref.read(roomListServiceProvider.notifier).refresh(silent: true);
         _openRoom(group.roomId);
       } else {
-        setState(() => _future = GroupJoinService.preview(group.roomId));
+        setState(() => _future = _preview());
       }
     } catch (_) {
       if (mounted) {

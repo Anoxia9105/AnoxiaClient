@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
-import 'package:anoxia/framework/provider/chat/input/voice_record_controller.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/voice_record_controller.dart';
 import 'package:chat_bottom_container/chat_bottom_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,7 +75,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
       ..onMaxDurationReached = _onVoiceMaxDuration;
 
     // 预热权限与临时目录，降低首次长按录音的启动延迟。
-    unawaited(_voiceController.warmUp());
+    // Web 端 path_provider 无实现（getTemporaryDirectory 抛 MissingPluginException），
+    // 且网页不支持本地录音，因此跳过预热，避免 SP/PC 模式切换重建时崩溃。
+    if (!DeviceUtil.isWeb) {
+      unawaited(_voiceController.warmUp());
+    }
   }
 
   void _onVoiceMaxDuration() {
@@ -362,15 +366,17 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // 语音/键盘切换按钮
-              _buildCompactButton(
-                tooltipMessage: _isVoiceMode
-                    ? 'toolbar_keyboard'.tr()
-                    : 'toolbar_mic'.tr(),
-                onTap: _toggleVoiceMode,
-                icon: _isVoiceMode
-                    ? HugeIcons.strokeRoundedKeyboard
-                    : HugeIcons.strokeRoundedMic01,
-              ),
+              // Web 端 audio_waveforms 无实现（麦克风权限/录音均不可用），隐藏语音入口。
+              if (!DeviceUtil.isWeb)
+                _buildCompactButton(
+                  tooltipMessage: _isVoiceMode
+                      ? 'toolbar_keyboard'.tr()
+                      : 'toolbar_mic'.tr(),
+                  onTap: _toggleVoiceMode,
+                  icon: _isVoiceMode
+                      ? HugeIcons.strokeRoundedKeyboard
+                      : HugeIcons.strokeRoundedMic01,
+                ),
               Expanded(
                 child: _isVoiceMode
                     ? GestureDetector(

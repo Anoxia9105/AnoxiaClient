@@ -53,7 +53,7 @@ final class ContactRequestsServiceProvider
 }
 
 String _$contactRequestsServiceHash() =>
-    r'e6328e578c2786fc9758965f628c5c4ecc3bdaef';
+    r'057719eb5f7bfb1b4a20d7555eaeba6ee110d96c';
 
 /// 好友申请列表服务
 ///

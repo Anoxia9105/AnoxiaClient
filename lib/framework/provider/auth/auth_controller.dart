@@ -1,13 +1,11 @@
 ﻿import 'dart:async';
 
-import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/framework/provider/core/auth_repository_provider.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import '../../domain/captcha_model.dart';
@@ -72,25 +70,21 @@ class AuthController extends _$AuthController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      final res = await DioClient().post(
-        API.login,
-        data: {
-          'username': account,
-          'password': password,
-          'code': code,
-          'uuid': uuid,
-          'deviceId': await DeviceIdentity.instance.getPlatformQualifiedId(),
-        },
-        auth: false,
-      );
-      if (res.data['token'] == null) {
-        Toast.showToast(
-          res.data['msg'] ?? 'login_failed'.tr(),
-          type: ToastType.error,
-        );
+      final token = await ref.read(authRepositoryProvider).login(
+            account: account,
+            password: password,
+            code: code,
+            uuid: uuid,
+            deviceId:
+                await DeviceIdentity.instance.getPlatformQualifiedId(),
+          );
+      if (token == null) {
+        ref.read(toastServiceProvider).showToast(
+              'login_failed'.tr(),
+              type: ToastType.error,
+            );
         return null;
       }
-      String token = res.data['token'];
 
       // 同时保存到 TokenManager 和内存缓存
       await TokenManager.instance.setToken(token);
@@ -115,31 +109,22 @@ class AuthController extends _$AuthController {
     required String email,
     required String captchaCode,
     required String uuid,
-  }) async {
-    final res = await DioClient().post(
-      API.registerSendEmailCode,
-      data: {'email': email, 'code': captchaCode, 'uuid': uuid},
-      auth: false,
-    );
-    final msg = _extractApiMsg(res.data, fallback: '操作成功');
-    if (!_isApiSuccess(res.data)) throw Exception(msg);
-    return msg;
+  }) {
+    return ref.read(authRepositoryProvider).sendRegisterEmailCode(
+          email: email,
+          captchaCode: captchaCode,
+          uuid: uuid,
+        );
   }
 
   Future<String> verifyRegisterEmailCode({
     required String email,
     required String emailCode,
-  }) async {
-    final res = await DioClient().post(
-      API.registerVerifyEmailCode,
-      data: {'email': email, 'emailCode': emailCode},
-      auth: false,
-    );
-    final msg = _extractApiMsg(res.data, fallback: '邮箱验证失败');
-    if (!_isApiSuccess(res.data)) throw Exception(msg);
-    final token = res.data is Map ? res.data['data']?.toString() : null;
-    if (token == null || token.isEmpty) throw Exception('邮箱验证凭证无效');
-    return token;
+  }) {
+    return ref.read(authRepositoryProvider).verifyRegisterEmailCode(
+          email: email,
+          emailCode: emailCode,
+        );
   }
 
   Future<String> register({
@@ -147,20 +132,13 @@ class AuthController extends _$AuthController {
     required String email,
     required String emailVerificationToken,
     required String password,
-  }) async {
-    final res = await DioClient().post(
-      API.register,
-      data: {
-        'username': username,
-        'email': email,
-        'emailVerificationToken': emailVerificationToken,
-        'password': password,
-      },
-      auth: false,
-    );
-    final msg = _extractApiMsg(res.data, fallback: '注册成功');
-    if (!_isApiSuccess(res.data)) throw Exception(msg);
-    return msg;
+  }) {
+    return ref.read(authRepositoryProvider).register(
+          username: username,
+          email: email,
+          emailVerificationToken: emailVerificationToken,
+          password: password,
+        );
   }
 
   /// 忘记密码：发送邮箱验证码
@@ -168,18 +146,12 @@ class AuthController extends _$AuthController {
     required String username,
     required String captchaCode,
     required String uuid,
-  }) async {
-    final res = await DioClient().post(
-      API.forgotPasswordSendCode,
-      data: {'username': username, 'captchaCode': captchaCode, 'uuid': uuid},
-      auth: false,
-    );
-
-    final msg = _extractApiMsg(res.data, fallback: '操作成功');
-    if (!_isApiSuccess(res.data)) {
-      throw Exception(msg);
-    }
-    return msg;
+  }) {
+    return ref.read(authRepositoryProvider).forgotPasswordSendCode(
+          username: username,
+          captchaCode: captchaCode,
+          uuid: uuid,
+        );
   }
 
   /// 忘记密码：重置密码
@@ -188,23 +160,13 @@ class AuthController extends _$AuthController {
     required String emailCode,
     required String newPassword,
     required String confirmPassword,
-  }) async {
-    final res = await DioClient().post(
-      API.forgotPasswordReset,
-      data: {
-        'username': username,
-        'emailCode': emailCode,
-        'newPassword': newPassword,
-        'confirmPassword': confirmPassword,
-      },
-      auth: false,
-    );
-
-    final msg = _extractApiMsg(res.data, fallback: '操作成功');
-    if (!_isApiSuccess(res.data)) {
-      throw Exception(msg);
-    }
-    return msg;
+  }) {
+    return ref.read(authRepositoryProvider).forgotPasswordReset(
+          username: username,
+          emailCode: emailCode,
+          newPassword: newPassword,
+          confirmPassword: confirmPassword,
+        );
   }
 
   /// 用户登出
@@ -233,26 +195,7 @@ class AuthController extends _$AuthController {
 
     // 手动登出时异步通知后端；鉴权失效触发的本地登出不再重复请求。
     if (notifyBackend) {
-      unawaited(
-        (() async {
-          try {
-            await DioClient()
-                .post(
-                  API.logout,
-                  auth: false,
-                  options: Options(
-                    headers: {
-                      if (token != null && token.isNotEmpty)
-                        'Authorization': 'Bearer $token',
-                    },
-                  ),
-                )
-                .timeout(const Duration(seconds: 2));
-          } catch (e) {
-            log.warning('[AuthController] 后端登出请求失败（忽略）: $e');
-          }
-        })(),
-      );
+      unawaited(ref.read(authRepositoryProvider).logout(token: token));
     }
 
     try {
@@ -282,9 +225,8 @@ class AuthController extends _$AuthController {
   }
 
   /// 获取用户信息
-  Future<UserInfo?> _fetchUserInfo() async {
-    final res = await DioClient().get(API.getInfo);
-    return UserInfo.fromJson(res.data['data']);
+  Future<UserInfo?> _fetchUserInfo() {
+    return ref.read(authRepositoryProvider).fetchUserInfo();
   }
 
   Future<void> _clearLocalSessionCache() async {
@@ -317,7 +259,7 @@ class AuthController extends _$AuthController {
       final payload = await PushManager.instance.buildDeviceBindPayload(
         userId: user.userId,
       );
-      await DioClient().post(API.pushDeviceBind, data: payload);
+      await ref.read(authRepositoryProvider).bindPushDevice(payload);
       log.info('[AuthController] 推送设备绑定上报成功');
     } catch (e, st) {
       log.warning('[AuthController] 推送设备绑定上报失败: $e');
@@ -339,17 +281,10 @@ class AuthController extends _$AuthController {
 
     try {
       final deviceUid = await PushManager.instance.getOrCreateDeviceUid();
-      await DioClient().delete(
-        '${API.pushDeviceUnbind}?deviceUid=${Uri.encodeQueryComponent(deviceUid)}',
-        auth: false,
-        options: Options(
-          extra: {'skipAuthFailureLogout': true},
-          headers: {
-            if (token != null && token.isNotEmpty)
-              'Authorization': 'Bearer $token',
-          },
-        ),
-      );
+      await ref.read(authRepositoryProvider).unbindPushDevice(
+            deviceUid,
+            token: token,
+          );
       log.info('[AuthController] 推送设备解绑上报成功');
     } catch (e) {
       log.warning('[AuthController] 推送设备解绑上报失败（忽略）: $e');
@@ -357,40 +292,6 @@ class AuthController extends _$AuthController {
   }
 
   bool _shouldReportPushDevice() => DeviceUtil.isRealMobile();
-
-  bool _isApiSuccess(dynamic body) {
-    if (body is! Map) return true;
-
-    final code = body['code'];
-    if (code is num) return code == 200;
-    if (code is String) return code == '200' || code == '0';
-
-    final nestedData = body['data'];
-    if (nestedData is Map) {
-      final nestedCode = nestedData['code'];
-      if (nestedCode is num) return nestedCode == 200;
-      if (nestedCode is String) return nestedCode == '200' || nestedCode == '0';
-    }
-
-    return true;
-  }
-
-  String _extractApiMsg(dynamic body, {required String fallback}) {
-    if (body is! Map) return fallback;
-
-    final msg = body['msg'];
-    if (msg is String && msg.trim().isNotEmpty) return msg.trim();
-
-    final nestedData = body['data'];
-    if (nestedData is Map) {
-      final nestedMsg = nestedData['msg'];
-      if (nestedMsg is String && nestedMsg.trim().isNotEmpty) {
-        return nestedMsg.trim();
-      }
-    }
-
-    return fallback;
-  }
 }
 
 /// 获取验证码
@@ -398,6 +299,5 @@ class AuthController extends _$AuthController {
 /// 每次调用都会请求新的验证码，返回 UUID 和 Base64 图片
 @riverpod
 Future<CaptchaModel> getCaptcha(Ref ref) async {
-  final res = await DioClient().get(API.captchaImage, auth: false);
-  return CaptchaModel(uuid: res.data['uuid'], imgBase64: res.data['img']);
+  return ref.read(authRepositoryProvider).fetchCaptcha();
 }

@@ -4,10 +4,9 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Toast 类型枚举
-///
-/// 用于指定 Toast 的样式主题
-enum ToastType { warning, error, success, info }
+import '../../framework/core/toast_service.dart';
+
+export '../../framework/core/toast_service.dart' show ToastType;
 
 /// Toast 工具类
 ///
@@ -133,7 +132,7 @@ class Toast {
     );
   }
 
-  /// 显示自定义 Widget（关联坐标）
+  /// 显示自定义 Widget（关联 coordinates）
   static Function showWidgetOffset({
     required Offset target,
     PreferDirection direction = PreferDirection.topLeft,

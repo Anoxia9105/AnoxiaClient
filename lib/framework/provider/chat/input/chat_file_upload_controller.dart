@@ -1,8 +1,9 @@
 ﻿import 'dart:async';
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
+import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/logs/talker.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
@@ -46,11 +47,11 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       type: FileType.any,
     );
     if (result == null || result.files.isEmpty) return;
-    if (!UploadValidator.validate(controller, result.files)) return;
+    if (!UploadValidator.validate(ref.read(toastServiceProvider), controller, result.files)) return;
 
     final List<Attachment> uploadList = [];
     for (final file in result.files) {
-      if (!UploadValidator.validateSingleFile(file)) continue;
+      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
       final id = const Uuid().v4();
       if (file.bytes != null) _filesById[id] = file;
       uploadList.add(
@@ -110,22 +111,16 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
-        final res = await DioClient().uploadFiles(
-          '/file/uploadBatch',
-          files: files,
-        );
+        final urls = await ref.read(uploadRepositoryProvider).uploadFiles(files);
 
-        final rawList = res.data is Map ? res.data['data'] : res.data;
-        if (rawList is List && rawList.isNotEmpty) {
+        if (urls.isNotEmpty) {
           // 只回写仍在编辑器中的条目：用户删除 embed 后对应记录已被
           // retain() 清理，不能再把成功/失败状态加回来阻塞发送按钮
           state = {
             ...state,
-            for (int i = 0; i < attachments.length && i < rawList.length; i++)
+            for (int i = 0; i < attachments.length && i < urls.length; i++)
               if (state.containsKey(attachments[i].id))
-                attachments[i].id!: UploadEntry.success(
-                  rawList[i].toString(),
-                ),
+                attachments[i].id!: UploadEntry.success(urls[i]),
           };
           return;
         }

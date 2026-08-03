@@ -1,8 +1,6 @@
-﻿import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/domain/contact_request.dart';
-import 'package:anoxia/framework/domain/user_search_response.dart';
+﻿import 'package:anoxia/framework/domain/user_search_response.dart';
 import 'package:anoxia/framework/logs/talker.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'user_search_service.g.dart';
@@ -33,25 +31,12 @@ class UserSearchService extends _$UserSearchService {
     int pageSize = 10,
   }) async {
     try {
-      final response = await DioClient().get(
-        API.contactSearch,
-        queryParameters: {
-          'name': name,
-          'pageNum': pageNum,
-          'pageSize': pageSize,
-        },
+      final contactRepository = ref.read(contactRepositoryProvider);
+      final searchResponse = await contactRepository.searchUsers(
+        name,
+        pageNum: pageNum,
+        pageSize: pageSize,
       );
-
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        final code = data['code'];
-        if (code is int && code != 200) {
-          final msg = (data['msg'] ?? 'search failed').toString();
-          throw Exception(msg);
-        }
-      }
-
-      final searchResponse = UserSearchResponse.fromJson(response.data);
       state = searchResponse;
       return searchResponse;
     } catch (e, st) {
@@ -65,24 +50,7 @@ class UserSearchService extends _$UserSearchService {
   /// [toUserId] 接收人用户ID
   /// [remark] 申请附言
   Future<bool> sendContactRequest(int toUserId, String? remark) async {
-    try {
-      final request = ContactRequest(toUserId: toUserId, remark: remark);
-
-      final response = await DioClient().post(
-        API.contactRequestCreate,
-        data: request.toJson(),
-      );
-
-      if (response.data['code'] == 200) {
-        log.info('发送好友申请成功: $toUserId');
-        return true;
-      } else {
-        log.warning('发送好友申请失败: ${response.data['msg']}');
-        return false;
-      }
-    } catch (e, st) {
-      log.error('发送好友申请失败: $e', e, st);
-      return false;
-    }
+    final contactRepository = ref.read(contactRepositoryProvider);
+    return contactRepository.sendContactRequest(toUserId, remark);
   }
 }

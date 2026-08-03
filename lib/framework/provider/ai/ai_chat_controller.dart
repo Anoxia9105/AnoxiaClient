@@ -1,7 +1,6 @@
 ﻿import 'dart:async';
 
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/core/ai_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../domain/ai_chat_message.dart';
@@ -46,16 +45,7 @@ class AiChatController extends _$AiChatController {
     state = [...state, AiChatMessage(content: '...', isAi: true)];
 
     try {
-      final resp = await DioClient().post(
-        API.chatGemini,
-        data: {'prompt': prompt},
-      );
-
-      if (resp.data['code'] != 200) {
-        throw Exception(resp.data['msg'] ?? 'AI 请求失败');
-      }
-
-      final String aiText = resp.data['data']['text'] ?? '';
+      final aiText = await ref.read(aiRepositoryProvider).ask(prompt);
 
       // 3. 更新 AI 消息内容
       state = [

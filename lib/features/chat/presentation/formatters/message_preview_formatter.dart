@@ -2,7 +2,7 @@
 ///
 /// 将聊天消息转换为本地化、用户可读的简短预览文本，
 /// 用于消息列表等紧凑展示场景。
-import 'package:anoxia/features/chat/presentation/formatters/system_message_formatter.dart';
+import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:easy_localization/easy_localization.dart';

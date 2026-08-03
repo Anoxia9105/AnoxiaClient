@@ -6,28 +6,31 @@ import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 群组入群申请管理页面。
 ///
 /// 通过 [roomId] 指定目标群组，加载并展示该群组的入群申请列表。
-class GroupJoinRequestsPage extends StatefulWidget {
+class GroupJoinRequestsPage extends ConsumerStatefulWidget {
   /// 群组房间 ID。
   final String roomId;
 
   const GroupJoinRequestsPage({super.key, required this.roomId});
 
   @override
-  State<GroupJoinRequestsPage> createState() => _GroupJoinRequestsPageState();
+  ConsumerState<GroupJoinRequestsPage> createState() =>
+      _GroupJoinRequestsPageState();
 }
 
-class _GroupJoinRequestsPageState extends State<GroupJoinRequestsPage> {
-  late Future<List<Map<String, dynamic>>> _future = GroupJoinService.requests(
-    widget.roomId,
-  );
+class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
+  late Future<List<Map<String, dynamic>>> _future = _requests();
+
+  Future<List<Map<String, dynamic>>> _requests() {
+    return ref.read(groupJoinServiceProvider).requests(widget.roomId);
+  }
 
   /// 重新加载入群申请列表。
-  void _reload() =>
-      setState(() => _future = GroupJoinService.requests(widget.roomId));
+  void _reload() => setState(() => _future = _requests());
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -104,10 +107,9 @@ class _GroupJoinRequestsPageState extends State<GroupJoinRequestsPage> {
   /// [row] 申请数据行，[approved] 为 true 表示批准，false 表示拒绝。
   Future<void> _handle(Map<String, dynamic> row, bool approved) async {
     try {
-      await GroupJoinService.handleRequest(
-        int.parse(row['id'].toString()),
-        approved,
-      );
+      await ref
+          .read(groupJoinServiceProvider)
+          .handleRequest(int.parse(row['id'].toString()), approved);
       _reload();
     } catch (_) {
       if (mounted) {
