@@ -95,10 +95,7 @@ class RoomListDialogMenus {
             contentBuilder: (context) => Container(
               // 2. 宽度自适应最长文案，所有菜单项等宽、内容统一居中
               width: menuWidth,
-              padding: const EdgeInsets.symmetric(
-                vertical: 4,
-                horizontal: 3,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 3),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -200,8 +197,8 @@ class RoomListDialogMenus {
           vertical: 7,
         ),
         child: Row(
-          // 所有菜单项等宽，内容统一水平居中，避免长文案左对齐、短文案居中
-          mainAxisAlignment: MainAxisAlignment.center,
+          // 固定每项文案区域宽度为 textMaxWidth，所有项等宽布局，文案居中显示
+          mainAxisSize: MainAxisSize.min,
           children: [
             HugeIcon(
               icon: icon,
@@ -209,14 +206,15 @@ class RoomListDialogMenus {
               color: color.withValues(alpha: 0.85),
             ),
             const SizedBox(width: _iconGap),
-            // 限制文案最大宽度：正常情况下恰好等于最宽文案，超上限时省略号兜底
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: textMaxWidth),
+            // 固定宽度而非 maxWidth：所有菜单项文案区域完全一致，防止长文溢出
+            SizedBox(
+              width: textMaxWidth,
               child: Text(
                 title,
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w400,

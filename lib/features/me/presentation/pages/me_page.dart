@@ -112,7 +112,7 @@ class _MyPageState extends ConsumerState<MyPage> {
         _buildTileSection(
           context,
           children: [
-            _buildAvatarTile(context, user),
+            _buildAvatarTile(context),
             _buildTileDivider(context),
             _buildEditableTile(
               context,
@@ -225,10 +225,43 @@ class _MyPageState extends ConsumerState<MyPage> {
       ),
       child: Row(
         children: [
-          AvatarWidget(
-            url: user.avatar,
-            name: user.nickName,
-            size: 48,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => _editAvatar(context),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AvatarWidget(
+                    url: user.avatar,
+                    name: user.nickName,
+                    size: 48,
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: cs.surfaceContainer,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.photo_camera_outlined,
+                        size: 11,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -269,14 +302,14 @@ class _MyPageState extends ConsumerState<MyPage> {
     );
   }
 
-  Widget _buildAvatarTile(BuildContext context, UserInfo user) {
+  Widget _buildAvatarTile(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return ListTile(
       dense: true,
       visualDensity: const VisualDensity(vertical: -1),
       minVerticalPadding: 10,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      leading: AvatarWidget(url: user.avatar, name: user.nickName, size: 40),
+      leading: Icon(Icons.account_circle_outlined, size: 22, color: cs.primary),
       title: Text('me_avatar'.tr(), style: const TextStyle(fontSize: 14.5)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

@@ -527,16 +527,23 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                               onTap: () {
                                 final data = _inputController.buildSendData();
                                 if (data == null) return;
-                                ref
-                                    .read(
-                                      chatInputControllerProvider(
-                                        widget.roomId,
-                                      ).notifier,
-                                    )
-                                    .sendPlainTextMessage(
-                                      data.text,
-                                      mentionIds: data.mentionIds,
-                                    );
+                                final notifier = ref.read(
+                                  chatInputControllerProvider(
+                                    widget.roomId,
+                                  ).notifier,
+                                );
+                                if (data.quillDelta != null) {
+                                  notifier.sendMobileMentionMessage(
+                                    data.text,
+                                    data.quillDelta!,
+                                    mentionIds: data.mentionIds,
+                                  );
+                                } else {
+                                  notifier.sendPlainTextMessage(
+                                    data.text,
+                                    mentionIds: data.mentionIds,
+                                  );
+                                }
                                 _inputController.clear();
                               },
                               icon: HugeIcons.strokeRoundedSent,

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 /// 单个 @提及在输入框文本中的区间
@@ -246,25 +248,56 @@ class MobileTextInputController extends ChangeNotifier {
 
   /// 构建发送数据
   ///
-  /// 返回包含文本和提及用户ID列表的 Record，文本为空时返回 null
-  ///
-  /// 使用 Record 类型：(text: 文本内容, mentionIds: 提及用户ID列表)
-  ({String text, List<int> mentionIds})? buildSendData() {
+  /// 返回包含文本、提及用户ID列表和可选 quillDelta 的 Record，文本为空时返回 null。
+  /// 当存在有效 @提及时，[quillDelta] 为 Quill Delta JSON 字符串（与桌面端格式
+  /// 一致），调用方应使用富文本消息类型发送；否则 [quillDelta] 为 null。
+  ({String text, List<int> mentionIds, String? quillDelta})? buildSendData() {
     final full = textController.text;
     final text = full.trim();
     if (text.isEmpty) return null;
 
     // 只收集文本仍与 @昵称 相符的提及区间，避免用户手动改写后误发提醒。
-    final mentionIds = <int>{};
+    final validMentions = <MentionSpan>[];
     for (final span in textController.mentions) {
       if (span.start >= 0 &&
           span.end <= full.length &&
           full.substring(span.start, span.end) == '@${span.name}') {
-        mentionIds.add(span.id);
+        validMentions.add(span);
       }
     }
+    validMentions.sort((a, b) => a.start.compareTo(b.start));
 
-    return (text: text, mentionIds: mentionIds.toList());
+    final mentionIds = validMentions.map((s) => s.id).toSet().toList();
+    final quillDelta = validMentions.isNotEmpty
+        ? _buildQuillDelta(full, validMentions)
+        : null;
+
+    return (text: text, mentionIds: mentionIds, quillDelta: quillDelta);
+  }
+
+  /// 将纯文本 + @提及区间转换为与桌面端格式一致的 Quill Delta JSON 字符串。
+  String _buildQuillDelta(String full, List<MentionSpan> mentions) {
+    final ops = <Map<String, dynamic>>[];
+    final content = full.trimRight();
+    var cursor = 0;
+
+    for (final span in mentions) {
+      if (span.start >= content.length) break;
+      final end = span.end.clamp(0, content.length);
+      if (span.start > cursor) {
+        ops.add({'insert': content.substring(cursor, span.start)});
+      }
+      ops.add({
+        'insert': {
+          'mention': jsonEncode({'userId': span.id, 'userName': span.name}),
+        },
+      });
+      cursor = end;
+    }
+    // 剩余文本与终止换行合并为最后一个 op（Quill Delta 要求以 \n 结尾）。
+    ops.add({'insert': '${content.substring(cursor)}\n'});
+
+    return jsonEncode(ops);
   }
 
   /// 同步提及区间

@@ -115,26 +115,42 @@ class RoomListItem extends ConsumerWidget {
             status: isOnline ? AvatarStatus.online : AvatarStatus.offline,
           );
         }
+        final cs = Theme.of(context).colorScheme;
         return AvatarWidget(
           url: room.roomAvatar,
           name: displayRoomName,
           statusWidget: Tooltip(
             message: 'chat_type_group'.tr(),
             child: Container(
-              width: 20,
-              height: 20,
+              width: 16,
+              height: 16,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cs.primary.withValues(alpha: 0.92),
+                    cs.primary.withValues(alpha: 0.6),
+                  ],
+                ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: cs.surface,
                   width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.primary.withValues(alpha: 0.28),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedUserGroup03,
-                size: 13,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 10,
+                strokeWidth: 2,
+                color: cs.onPrimary,
               ),
             ),
           ),

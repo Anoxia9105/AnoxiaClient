@@ -330,7 +330,9 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     // letterSpacing）会继承气泡默认样式。测量时必须使用同一份已合并的样式，
     // 否则继承下来的 letterSpacing 会让实际渲染行宽大于测量值，最后一个字
     // 被挤到下一行。桌面分支用 QuillEditor，样式不走此合并路径，故保持原样。
-    final baseStyle = _kIsWasm ? _wasmRenderStyle(context) : _wasmBaseStyle(context);
+    final baseStyle = _kIsWasm
+        ? _wasmRenderStyle(context)
+        : _wasmBaseStyle(context);
     final textScaler = MediaQuery.textScalerOf(context);
     final spans = <InlineSpan>[];
     final placeholders = <PlaceholderDimensions>[];
@@ -375,13 +377,13 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
           child: SizedBox.fromSize(size: mentionSize),
         ),
       );
-placeholders.add(
-         PlaceholderDimensions(
-           // mentionSize 已含 margin，与实际渲染的 WidgetSpan 尺寸一致
-           size: mentionSize,
-           alignment: PlaceholderAlignment.middle,
-         ),
-       );
+      placeholders.add(
+        PlaceholderDimensions(
+          // mentionSize 已含 margin，与实际渲染的 WidgetSpan 尺寸一致
+          size: mentionSize,
+          alignment: PlaceholderAlignment.middle,
+        ),
+      );
     }
 
     if (!hasVisibleContent) return 64;
@@ -414,11 +416,18 @@ placeholders.add(
   /// Flutter Quill 当前的只读编辑器仍会进入依赖原生平台判断的路径，WASM 下不能
   /// 使用；直接调用 [Document.toPlainText] 又会显示 embed 的对象图标并丢掉样式。
   /// 这里逐个解释 Delta operation，保留常用行内样式，并显式渲染 mention embed。
+  ///
+  /// 使用 [SelectionArea] + [Text.rich] 而非 [SelectableText.rich]：
+  /// `SelectableText` 内部的 `EditableText` 在 Web 上会为光标保留额外空间，
+  /// 导致实际可用文本宽度比测量宽度窄，最后一个字被挤换行；同时其选区机制
+  /// 会把行内 [WidgetSpan]（mention 胶囊）渲染为块级元素，@块后文字另起一行。
+  /// `Text.rich` 直接映射到 `RichText`，`WidgetSpan` 始终内联，且渲染宽度
+  /// 与 `TextPainter` 测量结果严格一致。
   Widget _buildWasmRichText(BuildContext context) {
     final dynamic opsJson = _controller?.document.toDelta().toJson();
     final baseStyle = _wasmRenderStyle(context);
     if (opsJson is! List) {
-      return SelectableText('', style: baseStyle);
+      return Text('', style: baseStyle);
     }
 
     final spans = <InlineSpan>[];
@@ -448,7 +457,9 @@ placeholders.add(
       }
     }
 
-    return SelectableText.rich(TextSpan(style: baseStyle, children: spans));
+    return SelectionArea(
+      child: Text.rich(TextSpan(style: baseStyle, children: spans)),
+    );
   }
 
   TextStyle _wasmBaseStyle(BuildContext context) {
@@ -502,13 +513,11 @@ placeholders.add(
     // （例如 letterSpacing 0.25），实际渲染宽度大于裸样式。测量必须使用
     // 同一份合并样式，否则胶囊与气泡宽度都会小于真实文字宽度，导致
     // 最后一个字被挤换行/溢出（仅 WASM 手动渲染路径存在该问题）。
-    final style = DefaultTextStyle.of(context).style
-        .merge(_wasmMentionStyle(context));
+    final style = DefaultTextStyle.of(
+      context,
+    ).style.merge(_wasmMentionStyle(context));
     final painter = TextPainter(
-      text: TextSpan(
-        text: _mentionText(rawData),
-        style: style,
-      ),
+      text: TextSpan(text: _mentionText(rawData), style: style),
       textDirection: ui.TextDirection.ltr,
       textScaler: textScaler,
       maxLines: 1,

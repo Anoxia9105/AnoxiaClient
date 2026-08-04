@@ -216,8 +216,10 @@ class ChatInputController extends _$ChatInputController {
   /// 时按当前文档内的附件 ID 裁剪两个上传控制器，移动端不插入 embed，
   /// 文档里没有附件 ID 也不会误清（其上传走 sendPicked* 即时链路）。
   void _pruneDeletedUploads(QuillController controller) {
-    final ids = DeltaProcessor(controller.document.toDelta(), const {})
-        .attachmentIds;
+    final ids = DeltaProcessor(
+      controller.document.toDelta(),
+      const {},
+    ).attachmentIds;
     ref.read(chatImageUploadControllerProvider.notifier).retain(ids);
     ref.read(chatFileUploadControllerProvider.notifier).retain(ids);
   }
@@ -256,11 +258,13 @@ class ChatInputController extends _$ChatInputController {
       return;
     }
     _lastLimitNoticeAt = now;
-    ref.read(toastServiceProvider).showToast(
-      'chat_input_length_limit'.tr(
-        args: [ChatInputLimit.maxCharacters.toString()],
-      ),
-    );
+    ref
+        .read(toastServiceProvider)
+        .showToast(
+          'chat_input_length_limit'.tr(
+            args: [ChatInputLimit.maxCharacters.toString()],
+          ),
+        );
   }
 
   void _sendTypingStatus(bool isTyping) {
@@ -400,6 +404,31 @@ class ChatInputController extends _$ChatInputController {
     }
   }
 
+  /// 发送移动端含 @提及的富文本消息。
+  ///
+  /// [quillDelta] 为由 [MobileTextInputController.buildSendData] 生成的
+  /// Quill Delta JSON 字符串，格式与桌面端一致，渲染效果与桌面端保持统一。
+  void sendMobileMentionMessage(
+    String text,
+    String quillDelta, {
+    List<int>? mentionIds,
+  }) {
+    final room = ref.read(currentRoomProvider(roomId));
+    final content = text.trim();
+    if (room == null || content.isEmpty) return;
+
+    _doSend(
+      type: MessageType.richText,
+      payload: MessagePayload(
+        content: content.characters.take(100).toString(),
+        quillDelta: quillDelta,
+        mentions: (mentionIds != null && mentionIds.isNotEmpty)
+            ? mentionIds
+            : null,
+      ),
+    );
+  }
+
   /// 发送纯文本消息（Android 专用或外部调用）
   ///
   /// 若文本为单个表情符号，则作为 Emoji 消息发送。
@@ -456,7 +485,11 @@ class ChatInputController extends _$ChatInputController {
 
     final List<Attachment> uploadList = [];
     for (final file in files.where((f) => f.path != null)) {
-      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
+      if (!UploadValidator.validateSingleFile(
+        ref.read(toastServiceProvider),
+        file,
+      ))
+        continue;
       final imageSize = await _readImageSizeFromFile(file.path!);
       uploadList.add(
         Attachment(
@@ -503,7 +536,11 @@ class ChatInputController extends _$ChatInputController {
     final List<Attachment> uploadList = [];
     final filesById = <String, PlatformFile>{};
     for (final file in files) {
-      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
+      if (!UploadValidator.validateSingleFile(
+        ref.read(toastServiceProvider),
+        file,
+      ))
+        continue;
       final id = const Uuid().v4();
       if (file.bytes != null) filesById[id] = file;
       uploadList.add(

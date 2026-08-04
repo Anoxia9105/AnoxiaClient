@@ -1,12 +1,16 @@
 import 'dart:typed_data';
 
 import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'avatar_crop_editor.dart';
 
@@ -18,7 +22,7 @@ typedef AvatarEditCallback = Future<void> Function(bool success);
 /// 头像编辑流程组件（选择图片 → 裁剪预览 → 上传）
 ///
 /// 桌面端对话框与移动端页面共用，纯 Flutter 实现，Web/Wasm 全平台兼容。
-class AvatarEditFlow extends StatefulWidget {
+class AvatarEditFlow extends ConsumerStatefulWidget {
   const AvatarEditFlow({
     super.key,
     required this.editorSize,
@@ -32,10 +36,10 @@ class AvatarEditFlow extends StatefulWidget {
   final AvatarEditCallback onDone;
 
   @override
-  State<AvatarEditFlow> createState() => _AvatarEditFlowState();
+  ConsumerState<AvatarEditFlow> createState() => _AvatarEditFlowState();
 }
 
-class _AvatarEditFlowState extends State<AvatarEditFlow> {
+class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
   final GlobalKey<AvatarCropEditorState> _editorKey =
       GlobalKey<AvatarCropEditorState>();
 
@@ -121,15 +125,19 @@ class _AvatarEditFlowState extends State<AvatarEditFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final bytes = _pickedBytes;
+    final user = ref.watch(authControllerProvider).when(
+          data: (u) => u,
+          loading: () => null,
+          error: (_, _) => null,
+        );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (bytes == null)
-          _buildPickPrompt(cs)
+          _buildPickPrompt(user)
         else ...[
           AvatarCropEditor(
             key: _editorKey,
@@ -166,25 +174,13 @@ class _AvatarEditFlowState extends State<AvatarEditFlow> {
     );
   }
 
-  Widget _buildPickPrompt(ColorScheme cs) {
+  Widget _buildPickPrompt(UserInfo? user) {
     return SizedBox(
       height: widget.editorSize,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 44,
-              color: cs.onPrimaryContainer,
-            ),
-          ),
+          AvatarWidget(url: user?.avatar, name: user?.nickName, size: 88),
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: _pickImage,

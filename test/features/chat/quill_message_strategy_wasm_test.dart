@@ -25,12 +25,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('@CC3'), findsOneWidget);
-    final selectableFinder = find.byType(SelectableText);
-    expect(selectableFinder, findsOneWidget);
-
-    final selectable = tester.widget<SelectableText>(selectableFinder);
-    expect(selectable.textSpan?.toPlainText().endsWith('\n'), isFalse);
-    expect(tester.getSize(selectableFinder).height, lessThan(30));
+    // SelectionArea + Text.rich 代替了旧的 SelectableText.rich
+    final selectionArea = find.byType(SelectionArea);
+    expect(selectionArea, findsOneWidget);
+    // 单行：mention 与后续文字同行，且无终止换行导致的多余行高
+    expect(tester.getSize(selectionArea).height, lessThan(30));
   }, skip: !_isWasm);
 
   testWidgets('WASM 短富文本按实际内容宽度收缩', (tester) async {
@@ -45,7 +44,9 @@ void main() {
     await tester.pumpWidget(_testApp(message));
     await tester.pump();
 
-    final size = tester.getSize(find.byType(SelectableText));
+    final selectionArea = find.byType(SelectionArea);
+    expect(selectionArea, findsOneWidget);
+    final size = tester.getSize(selectionArea);
     expect(size.width, lessThan(48));
     expect(size.height, lessThan(30));
   }, skip: !_isWasm);
@@ -62,9 +63,9 @@ void main() {
     await tester.pumpWidget(_testApp(message));
     await tester.pump();
 
-    final selectable = find.byType(SelectableText);
-    expect(selectable, findsOneWidget);
-    final size = tester.getSize(selectable);
+    final selectionArea = find.byType(SelectionArea);
+    expect(selectionArea, findsOneWidget);
+    final size = tester.getSize(selectionArea);
     // 单行应小于两行高度；高度超过一行即为换行。
     expect(size.height, lessThan(30));
   }, skip: !_isWasm);
