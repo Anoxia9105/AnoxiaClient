@@ -44,6 +44,13 @@ class RoomListService extends _$RoomListService {
   /// 待上报的最新 seq（按房间维度）
   final Map<String, int> _pendingReadSeqs = {};
 
+  /// 首次拉取是否已完成
+  ///
+  /// 登录后预加载期间，本地缓存的「空列表」不能作为最终结果上屏，
+  /// 否则会先闪「无会话」空态、服同同步完成后才显示列表。
+  /// 空态 UI 只能由 fetch 结果决定，非空缓存则允许立即展示。
+  bool _initialFetchDone = false;
+
   @override
   FutureOr<List<ChatRoomVO>> build() async {
     ref.onDispose(() {
@@ -60,9 +67,18 @@ class RoomListService extends _$RoomListService {
     final subscription = ref
         .read(chatRepositoryProvider)
         .watchConversations()
-        .listen((rooms) => state = AsyncValue.data(rooms));
+        .listen((rooms) {
+          // 首次拉取完成前，空缓存不覆盖 state（保持 loading 到 fetch 出结果），
+          // 避免「先显示无数据、后显示列表」的闪烁；有缓存房间则立即上屏。
+          if (!_initialFetchDone && rooms.isEmpty) return;
+          state = AsyncValue.data(rooms);
+        });
     ref.onDispose(subscription.cancel);
-    return await _fetchRoomListForStartup();
+    try {
+      return await _fetchRoomListForStartup();
+    } finally {
+      _initialFetchDone = true;
+    }
   }
 
   /// 切换当前房间的搜索栏展开状态
