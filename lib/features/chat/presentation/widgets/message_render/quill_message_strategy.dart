@@ -375,12 +375,13 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
           child: SizedBox.fromSize(size: mentionSize),
         ),
       );
-      placeholders.add(
-        PlaceholderDimensions(
-          size: mentionSize,
-          alignment: PlaceholderAlignment.middle,
-        ),
-      );
+placeholders.add(
+         PlaceholderDimensions(
+           // mentionSize 已含 margin，与实际渲染的 WidgetSpan 尺寸一致
+           size: mentionSize,
+           alignment: PlaceholderAlignment.middle,
+         ),
+       );
     }
 
     if (!hasVisibleContent) return 64;
@@ -392,7 +393,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     );
     painter
       ..setPlaceholderDimensions(placeholders)
-      ..layout(maxWidth: maxWidth);
+      ..layout(maxWidth: double.infinity);
 
     var widestLine = 0.0;
     for (final line in painter.computeLineMetrics()) {
@@ -472,9 +473,12 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
   /// Quill 文档总会以一个终止换行结尾。编辑器把它作为文档边界而非空白行，
   /// 手动构造 TextSpan 时也必须去掉，否则消息气泡底部会多出一行高度。
+  ///
+  /// 同时去除最后一个 op 的行尾空格：`computeLineMetrics` 不会计入行尾空白，
+  /// 但渲染时会保留，导致末尾多出不可见的换行。
   String _displayText(List<dynamic> ops, int index, String text) {
-    if (index == ops.length - 1 && text.endsWith('\n')) {
-      return text.substring(0, text.length - 1);
+    if (index == ops.length - 1) {
+      return text.trimRight();
     }
     return text;
   }
@@ -494,17 +498,29 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     dynamic rawData,
     TextScaler textScaler,
   ) {
+    // mention 的 Text 位于 WidgetSpan 内，会继承气泡的 DefaultTextStyle
+    // （例如 letterSpacing 0.25），实际渲染宽度大于裸样式。测量必须使用
+    // 同一份合并样式，否则胶囊与气泡宽度都会小于真实文字宽度，导致
+    // 最后一个字被挤换行/溢出（仅 WASM 手动渲染路径存在该问题）。
+    final style = DefaultTextStyle.of(context).style
+        .merge(_wasmMentionStyle(context));
     final painter = TextPainter(
       text: TextSpan(
         text: _mentionText(rawData),
-        style: _wasmMentionStyle(context),
+        style: style,
       ),
       textDirection: ui.TextDirection.ltr,
       textScaler: textScaler,
       maxLines: 1,
-    )..layout();
+    );
+    painter.layout();
 
-    // 与下方组件的左右 margin(4) + padding(8)、上下 padding(4) 一致。
+    // 组件完整尺寸（含 margin：水平 2+2、垂直 0）：
+    // 宽 = 文本宽 + 水平 padding(4+4) + 水平 margin(2+2)
+    // 高 = 文本高 + 垂直 padding(2+2)
+    //
+    // 注意：SizedBox.fromSize 会给 Container 施加紧约束，margin 会从
+    // 尺寸内部扣除，因此 margin 必须计入尺寸，否则内容区比文本窄 4px。
     return Size(painter.width + 12, painter.height + 4);
   }
 

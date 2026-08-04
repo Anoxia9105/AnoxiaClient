@@ -1,6 +1,8 @@
 ﻿import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/constants/storage_keys.dart';
+import 'package:anoxia/common/utils/ss_util.dart';
 import 'package:anoxia/framework/provider/core/auth_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
@@ -40,6 +42,9 @@ class AuthController extends _$AuthController {
       ref.read(tokenCacheProvider.notifier).setToken(token);
       final user = await _fetchUserInfo();
       if (user != null) {
+        // 自动恢复成功路径也要校验本地缓存归属：上次登录的是其他账号时，
+        // 先清空会话缓存，避免把上一个账号的会话/消息/头像残留带进来。
+        await _ensureSessionCacheMatches(user.userId);
         _registerPushTokenRefreshBinding(user);
         unawaited(_bindPushDevice(user));
       }
@@ -91,7 +96,14 @@ class AuthController extends _$AuthController {
       ref.read(tokenCacheProvider.notifier).setToken(token);
       await _clearLocalSessionCache();
 
-      return await _fetchUserInfo();
+      final user = await _fetchUserInfo();
+      if (user != null) {
+        await SSUtil.instance.write(
+          key: StorageKeys.lastLoginUserId,
+          value: '${user.userId}',
+        );
+      }
+      return user;
     });
 
     // 登录成功后重新触发 App 初始化（_preloadData 在登出时不会为新 session 重跑）
@@ -233,6 +245,28 @@ class AuthController extends _$AuthController {
     await ref.read(localDataSourceProvider).clearSessionCache();
     ref.invalidate(contactListServiceProvider);
     ref.invalidate(sortedContactGroupsProvider);
+  }
+
+  /// 校验本地会话缓存是否属于当前用户
+  ///
+  /// 上次登录成功的用户与当前用户不一致时，先清空本地缓存（含会话、
+  /// 消息、联系人、同步水位），再记录当前用户 ID，避免切账号后复用旧数据。
+  Future<void> _ensureSessionCacheMatches(int userId) async {
+    final lastUserIdRaw = await SSUtil.instance.read(
+      key: StorageKeys.lastLoginUserId,
+    );
+    final lastUserId = int.tryParse(lastUserIdRaw ?? '');
+    if (lastUserId != null && lastUserId != userId) {
+      log.info(
+        '[AuthController] 检测到上次登录用户($lastUserId)与当前用户($userId)'
+        '不一致，清理本地会话缓存',
+      );
+      await _clearLocalSessionCache();
+    }
+    await SSUtil.instance.write(
+      key: StorageKeys.lastLoginUserId,
+      value: '$userId',
+    );
   }
 
   /// 刷新当前登录用户信息

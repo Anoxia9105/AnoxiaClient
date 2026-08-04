@@ -49,6 +49,25 @@ void main() {
     expect(size.width, lessThan(48));
     expect(size.height, lessThan(30));
   }, skip: !_isWasm);
+
+  testWidgets('WASM 单行消息最后一个字不换行', (tester) async {
+    // 回归：DefaultTextStyle 携带 letterSpacing 时，气泡宽度必须包含字距，
+    // 否则最后一个字被挤到第二行。
+    final text = List.generate(28, (_) => '字').join();
+    final message = _richTextMessage([
+      {'insert': text},
+      {'insert': '\n'},
+    ]);
+
+    await tester.pumpWidget(_testApp(message));
+    await tester.pump();
+
+    final selectable = find.byType(SelectableText);
+    expect(selectable, findsOneWidget);
+    final size = tester.getSize(selectable);
+    // 单行应小于两行高度；高度超过一行即为换行。
+    expect(size.height, lessThan(30));
+  }, skip: !_isWasm);
 }
 
 Widget _testApp(ChatMessage message) {

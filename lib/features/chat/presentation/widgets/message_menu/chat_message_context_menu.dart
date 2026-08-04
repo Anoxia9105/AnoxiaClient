@@ -12,6 +12,7 @@ import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 
@@ -255,6 +256,9 @@ class _ChatMessageContextMenuState
       final success = await ref
           .read(chatMessagesProvider.notifier)
           .addFavorite(messageId);
+      if (success) {
+        ref.invalidate(chatFavoriteListProvider);
+      }
       if (context.mounted) {
         Toast.showToast(
           success ? 'chat_favorite_success'.tr() : 'chat_favorite_failed'.tr(),

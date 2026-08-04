@@ -79,6 +79,9 @@ class API {
   /// 更新用户个人资料
   static const String userProfileUpdate = '/system/user/profile';
 
+  /// 上传/更新当前用户头像
+  static const String userAvatarUpload = '/system/user/profile/avatar';
+
   /// 更新用户密码
   static const String userProfileUpdatePassword =
       '/system/user/profile/updatePwd';

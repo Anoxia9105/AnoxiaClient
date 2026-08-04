@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'change_password_page.dart';
+import 'avatar_edit_dialog.dart';
+import 'avatar_edit_page.dart';
 import 'me_profile_item_edit_page.dart';
 import 'personal_qr_page.dart';
 
@@ -110,6 +112,8 @@ class _MyPageState extends ConsumerState<MyPage> {
         _buildTileSection(
           context,
           children: [
+            _buildAvatarTile(context, user),
+            _buildTileDivider(context),
             _buildEditableTile(
               context,
               title: 'me_profile_nickname'.tr(),
@@ -225,7 +229,6 @@ class _MyPageState extends ConsumerState<MyPage> {
             url: user.avatar,
             name: user.nickName,
             size: 48,
-            borderRadius: 24,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -263,6 +266,30 @@ class _MyPageState extends ConsumerState<MyPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatarTile(BuildContext context, UserInfo user) {
+    final cs = Theme.of(context).colorScheme;
+    return ListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -1),
+      minVerticalPadding: 10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      leading: AvatarWidget(url: user.avatar, name: user.nickName, size: 40),
+      title: Text('me_avatar'.tr(), style: const TextStyle(fontSize: 14.5)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'me_avatar_change'.tr(),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12.5),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right_rounded, size: 20, color: cs.outline),
+        ],
+      ),
+      onTap: () => _editAvatar(context),
     );
   }
 
@@ -412,6 +439,27 @@ class _MyPageState extends ConsumerState<MyPage> {
     }
     if (result != null && mounted) {
       setState(() => onApplied(result!));
+    }
+  }
+
+  /// 打开头像编辑（桌面端对话框，移动端全屏页面）
+  Future<void> _editAvatar(BuildContext context) async {
+    final bool ok;
+    if (!DeviceUtil.isMobile(context)) {
+      ok = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const AvatarEditDialog(),
+          ) ??
+          false;
+    } else {
+      ok = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const AvatarEditPage()),
+          ) ??
+          false;
+    }
+    if (ok && mounted) {
+      await ref.read(authControllerProvider.notifier).refreshUserInfo();
     }
   }
 

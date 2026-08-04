@@ -82,6 +82,9 @@ class SyncRepository implements ChatRepository {
     try {
       final since = await _local.latestConversationUpdatedAt();
       final remoteRooms = await _remote.fetchConversations(since: since);
+      // 服务端响应异常（null）时不视为「用户无房间」，跳过合并与对账，
+      // 避免用一次错误响应把本地缓存清空。
+      if (remoteRooms == null) return;
       await _mergeConversations(remoteRooms);
       await _local.updateSyncState(
         scope: 'conversations',
@@ -102,39 +105,46 @@ class SyncRepository implements ChatRepository {
     return _syncMessagesInflight[convId] ??= _doSyncMessages(
       convId,
       since: since,
-    ).whenComplete(() => _syncMessagesInflight.remove(convId));
+    ).whenComplete(() {
+      // 注意：不能写成 `return _syncMessagesInflight.remove(convId)`。
+      // remove 返回被移除的 future 自身，而 whenComplete 会等待回调返回的
+      // Future 完成，等于「未来等待自己」，导致该 future 永不完成。
+      _syncMessagesInflight.remove(convId);
+    });
   }
 
   Future<void> _doSyncMessages(String convId, {DateTime? since}) async {
     if (!await _hasNetwork()) return;
 
     try {
-      final lastSeq = await _local.messageSyncWatermark(convId);
+      var lastSeq = await _local.messageSyncWatermark(convId);
       final latestSentAt = since ?? await _local.latestMessageSentAt(convId);
-      final remoteMessages = await _remote.fetchMessages(
-        convId,
-        since: latestSentAt,
-        lastSeq: lastSeq,
-      );
-      await _local.upsertMessages(remoteMessages);
-      final orderedSeqs =
-          remoteMessages
-              .map((message) => message.seq ?? 0)
-              .where((seq) => seq > lastSeq)
-              .toList()
-            ..sort();
-      // A first sync may start at the member's visibility boundary instead of
-      // room seq 1. Treat the first returned seq as the local baseline.
-      var maxSeq = lastSeq == 0 && orderedSeqs.isNotEmpty
-          ? orderedSeqs.first - 1
-          : lastSeq;
-      for (final seq in orderedSeqs) {
-        if (seq == maxSeq + 1) {
-          maxSeq = seq;
-        } else if (seq > maxSeq + 1) {
-          break;
-        }
+      var maxSeq = lastSeq;
+
+      // 循环拉取：服务端单次最多返回 pageSize(≤100) 条。若会话积压超过一页，
+      // 连续拉取直至追平，避免「一次进房只同步一批，中间消息缺失」。
+      while (true) {
+        final remoteMessages = await _remote.fetchMessages(
+          convId,
+          since: latestSentAt,
+          lastSeq: lastSeq,
+        );
+        if (remoteMessages.isEmpty) break;
+        await _local.upsertMessages(remoteMessages);
+        final orderedSeqs = remoteMessages
+            .map((message) => message.seq ?? 0)
+            .where((seq) => seq > lastSeq)
+            .toList()
+          ..sort();
+        if (orderedSeqs.isEmpty) break;
+        // 响应是服务端单条 SQL 的连续区间，区间内所有 seq 均已落库；
+        // 即便窗口内存在空洞（被撤回/硬删除的消息行，服务端永久缺失），
+        // 直接跳到响应最大 seq 也不会丢数据，又能避免水位卡死在空洞处。
+        maxSeq = orderedSeqs.last;
+        lastSeq = maxSeq;
+        if (remoteMessages.length < 100) break;
       }
+
       await _local.updateSyncState(
         scope: 'messages',
         scopeId: convId,
@@ -278,6 +288,14 @@ class SyncRepository implements ChatRepository {
       }
     }
     await _local.upsertConversations(merged);
+    // 对账：服务端 /chat/rooms 是完整的权威列表，本地多余的行
+    //（残留账号数据 / 已退群被移除房间 / 非成员 stub 行）
+    // 一律清除，否则它们会一直出现在聊天列表。
+    final remoteIds = remoteRooms
+        .map((r) => r.roomId)
+        .whereType<String>()
+        .toList();
+    await _local.deleteConversationsNotIn(remoteIds);
   }
 
   ChatMessage _ensureLocalSendingMessage(ChatMessage message) {

@@ -73,8 +73,8 @@ class ChatFavorite {
           json['favorite_type']?.toString() ??
           '',
       content: json['content']?.toString() ?? '',
-      payload: json['payload']?.toString() ?? '',
-      attachments: json['attachments']?.toString() ?? '',
+      payload: _stringifyJson(json['payload']),
+      attachments: _stringifyJson(json['attachments']),
       createdAt: rawCreatedAt != null && rawCreatedAt.isNotEmpty
           ? DateTime.tryParse(rawCreatedAt)
           : null,
@@ -304,6 +304,9 @@ class ChatFavorite {
         final quillText = _plainTextFromQuill(parsed.quillDelta);
         if (quillText.isNotEmpty) return quillText;
 
+        final locationText = _locationReadableText(parsed.location);
+        if (locationText.isNotEmpty) return locationText;
+
         final fileText = _attachmentReadableName(parsed.file);
         if (fileText.isNotEmpty) return fileText;
 
@@ -389,6 +392,35 @@ class ChatFavorite {
     return lastSegment.isEmpty ? '' : lastSegment;
   }
 
+  /// 获取位置的可读文本（优先地点名称/地址，其次经纬度）
+  String _locationReadableText(LocationPayload? location) {
+    if (location == null) return '';
+    final title = location.displayTitle.trim();
+    if (title.isNotEmpty) return title;
+    if (location.hasCoordinate) {
+      return '${location.latitude!.toStringAsFixed(6)}, '
+          '${location.longitude!.toStringAsFixed(6)}';
+    }
+    return '';
+  }
+
+  /// 将动态值序列化为 JSON 字符串
+  ///
+  /// 服务端可能返回对象/数组形式的 payload 或 attachments（Dio 已自动解码），
+  /// 直接 [toString] 会得到无法解析的 Dart 语法，需通过 [jsonEncode] 还原。
+  static String _stringifyJson(dynamic source) {
+    if (source == null) return '';
+    if (source is String) return source;
+    if (source is Map || source is List) {
+      try {
+        return jsonEncode(source);
+      } catch (_) {
+        return source.toString();
+      }
+    }
+    return source.toString();
+  }
+
   /// 转换为标准 [ChatMessage] 格式
   ///
   /// 用于在消息详情页或转发场景中复用消息渲染逻辑
@@ -424,23 +456,17 @@ class ChatFavorite {
         final parsed = MessagePayload.fromJson(decoded);
         final normalizedQuillDelta = _extractQuillDeltaString(decoded);
         final parsedContent = parsed.content?.trim() ?? '';
+        // 保留 fromJson 解析出的媒体附件（image/audio/video/cover/file/asset），
+        // 否则收藏的图片/视频/文件在详情页会丢失内容
         if (parsedContent.isNotEmpty || content.trim().isEmpty) {
-          return MessagePayload(
+          return parsed.copyWith(
             content: parsed.content,
             quillDelta: parsed.quillDelta ?? normalizedQuillDelta,
-            replyTo: parsed.replyTo,
-            mentions: parsed.mentions,
-            markdown: parsed.markdown,
-            emojiCode: parsed.emojiCode,
           );
         }
-        return MessagePayload(
+        return parsed.copyWith(
           content: content.trim(),
           quillDelta: parsed.quillDelta ?? normalizedQuillDelta,
-          replyTo: parsed.replyTo,
-          mentions: parsed.mentions,
-          markdown: parsed.markdown,
-          emojiCode: parsed.emojiCode,
         );
       }
 
@@ -534,6 +560,23 @@ class ChatFavorite {
         if (nested.isNotEmpty) return nested;
       }
 
+      // V5 typed 结构：附件嵌在媒体包装内（image.image / video.video+cover / audio.audio / file.file / emoji.asset）
+      for (final entry in const {
+        'image': ['image'],
+        'video': ['video', 'cover'],
+        'audio': ['audio'],
+        'file': ['file'],
+        'emoji': ['asset'],
+      }.entries) {
+        final media = _decodeMaybeJson(decoded[entry.key]);
+        if (media is! Map<String, dynamic>) continue;
+        for (final innerKey in entry.value) {
+          final inner = _decodeMaybeJson(media[innerKey]);
+          final parsed = _parseAttachmentsDynamic(inner);
+          if (parsed.isNotEmpty) return parsed;
+        }
+      }
+
       final hasUrl = (decoded['url']?.toString().trim().isNotEmpty ?? false);
       if (hasUrl) {
         return [
@@ -595,7 +638,7 @@ class ChatFavorite {
       ],
     );
 
-    final payloadRaw = json['payload']?.toString() ?? '';
+    final payloadRaw = _stringifyJson(json['payload']);
     if (payloadRaw.trim().isNotEmpty) {
       final payloadDecoded = _decodeStatic(payloadRaw);
       if (payloadDecoded is Map<String, dynamic>) {

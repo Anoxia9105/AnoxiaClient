@@ -393,13 +393,6 @@ class ChatMessages extends _$ChatMessages {
   }
 
   Future<void> syncRoomMessages(String roomId, int? serverLastSeq) async {
-    // 先检查是否已同步到最新，避免不必要的 DB 查询
-    if (_syncedRoomIds.contains(roomId) &&
-        serverLastSeq != null &&
-        (_syncedSeqByRoom[roomId] ?? 0) >= serverLastSeq) {
-      return;
-    }
-
     final syncRepo = ref.read(chatRepositoryProvider);
     final localMessages = await syncRepo.getMessagesForConversation(
       roomId,
@@ -420,14 +413,18 @@ class ChatMessages extends _$ChatMessages {
 
     try {
       await syncRepo.syncMessages(roomId);
-      _syncedRoomIds.add(roomId);
-      _syncedSeqByRoom[roomId] = serverLastSeq;
-
+      // 进度按实际落库的 max seq 记录，而非服务端最新 seq：
+      // 单批最多拉 100 条，若积压超过一批，本次只追了一部分，
+      // 下次进入房间仍会继续拉取，直到追平服务端最新 seq。
       final refreshed = await syncRepo.getMessagesForConversation(
         roomId,
         limit: _pageSize,
         sync: false,
       );
+      final actualMaxSeq = _maxSeq(refreshed);
+      _syncedRoomIds.add(roomId);
+      _syncedSeqByRoom[roomId] = actualMaxSeq;
+
       ref
           .read(chatHasMoreProvider.notifier)
           .setHasMore(roomId, refreshed.length >= _pageSize);

@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,22 +85,11 @@ class MentionListWidget extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    // 头像
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: colorScheme.primaryContainer,
-                      child: user.avatar != null
-                          ? ClipOval(
-                              child: Image.network(
-                                user.avatar!,
-                                width: 32,
-                                height: 32,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildInitialAvatar(user.name, colorScheme),
-                              ),
-                            )
-                          : _buildInitialAvatar(user.name, colorScheme),
+                    // 头像（与聊天列表头像保持一致）
+                    AvatarWidget(
+                      url: user.avatar,
+                      name: user.name,
+                      size: 32,
                     ),
                     const SizedBox(width: 12),
                     // 用户名
@@ -120,17 +110,6 @@ class MentionListWidget extends ConsumerWidget {
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildInitialAvatar(String name, ColorScheme colorScheme) {
-    return Text(
-      name.isNotEmpty ? name[0].toUpperCase() : '?',
-      style: TextStyle(
-        fontSize: 14,
-        color: colorScheme.onPrimaryContainer,
-        fontWeight: FontWeight.bold,
       ),
     );
   }

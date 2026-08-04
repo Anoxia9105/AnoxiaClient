@@ -120,9 +120,22 @@ class RoomListItem extends ConsumerWidget {
           name: displayRoomName,
           statusWidget: Tooltip(
             message: 'chat_type_group'.tr(),
-            child: const HugeIcon(
-              icon: HugeIcons.strokeRoundedUserGroup03,
-              size: 16,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1.5,
+                ),
+              ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedUserGroup03,
+                size: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         );

@@ -94,5 +94,105 @@ void main() {
       expect(favorite.messageType, MessageType.text);
       expect(favorite.detailText, '');
     });
+
+    test('payload 为对象时位置消息提取地点名称', () {
+      final favorite = ChatFavorite.fromJson({
+        'id': 8,
+        'msgId': 'm8',
+        'favoriteType': 'LOCATION',
+        'content': '[location]',
+        'payload': {
+          'location': {
+            'latitude': 34.26,
+            'longitude': 108.94,
+            'title': '钟楼',
+            'address': '西安市莲湖区北大街',
+          },
+        },
+      });
+
+      expect(favorite.messageType, MessageType.location);
+      expect(favorite.summary, '钟楼');
+      expect(favorite.detailText, contains('钟楼'));
+    });
+
+    test('平铺位置 payload 无标题时提取地址', () {
+      final favorite = ChatFavorite.fromJson({
+        'id': 9,
+        'msgId': 'm9',
+        'favoriteType': 'LOCATION',
+        'content': '[location]',
+        'payload': {
+          'latitude': 34.26,
+          'longitude': 108.94,
+          'address': '西安市莲湖区北大街',
+        },
+      });
+
+      expect(favorite.messageType, MessageType.location);
+      expect(favorite.summary, contains('西安市莲湖区北大街'));
+    });
+
+    test('位置无名称与地址时降级展示经纬度', () {
+      final favorite = ChatFavorite.fromJson({
+        'id': 10,
+        'msgId': 'm10',
+        'favoriteType': 'LOCATION',
+        'content': '[location]',
+        'payload': '{"location":{"latitude":34.26,"longitude":108.94}}',
+      });
+
+      expect(favorite.messageType, MessageType.location);
+      expect(favorite.summary, contains('34.26'));
+      expect(favorite.summary, contains('108.94'));
+    });
+
+    test('image typed payload toChatMessage 保留图片附件', () {
+      final favorite = ChatFavorite.fromJson({
+        'id': 8,
+        'msgId': 'm8',
+        'favoriteType': 'IMAGE',
+        'payload':
+            '{"image":{"image":{"url":"https://x.com/a.jpg","width":100,"height":100},"caption":"风景照"}}',
+      });
+
+      final message = favorite.toChatMessage();
+      expect(message.messageType, MessageType.image);
+      final attachments = message.payload?.mediaAttachments;
+      expect(attachments, isNotEmpty);
+      expect(attachments!.single.url, 'https://x.com/a.jpg');
+    });
+
+    test('image attachments 字段 toChatMessage 保留图片附件', () {
+      final favorite = ChatFavorite.fromJson({
+        'id': 9,
+        'msgId': 'm9',
+        'favoriteType': 'IMAGE',
+        'content': '风景照',
+        'attachments': '[{"url":"https://x.com/b.jpg","width":200,"height":300}]',
+      });
+
+      final message = favorite.toChatMessage();
+      expect(message.messageType, MessageType.image);
+      final attachments = message.payload?.mediaAttachments;
+      expect(attachments, isNotEmpty);
+      expect(attachments!.single.url, 'https://x.com/b.jpg');
+    });
+
+    test('video typed payload toChatMessage 保留视频与封面', () {
+      final favorite = ChatFavorite.fromJson({
+        'id': 10,
+        'msgId': 'm10',
+        'favoriteType': 'VIDEO',
+        'payload':
+            '{"video":{"video":{"url":"https://x.com/v.mp4"},"cover":{"url":"https://x.com/cover.jpg"},"durationMs":5000}}',
+      });
+
+      final message = favorite.toChatMessage();
+      expect(message.messageType, MessageType.video);
+      final attachments = message.payload?.mediaAttachments;
+      expect(attachments, isNotEmpty);
+      expect(attachments!.first.url, 'https://x.com/v.mp4');
+    });
   });
 }

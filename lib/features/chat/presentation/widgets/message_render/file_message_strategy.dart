@@ -5,6 +5,7 @@ import 'package:anoxia/common/utils/file_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/platform/shims/web_download_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -280,14 +281,18 @@ class _FileMessageListState extends State<_FileMessageList> {
     Attachment file, {
     bool openAfterDownload = false,
   }) async {
-    // Web 端通过浏览器下载文件，不写入本地磁盘
+    // Web 端通过浏览器下载文件，不写入本地磁盘；
+    // 优先用原始文件名触发下载，浏览器保存的名字与上传时一致
     if (kIsWeb) {
       final url = file.url;
       if (url == null || url.isEmpty) {
         Toast.showToast('file_url_invalid'.tr());
         return;
       }
-      await launchUrl(Uri.parse(url));
+      final downloaded = await WebDownload.downloadUrl(url, _buildFileName(file));
+      if (!downloaded) {
+        await launchUrl(Uri.parse(url));
+      }
       return;
     }
 

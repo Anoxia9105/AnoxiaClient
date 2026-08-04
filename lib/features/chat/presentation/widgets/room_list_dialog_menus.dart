@@ -1,4 +1,6 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+﻿import 'dart:math';
+
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
@@ -18,6 +20,22 @@ import 'package:hugeicons/hugeicons.dart';
 /// - 创建群聊
 /// - 添加好友
 class RoomListDialogMenus {
+  /// 菜单项图标宽度
+  static const double _iconWidth = 16;
+
+  /// 图标与文案之间的间距
+  static const double _iconGap = 8;
+
+  /// 菜单项水平内边距
+  static const double _itemHPadding = 8;
+
+  /// 气泡内容容器水平内边距
+  static const double _containerHPadding = 3;
+
+  /// 除文案外菜单项占用的固定宽度（图标 + 间距 + 各项水平内边距）
+  static const double _fixedContentWidth =
+      _iconWidth + _iconGap + _itemHPadding * 2 + _containerHPadding * 2;
+
   /// 显示右上角菜单对话框
   ///
   /// 根据设备类型（移动端/桌面端）调整菜单的位置和样式，
@@ -30,6 +48,20 @@ class RoomListDialogMenus {
     // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()，
     // 否则 Web 上缩小窗口后气泡角与菜单形态仍停留在桌面端。
     bool isMobile = DeviceUtil.isMobile(context);
+    // Web 无摄像头扫码能力，隐藏"扫一扫"入口
+    final showScan = isMobile && !DeviceUtil.isRealWeb();
+
+    // 气泡宽度自适应最长文案（中文短、日/英文长），避免文字溢出报错；
+    // 超出上限时由文案省略号兜底
+    final menuWidth = _measureMenuWidth(
+      context,
+      titles: [
+        'chat_create_group'.tr(),
+        'chat_add_friend'.tr(),
+        if (showScan) 'chat_scan_qr_code'.tr(),
+      ],
+      maxWidth: isMobile ? 200 : 220,
+    );
 
     close = Toast.showWidget(
       context,
@@ -42,7 +74,8 @@ class RoomListDialogMenus {
           padding: const EdgeInsets.only(right: 4),
           child: BubbleWidget(
             arrowDirection: AxisDirection.up,
-            arrowOffset: isMobile ? 130 : 25,
+            // 气泡宽度随文案自适应，移动端箭头偏移跟随宽度，保持指向右上角按钮
+            arrowOffset: isMobile ? menuWidth + 34 : 25,
             backgroundColor: Theme.of(context).colorScheme.surface,
             // 1. 增加精致圆角与柔和阴影
             borderRadius: BorderRadius.circular(10),
@@ -60,9 +93,12 @@ class RoomListDialogMenus {
               width: 0.5,
             ),
             contentBuilder: (context) => Container(
-              // 2. 紧凑的宽度与高度控制
-              constraints: BoxConstraints(maxWidth: isMobile ? 120 : 140),
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 3),
+              // 2. 宽度自适应最长文案，所有菜单项等宽、内容统一居中
+              width: menuWidth,
+              padding: const EdgeInsets.symmetric(
+                vertical: 4,
+                horizontal: 3,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -71,6 +107,7 @@ class RoomListDialogMenus {
                     context: context,
                     icon: HugeIcons.strokeRoundedChatting01,
                     title: 'chat_create_group'.tr(),
+                    textMaxWidth: menuWidth - _fixedContentWidth,
                     onTap: () {
                       close?.call();
                       if (isMobile) {
@@ -91,6 +128,7 @@ class RoomListDialogMenus {
                     context: context,
                     icon: HugeIcons.strokeRoundedUserAdd01,
                     title: 'chat_add_friend'.tr(),
+                    textMaxWidth: menuWidth - _fixedContentWidth,
                     onTap: () {
                       close?.call();
                       presentAdaptivePage(
@@ -100,11 +138,12 @@ class RoomListDialogMenus {
                     },
                   ),
                   // 扫一扫
-                  if (isMobile)
+                  if (showScan)
                     _buildMenuItem(
                       context: context,
                       icon: HugeIcons.strokeRoundedScan,
                       title: 'chat_scan_qr_code'.tr(),
+                      textMaxWidth: menuWidth - _fixedContentWidth,
                       onTap: () {
                         close?.call();
                         Navigator.of(appNavigatorKey.currentContext!).push(
@@ -121,10 +160,33 @@ class RoomListDialogMenus {
     );
   }
 
+  /// 测量菜单气泡宽度：取所有文案中的最大宽度，加上图标与内边距，
+  /// 并以 [maxWidth] 为上限。
+  static double _measureMenuWidth(
+    BuildContext context, {
+    required List<String> titles,
+    required double maxWidth,
+  }) {
+    // 与 _buildMenuItem 中 Text 的样式保持一致
+    const style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w400);
+    final textScaler = MediaQuery.textScalerOf(context);
+    var maxTextWidth = 0.0;
+    for (final title in titles) {
+      final painter = TextPainter(
+        text: TextSpan(text: title, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: textScaler,
+      )..layout();
+      if (painter.width > maxTextWidth) maxTextWidth = painter.width;
+    }
+    return min(maxWidth, maxTextWidth + _fixedContentWidth);
+  }
+
   static Widget _buildMenuItem({
     required BuildContext context,
     required dynamic icon,
     required String title,
+    required double textMaxWidth,
     required VoidCallback onTap,
   }) {
     final color = Theme.of(context).colorScheme.onSurface;
@@ -133,25 +195,34 @@ class RoomListDialogMenus {
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        padding: const EdgeInsets.symmetric(
+          horizontal: _itemHPadding,
+          vertical: 7,
+        ),
         child: Row(
-          // 核心：设置水平居中
+          // 所有菜单项等宽，内容统一水平居中，避免长文案左对齐、短文案居中
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             HugeIcon(
               icon: icon,
-              size: 16,
+              size: _iconWidth,
               color: color.withValues(alpha: 0.85),
             ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w400,
-                color: color,
+            const SizedBox(width: _iconGap),
+            // 限制文案最大宽度：正常情况下恰好等于最宽文案，超上限时省略号兜底
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: textMaxWidth),
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w400,
+                  color: color,
+                ),
               ),
-              maxLines: 1,
             ),
           ],
         ),

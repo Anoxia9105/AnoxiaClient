@@ -394,6 +394,39 @@ class LocalDataSource {
     });
   }
 
+  /// 对账删除：移除服务端权威列表之外的所有本地会话
+  ///
+  /// 服务端 /chat/rooms 返回完整、无分页的当前用户房间列表，
+  /// 不在其中的本地行（旧账号残留、已退群/被移除、服务器重置后的幽灵行）
+  /// 一律连同其消息与同步水位一起清除，避免聊天列表出现「别人的房间」。
+  Future<void> deleteConversationsNotIn(Iterable<String> keepIds) async {
+    final keep = keepIds.toSet();
+    log.debug('[DB] deleteConversationsNotIn keep=${keep.length} ids');
+    await db.transaction(() async {
+      if (keep.isEmpty) {
+        await db.delete(db.messages).go();
+        await db.delete(db.conversations).go();
+        await (db.delete(db.syncStates)..where(
+              (tbl) => tbl.scope.equals('messages'),
+            ))
+            .go();
+        return;
+      }
+      await (db.delete(
+        db.messages,
+      )..where((tbl) => tbl.conversationId.isNotIn(keep))).go();
+      await (db.delete(
+        db.conversations,
+      )..where((tbl) => tbl.id.isNotIn(keep))).go();
+      await (db.delete(db.syncStates)..where(
+            (tbl) =>
+                tbl.scope.equals('messages') &
+                tbl.scopeId.isNotIn(keep),
+          ))
+          .go();
+    });
+  }
+
   Future<void> updateConversationStatus(String conversationId, int status) {
     return db.conversationDao.updateStatus(conversationId, status);
   }
