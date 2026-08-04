@@ -18,6 +18,7 @@ class MeProfileItemEditDialog extends StatefulWidget {
     this.onSave,
     this.requiredMessage,
     this.keyboardType = TextInputType.text,
+    this.maxLength,
   }) : options = null;
 
   const MeProfileItemEditDialog.select({
@@ -27,13 +28,15 @@ class MeProfileItemEditDialog extends StatefulWidget {
     this.onSave,
     required this.options,
   }) : requiredMessage = null,
-       keyboardType = TextInputType.text;
+       keyboardType = TextInputType.text,
+       maxLength = null;
 
   final String title;
   final String initialValue;
   final Future<bool> Function(String value)? onSave;
   final String? requiredMessage;
   final TextInputType keyboardType;
+  final int? maxLength;
   final List<MeProfileEditOption>? options;
 
   bool get isSelect => options != null;
@@ -124,6 +127,7 @@ class _MeProfileItemEditDialogState extends State<MeProfileItemEditDialog> {
       controller: _controller,
       autofocus: true,
       keyboardType: widget.keyboardType,
+      maxLength: widget.maxLength,
       textInputAction: TextInputAction.done,
       onSubmitted: (_) {
         if (!_saving) _save();
@@ -176,6 +180,7 @@ class MeProfileItemEditPage extends StatefulWidget {
     this.onSave,
     this.requiredMessage,
     this.keyboardType = TextInputType.text,
+    this.maxLength,
   }) : options = null;
 
   const MeProfileItemEditPage.select({
@@ -185,13 +190,15 @@ class MeProfileItemEditPage extends StatefulWidget {
     this.onSave,
     required this.options,
   }) : requiredMessage = null,
-       keyboardType = TextInputType.text;
+       keyboardType = TextInputType.text,
+       maxLength = null;
 
   final String title;
   final String initialValue;
   final Future<bool> Function(String value)? onSave;
   final String? requiredMessage;
   final TextInputType keyboardType;
+  final int? maxLength;
   final List<MeProfileEditOption>? options;
 
   bool get isSelect => options != null;
@@ -274,6 +281,7 @@ class _MeProfileItemEditPageState extends State<MeProfileItemEditPage> {
         controller: _controller,
         autofocus: true,
         keyboardType: widget.keyboardType,
+        maxLength: widget.maxLength,
         onChanged: (_) {
           if (_errorText != null) {
             setState(() => _errorText = null);

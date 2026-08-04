@@ -124,6 +124,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                 title: 'me_profile_nickname'.tr(),
                 initialValue: _nickController.text,
                 requiredMessage: 'me_profile_nickname_required'.tr(),
+                maxLength: 30,
                 onSave: (value) => _saveProfile(nickName: value),
                 onApplied: (value) => _nickController.text = value,
               ),
@@ -405,6 +406,7 @@ class _MyPageState extends ConsumerState<MyPage> {
     required Future<bool> Function(String value) onSave,
     required void Function(String value) onApplied,
     String? requiredMessage,
+    int? maxLength,
     TextInputType keyboardType = TextInputType.text,
   }) async {
     final String? result;
@@ -417,6 +419,7 @@ class _MyPageState extends ConsumerState<MyPage> {
           initialValue: initialValue,
           requiredMessage: requiredMessage,
           keyboardType: keyboardType,
+          maxLength: maxLength,
           onSave: onSave,
         ),
       );
@@ -428,6 +431,7 @@ class _MyPageState extends ConsumerState<MyPage> {
             initialValue: initialValue,
             requiredMessage: requiredMessage,
             keyboardType: keyboardType,
+            maxLength: maxLength,
             onSave: onSave,
           ),
         ),
@@ -523,6 +527,14 @@ class _MyPageState extends ConsumerState<MyPage> {
     if (effectiveNick.isEmpty) {
       Toast.showToast(
         'me_profile_nickname_required'.tr(),
+        type: ToastType.error,
+      );
+      return false;
+    }
+
+    if (effectiveNick.length > 30) {
+      Toast.showToast(
+        'me_profile_nickname_length'.tr(),
         type: ToastType.error,
       );
       return false;

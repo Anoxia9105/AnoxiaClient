@@ -5,6 +5,7 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/features/chat/presentation/pages/member_basic_info_page.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
@@ -138,7 +139,14 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
     }
 
     final contact = contactMap?[member.userId];
+
+    // 成员还不是联系人时，展示群成员基础资料
     if (contact == null) {
+      if (!mounted) return;
+      await presentAdaptivePage(
+        context,
+        builder: (_) => MemberBasicInfoPage(member: member),
+      );
       return;
     }
 

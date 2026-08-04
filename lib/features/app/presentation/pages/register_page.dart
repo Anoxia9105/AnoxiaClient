@@ -43,6 +43,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool _isSendingCode = false;
   bool _isVerifyingEmail = false;
   bool _isSubmitting = false;
+  bool _emailCodeSent = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -243,10 +244,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             validator: Validators.email,
+            onChanged: _emailCodeSent ? _onEmailChanged : null,
           ),
           const SizedBox(height: 14),
-          _captchaRow(scheme, isMobile),
-          const SizedBox(height: 14),
+          if (!_emailCodeSent || _countdown <= 0) ...[
+            _captchaRow(scheme, isMobile),
+            const SizedBox(height: 14),
+          ],
           _emailCodeRow(isMobile),
           const SizedBox(height: 24),
           SizedBox(
@@ -406,10 +410,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     Iterable<String>? autofillHints,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
+    ValueChanged<String>? onChanged,
   }) => TextFormField(
     controller: controller,
     keyboardType: keyboardType,
     autofillHints: autofillHints,
+    onChanged: onChanged,
     inputFormatters: [
       if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
       ...?inputFormatters,
@@ -547,6 +553,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           );
       if (!mounted) return;
       _showMessage(message);
+      setState(() => _emailCodeSent = true);
       _startCountdown();
       _refreshCaptcha();
     } catch (error) {
@@ -586,8 +593,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     });
   }
 
+  void _onEmailChanged(String _) {
+    _countdownTimer?.cancel();
+    _emailCodeCtrl.clear();
+    setState(() {
+      _countdown = 0;
+      _emailCodeSent = false;
+    });
+    _refreshCaptcha();
+  }
+
   void _resetEmailVerification() {
     _emailVerificationToken = null;
+    _emailCodeSent = false;
     _emailCodeCtrl.clear();
     _usernameCtrl.clear();
     _passwordCtrl.clear();

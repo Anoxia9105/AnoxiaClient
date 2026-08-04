@@ -10,6 +10,7 @@ import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
+import 'package:anoxia/platform/shims/cross_tab_session_sync_shim.dart';
 import '../../domain/captcha_model.dart';
 import '../../domain/user_info.dart';
 import '../../local_cache/cache_providers.dart';
@@ -114,6 +115,10 @@ class AuthController extends _$AuthController {
       ref.invalidate(roomListServiceProvider);
       log.info('[AuthController] 登录成功，重新触发 App 初始化序列...');
       ref.invalidate(appInitializerProvider);
+
+      // 通知其它标签页已切换账号，避免共享缓存被新账号数据覆盖后仍显示
+      // 旧账号的头像/昵称（Web 端生效，原生端为空实现）。
+      CrossTabSessionSync.instance.broadcastLogin(state.value?.userId);
     }
   }
 
@@ -201,6 +206,7 @@ class AuthController extends _$AuthController {
     _isLoggingOut = true;
 
     final token = ref.read(tokenCacheProvider);
+    final previousUser = state.value;
 
     PushManager.instance.setOnFcmTokenChanged(null);
     unawaited(_unbindPushDevice(token));
@@ -222,6 +228,9 @@ class AuthController extends _$AuthController {
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
       await _clearLocalSessionCache();
       state = const AsyncData(null);
+
+      // 通知其它标签页本账号已登出（Web 端生效，原生端为空实现）。
+      CrossTabSessionSync.instance.broadcastLogout(previousUser?.userId);
 
       // 4. 统一清理会话级缓存，避免切账号后复用旧会话数据
       SessionResetService.instance.reset(ref, reason: reason);

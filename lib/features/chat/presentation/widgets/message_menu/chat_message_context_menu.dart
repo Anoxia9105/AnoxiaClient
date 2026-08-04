@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 import 'dart:convert';
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,16 +52,30 @@ class _ChatMessageContextMenuState
       return widget.child;
     }
 
-    // 全平台同时注册右键和长按：
-    // - 桌面端（含桌面 Web）右键弹出菜单
+    // 全平台注册右键和长按：
+    // - 鼠标右键直接弹菜单（用原始指针监听而非 onSecondaryTapDown）
     // - 移动端 / 触屏 Web 长按弹出菜单
-    return GestureDetector(
+    //
+    // 右键必须用 Listener 原始指针监听：GestureDetector 的 onSecondaryTapDown
+    // 依赖手势竞技场裁决，而 flutter_quill 只读气泡内部（EditorTextSelectionGestureDetector
+    // 的 _TransparentTapGestureRecognizer）会注册同级的右击识别器且位于更深的命中路径，
+    // 竞技场总是先裁决给 quill，导致富文本消息文字区域右键菜单偶发弹不出来。
+    // 原始指针事件不受竞技场影响，沿命中路径必然触发，故改用 onPointerDown 拦截右键。
+    return Listener(
       behavior: HitTestBehavior.opaque,
-      onSecondaryTapDown: (details) =>
-          _showMenuAtPosition(context, details.globalPosition),
-      onLongPressStart: (details) =>
-          _showMenuAtPosition(context, details.globalPosition),
-      child: widget.child,
+      onPointerDown: (event) {
+        if (event.buttons & kSecondaryMouseButton == 0) return;
+        final box = context.findRenderObject() as RenderBox?;
+        final globalPosition =
+            box?.localToGlobal(event.position) ?? event.position;
+        _showMenuAtPosition(context, globalPosition);
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPressStart: (details) =>
+            _showMenuAtPosition(context, details.globalPosition),
+        child: widget.child,
+      ),
     );
   }
 

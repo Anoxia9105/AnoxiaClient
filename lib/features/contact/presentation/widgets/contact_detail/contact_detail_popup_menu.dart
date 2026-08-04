@@ -111,14 +111,16 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
               color: isDestructive ? Colors.red : null,
             ),
             const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDestructive ? Colors.red : null,
+            Flexible(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDestructive ? Colors.red : null,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

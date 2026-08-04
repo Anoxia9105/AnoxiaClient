@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
+import 'package:anoxia/platform/shims/cross_tab_session_sync_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ import 'features/app/presentation/pages/error_page.dart';
 import 'framework/logs/talker.dart';
 import 'framework/network/dio_client.dart';
 import 'framework/network/token_manager.dart';
+import 'framework/local_cache/cache_providers.dart';
 import 'framework/provider/auth/token_provider.dart';
 import 'framework/provider/auth/auth_controller.dart';
 import 'framework/provider/core/session_reset_service.dart';
@@ -194,6 +196,45 @@ bool _isSubWindow(dynamic arguments) {
   }
 }
 
+/// 安装跨标签页会话同步监听
+///
+/// 同一浏览器（同源）的多个标签页共享 localStorage/IndexedDB，但各自持有
+/// 独立内存状态。其它标签页登录/登出切换账号时，本页必须清空共享会话缓存
+/// 并重载，从共享存储重新冷启动，避免「旧账号头像 + 新账号聊天列表」错位。
+///
+/// 仅 Web 端生效（原生端 shim 为空实现）。
+void _installCrossTabSessionSync() {
+  CrossTabSessionSync.instance.events.listen((event) async {
+    final currentUser = globalContainer.read(authControllerProvider).value;
+    final currentUserId = currentUser?.userId;
+
+    final bool shouldReload;
+    switch (event.action) {
+      case CrossTabAuthAction.logout:
+        // 其它标签页登出：本页已登录时回到登录页（重载后无 Token）
+        shouldReload = currentUserId != null;
+      case CrossTabAuthAction.login:
+        // 其它标签页登录了不同账号（或未知账号，storage 兜底路径）：
+        // 重载后按共享 Token 自动恢复为新账号
+        shouldReload = event.userId == null || event.userId != currentUserId;
+    }
+    if (!shouldReload) return;
+
+    log.info(
+      '[CrossTabSync] 检测到其它标签页${event.action.name}'
+      '（userId=${event.userId}），清空共享缓存并重载页面',
+    );
+    // 重载前清空共享 IndexedDB 会话缓存，避免把上一个账号的残留数据带进
+    // 新会话；失败不阻塞重载（登录流程自身也会兜底清理）。
+    try {
+      await globalContainer.read(localDataSourceProvider).clearSessionCache();
+    } catch (e, st) {
+      log.warning('[CrossTabSync] 清空本地会话缓存失败（忽略）: $e', e, st);
+    }
+    CrossTabSessionSync.instance.reload();
+  });
+}
+
 /// 启动主窗口（修正异步逻辑 + 窗口配置）
 Future<void> runMainApp() async {
   try {
@@ -248,6 +289,9 @@ Future<void> runMainApp() async {
             notifyBackend: false,
           ),
     );
+
+    // 跨标签页会话同步：其它标签页登录/登出切换账号时，本页重置并重载
+    _installCrossTabSessionSync();
 
     // 初始化 DioClient 的国际化语言
     final savedLocale = SPUtil.instance.get('locale', defValue: 'zh') ?? 'zh';

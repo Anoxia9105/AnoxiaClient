@@ -4,6 +4,7 @@ import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/r
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_room_picker_dialog.dart';
 import 'package:anoxia/features/chat/presentation/pages/add_member_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/member_basic_info_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_member_list_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_join_requests_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dart';
@@ -379,7 +380,17 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     }
 
     final contact = contactMap?[member.userId];
-    if (contact == null) return;
+
+    // 成员还不是联系人时，展示群成员基础资料
+    if (contact == null) {
+      if (context.mounted) {
+        await presentAdaptivePage(
+          context,
+          builder: (_) => MemberBasicInfoPage(member: member),
+        );
+      }
+      return;
+    }
 
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
 

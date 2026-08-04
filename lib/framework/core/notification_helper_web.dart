@@ -65,8 +65,14 @@ class NotificationHelper {
     if (!_supported) return false;
     if (_permission == 'denied') return false;
     try {
+      // 浏览器在静默自动屏蔽通知（quieter messaging、多次忽略提示后自动拒绝等）
+      // 的场景下不会弹出授权框，requestPermission() 返回的 Promise 既不 resolve
+      // 也不 reject，会导致设置页的等待动画无限旋转。这里加超时兜底：超时视为
+      // 本次申请未获授权，避免 UI 卡在 loading 状态。
       final result =
-          (await web.Notification.requestPermission().toDart).toDart;
+          (await web.Notification.requestPermission().toDart
+                  .timeout(const Duration(seconds: 10)))
+              .toDart;
       return result == 'granted';
     } catch (_) {
       return false;
