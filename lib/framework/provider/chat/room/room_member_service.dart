@@ -199,23 +199,24 @@ class RoomMemberService extends _$RoomMemberService {
   ///
   /// [roomId] 目标房间
   /// [userIds] 要添加的用户 ID 列表
-  Future<bool> addMembers(String roomId, List<int> userIds) async {
+  ///
+  /// 返回 'ADDED'（已直接加入）、'PENDING'（已邀请，等待管理员审核）或 null（失败）。
+  Future<String?> addMembers(String roomId, List<int> userIds) async {
     try {
       log.info('🚀 添加成员 $userIds 到房间 $roomId');
 
-      final ok = await ref
+      final result = await ref
           .read(groupRepositoryProvider)
           .addRoomMembers(roomId, userIds);
 
-      if (ok) {
+      if (result == 'ADDED') {
         await syncMembers(roomId, force: true);
-        return true;
       }
 
-      return false;
+      return result;
     } catch (e, st) {
       log.error('❌ 添加成员失败', e, st);
-      return false;
+      return null;
     }
   }
 

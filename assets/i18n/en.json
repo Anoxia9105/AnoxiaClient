@@ -546,6 +546,7 @@
   "member_add_count": "Add ({})",
   "member_add_success": "Members added successfully",
   "member_add_failed": "Failed to add members",
+  "member_add_pending": "Invited, awaiting admin approval",
   "upload_total_count_exceeded": "Total attachments cannot exceed {} (already have {})",
   "upload_total_size_exceeded": "Total attachment size cannot exceed {}MB",
   "upload_single_file_too_large": "File {} exceeds 50MB, skipped",

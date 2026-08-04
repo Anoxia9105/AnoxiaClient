@@ -109,16 +109,17 @@ class GroupRepositoryImpl implements GroupRepository {
   }
 
   @override
-  Future<bool> addRoomMembers(String roomId, List<int> userIds) async {
+  Future<String?> addRoomMembers(String roomId, List<int> userIds) async {
     try {
       final res = await DioClient().post(
         API.chatRoomAddMembers,
         data: {'roomId': roomId, 'userIds': userIds},
       );
-      return res.data['code'] == 200;
+      if (res.data['code'] != 200) return null;
+      return res.data['data']?.toString();
     } catch (e, st) {
       log.error('[Group] 添加成员失败', e, st);
-      return false;
+      return null;
     }
   }
 

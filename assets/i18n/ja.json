@@ -546,6 +546,7 @@
   "member_add_count": "追加 ({})",
   "member_add_success": "メンバーの追加に成功しました",
   "member_add_failed": "メンバーの追加に失敗しました",
+  "member_add_pending": "招待済み、管理者の承認を待っています",
   "upload_total_count_exceeded": "メッセージの添付ファイル総数は {} 個を超えることはできません（すでに {} 個あります）",
   "upload_total_size_exceeded": "メッセージの添付ファイル総サイズは {}MBを超えることはできません",
   "upload_single_file_too_large": "ファイル {} が50MBを超えています、スキップしました",

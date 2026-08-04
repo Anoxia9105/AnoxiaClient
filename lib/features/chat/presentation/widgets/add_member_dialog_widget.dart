@@ -269,7 +269,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                               );
 
                               // 调用添加成员的API
-                              final success = await ref
+                              final result = await ref
                                   .read(roomMemberServiceProvider.notifier)
                                   .addMembers(
                                     widget.roomId,
@@ -282,10 +282,13 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                               Navigator.pop(context);
 
                               // 显示结果
+                              final success = result != null;
                               Toast.showToast(
-                                success
-                                    ? 'member_add_success'.tr()
-                                    : 'member_add_failed'.tr(),
+                                result == 'PENDING'
+                                    ? 'member_add_pending'.tr()
+                                    : success
+                                        ? 'member_add_success'.tr()
+                                        : 'member_add_failed'.tr(),
                                 type: success
                                     ? ToastType.success
                                     : ToastType.error,

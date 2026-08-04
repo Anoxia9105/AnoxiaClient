@@ -55,8 +55,9 @@ abstract interface class GroupRepository {
 
   /// 添加成员到房间
   ///
-  /// 返回是否操作成功。
-  Future<bool> addRoomMembers(String roomId, List<int> userIds);
+  /// 返回 'ADDED'（已直接加入）或 'PENDING'（已邀请，等待管理员审核）；
+  /// 失败返回 null。
+  Future<String?> addRoomMembers(String roomId, List<int> userIds);
 
   /// 从房间踢出成员
   ///

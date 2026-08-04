@@ -546,6 +546,7 @@
   "member_add_count": "添加 ({})",
   "member_add_success": "添加成员成功",
   "member_add_failed": "添加成员失败",
+  "member_add_pending": "已邀请，等待管理员审核",
   "upload_total_count_exceeded": "消息附件总数不能超过 {} 个（已有 {} 个）",
   "upload_total_size_exceeded": "消息附件总大小不能超过 {}MB",
   "upload_single_file_too_large": "文件 {} 超过 50MB，已跳过",

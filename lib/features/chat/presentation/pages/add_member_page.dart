@@ -217,7 +217,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                                 ),
                               );
 
-                              final success = await ref
+                              final result = await ref
                                   .read(roomMemberServiceProvider.notifier)
                                   .addMembers(
                                     widget.roomId,
@@ -226,10 +226,13 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
 
                               if (!context.mounted) return;
                               Navigator.pop(context);
+                              final success = result != null;
                               Toast.showToast(
-                                success
-                                    ? 'member_add_success'.tr()
-                                    : 'member_add_failed'.tr(),
+                                result == 'PENDING'
+                                    ? 'member_add_pending'.tr()
+                                    : success
+                                        ? 'member_add_success'.tr()
+                                        : 'member_add_failed'.tr(),
                                 type: success
                                     ? ToastType.success
                                     : ToastType.error,
