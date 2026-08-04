@@ -32,6 +32,9 @@ class AuthRepositoryImpl implements AuthRepository {
       },
       auth: false,
     );
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '登录失败'));
+    }
     final token = res.data is Map ? res.data['token'] : null;
     return token?.toString();
   }

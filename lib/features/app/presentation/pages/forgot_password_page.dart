@@ -102,7 +102,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           labelText: 'login_page_name'.tr(),
                           hintText: 'login_page_name'.tr(),
                         ),
-                        inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                        inputFormatters: [LengthLimitingTextInputFormatter(30)],
                       ),
                       const SizedBox(height: 12),
                       IntrinsicHeight(
@@ -344,7 +344,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   }
 
   bool _isValidUsername(String username) {
-    return RegExp(r'^[a-zA-Z_]\w{1,19}$').hasMatch(username);
+    return RegExp(r'^[a-zA-Z_]\w{1,29}$').hasMatch(username);
   }
 
   void _startCountdown() {

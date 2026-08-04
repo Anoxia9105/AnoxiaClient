@@ -27,7 +27,7 @@ Future<bool> showContactEditRemarkDialog(
         title: Text('contact_edit_remark'.tr()),
         content: TextField(
           controller: controller,
-          maxLength: 30,
+          maxLength: 100,
           decoration: InputDecoration(
             hintText: 'contact_edit_remark'.tr(),
             filled: true,

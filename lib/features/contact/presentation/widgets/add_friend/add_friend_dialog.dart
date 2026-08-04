@@ -184,7 +184,7 @@ class _AddFriendDialogState extends ConsumerState<AddFriendDialog> {
               ),
               style: textTheme.bodyMedium?.copyWith(fontSize: 15),
               maxLines: 3,
-              maxLength: 50,
+              maxLength: 100,
             ),
             const SizedBox(height: 6),
             Row(

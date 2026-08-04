@@ -1,9 +1,8 @@
-﻿import 'dart:math';
-
-import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/common/widgets/bubble_dialog.dart';
-import 'package:anoxia/common/widgets/toast.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/bubble_menu.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/pages/scan_qr_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
@@ -20,22 +19,6 @@ import 'package:hugeicons/hugeicons.dart';
 /// - 创建群聊
 /// - 添加好友
 class RoomListDialogMenus {
-  /// 菜单项图标宽度
-  static const double _iconWidth = 16;
-
-  /// 图标与文案之间的间距
-  static const double _iconGap = 8;
-
-  /// 菜单项水平内边距
-  static const double _itemHPadding = 8;
-
-  /// 气泡内容容器水平内边距
-  static const double _containerHPadding = 3;
-
-  /// 除文案外菜单项占用的固定宽度（图标 + 间距 + 各项水平内边距）
-  static const double _fixedContentWidth =
-      _iconWidth + _iconGap + _itemHPadding * 2 + _containerHPadding * 2;
-
   /// 显示右上角菜单对话框
   ///
   /// 根据设备类型（移动端/桌面端）调整菜单的位置和样式，
@@ -53,7 +36,7 @@ class RoomListDialogMenus {
 
     // 气泡宽度自适应最长文案（中文短、日/英文长），避免文字溢出报错；
     // 超出上限时由文案省略号兜底
-    final menuWidth = _measureMenuWidth(
+    final menuWidth = BubbleMenu.measureWidth(
       context,
       titles: [
         'chat_create_group'.tr(),
@@ -100,11 +83,11 @@ class RoomListDialogMenus {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // 创建群聊
-                  _buildMenuItem(
+                  BubbleMenu.buildMenuItem(
                     context: context,
                     icon: HugeIcons.strokeRoundedChatting01,
                     title: 'chat_create_group'.tr(),
-                    textMaxWidth: menuWidth - _fixedContentWidth,
+                    textMaxWidth: menuWidth - BubbleMenu.fixedContentWidth,
                     onTap: () {
                       close?.call();
                       if (isMobile) {
@@ -121,11 +104,11 @@ class RoomListDialogMenus {
                     },
                   ),
                   // 添加好友
-                  _buildMenuItem(
+                  BubbleMenu.buildMenuItem(
                     context: context,
                     icon: HugeIcons.strokeRoundedUserAdd01,
                     title: 'chat_add_friend'.tr(),
-                    textMaxWidth: menuWidth - _fixedContentWidth,
+                    textMaxWidth: menuWidth - BubbleMenu.fixedContentWidth,
                     onTap: () {
                       close?.call();
                       presentAdaptivePage(
@@ -136,15 +119,17 @@ class RoomListDialogMenus {
                   ),
                   // 扫一扫
                   if (showScan)
-                    _buildMenuItem(
+                    BubbleMenu.buildMenuItem(
                       context: context,
                       icon: HugeIcons.strokeRoundedScan,
                       title: 'chat_scan_qr_code'.tr(),
-                      textMaxWidth: menuWidth - _fixedContentWidth,
+                      textMaxWidth: menuWidth - BubbleMenu.fixedContentWidth,
                       onTap: () {
                         close?.call();
                         Navigator.of(appNavigatorKey.currentContext!).push(
-                          MaterialPageRoute(builder: (_) => const ScanQrPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const ScanQrPage(),
+                          ),
                         );
                       },
                     ),
@@ -152,77 +137,6 @@ class RoomListDialogMenus {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  /// 测量菜单气泡宽度：取所有文案中的最大宽度，加上图标与内边距，
-  /// 并以 [maxWidth] 为上限。
-  static double _measureMenuWidth(
-    BuildContext context, {
-    required List<String> titles,
-    required double maxWidth,
-  }) {
-    // 与 _buildMenuItem 中 Text 的样式保持一致
-    const style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w400);
-    final textScaler = MediaQuery.textScalerOf(context);
-    var maxTextWidth = 0.0;
-    for (final title in titles) {
-      final painter = TextPainter(
-        text: TextSpan(text: title, style: style),
-        textDirection: Directionality.of(context),
-        textScaler: textScaler,
-      )..layout();
-      if (painter.width > maxTextWidth) maxTextWidth = painter.width;
-    }
-    return min(maxWidth, maxTextWidth + _fixedContentWidth);
-  }
-
-  static Widget _buildMenuItem({
-    required BuildContext context,
-    required dynamic icon,
-    required String title,
-    required double textMaxWidth,
-    required VoidCallback onTap,
-  }) {
-    final color = Theme.of(context).colorScheme.onSurface;
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: _itemHPadding,
-          vertical: 7,
-        ),
-        child: Row(
-          // 固定每项文案区域宽度为 textMaxWidth，所有项等宽布局，文案居中显示
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HugeIcon(
-              icon: icon,
-              size: _iconWidth,
-              color: color.withValues(alpha: 0.85),
-            ),
-            const SizedBox(width: _iconGap),
-            // 固定宽度而非 maxWidth：所有菜单项文案区域完全一致，防止长文溢出
-            SizedBox(
-              width: textMaxWidth,
-              child: Text(
-                title,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w400,
-                  color: color,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

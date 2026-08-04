@@ -30,6 +30,7 @@ import 'framework/logs/talker.dart';
 import 'framework/network/dio_client.dart';
 import 'framework/network/token_manager.dart';
 import 'framework/local_cache/cache_providers.dart';
+import 'framework/core/web_navigation_blocker.dart';
 import 'framework/provider/auth/token_provider.dart';
 import 'framework/provider/auth/auth_controller.dart';
 import 'framework/provider/core/session_reset_service.dart';
@@ -45,6 +46,12 @@ Future<void> main(List<String> args) async {
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Web 端禁用浏览器返回/前进按钮（须在创建 Router / WidgetsApp 之前
+    // 注册，确保作为第一个 WidgetsBindingObserver 拦截 pop 消息）
+    if (DeviceUtil.isRealWeb()) {
+      WidgetsBinding.instance.addObserver(WebNavigationBlocker());
+    }
 
     // 捕获 Flutter 框架在构建/布局/绘制阶段抛出的错误（含渲染异常的原始堆栈）。
     //
@@ -204,6 +211,9 @@ bool _isSubWindow(dynamic arguments) {
 ///
 /// 仅 Web 端生效（原生端 shim 为空实现）。
 void _installCrossTabSessionSync() {
+  // 防抖：连续事件（登出+登录新账号等）只执行一次清理与重载
+  var reloadPending = false;
+
   CrossTabSessionSync.instance.events.listen((event) async {
     final currentUser = globalContainer.read(authControllerProvider).value;
     final currentUserId = currentUser?.userId;
@@ -218,7 +228,8 @@ void _installCrossTabSessionSync() {
         // 重载后按共享 Token 自动恢复为新账号
         shouldReload = event.userId == null || event.userId != currentUserId;
     }
-    if (!shouldReload) return;
+    if (!shouldReload || reloadPending) return;
+    reloadPending = true;
 
     log.info(
       '[CrossTabSync] 检测到其它标签页${event.action.name}'

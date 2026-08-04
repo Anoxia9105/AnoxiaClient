@@ -74,7 +74,7 @@ class _RecommendedContactRequestFormState
         TextField(
           controller: _verificationController,
           maxLines: 3,
-          maxLength: 50,
+          maxLength: 100,
           decoration: InputDecoration(
             hintText: 'add_friend_verify_hint'.tr(),
             border: const OutlineInputBorder(),

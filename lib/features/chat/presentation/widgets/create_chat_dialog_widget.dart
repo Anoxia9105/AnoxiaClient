@@ -68,6 +68,7 @@ class _CreateChatDialogWidgetState
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
           child: TextField(
             controller: _nameController,
+            maxLength: 30,
             style: textTheme.bodyLarge,
             onTap: () {
               if (_showNameError) {

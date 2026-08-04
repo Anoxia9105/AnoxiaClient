@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/core/auth_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
+import 'package:dio/dio.dart' show DioException;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/experimental/mutation.dart';
@@ -75,7 +76,7 @@ class AuthController extends _$AuthController {
   ) async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    try {
       final token = await ref.read(authRepositoryProvider).login(
             account: account,
             password: password,
@@ -84,12 +85,8 @@ class AuthController extends _$AuthController {
             deviceId:
                 await DeviceIdentity.instance.getPlatformQualifiedId(),
           );
-      if (token == null) {
-        ref.read(toastServiceProvider).showToast(
-              'login_failed'.tr(),
-              type: ToastType.error,
-            );
-        return null;
+      if (token == null || token.isEmpty) {
+        throw Exception('login_failed'.tr());
       }
 
       // 同时保存到 TokenManager 和内存缓存
@@ -104,8 +101,17 @@ class AuthController extends _$AuthController {
           value: '${user.userId}',
         );
       }
-      return user;
-    });
+      state = AsyncData(user);
+    } catch (e, st) {
+      log.error('[AuthController] 登录失败', e, st);
+      state = AsyncError(e, st);
+      // 统一展示后端返回的错误信息（验证码错误/失效、密码错误等）
+      ref.read(toastServiceProvider).showToast(
+            _parseLoginErrorMessage(e),
+            type: ToastType.error,
+          );
+      rethrow;
+    }
 
     // 登录成功后重新触发 App 初始化（_preloadData 在登出时不会为新 session 重跑）
     if (state is AsyncData && state.value != null) {
@@ -335,6 +341,33 @@ class AuthController extends _$AuthController {
   }
 
   bool _shouldReportPushDevice() => DeviceUtil.isRealMobile();
+
+  /// 解析登录错误信息，优先展示后端返回的具体错误文案
+  ///
+  /// 验证码错误/过期、用户名或密码错误等场景，后端统一返回
+  /// `{code: 非200, msg: 具体原因}`；Dio 异常时从响应体中提取 msg。
+  /// 无法获取后端文案时回退到通用提示。
+  String _parseLoginErrorMessage(Object error) {
+    String? message;
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map) {
+        final msg = data['msg'] ?? data['message'];
+        if (msg is String && msg.trim().isNotEmpty) {
+          message = msg.trim();
+        }
+      }
+    } else {
+      final raw = error.toString();
+      message = raw.startsWith('Exception:')
+          ? raw.substring('Exception:'.length).trim()
+          : raw.trim();
+    }
+    if (message == null || message.isEmpty) {
+      return 'login_failed'.tr();
+    }
+    return message;
+  }
 }
 
 /// 获取验证码

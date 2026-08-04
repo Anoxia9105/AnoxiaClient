@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -140,6 +140,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                 title: 'me_profile_email'.tr(),
                 initialValue: _emailController.text,
                 keyboardType: TextInputType.emailAddress,
+                maxLength: 50,
                 onSave: (value) => _saveProfile(email: value),
                 onApplied: (value) => _emailController.text = value,
               ),
@@ -155,6 +156,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                 title: 'me_profile_phone'.tr(),
                 initialValue: _phoneController.text,
                 keyboardType: TextInputType.phone,
+                maxLength: 11,
                 onSave: (value) => _saveProfile(phoneNumber: value),
                 onApplied: (value) => _phoneController.text = value,
               ),
@@ -234,17 +236,13 @@ class _MyPageState extends ConsumerState<MyPage> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  AvatarWidget(
-                    url: user.avatar,
-                    name: user.nickName,
-                    size: 48,
-                  ),
+                  AvatarWidget(url: user.avatar, name: user.nickName, size: 48),
                   Positioned(
                     right: -2,
                     bottom: -2,
                     child: Container(
-                      width: 18,
-                      height: 18,
+                      width: 22,
+                      height: 22,
                       decoration: BoxDecoration(
                         color: cs.primary,
                         shape: BoxShape.circle,
@@ -254,8 +252,8 @@ class _MyPageState extends ConsumerState<MyPage> {
                         ),
                       ),
                       child: Icon(
-                        Icons.photo_camera_outlined,
-                        size: 11,
+                        Icons.photo_camera_rounded,
+                        size: 13,
                         color: cs.onPrimary,
                       ),
                     ),
@@ -483,14 +481,16 @@ class _MyPageState extends ConsumerState<MyPage> {
   Future<void> _editAvatar(BuildContext context) async {
     final bool ok;
     if (!DeviceUtil.isMobile(context)) {
-      ok = await showDialog<bool>(
+      ok =
+          await showDialog<bool>(
             context: context,
             barrierDismissible: false,
             builder: (_) => const AvatarEditDialog(),
           ) ??
           false;
     } else {
-      ok = await Navigator.of(context).push<bool>(
+      ok =
+          await Navigator.of(context).push<bool>(
             MaterialPageRoute(builder: (_) => const AvatarEditPage()),
           ) ??
           false;
@@ -533,10 +533,7 @@ class _MyPageState extends ConsumerState<MyPage> {
     }
 
     if (effectiveNick.length > 30) {
-      Toast.showToast(
-        'me_profile_nickname_length'.tr(),
-        type: ToastType.error,
-      );
+      Toast.showToast('me_profile_nickname_length'.tr(), type: ToastType.error);
       return false;
     }
 

@@ -240,7 +240,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             controller: _emailCtrl,
             hint: 'register_email'.tr(),
             icon: Icons.alternate_email_rounded,
-            maxLength: 60,
+            maxLength: 50,
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             validator: Validators.email,
@@ -353,11 +353,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           controller: _usernameCtrl,
           hint: 'register_username'.tr(),
           icon: Icons.person_outline_rounded,
-          maxLength: 20,
+          maxLength: 30,
           autofillHints: const [AutofillHints.newUsername],
           validator: (value) {
             final text = value?.trim() ?? '';
-            return RegExp(r'^[a-zA-Z_]\w{1,19}$').hasMatch(text)
+            return RegExp(r'^[a-zA-Z_]\w{1,29}$').hasMatch(text)
                 ? null
                 : 'register_username_invalid'.tr();
           },

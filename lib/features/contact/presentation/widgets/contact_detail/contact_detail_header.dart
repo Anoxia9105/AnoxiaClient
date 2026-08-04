@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 /// 联系人详情头部组件
 ///
-/// 展示联系人大头像、昵称、备注和在线状态，带渐变背景
+/// 展示联系人大头像、昵称、备注和在线状态
 class ContactDetailHeader extends StatelessWidget {
   final String? avatar;
   final String? nickName;
@@ -25,16 +25,6 @@ class ContactDetailHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.3),
-            colorScheme.surface,
-          ],
-        ),
-      ),
       child: Column(
         children: [
           AvatarWidget(

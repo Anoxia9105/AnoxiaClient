@@ -137,7 +137,7 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
           title: Text('group_card_verify_title'.tr()),
           content: TextField(
             controller: controller,
-            maxLength: 100,
+            maxLength: 200,
             maxLines: 3,
             decoration: InputDecoration(
               hintText: 'group_card_verify_hint'.tr(),

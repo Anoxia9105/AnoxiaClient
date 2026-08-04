@@ -1,4 +1,6 @@
-﻿import 'package:anoxia/common/widgets/bubble_dialog.dart';
+﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/bubble_menu.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -26,15 +28,29 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
           mouseCursor: SystemMouseCursors.click,
           onPressed: () {
             Function? close;
+            // UI 布局按宽度断点判定（Web 窄屏等同移动端），与聊天列表菜单保持一致
+            final isMobile = DeviceUtil.isMobile(context);
+            // 气泡宽度与聊天列表菜单保持一致：自适应最长文案
+            final menuWidth = BubbleMenu.measureWidth(
+              context,
+              titles: [
+                'contact_edit_remark'.tr(),
+                'contact_delete'.tr(),
+              ],
+              maxWidth: isMobile ? 200 : 220,
+            );
+
             close = Toast.showWidget(
               context,
-              direction: PreferDirection.bottomRight,
+              direction: isMobile
+                  ? PreferDirection.bottomRight
+                  : PreferDirection.bottomLeft,
               child: Material(
                 color: Colors.transparent,
                 child: BubbleWidget(
                   arrowDirection: AxisDirection.up,
-                  arrowOffset: 95,
-                  arrowWidth: 13,
+                  // 气泡宽度随文案自适应，移动端箭头偏移跟随宽度，保持指向右上角按钮
+                  arrowOffset: isMobile ? menuWidth + 34 : 25,
                   backgroundColor: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(10),
                   shadows: [
@@ -48,30 +64,37 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .outlineVariant
-                        .withValues(alpha: 0.5),
+                        .withValues(alpha: 0.4),
                     width: 0.5,
                   ),
                   contentBuilder: (context) => Container(
-                    constraints: const BoxConstraints(maxWidth: 120),
+                    // 宽度自适应最长文案，所有菜单项等宽、内容统一居中
+                    width: menuWidth,
                     padding: const EdgeInsets.symmetric(
                       vertical: 4,
-                      horizontal: 2,
+                      horizontal: 3,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildMenuItem(
+                        BubbleMenu.buildMenuItem(
+                          context: context,
                           icon: HugeIcons.strokeRoundedEdit01,
                           title: 'contact_edit_remark'.tr(),
+                          textMaxWidth:
+                              menuWidth - BubbleMenu.fixedContentWidth,
                           onTap: () {
                             close?.call();
                             onEditRemark();
                           },
                         ),
-                        _buildMenuItem(
+                        BubbleMenu.buildMenuItem(
+                          context: context,
                           icon: HugeIcons.strokeRoundedDelete01,
                           title: 'contact_delete'.tr(),
                           isDestructive: true,
+                          textMaxWidth:
+                              menuWidth - BubbleMenu.fixedContentWidth,
                           onTap: () {
                             close?.call();
                             onDelete();
@@ -87,44 +110,6 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
           icon: const Icon(Icons.more_horiz),
         );
       },
-    );
-  }
-
-  Widget _buildMenuItem({
-    required dynamic icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            HugeIcon(
-              icon: icon,
-              size: 15,
-              color: isDestructive ? Colors.red : null,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDestructive ? Colors.red : null,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

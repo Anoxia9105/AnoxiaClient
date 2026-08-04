@@ -9,10 +9,11 @@ enum CrossTabAuthAction { login, logout }
 
 /// 跨标签页会话事件
 class CrossTabAuthEvent {
-  const CrossTabAuthEvent({required this.action, this.userId});
+  const CrossTabAuthEvent({required this.action, this.userId, this.issuedAt});
 
   final CrossTabAuthAction action;
   final int? userId;
+  final int? issuedAt;
 }
 
 /// 跨标签页会话同步器

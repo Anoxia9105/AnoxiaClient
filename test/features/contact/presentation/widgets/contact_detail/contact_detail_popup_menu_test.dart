@@ -65,7 +65,7 @@ void main() {
     );
     final bubbleRect = tester.getRect(find.byType(BubbleWidget));
 
-    expect(bubbleRect.width, lessThanOrEqualTo(120.5));
+    expect(bubbleRect.width, lessThanOrEqualTo(220.5));
     expect(editRect.width, lessThanOrEqualTo(bubbleRect.width));
     expect(deleteRect.width, lessThanOrEqualTo(bubbleRect.width));
     expect(editRect.left, greaterThanOrEqualTo(bubbleRect.left - 1));
