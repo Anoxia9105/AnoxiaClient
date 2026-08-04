@@ -308,7 +308,7 @@ class _MyPageState extends ConsumerState<MyPage> {
       visualDensity: const VisualDensity(vertical: -1),
       minVerticalPadding: 10,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      leading: Icon(Icons.account_circle_outlined, size: 22, color: cs.primary),
+      leading: const Icon(Icons.account_circle_outlined, size: 22),
       title: Text('me_avatar'.tr(), style: const TextStyle(fontSize: 14.5)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
