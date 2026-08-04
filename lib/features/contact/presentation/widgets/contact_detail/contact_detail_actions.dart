@@ -1,4 +1,5 @@
-﻿import 'package:anoxia/common/widgets/toast.dart';
+﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_recommend_dialog.dart';
 import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
@@ -74,6 +75,9 @@ class ContactDetailActions extends ConsumerWidget {
                           ref
                               .read(layoutControllerProvider.notifier)
                               .setIndex(0);
+                          if (context.mounted && isAdaptiveDialog(context)) {
+                            Navigator.of(context).pop();
+                          }
                         }
                       } finally {
                         ref
@@ -156,5 +160,8 @@ class ContactDetailActions extends ConsumerWidget {
           : 'contact_recommend_send_failed'.tr(),
       type: sent ? ToastType.success : ToastType.error,
     );
+    if (context.mounted && isAdaptiveDialog(context)) {
+      Navigator.of(context).pop();
+    }
   }
 }

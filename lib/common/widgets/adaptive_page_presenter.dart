@@ -38,3 +38,10 @@ Future<T?> presentAdaptivePage<T>(
     ),
   );
 }
+
+/// 判断当前页面是否以桌面模态对话框形式展示（配合 [presentAdaptivePage] 使用）。
+///
+/// 桌面端详情页以对话框展示，移动端为普通路由。操作完成后需关闭对话框时，
+/// 用此帮助方法区分：返回 true 表示应 `Navigator.pop`，false 表示普通页面无需操作。
+bool isAdaptiveDialog(BuildContext context) =>
+    ModalRoute.of(context) is PopupRoute;
