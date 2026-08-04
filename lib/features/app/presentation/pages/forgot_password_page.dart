@@ -8,7 +8,7 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 忘记密码页面
@@ -118,6 +118,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                 ),
                                 inputFormatters: [
                                   LengthLimitingTextInputFormatter(4),
+                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
                                 ],
                               ),
                             ),
@@ -140,6 +141,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                 ),
                                 inputFormatters: [
                                   LengthLimitingTextInputFormatter(6),
+                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
                                 ],
                               ),
                             ),

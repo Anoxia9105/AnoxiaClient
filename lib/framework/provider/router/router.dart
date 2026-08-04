@@ -144,24 +144,25 @@ class ErrorRoute extends GoRouteData with $ErrorRoute {
 @TypedGoRoute<ImageMessageDetailRoute>(path: '/imageView')
 class ImageMessageDetailRoute extends GoRouteData
     with $ImageMessageDetailRoute {
-  final Attachment $extra;
   final String heroTag;
   final String? roomId;
   final String? currentUrl;
   const ImageMessageDetailRoute({
-    required this.$extra,
     required this.heroTag,
     this.roomId,
     this.currentUrl,
   });
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => ImageViewer(
-    attachment: $extra,
-    heroTag: heroTag,
-    roomId: roomId,
-    currentUrl: currentUrl,
-  );
+  Widget build(BuildContext context, GoRouterState state) {
+    final attachment = state.extra as Attachment;
+    return ImageViewer(
+      attachment: attachment,
+      heroTag: heroTag,
+      roomId: roomId,
+      currentUrl: currentUrl,
+    );
+  }
 }
 
 /// 添加好友页路由

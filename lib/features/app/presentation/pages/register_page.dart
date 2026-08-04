@@ -9,7 +9,7 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter, TextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 注册页面
@@ -280,9 +280,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       hint: 'register_email_code'.tr(),
       icon: Icons.mark_email_read_outlined,
       maxLength: 6,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      validator: (value) => RegExp(r'^\d{6}$').hasMatch(value ?? '')
+      keyboardType: TextInputType.text,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+      ],
+      validator: (value) => RegExp(r'^[a-zA-Z0-9]{6}$').hasMatch(value ?? '')
           ? null
           : 'register_email_code_invalid'.tr(),
     );
@@ -466,14 +468,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: _field(
-            controller: _captchaCtrl,
-            hint: 'login_page_captcha'.tr(),
-            icon: Icons.shield_outlined,
-            maxLength: 4,
+Expanded(
+            child: _field(
+              controller: _captchaCtrl,
+              hint: 'login_page_captcha'.tr(),
+              icon: Icons.shield_outlined,
+              maxLength: 4,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+              ],
+            ),
           ),
-        ),
         SizedBox(width: isMobile ? 8 : 10),
         ref
             .watch(getCaptchaProvider)

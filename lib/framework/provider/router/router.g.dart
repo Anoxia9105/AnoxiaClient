@@ -142,7 +142,6 @@ mixin $ImageMessageDetailRoute on GoRouteData {
         heroTag: state.uri.queryParameters['hero-tag']!,
         roomId: state.uri.queryParameters['room-id'],
         currentUrl: state.uri.queryParameters['current-url'],
-        $extra: state.extra as InvalidType,
       );
 
   ImageMessageDetailRoute get _self => this as ImageMessageDetailRoute;
@@ -158,19 +157,17 @@ mixin $ImageMessageDetailRoute on GoRouteData {
   );
 
   @override
-  void go(BuildContext context) => context.go(location, extra: _self.$extra);
+  void go(BuildContext context) => context.go(location);
 
   @override
-  Future<T?> push<T>(BuildContext context) =>
-      context.push<T>(location, extra: _self.$extra);
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
   void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location, extra: _self.$extra);
+      context.pushReplacement(location);
 
   @override
-  void replace(BuildContext context) =>
-      context.replace(location, extra: _self.$extra);
+  void replace(BuildContext context) => context.replace(location);
 }
 
 RouteBase get $addFriendRoute => GoRouteData.$route(

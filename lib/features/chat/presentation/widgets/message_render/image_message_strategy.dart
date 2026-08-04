@@ -1,6 +1,7 @@
 ﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
 import '../../../../../framework/protocol/message/attachment.dart';
@@ -42,12 +43,14 @@ class ImageMessageStrategy extends MessageRenderStrategy {
       final heroTag = 'image-${attachment.url}';
 
       return GestureDetector(
-        onTap: () => ImageMessageDetailRoute(
-          $extra: attachment,
-          heroTag: heroTag,
-          roomId: message.roomId,
-          currentUrl: attachment.url,
-        ).push(context),
+        onTap: () => context.push(
+          ImageMessageDetailRoute(
+            heroTag: heroTag,
+            roomId: message.roomId,
+            currentUrl: attachment.url,
+          ).location,
+          extra: attachment,
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Hero(
@@ -79,12 +82,14 @@ class ImageMessageStrategy extends MessageRenderStrategy {
         final heroTag =
             'image-${attachment.url}-${message.messageId}'; // 澶氬浘甯︿笂娑堟伅ID闃叉Tag鍐茬獊
         return GestureDetector(
-          onTap: () => ImageMessageDetailRoute(
-            $extra: attachment,
-            heroTag: heroTag,
-            roomId: message.roomId,
-            currentUrl: attachment.url,
-          ).push(context),
+          onTap: () => context.push(
+            ImageMessageDetailRoute(
+              heroTag: heroTag,
+              roomId: message.roomId,
+              currentUrl: attachment.url,
+            ).location,
+            extra: attachment,
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Hero(

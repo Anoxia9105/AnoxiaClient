@@ -7,7 +7,7 @@ import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -234,7 +234,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
             controller: _codeCtrl,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
-            inputFormatters: [LengthLimitingTextInputFormatter(4)],
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(4),
+              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+            ],
             decoration: InputDecoration(
               hintText: 'login_page_captcha'.tr(),
               prefixIcon: Icon(
