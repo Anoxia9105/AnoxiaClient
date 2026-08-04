@@ -93,6 +93,7 @@ abstract class _$ContactListService
 ///
 /// 按联系人昵称/备注的首字母进行 A-Z 分组，
 /// 中文姓名自动转换为拼音后取首字母。
+/// 过滤掉当前登录用户自己（不应出现在联系人列表中）。
 
 @ProviderFor(sortedContactGroups)
 final sortedContactGroupsProvider = SortedContactGroupsProvider._();
@@ -101,6 +102,7 @@ final sortedContactGroupsProvider = SortedContactGroupsProvider._();
 ///
 /// 按联系人昵称/备注的首字母进行 A-Z 分组，
 /// 中文姓名自动转换为拼音后取首字母。
+/// 过滤掉当前登录用户自己（不应出现在联系人列表中）。
 
 final class SortedContactGroupsProvider
     extends
@@ -116,6 +118,7 @@ final class SortedContactGroupsProvider
   ///
   /// 按联系人昵称/备注的首字母进行 A-Z 分组，
   /// 中文姓名自动转换为拼音后取首字母。
+  /// 过滤掉当前登录用户自己（不应出现在联系人列表中）。
   SortedContactGroupsProvider._()
     : super(
         from: null,
@@ -143,4 +146,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'0ad45caf69ea74a73fa9db07b43fd962e4bc6e08';
+    r'a59b92da58852ae8a61db2319405c147b6e546d6';

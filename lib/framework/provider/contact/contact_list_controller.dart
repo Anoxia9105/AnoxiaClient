@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/sync_contacts_usecase_provider.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:lpinyin/lpinyin.dart';
@@ -114,13 +115,19 @@ class ContactListService extends _$ContactListService {
 ///
 /// 按联系人昵称/备注的首字母进行 A-Z 分组，
 /// 中文姓名自动转换为拼音后取首字母。
+/// 过滤掉当前登录用户自己（不应出现在联系人列表中）。
 @Riverpod(keepAlive: true)
 Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
   final contactsAsync = ref.watch(contactListServiceProvider);
   final contactMap = contactsAsync.value ?? {};
   if (contactMap.isEmpty) return {};
 
-  final List<ChatContactVO> contacts = contactMap.values.toList();
+  final currentUser = ref.watch(authControllerProvider).value;
+  final currentUserId = currentUser?.userId;
+
+  final List<ChatContactVO> contacts = contactMap.values
+      .where((c) => currentUserId == null || c.contactId != currentUserId)
+      .toList();
 
   // 按拼音首字母排序
   final sortedList = List<ChatContactVO>.from(contacts)

@@ -45,7 +45,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'de629a43d4ef59b50169c9a4883af071f1fbcc2f';
+String _$authControllerHash() => r'e4188e6b8c190583ffffb324e41c7612408626b4';
 
 /// 认证状态管理器
 ///

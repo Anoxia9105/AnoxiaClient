@@ -10,6 +10,7 @@ import 'package:hugeicons/hugeicons.dart';
 /// 联系人详情右上角弹出菜单按钮
 ///
 /// 提供编辑备注和删除联系人入口
+/// 使用全局坐标定位气泡菜单，避免在桌面端 Dialog 中层级被遮挡
 class ContactDetailPopupMenuButton extends StatelessWidget {
   final VoidCallback onEditRemark;
   final VoidCallback onDelete;
@@ -22,94 +23,104 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (context) {
-        return IconButton(
-          mouseCursor: SystemMouseCursors.click,
-          onPressed: () {
-            Function? close;
-            // UI 布局按宽度断点判定（Web 窄屏等同移动端），与聊天列表菜单保持一致
-            final isMobile = DeviceUtil.isMobile(context);
-            // 气泡宽度与聊天列表菜单保持一致：自适应最长文案
-            final menuWidth = BubbleMenu.measureWidth(
-              context,
-              titles: [
-                'contact_edit_remark'.tr(),
-                'contact_delete'.tr(),
-              ],
-              maxWidth: isMobile ? 200 : 220,
-            );
+    final buttonKey = GlobalKey();
 
-            close = Toast.showWidget(
-              context,
-              direction: isMobile
-                  ? PreferDirection.bottomRight
-                  : PreferDirection.bottomLeft,
-              child: Material(
-                color: Colors.transparent,
-                child: BubbleWidget(
-                  arrowDirection: AxisDirection.up,
-                  // 气泡宽度随文案自适应，移动端箭头偏移跟随宽度，保持指向右上角按钮
-                  arrowOffset: isMobile ? menuWidth + 34 : 25,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  shadows: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+    return IconButton(
+      key: buttonKey,
+      mouseCursor: SystemMouseCursors.click,
+      onPressed: () {
+        Function? close;
+        // UI 布局按宽度断点判定（Web 窄屏等同移动端），与聊天列表菜单保持一致
+        final isMobile = DeviceUtil.isMobile(context);
+        // 气泡宽度与聊天列表菜单保持一致：自适应最长文案
+        final menuWidth = BubbleMenu.measureWidth(
+          context,
+          titles: [
+            'contact_edit_remark'.tr(),
+            'contact_delete'.tr(),
+          ],
+          maxWidth: isMobile ? 200 : 220,
+        );
+
+        // 计算按钮的全局坐标，用于定位气泡菜单
+        final renderBox = buttonKey.currentContext?.findRenderObject() as RenderBox?;
+        final buttonPosition = renderBox?.localToGlobal(Offset.zero);
+        final buttonSize = renderBox?.size;
+        final targetOffset = buttonPosition != null && buttonSize != null
+            ? Offset(
+                buttonPosition.dx + buttonSize.width / 2,
+                buttonPosition.dy + buttonSize.height,
+              )
+            : Offset.zero;
+
+        close = Toast.showWidgetOffset(
+          target: targetOffset,
+          direction: isMobile
+              ? PreferDirection.bottomRight
+              : PreferDirection.bottomLeft,
+          child: Material(
+            color: Colors.transparent,
+            child: BubbleWidget(
+              arrowDirection: AxisDirection.up,
+              // 气泡宽度随文案自适应，移动端箭头偏移跟随宽度，保持指向右上角按钮
+              arrowOffset: isMobile ? menuWidth + 34 : 25,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(10),
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: BorderSide(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outlineVariant
+                    .withValues(alpha: 0.4),
+                width: 0.5,
+              ),
+              contentBuilder: (context) => Container(
+                // 宽度自适应最长文案，所有菜单项等宽、内容统一居中
+                width: menuWidth,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 3,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    BubbleMenu.buildMenuItem(
+                      context: context,
+                      icon: HugeIcons.strokeRoundedEdit01,
+                      title: 'contact_edit_remark'.tr(),
+                      textMaxWidth:
+                          menuWidth - BubbleMenu.fixedContentWidth,
+                      onTap: () {
+                        close?.call();
+                        onEditRemark();
+                      },
+                    ),
+                    BubbleMenu.buildMenuItem(
+                      context: context,
+                      icon: HugeIcons.strokeRoundedDelete01,
+                      title: 'contact_delete'.tr(),
+                      isDestructive: true,
+                      textMaxWidth:
+                          menuWidth - BubbleMenu.fixedContentWidth,
+                      onTap: () {
+                        close?.call();
+                        onDelete();
+                      },
                     ),
                   ],
-                  border: BorderSide(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .outlineVariant
-                        .withValues(alpha: 0.4),
-                    width: 0.5,
-                  ),
-                  contentBuilder: (context) => Container(
-                    // 宽度自适应最长文案，所有菜单项等宽、内容统一居中
-                    width: menuWidth,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 4,
-                      horizontal: 3,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        BubbleMenu.buildMenuItem(
-                          context: context,
-                          icon: HugeIcons.strokeRoundedEdit01,
-                          title: 'contact_edit_remark'.tr(),
-                          textMaxWidth:
-                              menuWidth - BubbleMenu.fixedContentWidth,
-                          onTap: () {
-                            close?.call();
-                            onEditRemark();
-                          },
-                        ),
-                        BubbleMenu.buildMenuItem(
-                          context: context,
-                          icon: HugeIcons.strokeRoundedDelete01,
-                          title: 'contact_delete'.tr(),
-                          isDestructive: true,
-                          textMaxWidth:
-                              menuWidth - BubbleMenu.fixedContentWidth,
-                          onTap: () {
-                            close?.call();
-                            onDelete();
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
-            );
-          },
-          icon: const Icon(Icons.more_horiz),
+            ),
+          ),
         );
       },
+      icon: const Icon(Icons.more_horiz),
     );
   }
 }
