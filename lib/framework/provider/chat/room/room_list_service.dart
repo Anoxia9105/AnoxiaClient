@@ -124,7 +124,12 @@ class RoomListService extends _$RoomListService {
 
   Future<List<ChatRoomVO>> _fetchRoomListForStartup() async {
     try {
-      return await fetchRoomList().timeout(_startupFetchTimeout);
+      // 先等待会话同步完成，避免首次加载显示空列表
+      await ref.read(syncConversationsUseCaseProvider).sync();
+      // 同步完成后获取会话列表（不再触发后台同步）
+      return await ref
+          .read(syncConversationsUseCaseProvider)(sync: false)
+          .timeout(_startupFetchTimeout);
     } on TimeoutException catch (e, st) {
       log.warning('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
       return state.value ?? const <ChatRoomVO>[];
