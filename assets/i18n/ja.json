@@ -854,6 +854,7 @@
   "no_data_title": "データがありません",
   "chat_history_load_failed": "履歴の読み込みに失敗しました",
   "chat_history_retry": "タップして再試行",
+  "chat_jump_message_not_found": "対象メッセージは読み込み範囲外です",
   "api_network_error": "ネットワークエラー、後でもう一度お試しください",
   "api_request_timeout": "リクエストがタイムアウトしました、ネットワークを確認してください",
   "api_unauthorized": "ログインの有効期限が切れました、再ログインしてください",

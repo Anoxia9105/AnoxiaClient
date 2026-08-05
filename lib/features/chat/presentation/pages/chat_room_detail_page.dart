@@ -1,4 +1,6 @@
-﻿import 'package:anoxia/common/utils/date_util.dart';
+﻿import 'dart:async';
+
+import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart';
@@ -112,13 +114,13 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
 
     // 当激活房间变化时，新 controller 会重置按钮状态
 
-    // 引用消息跳转
+    // 引用消息跳转（目标不在当前加载窗口时会先补拉历史再滚动）
     ref.listen<ReplyJumpRequest?>(replyJumpControllerProvider, (
       previous,
       next,
     ) {
       if (next == null || next.roomId != widget.roomId) return;
-      _scrollController.scrollToMessage(next.messageId, flatItems);
+      unawaited(_scrollController.jumpToMessage(next.messageId));
     });
 
     return Scaffold(

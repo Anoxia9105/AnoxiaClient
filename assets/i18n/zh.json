@@ -854,6 +854,7 @@
   "no_data_title": "暂无数据哦",
   "chat_history_load_failed": "历史消息加载失败",
   "chat_history_retry": "点击重试",
+  "chat_jump_message_not_found": "目标消息不在可加载范围内",
   "api_network_error": "网络异常，请稍后重试",
   "api_request_timeout": "请求超时，请检查网络后重试",
   "api_unauthorized": "登录状态已失效，请重新登录",

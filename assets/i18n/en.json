@@ -854,6 +854,7 @@
   "no_data_title": "No data available",
   "chat_history_load_failed": "Failed to load history",
   "chat_history_retry": "Click to retry",
+  "chat_jump_message_not_found": "Target message is out of loadable range",
   "api_network_error": "Network error, please try again later",
   "api_request_timeout": "Request timeout, please check your network and try again",
   "api_unauthorized": "Login expired, please log in again",

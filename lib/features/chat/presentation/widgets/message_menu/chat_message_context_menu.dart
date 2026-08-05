@@ -64,11 +64,10 @@ class _ChatMessageContextMenuState
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (event) {
+        // PointerDownEvent.position 本身已是全局坐标，直接使用；
+        // 不要再经 localToGlobal 二次变换，否则菜单会偏移气泡的全局位置。
         if (event.buttons & kSecondaryMouseButton == 0) return;
-        final box = context.findRenderObject() as RenderBox?;
-        final globalPosition =
-            box?.localToGlobal(event.position) ?? event.position;
-        _showMenuAtPosition(context, globalPosition);
+        _showMenuAtPosition(context, event.position);
       },
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
