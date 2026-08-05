@@ -252,7 +252,8 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   );
                 },
               ),
-              if (isAdmin)
+              // 需审批群才展示入群申请入口，自由加入群（joinPolicy==0）无需审批
+              if (isAdmin && currentRoom.joinPolicy != 0)
                 _buildMaterialListTile(
                   context,
                   leading: const Icon(Icons.how_to_reg_outlined, size: 22),

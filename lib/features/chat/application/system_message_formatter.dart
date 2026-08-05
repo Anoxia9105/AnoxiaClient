@@ -85,6 +85,26 @@ class SystemMessageFormatter {
     }
 
     return switch (action) {
+      // 通过分享群聊卡片进入：展示“xx 通过分享进入群聊”
+      'USER_JOINED' when message.properties['viaShare'] == 'true' =>
+        SystemMessageDisplay(
+          action: action,
+          icon: HugeIcons.strokeRoundedHome03,
+          text: 'system_msg_join_via_share'.tr(
+            namedArgs: {'names': message.properties['names'] ?? ''},
+          ),
+        ),
+      // 自由加入群聊（无审批）：操作人与加入人是同一人，展示“xx 加入了房间”
+      'USER_JOINED'
+          when message.properties['names'] == message.properties['nickName'] &&
+              (message.properties['nickName'] ?? '').isNotEmpty =>
+        SystemMessageDisplay(
+          action: action,
+          icon: HugeIcons.strokeRoundedHome03,
+          text: 'system_msg_joined'.tr(
+            namedArgs: {'nickName': message.properties['nickName'] ?? ''},
+          ),
+        ),
       'ROOM_CREATED_GROUP' || 'USER_JOINED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedHome03,

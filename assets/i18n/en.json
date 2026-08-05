@@ -496,6 +496,8 @@
   "system_msg_unknown": "Unknown system message",
   "system_msg_preview": "[System message]",
   "system_msg_invite": "{nickName} invited [{names}] to join the room",
+  "system_msg_joined": "{nickName} joined the room",
+  "system_msg_join_via_share": "{names} joined the group via share",
   "system_msg_mute_on": "Admin [enabled mute all]",
   "system_msg_mute_off": "Admin [disabled mute all]",
   "system_msg_kicked": "{nickName} was kicked from the room by admin",

@@ -99,6 +99,15 @@
     window.addEventListener('contextmenu', function (event) {
       event.preventDefault();
     }, false);
+
+    // 哨兵历史条目：阻止移动端左滑/浏览器返回耗尽历史后退出应用。
+    // 每次返回手势触发 popstate 时补回一条哨兵，浏览器历史永不到底，
+    // 左滑在浏览器层变为无操作（App 内返回仍由 WebNavigationBlocker 拦截）。
+    // 须在 flutter_bootstrap.js 加载前注册，先于 Flutter 引擎的 popstate 监听执行。
+    history.pushState(null, '', location.href);
+    window.addEventListener('popstate', function () {
+      history.pushState(null, '', location.href);
+    });
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

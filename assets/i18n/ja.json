@@ -496,6 +496,8 @@
   "system_msg_unknown": "不明なシステムメッセージ",
   "system_msg_preview": "[システムメッセージ]",
   "system_msg_invite": "{nickName} が [{names}] をルームに招待しました",
+  "system_msg_joined": "{nickName} がルームに参加しました",
+  "system_msg_join_via_share": "{names}が共有でグループに参加しました",
   "system_msg_mute_on": "管理者 [全体ミュートを有効にしました]",
   "system_msg_mute_off": "管理者 [全体ミュートを解除しました]",
   "system_msg_kicked": "{nickName} が管理者によってルームから追放されました",

@@ -12,6 +12,7 @@ import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:anoxia/platform/shims/cross_tab_session_sync_shim.dart';
+import 'package:anoxia/platform/shims/system_locale_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -304,9 +305,9 @@ Future<void> runMainApp() async {
     // 跨标签页会话同步：其它标签页登录/登出切换账号时，本页重置并重载
     _installCrossTabSessionSync();
 
-    // 初始化 DioClient 的国际化语言
-    final savedLocale = SPUtil.instance.get('locale', defValue: 'zh') ?? 'zh';
-    DioClient().setLocale(savedLocale);
+    // 初始化 DioClient 的国际化语言（用户选择过的 → 系统语言 → 默认 zh）
+    final startLocale = _resolveStartLocale();
+    DioClient().setLocale(startLocale);
 
     log.info('''
  _______
@@ -333,7 +334,7 @@ Future<void> runMainApp() async {
     runApp(
       UncontrolledProviderScope(
         container: globalContainer,
-        child: _buildAppWrapper(const App()),
+        child: _buildAppWrapper(const App(), startLocale: startLocale),
       ),
     );
   } catch (e, stack) {
@@ -378,7 +379,7 @@ Future<void> runSubApp(WindowController controller) async {
     runApp(
       UncontrolledProviderScope(
         container: container,
-        child: _buildAppWrapper(child),
+        child: _buildAppWrapper(child, startLocale: _resolveStartLocale()),
       ),
     );
   } catch (e, stack) {
@@ -435,7 +436,10 @@ Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
     runApp(
       UncontrolledProviderScope(
         container: globalContainer,
-        child: _buildAppWrapper(UpdatePage(updateInfo: updateInfo)),
+        child: _buildAppWrapper(
+          UpdatePage(updateInfo: updateInfo),
+          startLocale: _resolveStartLocale(),
+        ),
       ),
     );
   } catch (e, stack) {
@@ -467,12 +471,31 @@ Future<void> setupDesktopWindow({
   });
 }
 
+/// 解析启动语言：用户手动选择过的 → 系统/浏览器语言 → 默认 zh
+///
+/// easy_localization 在 WASM 下无法获取设备语言（内部 intl_standalone 依赖
+/// dart:io，Web 上抛异常后 Intl.systemLocale 恒为 en_US），这里自行检测
+/// 并作为 startLocale 传入；用户手动选择过的语言（saveLocale）优先级更高。
+String _resolveStartLocale() {
+  final saved = SPUtil.instance.get('locale');
+  if (saved != null && saved.isNotEmpty) {
+    final lower = saved.toLowerCase();
+    if (lower.startsWith('zh')) return 'zh';
+    if (lower.startsWith('ja')) return 'ja';
+    return 'en';
+  }
+  final system = SystemLocale.languageCode();
+  if (system != null) return system;
+  return 'zh';
+}
+
 /// 公共 UI 包装器（多语言 + 屏幕适配）
-Widget _buildAppWrapper(Widget home) {
+Widget _buildAppWrapper(Widget home, {String? startLocale}) {
   return EasyLocalization(
     supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
     path: 'assets/i18n',
     fallbackLocale: const Locale('en'),
+    startLocale: startLocale != null ? Locale(startLocale) : null,
     saveLocale: true,
 
     /// 通过 ScreenUtilInit 包裹，提供屏幕适配功能
