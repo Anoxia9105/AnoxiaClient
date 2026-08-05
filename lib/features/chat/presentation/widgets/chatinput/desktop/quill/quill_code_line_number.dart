@@ -2,6 +2,7 @@
 ///
 /// 为 Quill 编辑器中的代码块提供固定宽度的行号栏
 /// 和悬浮的语言选择标签。
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -174,7 +175,8 @@ class _CodeBlockLeadingState extends State<_CodeBlockLeading> {
         textAlign: TextAlign.start,
         style: (widget.style ?? const TextStyle()).copyWith(
           color: colorScheme.onSurfaceVariant,
-          fontFamily: 'HarmonyOS',
+          // Web 端走系统字体，避免加载内置 CJK 大字体（Safari 卡顿来源）
+          fontFamily: kIsWeb ? null : 'HarmonyOS',
           fontSize: QuillCodeLineNumber.fontSize,
           height: QuillCodeLineNumber.lineHeight,
           fontFeatures: const [FontFeature.tabularFigures()],

@@ -189,13 +189,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               }
             },
           ),
-          SettingsFontSection(
-            selectedFontKey: fontKey,
-            isDesktop: DeviceUtil.isDesktop(context),
-            onFontChanged: (selectedFont) {
-              ref.read(appFontProvider.notifier).setFont(selectedFont);
-            },
-          ),
+          // Web 端隐藏字体切换：字体选项均为 Google Fonts（运行时 CDN 拉取，
+          // 国内基本不可达，实际早已无声回退系统字体），Web 已强制系统字体。
+          if (!DeviceUtil.isWeb)
+            SettingsFontSection(
+              selectedFontKey: fontKey,
+              isDesktop: DeviceUtil.isDesktop(context),
+              onFontChanged: (selectedFont) {
+                ref.read(appFontProvider.notifier).setFont(selectedFont);
+              },
+            ),
           // 浏览器通知权限必须在用户手势中申请，这里提供显式入口；原生端不显示。
           if (DeviceUtil.isWeb) const SettingsWebNotificationSection(),
           SettingsFeedbackSection(

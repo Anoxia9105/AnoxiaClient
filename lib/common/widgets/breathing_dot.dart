@@ -1,45 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// 呼吸动画绿点（透明度循环变化）
-class BreathingDot extends StatefulWidget {
+/// 在线状态绿点（静态）
+///
+/// 原实现为无限透明度呼吸动画：Web 渲染下任何动画帧都会驱动整块 canvas
+/// 重绘与合成（群聊 AppBar 常驻该组件），是 Safari 掉帧的来源之一，改为静态。
+class BreathingDot extends StatelessWidget {
   const BreathingDot({super.key});
 
   @override
-  State<BreathingDot> createState() => _BreathingDotState();
-}
-
-class _BreathingDotState extends State<BreathingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2), // 一个完整呼吸周期（一呼一吸）
-      vsync: this,
-    )..repeat(reverse: true); // 自动来回重复
-    _animation = Tween<double>(begin: 0.2, end: 1.0).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.green,
-        ),
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.green,
       ),
     );
   }

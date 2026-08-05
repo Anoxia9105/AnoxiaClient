@@ -301,6 +301,8 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
       // 图片消息：显示附件缩略图
       if (imageAttachment?.url?.isNotEmpty == true) {
         final attachment = imageAttachment!;
+        // 缩略图显示尺寸（桌面 160，其余 120），用于限制解码尺寸
+        final double imageSize = DeviceUtil.isRealDesktop() ? 160 : 120;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -309,9 +311,16 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 attachment.url ?? '',
-                width: DeviceUtil.isRealDesktop() ? 160 : 120,
-                height: DeviceUtil.isRealDesktop() ? 160 : 120,
+                width: imageSize,
+                height: imageSize,
+                // 按显示尺寸×DPR 解码，避免整图（可能上 MB）全量解入内存
+                cacheWidth: (imageSize * MediaQuery.devicePixelRatioOf(context))
+                    .round(),
+                cacheHeight:
+                    (imageSize * MediaQuery.devicePixelRatioOf(context))
+                        .round(),
                 fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
                 errorBuilder: (context, error, stackTrace) {
                   final size = DeviceUtil.isRealDesktop() ? 160.0 : 120.0;
                   return Container(

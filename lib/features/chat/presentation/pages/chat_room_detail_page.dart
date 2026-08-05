@@ -215,11 +215,17 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     }
 
     if (DeviceUtil.isWeb) {
+      // Web（CanvasKit/skwasm）渲染下整屏 canvas 每次动画帧都会重绘合成，
+      // 气泡包 RepaintBoundary 让滚动时命中缓存图层、只上传不重绘；
+      // 关闭 keepalive 避免为离屏项保留状态（气泡本身无状态）。
       return ListView.builder(
         controller: _listViewController,
         reverse: true,
+        addAutomaticKeepAlives: false,
         itemCount: flatItems.length,
-        itemBuilder: itemBuilder,
+        itemBuilder: (context, index) => RepaintBoundary(
+          child: itemBuilder(context, index),
+        ),
       );
     }
 

@@ -157,7 +157,13 @@ class _CardThumbnail extends StatelessWidget {
                 imageUrl,
                 width: 52,
                 height: 52,
+                // 按显示尺寸×DPR 解码，避免整图（可能上 MB）全量解入内存
+                cacheWidth: (52 * MediaQuery.devicePixelRatioOf(context))
+                    .round(),
+                cacheHeight: (52 * MediaQuery.devicePixelRatioOf(context))
+                    .round(),
                 fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
                 errorBuilder: (_, _, _) => Icon(
                   Icons.badge_outlined,
                   size: 24,

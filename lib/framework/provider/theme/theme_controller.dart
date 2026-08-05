@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -178,6 +179,14 @@ ThemeData appTheme(Ref ref) {
     brightness: brightness,
     accentIndex: accentIndex,
   );
+
+  // Web 端强制系统字体：字体选项均来自 google_fonts（运行时从 Google CDN
+  // 拉取，国内基本不可达，选择后实际无声回退），且自定义 CJK 字体在
+  // Safari（CanvasKit/skwasm）下栅格化成本高。Web 直接返回 baseTheme，
+  // 字体设置入口已在设置页隐藏，这里不再套任何 TextTheme。
+  if (kIsWeb) {
+    return baseTheme;
+  }
 
   final textTheme = _buildTextTheme(fontKey, baseTheme.textTheme);
   final primaryTextTheme = _buildTextTheme(fontKey, baseTheme.primaryTextTheme);

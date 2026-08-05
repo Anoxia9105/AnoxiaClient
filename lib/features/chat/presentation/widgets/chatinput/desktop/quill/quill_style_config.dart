@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -14,7 +15,8 @@ class QuillStyleConfig {
   static TextStyle codeTextStyle(BuildContext context) {
     final theme = Theme.of(context);
     return TextStyle(
-      fontFamily: 'HarmonyOS',
+      // Web 端走系统字体，避免加载内置 CJK 大字体（Safari 卡顿来源）
+      fontFamily: kIsWeb ? null : 'HarmonyOS',
       fontSize: QuillCodeLineNumber.fontSize,
       height: QuillCodeLineNumber.lineHeight,
       color: theme.colorScheme.onSurface,
