@@ -35,7 +35,7 @@ class ChatRoomDetail extends ConsumerStatefulWidget {
 }
 
 class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
-  /// Web 使用标准 ScrollController；其他平台保留支持按索引定位的控制器。
+  /// flutter_list_view 的滚动控制器，支持按索引精确定位（Web 与原生一致）。
   late final ScrollController _listViewController;
 
   /// 滚动控制器，封装滚动相关的全部逻辑
@@ -44,9 +44,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   @override
   void initState() {
     super.initState();
-    _listViewController = DeviceUtil.isWeb
-        ? ScrollController()
-        : FlutterListViewController();
+    _listViewController = FlutterListViewController();
     _scrollController = ChatScrollController(
       listViewController: _listViewController,
       roomId: widget.roomId,
@@ -214,21 +212,6 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       };
     }
 
-    if (DeviceUtil.isWeb) {
-      // Web（CanvasKit/skwasm）渲染下整屏 canvas 每次动画帧都会重绘合成，
-      // 气泡包 RepaintBoundary 让滚动时命中缓存图层、只上传不重绘；
-      // 关闭 keepalive 避免为离屏项保留状态（气泡本身无状态）。
-      return ListView.builder(
-        controller: _listViewController,
-        reverse: true,
-        addAutomaticKeepAlives: false,
-        itemCount: flatItems.length,
-        itemBuilder: (context, index) => RepaintBoundary(
-          child: itemBuilder(context, index),
-        ),
-      );
-    }
-
     // 注意：此处刻意不使用 keepPosition: true。
     // 原因：本列表为 reverse: true 的聊天消息流，第二个房间在「切换瞬间」仍在
     // 实时加载（roomEntryTask 同步 + drift 流增量推送），childCount 会频繁变化。
@@ -236,8 +219,12 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     // 重算并保持滚动锚点，引发主线程布局抖动直至 ANR（表现为「第二次切换列表
     // 直接卡死、无 log」）。逆向聊天列表的正确语义本就是「停在最新消息底部」，
     // 关闭 keepPosition 后：切换/新消息到达自动停在底部，上滑看历史也不跳位，
-    // 且不再触发锚点重算抖动。flutter_list_view 包保留，行为更符合聊天场景。
-    return FlutterListView(
+    // 且不再触发锚点重算抖动。
+    //
+    // 关闭自动 keepalive：气泡本身无状态（ConsumerWidget），离屏即销毁滚回重建
+    // 无成本，无需保留；RepaintBoundary 由 delegate（addRepaintBoundaries 默认
+    // true）自动包，滚动时命中缓存图层、只上传不重绘。
+    final list = FlutterListView(
       key: ValueKey(widget.roomId),
       controller: _listViewController as FlutterListViewController,
       reverse: true,
@@ -245,6 +232,26 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         itemBuilder,
         childCount: flatItems.length,
         keepPosition: false,
+        addAutomaticKeepAlives: false,
+      ),
+    );
+
+    if (!DeviceUtil.isWeb) return list;
+
+    // Web 滚动条：Material 自动 Scrollbar 的拖拽映射在列表高度变化
+    // （历史加载/新消息）时 thumb 会与鼠标脱开（框架缺陷）。这里禁用
+    // 自动滚动条，改为 RawScrollbar 仅做位置指示（interactive 默认
+    // false），滚动交给滚轮/触摸板/拖列表区，与微信网页版交互一致。
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(
+        context,
+      ).copyWith(scrollbars: false),
+      child: RawScrollbar(
+        controller: _listViewController,
+        thumbVisibility: true,
+        thickness: 6,
+        radius: const Radius.circular(3),
+        child: list,
       ),
     );
   }

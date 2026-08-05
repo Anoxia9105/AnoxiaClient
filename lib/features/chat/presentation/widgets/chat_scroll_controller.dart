@@ -119,29 +119,20 @@ class ChatScrollController {
     }
     _bottomScrollRetries = 0;
 
-    final indexedController = listViewController;
-    if (indexedController is FlutterListViewController) {
-      if (animated) {
-        indexedController.sliverController.animateToIndex(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } else {
-        indexedController.sliverController.jumpToIndex(0);
-      }
-    } else if (animated) {
-      listViewController.animateTo(
+    // Web 与原生统一使用 flutter_list_view 的按索引跳转（精确到底）
+    final indexedController = listViewController as FlutterListViewController;
+    if (animated) {
+      indexedController.sliverController.animateToIndex(
         0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } else {
-      listViewController.jumpTo(0);
+      indexedController.sliverController.jumpToIndex(0);
     }
   }
 
-  /// 滚动到指定消息
+  /// 滚动到指定消息（按索引精确跳转，Web 与原生一致）
   void scrollToMessage(String messageId, List<ChatListItem> flatItems) {
     if (!listViewController.hasClients) return;
 
@@ -154,23 +145,9 @@ class ChatScrollController {
     });
 
     if (index < 0) return;
-    final indexedController = listViewController;
-    if (indexedController is FlutterListViewController) {
-      indexedController.sliverController.animateToIndex(
-        index,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
-
-    final itemCount = flatItems.length;
-    final maxScrollExtent = listViewController.position.maxScrollExtent;
-    final targetOffset = itemCount <= 1
-        ? 0.0
-        : maxScrollExtent * index / (itemCount - 1);
-    listViewController.animateTo(
-      targetOffset.clamp(0.0, maxScrollExtent),
+    final indexedController = listViewController as FlutterListViewController;
+    indexedController.sliverController.animateToIndex(
+      index,
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );
