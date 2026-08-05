@@ -1,4 +1,6 @@
-﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+﻿import 'dart:math' as math;
+
+import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -17,6 +19,7 @@ import 'package:photo_view/photo_view.dart';
 /// 图片查看器组件
 ///
 /// 提供全屏图片预览功能，支持：
+/// - 默认按原图 1:1 显示，超大图等比缩放至不超出屏幕
 /// - 手势缩放（双指捏合、鼠标滚轮）
 /// - 放大/缩小按钮
 /// - 重置缩放按钮
@@ -56,6 +59,11 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   bool _downloading = false;
   // 当前显示的图片 URL（可能随切换变化）
   late String? _currentUrl;
+  // 当前图片解码后的实际像素尺寸（用于计算原图 1:1 缩放）
+  Size? _imageSize;
+  // 图片尺寸监听（复用同一 ImageStream，避免重复下载）
+  ImageStream? _imageSizeStream;
+  ImageStreamListener? _imageSizeStreamListener;
 
   // 缩放步长（每次点击放大/缩小的比例因子）
   static const double _step = 0.2;
@@ -70,13 +78,57 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     _controller = PhotoViewController();
     _scaleStateCtrl = PhotoViewScaleStateController();
     _currentUrl = widget.currentUrl ?? widget.attachment.url;
+    final url = _currentUrl;
+    if (url != null && url.isNotEmpty) _loadImageSize(url);
   }
 
   @override
   void dispose() {
+    _removeImageSizeListener();
     _controller.dispose();
     _scaleStateCtrl.dispose();
     super.dispose();
+  }
+
+  /// 监听图片解码结果，获取图片实际像素尺寸
+  void _loadImageSize(String url) {
+    _removeImageSizeListener();
+    final listener = _createImageSizeListener(url);
+    final stream = appCachedNetworkImageProvider(url).resolve(
+      const ImageConfiguration(),
+    );
+    _imageSizeStreamListener = listener;
+    _imageSizeStream = stream;
+    stream.addListener(listener);
+  }
+
+  ImageStreamListener _createImageSizeListener(String url) {
+    return ImageStreamListener(
+      (ImageInfo info, bool synchronousCall) {
+        final size = Size(
+          info.image.width.toDouble(),
+          info.image.height.toDouble(),
+        );
+        if (!mounted || size == _imageSize) return;
+        // 使用帧回调，避免在构建阶段调用 setState
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || size == _imageSize || _currentUrl != url) return;
+          setState(() => _imageSize = size);
+        });
+      },
+      onError: (Object error, StackTrace? stackTrace) {
+        // 尺寸获取失败时回退到附件元数据（attachment.width/height）
+      },
+    );
+  }
+
+  void _removeImageSizeListener() {
+    final listener = _imageSizeStreamListener;
+    if (listener != null) {
+      _imageSizeStream?.removeListener(listener);
+    }
+    _imageSizeStream = null;
+    _imageSizeStreamListener = null;
   }
 
   /// 鼠标滚轮缩放事件处理（桌面端）
@@ -286,36 +338,45 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
           children: [
             // 主图片展示区
             Positioned.fill(
-              child: GestureDetector(
-                // 点击任意位置关闭（外层确保即使图片加载失败也能关闭）
-                onTap: () => Navigator.pop(context),
-                child: Listener(
-                  // 监听鼠标滚轮事件（桌面端）
-                  onPointerSignal: _onPointerSignal,
-                  child: PhotoView(
-                    key: ValueKey(attachment.url),
-                    controller: _controller,
-                    scaleStateController: _scaleStateCtrl,
-                    onTapUp: (context, details, value) =>
-                        Navigator.pop(context),
-                    imageProvider: appCachedNetworkImageProvider(
-                      attachment.url!,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // 计算缩放边界：默认原图 1:1，超大图等比缩放至不超出屏幕
+                  final scales = _computeScales(attachment, constraints);
+                  return GestureDetector(
+                    // 点击任意位置关闭（外层确保即使图片加载失败也能关闭）
+                    onTap: () => Navigator.pop(context),
+                    child: Listener(
+                      // 监听鼠标滚轮事件（桌面端）
+                      onPointerSignal: _onPointerSignal,
+                      child: PhotoView(
+                        key: ValueKey(attachment.url),
+                        controller: _controller,
+                        scaleStateController: _scaleStateCtrl,
+                        onTapUp: (context, details, value) =>
+                            Navigator.pop(context),
+                        imageProvider: appCachedNetworkImageProvider(
+                          attachment.url!,
+                        ),
+                        filterQuality: FilterQuality.high,
+                        backgroundDecoration: const BoxDecoration(
+                          color: Colors.black,
+                        ),
+                        initialScale: scales.initialScale,
+                        minScale: scales.minScale,
+                        maxScale: scales.maxScale,
+                        enableRotation: false,
+                        basePosition: Alignment.center,
+                        // 仅在当前附件与初始一致时启用 Hero 动画
+                        heroAttributes: _heroAttributesFor(attachment),
+                        loadingBuilder: (context, event) => _buildLoading(
+                          event,
+                        ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildError(),
+                      ),
                     ),
-                    filterQuality: FilterQuality.high,
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.black,
-                    ),
-                    initialScale: PhotoViewComputedScale.contained,
-                    minScale: PhotoViewComputedScale.contained * 0.8,
-                    maxScale: PhotoViewComputedScale.covered * 2.5,
-                    enableRotation: false,
-                    basePosition: Alignment.center,
-                    // 仅在当前附件与初始一致时启用 Hero 动画
-                    heroAttributes: _heroAttributesFor(attachment),
-                    loadingBuilder: (context, event) => _buildLoading(event),
-                    errorBuilder: (context, error, stackTrace) => _buildError(),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
             // 多图切换按钮（左右箭头）
@@ -429,12 +490,73 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   /// 切换到指定索引的图片
   void _switchTo(int index, List<Attachment> attachments) {
     if (index < 0 || index >= attachments.length) return;
-    setState(() => _currentUrl = attachments[index].url);
+    final url = attachments[index].url;
+    setState(() {
+      _currentUrl = url;
+      // 清空旧图尺寸，等待新图解码结果
+      _imageSize = null;
+    });
+    if (url != null && url.isNotEmpty) _loadImageSize(url);
     // 在下一帧重置缩放为初始状态
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _controller.scale = _controller.initial.scale;
     });
+  }
+
+  /// 计算图片初始缩放与缩放边界
+  ///
+  /// 规则：图片以原图 1:1 显示；若原图超过屏幕，则等比缩小至完整显示。
+  /// 在此基础上仍支持放大/缩小查看。
+  _PhotoViewScales _computeScales(
+    Attachment attachment,
+    BoxConstraints constraints,
+  ) {
+    // 视口或图片尺寸未知时，回退到默认“完整显示”策略
+    final imageSize = _sizeOf(attachment);
+    if (constraints.maxWidth <= 0 ||
+        constraints.maxHeight <= 0 ||
+        imageSize == null) {
+      return _PhotoViewScales(
+        initialScale: PhotoViewComputedScale.contained,
+        minScale: PhotoViewComputedScale.contained * 0.8,
+        maxScale: PhotoViewComputedScale.covered * 2.5,
+      );
+    }
+
+    final viewportW = constraints.maxWidth;
+    final viewportH = constraints.maxHeight;
+    final imageW = imageSize.width;
+    final imageH = imageSize.height;
+
+    // 等比缩放至完整显示的倍数（可能大于 1，此时原图本就小于屏幕）
+    final double fit = math.min(viewportW / imageW, viewportH / imageH);
+    // 覆盖整个屏幕所需倍数
+    final double cover = math.max(viewportW / imageW, viewportH / imageH);
+    // 初始：原图 1:1；超大图则等比缩小到屏幕内
+    final double initial = math.min(1.0, fit);
+    // 缩小下限：不超过完整显示比例的一半（小图不可再小于 1:1）
+    final double min = math.min(initial, fit * 0.5);
+    // 放大上限：至少可放大 2 倍
+    final double max = math.max(2.0, cover * 2.5);
+
+    return _PhotoViewScales(
+      initialScale: initial,
+      minScale: min,
+      maxScale: max,
+    );
+  }
+
+  /// 获取图片实际尺寸：优先解码结果，其次附件元数据
+  Size? _sizeOf(Attachment attachment) {
+    final size = _imageSize;
+    if (size != null) return size;
+    final width = attachment.width;
+    final height = attachment.height;
+    if (width != null && width > 0 && height != null && height > 0) {
+      return Size(width.toDouble(), height.toDouble());
+    }
+    return null;
   }
 
   /// 生成 Hero 属性（仅在当前附件与初始附件一致时返回，保证过渡正确）
@@ -502,4 +624,17 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       ),
     );
   }
+}
+
+/// PhotoView 缩放参数集合
+class _PhotoViewScales {
+  final dynamic initialScale;
+  final dynamic minScale;
+  final dynamic maxScale;
+
+  const _PhotoViewScales({
+    required this.initialScale,
+    required this.minScale,
+    required this.maxScale,
+  });
 }

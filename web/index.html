@@ -100,14 +100,12 @@
       event.preventDefault();
     }, false);
 
-    // 哨兵历史条目：阻止移动端左滑/浏览器返回耗尽历史后退出应用。
-    // 每次返回手势触发 popstate 时补回一条哨兵，浏览器历史永不到底，
-    // 左滑在浏览器层变为无操作（App 内返回仍由 WebNavigationBlocker 拦截）。
-    // 须在 flutter_bootstrap.js 加载前注册，先于 Flutter 引擎的 popstate 监听执行。
-    history.pushState(null, '', location.href);
-    window.addEventListener('popstate', function () {
-      history.pushState(null, '', location.href);
-    });
+    // 注意：切勿在此处手动 pushState / 监听 popstate 补历史条目（哨兵历史）！
+    // Flutter 引擎（SingleEntryBrowserHistory）自维护 origin/flutter 两个历史
+    // 条目，tearDown 时 go(-1) 后要求当前条目必须是 origin；哨兵在 popstate
+    // 中 pushState(null) 会破坏该不变量，WASM 下直接抛未捕获异常
+    // （history.dart:287 断言 / release 下 NullError）。
+    // 浏览器返回/前进已在 Flutter 层由 WebNavigationBlocker 拦截。
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
