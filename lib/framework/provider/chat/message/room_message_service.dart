@@ -213,6 +213,19 @@ final roomMessageIndexProvider =
       return index;
     });
 
+/// 引用消息查询参数
+typedef QuotedMessageLookupArgs = ({String roomId, String messageId});
+
+/// 查询被引用消息：优先返回当前加载窗口内的消息（同步可读，无闪烁）；
+/// 窗口外则查本地库——本地库也查不到说明消息已被撤回/删除（或从未同步）。
+final quotedMessageLookupProvider = FutureProvider.autoDispose
+    .family<ChatMessage?, QuotedMessageLookupArgs>((ref, args) {
+  final inWindow =
+      ref.watch(roomMessageIndexProvider(args.roomId))[args.messageId];
+  if (inWindow != null) return inWindow;
+  return ref.read(localDataSourceProvider).getMessageById(args.messageId);
+});
+
 /// 历史消息加载状态追踪
 ///
 /// value 为 null 表示无错误，非 null 表示加载失败的错误信息

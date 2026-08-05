@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_menu/chat_message_context_menu.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';
@@ -209,15 +210,21 @@ class MessageContent extends ConsumerWidget {
     final replyTo = message.payload?.replyTo;
     if (replyTo == null || replyTo.isEmpty) return body;
 
+    final roomId = message.roomId;
+    final quotedLookup = (roomId == null || roomId.isEmpty)
+        ? const AsyncValue<ChatMessage?>.data(null)
+        : ref.watch(
+            quotedMessageLookupProvider((roomId: roomId, messageId: replyTo)),
+          );
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ReplyPreviewBar(
-          message: _findQuotedMessage(ref, message, replyTo),
-          fallbackMessageId: replyTo,
+          message: quotedLookup.value,
           dense: true,
-          onTap: () => _jumpToReply(ref, message, replyTo),
+          onTap: () => _jumpToReply(ref, message, replyTo, quotedLookup),
         ),
         const SizedBox(height: 6),
         body,
@@ -225,22 +232,20 @@ class MessageContent extends ConsumerWidget {
     );
   }
 
-  /// 查找被引用的消息
-  ChatMessage? _findQuotedMessage(
+  /// 跳转到引用的消息；已确认被引用消息不存在（已撤回/删除）时直接提示，
+  /// 不再触发无意义的补拉历史。
+  void _jumpToReply(
     WidgetRef ref,
     ChatMessage message,
     String messageId,
+    AsyncValue<ChatMessage?> quotedLookup,
   ) {
     final roomId = message.roomId;
-    if (roomId == null || roomId.isEmpty) return null;
-
-    return ref.watch(roomMessageIndexProvider(roomId))[messageId];
-  }
-
-  /// 跳转到引用的消息
-  void _jumpToReply(WidgetRef ref, ChatMessage message, String messageId) {
-    final roomId = message.roomId;
     if (roomId == null || roomId.isEmpty) return;
+    if (quotedLookup.hasValue && quotedLookup.value == null) {
+      Toast.showToast('chat_quote_not_found'.tr());
+      return;
+    }
     ref
         .read(replyJumpControllerProvider.notifier)
         .jumpTo(roomId: roomId, messageId: messageId);

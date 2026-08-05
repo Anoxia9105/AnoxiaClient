@@ -591,6 +591,14 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                     child: ChatEmojiWidget(
                       closeSelected: _closeAllPanels,
                       onEmojiSelected: _inputController.insertTextAtCursor,
+                      onStickerSelected: (sticker) {
+                        ref
+                            .read(chatInputControllerProvider(widget.roomId).notifier)
+                            .sendStickerMessage(sticker);
+                      },
+                      showSearch: false,
+                      // 手机端选中后保持面板打开，键盘不弹出也不整体收起
+                      closeOnSelect: false,
                     ),
                   ),
                 },

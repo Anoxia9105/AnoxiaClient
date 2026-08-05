@@ -51,11 +51,16 @@ class ImageMessageStrategy extends MessageRenderStrategy {
           ).location,
           extra: attachment,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Hero(
-            tag: heroTag,
-            child: CachedNetworkImageView(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Hero(
+              tag: heroTag,
+              child: CachedNetworkImageView(
               imageUrl: attachment.url!,
               width: displayWidth,
               height: displayHeight,
@@ -70,7 +75,8 @@ class ImageMessageStrategy extends MessageRenderStrategy {
             ),
           ),
         ),
-      );
+      ),
+    );
     }
 
     // 澶氬浘鏄剧ず (涔濆鏍奸鏍?
@@ -90,11 +96,16 @@ class ImageMessageStrategy extends MessageRenderStrategy {
             ).location,
             extra: attachment,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: Hero(
-              tag: heroTag,
-              child: CachedNetworkImageView(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!, width: 1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Hero(
+                tag: heroTag,
+                child: CachedNetworkImageView(
                 imageUrl: attachment.url!,
                 width: gridSize,
                 height: gridSize,
@@ -110,7 +121,8 @@ class ImageMessageStrategy extends MessageRenderStrategy {
               ),
             ),
           ),
-        );
+        ),
+      );
       }).toList(),
     );
   }

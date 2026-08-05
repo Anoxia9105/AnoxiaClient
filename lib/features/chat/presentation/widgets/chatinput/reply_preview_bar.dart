@@ -17,10 +17,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// 包括发送者名称、发送时间和消息内容摘要。
 /// 支持紧凑模式（[dense]）和可选的操作按钮。
 class ReplyPreviewBar extends ConsumerWidget {
-  /// 被引用的消息对象，为 null 时显示回退文本
+  /// 被引用的消息对象，为 null 时显示「引用消息不存在」回退文本
   final ChatMessage? message;
-  /// 当 [message] 为 null 时使用的回退消息 ID
-  final String? fallbackMessageId;
   /// 清除引用回调，不为 null 时显示关闭按钮
   final VoidCallback? onClear;
   /// 点击预览栏的回调，不为 null 时启用点击效果
@@ -31,7 +29,6 @@ class ReplyPreviewBar extends ConsumerWidget {
   const ReplyPreviewBar({
     super.key,
     required this.message,
-    this.fallbackMessageId,
     this.onClear,
     this.onTap,
     this.dense = false,
@@ -42,7 +39,7 @@ class ReplyPreviewBar extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final sender = _displaySender(ref, message);
     final time = DateUtil.formatTimestampToTime(message?.timestamp);
-    final content = _displayContent(message, fallbackMessageId);
+    final content = _displayContent(message);
     final bar = Container(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 8 : 10,
@@ -128,7 +125,7 @@ class ReplyPreviewBar extends ConsumerWidget {
   }
 
   static String _displaySender(WidgetRef ref, ChatMessage? message) {
-    if (message == null) return '引用消息';
+    if (message == null) return '';
 
     final currentUser = ref.watch(authControllerProvider).value;
     if (message.senderId != null && message.senderId == currentUser?.userId) {
@@ -153,11 +150,8 @@ class ReplyPreviewBar extends ConsumerWidget {
     return '未知用户';
   }
 
-  static String _displayContent(ChatMessage? message, String? fallbackId) {
-    if (message == null) {
-      if (fallbackId == null || fallbackId.isEmpty) return '引用消息';
-      return '引用消息 $fallbackId';
-    }
+  static String _displayContent(ChatMessage? message) {
+    if (message == null) return 'chat_quote_not_found'.tr();
 
     final payload = message.payload;
     final content = (payload?.content ?? message.content).trim();
@@ -172,7 +166,11 @@ class ReplyPreviewBar extends ConsumerWidget {
             ? '[文件] ${payload!.file!.name}'
             : '[文件]',
       MessageType.emoji =>
-        payload?.emojiCode?.isNotEmpty == true ? payload!.emojiCode! : '[表情]',
+        payload?.asset?.url?.isNotEmpty == true
+            ? '[表情]'
+            : payload?.emojiCode?.isNotEmpty == true
+            ? payload!.emojiCode!
+            : '[表情]',
       MessageType.system => '[系统消息]',
       MessageType.card => '[卡片]',
       MessageType.location => '[位置]',

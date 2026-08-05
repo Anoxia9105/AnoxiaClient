@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/framework/extensions/quill_cursor_x.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
@@ -82,15 +82,11 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     super.dispose();
   }
 
-  /// 显示 @提及成员选择列表
-  void _showMentionList(MentionStateData state) {
-    _closeMentionList();
-    final offset = _editorKey.getCaretClientPosition();
-    if (offset == null) return;
-
+  /// 构建可提及用户列表（排除自己）
+  List<MentionUser> _buildMentionUsers() {
     final currentUser = ref.read(authControllerProvider).value;
     final roomMembers = ref.read(roomMembersProvider(widget.roomId));
-    final mentionUsers = roomMembers
+    return roomMembers
         .where((m) => m.userId != currentUser?.userId)
         .map(
           (m) => MentionUser(
@@ -100,12 +96,19 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
           ),
         )
         .toList();
+  }
+
+  /// 显示 @提及成员选择列表
+  void _showMentionList(MentionStateData state) {
+    _closeMentionList();
+    final offset = _editorKey.getCaretClientPosition();
+    if (offset == null) return;
 
     _cancelMentionToast = Toast.showWidgetOffset(
       target: offset,
       direction: PreferDirection.topLeft,
       child: MentionListWidget(
-        users: mentionUsers,
+        users: _buildMentionUsers(),
         onUserSelected: (user) => _insertMention(user, state.cursorPosition),
       ),
     );
@@ -145,11 +148,44 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
 
   /// 处理键盘按键事件
   ///
-  /// - Enter：发送消息（非 Shift 组合）
+  /// - 上下键：@提及列表弹窗显示时切换选中用户
+  /// - Enter：@提及列表显示时选中高亮用户（等价于鼠标点击），否则发送消息（非 Shift 组合）
   /// - Ctrl/Cmd + V：处理粘贴操作
   KeyEventResult _handleKeyPress(KeyEvent event, QuillController controller) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.enter &&
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final mentionState = ref.read(mentionStateProvider);
+    if (mentionState.isShowing) {
+      final filtered = MentionUser.filterUsers(
+        _buildMentionUsers(),
+        mentionState.searchText,
+      );
+
+      if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+          event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        if (filtered.isNotEmpty) {
+          final delta = event.logicalKey == LogicalKeyboardKey.arrowDown
+              ? 1
+              : -1;
+          final next =
+              (mentionState.selectedIndex + delta + filtered.length) %
+              filtered.length;
+          ref.read(mentionStateProvider.notifier).updateSelectedIndex(next);
+        }
+        return KeyEventResult.handled;
+      }
+
+      if (event.logicalKey == LogicalKeyboardKey.enter &&
+          !HardwareKeyboard.instance.isShiftPressed) {
+        final index = mentionState.selectedIndex;
+        if (index >= 0 && index < filtered.length) {
+          _insertMention(filtered[index], mentionState.cursorPosition);
+          return KeyEventResult.handled;
+        }
+      }
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.enter &&
         !HardwareKeyboard.instance.isShiftPressed) {
       ref
           .read(chatInputControllerProvider(widget.roomId).notifier)
@@ -159,7 +195,6 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     }
 
     final isPaste =
-        event is KeyDownEvent &&
         (HardwareKeyboard.instance.isControlPressed ||
             HardwareKeyboard.instance.isMetaPressed) &&
         event.logicalKey == LogicalKeyboardKey.keyV;
@@ -246,6 +281,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         /// 聊天工具栏
         ChatQuillToolbar(
           controller: controller,
+          roomId: widget.roomId,
           onSend: () {
             ref
                 .read(chatInputControllerProvider(widget.roomId).notifier)

@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -448,6 +449,29 @@ class ChatInputController extends _$ChatInputController {
             ? mentionIds
             : null,
         emojiCode: isSingleEmoji ? content.characters.first : null,
+      ),
+    );
+  }
+
+  /// 发送贴图表情（表情包）
+  ///
+  /// 以 [MessageType.emoji] 消息发送：[emojiCode] = 表情标识，
+  /// [asset] = 表情图片 URL/宽高，对端按图片渲染。
+  void sendStickerMessage(Sticker sticker) {
+    final room = ref.read(currentRoomProvider(roomId));
+    if (room == null) return;
+
+    _doSend(
+      type: MessageType.emoji,
+      payload: MessagePayload(
+        content: sticker.stickerKey,
+        emojiCode: sticker.stickerKey,
+        asset: Attachment(
+          url: sticker.imageUrl,
+          width: sticker.width,
+          height: sticker.height,
+          kind: 'FILE',
+        ),
       ),
     );
   }
@@ -916,34 +940,42 @@ class MentionState extends _$MentionState {
       cursorPosition: cursorPosition,
       searchText: searchText,
       atSymbolOffset: atSymbolOffset,
+      selectedIndex: 0,
     );
   }
 
   /// 隐藏提及选择器
   void hide() {
-    state = state.copyWith(isShowing: false);
+    state = state.copyWith(isShowing: false, selectedIndex: 0);
   }
 
   /// 更新搜索文本（用户输入了更多字符）
   void updateSearch(String text) {
-    state = state.copyWith(searchText: text);
+    state = state.copyWith(searchText: text, selectedIndex: 0);
+  }
+
+  /// 更新键盘选中的用户索引
+  void updateSelectedIndex(int index) {
+    state = state.copyWith(selectedIndex: index);
   }
 }
 
 /// @提及状态数据类
 ///
-/// 包含是否显示、光标位置、搜索关键字、@符号偏移量（用于定位）。
+/// 包含是否显示、光标位置、搜索关键字、@符号偏移量（用于定位）、键盘选中索引。
 class MentionStateData {
   final bool isShowing;
   final int cursorPosition;
   final String searchText;
   final Offset? atSymbolOffset; // @ 符号在屏幕上的偏移，用于锚定弹出层
+  final int selectedIndex; // 键盘上下键选中的用户索引（-1 表示未选中）
 
   MentionStateData({
     this.isShowing = false,
     this.cursorPosition = 0,
     this.searchText = '',
     this.atSymbolOffset,
+    this.selectedIndex = 0,
   });
 
   MentionStateData copyWith({
@@ -951,12 +983,14 @@ class MentionStateData {
     int? cursorPosition,
     String? searchText,
     Offset? atSymbolOffset,
+    int? selectedIndex,
   }) {
     return MentionStateData(
       isShowing: isShowing ?? this.isShowing,
       cursorPosition: cursorPosition ?? this.cursorPosition,
       searchText: searchText ?? this.searchText,
       atSymbolOffset: atSymbolOffset ?? this.atSymbolOffset,
+      selectedIndex: selectedIndex ?? this.selectedIndex,
     );
   }
 }

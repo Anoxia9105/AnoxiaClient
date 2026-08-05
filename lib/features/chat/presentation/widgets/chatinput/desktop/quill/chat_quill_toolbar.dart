@@ -4,6 +4,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_w
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -27,11 +28,13 @@ import 'colors_box.dart';
 /// - 发送按钮
 ///
 /// [controller] Quill 编辑器控制器
+/// [roomId] 当前聊天房间 ID（用于发送贴图等消息）
 /// [onSend] 发送按钮点击回调
 /// [onImagePressed] 图片按钮点击回调
 /// [onFilePressed] 文件按钮点击回调
 class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
+  final String roomId;
   final VoidCallback onSend;
   final ValueChanged<LocationPayload> onLocationSubmit;
   final VoidCallback? onImagePressed;
@@ -40,6 +43,7 @@ class ChatQuillToolbar extends ConsumerWidget {
   const ChatQuillToolbar({
     super.key,
     required this.controller,
+    required this.roomId,
     required this.onSend,
     required this.onLocationSubmit,
     this.onImagePressed,
@@ -288,6 +292,16 @@ class ChatQuillToolbar extends ConsumerWidget {
                                     text: emoji,
                                     controller: controller,
                                   );
+                                },
+                                onStickerSelected: (sticker) {
+                                  ref
+                                      .read(
+                                        chatInputControllerProvider(
+                                          roomId,
+                                        ).notifier,
+                                      )
+                                      .sendStickerMessage(sticker);
+                                  close?.call();
                                 },
                               ),
                             ),

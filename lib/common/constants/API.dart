@@ -154,6 +154,9 @@ class API {
   /// 获取收藏列表
   static const String chatFavoriteList = '/chat/favorite/list';
 
+  /// 获取表情包列表（含包内表情）
+  static const String stickerPacks = '/chat/sticker/packs';
+
   // ======================== 通话 ========================
   /// 获取通话 token
   static const String callToken = '/call/token';

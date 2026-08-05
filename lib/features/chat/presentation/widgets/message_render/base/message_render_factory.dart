@@ -2,6 +2,7 @@
 import 'package:anoxia/features/chat/presentation/widgets/message_render/card_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/location_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/quill_message_strategy.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_render/sticker_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/system_message_strategy.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ class MessageRenderFactory {
     MessageType.system: SystemMessageStrategy(),
     MessageType.audio: AudioMessageStrategy(),
     MessageType.video: FileMessageStrategy(),
-    MessageType.emoji: TextMessageStrategy(),
+    MessageType.emoji: StickerMessageStrategy(),
     MessageType.location: LocationMessageStrategy(),
     MessageType.card: CardMessageStrategy(),
   };
