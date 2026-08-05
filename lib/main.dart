@@ -515,6 +515,12 @@ Widget _buildAppWrapper(Widget home, {String? startLocale}) {
         locale: context.locale,
         home: home,
         debugShowCheckedModeBanner: false,
+        // 大字号（无障碍）模式下将全局文本缩放钳制在 1.3 以内，
+        // 防止小屏设备 + 系统放大字体叠加导致布局溢出。
+        builder: (context, child) => MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     ),
   );

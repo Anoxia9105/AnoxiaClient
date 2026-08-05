@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/app/unsupported_device_page.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_sidebar.dart';
 import 'package:anoxia/common/widgets/app/mobile_bottom_bar.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
@@ -22,20 +23,34 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 /// - 移动端：底部导航栏
 ///
 /// 使用 [IndexedStack] 保持各页面状态，避免重复重建
-class MainLayoutPage extends ConsumerWidget {
+class MainLayoutPage extends ConsumerStatefulWidget {
   const MainLayoutPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainLayoutPage> createState() => _MainLayoutPageState();
+}
+
+class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
+  /// 用户在小屏提示页点击「仍要进入」后放行（仅本次会话有效）。
+  ///
+  /// 仅 Web/桌面这类可自由缩放窗口的场景会展示该入口；
+  /// 真机屏幕物理尺寸无法放大，故不放行。
+  bool _forceEnterSmallDevice = false;
+
+  @override
+  Widget build(BuildContext context) {
     final layout = ref.watch(layoutControllerProvider);
     // 确保索引在有效范围内，防止数组越界
     final safeIndex = layout.currentIndex.clamp(0, layout.items.length - 1);
 
     final size = MediaQuery.of(context).size;
-    // 设备屏幕过小，展示提示而非崩溃
-    if (size.width < 320 || size.height <= 320) {
-      return Scaffold(
-        body: Center(child: Text('layout_too_small_device'.tr())),
+
+    // 设备屏幕过小：展示品牌化提示页（非纯文本），而不是直接崩溃或溢出
+    if (DeviceUtil.isScreenTooSmall(context) && !_forceEnterSmallDevice) {
+      return UnsupportedDevicePage(
+        onContinue: DeviceUtil.isRealMobile()
+            ? null
+            : () => setState(() => _forceEnterSmallDevice = true),
       );
     }
 
@@ -73,6 +88,10 @@ class MainLayoutPage extends ConsumerWidget {
     }
 
     if (DeviceUtil.isMobile(context)) {
+      // 抽屉宽度取屏幕 65%，但限制在 240~300 的可用区间：
+      // 窄屏下不低于 240，避免抽屉被压得过窄无法操作；
+      // 宽屏下不超 300，避免抽屉占比过大
+      final drawerWidth = (size.width * 0.65).clamp(240.0, 300.0);
       return ZoomDrawer(
         menuBackgroundColor: Theme.of(context).colorScheme.primary, // 抽屉背景色
         menuScreen: const MenuPage(), // 左侧抽屉菜单
@@ -80,8 +99,8 @@ class MainLayoutPage extends ConsumerWidget {
         borderRadius: 24.0,
         showShadow: false,
         angle: 0.0, // 纯平移
-        slideWidth: size.width * 0.65, // 侧滑宽度 65%
-        menuScreenWidth: size.width * 0.65, // 抽屉宽度 65%
+        slideWidth: drawerWidth, // 侧滑宽度（65%，封顶 280）
+        menuScreenWidth: drawerWidth, // 抽屉宽度（与侧滑宽度保持一致）
       );
     }
 

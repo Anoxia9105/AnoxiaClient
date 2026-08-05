@@ -12,6 +12,24 @@ class DeviceUtil {
   /// 平板最大宽度阈值
   static const double tabletMaxWidth = 1024;
 
+  /// 主界面支持的最小屏幕宽度（逻辑像素）
+  ///
+  /// 低于该宽度时聊天/联系人等核心布局可能溢出或无法操作，
+  /// 统一按此阈值拦截并展示「不支持过小设备」提示页。
+  static const double minSupportedWidth = 320;
+
+  /// 主界面支持的最小屏幕高度（逻辑像素）
+  ///
+  /// 只用于拦截被压得过扁的窗口（如 Web 端手动缩得很矮的浏览器窗口）。
+  /// 阈值不能过高，否则会误伤横屏手机（如 iPhone SE 横屏高恰为 320）。
+  static const double minSupportedHeight = 240;
+
+  /// 判断屏幕尺寸是否过小、无法正常展示主界面
+  static bool isScreenTooSmall(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return size.width < minSupportedWidth || size.height < minSupportedHeight;
+  }
+
   /// 是否为 Web 环境
   static bool get isWeb => kIsWeb;
 
