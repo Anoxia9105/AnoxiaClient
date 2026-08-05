@@ -306,7 +306,13 @@ class WsController extends _$WsController {
         if (ack != null) {
           // 打印 ACK 详情
           log.debug('[SERVER ACK] topic=$topic code=${ack.code}');
-          _handleAckV5(ack);
+          try {
+            _handleAckV5(ack);
+          } catch (ackError, ackStack) {
+            // ACK 处理是业务副作用（刷新 Riverpod 状态等），失败不应中断后续帧的解析。
+            // 例如 Web 热重载后 ref 可能持有旧模块对象，触发 NoSuchMethodError。
+            log.error('WS ACK 处理异常', ackError, ackStack);
+          }
         }
         return;
       }
@@ -317,14 +323,19 @@ class WsController extends _$WsController {
       );
       if (packetData != null) {
         final frame = PacketFrame(topic: effectiveTopic, data: packetData);
-        if (!_messageController.isClosed) {
-          _messageController.add(frame);
+        try {
+          if (!_messageController.isClosed) {
+            _messageController.add(frame);
+          }
+        } catch (dispatchError, dispatchStack) {
+          // 派发到业务订阅者时失败（如监听者持有热重载前的旧类型）不应中断消息解析。
+          log.error('WS 消息派发异常', dispatchError, dispatchStack);
         }
       } else {
         log.warning('[SERVER DATA] 解析失败（未知的 Topic 或解析器缺失）-> Topic: $topic');
       }
-    } catch (e) {
-      log.error('WS 消息解析异常', e);
+    } catch (e, st) {
+      log.error('WS 消息解析异常', e, st);
     }
   }
 

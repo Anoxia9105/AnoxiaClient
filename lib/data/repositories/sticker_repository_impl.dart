@@ -20,8 +20,8 @@ class StickerRepositoryImpl implements StickerRepository {
   }
 
   /// 兼容多种后端响应格式
-  dynamic _extractList(dynamic data) {
-    if (data is! Map) return const [];
+  List<dynamic> _extractList(dynamic data) {
+    if (data is! Map) return const <dynamic>[];
 
     final rows = data['rows'];
     if (rows is List) return rows;

@@ -278,7 +278,11 @@ class ChatMessages extends _$ChatMessages {
   void build() {
     final stream = ref.read(wsControllerProvider.notifier).messageStream;
     final subscription = stream
-        .where((frame) => frame.topic == PacketType.message)
+        .where(
+          (frame) =>
+              frame.topic == PacketType.message &&
+              frame.data is RoomMessage,
+        )
         .map((frame) => frame.data as RoomMessage)
         .listen(_handleIncomingMessage);
 

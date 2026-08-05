@@ -74,7 +74,8 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
           bottom: EmojiPickerItem.emojiView,
         ),
         skinToneConfig: SkinToneConfig(
-          dialogBackgroundColor: Theme.of(context).brightness == Brightness.light
+          dialogBackgroundColor:
+              Theme.of(context).brightness == Brightness.light
               ? Colors.white
               : Colors.black87,
         ),
@@ -186,7 +187,11 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         Expanded(
           child: packsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => _buildLoadError(),
+            // error: (error, stackTrace) => _buildLoadError(),
+            error: (error, stackTrace) {
+              print('加载表情包失败: $error\n$stackTrace');
+              return _buildLoadError();
+            },
             data: (packs) => _buildStickerGrid(packs),
           ),
         ),
@@ -312,7 +317,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 96,
+        maxCrossAxisExtent: 80,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
       ),
@@ -392,11 +397,11 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
     );
   }
 
-  /// 面板内贴图尺寸：默认 64×64，按宽高等比缩放，最大边 80px，最小边 40px
+  /// 面板内贴图尺寸：默认 56×56，按宽高等比缩放，最大边 64px，最小边 36px
   Size _resolveStickerSize(Sticker sticker) {
-    const maxSide = 80.0;
-    const minSide = 40.0;
-    const defaultSide = 64.0;
+    const maxSide = 64.0;
+    const minSide = 36.0;
+    const defaultSide = 56.0;
 
     final rawWidth = sticker.width;
     final rawHeight = sticker.height;

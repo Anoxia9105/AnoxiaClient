@@ -27,7 +27,11 @@ class SystemMessageService extends _$SystemMessageService {
     final stream = ref.read(wsControllerProvider.notifier).messageStream;
 
     final subscription = stream
-        .where((frame) => frame.topic == PacketType.message)
+        .where(
+          (frame) =>
+              frame.topic == PacketType.message &&
+              frame.data is RoomMessage,
+        )
         .map((frame) => frame.data as RoomMessage)
         .where((msg) => msg.messageType == MessageType.system) // 只拦截系统消息
         .listen(_onSystemMessageReceived);

@@ -132,7 +132,11 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     final subscription = ref
         .read(wsControllerProvider.notifier)
         .messageStream
-        .where((frame) => frame.topic == PacketType.highFrequency)
+        .where(
+          (frame) =>
+              frame.topic == PacketType.highFrequency &&
+              frame.data is HighMessage,
+        )
         .map((frame) => frame.data as HighMessage)
         .listen(_handleHighMessage);
 

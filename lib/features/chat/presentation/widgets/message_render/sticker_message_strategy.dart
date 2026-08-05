@@ -68,11 +68,11 @@ class StickerMessageStrategy extends MessageRenderStrategy {
     );
   }
 
-  /// 表情图片尺寸：默认 120×120，按附件宽高等比缩放，最大边 160px，最小边 60px
+  /// 表情图片尺寸：默认 96×96，按附件宽高等比缩放，最大边 120px，最小边 48px
   Size _resolveStickerSize(Attachment asset) {
-    const maxSide = 160.0;
-    const minSide = 60.0;
-    const defaultSide = 120.0;
+    const maxSide = 120.0;
+    const minSide = 48.0;
+    const defaultSide = 96.0;
 
     final rawWidth = asset.width;
     final rawHeight = asset.height;
