@@ -5,6 +5,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -183,60 +184,31 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                       onPressed: selectedContactIds.isEmpty
                           ? null
                           : () async {
-                              Toast.showWidget(
-                                context,
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: colorScheme.shadow.withValues(
-                                          alpha: 0.08,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text('member_adding'.tr()),
-                                    ],
-                                  ),
-                                ),
-                              );
+                              final cancelLoading = BotToast.showLoading();
+                              try {
+                                final result = await ref
+                                    .read(roomMemberServiceProvider.notifier)
+                                    .addMembers(
+                                      widget.roomId,
+                                      selectedContactIds.toList(),
+                                    );
 
-                              final result = await ref
-                                  .read(roomMemberServiceProvider.notifier)
-                                  .addMembers(
-                                    widget.roomId,
-                                    selectedContactIds.toList(),
-                                  );
-
-                              if (!context.mounted) return;
-                              Navigator.pop(context);
-                              final success = result != null;
-                              Toast.showToast(
-                                result == 'PENDING'
-                                    ? 'member_add_pending'.tr()
-                                    : success
-                                        ? 'member_add_success'.tr()
-                                        : 'member_add_failed'.tr(),
-                                type: success
-                                    ? ToastType.success
-                                    : ToastType.error,
-                              );
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                final success = result != null;
+                                Toast.showToast(
+                                  result == 'PENDING'
+                                      ? 'member_add_pending'.tr()
+                                      : success
+                                          ? 'member_add_success'.tr()
+                                          : 'member_add_failed'.tr(),
+                                  type: success
+                                      ? ToastType.success
+                                      : ToastType.error,
+                                );
+                              } finally {
+                                cancelLoading();
+                              }
                             },
                       child: Text(
                         'member_add_count'.tr(

@@ -4,6 +4,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -234,65 +235,36 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                           ? null
                           : () async {
                               // 显示加载状态
-                              Toast.showWidget(
-                                context,
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(10),
-                                        spreadRadius: 0,
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text('member_adding'.tr()),
-                                    ],
-                                  ),
-                                ),
-                              );
+                              final cancelLoading = BotToast.showLoading();
+                              try {
+                                // 调用添加成员的API
+                                final result = await ref
+                                    .read(roomMemberServiceProvider.notifier)
+                                    .addMembers(
+                                      widget.roomId,
+                                      selectedContactIds.toList(),
+                                    );
 
-                              // 调用添加成员的API
-                              final result = await ref
-                                  .read(roomMemberServiceProvider.notifier)
-                                  .addMembers(
-                                    widget.roomId,
-                                    selectedContactIds.toList(),
-                                  );
+                                if (!context.mounted) return;
 
-                              if (!context.mounted) return;
+                                // 关闭对话框
+                                Navigator.pop(context);
 
-                              // 关闭对话框
-                              Navigator.pop(context);
-
-                              // 显示结果
-                              final success = result != null;
-                              Toast.showToast(
-                                result == 'PENDING'
-                                    ? 'member_add_pending'.tr()
-                                    : success
-                                        ? 'member_add_success'.tr()
-                                        : 'member_add_failed'.tr(),
-                                type: success
-                                    ? ToastType.success
-                                    : ToastType.error,
-                              );
+                                // 显示结果
+                                final success = result != null;
+                                Toast.showToast(
+                                  result == 'PENDING'
+                                      ? 'member_add_pending'.tr()
+                                      : success
+                                          ? 'member_add_success'.tr()
+                                          : 'member_add_failed'.tr(),
+                                  type: success
+                                      ? ToastType.success
+                                      : ToastType.error,
+                                );
+                              } finally {
+                                cancelLoading();
+                              }
                             },
                       child: Text(
                         'member_add_count'.tr(

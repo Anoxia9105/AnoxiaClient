@@ -142,9 +142,11 @@ class SystemEventService extends _$SystemEventService {
         break;
       case SystemEventType.groupJoinRequestHandled:
         ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-        final approved = event.extra?['approved'] == true;
+        // 协议属性是 string 类型，兼容布尔与字符串两种取值
+        final approved = event.extra?['approved'];
+        final isApproved = approved == true || approved == 'true';
         ref.read(toastServiceProvider).showToast(
-              approved
+              isApproved
                   ? 'group_join_request_approved_notification'.tr()
                   : 'group_join_request_rejected_notification'.tr(),
             );
