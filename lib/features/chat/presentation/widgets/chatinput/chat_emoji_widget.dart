@@ -86,6 +86,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
               pageController: pageController,
               categories: state.categoryEmoji,
               onStickerTap: () {
+                ref.invalidate(stickerPacksProvider);
                 setState(() {
                   _showStickers = true;
                 });
