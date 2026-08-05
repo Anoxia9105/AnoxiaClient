@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
@@ -16,6 +17,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -255,7 +257,14 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   context,
                   leading: const Icon(Icons.how_to_reg_outlined, size: 22),
                   title: Text('group_join_requests_title'.tr()),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _JoinRequestsBadge(roomId: roomId),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.arrow_forward_ios, size: 14),
+                    ],
+                  ),
                   onTap: () => presentAdaptivePage(
                     context,
                     builder: (_) => GroupJoinRequestsPage(roomId: roomId),
@@ -539,5 +548,38 @@ class _RoomSwitchTile extends StatelessWidget {
       ),
       onTap: () => onChanged(!value),
     );
+  }
+}
+
+/// 「入群申请」入口的待处理数量徽标
+///
+/// 进入设置页时静默刷新一次，数量变化时展示红点徽章。
+class _JoinRequestsBadge extends ConsumerStatefulWidget {
+  final String roomId;
+
+  const _JoinRequestsBadge({super.key, required this.roomId});
+
+  @override
+  ConsumerState<_JoinRequestsBadge> createState() => _JoinRequestsBadgeState();
+}
+
+class _JoinRequestsBadgeState extends ConsumerState<_JoinRequestsBadge> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref
+          .read(groupJoinRequestsServiceProvider(widget.roomId).notifier)
+          .refresh(widget.roomId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pendingCount = ref.watch(
+      pendingGroupJoinRequestCountProvider(widget.roomId),
+    );
+    return VibratingBadge(count: pendingCount.value ?? 0, size: 16);
   }
 }

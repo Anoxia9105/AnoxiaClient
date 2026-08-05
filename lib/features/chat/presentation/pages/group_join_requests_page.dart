@@ -110,6 +110,10 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
       await ref
           .read(groupJoinServiceProvider)
           .handleRequest(int.parse(row['id'].toString()), approved);
+      // 同步刷新红点徽标
+      ref
+          .read(groupJoinRequestsServiceProvider(widget.roomId).notifier)
+          .refresh(widget.roomId);
       _reload();
     } catch (_) {
       if (mounted) {

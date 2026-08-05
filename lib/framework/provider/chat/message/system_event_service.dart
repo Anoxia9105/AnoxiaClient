@@ -4,6 +4,7 @@ import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
+import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
@@ -138,6 +139,13 @@ class SystemEventService extends _$SystemEventService {
         break;
       case SystemEventType.groupJoinRequest:
         log.info('收到新的入群申请');
+        // 刷新该群待处理申请红点
+        final requestRoomId = event.extra?['roomId'];
+        if (requestRoomId is String && requestRoomId.isNotEmpty) {
+          ref
+              .read(groupJoinRequestsServiceProvider(requestRoomId).notifier)
+              .refresh(requestRoomId);
+        }
         ref.read(toastServiceProvider).showToast('group_join_request_notification'.tr());
         break;
       case SystemEventType.groupJoinRequestHandled:

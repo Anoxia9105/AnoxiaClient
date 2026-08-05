@@ -45,7 +45,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'2d4b350d9751952fb1c7e84182483c3fcaf2ce0f';
+String _$roomListServiceHash() => r'b8e55c1877a428f7fe74feec064c526be0c11c60';
 
 /// 聊天室列表服务
 ///
