@@ -13,37 +13,37 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  # 屏幕适配
+  # 灞忓箷閫傞厤
   flutter_screenutil: ^5.9.3
-  # Riverpod核心库
+  # Riverpod鏍稿績搴?
   flutter_riverpod: ^3.0.3
   riverpod_annotation: ^4.0.2
-  # http请求
+  # http璇锋眰
   dio: ^5.9.0
-  # 路由
+  # 璺敱
   go_router: ^17.0.0
-  # Log库
+  # Log搴?
   talker_flutter: ^5.1.5
   talker_riverpod_logger: ^5.1.5
-  # 本地存储
+  # 鏈湴瀛樺偍
   shared_preferences: ^2.5.3
-  # 密钥存储
+  # 瀵嗛挜瀛樺偍
   flutter_secure_storage: ^10.3.0
-  # 网络检测
+  # 缃戠粶妫€娴?
   connectivity_plus: ^7.0.0
-  # 权限申请
+  # 鏉冮檺鐢宠
   permission_handler: ^12.0.1
-  # 地图与前台定位
+  # 鍦板浘涓庡墠鍙板畾浣?
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
   geolocator: ^14.0.2
-  # 国际化 多语言设置
+  # 鍥介檯鍖?澶氳瑷€璁剧疆
   easy_localization: ^3.0.8
-  # 图标
+  # 鍥炬爣
   hugeicons: ^1.1.5
-  # 列表滚动
+  # 鍒楄〃婊氬姩
   flutter_list_view: ^1.1.29
-  # 可定位列表滚动
+  # 鍙畾浣嶅垪琛ㄦ粴鍔?
   scrollable_positioned_list: ^0.3.8
   # rtc
   livekit_client: ^2.7.0
@@ -52,16 +52,16 @@ dependencies:
   web_socket_channel: ^3.0.3
   # win toolbar
   tray_manager: ^0.5.2
-  # 富文本
+  # 瀵屾枃鏈?
   flutter_quill: ^11.5.1
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0
-  # 跨平台文件（Web 上传）
+  # 璺ㄥ钩鍙版枃浠讹紙Web 涓婁紶锛?
   cross_file: ^0.3.5+4
-  # 图片缓存
+  # 鍥剧墖缂撳瓨
   #cached_network_image: ^3.4.1
   cross_cache: ^1.1.0
-  # 图片查看
+  # 鍥剧墖鏌ョ湅
   photo_view: ^0.15.0
   window_manager:
     git:
@@ -70,88 +70,88 @@ dependencies:
       ref: 6fae92d21b4c80ce1b8f71c1190d7970cf722bd4
   # toast
   bot_toast: ^4.1.3
-  # 流传输
+  # 娴佷紶杈?
   #  flutter_client_sse: ^2.0.3
-   #link 链接处理
+   #link 閾炬帴澶勭悊
   url_launcher: ^6.3.2
-  # 字母分组排序列表
+  # 瀛楁瘝鍒嗙粍鎺掑簭鍒楄〃
   alphabet_list_view: ^1.2.0
-  # 汉字转拼音
+  # 姹夊瓧杞嫾闊?
   lpinyin: ^2.0.3
-  # 多窗口
+  # 澶氱獥鍙?
   desktop_multi_window: ^0.3.0
-  # 文件选择
+  # 鏂囦欢閫夋嫨
   file_picker: ^11.0.2
   # uuid
   uuid: ^4.5.2
-  # 程序信息检测
+  # 绋嬪簭淇℃伅妫€娴?
   package_info_plus: ^9.0.0
-  # 获取文件目录
+  # 鑾峰彇鏂囦欢鐩綍
   path_provider: ^2.1.5
-  # 打开文件
+  # 鎵撳紑鏂囦欢
   open_filex: ^4.7.0
-  # 版本比较
+  # 鐗堟湰姣旇緝
   pub_semver: ^2.2.0
   path: ^1.9.1
   characters: ^1.4.0
   intl: ^0.20.2
   share_plus: ^12.0.2
-  # Web 端 JS 互操作（替代已废弃的 dart:js / dart:js_util），并提供 Wasm 兼容路径
+  # Web 绔?JS 浜掓搷浣滐紙鏇夸唬宸插簾寮冪殑 dart:js / dart:js_util锛夛紝骞舵彁渚?Wasm 鍏煎璺緞
   web: ^1.0.0
-  # 处理图片格式
+  # 澶勭悊鍥剧墖鏍煎紡
   image: ^4.7.2
-  # emoji 选择器
+  # emoji 閫夋嫨鍣?
   emoji_picker_flutter: ^4.4.0
-  # 本地通知
+  # 鏈湴閫氱煡
   flutter_local_notifications: ^21.0.0
-  # Android/iOS/macOS角标
+  # Android/iOS/macOS瑙掓爣
   app_badge_plus: ^1.3.1
-  # 剪贴板
+  # 鍓创鏉?
   pasteboard: ^0.5.0
-  # 错落动画
+  # 閿欒惤鍔ㄧ敾
   flutter_staggered_animations: ^1.1.1
-  # 拆分器视图插件
+  # 鎷嗗垎鍣ㄨ鍥炬彃浠?
   split_view: ^3.2.2
-  # 抽屉式导航
+  # 鎶藉眽寮忓鑸?
   flutter_zoom_drawer: ^3.2.0
-  # 键盘快捷键
+  # 閿洏蹇嵎閿?
   hotkey_manager: ^0.2.3
-  # 后台服务
+  # 鍚庡彴鏈嶅姟
   flutter_background: ^1.3.1
-  # 系统浮动窗口 Android/IOS
+  # 绯荤粺娴姩绐楀彛 Android/IOS
   pip: ^0.0.3
-  # 音频播放组件
+  # 闊抽鎾斁缁勪欢
   just_audio: ^0.10.5
-  # 音频波形组件
+  # 闊抽娉㈠舰缁勪欢
   audio_waveforms: ^2.0.2
-  # 极光推送
+  # 鏋佸厜鎺ㄩ€?
   jpush_flutter: ^3.4.5
   # fcm google firebase cloud messaging
   firebase_core: ^4.10.0
   firebase_messaging: ^16.0.2
-  # 谷歌字体
+  # 璋锋瓕瀛椾綋
   google_fonts: ^8.1.0
-  # 深度链接
-  # 聊天输入键盘/面板切换容器
+  # 娣卞害閾炬帴
+  # 鑱婂ぉ杈撳叆閿洏/闈㈡澘鍒囨崲瀹瑰櫒
   chat_bottom_container: ^0.5.0
-  # 二维码扫描
+  # 浜岀淮鐮佹壂鎻?
   mobile_scanner: ^7.1.3
-  # 二维码生成
+  # 浜岀淮鐮佺敓鎴?
   qr_flutter: ^4.1.0
-  # 保存图片到相册
+  # 淇濆瓨鍥剧墖鍒扮浉鍐?
   image_gallery_saver_plus: ^5.0.0
-  # 图片裁剪
+  # 鍥剧墖瑁佸壀
   image_cropper: ^12.2.1
-  # 图片选择器
+  # 鍥剧墖閫夋嫨鍣?
   image_picker: ^1.2.2
-  # 链接预览
+  # 閾炬帴棰勮
   any_link_preview: ^3.0.3
   html: ^0.15.6
   http: ^1.6.0
   device_info_plus: ^12.3.0
-  # 数据库
+  # 鏁版嵁搴?
   drift: ^2.34.0
-  # 数据库libs
+  # 鏁版嵁搴搇ibs
   sqlite3_flutter_libs: ^0.5.40
 
 
@@ -200,7 +200,3 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
-  fonts:
-    - family: HarmonyOS
-      fonts:
-        - asset: assets/fonts/HarmonyOS.ttf
