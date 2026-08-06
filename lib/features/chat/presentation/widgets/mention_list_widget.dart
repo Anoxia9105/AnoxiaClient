@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,7 +13,22 @@ class MentionUser {
   final String name;
   final String? avatar;
 
-  MentionUser({required this.id, required this.name, this.avatar});
+  /// 是否为「@所有人」占位项（仅群聊展示，不提醒真实用户）
+  final bool isAll;
+
+  MentionUser({
+    required this.id,
+    required this.name,
+    this.avatar,
+    this.isAll = false,
+  });
+
+  /// 构造「@所有人」占位项
+  factory MentionUser.atAll() => MentionUser(
+    id: kMentionAllUserId,
+    name: 'mention_all'.tr(),
+    isAll: true,
+  );
 
   /// 按搜索文本过滤可提及用户（键盘导航与列表展示共用同一过滤逻辑）
   static List<MentionUser> filterUsers(
@@ -23,10 +41,28 @@ class MentionUser {
         .where((user) => user.name.toLowerCase().contains(query))
         .toList();
   }
+
+  /// 解析 mention embed 数据并返回展示名称。
+  ///
+  /// 「@所有人」占位项（userId == [kMentionAllUserId]）始终返回
+  /// 当前语言环境的本地化名称，不受发送者语言影响。
+  static String? displayName(dynamic rawData) {
+    try {
+      final dynamic data = rawData is String ? jsonDecode(rawData) : rawData;
+      if (data is Map) {
+        if (data['userId'] == kMentionAllUserId) return 'mention_all'.tr();
+        final userName = data['userName']?.toString().trim();
+        if (userName != null && userName.isNotEmpty) return userName;
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
 }
 
 /// @提及列表组件
-class MentionListWidget extends ConsumerWidget {
+class MentionListWidget extends ConsumerStatefulWidget {
   final Function(MentionUser) onUserSelected;
   final List<MentionUser> users; // 可提及的用户列表
 
@@ -37,7 +73,40 @@ class MentionListWidget extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MentionListWidget> createState() => _MentionListWidgetState();
+}
+
+class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
+  /// 列表行高固定，键盘上下键导航时按行距精确滚动（气泡跟随选中项跳动）
+  static const double _itemExtent = 48;
+
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// 键盘选中项变化时，将气泡列表滚动到选中项所在位置。
+  ///
+  /// ListView.builder 懒构建，屏幕外的选中项不会触发 build，
+  /// 不能再依赖项内的 Scrollable.ensureVisible，改为行距换算后主动滚动。
+  void _scrollToSelected(int index, int itemCount) {
+    if (itemCount <= 0 || index < 0 || index >= itemCount) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final target = (index * _itemExtent).clamp(0, position.maxScrollExtent);
+    if ((target - position.pixels).abs() < 1) return;
+    _scrollController.animateTo(
+      target.toDouble(),
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     // 从 provider 实时获取搜索文本与键盘选中索引
@@ -56,7 +125,16 @@ class MentionListWidget extends ConsumerWidget {
     final isKeyboardNavActive = mentionState.isShowing;
 
     // 根据搜索文本过滤用户
-    final filteredUsers = MentionUser.filterUsers(users, searchText);
+    final filteredUsers = MentionUser.filterUsers(widget.users, searchText);
+
+    // 键盘选中项变化后滚动气泡列表，让选中项始终可见
+    if (isKeyboardNavActive && filteredUsers.isNotEmpty) {
+      final selectedIndex = mentionState.selectedIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _scrollToSelected(selectedIndex, filteredUsers.length);
+      });
+    }
 
     if (filteredUsers.isEmpty) {
       return Material(
@@ -90,7 +168,9 @@ class MentionListWidget extends ConsumerWidget {
           maxWidth: 300,
         ),
         child: ListView.builder(
+          controller: _scrollController,
           shrinkWrap: true,
+          itemExtent: _itemExtent,
           padding: const EdgeInsets.symmetric(vertical: 4),
           itemCount: filteredUsers.length,
           itemBuilder: (context, index) {
@@ -98,19 +178,8 @@ class MentionListWidget extends ConsumerWidget {
             final isSelected =
                 isKeyboardNavActive && index == mentionState.selectedIndex;
 
-            // 键盘选中项滚动到可视区域
-            if (isSelected) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!context.mounted) return;
-                Scrollable.ensureVisible(
-                  context,
-                  duration: const Duration(milliseconds: 100),
-                );
-              });
-            }
-
             return InkWell(
-              onTap: () => onUserSelected(user),
+              onTap: () => widget.onUserSelected(user),
               child: Container(
                 color: isSelected
                     ? colorScheme.primaryContainer.withValues(alpha: 0.5)
@@ -121,8 +190,24 @@ class MentionListWidget extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    // 头像（与聊天列表头像保持一致）
-                    AvatarWidget(url: user.avatar, name: user.name, size: 32),
+                    // 头像（@所有人 使用群组图标，其余与聊天列表头像保持一致）
+                    if (user.isAll)
+                      Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.group,
+                          size: 18,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      )
+                    else
+                      AvatarWidget(url: user.avatar, name: user.name, size: 32),
                     const SizedBox(width: 12),
                     // 用户名
                     Expanded(

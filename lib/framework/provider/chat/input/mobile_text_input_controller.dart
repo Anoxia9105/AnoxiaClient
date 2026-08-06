@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 /// 单个 @提及在输入框文本中的区间
@@ -216,6 +218,14 @@ class MobileTextInputController extends ChangeNotifier {
     }
   }
 
+  /// 插入「@所有人」（仅群聊展示）。
+  ///
+  /// 占位用户 ID 使用 [kMentionAllUserId]，发送时从 mentionIds 中排除，
+  /// 通过 [buildSendData] 的 mentionAll 标记单独透传。
+  void insertMentionAll() {
+    insertMention(kMentionAllUserId, 'mention_all'.tr());
+  }
+
   /// 在光标位置插入文本
   ///
   /// [insertText] 要插入的文本内容
@@ -248,10 +258,17 @@ class MobileTextInputController extends ChangeNotifier {
 
   /// 构建发送数据
   ///
-  /// 返回包含文本、提及用户ID列表和可选 quillDelta 的 Record，文本为空时返回 null。
+  /// 返回包含文本、提及用户ID列表、是否@所有人及可选 quillDelta 的 Record，
+  /// 文本为空时返回 null。
   /// 当存在有效 @提及时，[quillDelta] 为 Quill Delta JSON 字符串（与桌面端格式
   /// 一致），调用方应使用富文本消息类型发送；否则 [quillDelta] 为 null。
-  ({String text, List<int> mentionIds, String? quillDelta})? buildSendData() {
+  ({
+    String text,
+    List<int> mentionIds,
+    bool mentionAll,
+    String? quillDelta,
+  })?
+  buildSendData() {
     final full = textController.text;
     final text = full.trim();
     if (text.isEmpty) return null;
@@ -267,12 +284,23 @@ class MobileTextInputController extends ChangeNotifier {
     }
     validMentions.sort((a, b) => a.start.compareTo(b.start));
 
-    final mentionIds = validMentions.map((s) => s.id).toSet().toList();
+    // @所有人 占位 ID 不参与真实用户提醒
+    final mentionAll = validMentions.any((s) => s.id == kMentionAllUserId);
+    final mentionIds = validMentions
+        .where((s) => s.id != kMentionAllUserId)
+        .map((s) => s.id)
+        .toSet()
+        .toList();
     final quillDelta = validMentions.isNotEmpty
         ? _buildQuillDelta(full, validMentions)
         : null;
 
-    return (text: text, mentionIds: mentionIds, quillDelta: quillDelta);
+    return (
+      text: text,
+      mentionIds: mentionIds,
+      mentionAll: mentionAll,
+      quillDelta: quillDelta,
+    );
   }
 
   /// 将纯文本 + @提及区间转换为与桌面端格式一致的 Quill Delta JSON 字符串。

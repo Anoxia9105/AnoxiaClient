@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -10,11 +9,7 @@ class QuillMentionBuild implements EmbedBuilder {
   Widget build(BuildContext context, EmbedContext embedContext) {
     // 解析 mention 数据
     final data = embedContext.node.value.data;
-    final Map<String, dynamic> dataMap = data is String
-        ? jsonDecode(data)
-        : data as Map<String, dynamic>;
-
-    final String userName = dataMap['userName'] ?? '--';
+    final String userName = MentionUser.displayName(data) ?? '--';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -47,9 +42,7 @@ class QuillMentionBuild implements EmbedBuilder {
 
   @override
   String toPlainText(Embed node) {
-    final data = node.value.data;
-    final dataMap = data is String ? jsonDecode(data) : data;
-    final userName = dataMap['userName'] ?? '';
+    final userName = MentionUser.displayName(node.value.data) ?? '';
     return '@$userName';
   }
 }

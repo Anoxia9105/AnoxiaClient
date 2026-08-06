@@ -106,11 +106,11 @@ class MessageBubbleViewData {
     int? currentUserId,
     bool isCurrentUser,
   ) {
+    if (isCurrentUser || currentUserId == null) return false;
+    // 群聊 @所有人 视同 @了我
+    if (message.payload?.mentionAll == true) return true;
     final mentions = message.payload?.mentions;
-    return mentions != null &&
-        !isCurrentUser &&
-        currentUserId != null &&
-        mentions.contains(currentUserId);
+    return mentions != null && mentions.contains(currentUserId);
   }
 
   /// 获取发送者显示名称

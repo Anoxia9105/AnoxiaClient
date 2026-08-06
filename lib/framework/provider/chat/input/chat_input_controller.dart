@@ -324,6 +324,7 @@ class ChatInputController extends _$ChatInputController {
     };
     final processor = DeltaProcessor(state.document.toDelta(), uploadState);
     final mentionIds = processor.mentionedUserIds;
+    final mentionAll = processor.mentionAll;
 
     final imageState = ref.read(chatImageUploadControllerProvider);
     final fileState = ref.read(chatFileUploadControllerProvider);
@@ -364,13 +365,15 @@ class ChatInputController extends _$ChatInputController {
 
     // --- 发送文本/富文本/表情 ---
     if (processor.plainText.isNotEmpty ||
-        processor.mentionedUserIds.isNotEmpty) {
+        processor.mentionedUserIds.isNotEmpty ||
+        processor.mentionAll) {
       final cleanDelta = processor.filteredDelta;
       // 如果 Delta 为空或仅包含换行且无 @提及，则忽略
       if (cleanDelta.length == 0 ||
           (cleanDelta.length == 1 &&
               cleanDelta.first.data == '\n' &&
-              processor.mentionedUserIds.isEmpty)) {
+              processor.mentionedUserIds.isEmpty &&
+              !processor.mentionAll)) {
         return;
       }
 
@@ -383,7 +386,8 @@ class ChatInputController extends _$ChatInputController {
           clearReplyAfterSend: false,
         );
       } else {
-        final isRich = processor.hasAttributes || mentionIds.isNotEmpty;
+        final isRich =
+            processor.hasAttributes || mentionIds.isNotEmpty || mentionAll;
         _doSend(
           type: isRich ? MessageType.richText : MessageType.text,
           payload: isRich
@@ -391,6 +395,7 @@ class ChatInputController extends _$ChatInputController {
                   content: processor.plainText.characters.take(100).toString(),
                   quillDelta: jsonEncode(cleanDelta.toJson()),
                   mentions: mentionIds,
+                  mentionAll: mentionAll,
                 )
               : MessagePayload(content: processor.plainText),
           clearReplyAfterSend: false,
@@ -413,6 +418,7 @@ class ChatInputController extends _$ChatInputController {
     String text,
     String quillDelta, {
     List<int>? mentionIds,
+    bool mentionAll = false,
   }) {
     final room = ref.read(currentRoomProvider(roomId));
     final content = text.trim();
@@ -426,6 +432,7 @@ class ChatInputController extends _$ChatInputController {
         mentions: (mentionIds != null && mentionIds.isNotEmpty)
             ? mentionIds
             : null,
+        mentionAll: mentionAll,
       ),
     );
   }
@@ -433,7 +440,11 @@ class ChatInputController extends _$ChatInputController {
   /// 发送纯文本消息（Android 专用或外部调用）
   ///
   /// 若文本为单个表情符号，则作为 Emoji 消息发送。
-  void sendPlainTextMessage(String text, {List<int>? mentionIds}) {
+  void sendPlainTextMessage(
+    String text, {
+    List<int>? mentionIds,
+    bool mentionAll = false,
+  }) {
     final room = ref.read(currentRoomProvider(roomId));
     final content = text.trim();
     if (room == null || content.isEmpty) return;
@@ -448,6 +459,7 @@ class ChatInputController extends _$ChatInputController {
         mentions: (mentionIds != null && mentionIds.isNotEmpty)
             ? mentionIds
             : null,
+        mentionAll: mentionAll,
         emojiCode: isSingleEmoji ? content.characters.first : null,
       ),
     );

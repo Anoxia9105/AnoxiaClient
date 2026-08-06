@@ -16,6 +16,7 @@ import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart'
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 /// 聊天消息上下文菜单组件
 ///
@@ -231,10 +232,9 @@ class _ChatMessageContextMenuState
           } else if (op.data is Map) {
             final map = op.data as Map;
             if (map.containsKey('mention')) {
-              final data = map['mention'] is String
-                  ? jsonDecode(map['mention'])
-                  : map['mention'];
-              sb.write('@${data['userName'] ?? ''} ');
+              final userName =
+                  MentionUser.displayName(map['mention']) ?? '';
+              sb.write('@$userName ');
             }
           }
         }

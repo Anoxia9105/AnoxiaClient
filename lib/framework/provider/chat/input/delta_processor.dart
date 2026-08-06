@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/attachment.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:characters/characters.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'dart:math' as math;
@@ -84,6 +85,9 @@ class DeltaProcessor {
   }
 
   /// 获取文档中所有被提及的用户 ID
+  ///
+  /// 「@所有人」占位 ID（[kMentionAllUserId]）不计入真实用户提醒列表，
+  /// 该标记通过 [mentionAll] 单独透传。
   List<int> get mentionedUserIds {
     final ids = <int>{}; // 使用 Set 去重
 
@@ -102,7 +106,7 @@ class DeltaProcessor {
               : mentionContent as Map<String, dynamic>;
 
           final int? userId = mentionMap['userId'];
-          if (userId != null) {
+          if (userId != null && userId != kMentionAllUserId) {
             ids.add(userId);
           }
         }
@@ -110,6 +114,23 @@ class DeltaProcessor {
     }
 
     return ids.toList();
+  }
+
+  /// 是否 @了房间内所有人（delta 中存在 @所有人 embed）
+  bool get mentionAll {
+    for (final op in delta.toList()) {
+      if (op.isInsert && op.data is Map) {
+        final data = op.data as Map;
+        if (data.containsKey('mention')) {
+          final mentionContent = data['mention'];
+          final Map<String, dynamic> mentionMap = mentionContent is String
+              ? jsonDecode(mentionContent)
+              : mentionContent as Map<String, dynamic>;
+          if (mentionMap['userId'] == kMentionAllUserId) return true;
+        }
+      }
+    }
+    return false;
   }
 
   /// 生成用于发送的 Delta：保留文本、样式、Mention，剔除图片和文件
@@ -143,7 +164,10 @@ class DeltaProcessor {
   /// 判断是否是单个 emoji（无其他内容、无图片/文件/mention）
   bool get isSingleEmoji {
     // 条件1：无图片、无文件、无@提及
-    if (images.isNotEmpty || files.isNotEmpty || mentionedUserIds.isNotEmpty) {
+    if (images.isNotEmpty ||
+        files.isNotEmpty ||
+        mentionedUserIds.isNotEmpty ||
+        mentionAll) {
       return false;
     }
 

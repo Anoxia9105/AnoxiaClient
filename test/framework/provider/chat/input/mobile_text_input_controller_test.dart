@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -150,5 +151,45 @@ void main() {
     expect(controller.textController.text, isEmpty);
     expect(controller.textController.mentions, isEmpty);
     expect(controller.buildSendData(), isNull);
+  });
+
+  testWidgets('insertMentionAll 插入 @所有人，发送时携带 mentionAll 且排除占位 ID', (tester) async {
+    final controller = MobileTextInputController();
+    addTearDown(controller.dispose);
+    await buildField(tester, controller);
+
+    setText(controller, 'Hi @');
+    controller.insertMentionAll();
+
+    expect(controller.textController.text, 'Hi @mention_all ');
+
+    final data = controller.buildSendData()!;
+    expect(data.mentionAll, isTrue);
+    expect(data.mentionIds, isEmpty);
+    expect(data.quillDelta, contains(kMentionAllUserId.toString()));
+  });
+
+  testWidgets('@所有人 与普通提及混用：mentionAll 为 true 且保留真实用户 ID', (tester) async {
+    final controller = MobileTextInputController();
+    addTearDown(controller.dispose);
+    await buildField(tester, controller);
+
+    setText(controller, 'Hi @');
+    controller.insertMentionAll();
+    controller.textController.selection = TextSelection.collapsed(
+      offset: controller.textController.text.length,
+    );
+    controller.textController.value = TextEditingValue(
+      text: '${controller.textController.text}@',
+      selection: TextSelection.collapsed(
+        offset: controller.textController.text.length + 1,
+      ),
+    );
+    controller.handleTextChanged(controller.textController.text);
+    controller.insertMention(2, 'bob');
+
+    final data = controller.buildSendData()!;
+    expect(data.mentionAll, isTrue);
+    expect(data.mentionIds, [2]);
   });
 }

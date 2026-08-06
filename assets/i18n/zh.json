@@ -616,6 +616,7 @@
   "emoji_sticker_retry": "重试",
   "mention_no_users": "暂无可@的用户",
   "mention_user_not_found": "没有找到匹配 \"{}\" 的用户",
+  "mention_all": "所有人",
   "gender_male": "男",
   "gender_female": "女",
   "gender_unknown": "未知",

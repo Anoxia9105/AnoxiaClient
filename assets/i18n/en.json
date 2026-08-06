@@ -616,6 +616,7 @@
   "emoji_sticker_retry": "Retry",
   "mention_no_users": "No users to mention",
   "mention_user_not_found": "No users matching \"{}\"",
+  "mention_all": "Everyone",
   "gender_male": "Male",
   "gender_female": "Female",
   "gender_unknown": "Unknown",

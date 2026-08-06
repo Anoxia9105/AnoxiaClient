@@ -616,6 +616,7 @@
   "emoji_sticker_retry": "再試行",
   "mention_no_users": "メンションできるユーザーがいません",
   "mention_user_not_found": "\"{}\" に一致するユーザーが見つかりません",
+  "mention_all": "全員",
   "gender_male": "男性",
   "gender_female": "女性",
   "gender_unknown": "不明",

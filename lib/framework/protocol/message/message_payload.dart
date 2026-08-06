@@ -1,5 +1,14 @@
+import 'dart:convert';
+
 import 'attachment.dart';
 import 'message_enum.dart';
+
+/// @全体成员的固定占位用户 ID。
+///
+/// 群聊提及列表中的「@所有人」项以该 ID 写入 mention embed，
+/// 发送时从 [MessagePayload.mentions] 中排除，避免误提醒真实用户，
+/// 通过 [MessagePayload.mentionAll] 标记（写入 interaction.mentionAll）。
+const int kMentionAllUserId = -1;
 
 /// 卡片消息载荷（V5 协议）
 ///
@@ -267,6 +276,9 @@ class MessagePayload {
   /// 被 @ 的用户 ID 列表
   final List<int>? mentions;
 
+  /// 是否 @了房间内所有人（群聊「@所有人」）
+  final bool? mentionAll;
+
   /// Markdown 格式文本（可选）
   final String? markdown;
 
@@ -314,6 +326,7 @@ class MessagePayload {
     this.quillDelta,
     this.replyTo,
     this.mentions,
+    this.mentionAll,
     this.markdown,
     this.emojiCode,
     this.audioDuration,
@@ -365,6 +378,7 @@ class MessagePayload {
     String? quillDelta,
     String? replyTo,
     List<int>? mentions,
+    bool? mentionAll,
     String? markdown,
     String? emojiCode,
     int? audioDuration,
@@ -382,6 +396,7 @@ class MessagePayload {
     quillDelta: quillDelta ?? this.quillDelta,
     replyTo: replyTo ?? this.replyTo,
     mentions: mentions ?? this.mentions,
+    mentionAll: mentionAll ?? this.mentionAll,
     markdown: markdown ?? this.markdown,
     emojiCode: emojiCode ?? this.emojiCode,
     audioDuration: audioDuration ?? this.audioDuration,
@@ -413,22 +428,26 @@ class MessagePayload {
         markdown: markdown.isNotEmpty ? markdown : null,
         replyTo: _readReplyTo(interaction),
         mentions: _readMentions(interaction),
+        mentionAll: _readMentionAll(interaction),
       );
     }
 
     final richText = _asMap(json['richText'] ?? json['rich_text']);
     if (richText != null) {
       final interaction = _asMap(richText['interaction']);
+      final quillDelta = _readString(richText, [
+        'deltaJson',
+        'delta_json',
+        'quillDelta',
+        'quill_delta',
+      ]);
       return MessagePayload(
         content: _readString(richText, ['plainText', 'plain_text', 'content']),
-        quillDelta: _readString(richText, [
-          'deltaJson',
-          'delta_json',
-          'quillDelta',
-          'quill_delta',
-        ]),
+        quillDelta: quillDelta,
         replyTo: _readReplyTo(interaction),
         mentions: _readMentions(interaction),
+        mentionAll: _readMentionAll(interaction) ??
+            deltaMentionsAll(quillDelta),
       );
     }
 
@@ -450,6 +469,7 @@ class MessagePayload {
             ? _readReplyTo(interaction)
             : _readString(json, ['replyTo', 'reply_to']),
         mentions: _readMentions(interaction) ?? _readIntList(json['mentions']),
+        mentionAll: _readMentionAll(interaction) ?? _readBool(json['mentionAll']),
       );
     }
 
@@ -470,6 +490,7 @@ class MessagePayload {
             ? _readReplyTo(interaction)
             : _readString(json, ['replyTo', 'reply_to']),
         mentions: _readMentions(interaction) ?? _readIntList(json['mentions']),
+        mentionAll: _readMentionAll(interaction) ?? _readBool(json['mentionAll']),
       );
     }
 
@@ -493,6 +514,7 @@ class MessagePayload {
         content: caption.isNotEmpty ? caption : '[video]',
         replyTo: _readReplyTo(interaction),
         mentions: _readMentions(interaction),
+        mentionAll: _readMentionAll(interaction),
         audioDuration: _readInt(
           videoPayload['durationMs'] ?? videoPayload['duration_ms'],
         ),
@@ -570,6 +592,7 @@ class MessagePayload {
         'reply_to_message_id',
       ]),
       mentions: _readIntList(json['mentions'] ?? json['mentionUserIds']),
+      mentionAll: _readBool(json['mentionAll'] ?? json['mention_all']),
       markdown: _readString(json, ['markdown']),
       emojiCode: _readString(json, ['emojiCode', 'emojiId', 'emoji_id']),
       audioDuration: _readInt(
@@ -596,6 +619,7 @@ class MessagePayload {
     'quillDelta': quillDelta,
     'replyTo': replyTo,
     'mentions': mentions,
+    'mentionAll': mentionAll,
     'markdown': markdown,
     'emojiCode': emojiCode,
     'audioDuration': audioDuration,
@@ -710,6 +734,17 @@ class MessagePayload {
   static List<int>? _readMentions(Map<String, dynamic>? interaction) =>
       _readIntList(interaction?['mentionUserIds'] ?? interaction?['mentions']);
 
+  /// 从 interaction 对象中读取是否 @所有人。
+  static bool? _readMentionAll(Map<String, dynamic>? interaction) =>
+      _readBool(interaction?['mentionAll'] ?? interaction?['mention_all']);
+
+  /// 将动态值转为 bool。
+  static bool? _readBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    return value.toString() == 'true';
+  }
+
   /// 将动态值转为 int。
   static int? _readInt(dynamic value) =>
       value == null ? null : int.tryParse(value.toString());
@@ -731,6 +766,38 @@ class MessagePayload {
     return result.isEmpty ? null : result;
   }
 
+  /// 从 Quill Delta JSON 中检测是否包含「@所有人」提及。
+  ///
+  /// 富文本消息的 interaction.mentionUserIds 不含占位 ID，
+  /// 「@所有人」标记只存在于 delta 的 mention embed（userId == -1）中，
+  /// 接收侧（含本地缓存回放）以此兜底识别。
+  static bool deltaMentionsAll(String? quillDelta) {
+    if (quillDelta == null || quillDelta.isEmpty) return false;
+    try {
+      final dynamic ops = jsonDecode(quillDelta);
+      if (ops is! List) return false;
+      for (final op in ops) {
+        if (op is! Map) continue;
+        final insert = op['insert'];
+        if (insert is! Map) continue;
+        if (!insert.containsKey('mention')) continue;
+        final dynamic mention = insert['mention'];
+        Map<String, dynamic>? mentionMap;
+        if (mention is String) {
+          mentionMap = Map<String, dynamic>.from(jsonDecode(mention) as Map);
+        } else if (mention is Map) {
+          mentionMap = Map<String, dynamic>.from(mention);
+        }
+        if (mentionMap != null && mentionMap['userId'] == kMentionAllUserId) {
+          return true;
+        }
+      }
+    } catch (_) {
+      // 非法 delta 视为不含 @所有人。
+    }
+    return false;
+  }
+
   /// 从 JSON 中读取附件，若 URL 为空则返回 null。
   static Attachment? _readAttachment(dynamic value) {
     final map = _asMap(value);
@@ -743,10 +810,15 @@ class MessagePayload {
   /// 构建 interaction 对象（用于回复和 @ 功能）。
   Map<String, dynamic>? _buildInteractionJson() {
     if ((replyTo == null || replyTo!.isEmpty) &&
-        (mentions == null || mentions!.isEmpty)) {
+        (mentions == null || mentions!.isEmpty) &&
+        mentionAll != true) {
       return null;
     }
-    return {'replyToMessageId': replyTo, 'mentionUserIds': mentions};
+    return {
+      'replyToMessageId': replyTo,
+      'mentionUserIds': mentions,
+      if (mentionAll == true) 'mentionAll': true,
+    };
   }
 
   /// 尝试从平铺 JSON 中解析卡片（当无顶层 'card' 时备用）。
@@ -792,6 +864,7 @@ class MessagePayload {
         '  quillDelta: $quillDelta,\n'
         '  replyTo: $replyTo,\n'
         '  mentions: $mentions,\n'
+        '  mentionAll: $mentionAll,\n'
         '  markdown: $markdown,\n'
         '  emojiCode: $emojiCode,\n'
         '  audioDuration: $audioDuration,\n'

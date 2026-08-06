@@ -18,6 +18,7 @@ import 'package:path/path.dart' as path;
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
@@ -115,16 +116,20 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   void _showMentionSheet() {
     final currentUser = ref.read(authControllerProvider).value;
     final roomMembers = ref.read(roomMembersProvider(widget.roomId));
-    final users = roomMembers
-        .where((m) => m.userId != null && m.userId != currentUser?.userId)
-        .map(
-          (m) => MentionUser(
-            id: m.userId!,
-            name: m.nickName ?? 'chat_unknown_user_label'.tr(),
-            avatar: m.avatar,
+    final room = ref.read(currentRoomProvider(widget.roomId));
+    // 仅群聊支持 @所有人，单聊不展示
+    final users = <MentionUser>[
+      if (room?.roomType == 1) MentionUser.atAll(),
+      ...roomMembers
+          .where((m) => m.userId != null && m.userId != currentUser?.userId)
+          .map(
+            (m) => MentionUser(
+              id: m.userId!,
+              name: m.nickName ?? 'chat_unknown_user_label'.tr(),
+              avatar: m.avatar,
+            ),
           ),
-        )
-        .toList();
+    ];
 
     showModalBottomSheet<void>(
       context: context,
@@ -140,7 +145,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             users: users,
             onUserSelected: (user) {
               Navigator.of(ctx).pop();
-              _inputController.insertMention(user.id, user.name);
+              if (user.isAll) {
+                _inputController.insertMentionAll();
+              } else {
+                _inputController.insertMention(user.id, user.name);
+              }
             },
           ),
         ),
@@ -537,11 +546,13 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                                     data.text,
                                     data.quillDelta!,
                                     mentionIds: data.mentionIds,
+                                    mentionAll: data.mentionAll,
                                   );
                                 } else {
                                   notifier.sendPlainTextMessage(
                                     data.text,
                                     mentionIds: data.mentionIds,
+                                    mentionAll: data.mentionAll,
                                   );
                                 }
                                 _inputController.clear();

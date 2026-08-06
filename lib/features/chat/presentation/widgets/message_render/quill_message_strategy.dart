@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
+import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
@@ -631,15 +632,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   String _mentionText(dynamic rawData) {
-    try {
-      final dynamic data = rawData is String ? jsonDecode(rawData) : rawData;
-      if (data is Map) {
-        final userName = data['userName']?.toString().trim();
-        if (userName != null && userName.isNotEmpty) return '@$userName';
-      }
-    } catch (_) {
-      // 渲染器会使用占位名称；测量失败时保持相同的安全回退。
-    }
+    final userName = MentionUser.displayName(rawData);
+    if (userName != null && userName.isNotEmpty) return '@$userName';
     return '@--';
   }
 

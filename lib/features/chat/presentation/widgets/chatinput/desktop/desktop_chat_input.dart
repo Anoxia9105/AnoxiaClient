@@ -17,6 +17,7 @@ import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
@@ -82,20 +83,24 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
     super.dispose();
   }
 
-  /// 构建可提及用户列表（排除自己）
+  /// 构建可提及用户列表（排除自己；群聊顶部固定「@所有人」项）
   List<MentionUser> _buildMentionUsers() {
     final currentUser = ref.read(authControllerProvider).value;
     final roomMembers = ref.read(roomMembersProvider(widget.roomId));
-    return roomMembers
-        .where((m) => m.userId != currentUser?.userId)
-        .map(
-          (m) => MentionUser(
-            id: m.userId ?? -1,
-            name: m.nickName ?? 'chat_unknown_user_label'.tr(),
-            avatar: m.avatar,
+    final room = ref.read(currentRoomProvider(widget.roomId));
+    return [
+      // 仅群聊支持 @所有人，单聊不展示
+      if (room?.roomType == 1) MentionUser.atAll(),
+      ...roomMembers
+          .where((m) => m.userId != currentUser?.userId)
+          .map(
+            (m) => MentionUser(
+              id: m.userId ?? -1,
+              name: m.nickName ?? 'chat_unknown_user_label'.tr(),
+              avatar: m.avatar,
+            ),
           ),
-        )
-        .toList();
+    ];
   }
 
   /// 显示 @提及成员选择列表
