@@ -6,7 +6,7 @@ import 'package:anoxia/framework/network/dio_client.dart';
 
 /// 表情包仓库实现
 ///
-/// 通过远程数据源（HTTP API）提供表情包数据。
+/// 通过远程数据源（HTTP API）提供表情包数据，含用户自定义表情包的创建与删除。
 class StickerRepositoryImpl implements StickerRepository {
   @override
   Future<List<StickerPack>> fetchPacks() async {
@@ -17,6 +17,74 @@ class StickerRepositoryImpl implements StickerRepository {
     return rawList
         .map((e) => StickerPack.fromJson(Map<String, dynamic>.from(e)))
         .toList();
+  }
+
+  @override
+  Future<int> createCustomPack(String name, {String? iconUrl}) async {
+    try {
+      final response = await DioClient().post(
+        API.stickerCustomPack,
+        data: {'name': name, 'iconUrl': ?iconUrl},
+      );
+      if (response.data is! Map || response.data['code'] != 200) {
+        log.error('创建自定义表情包失败: ${response.data}');
+        return 0;
+      }
+      return int.tryParse(response.data['data']?.toString() ?? '') ?? 0;
+    } catch (e, st) {
+      log.error('创建自定义表情包失败', e, st);
+      return 0;
+    }
+  }
+
+  @override
+  Future<bool> addCustomSticker(
+    int packId,
+    String imageUrl, {
+    int? width,
+    int? height,
+  }) async {
+    try {
+      final response = await DioClient().post(
+        API.stickerCustomSticker,
+        data: {
+          'packId': packId,
+          'imageUrl': imageUrl,
+          'width': ?width,
+          'height': ?height,
+        },
+      );
+      return response.data is Map && response.data['code'] == 200;
+    } catch (e, st) {
+      log.error('新增自定义表情失败: $e\n$st');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> deleteCustomPack(int packId) async {
+    try {
+      final response = await DioClient().delete(
+        '${API.stickerCustomPackDelete}/$packId',
+      );
+      return response.data is Map && response.data['code'] == 200;
+    } catch (e, st) {
+      log.error('删除自定义表情包失败: $e\n$st');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> deleteCustomSticker(int stickerId) async {
+    try {
+      final response = await DioClient().delete(
+        '${API.stickerCustomStickerDelete}/$stickerId',
+      );
+      return response.data is Map && response.data['code'] == 200;
+    } catch (e, st) {
+      log.error('删除自定义表情失败: $e\n$st');
+      return false;
+    }
   }
 
   /// 兼容多种后端响应格式

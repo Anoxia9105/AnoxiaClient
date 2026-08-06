@@ -20,6 +20,7 @@ class QuillStyleConfig {
       fontSize: QuillCodeLineNumber.fontSize,
       height: QuillCodeLineNumber.lineHeight,
       color: theme.colorScheme.onSurface,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
 
@@ -98,12 +99,17 @@ class QuillStyleConfig {
         baseHorizontalSpacing,
         baseVerticalSpacing,
         VerticalSpacing.zero,
+        // 深色模式用更柔和的半透明底色，配合细边框收敛轮廓，
+        // 使代码块在输入框中更显紧凑、精致
         BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(
-            alpha: theme.brightness == Brightness.dark ? 0.72 : 0.82,
+            alpha: theme.brightness == Brightness.dark ? 0.55 : 0.85,
           ),
-          border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(6),
         ),
         null,
       ),

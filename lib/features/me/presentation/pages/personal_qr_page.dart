@@ -227,34 +227,31 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'ID: ${widget.user.userId}',
-                    style: TextStyle(color: cs.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
                     'me_qr_hint'.tr(),
                     style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(
-                        child: FilledButton.tonalIcon(
-                          onPressed: _saving ? null : _saveToGallery,
-                          icon: _saving
-                              ? SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: cs.onSecondaryContainer,
-                                  ),
-                                )
-                              : const Icon(Icons.save_alt_rounded, size: 18),
-                          label: Text('me_qr_save_image'.tr()),
+                      if (!DeviceUtil.isWeb) ...[
+                        Expanded(
+                          child: FilledButton.tonalIcon(
+                            onPressed: _saving ? null : _saveToGallery,
+                            icon: _saving
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: cs.onSecondaryContainer,
+                                    ),
+                                  )
+                                : const Icon(Icons.save_alt_rounded, size: 18),
+                            label: Text('me_qr_save_image'.tr()),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 10),
+                      ],
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: _sharing ? null : _shareQrImage,

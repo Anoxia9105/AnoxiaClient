@@ -209,6 +209,12 @@ class AuthController extends _$AuthController {
   }) async {
     // 防止递归调用（如 logout 接口本身返回 401 又触发 logout）
     if (_isLoggingOut) return;
+    // 已处于登出态时直接返回，不再重复重置会话缓存。
+    // 否则 DioClient 的 401 处理器会在 keepAlive 的 roomListService 等
+    // Provider 被本流程 invalidate 后重建出新的加签请求，请求再次 401，
+    // 再次触发本方法，形成无限 401→登出→重建→再 401 循环（Windows 端
+    // 冷启动未登录时尤其明显，登出后回登录页也会被循环请求打断）。
+    if (state is AsyncData && state.value == null) return;
     _isLoggingOut = true;
 
     final token = ref.read(tokenCacheProvider);

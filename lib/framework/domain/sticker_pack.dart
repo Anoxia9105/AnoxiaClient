@@ -8,12 +8,19 @@ class StickerPack {
   final String iconUrl;
   final List<Sticker> stickers;
 
+  /// 所属用户ID（服务端全局表情包为 null，用户自定义表情包为登录用户ID）
+  final int? userId;
+
   const StickerPack({
     required this.id,
     required this.name,
     required this.iconUrl,
     required this.stickers,
+    this.userId,
   });
+
+  /// 是否为用户自定义表情包（区别于服务端全局表情包）
+  bool get isCustom => userId != null;
 
   /// 从 JSON 构造 [StickerPack]，兼容 camelCase 与 snake_case
   factory StickerPack.fromJson(Map<String, dynamic> json) {
@@ -33,6 +40,9 @@ class StickerPack {
           '',
       iconUrl:
           json['iconUrl']?.toString() ?? json['icon_url']?.toString() ?? '',
+      userId: int.tryParse(
+        json['userId']?.toString() ?? json['user_id']?.toString() ?? '',
+      ),
       stickers: stickers,
     );
   }

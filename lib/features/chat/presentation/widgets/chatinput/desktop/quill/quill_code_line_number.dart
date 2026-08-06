@@ -11,7 +11,7 @@ import 'code_language.dart';
 /// Builds a clearly visible leading number for every code-block line.
 abstract final class QuillCodeLineNumber {
   /// 行号栏宽度。
-  static const double gutterWidth = 44;
+  static const double gutterWidth = 40;
 
   /// 行号字体大小。
   static const double fontSize = 14;

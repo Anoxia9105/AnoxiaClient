@@ -80,6 +80,9 @@ class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
   /// 列表行高固定，键盘上下键导航时按行距精确滚动（气泡跟随选中项跳动）
   static const double _itemExtent = 48;
 
+  /// ListView 的垂直内边距（与 build 中的 padding 保持一致）
+  static const double _listPadding = 4;
+
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -92,14 +95,34 @@ class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
   ///
   /// ListView.builder 懒构建，屏幕外的选中项不会触发 build，
   /// 不能再依赖项内的 Scrollable.ensureVisible，改为行距换算后主动滚动。
+  /// 选中项已在可视区域内时不滚动，避免到达底部后多滚动一次的跳动。
   void _scrollToSelected(int index, int itemCount) {
     if (itemCount <= 0 || index < 0 || index >= itemCount) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
-    final target = (index * _itemExtent).clamp(0, position.maxScrollExtent);
+
+    final itemTop = _listPadding + index * _itemExtent;
+    final itemBottom = itemTop + _itemExtent;
+    final viewportStart = position.pixels;
+    final viewportEnd = viewportStart + position.viewportDimension;
+
+    // 选中项完全可见：不滚动
+    if (itemTop >= viewportStart && itemBottom <= viewportEnd) return;
+
+    // 选中项在可视区上方：滚动使其顶部对齐可视区顶部
+    final double target;
+    if (itemTop < viewportStart) {
+      target = itemTop.clamp(0.0, position.maxScrollExtent).toDouble();
+    } else {
+      // 选中项在可视区下方：滚动使其底部对齐可视区底部
+      target = (itemBottom - position.viewportDimension)
+          .clamp(0.0, position.maxScrollExtent)
+          .toDouble();
+    }
+
     if ((target - position.pixels).abs() < 1) return;
     _scrollController.animateTo(
-      target.toDouble(),
+      target,
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
     );

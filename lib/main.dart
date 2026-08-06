@@ -8,6 +8,10 @@ import 'package:anoxia/features/live/presentation/pages/window_live_preview_page
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
+// 引入 WindowController 扩展（doCustomInitialize）。analyze 会误判 stub 分支而报 unused_import，
+// 但 Windows/macOS 原生编译必须依赖该扩展，故忽略该提示。
+// ignore: unused_import
+import 'package:anoxia/framework/extensions/window_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';

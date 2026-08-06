@@ -548,6 +548,9 @@ class _EmojiCategoryTabBarState extends State<_EmojiCategoryTabBar> {
   }
 
   /// 表情包入口按钮（分类栏末尾）
+  ///
+  /// 与表情分类 Tab 保持一致的选中风格：未选中时透明无背景，
+  /// 选中（进入表情包视图）时才添加主题色背景。
   Widget _buildStickerButton(BuildContext context, double iconSize) {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
@@ -562,13 +565,13 @@ class _EmojiCategoryTabBarState extends State<_EmojiCategoryTabBar> {
           vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: scheme.onSurfaceVariant.withValues(alpha: 0.08),
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedSticker,
           size: iconSize,
-          color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
         ),
       ),
     );

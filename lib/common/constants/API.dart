@@ -157,6 +157,18 @@ class API {
   /// 获取表情包列表（含包内表情）
   static const String stickerPacks = '/chat/sticker/packs';
 
+  /// 创建用户自定义表情包
+  static const String stickerCustomPack = '/chat/sticker/custom/pack';
+
+  /// 向用户自定义表情包新增表情
+  static const String stickerCustomSticker = '/chat/sticker/custom/sticker';
+
+  /// 删除用户自定义表情包（{id}）
+  static const String stickerCustomPackDelete = '/chat/sticker/custom/pack';
+
+  /// 删除用户自定义表情包内的单个表情（{id}）
+  static const String stickerCustomStickerDelete = '/chat/sticker/custom/sticker';
+
   // ======================== 通话 ========================
   /// 获取通话 token
   static const String callToken = '/call/token';

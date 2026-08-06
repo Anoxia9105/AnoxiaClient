@@ -74,6 +74,17 @@ class RoomListService extends _$RoomListService {
           state = AsyncValue.data(rooms);
         });
     ref.onDispose(subscription.cancel);
+
+    // 未登录时不发起会话列表网络请求：已登录后的 fetch 由登录流程
+    // 通过 invalidate(roomListServiceProvider) 触发。否则匿名请求会收到
+    // 401，被 DioClient 误判为「token 过期」触发登出，并因本 Provider 为
+    // keepAlive 被登出时的会话重置重新 invalidate，形成
+    // 「401 → 登出 → 重建 → 再 401」的无限循环，导致刚登录进首页又被登出。
+    if (ref.read(authControllerProvider).value == null) {
+      log.info('[RoomListService] 用户未登录，跳过会话列表预加载');
+      return state.value ?? const <ChatRoomVO>[];
+    }
+
     try {
       return await _fetchRoomListForStartup();
     } finally {
