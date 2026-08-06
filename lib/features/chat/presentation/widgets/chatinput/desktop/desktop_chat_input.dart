@@ -14,6 +14,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
+import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
@@ -235,11 +236,33 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         return;
       }
       final selection = controller.selection;
-      final start = selection.baseOffset;
+
+      // 粘贴到代码块内时，绕过 flutter_quill 的启发式插入规则，显式构造携带
+      // code-block（含语言）属性的 Delta。否则 Web/wasm 下粘贴多行文本会临时
+      // 产生「空代码块」，渲染时序中 RenderEditor 对其查询 childAtPosition 时
+      // 抛出 `targetChild should not be null`，并表现为代码块消失。
+      if (selection.baseOffset >= 0) {
+        final block = _codeBlockAt(controller, selection.baseOffset);
+        if (block != null) {
+          final language = block.style.attributes[Attribute.codeBlock.key]?.value;
+          final delta = _buildCodeBlockDelta(text, language);
+          final start = selection.start;
+          final deleteLen =
+              selection.isCollapsed ? 0 : selection.end - selection.start;
+          controller.replaceText(
+            start,
+            deleteLen,
+            delta,
+            TextSelection.collapsed(offset: start + text.length),
+          );
+          return;
+        }
+      }
 
       // 使用 replaceText 原子式写入，避免 document.insert + updateSelection
       // 两段式操作在 wasm 渲染时序下导致 render children 与 document 不同步，
       // 触发 flutter_quill 的 childAtPosition null 崩溃。
+      final start = selection.baseOffset;
       if (start < 0) {
         controller.replaceText(
           controller.document.length - 1,
@@ -265,6 +288,35 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         );
       }
     }
+  }
+
+  /// 返回包含 [offset] 处的代码块节点（向上查找祖先），不在代码块内则返回 null。
+  Node? _codeBlockAt(QuillController controller, int offset) {
+    final res = controller.document.queryChild(offset);
+    var node = res.node;
+    while (node != null) {
+      if (node.style.containsKey(Attribute.codeBlock.key)) {
+        return node;
+      }
+      node = node.parent;
+    }
+    return null;
+  }
+
+  /// 将纯文本按换行拆分为代码块行，构造携带 code-block（含语言）属性的 Delta。
+  ///
+  /// 每行的换行符都带上 code-block 属性，确保 flutter_quill 的插入规则不会
+  /// 把代码块降级为普通文本或临时产生空代码块。
+  Delta _buildCodeBlockDelta(String text, dynamic language) {
+    final codeAttr = <String, dynamic>{Attribute.codeBlock.key: language};
+    final lines = text.split('\n');
+    final delta = Delta();
+    delta.insert(lines.first);
+    for (var i = 1; i < lines.length; i++) {
+      delta.insert('\n', codeAttr);
+      delta.insert(lines[i]);
+    }
+    return delta;
   }
 
   @override

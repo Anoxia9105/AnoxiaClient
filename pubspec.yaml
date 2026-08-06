@@ -54,6 +54,7 @@ dependencies:
   tray_manager: ^0.5.2
   # 瀵屾枃鏈?
   flutter_quill: ^11.5.1
+  dart_quill_delta: ^10.0.0
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0
   # 璺ㄥ钩鍙版枃浠讹紙Web 涓婁紶锛?
@@ -200,3 +201,7 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+  fonts:
+    - family: HarmonyOS
+      fonts:
+        - asset: assets/fonts/HarmonyOS.ttf

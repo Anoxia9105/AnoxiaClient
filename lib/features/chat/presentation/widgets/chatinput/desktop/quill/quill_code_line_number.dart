@@ -1,7 +1,7 @@
 /// Quill 代码块行号与语言标签渲染组件。
 ///
-/// 为 Quill 编辑器中的代码块提供固定宽度的行号栏
-/// 和悬浮的语言选择标签。
+/// 为 Quill 编辑器中的代码块提供紧凑、精致的固定宽度行号栏
+/// 和左上角的语言标签，行号与代码高亮均由 Quill 稳定驱动。
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -10,14 +10,18 @@ import 'code_language.dart';
 
 /// Builds a clearly visible leading number for every code-block line.
 abstract final class QuillCodeLineNumber {
-  /// 行号栏宽度。
-  static const double gutterWidth = 40;
+  /// 行号栏宽度（左侧留白 + 数字）。
+  static const double gutterWidth = 38;
 
-  /// 行号字体大小。
-  static const double fontSize = 14;
+  /// 代码字体大小。
+  static const double fontSize = 13;
 
-  /// 行号行高。
-  static const double lineHeight = 1.15;
+  /// 代码行高。
+  static const double lineHeight = 1.5;
+
+  /// Quill 代码块内置的上下内边距（与 flutter_quill 包内写死的一致），
+  /// 语言标签依此定位在代码块顶部留白处，避免与首行代码重叠。
+  static const double blockTopPadding = 16;
 
   /// 计算文本缩进宽度，将代码文本保持在固定间距的右侧列中。
   static HorizontalSpacing indentWidth(
@@ -97,87 +101,34 @@ class _CodeBlockLeading extends StatefulWidget {
 }
 
 class _CodeBlockLeadingState extends State<_CodeBlockLeading> {
-  static const double _badgeWidth = 92;
-  final GlobalKey _numberKey = GlobalKey();
-  final OverlayPortalController _overlayController = OverlayPortalController();
-  double _lineWidth = 0;
-  double _badgeTop = 0;
-  double _badgeRight = 8;
-  bool _isOverlayShown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.showLanguage) {
-      WidgetsBinding.instance.addPostFrameCallback(_measureAndShow);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _CodeBlockLeading oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.showLanguage) {
-      WidgetsBinding.instance.addPostFrameCallback(_measureAndShow);
-    } else if (oldWidget.showLanguage && _isOverlayShown) {
-      _overlayController.hide();
-      _isOverlayShown = false;
-    }
-  }
-
-  void _measureAndShow(Duration _) {
-    if (!mounted || !widget.showLanguage) return;
-
-    final targetRenderObject = _numberKey.currentContext?.findRenderObject();
-    RenderObject? renderObject = targetRenderObject;
-    var visibleWidth = double.infinity;
-    while (renderObject != null) {
-      if (renderObject is RenderBox && renderObject.hasSize) {
-        final width = renderObject.size.width;
-        if (width > _badgeWidth + QuillCodeLineNumber.gutterWidth &&
-            width < visibleWidth) {
-          visibleWidth = width;
-        }
-      }
-      renderObject = renderObject.parent;
-    }
-    if (targetRenderObject is RenderBox && targetRenderObject.hasSize) {
-      final viewportWidth = MediaQuery.sizeOf(context).width;
-      final targetPosition = targetRenderObject.localToGlobal(Offset.zero);
-      final targetLeft = targetPosition.dx;
-      _badgeTop = targetPosition.dy;
-      final viewportAvailable = viewportWidth - targetLeft - 8;
-      if (viewportAvailable > _badgeWidth && viewportAvailable < visibleWidth) {
-        visibleWidth = viewportAvailable;
-      }
-      _badgeRight = (viewportWidth - targetLeft - visibleWidth + 8)
-          .clamp(8.0, viewportWidth - _badgeWidth)
-          .toDouble();
-    }
-    if (!visibleWidth.isFinite) return;
-
-    if (_lineWidth != visibleWidth) {
-      setState(() => _lineWidth = visibleWidth);
-    }
-    _overlayController.show();
-    _isOverlayShown = true;
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final language = CodeLanguageDetector.resolveForLine(widget.node);
+
     final number = Container(
-      key: _numberKey,
-      alignment: AlignmentDirectional.topStart,
+      alignment: AlignmentDirectional.topEnd,
       width: QuillCodeLineNumber.gutterWidth,
+      padding: const EdgeInsetsDirectional.only(end: 8, top: 2),
+      // 行号栏使用比代码区略深的底色 + 细分割线，形成精致的沟槽效果
+      decoration: BoxDecoration(
+        color:
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        border: Border(
+          right: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+            width: 1,
+          ),
+        ),
+      ),
       child: Text(
         widget.lineNumber,
-        textAlign: TextAlign.start,
+        textAlign: TextAlign.end,
         style: (widget.style ?? const TextStyle()).copyWith(
-          color: colorScheme.onSurfaceVariant,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
           // Web 端走系统字体，避免加载内置 CJK 大字体（Safari 卡顿来源）
           fontFamily: kIsWeb ? null : 'HarmonyOS',
-          fontSize: QuillCodeLineNumber.fontSize,
+          fontSize: QuillCodeLineNumber.fontSize - 1,
           height: QuillCodeLineNumber.lineHeight,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
@@ -186,23 +137,21 @@ class _CodeBlockLeadingState extends State<_CodeBlockLeading> {
 
     if (!widget.showLanguage) return number;
 
-    return OverlayPortal(
-      controller: _overlayController,
-      overlayChildBuilder: (overlayContext) {
-        if (_lineWidth <= _badgeWidth) return const SizedBox.shrink();
-        return Positioned(
-          top: _badgeTop,
-          right: _badgeRight,
-          child: SizedBox(
-            width: _badgeWidth,
-            child: QuillCodeLanguageBadge(
-              language: language,
-              onSelected: widget.controller == null ? null : _setLanguage,
-            ),
+    // 语言标签稳定地置于代码块顶部留白（首行上方），不依赖视口测量，
+    // 避免 Overlay 测量带来的抖动/不稳定。
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        number,
+        Positioned(
+          left: QuillCodeLineNumber.gutterWidth,
+          top: -QuillCodeLineNumber.blockTopPadding,
+          child: QuillCodeLanguageBadge(
+            language: language,
+            onSelected: widget.controller == null ? null : _setLanguage,
           ),
-        );
-      },
-      child: number,
+        ),
+      ],
     );
   }
 
@@ -237,17 +186,16 @@ class QuillCodeLanguageBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final badge = Container(
-      height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: colorScheme.surface.withValues(alpha: 0.9),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
         border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Flexible(
             child: Text(
@@ -256,8 +204,9 @@ class QuillCodeLanguageBadge extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: colorScheme.onSurfaceVariant,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
+                height: 1,
               ),
             ),
           ),
@@ -265,7 +214,7 @@ class QuillCodeLanguageBadge extends StatelessWidget {
             const SizedBox(width: 2),
             Icon(
               Icons.arrow_drop_down,
-              size: 14,
+              size: 12,
               color: colorScheme.onSurfaceVariant,
             ),
           ],
