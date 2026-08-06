@@ -11,9 +11,8 @@ void main() {
   ) async {
     final controller = QuillController(
       document: Document.fromJson([
-        {'insert': 'final value = 42;'},
         {
-          'insert': '\n',
+          'insert': 'final value = 42;\n',
           'attributes': {'code-block': true},
         },
         {
@@ -58,14 +57,12 @@ void main() {
   ) async {
     final controller = QuillController(
       document: Document.fromJson([
-        {'insert': '^'},
         {
-          'insert': '\n',
+          'insert': '^\n',
           'attributes': {'code-block': true},
         },
-        {'insert': '='},
         {
-          'insert': '\n',
+          'insert': '=\n',
           'attributes': {'code-block': true},
         },
       ]),
@@ -123,9 +120,8 @@ void main() {
   ) async {
     final controller = QuillController(
       document: Document.fromJson([
-        {'insert': '@override Widget build() {}'},
         {
-          'insert': '\n',
+          'insert': '@override Widget build() {}\n',
           'attributes': {'code-block': true},
         },
       ]),

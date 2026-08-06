@@ -77,7 +77,7 @@ def main():
         if rc != 0:
             print('flutter pub get failed (rc=%d)' % rc)
             return rc
-        rc = run(['build', 'web', '--release'])
+        rc = run(['build', 'web', '--release', '--no-tree-shake-icons'])
         print('flutter build web rc=%d' % rc)
         return rc
     finally:

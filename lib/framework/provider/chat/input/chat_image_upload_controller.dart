@@ -173,11 +173,15 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
+        log.info(
+          '[ImageUpload] 第$attempt次上传尝试, '
+          '文件: ${files.map((f) => f.name).join(', ')}',
+        );
+
         final urls = await ref.read(uploadRepositoryProvider).uploadFiles(files);
 
         if (urls.isNotEmpty) {
-          // 只回写仍在编辑器中的条目：用户删除 embed 后对应记录已被
-          // retain() 清理，不能再把成功/失败状态加回来阻塞发送按钮
+          log.info('[ImageUpload] 上传成功: $urls');
           state = {
             ...state,
             for (int i = 0; i < images.length && i < urls.length; i++)
@@ -187,13 +191,14 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           return;
         }
 
+        log.warning('[ImageUpload] 第$attempt次上传返回空URL列表');
         if (isLastAttempt) {
           _markFailed(images);
           return;
         }
       } catch (e, st) {
+        log.error('[ImageUpload] 第$attempt次上传异常: $e', st);
         if (isLastAttempt) {
-          log.error('图片上传失败: $e\n$st');
           _markFailed(images);
           return;
         }

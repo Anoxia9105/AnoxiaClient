@@ -237,24 +237,31 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
       final selection = controller.selection;
       final start = selection.baseOffset;
 
+      // 使用 replaceText 原子式写入，避免 document.insert + updateSelection
+      // 两段式操作在 wasm 渲染时序下导致 render children 与 document 不同步，
+      // 触发 flutter_quill 的 childAtPosition null 崩溃。
       if (start < 0) {
-        controller.document.insert(controller.document.length - 1, text);
+        controller.replaceText(
+          controller.document.length - 1,
+          0,
+          text,
+          TextSelection.collapsed(
+            offset: controller.document.length - 1 + text.length,
+          ),
+        );
+      } else if (!selection.isCollapsed) {
+        controller.replaceText(
+          selection.start,
+          selection.end - selection.start,
+          text,
+          TextSelection.collapsed(offset: selection.start + text.length),
+        );
       } else {
-        if (!selection.isCollapsed) {
-          controller.replaceText(
-            selection.start,
-            selection.end - selection.start,
-            text,
-            null,
-          );
-        } else {
-          controller.document.insert(start, text);
-        }
-        final newOffset =
-            (selection.isCollapsed ? start : selection.start) + text.length;
-        controller.updateSelection(
-          TextSelection.collapsed(offset: newOffset),
-          ChangeSource.local,
+        controller.replaceText(
+          start,
+          0,
+          text,
+          TextSelection.collapsed(offset: start + text.length),
         );
       }
     }

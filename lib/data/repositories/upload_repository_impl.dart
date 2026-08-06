@@ -11,6 +11,9 @@ class UploadRepositoryImpl implements UploadRepository {
   @override
   Future<List<String>> uploadFiles(List<XFile> files) async {
     try {
+      final fileNames = files.map((f) => f.name).join(', ');
+      log.info('[Upload] uploadFiles 开始上传: $fileNames');
+
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
         files: files,
@@ -18,12 +21,15 @@ class UploadRepositoryImpl implements UploadRepository {
 
       final rawList = res.data is Map ? res.data['data'] : res.data;
       if (rawList is! List) {
-        log.warning('[Upload] uploadFiles: empty/invalid response');
+        log.warning('[Upload] uploadFiles: 服务器返回空/无效响应 -> ${res.data}');
         return [];
       }
-      return rawList.map((e) => e.toString()).toList();
+
+      final urls = rawList.map((e) => e.toString()).toList();
+      log.info('[Upload] uploadFiles 上传成功: ${urls.length} 个文件');
+      return urls;
     } catch (e, st) {
-      log.error('[Upload] uploadFiles failed', e, st);
+      log.error('[Upload] uploadFiles 上传异常: $e', st);
       return [];
     }
   }

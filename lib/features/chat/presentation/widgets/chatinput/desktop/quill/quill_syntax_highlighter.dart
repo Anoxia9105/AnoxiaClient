@@ -31,8 +31,17 @@ abstract final class QuillSyntaxHighlighter {
     TextStyle? style,
     GestureRecognizer? recognizer,
   ) {
-    final isCodeBlock =
-        node.parent?.style.containsKey(Attribute.codeBlock.key) ?? false;
+    // Line.style 不继承父 Block 的 code-block 属性，需要向上遍历祖先链
+    // 才能检测到代码块。结构：QuillText → Line → Block。
+    var isCodeBlock = false;
+    var ancestor = node.parent;
+    while (ancestor != null) {
+      if (ancestor.style.containsKey(Attribute.codeBlock.key)) {
+        isCodeBlock = true;
+        break;
+      }
+      ancestor = ancestor.parent;
+    }
     final isInlineCode = node.style.containsKey(Attribute.inlineCode.key);
     final codeStyle = (isCodeBlock || isInlineCode)
         ? (style ?? const TextStyle()).merge(
@@ -104,12 +113,15 @@ abstract final class QuillSyntaxHighlighter {
           final tokenStyle = node.className == null
               ? null
               : theme[node.className];
+          // highlight 语法树中，实际文本在子节点（className=null），
+          // 而 className 在父节点上（value 为空），需要向下传递才能生效。
+          final effectiveBase = baseStyle?.merge(tokenStyle) ?? tokenStyle;
           return TextSpan(
             text: node.value,
-            style: baseStyle?.merge(tokenStyle) ?? tokenStyle,
+            style: effectiveBase,
             children: node.children == null
                 ? null
-                : _convertNodes(node.children!, baseStyle, theme),
+                : _convertNodes(node.children!, effectiveBase, theme),
           );
         })
         .toList(growable: false);
