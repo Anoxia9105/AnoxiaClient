@@ -13,7 +13,7 @@ $Mode = if ($Debug) { '--debug' } else { '--release' }
 
 function Strip-Fonts {
     param([string]$Path)
-    $lines = Get-Content -Path $Path
+    $lines = Get-Content -Path $Path -Encoding UTF8
     $out = @()
     $inFonts = $false
     foreach ($line in $lines) {
@@ -32,12 +32,12 @@ function Strip-Fonts {
         }
         $out += $line
     }
-    [System.IO.File]::WriteAllText($Path, ($out -join "`r`n"))
+    [System.IO.File]::WriteAllText($Path, ($out -join "`r`n"), [System.Text.Encoding]::UTF8)
 }
 
 $backup = $null
 if ($Target -eq 'web') {
-    $backup = Get-Content -Path $PUBSPEC -Raw
+    $backup = Get-Content -Path $PUBSPEC -Raw -Encoding UTF8
     Strip-Fonts -Path $PUBSPEC
     $newText = Get-Content -Path $PUBSPEC -Raw
     if ($newText -eq $backup) {

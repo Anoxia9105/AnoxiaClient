@@ -13,6 +13,9 @@ analyzer:
   exclude:
     # 官方参考库 - 用于对标功能，不编译
     - lib-livekit/**
+    # flutter_quill 本地补丁包（third_party 依赖，自带测试与本项目规范不一致，
+    # 包内源码问题由 flutter_quill 上游维护，不纳入本仓库分析）
+    - third_party/**
     
 
     

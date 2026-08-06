@@ -13,37 +13,38 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  # 灞忓箷閫傞厤
+  # 屏幕适配
   flutter_screenutil: ^5.9.3
-  # Riverpod鏍稿績搴?
+  # Riverpod状态管理
   flutter_riverpod: ^3.0.3
   riverpod_annotation: ^4.0.2
-  # http璇锋眰
+  # http网络请求
   dio: ^5.9.0
-  # 璺敱
+  # 路由跳转
   go_router: ^17.0.0
-  # Log搴?
+  # Log日志
   talker_flutter: ^5.1.5
   talker_riverpod_logger: ^5.1.5
-  # 鏈湴瀛樺偍
+  # 本地存储
   shared_preferences: ^2.5.3
-  # 瀵嗛挜瀛樺偍
+  # 安全存储
   flutter_secure_storage: ^10.3.0
-  # 缃戠粶妫€娴?
+  # 网络状态监测
   connectivity_plus: ^7.0.0
-  # 鏉冮檺鐢宠
+  # 权限管理
   permission_handler: ^12.0.1
-  # 鍦板浘涓庡墠鍙板畾浣?
+  # 地图相关
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
+  # 定位
   geolocator: ^14.0.2
-  # 鍥介檯鍖?澶氳瑷€璁剧疆
+  # 国际化
   easy_localization: ^3.0.8
-  # 鍥炬爣
+  # 图标库
   hugeicons: ^1.1.5
-  # 鍒楄〃婊氬姩
+  # 列表相关
   flutter_list_view: ^1.1.29
-  # 鍙畾浣嶅垪琛ㄦ粴鍔?
+  # 滚动定位列表
   scrollable_positioned_list: ^0.3.8
   # rtc
   livekit_client: ^2.7.0
@@ -52,17 +53,17 @@ dependencies:
   web_socket_channel: ^3.0.3
   # win toolbar
   tray_manager: ^0.5.2
-  # 瀵屾枃鏈?
+  # 富文本编辑器
   flutter_quill: ^11.5.1
   dart_quill_delta: ^10.0.0
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0
-  # 璺ㄥ钩鍙版枃浠讹紙Web 涓婁紶锛?
+  # Web 平台文件处理
   cross_file: ^0.3.5+4
-  # 鍥剧墖缂撳瓨
+  # 缓存
   #cached_network_image: ^3.4.1
   cross_cache: ^1.1.0
-  # 鍥剧墖鏌ョ湅
+  # 图片查看
   photo_view: ^0.15.0
   window_manager:
     git:
@@ -71,88 +72,89 @@ dependencies:
       ref: 6fae92d21b4c80ce1b8f71c1190d7970cf722bd4
   # toast
   bot_toast: ^4.1.3
-  # 娴佷紶杈?
+  # 长连接
   #  flutter_client_sse: ^2.0.3
-   #link 閾炬帴澶勭悊
+   #link 打开链接
   url_launcher: ^6.3.2
-  # 瀛楁瘝鍒嗙粍鎺掑簭鍒楄〃
+  # 字母列表
   alphabet_list_view: ^1.2.0
-  # 姹夊瓧杞嫾闊?
+  # 拼音
   lpinyin: ^2.0.3
-  # 澶氱獥鍙?
+  # 多窗口
   desktop_multi_window: ^0.3.0
-  # 鏂囦欢閫夋嫨
+  # 文件选择
   file_picker: ^11.0.2
   # uuid
   uuid: ^4.5.2
-  # 绋嬪簭淇℃伅妫€娴?
+  # 包信息
   package_info_plus: ^9.0.0
-  # 鑾峰彇鏂囦欢鐩綍
+  # 路径管理
   path_provider: ^2.1.5
-  # 鎵撳紑鏂囦欢
+  # 打开文件
   open_filex: ^4.7.0
-  # 鐗堟湰姣旇緝
+  # 版本号
   pub_semver: ^2.2.0
   path: ^1.9.1
   characters: ^1.4.0
   intl: ^0.20.2
   share_plus: ^12.0.2
-  # Web 绔?JS 浜掓搷浣滐紙鏇夸唬宸插簾寮冪殑 dart:js / dart:js_util锛夛紝骞舵彁渚?Wasm 鍏煎璺緞
+  # Web 平台 JS 交互：dart:js / dart:js_util在 Wasm 下不可用
   web: ^1.0.0
-  # 澶勭悊鍥剧墖鏍煎紡
+  # 图片处理
   image: ^4.7.2
-  # emoji 閫夋嫨鍣?
+  # emoji 选择器
   emoji_picker_flutter: ^4.4.0
-  # 鏈湴閫氱煡
+  # 本地通知
   flutter_local_notifications: ^21.0.0
-  # Android/iOS/macOS瑙掓爣
+  # Android/iOS/macOS角标
   app_badge_plus: ^1.3.1
-  # 鍓创鏉?
+  # 剪贴板
   pasteboard: ^0.5.0
-  # 閿欒惤鍔ㄧ敾
+  # 动画
   flutter_staggered_animations: ^1.1.1
-  # 鎷嗗垎鍣ㄨ鍥炬彃浠?
+  # 分屏
   split_view: ^3.2.2
-  # 鎶藉眽寮忓鑸?
+  # 抽屉
   flutter_zoom_drawer: ^3.2.0
-  # 閿洏蹇嵎閿?
+  # 快捷键
   hotkey_manager: ^0.2.3
-  # 鍚庡彴鏈嶅姟
+  # 后台
   flutter_background: ^1.3.1
-  # 绯荤粺娴姩绐楀彛 Android/IOS
+  # 画中画 Android/IOS
   pip: ^0.0.3
-  # 闊抽鎾斁缁勪欢
+  # 音频播放
   just_audio: ^0.10.5
-  # 闊抽娉㈠舰缁勪欢
+  # 音频波形
   audio_waveforms: ^2.0.2
-  # 鏋佸厜鎺ㄩ€?
+  # 极光推送
   jpush_flutter: ^3.4.5
   # fcm google firebase cloud messaging
   firebase_core: ^4.10.0
   firebase_messaging: ^16.0.2
-  # 璋锋瓕瀛椾綋
+  # 字体
   google_fonts: ^8.1.0
-  # 娣卞害閾炬帴
-  # 鑱婂ぉ杈撳叆閿洏/闈㈡澘鍒囨崲瀹瑰櫒
+  # 聊天输入容器
+  # 底部输入栏
   chat_bottom_container: ^0.5.0
-  # 浜岀淮鐮佹壂鎻?
+  # 扫码
   mobile_scanner: ^7.1.3
-  # 浜岀淮鐮佺敓鎴?
+  # 二维码
   qr_flutter: ^4.1.0
-  # 淇濆瓨鍥剧墖鍒扮浉鍐?
+  # 相册保存
   image_gallery_saver_plus: ^5.0.0
-  # 鍥剧墖瑁佸壀
+  # 图片裁剪
   image_cropper: ^12.2.1
-  # 鍥剧墖閫夋嫨鍣?
+  # 图片选择
   image_picker: ^1.2.2
-  # 閾炬帴棰勮
+  # 链接预览
   any_link_preview: ^3.0.3
   html: ^0.15.6
   http: ^1.6.0
+  # 设备信息
   device_info_plus: ^12.3.0
-  # 鏁版嵁搴?
+  # 本地数据库
   drift: ^2.34.0
-  # 鏁版嵁搴搇ibs
+  # drift 依赖
   sqlite3_flutter_libs: ^0.5.40
 
 
@@ -172,6 +174,11 @@ dev_dependencies:
 
 dependency_overrides:
   sqlparser: 0.44.0
+  # flutter_quill 本地补丁：修复代码块粘贴/格式化时 render children 与文档
+  # 短暂失步导致 childAtPosition 抛 "targetChild should not be null" 崩溃
+  # （web-wasm 必现）。源码位于 third_party/flutter_quill（基于 11.5.1）。
+  flutter_quill:
+    path: third_party/flutter_quill
 
 flutter:
   uses-material-design: true
@@ -197,7 +204,6 @@ flutter:
   #         style: italic
   #   - family: Trajan Pro
   #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
