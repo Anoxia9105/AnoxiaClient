@@ -56,7 +56,11 @@ enum SystemEventType {
   /// 聊天室解散（event_type = 19）
   roomDissolved(19),
   groupJoinRequest(24),
-  groupJoinRequestHandled(25);
+  groupJoinRequestHandled(25),
+
+  /// 个人资料/头像已更新（event_type = 26），由其它设备修改资料时定向推送，
+  /// 收到后需重新拉取个人资料（getInfo）以同步头像/昵称等展示。
+  profileUpdated(26);
 
   /// 对应的 V5 协议数字事件码
   final int code;
@@ -95,6 +99,7 @@ enum SystemEventType {
       19 => SystemEventType.roomDissolved,
       24 => SystemEventType.groupJoinRequest,
       25 => SystemEventType.groupJoinRequestHandled,
+      26 => SystemEventType.profileUpdated,
       _ => SystemEventType.contactRequest, // 默认回退
     };
   }

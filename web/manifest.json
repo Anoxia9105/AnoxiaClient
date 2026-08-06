@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Anoxia - A high-performance, real-time instant messaging client for cross-platform multi-device sync.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

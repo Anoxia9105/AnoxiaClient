@@ -134,6 +134,12 @@ class SystemEventService extends _$SystemEventService {
         ref.read(contactListServiceProvider.notifier).refresh();
         ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
         break;
+      case SystemEventType.profileUpdated:
+        // 其它设备修改了个人资料/头像：重新拉取本人资料，
+        // 使本地侧边栏、我的页、本人消息气泡等处的头像/昵称即时更新。
+        ref.read(authControllerProvider.notifier).refreshUserInfo();
+        ref.read(contactListServiceProvider.notifier).refresh();
+        break;
       case SystemEventType.contactRequest:
         ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
         break;
