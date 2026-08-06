@@ -98,35 +98,50 @@ abstract final class CodeLanguageDetector {
     ).hasMatch(text)) {
       return fromId('csharp')!;
     }
-    if (RegExp(r'#include\s*[<"]|std::|\b(?:cout|cin)\s*<<').hasMatch(text)) {
+    if (RegExp(
+      r'#include\s*[<"]|std::|\b(?:cout|cin)\s*<<|\busing\s+namespace\b',
+    ).hasMatch(text)) {
       return fromId('cpp')!;
     }
     if (RegExp(
-      r'\bpackage\s+[\w.]+;|\bimport\s+java\.|System\.out\.println',
+      r'\bpackage\s+[\w.]+;|\bimport\s+java\.|System\.out\.println|'
+      r'\bpublic\s+(?:class|static|void)\b',
     ).hasMatch(text)) {
       return fromId('java')!;
     }
     if (RegExp(
-      r'\binterface\s+\w+|:\s*(?:string|number|boolean)\b',
+      r'\binterface\s+\w+|:\s*(?:string|number|boolean)\b|'
+      r'\b(?:as\s+const|readonly|private\s+[a-zA-Z]+\s*[=;])\b',
     ).hasMatch(text)) {
       return fromId('typescript')!;
     }
     if (RegExp(
-      r'\bpackage:|@override\b|\bWidget\s+build\b|\blate\s+final\b|'
-      r'\bvoid\s+main\s*\(|\b(?:Future|Stream)<[^>]+>\s+\w+\s*\(',
+      r'\bpackage:|\b@override\b|\bWidget\s+build\b|\blate\s+final\b|'
+      r'\bvoid\s+main\s*\(|\b(?:Future|Stream)<[^>]+>\s+\w+\s*\(|'
+      r'\bimport\s+(?:dart|package):|\bclass\s+\w+\s+extends\s+',
     ).hasMatch(text)) {
       return fromId('dart')!;
     }
     if (RegExp(
-      r'^\s*(?:def|class)\s+\w+.*:\s*$|\bfrom\s+\w+\s+import\b',
+      r'^\s*(?:def|class)\s+\w+.*:\s*$|\bfrom\s+\w+\s+import\b|'
+      r'\bimport\s+\w+\s*$|\bprint\s*\(',
       multiLine: true,
     ).hasMatch(text)) {
       return fromId('python')!;
     }
     if (RegExp(
-      r'\b(?:const|let|var)\s+\w+|=>|\bfunction\s+\w+',
+      r'\b(?:const|let|var)\s+\w+|=>|\bfunction\s+\w+|'
+      r'\bconsole\.\w+\s*\(|\brequire\s*\(|\bmodule\.exports\b|'
+      r'\b(?:import|export)\s+(?:[\w{}\s,*]+)\s+from\s+|'
+      r'\b(?:import|export)\s+default\b',
     ).hasMatch(text)) {
       return fromId('javascript')!;
+    }
+    if (RegExp(
+      r'^\s*(?:sudo\s+)?(?:ls|cd|mkdir|rm|cp|mv|cat|curl|wget)\b',
+      multiLine: true,
+    ).hasMatch(text)) {
+      return fromId('bash')!;
     }
     if (RegExp(
           r'^[^{]+\{(?:[^{}]|\{[^{}]*\})*\}',

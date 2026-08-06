@@ -60,21 +60,56 @@ abstract final class QuillSyntaxHighlighter {
       return _plainSpan(text, codeStyle, recognizer);
     }
 
+    return _highlightedSpan(
+      context,
+      text,
+      language.id,
+      codeStyle,
+      recognizer,
+    );
+  }
+
+  /// 为一段完整代码文本构建语法高亮跨度（不依赖 Quill 节点）。
+  ///
+  /// 供 WASM 消息渲染等非编辑器场景复用；不识别时原样返回纯文本，
+  /// 高亮失败也不影响文本显示。
+  static InlineSpan buildCodeSpan(
+    BuildContext context,
+    String code,
+    String languageId,
+    TextStyle? style,
+  ) {
+    final trimmedText = code.trim();
+    if (languageId == CodeLanguageDetector.plainText.id ||
+        trimmedText.isEmpty ||
+        !_hasHighlightableContent(trimmedText)) {
+      return _plainSpan(code, style, null);
+    }
+    return _highlightedSpan(context, code, languageId, style, null);
+  }
+
+  static InlineSpan _highlightedSpan(
+    BuildContext context,
+    String text,
+    String languageId,
+    TextStyle? style,
+    GestureRecognizer? recognizer,
+  ) {
     try {
-      final result = syntax.highlight.parse(text, language: language.id);
+      final result = syntax.highlight.parse(text, language: languageId);
       final theme = Theme.of(context).brightness == Brightness.dark
           ? monokaiSublimeTheme
           : githubTheme;
       return TextSpan(
-        style: codeStyle,
+        style: style,
         recognizer: recognizer,
         mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
-        children: _convertNodes(result.nodes ?? const [], codeStyle, theme),
+        children: _convertNodes(result.nodes ?? const [], style, theme),
       );
     } catch (_) {
       // Highlighting is presentation-only; malformed or unknown code must
       // never prevent Quill from rendering/editing the original text.
-      return _plainSpan(text, codeStyle, recognizer);
+      return _plainSpan(text, style, recognizer);
     }
   }
 

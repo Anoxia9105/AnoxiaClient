@@ -416,7 +416,9 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   ///
   /// Flutter Quill 当前的只读编辑器仍会进入依赖原生平台判断的路径，WASM 下不能
   /// 使用；直接调用 [Document.toPlainText] 又会显示 embed 的对象图标并丢掉样式。
-  /// 这里逐个解释 Delta operation，保留常用行内样式，并显式渲染 mention embed。
+  /// 这里逐个解释 Delta operation：保留常用行内样式，显式渲染 mention embed，
+  /// 并把携带 `code-block` 属性的操作按块渲染为「背景 + 行号 + 语法高亮」的
+  /// 代码块，消息中的代码块不再退化为纯文本。
   ///
   /// 使用 [SelectionArea] + [Text.rich] 而非 [SelectableText.rich]：
   /// `SelectableText` 内部的 `EditableText` 在 Web 上会为光标保留额外空间，
@@ -431,15 +433,62 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       return Text('', style: baseStyle);
     }
 
-    final spans = <InlineSpan>[];
+    final children = <Widget>[];
+    final plainSpans = <InlineSpan>[];
+    var codeRendered = false;
+    var pendingCode = '';
+    dynamic pendingCodeLanguage;
+    var hasPendingCode = false;
+
+    void flushPlain() {
+      if (plainSpans.isEmpty) return;
+      children.add(
+        Text.rich(TextSpan(style: baseStyle, children: plainSpans)),
+      );
+      plainSpans.clear();
+    }
+
+    void flushCode() {
+      if (!hasPendingCode) return;
+      final raw = pendingCode;
+      final languageAttr = pendingCodeLanguage;
+      pendingCode = '';
+      hasPendingCode = false;
+      pendingCodeLanguage = null;
+      final lines = raw.split('\n');
+      if (lines.last.isEmpty) lines.removeLast();
+      children.add(
+        _buildWasmCodeBlock(
+          context,
+          lines,
+          _wasmCodeLanguage(languageAttr, lines.join('\n')),
+          showBadge: !codeRendered,
+        ),
+      );
+      codeRendered = true;
+    }
+
     for (var index = 0; index < opsJson.length; index++) {
       final op = opsJson[index];
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
 
+      if (insert is String &&
+          attributes is Map &&
+          attributes.containsKey(Attribute.codeBlock.key)) {
+        if (!hasPendingCode) {
+          hasPendingCode = true;
+          pendingCode = '';
+          pendingCodeLanguage = attributes[Attribute.codeBlock.key];
+        }
+        pendingCode += insert;
+        continue;
+      }
+
+      flushCode();
       if (insert is String) {
-        spans.add(
+        plainSpans.add(
           TextSpan(
             text: _displayText(opsJson, index, insert),
             style: _inlineStyle(context, baseStyle, attributes),
@@ -449,7 +498,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       }
 
       if (insert is Map && insert.containsKey('mention')) {
-        spans.add(
+        plainSpans.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
             child: _buildWasmMention(context, insert['mention']),
@@ -457,9 +506,95 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         );
       }
     }
+    flushCode();
+    flushPlain();
 
     return SelectionArea(
-      child: Text.rich(TextSpan(style: baseStyle, children: spans)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  CodeLanguage _wasmCodeLanguage(dynamic attributeValue, String code) {
+    if (attributeValue is String) {
+      final language = CodeLanguageDetector.fromId(attributeValue);
+      if (language != null) return language;
+    }
+    return CodeLanguageDetector.detect(code);
+  }
+
+  /// 构建 WASM 消息中的代码块：圆角底色 + 行号栏 + 语法高亮文本，
+  /// 首个代码块右上角叠加语言徽章（样式与桌面端消息一致）。
+  Widget _buildWasmCodeBlock(
+    BuildContext context,
+    List<String> lines,
+    CodeLanguage language, {
+    required bool showBadge,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final codeStyle = QuillStyleConfig.codeTextStyle(context);
+    final code = lines.join('\n');
+    final codeSpan = QuillSyntaxHighlighter.buildCodeSpan(
+      context,
+      code,
+      language.id,
+      codeStyle,
+    );
+
+    // 行号与代码行保持相同的行盒高度（fontSize * height），
+    // 数字列才能逐行对齐。
+    final numberHeight = codeStyle.fontSize! * codeStyle.height!;
+    final numberStyle = codeStyle.copyWith(
+      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      fontSize: 12,
+      height: numberHeight / 12,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+
+    final codeWidget = DefaultTextStyle(
+      style: codeStyle,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(0, showBadge ? 26 : 10, 12, 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 28,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < lines.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text('${i + 1}', style: numberStyle),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(child: Text.rich(codeSpan)),
+          ],
+        ),
+      ),
+    );
+
+    if (!showBadge) return codeWidget;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: QuillStyleConfig.codeBlockDecoration(context),
+      child: Stack(
+        children: [
+          codeWidget,
+          Positioned(
+            top: 4,
+            right: 8,
+            child: QuillCodeLanguageBadge(language: language),
+          ),
+        ],
+      ),
     );
   }
 

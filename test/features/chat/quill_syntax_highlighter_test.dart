@@ -110,7 +110,9 @@ void main() {
     final codeTextRect = tester.getRect(firstCodeText);
     expect(lineNumberRect.right, lessThanOrEqualTo(codeTextRect.left));
     expect(gutterRect.width, QuillCodeLineNumber.gutterWidth);
-    expect(lineNumberRect.left, gutterRect.left);
+    // 行号在沟槽内右对齐：不越过沟槽左右边界，也不与代码文本重叠
+    expect(lineNumberRect.left, greaterThanOrEqualTo(gutterRect.left));
+    expect(lineNumberRect.right, lessThanOrEqualTo(gutterRect.right));
     expect(gutterRect.right, lessThanOrEqualTo(codeTextRect.left));
     expect(tester.takeException(), isNull);
   });

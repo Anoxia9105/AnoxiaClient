@@ -1510,6 +1510,44 @@ class RenderEditableTextLine extends RenderEditableBox {
   }
 
   @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    // 语言徽章定位在行盒上方的代码块顶部留白内，超出了本行尺寸；
+    // RenderStack 的 hitTest 会先做自身边界检查，拦截位于其尺寸之外的
+    // Positioned 子组件，因此这里手动遍历 leading 子树做命中测试，
+    // 否则徽章（点击切换语言）无法被命中。
+    if (_leading != null) {
+      final childParentData = _leading!.parentData as BoxParentData;
+      var isHit = false;
+      result.addWithPaintOffset(
+        offset: childParentData.offset,
+        position: position,
+        hitTest: (result, transformed) {
+          _leading!.visitChildren((child) {
+            if (isHit || child is! RenderBox) return;
+            final parentData = child.parentData! as BoxParentData;
+            if (child.hitTest(
+              result,
+              position: transformed - parentData.offset,
+            )) {
+              isHit = true;
+            }
+          });
+          return isHit;
+        },
+      );
+      if (isHit) {
+        // 命中点在行盒内时保留行级命中（光标定位等交互）；
+        // 徽章（行盒外）不添加行级条目，避免点击徽章时误移动光标。
+        if (size.contains(position)) {
+          result.add(BoxHitTestEntry(this, position));
+        }
+        return true;
+      }
+    }
+    return super.hitTest(result, position: position);
+  }
+
+  @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     if (_leading != null) {
       final childParentData = _leading!.parentData as BoxParentData;
