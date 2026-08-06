@@ -14,7 +14,6 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
-import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
@@ -226,7 +225,10 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
 
     final textData = await Clipboard.getData(Clipboard.kTextPlain);
     if (textData?.text != null && textData!.text!.isNotEmpty) {
-      final text = textData.text!;
+      // 统一换行符：Windows/Web 剪贴板的 CRLF 会把字面量 \r 带进代码块
+      final text = textData.text!
+          .replaceAll('\r\n', '\n')
+          .replaceAll('\r', '\n');
       if (!ChatInputLimit.canPaste(controller, text)) {
         Toast.showToast(
           'chat_input_length_limit'.tr(
@@ -237,33 +239,10 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
       }
       final selection = controller.selection;
 
-      // 粘贴到代码块内时，绕过 flutter_quill 的启发式插入规则，显式构造携带
-      // code-block（含语言）属性的 Delta。否则 Web/wasm 下粘贴多行文本会临时
-      // 产生「空代码块」，渲染时序中 RenderEditor 对其查询 childAtPosition 时
-      // 抛出 `targetChild should not be null`，并表现为代码块消失。
-      if (selection.baseOffset >= 0) {
-        final block = _codeBlockAt(controller, selection.baseOffset);
-        if (block != null) {
-          final language = block.style.attributes[Attribute.codeBlock.key]?.value;
-          final delta = _buildCodeBlockDelta(text, language);
-          final start = selection.start;
-          final deleteLen =
-              selection.isCollapsed ? 0 : selection.end - selection.start;
-          controller.replaceText(
-            start,
-            deleteLen,
-            delta,
-            TextSelection.collapsed(offset: start + text.length),
-          );
-          return;
-        }
-      }
-
-      // 使用 replaceText 原子式写入，避免 document.insert + updateSelection
-      // 两段式操作在 wasm 渲染时序下导致 render children 与 document 不同步，
-      // 触发 flutter_quill 的 childAtPosition null 崩溃。
-      final start = selection.baseOffset;
-      if (start < 0) {
+      // 代码块（含语言）由 flutter_quill 自带的 PreserveBlockStyleOnInsertRule
+      // 处理，无需自定义 Delta 分支；自定义分支会把选区偏移重复计数，导致光标定
+      // 位错误并触发渲染层 targetChild 崩溃，故此处统一走原生 replaceText。
+      if (!selection.isValid) {
         controller.replaceText(
           controller.document.length - 1,
           0,
@@ -272,51 +251,22 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
             offset: controller.document.length - 1 + text.length,
           ),
         );
-      } else if (!selection.isCollapsed) {
-        controller.replaceText(
-          selection.start,
-          selection.end - selection.start,
-          text,
-          TextSelection.collapsed(offset: selection.start + text.length),
-        );
-      } else {
-        controller.replaceText(
-          start,
-          0,
-          text,
-          TextSelection.collapsed(offset: start + text.length),
-        );
+        return;
       }
-    }
-  }
 
-  /// 返回包含 [offset] 处的代码块节点（向上查找祖先），不在代码块内则返回 null。
-  Node? _codeBlockAt(QuillController controller, int offset) {
-    final res = controller.document.queryChild(offset);
-    var node = res.node;
-    while (node != null) {
-      if (node.style.containsKey(Attribute.codeBlock.key)) {
-        return node;
-      }
-      node = node.parent;
+      // 使用 replaceText 原子式写入：flutter_quill 会自动按选区保留代码块属性
+      // 并正确计算光标偏移，避免 wasm 渲染时序下 render children 与 document
+      // 不同步导致的 childAtPosition null 崩溃。
+      final start = selection.start;
+      final deleteLen =
+          selection.isCollapsed ? 0 : selection.end - selection.start;
+      controller.replaceText(
+        start,
+        deleteLen,
+        text,
+        TextSelection.collapsed(offset: start + text.length),
+      );
     }
-    return null;
-  }
-
-  /// 将纯文本按换行拆分为代码块行，构造携带 code-block（含语言）属性的 Delta。
-  ///
-  /// 每行的换行符都带上 code-block 属性，确保 flutter_quill 的插入规则不会
-  /// 把代码块降级为普通文本或临时产生空代码块。
-  Delta _buildCodeBlockDelta(String text, dynamic language) {
-    final codeAttr = <String, dynamic>{Attribute.codeBlock.key: language};
-    final lines = text.split('\n');
-    final delta = Delta();
-    delta.insert(lines.first);
-    for (var i = 1; i < lines.length; i++) {
-      delta.insert('\n', codeAttr);
-      delta.insert(lines[i]);
-    }
-    return delta;
   }
 
   @override
