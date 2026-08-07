@@ -1,6 +1,5 @@
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:flutter/material.dart';
@@ -39,18 +38,10 @@ class _CodeMessageWidget extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
     final codeStyle = QuillStyleConfig.codeTextStyle(context);
-    final codeSpan = QuillSyntaxHighlighter.buildCodeSpan(
-      context,
-      code.code,
-      language.id,
-      codeStyle,
-    );
 
     final numberHeight = codeStyle.fontSize! * codeStyle.height!;
     final numberStyle = codeStyle.copyWith(
       color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-      fontSize: 12,
-      height: numberHeight / 12,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
 
@@ -62,19 +53,25 @@ class _CodeMessageWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 28,
+              width: 36,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   for (var i = 0; i < lines.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text('${i + 1}', style: numberStyle),
+                    SizedBox(
+                      height: numberHeight,
+                      child: Center(
+                        child: Text(
+                          '${i + 1}',
+                          style: numberStyle,
+                          maxLines: 1,
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
-            Expanded(child: Text.rich(codeSpan)),
+            Expanded(child: Text(code.code, style: codeStyle)),
           ],
         ),
       ),

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:anoxia/framework/extensions/quill_cursor_x.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -333,7 +332,6 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               autoFocus: false,
               padding: const EdgeInsets.all(8),
               customStyles: QuillStyleConfig.get(context),
-              textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
               onKeyPressed: (event, node) => _handleKeyPress(event, controller),
               embedBuilders: [
                 QuillImageBuild(),

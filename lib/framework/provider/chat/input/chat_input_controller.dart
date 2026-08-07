@@ -955,7 +955,7 @@ class ChatInputController extends _$ChatInputController {
 /// 用于在发送消息后（桌面端）自动获取焦点。
 @riverpod
 FocusNode chatFocusNode(Ref ref, String roomId) {
-  final node = FocusNode(canRequestFocus: !kIsWeb);
+  final node = FocusNode();
   ref.onDispose(() => node.dispose());
   return node;
 }

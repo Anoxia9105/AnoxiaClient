@@ -887,5 +887,8 @@
   "api_not_found": "要求されたリソースは存在しません",
   "api_server_error": "サービスが一時的に利用できません、後でもう一度お試しください",
   "api_request_failed": "リクエストに失敗しました、後でもう一度お試しください",
-  "api_login_expired": "ログインの有効期限が切れました"
+  "api_login_expired": "ログインの有効期限が切れました",
+  "code_editor_title": "コードエディタ",
+  "code_editor_placeholder": "ここにコードを入力...",
+  "code_auto_detect": "自動検出"
 }

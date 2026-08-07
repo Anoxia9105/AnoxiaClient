@@ -1,4 +1,4 @@
-﻿name: anoxia
+name: anoxia
 description: "A high-performance, real-time IM (Instant Messaging) solution built with Flutter and Dart. Supports low-latency message delivery and robust state synchronization."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # Mobile: 1.0.8 
@@ -54,8 +54,6 @@ dependencies:
   tray_manager: ^0.5.2
   # 富文本编辑器
   flutter_quill: ^11.5.1
-  flutter_highlight: ^0.7.0
-  highlight: ^0.7.0
   # Web 平台文件处理
   cross_file: ^0.3.5+4
   # 缓存
@@ -198,3 +196,7 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+  fonts:
+    - family: HarmonyOS
+      fonts:
+        - asset: assets/fonts/HarmonyOS.ttf

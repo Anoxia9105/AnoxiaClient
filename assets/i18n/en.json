@@ -887,5 +887,8 @@
   "api_not_found": "The requested resource does not exist",
   "api_server_error": "Service temporarily unavailable, please try again later",
   "api_request_failed": "Request failed, please try again later",
-  "api_login_expired": "Login expired"
+  "api_login_expired": "Login expired",
+  "code_editor_title": "Code Editor",
+  "code_editor_placeholder": "Enter code here...",
+  "code_auto_detect": "Auto Detect"
 }

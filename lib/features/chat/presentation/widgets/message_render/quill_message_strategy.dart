@@ -6,7 +6,6 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -212,7 +211,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                           color: widget.textColor,
                           compact: true,
                         ),
-                        textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
                         onTapOutside: (_, focusNode) {
                           focusNode.unfocus();
                           _clearSelection();
@@ -401,8 +399,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   /// Flutter Quill 当前的只读编辑器仍会进入依赖原生平台判断的路径，WASM 下不能
   /// 使用；直接调用 [Document.toPlainText] 又会显示 embed 的对象图标并丢掉样式。
   /// 这里逐个解释 Delta operation：保留常用行内样式，显式渲染 mention embed，
-  /// 并把携带 `code-block` 属性的操作按块渲染为「背景 + 行号 + 语法高亮」的
-  /// 代码块，消息中的代码块不再退化为纯文本。
+  /// 并把携带 `code-block` 属性的操作按块渲染为「背景 + 行号」的代码块。
   ///
   /// 使用 [SelectionArea] + [Text.rich] 而非 [SelectableText.rich]：
   /// `SelectableText` 内部的 `EditableText` 在 Web 上会为光标保留额外空间，
@@ -419,6 +416,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     final children = <Widget>[];
     final plainSpans = <InlineSpan>[];
+    CodeLanguage? pendingCodeLang;
+    String pendingCodeText = '';
 
     void flushPlain() {
       if (plainSpans.isEmpty) return;
@@ -428,23 +427,41 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       plainSpans.clear();
     }
 
+    void flushCodeBlock() {
+      if (pendingCodeText.isEmpty) return;
+      children.add(_buildWasmCodeBlock(context, pendingCodeText, pendingCodeLang));
+      pendingCodeText = '';
+      pendingCodeLang = null;
+    }
+
     for (var index = 0; index < opsJson.length; index++) {
       final op = opsJson[index];
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
+      final isCodeBlock = attributes is Map &&
+          attributes.containsKey(Attribute.codeBlock.key);
 
       if (insert is String) {
-        plainSpans.add(
-          TextSpan(
-            text: _displayText(opsJson, index, insert),
-            style: _inlineStyle(context, baseStyle, attributes),
-          ),
-        );
+        if (isCodeBlock) {
+          flushPlain();
+          final langAttr = attributes[Attribute.codeBlock.key]?.value;
+          pendingCodeLang = _wasmCodeLanguage(langAttr, insert);
+          pendingCodeText = _displayText(opsJson, index, insert);
+        } else {
+          flushCodeBlock();
+          plainSpans.add(
+            TextSpan(
+              text: _displayText(opsJson, index, insert),
+              style: _inlineStyle(context, baseStyle, attributes),
+            ),
+          );
+        }
         continue;
       }
 
       if (insert is Map && insert.containsKey('mention')) {
+        flushCodeBlock();
         plainSpans.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
@@ -454,12 +471,97 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       }
     }
     flushPlain();
+    flushCodeBlock();
 
     return SelectionArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
+      ),
+    );
+  }
+
+  Widget _buildWasmCodeBlock(
+    BuildContext context,
+    String code,
+    CodeLanguage? language,
+  ) {
+    final codeStyle = QuillStyleConfig.codeTextStyle(context);
+    final lines = code.split('\n');
+    if (lines.isNotEmpty && lines.last.isEmpty) lines.removeLast();
+    final colorScheme = Theme.of(context).colorScheme;
+    final numberHeight = codeStyle.fontSize! * codeStyle.height!;
+    final numberStyle = codeStyle.copyWith(
+      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: QuillStyleConfig.codeBlockDecoration(context),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 26, 12, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 36,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 0; i < lines.length; i++)
+                        SizedBox(
+                          height: numberHeight,
+                          child: Center(
+                            child: Text(
+                              '${i + 1}',
+                              style: numberStyle,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    code,
+                    style: codeStyle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (language != null)
+            Positioned(
+              top: 4,
+              right: 8,
+              child: Container(
+                height: 16,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Text(
+                  language.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
