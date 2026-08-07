@@ -1,4 +1,4 @@
-{
+﻿{
   "header_minimize": "最小化",
   "header_maximize": "最大化",
   "header_reduction": "还原",
@@ -889,6 +889,5 @@
   "api_request_failed": "请求失败，请稍后重试",
   "api_login_expired": "登录过期",
   "code_editor_title": "代码编辑",
-  "code_editor_placeholder": "在此输入代码...",
-  "code_auto_detect": "自动检测"
+  "code_editor_placeholder": "在此输入代码..."
 }

@@ -1,4 +1,4 @@
-{
+﻿{
   "header_minimize": "最小化",
   "header_maximize": "最大化",
   "header_reduction": "縮小",
@@ -889,6 +889,5 @@
   "api_request_failed": "リクエストに失敗しました、後でもう一度お試しください",
   "api_login_expired": "ログインの有効期限が切れました",
   "code_editor_title": "コードエディタ",
-  "code_editor_placeholder": "ここにコードを入力...",
-  "code_auto_detect": "自動検出"
+  "code_editor_placeholder": "ここにコードを入力..."
 }

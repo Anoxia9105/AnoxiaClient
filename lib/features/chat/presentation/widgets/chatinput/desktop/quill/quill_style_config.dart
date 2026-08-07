@@ -114,12 +114,11 @@ class QuillStyleConfig {
       code: DefaultListBlockStyle(
         codeTextStyle,
         baseHorizontalSpacing,
-        // 非紧凑模式顶部留出 16px 给语言徽章（位于首行上方、块内），
-        // 底部留 6px 与下一条消息/段落分隔；紧凑模式（消息渲染）无需徽章
-        // 头部，保持零间距。
+        // 紧凑模式（消息渲染）顶部/底部保持零间距；
+        // 非紧凑模式（输入框）顶部留 8px 与段落分隔，底部留 6px。
         compact
             ? VerticalSpacing.zero
-            : const VerticalSpacing(16, 6),
+            : const VerticalSpacing(8, 6),
         VerticalSpacing.zero,
         QuillStyleConfig.codeBlockDecoration(context),
         null,

@@ -1,4 +1,4 @@
-{
+﻿{
   "header_minimize": "Minimize",
   "header_maximize": "Maximize",
   "header_reduction": "Reduction",
@@ -889,6 +889,5 @@
   "api_request_failed": "Request failed, please try again later",
   "api_login_expired": "Login expired",
   "code_editor_title": "Code Editor",
-  "code_editor_placeholder": "Enter code here...",
-  "code_auto_detect": "Auto Detect"
+  "code_editor_placeholder": "Enter code here..."
 }

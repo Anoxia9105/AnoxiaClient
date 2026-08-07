@@ -5,8 +5,8 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -211,6 +211,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                           color: widget.textColor,
                           compact: true,
                         ),
+                        textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
                         onTapOutside: (_, focusNode) {
                           focusNode.unfocus();
                           _clearSelection();
@@ -416,7 +417,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     final children = <Widget>[];
     final plainSpans = <InlineSpan>[];
-    CodeLanguage? pendingCodeLang;
     String pendingCodeText = '';
 
     void flushPlain() {
@@ -429,9 +429,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     void flushCodeBlock() {
       if (pendingCodeText.isEmpty) return;
-      children.add(_buildWasmCodeBlock(context, pendingCodeText, pendingCodeLang));
+      children.add(_buildWasmCodeBlock(context, pendingCodeText));
       pendingCodeText = '';
-      pendingCodeLang = null;
     }
 
     for (var index = 0; index < opsJson.length; index++) {
@@ -445,8 +444,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       if (insert is String) {
         if (isCodeBlock) {
           flushPlain();
-          final langAttr = attributes[Attribute.codeBlock.key]?.value;
-          pendingCodeLang = _wasmCodeLanguage(langAttr, insert);
           pendingCodeText = _displayText(opsJson, index, insert);
         } else {
           flushCodeBlock();
@@ -473,25 +470,24 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     flushPlain();
     flushCodeBlock();
 
-    return SelectionArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
     );
   }
 
   Widget _buildWasmCodeBlock(
     BuildContext context,
     String code,
-    CodeLanguage? language,
   ) {
     final codeStyle = QuillStyleConfig.codeTextStyle(context);
     final lines = code.split('\n');
     if (lines.isNotEmpty && lines.last.isEmpty) lines.removeLast();
     final colorScheme = Theme.of(context).colorScheme;
-    final numberHeight = codeStyle.fontSize! * codeStyle.height!;
+    // 行号使用与代码一致的文本样式行高（含文字缩放），保证逐行对齐。
+    final numberHeight = MediaQuery.textScalerOf(context)
+        .scale(codeStyle.fontSize! * codeStyle.height!);
     final numberStyle = codeStyle.copyWith(
       color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -500,78 +496,40 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: QuillStyleConfig.codeBlockDecoration(context),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 26, 12, 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 36,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      for (var i = 0; i < lines.length; i++)
-                        SizedBox(
-                          height: numberHeight,
-                          child: Center(
-                            child: Text(
-                              '${i + 1}',
-                              style: numberStyle,
-                              maxLines: 1,
-                            ),
-                          ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 12, 12, 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 36,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < lines.length; i++)
+                    SizedBox(
+                      height: numberHeight,
+                      child: Center(
+                        child: Text(
+                          '${i + 1}',
+                          style: numberStyle,
+                          maxLines: 1,
                         ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    code,
-                    style: codeStyle,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (language != null)
-            Positioned(
-              top: 4,
-              right: 8,
-              child: Container(
-                height: 16,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-                  border: Border.all(color: colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  language.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
-                  ),
-                ),
+                      ),
+                    ),
+                ],
               ),
             ),
-        ],
+            Expanded(
+              child: Text(
+                code,
+                style: codeStyle,
+              ),
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  CodeLanguage _wasmCodeLanguage(dynamic attributeValue, String code) {
-    if (attributeValue is String) {
-      final language = CodeLanguageDetector.fromId(attributeValue);
-      if (language != null) return language;
-    }
-    return CodeLanguageDetector.detect(code);
   }
 
   TextStyle _wasmBaseStyle(BuildContext context) {

@@ -1,4 +1,3 @@
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
@@ -31,24 +30,25 @@ class _CodeMessageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final language = CodeLanguageDetector.fromId(code.displayLanguage) ??
-        CodeLanguageDetector.plainText;
     final lines = code.code.split('\n');
     if (lines.isNotEmpty && lines.last.isEmpty) lines.removeLast();
 
     final colorScheme = Theme.of(context).colorScheme;
     final codeStyle = QuillStyleConfig.codeTextStyle(context);
 
-    final numberHeight = codeStyle.fontSize! * codeStyle.height!;
+    // 行号使用与代码一致的文本样式行高（含文字缩放），保证逐行对齐。
+    final numberHeight = MediaQuery.textScalerOf(context)
+        .scale(codeStyle.fontSize! * codeStyle.height!);
     final numberStyle = codeStyle.copyWith(
       color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
       fontFeatures: const [FontFeature.tabularFigures()],
     );
 
-    final codeWidget = DefaultTextStyle(
-      style: codeStyle,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: QuillStyleConfig.codeBlockDecoration(context),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 26, 12, 10),
+        padding: const EdgeInsets.fromLTRB(0, 12, 12, 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -73,53 +73,6 @@ class _CodeMessageWidget extends StatelessWidget {
             ),
             Expanded(child: Text(code.code, style: codeStyle)),
           ],
-        ),
-      ),
-    );
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      decoration: QuillStyleConfig.codeBlockDecoration(context),
-      child: Stack(
-        children: [
-          codeWidget,
-          Positioned(
-            top: 4,
-            right: 8,
-            child: _LanguageBadge(language: language),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LanguageBadge extends StatelessWidget {
-  const _LanguageBadge({required this.language});
-
-  final CodeLanguage language;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 16,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        language.label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: colorScheme.onSurfaceVariant,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          height: 1,
         ),
       ),
     );

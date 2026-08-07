@@ -1,8 +1,8 @@
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CodeInputDialog extends StatefulWidget {
   const CodeInputDialog({
@@ -21,7 +21,6 @@ class CodeInputDialog extends StatefulWidget {
 class _CodeInputDialogState extends State<CodeInputDialog> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _editorFocusNode = FocusNode();
-  String _selectedLanguage = CodeLanguageDetector.plainText.id;
 
   @override
   void dispose() {
@@ -33,21 +32,7 @@ class _CodeInputDialogState extends State<CodeInputDialog> {
   void _submit() {
     final code = _controller.text;
     if (code.trim().isEmpty) return;
-    widget.onSubmit(CodePayload(
-      code: code,
-      language: _selectedLanguage,
-    ));
-  }
-
-  void _detectLanguage() {
-    final code = _controller.text;
-    if (code.trim().isEmpty) return;
-    final detected = CodeLanguageDetector.detect(code);
-    if (detected != CodeLanguageDetector.plainText && mounted) {
-      setState(() {
-        _selectedLanguage = detected.id;
-      });
-    }
+    widget.onSubmit(CodePayload(code: code));
   }
 
   @override
@@ -94,51 +79,11 @@ class _CodeInputDialogState extends State<CodeInputDialog> {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: colorScheme.outlineVariant),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedLanguage,
-                        isExpanded: true,
-                        items: [
-                          for (final lang in CodeLanguageDetector.supported)
-                            DropdownMenuItem<String>(
-                              value: lang.id,
-                              child: Text(lang.label),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedLanguage = value;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: _detectLanguage,
-                    icon: const Icon(Icons.auto_awesome, size: 16),
-                    label: Text('code_auto_detect'.tr()),
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: _CodeEditor(
                 controller: _controller,
                 focusNode: _editorFocusNode,
-                languageId: _selectedLanguage,
+                onSubmit: _submit,
               ),
             ),
           ],
@@ -152,31 +97,36 @@ class _CodeEditor extends StatefulWidget {
   const _CodeEditor({
     required this.controller,
     required this.focusNode,
-    required this.languageId,
+    required this.onSubmit,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
-  final String languageId;
+  final VoidCallback onSubmit;
 
   @override
   State<_CodeEditor> createState() => _CodeEditorState();
 }
 
 class _CodeEditorState extends State<_CodeEditor> {
-  final ScrollController _scrollController = ScrollController();
+  /// Tab 键插入的缩进宽度。
+  static const _indent = '    ';
+
   int _lineCount = 1;
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_updateLineCount);
+    // 打开对话框后自动聚焦编辑区，可直接开始输入。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.focusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_updateLineCount);
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -190,53 +140,92 @@ class _CodeEditorState extends State<_CodeEditor> {
     }
   }
 
+  /// 代码编辑快捷键：Tab 插入 4 空格缩进（替代默认的焦点切换），
+  /// Ctrl/Cmd + Enter 直接发送。
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key == LogicalKeyboardKey.tab) {
+      final value = widget.controller.value;
+      final selection = value.selection;
+      if (!selection.isValid) return KeyEventResult.ignored;
+      widget.controller.value = TextEditingValue(
+        text: value.text.replaceRange(selection.start, selection.end, _indent),
+        selection: TextSelection.collapsed(
+          offset: selection.start + _indent.length,
+        ),
+      );
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.enter &&
+        (HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed)) {
+      widget.onSubmit();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final codeStyle = QuillStyleConfig.codeTextStyle(context);
 
-    final numberHeight = codeStyle.fontSize! * codeStyle.height!;
+    // 行号与代码区使用同一份行高（含文字缩放），且顶部/底部内边距与
+    // 输入框 contentPadding 保持一致，保证行号与代码逐行对齐。
+    final lineHeight = MediaQuery.textScalerOf(context)
+        .scale(codeStyle.fontSize! * codeStyle.height!);
     final numberStyle = codeStyle.copyWith(
       color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
       fontFeatures: const [FontFeature.tabularFigures()],
     );
 
     return SingleChildScrollView(
-      controller: _scrollController,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 36,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (var i = 0; i < _lineCount; i++)
-                  SizedBox(
-                    height: numberHeight,
-                    child: Center(
-                      child: Text(
-                        '${i + 1}',
-                        style: numberStyle,
-                        maxLines: 1,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: SizedBox(
+              width: 36,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < _lineCount; i++)
+                    SizedBox(
+                      height: lineHeight,
+                      child: Center(
+                        child: Text(
+                          '${i + 1}',
+                          style: numberStyle,
+                          maxLines: 1,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
           Expanded(
-            child: TextField(
-              controller: widget.controller,
-              focusNode: widget.focusNode,
-              maxLines: null,
-              textAlignVertical: TextAlignVertical.top,
-              style: codeStyle,
-              decoration: InputDecoration(
-                hintText: 'code_editor_placeholder'.tr(),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.fromLTRB(4, 12, 12, 12),
+            child: Focus(
+              canRequestFocus: false,
+              onKeyEvent: _handleKeyEvent,
+              child: TextField(
+                controller: widget.controller,
+                focusNode: widget.focusNode,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                style: codeStyle,
+                decoration: InputDecoration(
+                  hintText: 'code_editor_placeholder'.tr(),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.fromLTRB(4, 12, 12, 12),
+                ),
               ),
             ),
           ),
