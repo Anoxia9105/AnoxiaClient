@@ -1,6 +1,6 @@
 ﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
-import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_grid_section.dart';
+import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_list_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_room_picker_dialog.dart';
@@ -61,9 +61,9 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     return ListView(
       padding: padding,
       children: [
-        // 区块 0：群成员头像网格
+        // 区块 0：群成员行式列表
         RoomCard(
-          child: MemberGridSection(
+          child: MemberListSection(
             roomId: roomId,
             isGroup: isGroup,
             onMemberTap: (member) =>
@@ -92,7 +92,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 size: 22,
               ),
               title: Text(
-                isGroup ? 'chat_group_members'.tr() : 'chat_contact_info'.tr(),
+                isGroup ? 'chat_view_all_members'.tr() : 'chat_contact_info'.tr(),
               ),
               subtitle: isGroup
                   ? Consumer(

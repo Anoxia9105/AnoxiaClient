@@ -23,6 +23,25 @@ class QuillStyleConfig {
     );
   }
 
+  /// 行号文字样式（与代码文本同字号行高，仅颜色不同），保证逐行对齐。
+  static TextStyle codeLineNumberStyle(BuildContext context) {
+    return codeTextStyle(context).copyWith(
+      color: Theme.of(context)
+          .colorScheme
+          .onSurfaceVariant
+          .withValues(alpha: 0.6),
+    );
+  }
+
+  /// 行号区宽度：等宽数字宽度 ≈ fontSize×0.65（含文字缩放），
+  /// 加上左右各 8px 留白。编辑框与消息渲染共用，保证观感一致。
+  static double codeGutterWidth(BuildContext context, int lineCount) {
+    final fontSize = codeTextStyle(context).fontSize!;
+    final textScaler = MediaQuery.textScalerOf(context);
+    return textScaler.scale(fontSize * 0.65) * lineCount.toString().length +
+        16;
+  }
+
   /// 代码块背景装饰：深色模式用更柔和的半透明底色，配合细边框收敛轮廓，
   /// 使代码块在输入框中更显紧凑、精致。
   static BoxDecoration codeBlockDecoration(BuildContext context) {

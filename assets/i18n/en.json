@@ -692,6 +692,8 @@
   "settings_open_source_package_not_found": "Package information not found",
   "chat_conversation_detail": "Conversation Details",
   "chat_group_members": "Group Members",
+  "chat_view_all_members": "View All Members",
+  "chat_member_status_summary": "{} online / {} members",
   "chat_view_profile": "View Profile",
   "chat_total_members_count": "{} members",
   "chat_contact_info": "Contact Info",

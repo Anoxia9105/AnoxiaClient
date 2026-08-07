@@ -14,6 +14,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
+import 'code/code_block_view.dart';
 import 'link_preview_card.dart';
 
 /// 是否为 WASM 编译模式。
@@ -491,77 +492,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     BuildContext context,
     String code,
   ) {
-    final codeStyle = QuillStyleConfig.codeTextStyle(context);
-    final lines = code.split('\n');
-    if (lines.isNotEmpty && lines.last.isEmpty) lines.removeLast();
-    final colorScheme = Theme.of(context).colorScheme;
-    // 行号使用与代码一致的文本样式行高（含文字缩放），保证逐行对齐。
-    final numberHeight = MediaQuery.textScalerOf(context)
-        .scale(codeStyle.fontSize! * codeStyle.height!);
-    final numberStyle = codeStyle.copyWith(
-      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      decoration: QuillStyleConfig.codeBlockDecoration(context),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 12, 12, 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 36,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < lines.length; i++)
-                    SizedBox(
-                      height: numberHeight,
-                      child: Center(
-                        child: Text(
-                          '${i + 1}',
-                          style: numberStyle,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // 逐行渲染保证行号与代码对齐；横向滚动避免长行换行后错位。
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final line in lines)
-                      SizedBox(
-                        height: numberHeight,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            line,
-                            style: codeStyle,
-                            strutStyle: StrutStyle.fromTextStyle(
-                              codeStyle,
-                              forceStrutHeight: true,
-                            ),
-                            maxLines: 1,
-                            softWrap: false,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // 与编辑框一致的「行号 + 代码」渲染，见 CodeBlockView。
+    return CodeBlockView(code: code);
   }
 
   TextStyle _wasmBaseStyle(BuildContext context) {

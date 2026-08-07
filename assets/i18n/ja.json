@@ -692,6 +692,8 @@
   "settings_open_source_package_not_found": "対象パッケージ情報が見つかりません",
   "chat_conversation_detail": "会話詳細",
   "chat_group_members": "グループメンバー",
+  "chat_view_all_members": "全メンバーを表示",
+  "chat_member_status_summary": "{}人オンライン / メンバー{}人",
   "chat_contact_info": "連絡先情報",
   "chat_view_profile": "プロフィールを見る",
   "chat_total_members_count": "メンバー{}人",

@@ -195,7 +195,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                '$onlineCount人在线 / $totalCount位成员',
+                'chat_member_status_summary'.tr(
+                  args: [onlineCount.toString(), totalCount.toString()],
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
