@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -181,70 +183,90 @@ class _CodeEditorState extends State<_CodeEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final codeStyle = QuillStyleConfig.codeTextStyle(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+    // 行号和代码区共用同一 strutStyle，确保基线对齐而非依赖 SizedBox+Center 奇呈。
+    final strutStyle = StrutStyle.fromTextStyle(codeStyle, forceStrutHeight: true);
 
-    // 行号与代码区使用同一份行高（含文字缩放），且顶部/底部内边距与
-    // 输入框 contentPadding 保持一致，保证行号与代码逐行对齐。
-    final lineHeight = MediaQuery.textScalerOf(context)
-        .scale(codeStyle.fontSize! * codeStyle.height!);
     final numberStyle = codeStyle.copyWith(
-      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
       fontFeatures: const [FontFeature.tabularFigures()],
     );
 
-    return SingleChildScrollView(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: SizedBox(
-              width: 36,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < _lineCount; i++)
-                    SizedBox(
-                      height: lineHeight,
-                      child: Center(
-                        child: Text(
-                          '${i + 1}',
-                          style: numberStyle,
-                          maxLines: 1,
+    // 等宽字体每个数字宽度 ≈ fontSize×0.65，加左右 padding 10px
+    final numColWidth =
+        textScaler.scale(codeStyle.fontSize! * 0.65) *
+            _lineCount.toString().length +
+        20;
+
+    return ColoredBox(
+      color: colorScheme.surfaceContainerLow,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 行号区域：独立背景色、靠右对齐、位数自适应宽度
+            ColoredBox(
+              color: colorScheme.surfaceContainer,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+                child: SizedBox(
+                  width: numColWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 0; i < _lineCount; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text(
+                            '${i + 1}',
+                            style: numberStyle,
+                            strutStyle: strutStyle,
+                            maxLines: 1,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // 代码编辑区：禁止软换行，横向可滚动
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
+                    child: SizedBox(
+                      // 最小宽度取可用宽和 2000px 中较大值，消除软换行
+                      width: max(constraints.maxWidth, 2000),
+                      child: Focus(
+                        canRequestFocus: false,
+                        onKeyEvent: _handleKeyEvent,
+                        child: TextField(
+                          controller: widget.controller,
+                          focusNode: widget.focusNode,
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          style: codeStyle,
+                          strutStyle: strutStyle,
+                          decoration: InputDecoration(
+                            hintText: 'code_editor_placeholder'.tr(),
+                            border: InputBorder.none,
+                            contentPadding:
+                                const EdgeInsets.fromLTRB(8, 12, 12, 12),
+                          ),
                         ),
                       ),
                     ),
-                ],
+                  );
+                },
               ),
             ),
-          ),
-          Expanded(
-            child: Focus(
-              canRequestFocus: false,
-              onKeyEvent: _handleKeyEvent,
-              child: TextField(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textAlignVertical: TextAlignVertical.top,
-                style: codeStyle,
-                // forceStrutHeight 确保每行高度与行号 SizedBox 精确一致。
-                strutStyle: StrutStyle.fromTextStyle(
-                  codeStyle,
-                  forceStrutHeight: true,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'code_editor_placeholder'.tr(),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.fromLTRB(4, 12, 12, 12),
-                ),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
