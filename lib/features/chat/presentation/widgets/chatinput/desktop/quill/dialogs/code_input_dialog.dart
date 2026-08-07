@@ -23,7 +23,17 @@ class _CodeInputDialogState extends State<CodeInputDialog> {
   final FocusNode _editorFocusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    // 监听文本变化以刷新发送按钮的启用状态。
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() => setState(() {});
+
+  @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _editorFocusNode.dispose();
     super.dispose();
@@ -221,6 +231,11 @@ class _CodeEditorState extends State<_CodeEditor> {
                 keyboardType: TextInputType.multiline,
                 textAlignVertical: TextAlignVertical.top,
                 style: codeStyle,
+                // forceStrutHeight 确保每行高度与行号 SizedBox 精确一致。
+                strutStyle: StrutStyle.fromTextStyle(
+                  codeStyle,
+                  forceStrutHeight: true,
+                ),
                 decoration: InputDecoration(
                   hintText: 'code_editor_placeholder'.tr(),
                   border: InputBorder.none,

@@ -82,6 +82,12 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   bool _isError = false;
   late final FocusNode _focusNode;
 
+  /// 原始 Delta ops 列表，避免通过 Document.toDelta().toJson() 往返转换。
+  ///
+  /// WASM 模式下 flutter_quill 的 Document 往返可能产出空列表或格式异常，
+  /// 导致消息渲染空白。直接缓存 JSON 解析后的原始 ops 可以绕过此问题。
+  List<dynamic>? _rawDeltaOps;
+
   @override
   void initState() {
     super.initState();
@@ -123,6 +129,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   void _initController() {
     try {
       final delta = jsonDecode(widget.message.payload?.quillDelta ?? '[]');
+      _rawDeltaOps = delta is List ? delta : null;
       _controller = QuillController(
         document: Document.fromJson(delta),
         selection: const TextSelection.collapsed(offset: 0),
@@ -131,6 +138,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       _isError = false;
     } catch (e) {
       _controller = null;
+      _rawDeltaOps = null;
       _isError = true;
     }
   }
@@ -305,7 +313,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   double _measureInlineContentWidth(BuildContext context, double maxWidth) {
-    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    final opsJson = _rawDeltaOps;
     if (opsJson is! List) return 64;
 
     // WASM 分支渲染使用 SelectableText.rich，Flutter 会把
@@ -409,7 +417,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   /// `Text.rich` 直接映射到 `RichText`，`WidgetSpan` 始终内联，且渲染宽度
   /// 与 `TextPainter` 测量结果严格一致。
   Widget _buildWasmRichText(BuildContext context) {
-    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    final opsJson = _rawDeltaOps;
     final baseStyle = _wasmRenderStyle(context);
     if (opsJson is! List) {
       return Text('', style: baseStyle);
@@ -421,10 +429,11 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     void flushPlain() {
       if (plainSpans.isEmpty) return;
-      children.add(
-        Text.rich(TextSpan(style: baseStyle, children: plainSpans)),
-      );
+      // TextSpan 不复制 children 列表，必须先拍快照再 clear，
+      // 否则 clear() 会同时清空 TextSpan.children 导致渲染空白。
+      final spans = List<InlineSpan>.of(plainSpans);
       plainSpans.clear();
+      children.add(Text.rich(TextSpan(style: baseStyle, children: spans)));
     }
 
     void flushCodeBlock() {
@@ -444,7 +453,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       if (insert is String) {
         if (isCodeBlock) {
           flushPlain();
-          pendingCodeText = _displayText(opsJson, index, insert);
+          // 多行代码块每行是独立 op，必须累加而非覆盖。
+          pendingCodeText += _displayText(opsJson, index, insert);
         } else {
           flushCodeBlock();
           plainSpans.add(
@@ -520,10 +530,32 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                 ],
               ),
             ),
+            // 逐行渲染保证行号与代码对齐；横向滚动避免长行换行后错位。
             Expanded(
-              child: Text(
-                code,
-                style: codeStyle,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final line in lines)
+                      SizedBox(
+                        height: numberHeight,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            line,
+                            style: codeStyle,
+                            strutStyle: StrutStyle.fromTextStyle(
+                              codeStyle,
+                              forceStrutHeight: true,
+                            ),
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -707,7 +739,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   bool _requiresFullWidth() {
-    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    final opsJson = _rawDeltaOps;
     if (opsJson is! List) return false;
 
     for (final op in opsJson) {
@@ -725,8 +757,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   }
 
   String _linkPreviewSource() {
-    final buffer = StringBuffer(_controller?.document.toPlainText() ?? '');
-    final dynamic opsJson = _controller?.document.toDelta().toJson();
+    final buffer = StringBuffer(_plainTextFromOps());
+    final opsJson = _rawDeltaOps;
     if (opsJson is! List) return buffer.toString();
 
     for (final op in opsJson) {
@@ -738,6 +770,21 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       buffer
         ..write(' ')
         ..write(link);
+    }
+    return buffer.toString();
+  }
+
+  /// 从原始 Delta ops 提取纯文本，绕过 flutter_quill Document。
+  String _plainTextFromOps() {
+    final opsJson = _rawDeltaOps;
+    if (opsJson is! List) return '';
+    final buffer = StringBuffer();
+    for (final op in opsJson) {
+      if (op is! Map) continue;
+      final insert = op['insert'];
+      if (insert is String) {
+        buffer.write(insert);
+      }
     }
     return buffer.toString();
   }
