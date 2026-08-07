@@ -5,7 +5,6 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/code_language.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
@@ -214,13 +213,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                           compact: true,
                         ),
                         textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
-                        // ignore: experimental_member_use
-                        customLeadingBlockBuilder: (node, config) =>
-                            QuillCodeLineNumber.build(
-                              node,
-                              config,
-                              showLanguageBadge: false,
-                            ),
                         onTapOutside: (_, focusNode) {
                           focusNode.unfocus();
                           _clearSelection();
@@ -233,14 +225,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
                       ),
                     ),
                   ),
-                  if (_codeLanguage() case final language?)
-                    Positioned(
-                      top: 2,
-                      right: 8,
-                      child: IgnorePointer(
-                        child: QuillCodeLanguageBadge(language: language),
-                      ),
-                    ),
                 ],
               ),
               MessageLinkPreview(text: previewSource, maxWidth: targetWidth),
@@ -435,10 +419,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
 
     final children = <Widget>[];
     final plainSpans = <InlineSpan>[];
-    var codeRendered = false;
-    var pendingCode = '';
-    dynamic pendingCodeLanguage;
-    var hasPendingCode = false;
 
     void flushPlain() {
       if (plainSpans.isEmpty) return;
@@ -448,45 +428,12 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       plainSpans.clear();
     }
 
-    void flushCode() {
-      if (!hasPendingCode) return;
-      final raw = pendingCode;
-      final languageAttr = pendingCodeLanguage;
-      pendingCode = '';
-      hasPendingCode = false;
-      pendingCodeLanguage = null;
-      final lines = raw.split('\n');
-      if (lines.last.isEmpty) lines.removeLast();
-      children.add(
-        _buildWasmCodeBlock(
-          context,
-          lines,
-          _wasmCodeLanguage(languageAttr, lines.join('\n')),
-          showBadge: !codeRendered,
-        ),
-      );
-      codeRendered = true;
-    }
-
     for (var index = 0; index < opsJson.length; index++) {
       final op = opsJson[index];
       if (op is! Map) continue;
       final insert = op['insert'];
       final attributes = op['attributes'];
 
-      if (insert is String &&
-          attributes is Map &&
-          attributes.containsKey(Attribute.codeBlock.key)) {
-        if (!hasPendingCode) {
-          hasPendingCode = true;
-          pendingCode = '';
-          pendingCodeLanguage = attributes[Attribute.codeBlock.key];
-        }
-        pendingCode += insert;
-        continue;
-      }
-
-      flushCode();
       if (insert is String) {
         plainSpans.add(
           TextSpan(
@@ -506,7 +453,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         );
       }
     }
-    flushCode();
     flushPlain();
 
     return SelectionArea(
@@ -524,78 +470,6 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       if (language != null) return language;
     }
     return CodeLanguageDetector.detect(code);
-  }
-
-  /// 构建 WASM 消息中的代码块：圆角底色 + 行号栏 + 语法高亮文本，
-  /// 首个代码块右上角叠加语言徽章（样式与桌面端消息一致）。
-  Widget _buildWasmCodeBlock(
-    BuildContext context,
-    List<String> lines,
-    CodeLanguage language, {
-    required bool showBadge,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final codeStyle = QuillStyleConfig.codeTextStyle(context);
-    final code = lines.join('\n');
-    final codeSpan = QuillSyntaxHighlighter.buildCodeSpan(
-      context,
-      code,
-      language.id,
-      codeStyle,
-    );
-
-    // 行号与代码行保持相同的行盒高度（fontSize * height），
-    // 数字列才能逐行对齐。
-    final numberHeight = codeStyle.fontSize! * codeStyle.height!;
-    final numberStyle = codeStyle.copyWith(
-      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-      fontSize: 12,
-      height: numberHeight / 12,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-
-    final codeWidget = DefaultTextStyle(
-      style: codeStyle,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(0, showBadge ? 26 : 10, 12, 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 28,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < lines.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text('${i + 1}', style: numberStyle),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(child: Text.rich(codeSpan)),
-          ],
-        ),
-      ),
-    );
-
-    if (!showBadge) return codeWidget;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      decoration: QuillStyleConfig.codeBlockDecoration(context),
-      child: Stack(
-        children: [
-          codeWidget,
-          Positioned(
-            top: 4,
-            right: 8,
-            child: QuillCodeLanguageBadge(language: language),
-          ),
-        ],
-      ),
-    );
   }
 
   TextStyle _wasmBaseStyle(BuildContext context) {
@@ -806,40 +680,5 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
         ..write(link);
     }
     return buffer.toString();
-  }
-
-  CodeLanguage? _codeLanguage() {
-    final dynamic opsJson = _controller?.document.toDelta().toJson();
-    if (opsJson is! List) return null;
-
-    final source = StringBuffer();
-    String? selectedLanguage;
-    var pendingText = '';
-    var foundCodeBlock = false;
-
-    for (final op in opsJson) {
-      if (op is! Map) continue;
-      final insert = op['insert'];
-      if (insert is String) pendingText += insert;
-
-      final attributes = op['attributes'];
-      final codeValue = attributes is Map
-          ? attributes[Attribute.codeBlock.key]
-          : null;
-      if (codeValue != null) {
-        foundCodeBlock = true;
-        source.write(pendingText);
-        pendingText = '';
-        if (codeValue is String) selectedLanguage ??= codeValue;
-      } else if (insert is String && insert.contains('\n') && foundCodeBlock) {
-        break;
-      }
-    }
-
-    if (!foundCodeBlock) return null;
-    return selectedLanguage == null
-        ? CodeLanguageDetector.detect(source.toString())
-        : CodeLanguageDetector.fromId(selectedLanguage) ??
-              CodeLanguageDetector.plainText;
   }
 }

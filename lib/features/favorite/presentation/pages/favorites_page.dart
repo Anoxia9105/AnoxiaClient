@@ -1425,6 +1425,7 @@ String _typeLabel(MessageType type) {
     MessageType.emoji => 'favorite_type_emoji'.tr(),
     MessageType.location => 'favorite_type_location'.tr(),
     MessageType.card => 'favorite_type_card'.tr(),
+    MessageType.codeSnippet => 'favorite_type_code'.tr(),
     MessageType.system => 'favorite_type_system'.tr(),
   };
 }

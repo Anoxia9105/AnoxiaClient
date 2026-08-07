@@ -4,6 +4,7 @@ import '../proto_reader.dart';
 import '../proto_writer.dart';
 import '../frame_codec.dart';
 import '../../protocol/message/attachment.dart';
+import '../../protocol/message/code_payload.dart';
 import '../../protocol/message/event_message.dart';
 import '../../protocol/message/high_message.dart';
 import '../../protocol/message/message_enum.dart';
@@ -372,6 +373,16 @@ class ImPacketV5 {
         }
         w.writeMessage(9, cw); // oneof card = 9
 
+      case MessageType.codeSnippet:
+        // CodePayloadProtoV5: code=1, language=2, title=3, interaction=4
+        final code = payload?.code;
+        final codeW = ProtoWriter()
+          ..writeString(1, code?.code)
+          ..writeString(2, code?.language)
+          ..writeString(3, code?.title);
+        _writeInteraction(codeW, 4, payload?.replyTo, payload?.mentions);
+        w.writeMessage(11, codeW); // oneof code = 11
+
       case MessageType.system:
         // SystemPayloadProtoV5: event_code=1, text=2, properties=3
         final sw = ProtoWriter()
@@ -530,6 +541,24 @@ class ImPacketV5 {
                 ? card.displayTitle
                 : '[card]',
             card: card,
+          );
+        }
+
+      case MessageType.codeSnippet:
+        final codeBytes = f.getBytes(11);
+        if (codeBytes.isNotEmpty) {
+          final cf = ProtoReader(codeBytes).readAll();
+          final inter = _readInteraction(cf.getBytes(4));
+          final code = CodePayload(
+            code: _emptyToNull(cf.getString(1)) ?? '',
+            language: _emptyToNull(cf.getString(2)),
+            title: _emptyToNull(cf.getString(3)),
+          );
+          payload = MessagePayload(
+            content: code.hasTitle ? code.title : code.displayLanguage,
+            code: code,
+            replyTo: inter?.replyTo,
+            mentions: inter?.mentions,
           );
         }
 

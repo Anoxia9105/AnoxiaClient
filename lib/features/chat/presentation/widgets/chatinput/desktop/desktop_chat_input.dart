@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_code_line_number.dart';
 import 'package:anoxia/framework/extensions/quill_cursor_x.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:flutter/material.dart';
@@ -308,6 +307,12 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
                 .sendLocationMessage(location);
             widget.bottomSheet();
           },
+          onCodeSubmit: (code) {
+            ref
+                .read(chatInputControllerProvider(widget.roomId).notifier)
+                .sendCodeMessage(code);
+            widget.bottomSheet();
+          },
           onImagePressed: () => ref
               .read(chatImageUploadControllerProvider.notifier)
               .selectImages(controller),
@@ -329,14 +334,6 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               padding: const EdgeInsets.all(8),
               customStyles: QuillStyleConfig.get(context),
               textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
-              // ignore: experimental_member_use
-              customLeadingBlockBuilder: (node, config) =>
-                  QuillCodeLineNumber.build(
-                    node,
-                    config,
-                    controller: controller,
-                  ),
-              // ignore: experimental_member_use
               onKeyPressed: (event, node) => _handleKeyPress(event, controller),
               embedBuilders: [
                 QuillImageBuild(),

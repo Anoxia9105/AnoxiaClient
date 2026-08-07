@@ -1,4 +1,4 @@
-name: anoxia
+﻿name: anoxia
 description: "A high-performance, real-time IM (Instant Messaging) solution built with Flutter and Dart. Supports low-latency message delivery and robust state synchronization."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # Mobile: 1.0.8 
@@ -12,7 +12,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
   # 屏幕适配
   flutter_screenutil: ^5.9.3
   # Riverpod状态管理
@@ -55,7 +54,6 @@ dependencies:
   tray_manager: ^0.5.2
   # 富文本编辑器
   flutter_quill: ^11.5.1
-  dart_quill_delta: ^10.0.0
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0
   # Web 平台文件处理
@@ -112,8 +110,6 @@ dependencies:
   pasteboard: ^0.5.0
   # 动画
   flutter_staggered_animations: ^1.1.1
-  # 分屏
-  split_view: ^3.2.2
   # 抽屉
   flutter_zoom_drawer: ^3.2.0
   # 快捷键
@@ -174,11 +170,6 @@ dev_dependencies:
 
 dependency_overrides:
   sqlparser: 0.44.0
-  # flutter_quill 本地补丁：修复代码块粘贴/格式化时 render children 与文档
-  # 短暂失步导致 childAtPosition 抛 "targetChild should not be null" 崩溃
-  # （web-wasm 必现）。源码位于 third_party/flutter_quill（基于 11.5.1）。
-  flutter_quill:
-    path: third_party/flutter_quill
 
 flutter:
   uses-material-design: true
@@ -207,7 +198,3 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
-  fonts:
-    - family: HarmonyOS
-      fonts:
-        - asset: assets/fonts/HarmonyOS.ttf

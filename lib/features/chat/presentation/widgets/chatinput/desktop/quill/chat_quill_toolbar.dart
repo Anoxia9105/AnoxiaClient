@@ -1,10 +1,12 @@
 ﻿import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/dialogs/code_input_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -29,14 +31,16 @@ import 'colors_box.dart';
 ///
 /// [controller] Quill 编辑器控制器
 /// [roomId] 当前聊天房间 ID（用于发送贴图等消息）
-/// [onSend] 发送按钮点击回调
-/// [onImagePressed] 图片按钮点击回调
-/// [onFilePressed] 文件按钮点击回调
-class ChatQuillToolbar extends ConsumerWidget {
+  /// [onSend] 发送按钮点击回调
+  /// [onCodeSubmit] 代码提交回调
+  /// [onImagePressed] 图片按钮点击回调
+  /// [onFilePressed] 文件按钮点击回调
+  class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
   final String roomId;
   final VoidCallback onSend;
   final ValueChanged<LocationPayload> onLocationSubmit;
+  final ValueChanged<CodePayload> onCodeSubmit;
   final VoidCallback? onImagePressed;
   final VoidCallback? onFilePressed;
 
@@ -46,6 +50,7 @@ class ChatQuillToolbar extends ConsumerWidget {
     required this.roomId,
     required this.onSend,
     required this.onLocationSubmit,
+    required this.onCodeSubmit,
     this.onImagePressed,
     this.onFilePressed,
   });
@@ -140,11 +145,33 @@ class ChatQuillToolbar extends ConsumerWidget {
                       'toolbar_quote'.tr(),
                       iconColor,
                     ),
-                    _buildActionButton(
-                      HugeIcons.strokeRoundedSourceCode,
-                      Attribute.codeBlock,
-                      'toolbar_code_block'.tr(),
-                      iconColor,
+                    Builder(
+                      builder: (context) {
+                        return IconButton(
+                          mouseCursor: SystemMouseCursors.click,
+                          tooltip: 'toolbar_code_block'.tr(),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () async {
+                            final code = await showDialog<CodePayload>(
+                              context: context,
+                              builder: (dialogContext) => CodeInputDialog(
+                                onCancel: () =>
+                                    Navigator.of(dialogContext).pop(),
+                                onSubmit: (value) =>
+                                    Navigator.of(dialogContext).pop(value),
+                              ),
+                            );
+                            if (code != null && context.mounted) {
+                              onCodeSubmit(code);
+                            }
+                          },
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedSourceCode,
+                            size: 16,
+                          ),
+                        );
+                      },
                     ),
                     Builder(
                       builder: (context) {

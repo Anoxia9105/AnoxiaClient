@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
-import 'quill_code_line_number.dart';
-
 /// Quill 编辑器样式配置类
 ///
 /// 提供统一的富文本编辑器样式配置，适配应用主题：
@@ -13,12 +11,13 @@ import 'quill_code_line_number.dart';
 /// - 代码块样式
 class QuillStyleConfig {
   static TextStyle codeTextStyle(BuildContext context) {
+    const fontSize = 13.0;
+    const lineHeight = 1.5;
     final theme = Theme.of(context);
     return TextStyle(
-      // Web 端走系统字体，避免加载内置 CJK 大字体（Safari 卡顿来源）
       fontFamily: kIsWeb ? null : 'HarmonyOS',
-      fontSize: QuillCodeLineNumber.fontSize,
-      height: QuillCodeLineNumber.lineHeight,
+      fontSize: fontSize,
+      height: lineHeight,
       color: theme.colorScheme.onSurface,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -107,8 +106,9 @@ class QuillStyleConfig {
         VerticalSpacing.zero,
         null,
         null,
-        indentWidthBuilder: QuillCodeLineNumber.indentWidth,
-        numberPointWidthBuilder: QuillCodeLineNumber.numberPointWidth,
+        indentWidthBuilder: (block, context, count, numberPointWidth) =>
+            const HorizontalSpacing(16, 16),
+        numberPointWidthBuilder: (fontSize, count) => 24.0,
       ),
       // 代码块样式
       code: DefaultListBlockStyle(

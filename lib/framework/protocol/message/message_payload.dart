@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'attachment.dart';
+import 'code_payload.dart';
 import 'message_enum.dart';
 
 /// @全体成员的固定占位用户 ID。
@@ -319,6 +320,9 @@ class MessagePayload {
   /// 卡片信息
   final CardPayload? card;
 
+  /// 代码信息
+  final CodePayload? code;
+
   // ==================== 构造函数 ====================
 
   const MessagePayload({
@@ -339,6 +343,7 @@ class MessagePayload {
     this.waveform,
     this.location,
     this.card,
+    this.code,
   });
 
   // ==================== 辅助方法 ====================
@@ -391,6 +396,7 @@ class MessagePayload {
     String? waveform,
     LocationPayload? location,
     CardPayload? card,
+    CodePayload? code,
   }) => MessagePayload(
     content: content ?? this.content,
     quillDelta: quillDelta ?? this.quillDelta,
@@ -409,6 +415,7 @@ class MessagePayload {
     waveform: waveform ?? this.waveform,
     location: location ?? this.location,
     card: card ?? this.card,
+    code: code ?? this.code,
   );
 
   // ==================== JSON 序列化 / 反序列化 ====================
@@ -558,6 +565,15 @@ class MessagePayload {
       );
     }
 
+    final codeMap = _asMap(json['code']);
+    if (codeMap != null) {
+      final code = CodePayload.fromJson(codeMap);
+      return MessagePayload(
+        content: code.hasTitle ? code.title : code.displayLanguage,
+        code: code,
+      );
+    }
+
     final system = _asMap(json['system']);
     if (system != null) {
       return MessagePayload(
@@ -632,6 +648,7 @@ class MessagePayload {
     'waveform': waveform,
     'location': location?.toJson(),
     'card': card?.toJson(),
+    'code': code?.toJson(),
   };
 
   /// 根据消息类型生成服务端要求的嵌套 JSON 结构。
@@ -696,6 +713,9 @@ class MessagePayload {
       },
       MessageType.card => {
         'card': (card ?? CardPayload(title: content ?? '[card]')).toJson(),
+      },
+      MessageType.codeSnippet => {
+        'code': (code ?? CodePayload(code: content ?? '')).toJson(),
       },
       MessageType.system => {
         'system': {'text': content, 'eventCode': content},

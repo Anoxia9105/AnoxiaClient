@@ -174,6 +174,7 @@ class ReplyPreviewBar extends ConsumerWidget {
       MessageType.system => '[系统消息]',
       MessageType.card => '[卡片]',
       MessageType.location => '[位置]',
+      MessageType.codeSnippet => '[代码]',
       MessageType.richText || MessageType.text => '消息',
       null => '消息',
     };

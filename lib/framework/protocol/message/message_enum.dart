@@ -30,6 +30,9 @@ enum MessageType {
   /// 名片消息。
   card(9),
 
+  /// 代码片段消息。
+  codeSnippet(11),
+
   /// 系统消息。
   system(10);
 
@@ -66,6 +69,7 @@ enum MessageType {
         'EMOJI': MessageType.emoji,
         'LOCATION': MessageType.location,
         'CARD': MessageType.card,
+        'CODE': MessageType.codeSnippet,
         'SYSTEM': MessageType.system,
       };
       return nameMap[value.toUpperCase()] ?? MessageType.text;

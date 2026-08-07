@@ -1,5 +1,6 @@
 ﻿import 'package:anoxia/features/chat/presentation/widgets/message_render/audio_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/card_message_strategy.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_render/code/code_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/location_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/quill_message_strategy.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/sticker_message_strategy.dart';
@@ -30,6 +31,7 @@ class MessageRenderFactory {
     MessageType.emoji: StickerMessageStrategy(),
     MessageType.location: LocationMessageStrategy(),
     MessageType.card: CardMessageStrategy(),
+    MessageType.codeSnippet: CodeMessageStrategy(),
   };
 
   /// 根据消息类型获取对应的渲染策略

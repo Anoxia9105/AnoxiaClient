@@ -1,7 +1,9 @@
 /// Quill 编辑器语法高亮渲染器。
 ///
-/// 为 Quill 代码块和内联代码构建带有语法着色属性的文本跨度，
-/// 同时保留 Quill 标准的 code-block 和 code 属性以保持可编辑性。
+/// 为 Quill 内联代码构建带有语法着色属性的文本跨度，
+/// 保留 Quill 标准的 code 属性以保持可编辑性。
+///
+/// 代码块不再在 Quill 编辑器中渲染，而是通过自定义对话框发送。
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/themes/github.dart';
@@ -12,17 +14,8 @@ import 'package:highlight/highlight.dart' as syntax;
 import 'code_language.dart';
 import 'quill_style_config.dart';
 
-/// Builds Quill text spans with syntax colors while preserving Quill's
-/// standard `code-block` and `code` attributes (and therefore editability).
 abstract final class QuillSyntaxHighlighter {
-  /// 构建语法高亮文本跨度。
-  ///
-  /// [context] 当前构建上下文，用于获取主题。
-  /// [node] 当前 Quill 节点。
-  /// [nodeOffset] 节点偏移量。
-  /// [text] 原始文本。
-  /// [style] 基础文本样式。
-  /// [recognizer] 手势识别器。
+  /// 构建语法高亮文本跨度（仅处理内联代码）。
   static InlineSpan buildSpan(
     BuildContext context,
     Node node,
@@ -31,47 +24,33 @@ abstract final class QuillSyntaxHighlighter {
     TextStyle? style,
     GestureRecognizer? recognizer,
   ) {
-    // Line.style 不继承父 Block 的 code-block 属性，需要向上遍历祖先链
-    // 才能检测到代码块。结构：QuillText → Line → Block。
-    var isCodeBlock = false;
-    var ancestor = node.parent;
-    while (ancestor != null) {
-      if (ancestor.style.containsKey(Attribute.codeBlock.key)) {
-        isCodeBlock = true;
-        break;
-      }
-      ancestor = ancestor.parent;
-    }
     final isInlineCode = node.style.containsKey(Attribute.inlineCode.key);
-    final codeStyle = (isCodeBlock || isInlineCode)
-        ? (style ?? const TextStyle()).merge(
-            QuillStyleConfig.codeTextStyle(context),
-          )
-        : style;
-    final language = isCodeBlock
-        ? CodeLanguageDetector.resolveForLine(node.parent!)
-        : CodeLanguageDetector.detect(text);
+    if (!isInlineCode) {
+      return TextSpan(
+        text: text,
+        style: style,
+        recognizer: recognizer,
+        mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
+      );
+    }
 
-    final trimmedText = text.trim();
-    if ((!isCodeBlock && !isInlineCode) ||
-        language.id == CodeLanguageDetector.plainText.id ||
-        trimmedText.isEmpty ||
-        !_hasHighlightableContent(trimmedText)) {
+    final codeStyle = (style ?? const TextStyle()).merge(
+      QuillStyleConfig.codeTextStyle(context),
+    );
+    final language = CodeLanguageDetector.detect(text);
+
+    if (language.id == CodeLanguageDetector.plainText.id ||
+        text.trim().isEmpty ||
+        !_hasHighlightableContent(text)) {
       return _plainSpan(text, codeStyle, recognizer);
     }
 
-    return _highlightedSpan(
-      context,
-      text,
-      language.id,
-      codeStyle,
-      recognizer,
-    );
+    return _highlightedSpan(context, text, language.id, codeStyle, recognizer);
   }
 
   /// 为一段完整代码文本构建语法高亮跨度（不依赖 Quill 节点）。
   ///
-  /// 供 WASM 消息渲染等非编辑器场景复用；不识别时原样返回纯文本，
+  /// 供代码消息渲染等非编辑器场景复用；不识别时原样返回纯文本，
   /// 高亮失败也不影响文本显示。
   static InlineSpan buildCodeSpan(
     BuildContext context,
@@ -97,6 +76,10 @@ abstract final class QuillSyntaxHighlighter {
   ) {
     try {
       final result = syntax.highlight.parse(text, language: languageId);
+      final nodes = result.nodes;
+      if (nodes == null) {
+        return _plainSpan(text, style, recognizer);
+      }
       final theme = Theme.of(context).brightness == Brightness.dark
           ? monokaiSublimeTheme
           : githubTheme;
@@ -104,18 +87,13 @@ abstract final class QuillSyntaxHighlighter {
         style: style,
         recognizer: recognizer,
         mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
-        children: _convertNodes(result.nodes ?? const [], style, theme),
+        children: _convertNodes(nodes, style, theme),
       );
     } catch (_) {
-      // Highlighting is presentation-only; malformed or unknown code must
-      // never prevent Quill from rendering/editing the original text.
       return _plainSpan(text, style, recognizer);
     }
   }
 
-  /// Auto detection runs language-specific number parsers. Incomplete input
-  /// such as "^" or "=" is not useful to highlight and can make those parsers
-  /// throw a [FormatException] while the user is still typing.
   static bool _hasHighlightableContent(String text) {
     return text.runes.any((rune) {
       return (rune >= 0x30 && rune <= 0x39) ||
@@ -143,22 +121,24 @@ abstract final class QuillSyntaxHighlighter {
     TextStyle? baseStyle,
     Map<String, TextStyle> theme,
   ) {
-    return nodes
-        .map((node) {
-          final tokenStyle = node.className == null
-              ? null
-              : theme[node.className];
-          // highlight 语法树中，实际文本在子节点（className=null），
-          // 而 className 在父节点上（value 为空），需要向下传递才能生效。
-          final effectiveBase = baseStyle?.merge(tokenStyle) ?? tokenStyle;
-          return TextSpan(
-            text: node.value,
-            style: effectiveBase,
-            children: node.children == null
-                ? null
-                : _convertNodes(node.children!, effectiveBase, theme),
-          );
-        })
-        .toList(growable: false);
+    final spans = <TextSpan>[];
+    for (final node in nodes) {
+      final tokenStyle = node.className == null
+          ? null
+          : theme[node.className];
+      final effectiveBase = baseStyle?.merge(tokenStyle) ?? tokenStyle;
+      final value = node.value;
+      final children = node.children;
+      if (value == null && children == null) continue;
+      if (children == null) {
+        spans.add(TextSpan(text: value, style: effectiveBase));
+      } else {
+        spans.add(TextSpan(
+          style: effectiveBase,
+          children: _convertNodes(children, effectiveBase, theme),
+        ));
+      }
+    }
+    return spans;
   }
 }

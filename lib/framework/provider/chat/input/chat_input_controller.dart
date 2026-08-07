@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/device_util.dart';
@@ -13,6 +13,7 @@ import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
+import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
@@ -30,6 +31,7 @@ import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -858,7 +860,8 @@ class ChatInputController extends _$ChatInputController {
         type == MessageType.richText ||
         type == MessageType.image ||
         type == MessageType.file ||
-        type == MessageType.video;
+        type == MessageType.video ||
+        type == MessageType.codeSnippet;
   }
 
   /// 通用发送消息方法
@@ -925,6 +928,26 @@ class ChatInputController extends _$ChatInputController {
       ref.read(replyTargetControllerProvider.notifier).clear(roomId);
     }
   }
+
+  /// 发送代码片段消息
+  ///
+  /// 从代码编辑对话框调用，直接发送代码消息，不经过 Quill 编辑器。
+  bool sendCodeMessage(CodePayload codePayload) {
+    if (!codePayload.isValid) return false;
+    final room = ref.read(currentRoomProvider(roomId));
+    if (room == null) return false;
+
+    _doSend(
+      type: MessageType.codeSnippet,
+      payload: MessagePayload(
+        content: codePayload.hasTitle
+            ? codePayload.title
+            : codePayload.displayLanguage,
+        code: codePayload,
+      ),
+    );
+    return true;
+  }
 }
 
 /// 聊天输入框的焦点节点 Provider
@@ -932,7 +955,7 @@ class ChatInputController extends _$ChatInputController {
 /// 用于在发送消息后（桌面端）自动获取焦点。
 @riverpod
 FocusNode chatFocusNode(Ref ref, String roomId) {
-  final node = FocusNode();
+  final node = FocusNode(canRequestFocus: !kIsWeb);
   ref.onDispose(() => node.dispose());
   return node;
 }
