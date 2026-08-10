@@ -736,6 +736,7 @@ Stream<PacketFrame<IPacket>> get messageStream => _messageController.stream;
 |--------|---------|------|
 | `build()` | `Future<UserInfo?>` | 自动恢复登录会话 |
 | `login()` | `Future<void>` | 用户登录 |
+| `loginByScanToken()` | `Future<void>` | 扫码登录（手机确认后签发 token 完成登录） |
 | `logout()` | `Future<void>` | 用户登出 |
 | `refreshUserInfo()` | `Future<void>` | 刷新用户信息 |
 
@@ -833,6 +834,34 @@ sendReaction(emoji)
   ├── 启动 3 秒 Timer，到期后按 id 删除
   └── 通过 publishData 广播给房间内其他用户
 ```
+
+#### 3.4.5 扫码登录 (ScanLoginController)
+
+**文件路径**: `lib/framework/provider/auth/scan_login_controller.dart`（展示端轮询）、`lib/features/app/presentation/pages/scan_login_confirm_page.dart`（手机确认端）、`lib/framework/domain/scan_login_model.dart`（模型）
+
+**职责描述**: 桌面/Web 端展示二维码、手机 App 扫码确认，为当前账号签发新设备登录令牌。
+
+**完整流程**:
+
+```
+桌面/Web 登录页（密码登录/扫码登录切换）
+  │  POST /login/scan/create ──→ ticket + qrContent + expiresIn(120s)
+  ▼
+QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
+  │  每 2s 轮询 GET /login/scan/status?ticket=xxx
+  ▼
+手机扫描二维码 → 解析 /qrlogin?ticket= → ScanLoginConfirmPage
+  │  点击确认 → POST /login/scan/confirm（deviceId + ticket，限频）
+  ▼
+服务端确认 → 桌面端轮询到 confirmed + token → loginByScanToken() 完成登录
+```
+
+**关键规则**:
+
+- 二维码过期（expired）时轮询自动重新创建会话，无需用户干预；页面销毁时自动取消轮询（`ref.onDispose`）。
+- 会话 Redis TTL 120s，一次性防重放；确认成功后签发新设备 token。
+- `loginByScanToken` 失败时转为 ASyncError 态展示重试，避免轮询 catch 静默吞错。
+- 手机端通过 `DeviceIdentity.getPlatformQualifiedId()` 上报设备标识，与登录/登出链路一致的设备维度清理。
 
 ---
 
@@ -1312,6 +1341,9 @@ Text('item_count').trplural('other', 10)
 | 认证 | `/logout` | POST | 用户登出 |
 | 认证 | `/getInfo` | GET | 获取用户信息 |
 | 认证 | `/captchaImage` | GET | 获取验证码 |
+| 认证 | `/login/scan/create` | POST | 创建扫码登录会话 |
+| 认证 | `/login/scan/status` | GET | 查询扫码登录状态 |
+| 认证 | `/login/scan/confirm` | POST | 手机确认扫码登录 |
 | 联系人 | `/contact/list` | GET | 获取联系人列表 |
 | 联系人 | `/contact/request` | POST | 发送好友请求 |
 | 聊天室 | `/chat/rooms` | GET | 获取聊天室列表 |
@@ -1327,4 +1359,4 @@ Text('item_count').trplural('other', 10)
 
 ---
 
-*最后更新: 2026-07-07*
+*最后更新: 2026-08-10*

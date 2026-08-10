@@ -44,8 +44,20 @@ class API {
   /// 获取图形验证码接口
   static const String captchaImage = '/captchaImage';
 
+  /// 创建扫码登录会话（桌面/Web 展示二维码）
+  static const String scanLoginCreate = '/login/scan/create';
+
+  /// 查询扫码登录会话状态（桌面/Web 轮询）
+  static const String scanLoginStatus = '/login/scan/status';
+
+  /// 手机端确认扫码登录
+  static const String scanLoginConfirm = '/login/scan/confirm';
+
   /// 忘记密码发送验证码
   static const String forgotPasswordSendCode = '/password/forgot/send-code';
+
+  /// 忘记密码校验邮箱验证码并获取重置凭证
+  static const String forgotPasswordVerifyCode = '/password/forgot/verify-code';
 
   /// 忘记密码重置密码
   static const String forgotPasswordReset = '/password/forgot/reset';

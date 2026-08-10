@@ -70,7 +70,7 @@ final class ChatImageUploadControllerProvider
 }
 
 String _$chatImageUploadControllerHash() =>
-    r'd22bdf2ab2af8d913dd87967042a80c704e915e7';
+    r'79cc056d9bf5f401d4ac6c18d37851c9faa87d72';
 
 /// 聊天图片上传控制器
 ///

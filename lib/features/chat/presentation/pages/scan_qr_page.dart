@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/features/app/presentation/pages/scan_login_confirm_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -83,6 +84,20 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       return;
     }
 
+    // 扫码登录二维码：跳转手机确认页
+    final ticket = _tryParseScanLoginTicket(raw);
+    if (ticket != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ScanLoginConfirmPage(ticket: ticket),
+        ),
+      );
+      if (!mounted) return;
+      _handling = false;
+      await _controller.start();
+      return;
+    }
+
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ScanQrResultPage(rawContent: raw)),
     );
@@ -90,6 +105,23 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
     if (!mounted) return;
     _handling = false;
     await _controller.start();
+  }
+
+  /// 尝试将扫码结果解析为扫码登录 ticket。
+  ///
+  /// 桌面端二维码内容为 `https://<host>/qrlogin?ticket=xxx`，
+  /// 匹配路径即可（兼容生产域名与本地开发环境）。
+  String? _tryParseScanLoginTicket(String raw) {
+    try {
+      final uri = Uri.parse(raw.trim());
+      if (!uri.hasScheme || uri.pathSegments.isEmpty) return null;
+      if (uri.pathSegments.first != 'qrlogin') return null;
+      final ticket = uri.queryParameters['ticket'];
+      if (ticket == null || ticket.isEmpty) return null;
+      return ticket;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// 尝试将扫码结果解析为用户名片。

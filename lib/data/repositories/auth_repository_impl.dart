@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/auth_repository.dart';
 import 'package:anoxia/framework/domain/captcha_model.dart';
+import 'package:anoxia/framework/domain/scan_login_model.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
@@ -96,13 +97,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<String> forgotPasswordSendCode({
-    required String username,
+    required String email,
     required String captchaCode,
     required String uuid,
   }) async {
     final res = await DioClient().post(
       API.forgotPasswordSendCode,
-      data: {'username': username, 'captchaCode': captchaCode, 'uuid': uuid},
+      data: {'email': email, 'captchaCode': captchaCode, 'uuid': uuid},
       auth: false,
     );
     final msg = _extractApiMsg(res.data, fallback: '操作成功');
@@ -113,17 +114,34 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<String> forgotPasswordReset({
-    required String username,
+  Future<String> forgotPasswordVerifyCode({
+    required String email,
     required String emailCode,
+  }) async {
+    final res = await DioClient().post(
+      API.forgotPasswordVerifyCode,
+      data: {'email': email, 'emailCode': emailCode},
+      auth: false,
+    );
+    final msg = _extractApiMsg(res.data, fallback: '邮箱验证失败');
+    if (!_isApiSuccess(res.data)) throw Exception(msg);
+    final token = res.data is Map ? res.data['data']?.toString() : null;
+    if (token == null || token.isEmpty) throw Exception('邮箱验证凭证无效');
+    return token;
+  }
+
+  @override
+  Future<String> forgotPasswordReset({
+    required String email,
+    required String resetToken,
     required String newPassword,
     required String confirmPassword,
   }) async {
     final res = await DioClient().post(
       API.forgotPasswordReset,
       data: {
-        'username': username,
-        'emailCode': emailCode,
+        'email': email,
+        'resetToken': resetToken,
         'newPassword': newPassword,
         'confirmPassword': confirmPassword,
       },
@@ -146,6 +164,53 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<CaptchaModel> fetchCaptcha() async {
     final res = await DioClient().get(API.captchaImage, auth: false);
     return CaptchaModel(uuid: res.data['uuid'], imgBase64: res.data['img']);
+  }
+
+  @override
+  Future<ScanLoginTicket> createScanLogin() async {
+    final res = await DioClient().post(API.scanLoginCreate, auth: false);
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '创建扫码登录失败'));
+    }
+    final body = res.data;
+    if (body is! Map) throw Exception('创建扫码登录失败');
+    return ScanLoginTicket(
+      ticket: body['ticket']?.toString() ?? '',
+      qrContent: body['qrContent']?.toString() ?? '',
+      expiresIn: (body['expiresIn'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  Future<ScanLoginStatus> getScanLoginStatus(String ticket) async {
+    final res = await DioClient().get(
+      '${API.scanLoginStatus}?ticket=${Uri.encodeQueryComponent(ticket)}',
+      auth: false,
+    );
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '查询扫码登录状态失败'));
+    }
+    final body = res.data;
+    if (body is! Map) throw Exception('查询扫码登录状态失败');
+    final token = body['token']?.toString();
+    return ScanLoginStatus(
+      status: body['status']?.toString() ?? ScanLoginStatus.expired,
+      token: (token == null || token.isEmpty) ? null : token,
+    );
+  }
+
+  @override
+  Future<void> confirmScanLogin(
+    String ticket, {
+    required String deviceId,
+  }) async {
+    final res = await DioClient().post(
+      API.scanLoginConfirm,
+      data: {'ticket': ticket, 'deviceId': deviceId},
+    );
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '扫码登录确认失败'));
+    }
   }
 
   @override

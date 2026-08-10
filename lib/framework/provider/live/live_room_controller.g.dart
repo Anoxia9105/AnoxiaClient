@@ -63,7 +63,7 @@ final class LiveRoomControllerProvider
 }
 
 String _$liveRoomControllerHash() =>
-    r'9a3f552b4c964feb5b58d97b7829873bed675249';
+    r'17557b0296fffd58a8a32f8387e3131aa1a65a3c';
 
 /// 直播房间控制器
 ///

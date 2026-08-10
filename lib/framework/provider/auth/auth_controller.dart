@@ -88,20 +88,7 @@ class AuthController extends _$AuthController {
       if (token == null || token.isEmpty) {
         throw Exception('login_failed'.tr());
       }
-
-      // 同时保存到 TokenManager 和内存缓存
-      await TokenManager.instance.setToken(token);
-      ref.read(tokenCacheProvider.notifier).setToken(token);
-      await _clearLocalSessionCache();
-
-      final user = await _fetchUserInfo();
-      if (user != null) {
-        await SSUtil.instance.write(
-          key: StorageKeys.lastLoginUserId,
-          value: '${user.userId}',
-        );
-      }
-      state = AsyncData(user);
+      await _completeTokenLogin(token);
     } catch (e, st) {
       debugLog('[AuthController] 登录失败', e, st);
       state = AsyncError(e, st);
@@ -113,19 +100,59 @@ class AuthController extends _$AuthController {
       rethrow;
     }
 
-    // 登录成功后重新触发 App 初始化（_preloadData 在登出时不会为新 session 重跑）
-    if (state is AsyncData && state.value != null) {
-      _registerPushTokenRefreshBinding(state.value!);
-      unawaited(_bindPushDevice(state.value!));
-      // 清掉未登录阶段可能遗留的空房间列表缓存，避免登录后先闪空态。
-      ref.invalidate(roomListServiceProvider);
-      debugLog('[AuthController] 登录成功，重新触发 App 初始化序列...');
-      ref.invalidate(appInitializerProvider);
+    _finishLoginSuccess();
+  }
 
-      // 通知其它标签页已切换账号，避免共享缓存被新账号数据覆盖后仍显示
-      // 旧账号的头像/昵称（Web 端生效，原生端为空实现）。
-      CrossTabSessionSync.instance.broadcastLogin(state.value?.userId);
+  /// 扫码登录
+  ///
+  /// [token] 为桌面/Web 端通过扫码登录会话换取的登录令牌，
+  /// 流程与密码登录一致：落库 → 拉取用户信息 → 触发 App 初始化。
+  Future<void> loginByScanToken(String token) async {
+    if (token.isEmpty) throw Exception('login_failed'.tr());
+    state = const AsyncLoading();
+    try {
+      await _completeTokenLogin(token);
+    } catch (e, st) {
+      debugLog('[AuthController] 扫码登录失败', e, st);
+      state = AsyncError(e, st);
+      ref.read(toastServiceProvider).showToast(
+            _parseLoginErrorMessage(e),
+            type: ToastType.error,
+          );
+      rethrow;
     }
+    _finishLoginSuccess();
+  }
+
+  /// 登录成功后的共同收尾：绑定推送、清空房间缓存、触发 App 初始化
+  void _finishLoginSuccess() {
+    final user = state.value;
+    if (user == null) return;
+    _registerPushTokenRefreshBinding(user);
+    unawaited(_bindPushDevice(user));
+    // 清掉未登录阶段可能遗留的空房间列表缓存，避免登录后先闪空态。
+    ref.invalidate(roomListServiceProvider);
+    debugLog('[AuthController] 登录成功，重新触发 App 初始化序列...');
+    ref.invalidate(appInitializerProvider);
+    // 通知其它标签页已切换账号（Web 端生效，原生端为空实现）。
+    CrossTabSessionSync.instance.broadcastLogin(user.userId);
+  }
+
+  /// Token 落库 → 拉取用户信息 → 记录最近登录用户
+  Future<void> _completeTokenLogin(String token) async {
+    // 同时保存到 TokenManager 和内存缓存
+    await TokenManager.instance.setToken(token);
+    ref.read(tokenCacheProvider.notifier).setToken(token);
+    await _clearLocalSessionCache();
+
+    final user = await _fetchUserInfo();
+    if (user != null) {
+      await SSUtil.instance.write(
+        key: StorageKeys.lastLoginUserId,
+        value: '${user.userId}',
+      );
+    }
+    state = AsyncData(user);
   }
 
   Future<String> sendRegisterEmailCode({
@@ -166,27 +193,38 @@ class AuthController extends _$AuthController {
 
   /// 忘记密码：发送邮箱验证码
   Future<String> forgotPasswordSendCode({
-    required String username,
+    required String email,
     required String captchaCode,
     required String uuid,
   }) {
     return ref.read(authRepositoryProvider).forgotPasswordSendCode(
-          username: username,
+          email: email,
           captchaCode: captchaCode,
           uuid: uuid,
         );
   }
 
+  /// 忘记密码：校验邮箱验证码并获取重置凭证
+  Future<String> forgotPasswordVerifyCode({
+    required String email,
+    required String emailCode,
+  }) {
+    return ref.read(authRepositoryProvider).forgotPasswordVerifyCode(
+          email: email,
+          emailCode: emailCode,
+        );
+  }
+
   /// 忘记密码：重置密码
   Future<String> forgotPasswordReset({
-    required String username,
-    required String emailCode,
+    required String email,
+    required String resetToken,
     required String newPassword,
     required String confirmPassword,
   }) {
     return ref.read(authRepositoryProvider).forgotPasswordReset(
-          username: username,
-          emailCode: emailCode,
+          email: email,
+          resetToken: resetToken,
           newPassword: newPassword,
           confirmPassword: confirmPassword,
         );

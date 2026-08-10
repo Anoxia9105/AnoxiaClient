@@ -898,5 +898,21 @@
   "api_request_failed": "请求失败，请稍后重试",
   "api_login_expired": "登录过期",
   "code_editor_title": "代码编辑",
-  "code_editor_placeholder": "在此输入代码..."
+  "code_editor_placeholder": "在此输入代码...",
+
+  "login_scan_password_mode": "密码登录",
+  "login_scan_title": "扫码登录",
+  "login_scan_countdown": "有效期 {seconds}s",
+  "login_scan_refresh": "刷新二维码",
+  "login_scan_hint": "请使用 Anoxia 手机 App 扫描二维码登录",
+  "login_scan_loading": "正在生成二维码...",
+  "login_scan_error": "二维码加载失败",
+  "login_scan_retry": "重试",
+  "scan_login_confirm_title": "扫码登录确认",
+  "scan_login_confirm_hint": "是否确认登录 Anoxia 桌面端？",
+  "scan_login_confirm_confirm": "确认登录",
+  "scan_login_confirm_cancel": "取消",
+  "scan_login_confirm_need_login": "请先登录后再确认",
+  "scan_login_confirm_success": "已确认登录",
+  "scan_login_confirm_failed": "确认失败，请重试"
 }

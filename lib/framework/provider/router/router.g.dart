@@ -19,11 +19,8 @@ List<RouteBase> get $appRoutes => [
   $openSourceLicenseDetailRoute,
 ];
 
-RouteBase get $initLoginRoute => GoRouteData.$route(
-  path: '/login',
-  hasOverriddenOnExit: false,
-  factory: $InitLoginRoute._fromState,
-);
+RouteBase get $initLoginRoute =>
+    GoRouteData.$route(path: '/login', factory: $InitLoginRoute._fromState);
 
 mixin $InitLoginRoute on GoRouteData {
   static InitLoginRoute _fromState(GoRouterState state) =>
@@ -46,11 +43,8 @@ mixin $InitLoginRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $homeRoute => GoRouteData.$route(
-  path: '/',
-  hasOverriddenOnExit: false,
-  factory: $HomeRoute._fromState,
-);
+RouteBase get $homeRoute =>
+    GoRouteData.$route(path: '/', factory: $HomeRoute._fromState);
 
 mixin $HomeRoute on GoRouteData {
   static HomeRoute _fromState(GoRouterState state) => const HomeRoute();
@@ -72,11 +66,8 @@ mixin $HomeRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $splashRoute => GoRouteData.$route(
-  path: '/splash',
-  hasOverriddenOnExit: false,
-  factory: $SplashRoute._fromState,
-);
+RouteBase get $splashRoute =>
+    GoRouteData.$route(path: '/splash', factory: $SplashRoute._fromState);
 
 mixin $SplashRoute on GoRouteData {
   static SplashRoute _fromState(GoRouterState state) => const SplashRoute();
@@ -98,11 +89,8 @@ mixin $SplashRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $errorRoute => GoRouteData.$route(
-  path: '/error',
-  hasOverriddenOnExit: false,
-  factory: $ErrorRoute._fromState,
-);
+RouteBase get $errorRoute =>
+    GoRouteData.$route(path: '/error', factory: $ErrorRoute._fromState);
 
 mixin $ErrorRoute on GoRouteData {
   static ErrorRoute _fromState(GoRouterState state) =>
@@ -132,7 +120,6 @@ mixin $ErrorRoute on GoRouteData {
 
 RouteBase get $imageMessageDetailRoute => GoRouteData.$route(
   path: '/imageView',
-  hasOverriddenOnExit: false,
   factory: $ImageMessageDetailRoute._fromState,
 );
 
@@ -172,7 +159,6 @@ mixin $ImageMessageDetailRoute on GoRouteData {
 
 RouteBase get $addFriendRoute => GoRouteData.$route(
   path: '/add-friend',
-  hasOverriddenOnExit: false,
   factory: $AddFriendRoute._fromState,
 );
 
@@ -199,7 +185,6 @@ mixin $AddFriendRoute on GoRouteData {
 
 RouteBase get $createGroupRoute => GoRouteData.$route(
   path: '/create-group',
-  hasOverriddenOnExit: false,
   factory: $CreateGroupRoute._fromState,
 );
 
@@ -224,11 +209,8 @@ mixin $CreateGroupRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $updateRoute => GoRouteData.$route(
-  path: '/update',
-  hasOverriddenOnExit: false,
-  factory: $UpdateRoute._fromState,
-);
+RouteBase get $updateRoute =>
+    GoRouteData.$route(path: '/update', factory: $UpdateRoute._fromState);
 
 mixin $UpdateRoute on GoRouteData {
   static UpdateRoute _fromState(GoRouterState state) => UpdateRoute(
@@ -282,7 +264,6 @@ bool _$boolConverter(String value) {
 
 RouteBase get $openSourceLicensesRoute => GoRouteData.$route(
   path: '/open-source-licenses',
-  hasOverriddenOnExit: false,
   factory: $OpenSourceLicensesRoute._fromState,
 );
 
@@ -309,7 +290,6 @@ mixin $OpenSourceLicensesRoute on GoRouteData {
 
 RouteBase get $openSourceLicenseDetailRoute => GoRouteData.$route(
   path: '/open-source-licenses/detail',
-  hasOverriddenOnExit: false,
   factory: $OpenSourceLicenseDetailRoute._fromState,
 );
 
@@ -407,4 +387,4 @@ final class RouterProvider
   }
 }
 
-String _$routerHash() => r'7d497004e6c469c9f6bcdb7328ceec2cdca0c759';
+String _$routerHash() => r'c79e1cf9ffc58b7b24ffeec516d9c4b85195bac2';

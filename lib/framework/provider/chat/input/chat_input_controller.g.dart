@@ -74,7 +74,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'563c34e784b35d83983136b8aa0f2a15a482cfc5';
+    r'0d243a86733e974306d651d9016e4c21fc2e13aa';
 
 /// 聊天输入控制器
 ///
@@ -278,7 +278,7 @@ final class MentionStateProvider
   }
 }
 
-String _$mentionStateHash() => r'4979a8c55c48aba2ee915f321b876beb71cd8461';
+String _$mentionStateHash() => r'a9e513f26aa32f07f6a66b44ca742626262cc3ae';
 
 /// @提及状态管理
 ///

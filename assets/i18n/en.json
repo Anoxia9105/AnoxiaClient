@@ -898,5 +898,21 @@
   "api_request_failed": "Request failed, please try again later",
   "api_login_expired": "Login expired",
   "code_editor_title": "Code Editor",
-  "code_editor_placeholder": "Enter code here..."
+  "code_editor_placeholder": "Enter code here...",
+
+  "login_scan_password_mode": "Password Login",
+  "login_scan_title": "Scan to Login",
+  "login_scan_countdown": "Valid for {seconds}s",
+  "login_scan_refresh": "Refresh QR Code",
+  "login_scan_hint": "Scan the QR code with the Anoxia mobile app",
+  "login_scan_loading": "Generating QR code...",
+  "login_scan_error": "Failed to load QR code",
+  "login_scan_retry": "Retry",
+  "scan_login_confirm_title": "Confirm Scan Login",
+  "scan_login_confirm_hint": "Confirm signing in to Anoxia desktop?",
+  "scan_login_confirm_confirm": "Confirm",
+  "scan_login_confirm_cancel": "Cancel",
+  "scan_login_confirm_need_login": "Please sign in first",
+  "scan_login_confirm_success": "Login confirmed",
+  "scan_login_confirm_failed": "Confirmation failed, please try again"
 }

@@ -898,5 +898,21 @@
   "api_request_failed": "リクエストに失敗しました、後でもう一度お試しください",
   "api_login_expired": "ログインの有効期限が切れました",
   "code_editor_title": "コードエディタ",
-  "code_editor_placeholder": "ここにコードを入力..."
+  "code_editor_placeholder": "ここにコードを入力...",
+
+  "login_scan_password_mode": "パスワードログイン",
+  "login_scan_title": "スキャンログイン",
+  "login_scan_countdown": "有効期間 {seconds}秒",
+  "login_scan_refresh": "QRコードを更新",
+  "login_scan_hint": "AnoxiaモバイルアプリでQRコードをスキャンしてください",
+  "login_scan_loading": "QRコードを生成中...",
+  "login_scan_error": "QRコードの読み込みに失敗しました",
+  "login_scan_retry": "再試行",
+  "scan_login_confirm_title": "スキャンログイン確認",
+  "scan_login_confirm_hint": "Anoxiaデスクトップへのログインを確認しますか？",
+  "scan_login_confirm_confirm": "ログインを確認",
+  "scan_login_confirm_cancel": "キャンセル",
+  "scan_login_confirm_need_login": "先にログインしてください",
+  "scan_login_confirm_success": "ログインを確認しました",
+  "scan_login_confirm_failed": "確認に失敗しました。もう一度お試しください"
 }

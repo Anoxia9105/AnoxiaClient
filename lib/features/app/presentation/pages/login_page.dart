@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/scan_login_controller.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 /// 登录页面
 ///
@@ -41,6 +45,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   /// 是否正在执行登录操作
   bool _isLoading = false;
+
+  /// 当前登录方式（仅桌面/Web 展示扫码登录）
+  _LoginMode _mode = _LoginMode.password;
+
+  /// 是否展示扫码登录入口（手机端扫码确认入口在 App 内）
+  bool get _showScanMode => !DeviceUtil.isRealMobile();
 
   @override
   void dispose() {
@@ -82,23 +92,31 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       children: [
                         _buildHeader(colorScheme, textTheme),
                         const SizedBox(height: 36),
-                        Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildUsernameField(colorScheme),
-                              const SizedBox(height: 16),
-                              _buildPasswordField(colorScheme),
-                              const SizedBox(height: 16),
-                              _buildCaptchaField(colorScheme),
-                              const SizedBox(height: 28),
-                              _buildLoginButton(colorScheme, loginMutation),
-                            ],
+                        if (_showScanMode) ...[
+                          _buildModeSwitcher(),
+                          const SizedBox(height: 28),
+                        ],
+                        if (_mode == _LoginMode.scan)
+                          const _ScanLoginPanel()
+                        else ...[
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildUsernameField(colorScheme),
+                                const SizedBox(height: 16),
+                                _buildPasswordField(colorScheme),
+                                const SizedBox(height: 16),
+                                _buildCaptchaField(colorScheme),
+                                const SizedBox(height: 28),
+                                _buildLoginButton(colorScheme, loginMutation),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFooterLinks(colorScheme),
+                          const SizedBox(height: 20),
+                          _buildFooterLinks(colorScheme),
+                        ],
                       ],
                     ),
                   ),
@@ -107,6 +125,33 @@ class _LoginPageState extends ConsumerState<LoginPage>
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// 登录方式切换器（密码登录 / 扫码登录）
+  Widget _buildModeSwitcher() {
+    return SegmentedButton<_LoginMode>(
+      segments: [
+        ButtonSegment(
+          value: _LoginMode.password,
+          icon: const Icon(Icons.key_rounded, size: 18),
+          label: Text('login_scan_password_mode'.tr()),
+        ),
+        ButtonSegment(
+          value: _LoginMode.scan,
+          icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+          label: Text('login_scan_title'.tr()),
+        ),
+      ],
+      selected: {_mode},
+      onSelectionChanged: (selection) {
+        setState(() => _mode = selection.first);
+      },
+      showSelectedIcon: false,
+      style: SegmentedButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        textStyle: const TextStyle(fontSize: 13),
       ),
     );
   }
@@ -453,5 +498,186 @@ class _CaptchaImage extends ConsumerWidget {
             ),
           ),
         );
+  }
+}
+
+/// 登录方式枚举
+enum _LoginMode { password, scan }
+
+/// 扫码登录面板（桌面/Web）
+///
+/// 展示二维码并自动轮询登录状态；手机 App 扫码确认后自动完成登录。
+class _ScanLoginPanel extends ConsumerStatefulWidget {
+  const _ScanLoginPanel();
+
+  @override
+  ConsumerState<_ScanLoginPanel> createState() => _ScanLoginPanelState();
+}
+
+class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
+  /// 倒计时定时器（每秒递减）
+  Timer? _ticker;
+
+  /// 当前倒计时所属的 ticket，ticket 变化时重置倒计时
+  String? _countdownFor;
+
+  /// 剩余有效秒数
+  int _remaining = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startSession());
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  /// 创建新的扫码登录会话
+  Future<void> _startSession() async {
+    try {
+      await ref.read(scanLoginControllerProvider.notifier).start();
+    } catch (_) {
+      // 错误状态由下方 UI 展示，此处仅静默
+    }
+  }
+
+  /// 启动倒计时
+  void _beginCountdown(String ticket, int expiresIn) {
+    _ticker?.cancel();
+    setState(() {
+      _countdownFor = ticket;
+      _remaining = expiresIn;
+    });
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_remaining > 0) {
+        setState(() => _remaining -= 1);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final session = ref.watch(scanLoginControllerProvider);
+
+    return session.when(
+      loading: () => _buildLoading(colorScheme),
+      error: (e, st) => _buildError(colorScheme),
+      data: (session) {
+        if (session == null) return _buildLoading(colorScheme);
+
+        final ticket = session.ticket;
+        if (_countdownFor != ticket.ticket) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _beginCountdown(ticket.ticket, ticket.expiresIn),
+          );
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildQrCard(colorScheme, session),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'login_scan_countdown'.tr(namedArgs: {'seconds': '$_remaining'}),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _remaining <= 10
+                        ? colorScheme.error
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                TextButton.icon(
+                  onPressed: _startSession,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text('login_scan_refresh'.tr()),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'login_scan_hint'.tr(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildQrCard(ColorScheme colorScheme, ScanLoginSession session) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: QrImageView(
+          data: session.ticket.qrContent,
+          size: 200,
+          padding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          eyeStyle: const QrEyeStyle(
+            eyeShape: QrEyeShape.square,
+            color: Colors.black,
+          ),
+          dataModuleStyle: const QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: Colors.black,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoading(ColorScheme colorScheme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox.square(
+          dimension: 48,
+          child: CircularProgressIndicator(strokeWidth: 3),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'login_scan_loading'.tr(),
+          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildError(ColorScheme colorScheme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.error_outline_rounded, size: 48, color: colorScheme.error),
+        const SizedBox(height: 12),
+        Text(
+          'login_scan_error'.tr(),
+          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _startSession,
+          icon: const Icon(Icons.refresh_rounded, size: 18),
+          label: Text('login_scan_retry'.tr()),
+        ),
+      ],
+    );
   }
 }
