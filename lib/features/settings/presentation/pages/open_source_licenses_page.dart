@@ -36,7 +36,6 @@ class OpenSourceLicensesPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final pkg = packages[index];
                 final version = (pkg.version ?? '').trim();
-                final spdx = pkg.spdxIdentifiers.join(' / ').trim();
                 final description = (pkg.description).trim();
 
                 return Card(
@@ -87,18 +86,6 @@ class OpenSourceLicensesPage extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            spdx.isNotEmpty
-                                ? spdx
-                                : 'settings_open_source_license_unlabeled'.tr(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
                           if (description.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(
@@ -160,7 +147,6 @@ class OpenSourceLicenseDetailPage extends StatelessWidget {
     }
 
     final version = (package.version ?? '').trim();
-    final spdx = package.spdxIdentifiers.join(' / ').trim();
     final title = package.name;
 
     return AppScaffold(
@@ -179,13 +165,6 @@ class OpenSourceLicenseDetailPage extends StatelessWidget {
                   if (version.isNotEmpty)
                     Text(
                       'settings_open_source_version'.tr(args: [version]),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  if (version.isNotEmpty && spdx.isNotEmpty)
-                    const SizedBox(height: 6),
-                  if (spdx.isNotEmpty)
-                    Text(
-                      'settings_open_source_spdx'.tr(args: [spdx]),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                 ],

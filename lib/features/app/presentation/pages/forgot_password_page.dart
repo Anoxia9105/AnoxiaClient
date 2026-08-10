@@ -1,9 +1,10 @@
-// 忘记密码页面，提供用户名验证、图形验证码、邮箱验证码及密码重置功能。
+// 忘记密码页面，提供两步找回流程：邮箱验证和密码重置。
 //
-// 用户通过输入用户名、图形验证码获取邮箱验证码，然后输入新密码完成密码重置。
+// 第一步输入邮箱并通过图形验证码发送邮箱验证码，验证通过后进入第二步设置新密码。
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:anoxia/common/utils/validators.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -13,8 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 忘记密码页面
 ///
-/// 使用 Riverpod 管理状态，支持图形验证码刷新、邮箱验证码发送倒计时、
-/// 密码重置提交等完整流程。
+/// 使用 Riverpod 管理状态，支持两步找回流程：先通过图形验证码获取邮箱验证码并验证邮箱，
+/// 验证通过后设置新密码完成重置。验证码图片高度与输入框保持一致。
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
 
@@ -24,19 +25,29 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
 
 /// 忘记密码页面状态
 ///
-/// 管理用户名、验证码、邮箱验证码、新密码等输入框的控制器，以及提交状态和倒计时逻辑。
+/// 管理邮箱、图形验证码、邮箱验证码、新密码等输入框的控制器，
+/// 以及发送/验证/提交状态和倒计时逻辑。
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
-  final _usernameCtrl = TextEditingController();
+  /// 验证码容器高度，与默认输入框高度保持一致
+  static const double _captchaHeight = 56;
+
+  final _emailCtrl = TextEditingController();
   final _captchaCtrl = TextEditingController();
   final _emailCodeCtrl = TextEditingController();
   final _newPasswordCtrl = TextEditingController();
   final _confirmPasswordCtrl = TextEditingController();
 
-  bool _submitting = false;
-  bool _sendingCode = false;
+  bool _isSendingCode = false;
+  bool _isVerifyingEmail = false;
+  bool _isSubmitting = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   int _countdown = 0;
   Timer? _countdownTimer;
+  String? _resetToken;
   _SimpleCaptchaData? _captcha;
+
+  bool get _emailVerified => _resetToken != null;
 
   @override
   void initState() {
@@ -47,7 +58,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _usernameCtrl.dispose();
+    _emailCtrl.dispose();
     _captchaCtrl.dispose();
     _emailCodeCtrl.dispose();
     _newPasswordCtrl.dispose();
@@ -61,162 +72,317 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
     return AppScaffold(
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Card(
-                elevation: 0,
-                color: colorScheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.arrow_back_rounded),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'login_page_forget_dialog_title'.tr(),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _usernameCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'login_page_name'.tr(),
-                          hintText: 'login_page_name'.tr(),
+        child: Column(
+          children: [
+            _buildTopBar(context),
+            Expanded(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildHeader(colorScheme),
+                        const SizedBox(height: 22),
+                        _buildSteps(colorScheme),
+                        const SizedBox(height: 24),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 260),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          child: _emailVerified
+                              ? _buildPasswordStep(colorScheme)
+                              : _buildEmailStep(colorScheme),
                         ),
-                        inputFormatters: [LengthLimitingTextInputFormatter(30)],
-                      ),
-                      const SizedBox(height: 12),
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _captchaCtrl,
-                                decoration: InputDecoration(
-                                  labelText: 'login_page_captcha'.tr(),
-                                  hintText: 'login_page_captcha'.tr(),
-                                ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(4),
-                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            _buildDialogCaptcha(colorScheme),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _emailCodeCtrl,
-                                decoration: InputDecoration(
-                                  labelText: 'login_page_forget_email_code'.tr(),
-                                  hintText: 'login_page_forget_email_code'.tr(),
-                                ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(6),
-                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            FilledButton.tonal(
-                              onPressed: (_sendingCode || _countdown > 0)
-                                  ? null
-                                  : _handleSendCode,
-                              child: _sendingCode
-                                  ? const SizedBox.square(
-                                      dimension: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(
-                                      _countdown > 0
-                                          ? '${_countdown}s'
-                                          : 'login_page_forget_send_code'.tr(),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _newPasswordCtrl,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'login_page_forget_new_password'.tr(),
-                          hintText: 'login_page_forget_new_password'.tr(),
-                        ),
-                        inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _confirmPasswordCtrl,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'login_page_forget_confirm_password'.tr(),
-                          hintText: 'login_page_forget_confirm_password'.tr(),
-                        ),
-                        inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                      ),
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        height: 46,
-                        child: FilledButton(
-                          onPressed: _submitting ? null : _handleResetPassword,
-                          child: _submitting
-                              ? const SizedBox.square(
-                                  dimension: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text('login_page_forget_reset'.tr()),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDialogCaptcha(ColorScheme colorScheme) {
+  Widget _buildTopBar(BuildContext context) => SizedBox(
+    height: 52,
+    child: Row(
+      children: [
+        IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: () {
+            if (_emailVerified) {
+              setState(() => _resetToken = null);
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildHeader(ColorScheme colorScheme) => Column(
+    children: [
+      Icon(Icons.password_rounded, size: 42, color: colorScheme.primary),
+      const SizedBox(height: 10),
+      Text(
+        'login_page_forget_dialog_title'.tr(),
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 5),
+      Text(
+        _emailVerified
+            ? 'login_page_forget_password_step_subtitle'.tr()
+            : 'login_page_forget_email_step_subtitle'.tr(),
+        textAlign: TextAlign.center,
+        style: TextStyle(color: colorScheme.onSurfaceVariant),
+      ),
+    ],
+  );
+
+  Widget _buildSteps(ColorScheme colorScheme) => Row(
+    children: [
+      _stepBadge(
+        colorScheme,
+        index: 1,
+        label: 'login_page_forget_step_email'.tr(),
+        active: !_emailVerified,
+        complete: _emailVerified,
+      ),
+      Expanded(
+        child: Container(
+          height: 2,
+          margin: const EdgeInsets.symmetric(horizontal: 10),
+          color: _emailVerified ? colorScheme.primary : colorScheme.outlineVariant,
+        ),
+      ),
+      _stepBadge(
+        colorScheme,
+        index: 2,
+        label: 'login_page_forget_step_password'.tr(),
+        active: _emailVerified,
+        complete: false,
+      ),
+    ],
+  );
+
+  Widget _stepBadge(
+    ColorScheme colorScheme, {
+    required int index,
+    required String label,
+    required bool active,
+    required bool complete,
+  }) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active || complete
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
+          shape: BoxShape.circle,
+        ),
+        child: complete
+            ? Icon(Icons.check_rounded, size: 18, color: colorScheme.onPrimary)
+            : Text(
+                '$index',
+                style: TextStyle(
+                  color: active
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
+      const SizedBox(width: 7),
+      Text(
+        label,
+        style: TextStyle(
+          color: active || complete
+              ? colorScheme.onSurface
+              : colorScheme.onSurfaceVariant,
+          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildEmailStep(ColorScheme colorScheme) => KeyedSubtree(
+    key: const ValueKey('email-step'),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            labelText: 'login_page_forget_email'.tr(),
+            hintText: 'login_page_forget_email'.tr(),
+          ),
+          inputFormatters: [LengthLimitingTextInputFormatter(100)],
+        ),
+        const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _captchaCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'login_page_captcha'.tr(),
+                    hintText: 'login_page_captcha'.tr(),
+                  ),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(4),
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              _buildCaptcha(colorScheme),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _emailCodeCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'login_page_forget_email_code'.tr(),
+                    hintText: 'login_page_forget_email_code'.tr(),
+                  ),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(6),
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton.tonal(
+                onPressed: (_isSendingCode || _countdown > 0)
+                    ? null
+                    : _handleSendCode,
+                child: _isSendingCode
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        _countdown > 0
+                            ? '${_countdown}s'
+                            : 'login_page_forget_send_code'.tr(),
+                      ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          height: 46,
+          child: FilledButton(
+            onPressed:
+                (_isVerifyingEmail || _isSendingCode) ? null : _handleVerifyEmail,
+            child: _isVerifyingEmail
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text('login_page_forget_verify_next'.tr()),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildPasswordStep(ColorScheme colorScheme) => KeyedSubtree(
+    key: const ValueKey('password-step'),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _passwordField(
+          controller: _newPasswordCtrl,
+          obscure: _obscurePassword,
+          onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+          label: 'login_page_forget_new_password'.tr(),
+        ),
+        const SizedBox(height: 12),
+        _passwordField(
+          controller: _confirmPasswordCtrl,
+          obscure: _obscureConfirmPassword,
+          onToggle: () =>
+              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+          label: 'login_page_forget_confirm_password'.tr(),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          height: 46,
+          child: FilledButton(
+            onPressed: _isSubmitting ? null : _handleResetPassword,
+            child: _isSubmitting
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text('login_page_forget_reset'.tr()),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _passwordField({
+    required TextEditingController controller,
+    required bool obscure,
+    required VoidCallback onToggle,
+    required String label,
+  }) => TextField(
+    controller: controller,
+    obscureText: obscure,
+    decoration: InputDecoration(
+      labelText: label,
+      hintText: label,
+      suffixIcon: IconButton(
+        onPressed: onToggle,
+        icon: Icon(
+          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        ),
+      ),
+    ),
+    inputFormatters: [LengthLimitingTextInputFormatter(20)],
+  );
+
+  /// 图形验证码，固定高度与输入框一致
+  Widget _buildCaptcha(ColorScheme colorScheme) {
     if (_captcha == null) {
       return SizedBox(
         width: 120,
+        height: _captchaHeight,
         child: Container(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHigh,
@@ -240,6 +406,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         onTap: _loadCaptcha,
         child: SizedBox(
           width: 120,
+          height: _captchaHeight,
           child: Image.memory(
             base64Decode(_captcha!.imgBase64),
             fit: BoxFit.cover,
@@ -263,12 +430,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   }
 
   Future<void> _handleSendCode() async {
-    final username = _usernameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
     final captchaCode = _captchaCtrl.text.trim();
     final captcha = _captcha;
 
-    if (!_isValidUsername(username)) {
-      _showMessage('login_page_username_validator_regex'.tr(), isError: true);
+    if (Validators.email(email) != null) {
+      _showMessage('validator_email_invalid'.tr(), isError: true);
       return;
     }
     if (captcha == null) {
@@ -280,12 +447,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       return;
     }
 
-    setState(() => _sendingCode = true);
+    setState(() => _isSendingCode = true);
     try {
       final msg = await ref
           .read(authControllerProvider.notifier)
           .forgotPasswordSendCode(
-            username: username,
+            email: email,
             captchaCode: captchaCode,
             uuid: captcha.uuid,
           );
@@ -297,21 +464,44 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       _showMessage(_parseError(e), isError: true);
       await _loadCaptcha();
     } finally {
-      if (mounted) setState(() => _sendingCode = false);
+      if (mounted) setState(() => _isSendingCode = false);
+    }
+  }
+
+  Future<void> _handleVerifyEmail() async {
+    final email = _emailCtrl.text.trim();
+    final emailCode = _emailCodeCtrl.text.trim();
+
+    if (Validators.email(email) != null) {
+      _showMessage('validator_email_invalid'.tr(), isError: true);
+      return;
+    }
+    if (emailCode.length != 6) {
+      _showMessage('login_page_forget_email_code_required'.tr(), isError: true);
+      return;
+    }
+
+    setState(() => _isVerifyingEmail = true);
+    try {
+      final token = await ref
+          .read(authControllerProvider.notifier)
+          .forgotPasswordVerifyCode(email: email, emailCode: emailCode);
+      if (!mounted) return;
+      setState(() => _resetToken = token);
+    } catch (e) {
+      _showMessage(_parseError(e), isError: true);
+    } finally {
+      if (mounted) setState(() => _isVerifyingEmail = false);
     }
   }
 
   Future<void> _handleResetPassword() async {
-    final username = _usernameCtrl.text.trim();
-    final emailCode = _emailCodeCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final resetToken = _resetToken;
     final newPassword = _newPasswordCtrl.text.trim();
     final confirmPassword = _confirmPasswordCtrl.text.trim();
 
-    if (!_isValidUsername(username)) {
-      _showMessage('login_page_username_validator_regex'.tr(), isError: true);
-      return;
-    }
-    if (emailCode.isEmpty) {
+    if (resetToken == null || resetToken.isEmpty) {
       _showMessage('login_page_forget_email_code_required'.tr(), isError: true);
       return;
     }
@@ -324,29 +514,25 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       return;
     }
 
-    setState(() => _submitting = true);
+    setState(() => _isSubmitting = true);
     try {
       final msg = await ref
           .read(authControllerProvider.notifier)
           .forgotPasswordReset(
-            username: username,
-            emailCode: emailCode,
+            email: email,
+            resetToken: resetToken,
             newPassword: newPassword,
             confirmPassword: confirmPassword,
           );
 
       if (!mounted) return;
       _showMessage(msg);
-      Navigator.of(context).pop(username);
+      Navigator.of(context).pop(email);
     } catch (e) {
       _showMessage(_parseError(e), isError: true);
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  bool _isValidUsername(String username) {
-    return RegExp(r'^[a-zA-Z_]\w{1,29}$').hasMatch(username);
   }
 
   void _startCountdown() {

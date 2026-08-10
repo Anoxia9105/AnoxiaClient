@@ -291,7 +291,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final button = OutlinedButton(
       onPressed: _isSendingCode || _countdown > 0 ? null : _sendEmailCode,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 56),
+        minimumSize: const Size(0, 48),
       ),
       child: _isSendingCode
           ? const SizedBox.square(
@@ -308,15 +308,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         children: [field, const SizedBox(height: 10), button],
       );
     }
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: field),
-          const SizedBox(width: 10),
-          button,
-        ],
-      ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: field),
+        const SizedBox(width: 10),
+        button,
+      ],
     );
   }
 
@@ -464,55 +462,53 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         },
   );
 
-  Widget _captchaRow(ColorScheme scheme, bool isMobile) => IntrinsicHeight(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-Expanded(
-            child: _field(
-              controller: _captchaCtrl,
-              hint: 'login_page_captcha'.tr(),
-              icon: Icons.shield_outlined,
-              maxLength: 4,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
-              ],
-            ),
-          ),
-        SizedBox(width: isMobile ? 8 : 10),
-        ref
-            .watch(getCaptchaProvider)
-            .when(
-              data: (captcha) => InkWell(
-                onTap: _refreshCaptcha,
+Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Expanded(
+        child: _field(
+          controller: _captchaCtrl,
+          hint: 'login_page_captcha'.tr(),
+          icon: Icons.shield_outlined,
+          maxLength: 4,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+          ],
+        ),
+      ),
+      SizedBox(width: isMobile ? 8 : 10),
+      ref
+          .watch(getCaptchaProvider)
+          .when(
+            data: (captcha) => InkWell(
+              onTap: _refreshCaptcha,
+              borderRadius: BorderRadius.circular(12),
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: isMobile ? 104 : 120,
-                    child: Image.memory(
-                      base64Decode(captcha.imgBase64),
-                      fit: BoxFit.cover,
-                    ),
+                child: SizedBox(
+                  width: isMobile ? 104 : 120,
+                  child: Image.memory(
+                    base64Decode(captcha.imgBase64),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
-              loading: () => _captchaPlaceholder(
-                const CircularProgressIndicator(strokeWidth: 2),
-                scheme,
-                isMobile,
-              ),
-              error: (_, _) => _captchaPlaceholder(
-                IconButton(
-                  onPressed: _refreshCaptcha,
-                  icon: const Icon(Icons.refresh_rounded),
-                ),
-                scheme,
-                isMobile,
-              ),
             ),
-      ],
-    ),
+            loading: () => _captchaPlaceholder(
+              const CircularProgressIndicator(strokeWidth: 2),
+              scheme,
+              isMobile,
+            ),
+            error: (_, _) => _captchaPlaceholder(
+              IconButton(
+                onPressed: _refreshCaptcha,
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+              scheme,
+              isMobile,
+            ),
+          ),
+    ],
   );
 
   Widget _captchaPlaceholder(Widget child, ColorScheme scheme, bool isMobile) =>
