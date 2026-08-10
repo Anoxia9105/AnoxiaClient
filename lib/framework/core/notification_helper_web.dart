@@ -22,10 +22,8 @@ class NotificationHelper {
   static const String callRejectAction = 'call_reject';
 
   void Function(String roomId)? _onOpenRoom;
-  FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
-  _onCallAction;
   web.Notification? _incomingCallNotification;
-  String _baseTitle = 'Anoxia';
+  final String _baseTitle = 'Anoxia';
 
   void configure({
     required void Function(String roomId) onOpenRoom,
@@ -33,7 +31,6 @@ class NotificationHelper {
     onCallAction,
   }) {
     _onOpenRoom = onOpenRoom;
-    _onCallAction = onCallAction;
   }
 
   Future<void> init() async {

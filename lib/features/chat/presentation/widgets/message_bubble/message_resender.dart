@@ -1,4 +1,4 @@
-﻿/// 消息重发器
+/// 消息重发器
 ///
 /// 职责：处理发送失败消息的重发逻辑，包括状态更新、重新发送、超时检测。
 /// 独立封装便于单元测试和复用。
@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
@@ -27,7 +27,7 @@ class MessageResender {
   static void resend(WidgetRef ref, ChatMessage message) {
     final roomId = message.roomId;
     if (roomId == null || roomId.isEmpty) {
-      log.warning('重发失败：消息缺少 roomId');
+      debugLog('重发失败：消息缺少 roomId');
       return;
     }
 
@@ -51,7 +51,7 @@ class MessageResender {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('重发消息: $clientMsgId');
+    debugLog('重发消息: $clientMsgId');
     wsNotifier.sendMessage(
       ImPacketV5.encodeRoomMessageFrame(protoMsg),
       clientMsgId: clientMsgId,

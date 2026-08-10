@@ -1,7 +1,7 @@
-/// 位置选取器组件
-///
-/// 桌面端聊天输入框中的位置分享组件，提供地图选点发送位置消息的功能。
-/// 支持定位当前位置、拖拽选点、切换瓦片图源等操作。
+// 位置选取器组件
+//
+// 桌面端聊天输入框中的位置分享组件，提供地图选点发送位置消息的功能。
+// 支持定位当前位置、拖拽选点、切换瓦片图源等操作。
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:easy_localization/easy_localization.dart';

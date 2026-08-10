@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/framework/core/notification_helper.dart';
+import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
@@ -8,7 +8,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 part 'system_message_service.g.dart';
 
@@ -79,7 +79,7 @@ class SystemMessageService extends _$SystemMessageService {
       ref
           .read(roomListServiceProvider.notifier)
           .updateRoomStatus(roomId, nextStatus);
-      log.info('房间 $roomId 状态根据系统信令 [$action] 异步变更为: $nextStatus');
+      debugLog('房间 $roomId 状态根据系统信令 [$action] 异步变更为: $nextStatus');
     }
   }
 

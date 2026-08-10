@@ -1,6 +1,6 @@
-/// 原生平台数据库连接（Android / iOS / 桌面 / macOS）
-///
-/// 基于 drift/native 的 SQLite（sqlite3），仅在非 Web 编译时被引用。
+// 原生平台数据库连接（Android / iOS / 桌面 / macOS）
+//
+// 基于 drift/native 的 SQLite（sqlite3），仅在非 Web 编译时被引用。
 import 'dart:io';
 
 import 'package:drift/drift.dart';

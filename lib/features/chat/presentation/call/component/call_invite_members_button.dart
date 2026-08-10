@@ -1,6 +1,6 @@
-/// 通话中邀请成员按钮组件，用于群组通话中邀请其他群成员加入。
-///
-/// 点击按钮弹出成员选择对话框，允许从群成员中选择未加入当前通话的成员进行邀请。
+// 通话中邀请成员按钮组件，用于群组通话中邀请其他群成员加入。
+//
+// 点击按钮弹出成员选择对话框，允许从群成员中选择未加入当前通话的成员进行邀请。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';

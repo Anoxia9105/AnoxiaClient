@@ -1,6 +1,6 @@
-/// 网络状态监听 Provider
-///
-/// 提供网络连接状态变化流，供 UI 层监听网络状态变化。
+// 网络状态监听 Provider
+//
+// 提供网络连接状态变化流，供 UI 层监听网络状态变化。
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

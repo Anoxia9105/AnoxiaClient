@@ -1,6 +1,6 @@
-/// 群组名称编辑页面，用于修改群组的名称。
-///
-/// 提供文本输入框用于编辑群组名称，支持提交更新到服务器。
+// 群组名称编辑页面，用于修改群组的名称。
+//
+// 提供文本输入框用于编辑群组名称，支持提交更新到服务器。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:bot_toast/bot_toast.dart';

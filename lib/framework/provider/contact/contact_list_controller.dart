@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/sync_contacts_usecase_provider.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
@@ -35,7 +35,7 @@ class ContactListService extends _$ContactListService {
     // ─── Step 1: 优先读本地缓存，立即渲染 ────────────────────────────────
     final localContacts = await local.getContacts();
     if (localContacts.isNotEmpty) {
-      log.debug('[Cache] ContactListService: local hit count=${localContacts.length}');
+      debugLog('[Cache] ContactListService: local hit count=${localContacts.length}');
       // 后台增量同步，不阻塞 UI
       unawaited(_syncFromRemote());
       return {for (final c in localContacts) c.contactId!: c};
@@ -45,10 +45,10 @@ class ContactListService extends _$ContactListService {
     // 检查是否已登录，防止登出过程中因 DB 已清空而再次发起请求导致 401 死循环
     final token = ref.read(tokenCacheProvider);
     if (token == null || token.isEmpty) {
-      log.debug('[Cache] ContactListService: no token, skip remote fetch');
+      debugLog('[Cache] ContactListService: no token, skip remote fetch');
       return {};
     }
-    log.debug('[Cache] ContactListService: local empty, fetch from remote');
+    debugLog('[Cache] ContactListService: local empty, fetch from remote');
     final result = await _syncFromRemote();
     return {for (final c in (result ?? [])) c.contactId!: c};
   }
@@ -63,10 +63,10 @@ class ContactListService extends _$ContactListService {
     try {
       final contacts = await ref.read(syncContactsUseCaseProvider)();
       await ref.read(localDataSourceProvider).upsertContacts(contacts);
-      log.debug('[Cache] ContactListService: synced ${contacts.length} contacts');
+      debugLog('[Cache] ContactListService: synced ${contacts.length} contacts');
       return contacts;
     } catch (e) {
-      log.error('[Cache] ContactListService: sync failed: $e');
+      debugLog('[Cache] ContactListService: sync failed: $e');
       return null;
     }
   }
@@ -83,7 +83,7 @@ class ContactListService extends _$ContactListService {
           onlineStatus: isOnline,
         );
         state = AsyncData({...contactMap, userId: updatedContact});
-        log.info("👤 联系人 $userId 状态同步: ${isOnline ? '在线' : '离线'}");
+        debugLog("👤 联系人 $userId 状态同步: ${isOnline ? '在线' : '离线'}");
       }
     }
     // 同步写入本地 DB（不 await，非关键路径）

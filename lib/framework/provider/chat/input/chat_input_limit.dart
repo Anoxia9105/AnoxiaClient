@@ -1,6 +1,6 @@
-/// 聊天输入框字符限制工具。
-///
-/// 为 Quill 聊天编辑器提供统一的字符数计算和粘贴限制检查。
+// 聊天输入框字符限制工具。
+//
+// 为 Quill 聊天编辑器提供统一的字符数计算和粘贴限制检查。
 import 'package:flutter_quill/flutter_quill.dart';
 
 /// Central limits for every Quill chat composer.

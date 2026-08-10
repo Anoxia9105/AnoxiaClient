@@ -1,7 +1,7 @@
-/// 直播预览页面
-///
-/// 在正式开播前提供预览和配置界面，用户可以选择摄像头或屏幕共享源、
-/// 设置直播可见性，并通过预览确认画面效果后再开播。
+// 直播预览页面
+//
+// 在正式开播前提供预览和配置界面，用户可以选择摄像头或屏幕共享源、
+// 设置直播可见性，并通过预览确认画面效果后再开播。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/common/widgets/toast.dart';

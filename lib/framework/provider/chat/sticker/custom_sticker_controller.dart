@@ -4,7 +4,7 @@ import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/provider/chat/sticker/sticker_packs_provider.dart';
 import 'package:anoxia/framework/provider/core/sticker_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
@@ -138,7 +138,7 @@ class CustomStickerController extends Notifier<CustomStickerState> {
       ref.invalidate(stickerPacksProvider);
       return StickerUploadResult(success: true, addedCount: added);
     } catch (e, st) {
-      log.error('自定义表情包上传失败: $e\n$st');
+      debugLog('自定义表情包上传失败: $e\n$st');
       return const StickerUploadResult(
         errorKey: 'settings_sticker_upload_failed',
       );
@@ -156,7 +156,7 @@ class CustomStickerController extends Notifier<CustomStickerState> {
         if (pack.isCustom && pack.id > 0) return pack.id;
       }
     } catch (e, st) {
-      log.warning('刷新表情包列表失败，将直接创建新表情包: $e\n$st');
+      debugLog('刷新表情包列表失败，将直接创建新表情包: $e\n$st');
     }
     return repository.createCustomPack(
       'settings_sticker_default_pack_name'.tr(),
@@ -175,7 +175,7 @@ class CustomStickerController extends Notifier<CustomStickerState> {
       if (ok) ref.invalidate(stickerPacksProvider);
       return ok;
     } catch (e, st) {
-      log.error('删除自定义表情包失败: $e\n$st');
+      debugLog('删除自定义表情包失败: $e\n$st');
       return false;
     } finally {
       state = state.copyWith(deleting: false);
@@ -193,7 +193,7 @@ class CustomStickerController extends Notifier<CustomStickerState> {
       if (ok) ref.invalidate(stickerPacksProvider);
       return ok;
     } catch (e, st) {
-      log.error('删除自定义表情失败: $e\n$st');
+      debugLog('删除自定义表情失败: $e\n$st');
       return false;
     } finally {
       state = state.copyWith(deleting: false);

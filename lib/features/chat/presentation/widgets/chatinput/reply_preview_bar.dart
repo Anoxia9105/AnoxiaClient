@@ -1,7 +1,7 @@
-/// 回复预览栏组件
-///
-/// 在聊天输入框上方显示被引用消息的预览条，展示发送者、时间和内容摘要。
-/// 支持点击跳转到原消息、清除引用等操作。
+// 回复预览栏组件
+//
+// 在聊天输入框上方显示被引用消息的预览条，展示发送者、时间和内容摘要。
+// 支持点击跳转到原消息、清除引用等操作。
 import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';

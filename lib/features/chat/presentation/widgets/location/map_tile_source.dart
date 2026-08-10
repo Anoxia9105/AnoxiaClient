@@ -1,8 +1,8 @@
-/// 地图瓦片图源配置
-///
-/// 定义地图组件使用的瓦片图源信息，包括 URL 模板、归属信息和子域名等。
-/// 支持 OpenStreetMap、CARTO Voyager 和 CARTO Light 三种图源，
-/// 并根据用户语言偏好自动选择默认图源。
+// 地图瓦片图源配置
+//
+// 定义地图组件使用的瓦片图源信息，包括 URL 模板、归属信息和子域名等。
+// 支持 OpenStreetMap、CARTO Voyager 和 CARTO Light 三种图源，
+// 并根据用户语言偏好自动选择默认图源。
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 

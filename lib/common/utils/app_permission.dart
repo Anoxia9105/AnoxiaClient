@@ -1,7 +1,7 @@
-/// 应用权限检查和请求工具。
-///
-/// 提供统一的权限请求、状态检查以及系统设置跳转能力，
-/// 支持 iOS 和 Android 平台差异处理。
+// 应用权限检查和请求工具。
+//
+// 提供统一的权限请求、状态检查以及系统设置跳转能力，
+// 支持 iOS 和 Android 平台差异处理。
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';

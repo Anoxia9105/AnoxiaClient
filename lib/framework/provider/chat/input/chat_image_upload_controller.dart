@@ -1,11 +1,11 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
@@ -94,7 +94,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
       unawaited(uploadImages([attachment]));
     } catch (e, st) {
-      log.error('处理粘贴图片失败: $e', st);
+      debugLog('处理粘贴图片失败: $e', st);
     }
   }
 
@@ -173,7 +173,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
-        log.info(
+        debugLog(
           '[ImageUpload] 第$attempt次上传尝试, '
           '文件: ${files.map((f) => f.name).join(', ')}',
         );
@@ -181,7 +181,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         final urls = await ref.read(uploadRepositoryProvider).uploadFiles(files);
 
         if (urls.isNotEmpty) {
-          log.info('[ImageUpload] 上传成功: $urls');
+          debugLog('[ImageUpload] 上传成功: $urls');
           state = {
             ...state,
             for (int i = 0; i < images.length && i < urls.length; i++)
@@ -191,13 +191,13 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           return;
         }
 
-        log.warning('[ImageUpload] 第$attempt次上传返回空URL列表');
+        debugLog('[ImageUpload] 第$attempt次上传返回空URL列表');
         if (isLastAttempt) {
           _markFailed(images);
           return;
         }
       } catch (e, st) {
-        log.error('[ImageUpload] 第$attempt次上传异常: $e', st);
+        debugLog('[ImageUpload] 第$attempt次上传异常: $e', st);
         if (isLastAttempt) {
           _markFailed(images);
           return;

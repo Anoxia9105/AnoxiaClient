@@ -1,6 +1,6 @@
-/// 移动端通话参与者画面组件，渲染单个参与者的视频/音频画面。
-///
-/// 支持视频渲染、画面替代占位、麦克风静音指示、说话状态动画、连接质量指示等功能。
+// 移动端通话参与者画面组件，渲染单个参与者的视频/音频画面。
+//
+// 支持视频渲染、画面替代占位、麦克风静音指示、说话状态动画、连接质量指示等功能。
 import 'dart:convert';
 
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_placeholder.dart';

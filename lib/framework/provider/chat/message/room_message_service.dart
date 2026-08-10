@@ -14,7 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/chat_message.dart';
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../../protocol/packet_type.dart';
 import '../../../protocol/message/room_message.dart';
 import '../../ws/ws_controller.dart';
@@ -312,7 +312,7 @@ class ChatMessages extends _$ChatMessages {
       );
       if (!inserted) return;
     } catch (error, stackTrace) {
-      log.error('缓存入站消息失败', error, stackTrace);
+      debugLog('缓存入站消息失败', error, stackTrace);
       return;
     }
     _handleSystemMessageSideEffects(chatMessage);
@@ -357,7 +357,7 @@ class ChatMessages extends _$ChatMessages {
         () => ref.read(chatRepositoryProvider).cacheLocalMessage(msg),
       ).catchError((Object error, StackTrace stackTrace) {
         ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
-        log.error('缓存本地发送消息失败', error, stackTrace);
+        debugLog('缓存本地发送消息失败', error, stackTrace);
       }),
     );
   }
@@ -446,7 +446,7 @@ class ChatMessages extends _$ChatMessages {
           .read(chatHasMoreProvider.notifier)
           .setHasMore(roomId, refreshed.length >= _pageSize);
     } catch (e) {
-      log.error('同步房间 $roomId 失败: $e');
+      debugLog('同步房间 $roomId 失败: $e');
     }
   }
 
@@ -512,7 +512,7 @@ class ChatMessages extends _$ChatMessages {
           .read(chatHasMoreProvider.notifier)
           .setHasMore(roomId, expanded && history.length >= _pageSize);
     } catch (e) {
-      log.error('加载历史消息失败: $e');
+      debugLog('加载历史消息失败: $e');
       ref
           .read(historyLoadErrorProvider.notifier)
           .setError(roomId, 'chat_history_load_failed'.tr());
@@ -563,7 +563,7 @@ class ChatMessages extends _$ChatMessages {
       }
       return false;
     } catch (e) {
-      log.error('撤回消息请求失败: $e');
+      debugLog('撤回消息请求失败: $e');
       return false;
     }
   }

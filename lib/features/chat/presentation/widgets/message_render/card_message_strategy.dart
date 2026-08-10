@@ -1,7 +1,7 @@
-/// 卡片消息渲染策略
-///
-/// 实现卡片类型消息的渲染逻辑，将 CardPayload 数据渲染为可点击的卡片组件。
-/// 支持联系人卡片和群组卡片的识别与跳转。
+// 卡片消息渲染策略
+//
+// 实现卡片类型消息的渲染逻辑，将 CardPayload 数据渲染为可点击的卡片组件。
+// 支持联系人卡片和群组卡片的识别与跳转。
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';

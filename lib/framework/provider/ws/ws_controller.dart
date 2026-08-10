@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io' as io;
 import 'dart:math' as math;
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
@@ -15,7 +15,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/api.dart';
 import '../../codec/frame_codec.dart';
 import '../../codec/v5/im_packet_v5.dart';
-import '../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../network/token_manager.dart';
 import '../../protocol/i_packet.dart';
 import '../../protocol/packet_frame.dart';
@@ -50,23 +50,23 @@ class WsController extends _$WsController {
 
   @override
   WsState build() {
-    log.info('🌐 WsController 构建中...');
+    debugLog('🌐 WsController 构建中...');
 
     _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
 
     // 监听认证状态变化：登录时连接，登出时断开
     ref.listen(authControllerProvider, (previous, next) {
-      log.info(
+      debugLog(
         '[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}',
       );
       next.when(
         data: (user) {
           if (user != null) {
-            log.info('[WsController] 检测到用户登录，准备连接...');
+            debugLog('[WsController] 检测到用户登录，准备连接...');
             _reconnectEnabled = true;
             _initConnection();
           } else {
-            log.info('[WsController] 检测到用户退出，断开连接...');
+            debugLog('[WsController] 检测到用户退出，断开连接...');
             _reconnectEnabled = false;
             unawaited(_disposeAll(closeStream: false, manual: true));
           }
@@ -88,7 +88,7 @@ class WsController extends _$WsController {
       _lastNetworkAvailable = available;
 
       if (recovered) {
-        log.info('[WsController] 网络已恢复，主动触发连接恢复');
+        debugLog('[WsController] 网络已恢复，主动触发连接恢复');
         _reconnectAttempts = 0;
         _initConnection();
       }
@@ -123,7 +123,7 @@ class WsController extends _$WsController {
     if (token != null && token.isNotEmpty) {
       await connect(token);
     } else {
-      log.warning('[WsController] 初始化失败：未找到 Token');
+      debugLog('[WsController] 初始化失败：未找到 Token');
     }
   }
 
@@ -145,7 +145,7 @@ class WsController extends _$WsController {
       final url =
           '${API.wsBaseUrl}${Uri.encodeQueryComponent(token)}'
           '&deviceId=${Uri.encodeQueryComponent(deviceId)}';
-      log.info('[WsController] 正在尝试建立 WebSocket 连接');
+      debugLog('[WsController] 正在尝试建立 WebSocket 连接');
 
       if (kIsWeb) {
         _channel = WebSocketChannel.connect(Uri.parse(url));
@@ -168,11 +168,11 @@ class WsController extends _$WsController {
 
       _reconnectAttempts = 0;
       state = WsState(status: WsStatus.connected);
-      log.info('✅ WebSocket 连接成功');
+      debugLog('✅ WebSocket 连接成功');
 
       _startHeartbeat();
     } catch (e, st) {
-      log.error('❌ WebSocket 连接失败', e, st);
+      debugLog('❌ WebSocket 连接失败', e, st);
       _handleError(e);
     }
   }
@@ -188,7 +188,7 @@ class WsController extends _$WsController {
     if (bytes == null) return;
 
     if (state.status != WsStatus.connected) {
-      log.warning('尝试在未连接状态发送消息，交给本地持久化队列处理');
+      debugLog('尝试在未连接状态发送消息，交给本地持久化队列处理');
       return;
     }
 
@@ -208,7 +208,7 @@ class WsController extends _$WsController {
               .markFailedByClientMsgId(clientMsgId),
         );
       }
-      log.error('发送消息失败', e);
+      debugLog('发送消息失败', e);
     }
   }
 
@@ -243,7 +243,7 @@ class WsController extends _$WsController {
       unawaited(
         ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq),
       );
-      log.warning('[WsController] ACK timeout: clientMsgId=$seq');
+      debugLog('[WsController] ACK timeout: clientMsgId=$seq');
     });
     _pendingOutbounds[seq] = pending;
   }
@@ -275,11 +275,11 @@ class WsController extends _$WsController {
   void _handleIncomingMessage(dynamic message) {
     // 只处理二进制帧
     if (message is! List<int>) {
-      log.warning('[WsController] 收到非二进制消息，忽略');
+      debugLog('[WsController] 收到非二进制消息，忽略');
       return;
     }
     final bytes = message is Uint8List ? message : Uint8List.fromList(message);
-    log.debug('[SERVER FRAME]: ${bytes.length} bytes');
+    debugLog('[SERVER FRAME]: ${bytes.length} bytes');
 
     try {
       final decoded = ImPacketV5.decodeFrame(bytes);
@@ -305,20 +305,20 @@ class WsController extends _$WsController {
         final ack = ImPacketV5.decodeAck(payload);
         if (ack != null) {
           // 打印 ACK 详情
-          log.debug('[SERVER ACK] topic=$topic code=${ack.code}');
+          debugLog('[SERVER ACK] topic=$topic code=${ack.code}');
           try {
             _handleAckV5(ack);
           } catch (ackError, ackStack) {
             // ACK 处理是业务副作用（刷新 Riverpod 状态等），失败不应中断后续帧的解析。
             // 例如 Web 热重载后 ref 可能持有旧模块对象，触发 NoSuchMethodError。
-            log.error('WS ACK 处理异常', ackError, ackStack);
+            debugLog('WS ACK 处理异常', ackError, ackStack);
           }
         }
         return;
       }
 
       final packetData = PacketRegistry.parse(topic, payload, decoded.codecId);
-      log.debug(
+      debugLog(
         '[SERVER DATA] dispatch -> Topic: $topic, CodecId: ${decoded.codecId}, EffectiveTopic: $effectiveTopic, PayloadSize: ${payload.length}',
       );
       if (packetData != null) {
@@ -329,13 +329,13 @@ class WsController extends _$WsController {
           }
         } catch (dispatchError, dispatchStack) {
           // 派发到业务订阅者时失败（如监听者持有热重载前的旧类型）不应中断消息解析。
-          log.error('WS 消息派发异常', dispatchError, dispatchStack);
+          debugLog('WS 消息派发异常', dispatchError, dispatchStack);
         }
       } else {
-        log.warning('[SERVER DATA] 解析失败（未知的 Topic 或解析器缺失）-> Topic: $topic');
+        debugLog('[SERVER DATA] 解析失败（未知的 Topic 或解析器缺失）-> Topic: $topic');
       }
     } catch (e, st) {
-      log.error('WS 消息解析异常', e, st);
+      debugLog('WS 消息解析异常', e, st);
     }
   }
 
@@ -386,7 +386,7 @@ class WsController extends _$WsController {
         type: ToastType.error,
       );
     }
-    log.warning('[WsController] ACK业务失败: code=$code, message=$rawMessage');
+    debugLog('[WsController] ACK业务失败: code=$code, message=$rawMessage');
   }
 
   void _retryPendingOutbound(String seq) {
@@ -399,7 +399,7 @@ class WsController extends _$WsController {
       unawaited(
         ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq),
       );
-      log.warning('[WsController] 自动重试超过上限，放弃: seq=$seq');
+      debugLog('[WsController] 自动重试超过上限，放弃: seq=$seq');
       return;
     }
 
@@ -413,17 +413,17 @@ class WsController extends _$WsController {
 
       if (pending.attempts > _maxAutoRetryAttempts) {
         _removePendingOutbound(seq);
-        log.warning('[WsController] 自动重试超过上限(延迟触发)，放弃: seq=$seq');
+        debugLog('[WsController] 自动重试超过上限(延迟触发)，放弃: seq=$seq');
         return;
       }
 
       try {
         _channel?.sink.add(pending.bytes);
-        log.warning(
+        debugLog(
           '[WsController] 已触发自动重试: seq=$seq, attempt=${pending.attempts}',
         );
       } catch (e) {
-        log.error('[WsController] 自动重试发送失败: seq=$seq', e);
+        debugLog('[WsController] 自动重试发送失败: seq=$seq', e);
       }
     });
   }
@@ -469,7 +469,7 @@ class WsController extends _$WsController {
   void _handleDone() {
     final closeCode = _channel?.closeCode;
     final closeReason = _channel?.closeReason;
-    log.info('WebSocket 连接关闭: closeCode=$closeCode, closeReason=$closeReason');
+    debugLog('WebSocket 连接关闭: closeCode=$closeCode, closeReason=$closeReason');
     state = WsState(status: WsStatus.disconnected);
     _retryConnection();
   }
@@ -487,7 +487,7 @@ class WsController extends _$WsController {
     if (user == null) return;
 
     final delaySeconds = _calculateReconnectDelay();
-    log.warning('将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...');
+    debugLog('将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...');
 
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;
@@ -515,7 +515,7 @@ class WsController extends _$WsController {
     bool closeStream = false,
     bool manual = false,
   }) async {
-    log.info(
+    debugLog(
       '[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}',
     );
     _heartbeatTimer?.cancel();
@@ -534,7 +534,7 @@ class WsController extends _$WsController {
     try {
       await channel?.sink.close();
     } catch (e) {
-      log.warning('[WsController] 关闭 WebSocket 时发生异常: $e');
+      debugLog('[WsController] 关闭 WebSocket 时发生异常: $e');
     }
   }
 }

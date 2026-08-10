@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/chat_voice_overlay.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -101,7 +101,7 @@ class VoiceRecordController extends ChangeNotifier {
       await waveController.checkPermission();
       // 请求后再检查一次
       if (!waveController.hasPermission) {
-        log.warning('用户拒绝了麦克风权限');
+        debugLog('用户拒绝了麦克风权限');
       }
     }
   }
@@ -179,7 +179,7 @@ class VoiceRecordController extends ChangeNotifier {
       await requestPermission();
       if (session != _activeGestureSession) return;
       if (!waveController.hasPermission) {
-        log.warning('未授予麦克风权限，无法开始录音');
+        debugLog('未授予麦克风权限，无法开始录音');
         hideOverlay();
         return;
       }
@@ -229,7 +229,7 @@ class VoiceRecordController extends ChangeNotifier {
       _maxDurationTimer = Timer(
         const Duration(seconds: _maxDurationSeconds),
         () {
-          log.info('录音达到最长 $_maxDurationSeconds 秒，自动发送');
+          debugLog('录音达到最长 $_maxDurationSeconds 秒，自动发送');
           onMaxDurationReached?.call();
         },
       );
@@ -239,7 +239,7 @@ class VoiceRecordController extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e, stack) {
-      log.error('开始录音失败', e, stack);
+      debugLog('开始录音失败', e, stack);
       isRecording = false;
       willCancel = false;
       _maxDurationTimer?.cancel();
@@ -306,7 +306,7 @@ class VoiceRecordController extends ChangeNotifier {
 
     // 处理取消或失败情况
     if (cancelled || path == null) {
-      log.info('语音录制已取消');
+      debugLog('语音录制已取消');
       // 清理临时文件
       if (path != null) {
         try {
@@ -319,7 +319,7 @@ class VoiceRecordController extends ChangeNotifier {
     // 检查录音时长
     final duration = DateTime.now().difference(_startTime!).inSeconds;
     if (duration < 1) {
-      log.info('录音时间太短，丢弃');
+      debugLog('录音时间太短，丢弃');
       try {
         File(path).deleteSync();
       } catch (_) {}
@@ -327,7 +327,7 @@ class VoiceRecordController extends ChangeNotifier {
     }
 
     // 返回录制结果
-    log.info('语音录制完成: $path, 时长: ${duration}s');
+    debugLog('语音录制完成: $path, 时长: ${duration}s');
     return VoiceResult(filePath: path, duration: duration);
   }
 
@@ -361,7 +361,7 @@ class VoiceRecordController extends ChangeNotifier {
 
     // 计算时长
     final duration = DateTime.now().difference(_startTime!).inSeconds;
-    log.info('语音强制结束: $path, 时长: ${duration}s');
+    debugLog('语音强制结束: $path, 时长: ${duration}s');
     return VoiceResult(filePath: path, duration: duration);
   }
 
@@ -397,9 +397,9 @@ class VoiceRecordController extends ChangeNotifier {
           File(path).deleteSync();
         } catch (_) {}
       }
-      log.info('语音录制已取消并重置');
+      debugLog('语音录制已取消并重置');
     } catch (e, stack) {
-      log.error('取消录音失败', e, stack);
+      debugLog('取消录音失败', e, stack);
     }
   }
 
@@ -411,7 +411,7 @@ class VoiceRecordController extends ChangeNotifier {
       try {
         return await waveController.stop();
       } catch (e, stack) {
-        log.error('停止录音失败', e, stack);
+        debugLog('停止录音失败', e, stack);
         return null;
       } finally {
         _stopInFlight = null;

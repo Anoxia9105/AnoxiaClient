@@ -1,6 +1,6 @@
-/// 移动端通话计时器组件，实时显示通话已持续时间。
-///
-/// 在通话界面中显示格式化的通话时长（MM:SS 或 HH:MM:SS），每秒更新一次。
+// 移动端通话计时器组件，实时显示通话已持续时间。
+//
+// 在通话界面中显示格式化的通话时长（MM:SS 或 HH:MM:SS），每秒更新一次。
 import 'dart:async';
 
 import 'package:flutter/material.dart';

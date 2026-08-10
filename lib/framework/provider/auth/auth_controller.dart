@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/constants/storage_keys.dart';
@@ -15,7 +15,7 @@ import 'package:anoxia/platform/shims/cross_tab_session_sync_shim.dart';
 import '../../domain/captcha_model.dart';
 import '../../domain/user_info.dart';
 import '../../local_cache/cache_providers.dart';
-import '../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../network/token_manager.dart';
 import '../chat/room/room_list_service.dart';
 import '../contact/contact_list_controller.dart';
@@ -33,10 +33,10 @@ part 'auth_controller.g.dart';
 class AuthController extends _$AuthController {
   @override
   Future<UserInfo?> build() async {
-    log.info('🔧 AuthController 初始化完成，尝试自动恢复登录...');
+    debugLog('🔧 AuthController 初始化完成，尝试自动恢复登录...');
 
     final token = await TokenManager.instance.getToken();
-    log.info("[AuthController] 自动恢复: token ${token != null ? '存在' : '不存在'}");
+    debugLog("[AuthController] 自动恢复: token ${token != null ? '存在' : '不存在'}");
     if (token == null || token.isEmpty) return null;
 
     try {
@@ -52,7 +52,7 @@ class AuthController extends _$AuthController {
       }
       return user;
     } catch (e, st) {
-      log.error('[AuthController] 自动恢复失败', e, st);
+      debugLog('[AuthController] 自动恢复失败', e, st);
       await TokenManager.instance.clearToken();
       ref.read(tokenCacheProvider.notifier).clearToken();
       await _clearLocalSessionCache();
@@ -103,7 +103,7 @@ class AuthController extends _$AuthController {
       }
       state = AsyncData(user);
     } catch (e, st) {
-      log.error('[AuthController] 登录失败', e, st);
+      debugLog('[AuthController] 登录失败', e, st);
       state = AsyncError(e, st);
       // 统一展示后端返回的错误信息（验证码错误/失效、密码错误等）
       ref.read(toastServiceProvider).showToast(
@@ -119,7 +119,7 @@ class AuthController extends _$AuthController {
       unawaited(_bindPushDevice(state.value!));
       // 清掉未登录阶段可能遗留的空房间列表缓存，避免登录后先闪空态。
       ref.invalidate(roomListServiceProvider);
-      log.info('[AuthController] 登录成功，重新触发 App 初始化序列...');
+      debugLog('[AuthController] 登录成功，重新触发 App 初始化序列...');
       ref.invalidate(appInitializerProvider);
 
       // 通知其它标签页已切换账号，避免共享缓存被新账号数据覆盖后仍显示
@@ -247,9 +247,9 @@ class AuthController extends _$AuthController {
       // 4. 统一清理会话级缓存，避免切账号后复用旧会话数据
       SessionResetService.instance.reset(ref, reason: reason);
 
-      log.info('[AuthController] 登出成功，全部业务缓存已清理');
+      debugLog('[AuthController] 登出成功，全部业务缓存已清理');
     } catch (e, st) {
-      log.error('[AuthController] 登出清理异常', e, st);
+      debugLog('[AuthController] 登出清理异常', e, st);
       // 即使出错也强制设为 null，确保用户能回到登录页
       state = const AsyncData(null);
     } finally {
@@ -278,7 +278,7 @@ class AuthController extends _$AuthController {
     );
     final lastUserId = int.tryParse(lastUserIdRaw ?? '');
     if (lastUserId != null && lastUserId != userId) {
-      log.info(
+      debugLog(
         '[AuthController] 检测到上次登录用户($lastUserId)与当前用户($userId)'
         '不一致，清理本地会话缓存',
       );
@@ -315,10 +315,10 @@ class AuthController extends _$AuthController {
         userId: user.userId,
       );
       await ref.read(authRepositoryProvider).bindPushDevice(payload);
-      log.info('[AuthController] 推送设备绑定上报成功');
+      debugLog('[AuthController] 推送设备绑定上报成功');
     } catch (e, st) {
-      log.warning('[AuthController] 推送设备绑定上报失败: $e');
-      log.error('[AuthController] 推送设备绑定上报异常', e, st);
+      debugLog('[AuthController] 推送设备绑定上报失败: $e');
+      debugLog('[AuthController] 推送设备绑定上报异常', e, st);
     }
   }
 
@@ -326,7 +326,7 @@ class AuthController extends _$AuthController {
     if (!_shouldReportPushDevice()) return;
 
     PushManager.instance.setOnFcmTokenChanged((token) async {
-      log.info('[AuthController] 检测到 FCM token 变更，触发设备绑定刷新');
+      debugLog('[AuthController] 检测到 FCM token 变更，触发设备绑定刷新');
       await _bindPushDevice(user);
     });
   }
@@ -340,9 +340,9 @@ class AuthController extends _$AuthController {
             deviceUid,
             token: token,
           );
-      log.info('[AuthController] 推送设备解绑上报成功');
+      debugLog('[AuthController] 推送设备解绑上报成功');
     } catch (e) {
-      log.warning('[AuthController] 推送设备解绑上报失败（忽略）: $e');
+      debugLog('[AuthController] 推送设备解绑上报失败（忽略）: $e');
     }
   }
 

@@ -1,6 +1,6 @@
-/// 通话初始媒体类型定义
-///
-/// 定义通话开始时选择的媒体类型（音频或视频），以及相关的 Riverpod Provider。
+// 通话初始媒体类型定义
+//
+// 定义通话开始时选择的媒体类型（音频或视频），以及相关的 Riverpod Provider。
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 /// 通话初始媒体类型枚举

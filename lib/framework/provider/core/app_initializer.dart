@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
@@ -7,7 +7,7 @@ import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/packet_registry.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../auth/auth_controller.dart';
 import 'login_bootstrap_orchestrator.dart';
 
@@ -37,14 +37,14 @@ class AppInitializer extends _$AppInitializer {
       final user = await ref.read(authControllerProvider.future);
 
       if (user == null) {
-        log.info('👤 用户未登录');
+        debugLog('👤 用户未登录');
         return false;
       }
 
       // 3. 业务数据预加载
       await _preloadData();
     } catch (e, stack) {
-      log.error('❌ 应用初始化崩溃', e, stack);
+      debugLog('❌ 应用初始化崩溃', e, stack);
       // 异常会被 Router 捕获并跳转错误页
       rethrow;
     }
@@ -55,19 +55,19 @@ class AppInitializer extends _$AppInitializer {
   /// 初始化基础服务
   Future<void> _initializeServices() async {
     if (_coreServicesInitialized) {
-      log.info('🛠️ 基础服务已初始化，跳过重复挂载');
+      debugLog('🛠️ 基础服务已初始化，跳过重复挂载');
       return;
     }
 
     if (DeviceUtil.isRealMobile()) {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp();
-        log.info('🔥 Firebase 初始化完成');
+        debugLog('🔥 Firebase 初始化完成');
       }
 
       unawaited(
         PushManager.instance.init().catchError((e, stack) {
-          log.error('PushManager 初始化失败', e, stack);
+          debugLog('PushManager 初始化失败', e, stack);
         }),
       );
     }

@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import '../../../../common/utils/device_util.dart';
-import '../../../../framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../../../framework/network/dio_client.dart';
 import '../../../../framework/domain/app_update_info.dart';
 import '../../../../framework/provider/layout/layout_controller.dart';
@@ -103,7 +103,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
       final fileName = widget.updateInfo.downloadUrl.split('/').last;
       final savePath = '${tempDir.path}/$fileName';
 
-      log.info('🚀 准备下载更新文件至: $savePath');
+      debugLog('🚀 准备下载更新文件至: $savePath');
 
       final response = await DioClient().download(
         widget.updateInfo.downloadUrl,
@@ -122,12 +122,12 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
         throw Exception('服务器响应异常: ${response.statusCode}');
       }
 
-      log.info('📦 下载完成，正在唤起安装程序...');
+      debugLog('📦 下载完成，正在唤起安装程序...');
 
       final result = await OpenFilex.open(savePath);
 
       if (result.type == ResultType.done) {
-        log.info('✅ 安装程序已启动，执行安全退出序列...');
+        debugLog('✅ 安装程序已启动，执行安全退出序列...');
 
         if (DeviceUtil.isRealDesktop()) {
           await windowManager.hide();
@@ -140,7 +140,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
         throw Exception('无法启动安装包: ${result.message}');
       }
     } catch (e) {
-      log.error('❌ 更新失败: $e');
+      debugLog('❌ 更新失败: $e');
       if (!mounted) return;
       setState(() {
         _isDownloading = false;

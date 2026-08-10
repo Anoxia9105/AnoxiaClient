@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
 
-import '../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'dio_config.dart';
 
 /// HTTP 客户端封装
@@ -19,13 +19,13 @@ class DioClient {
       InterceptorsWrapper(
         /// 请求拦截器：注入鉴权 Token
         onRequest: (options, handler) async {
-          log.info('Dio request -> ${options.method} ${options.uri}');
+          debugLog('Dio request -> ${options.method} ${options.uri}');
           // 确保 Content-Type 被正确设置
           options.contentType = 'application/json';
           options.headers['Content-Type'] = 'application/json';
           options.headers['Accept-Language'] = _acceptLanguage;
-          log.info('Dio request headers -> ${options.headers}');
-          log.info('Dio request data -> ${options.data}');
+          debugLog('Dio request headers -> ${options.headers}');
+          debugLog('Dio request data -> ${options.data}');
           // 默认需要鉴权，除非显式指定 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
@@ -41,7 +41,7 @@ class DioClient {
 
         /// 响应拦截器：处理业务状态码
         onResponse: (response, handler) async {
-          // log.info(response.data);
+          // debugLog(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
             final needAuth =
@@ -63,7 +63,7 @@ class DioClient {
                   unawaited(
                     handler().whenComplete(() => _isUnauthorizedHandling = false),
                   );
-                  log.info('鉴权失败，已触发登出并跳转登录页');
+                  debugLog('鉴权失败，已触发登出并跳转登录页');
                 }
               }
 
@@ -80,7 +80,7 @@ class DioClient {
             // 非 200 状态码：记录错误日志
             if (bizCode != 200) {
               final String? errorMsg = response.data['msg']?.toString();
-              log.error('请求错误: $errorMsg, 业务码: $bizCode');
+              debugLog('请求错误: $errorMsg, 业务码: $bizCode');
             }
           }
           return handler.next(response);
@@ -90,9 +90,9 @@ class DioClient {
         onError: (e, handler) async {
           final uri = e.requestOptions.uri;
           if (CancelToken.isCancel(e)) {
-            log.info('Dio 请求已取消 -> uri: $uri, reason: ${e.error}');
+            debugLog('Dio 请求已取消 -> uri: $uri, reason: ${e.error}');
           } else {
-            log.error(
+            debugLog(
               '【onError拦截器】Dio 发生错误 -> uri: $uri, type: ${e.type}, message: ${e.message}, error: ${e.error}',
             );
           }

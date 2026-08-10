@@ -1,7 +1,7 @@
-/// 群组卡片预览页面，用于在加入群组前预览群组信息。
-///
-/// 展示群组名称、头像、简介、管理员列表，并根据群组的加入策略和当前状态
-/// 提供加入、申请加入或直接进入群组的操作入口。
+// 群组卡片预览页面，用于在加入群组前预览群组信息。
+//
+// 展示群组名称、头像、简介、管理员列表，并根据群组的加入策略和当前状态
+// 提供加入、申请加入或直接进入群组的操作入口。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';

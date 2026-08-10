@@ -242,10 +242,6 @@ const allDependencies = <Package>[
   _stream_transform,
   _string_scanner,
   _synchronized,
-  _talker,
-  _talker_flutter,
-  _talker_logger,
-  _talker_riverpod_logger,
   _tar,
   _term_glyph,
   _test,
@@ -293,8 +289,6 @@ const dependencies = <Package>[
   _riverpod_annotation,
   _dio,
   _go_router,
-  _talker_flutter,
-  _talker_riverpod_logger,
   _shared_preferences,
   _flutter_secure_storage,
   _connectivity_plus,
@@ -5814,7 +5808,7 @@ SOFTWARE.''',
 /// flutter_gen_core 5.12.0
 const _flutter_gen_core = Package(
     name: 'flutter_gen_core',
-    description: 'The Flutter code generator for your assets, fonts, colors, … — Get rid of all String-based APIs.',
+    description: 'The Flutter code generator for your assets, fonts, colors, 闁?闁?Get rid of all String-based APIs.',
     homepage: 'https://github.com/FlutterGen/flutter_gen',
     repository: 'https://github.com/FlutterGen/flutter_gen/tree/main/packages/core',
     authors: [],
@@ -5850,7 +5844,7 @@ SOFTWARE.''',
 /// flutter_gen_runner 5.12.0
 const _flutter_gen_runner = Package(
     name: 'flutter_gen_runner',
-    description: 'The Flutter code generator for your assets, fonts, colors, … — Get rid of all String-based APIs.',
+    description: 'The Flutter code generator for your assets, fonts, colors, 闁?闁?Get rid of all String-based APIs.',
     homepage: 'https://github.com/FlutterGen/flutter_gen',
     repository: 'https://github.com/FlutterGen/flutter_gen/tree/main/packages/runner',
     authors: [],
@@ -7262,7 +7256,7 @@ const _flutter_webrtc = Package(
     devDependencies: [PackageRef('lints'), PackageRef('test')],
     license: '''MIT License
 
-Copyright (c) 2018 湖北捷智云技术有限公司
+Copyright (c) 2018 婵犫偓閺嵮冾嚚闁瑰綊鏀卞▍銈嗙閹寸偛螚闁哄牜鍨卞﹢渚€姊介幇顒€褰嗛柛?
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -11152,7 +11146,7 @@ const _photo_view = Package(
     isSdk: false,
     dependencies: [PackageRef('flutter')],
     devDependencies: [PackageRef('test')],
-    license: '''Copyright 2024 Renan C. Araújo
+    license: '''Copyright 2024 Renan C. Ara閻擃槓o
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -12994,7 +12988,7 @@ const _sdp_transform = Package(
     devDependencies: [PackageRef('test')],
     license: '''MIT License
 
-Copyright (c) 2018 湖北捷智云技术有限公司
+Copyright (c) 2018 婵犫偓閺嵮冾嚚闁瑰綊鏀卞▍銈嗙閹寸偛螚闁哄牜鍨卞﹢渚€姊介幇顒€褰嗛柛?
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -14423,149 +14417,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// talker 5.1.13
-const _talker = Package(
-    name: 'talker',
-    description: 'Advanced error handler and logger package for flutter and dart. App monitoring, logs history, report sharing, custom logs, and etc.',
-    homepage: 'https://github.com/Frezyx/talker',
-    repository: 'https://github.com/Frezyx/talker',
-    authors: [],
-    version: '5.1.13',
-    spdxIdentifiers: ['MIT'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('talker_logger')],
-    devDependencies: [PackageRef('lints'), PackageRef('test')],
-    license: '''MIT License
-
-Copyright (c) 2022 Stanislav Ilin
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-  );
-
-/// talker_flutter 5.1.13
-const _talker_flutter = Package(
-    name: 'talker_flutter',
-    description: 'Advanced error handler and logger package for flutter and dart. App monitoring, logs history, report sharing, custom logs, and etc.',
-    homepage: 'https://github.com/Frezyx/talker',
-    repository: 'https://github.com/Frezyx/talker',
-    authors: [],
-    version: '5.1.13',
-    spdxIdentifiers: ['MIT'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('talker'), PackageRef('group_button'), PackageRef('path_provider'), PackageRef('share_plus'), PackageRef('web')],
-    devDependencies: [PackageRef('flutter_lints')],
-    license: '''MIT License
-
-Copyright (c) 2022 Stanislav Ilin
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-  );
-
-/// talker_logger 5.1.13
-const _talker_logger = Package(
-    name: 'talker_logger',
-    description: 'Logger. Easy, customizable, extensible logging, lightweight with filters, formatters, custom logs, log levels.',
-    homepage: 'https://github.com/Frezyx/talker',
-    repository: 'https://github.com/Frezyx/talker',
-    authors: [],
-    version: '5.1.13',
-    spdxIdentifiers: ['MIT'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('ansicolor'), PackageRef('web')],
-    devDependencies: [PackageRef('test')],
-    license: '''MIT License
-
-Copyright (c) 2022 Stanislav Ilin
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-  );
-
-/// talker_riverpod_logger 5.1.13
-const _talker_riverpod_logger = Package(
-    name: 'talker_riverpod_logger',
-    description: 'Lightweight and customizable Riverpod state management library logger on talker base.',
-    homepage: 'https://github.com/Frezyx/talker',
-    repository: 'https://github.com/Frezyx/talker',
-    authors: [],
-    version: '5.1.13',
-    spdxIdentifiers: ['MIT'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('talker'), PackageRef('riverpod'), PackageRef('meta')],
-    devDependencies: [PackageRef('lints'), PackageRef('test')],
-    license: '''MIT License
-
-Copyright (c) 2022 Stanislav Ilin
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-  );
 
 /// tar 2.0.2
 const _tar = Package(
@@ -14601,6 +14452,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
+
+/// term_glyph 1.2.2
 
 /// term_glyph 1.2.2
 const _term_glyph = Package(
@@ -15938,7 +15791,7 @@ SOFTWARE.''',
 /// win32 5.15.0
 const _win32 = Package(
     name: 'win32',
-    description: '''Access common Win32 APIs directly from Dart using FFI — no C required!
+    description: '''Access common Win32 APIs directly from Dart using FFI 闁?no C required!
 ''',
     homepage: 'https://win32.pub',
     repository: 'https://github.com/halildurmus/win32',
@@ -16175,7 +16028,7 @@ const _anoxia = Package(
     spdxIdentifiers: [],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('cupertino_icons'), PackageRef('flutter_screenutil'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('dio'), PackageRef('go_router'), PackageRef('talker_flutter'), PackageRef('talker_riverpod_logger'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('connectivity_plus'), PackageRef('permission_handler'), PackageRef('easy_localization'), PackageRef('hugeicons'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('web_socket_channel'), PackageRef('tray_manager'), PackageRef('flutter_quill'), PackageRef('cached_network_image'), PackageRef('photo_view'), PackageRef('window_manager'), PackageRef('bot_toast'), PackageRef('url_launcher'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('desktop_multi_window'), PackageRef('file_picker'), PackageRef('uuid'), PackageRef('package_info_plus'), PackageRef('path_provider'), PackageRef('open_filex'), PackageRef('pub_semver'), PackageRef('path'), PackageRef('characters'), PackageRef('image'), PackageRef('emoji_picker_flutter'), PackageRef('flutter_local_notifications'), PackageRef('flutter_new_badger'), PackageRef('pasteboard'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_card_swiper'), PackageRef('flutter_fancy_tree_view'), PackageRef('split_view')],
+    dependencies: [PackageRef('flutter'), PackageRef('cupertino_icons'), PackageRef('flutter_screenutil'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('dio'), PackageRef('go_router'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('connectivity_plus'), PackageRef('permission_handler'), PackageRef('easy_localization'), PackageRef('hugeicons'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('web_socket_channel'), PackageRef('tray_manager'), PackageRef('flutter_quill'), PackageRef('cached_network_image'), PackageRef('photo_view'), PackageRef('window_manager'), PackageRef('bot_toast'), PackageRef('url_launcher'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('desktop_multi_window'), PackageRef('file_picker'), PackageRef('uuid'), PackageRef('package_info_plus'), PackageRef('path_provider'), PackageRef('open_filex'), PackageRef('pub_semver'), PackageRef('path'), PackageRef('characters'), PackageRef('image'), PackageRef('emoji_picker_flutter'), PackageRef('flutter_local_notifications'), PackageRef('flutter_new_badger'), PackageRef('pasteboard'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_card_swiper'), PackageRef('flutter_fancy_tree_view'), PackageRef('split_view')],
     devDependencies: [PackageRef('flutter_lints'), PackageRef('riverpod_generator'), PackageRef('riverpod_lint'), PackageRef('build_runner'), PackageRef('flutter_gen_runner'), PackageRef('go_router_builder'), PackageRef('flutter_oss_licenses')],
   );
 

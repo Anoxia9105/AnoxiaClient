@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
@@ -24,7 +24,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/chat_message.dart';
 import '../../../domain/chat_room_vo.dart';
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 part 'room_list_service.g.dart';
 
@@ -81,7 +81,7 @@ class RoomListService extends _$RoomListService {
     // keepAlive 被登出时的会话重置重新 invalidate，形成
     // 「401 → 登出 → 重建 → 再 401」的无限循环，导致刚登录进首页又被登出。
     if (ref.read(authControllerProvider).value == null) {
-      log.info('[RoomListService] 用户未登录，跳过会话列表预加载');
+      debugLog('[RoomListService] 用户未登录，跳过会话列表预加载');
       return state.value ?? const <ChatRoomVO>[];
     }
 
@@ -109,7 +109,7 @@ class RoomListService extends _$RoomListService {
   Future<List<ChatRoomVO>> fetchRoomList() async {
     final currentUser = ref.read(authControllerProvider).value;
     if (currentUser == null) {
-      log.info('用户未登录，跳过聊天室列表请求');
+      debugLog('用户未登录，跳过聊天室列表请求');
       return [];
     }
 
@@ -119,7 +119,7 @@ class RoomListService extends _$RoomListService {
       // 处理 401 登录过期错误：在初始化时优雅地返回空列表而不是崩溃
       // DioClient 的拦截器已处理登出逻辑，此处仅需返回空列表
       if (e.error == '登录过期') {
-        log.warning('登录已过期，返回空列表');
+        debugLog('登录已过期，返回空列表');
         return [];
       }
       rethrow;
@@ -158,7 +158,7 @@ class RoomListService extends _$RoomListService {
           .read(syncConversationsUseCaseProvider)(sync: false)
           .timeout(_startupFetchTimeout);
     } on TimeoutException catch (e, st) {
-      log.warning('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
+      debugLog('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
       return state.value ?? const <ChatRoomVO>[];
     }
   }
@@ -314,10 +314,10 @@ class RoomListService extends _$RoomListService {
   /// 上报已读 seq 到服务器，同时更新本地 DB（last_read_seq / unread_count）
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
-      log.info('🚀 上报已读状态: 房间 $roomId, Seq $seq');
+      debugLog('🚀 上报已读状态: 房间 $roomId, Seq $seq');
       await ref.read(markAsReadUseCaseProvider)(roomId, seq: seq);
     } catch (e) {
-      log.warning('上报已读失败: $e');
+      debugLog('上报已读失败: $e');
     }
   }
 
@@ -335,12 +335,12 @@ class RoomListService extends _$RoomListService {
     );
 
     if (existingRoom != null && existingRoom.roomId != null) {
-      log.info('✅ 找到现有房间: ${existingRoom.roomId}');
+      debugLog('✅ 找到现有房间: ${existingRoom.roomId}');
       return existingRoom.roomId;
     }
 
     try {
-      log.info('🚀 正在请求后端创建私聊房间，目标用户: $targetUserId');
+      debugLog('🚀 正在请求后端创建私聊房间，目标用户: $targetUserId');
       final newRoom = await ref
           .read(roomRepositoryProvider)
           .createPrivateRoom(targetUserId);
@@ -354,7 +354,7 @@ class RoomListService extends _$RoomListService {
 
       return newRoom.roomId;
     } catch (e) {
-      log.error('❌ 获取/创建房间接口调用失败', e);
+      debugLog('❌ 获取/创建房间接口调用失败', e);
       return null;
     }
   }
@@ -362,10 +362,10 @@ class RoomListService extends _$RoomListService {
   /// 退出聊天室
   Future<void> leaveRoom(String roomId) async {
     try {
-      log.info('🚀 正在请求后端删除会话，房间 ID: $roomId');
+      debugLog('🚀 正在请求后端删除会话，房间 ID: $roomId');
       await ref.read(roomRepositoryProvider).leaveRoom(roomId);
 
-      log.info('删除会话成功');
+      debugLog('删除会话成功');
       await ref.read(localDataSourceProvider).deleteConversationCache(roomId);
 
       // 删除对应房间缓存的消息
@@ -377,9 +377,9 @@ class RoomListService extends _$RoomListService {
 
       await refresh(silent: true);
 
-      log.info('✅ 已删除房间 $roomId 的本地消息缓存和状态');
+      debugLog('✅ 已删除房间 $roomId 的本地消息缓存和状态');
     } catch (e) {
-      log.error('❌ 删除会话失败', e);
+      debugLog('❌ 删除会话失败', e);
       rethrow;
     }
   }
@@ -390,7 +390,7 @@ class RoomListService extends _$RoomListService {
       await ref.read(roomRepositoryProvider).disbandRoom(roomId);
       await refresh(silent: true);
     } catch (e) {
-      log.error('❌ 解散群聊失败', e);
+      debugLog('❌ 解散群聊失败', e);
       rethrow;
     }
   }
@@ -401,19 +401,19 @@ class RoomListService extends _$RoomListService {
   /// [isMute] true=禁言，false=解除禁言
   Future<bool> muteRoom(String roomId, bool isMute) async {
     try {
-      log.info("🚀 正在${isMute ? '禁言' : '解除禁言'}房间 $roomId");
+      debugLog("🚀 正在${isMute ? '禁言' : '解除禁言'}房间 $roomId");
 
       final ok = await ref
           .read(roomRepositoryProvider)
           .muteRoom(roomId, isMute);
 
       if (ok) {
-        log.info("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
+        debugLog("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
         await refresh(silent: true);
       }
       return ok;
     } catch (e, st) {
-      log.error("❌ ${isMute ? '禁言' : '解除禁言'}房间失败", e, st);
+      debugLog("❌ ${isMute ? '禁言' : '解除禁言'}房间失败", e, st);
       return false;
     }
   }
@@ -430,7 +430,7 @@ class RoomListService extends _$RoomListService {
       }
       return ok;
     } catch (e, st) {
-      log.error('❌ 修改群聊名称失败', e, st);
+      debugLog('❌ 修改群聊名称失败', e, st);
       return false;
     }
   }
@@ -455,7 +455,7 @@ class RoomListService extends _$RoomListService {
       }
       return ok;
     } catch (e, st) {
-      log.error('❌ 修改群公告失败', e, st);
+      debugLog('❌ 修改群公告失败', e, st);
       return false;
     }
   }

@@ -1,7 +1,7 @@
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/room_repository.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 
 /// 房间仓库实现
@@ -38,7 +38,7 @@ class RoomRepositoryImpl implements RoomRepository {
       API.chatRoomDisband,
       queryParameters: {'roomId': roomId},
     );
-    log.debug('[Room] disbandRoom response: $res');
+    debugLog('[Room] disbandRoom response: $res');
   }
 
   @override
@@ -50,7 +50,7 @@ class RoomRepositoryImpl implements RoomRepository {
       );
       return res.data['code'] == 200;
     } catch (e, st) {
-      log.error('[Room] muteRoom 失败', e, st);
+      debugLog('[Room] muteRoom 失败', e, st);
       return false;
     }
   }
@@ -69,7 +69,7 @@ class RoomRepositoryImpl implements RoomRepository {
       );
       return res.data['code'] == 200;
     } catch (e, st) {
-      log.error('[Room] 修改群聊名称失败', e, st);
+      debugLog('[Room] 修改群聊名称失败', e, st);
       return false;
     }
   }
@@ -91,7 +91,7 @@ class RoomRepositoryImpl implements RoomRepository {
       );
       return res.data['code'] == 200;
     } catch (e, st) {
-      log.error('[Room] 修改群公告失败', e, st);
+      debugLog('[Room] 修改群公告失败', e, st);
       return false;
     }
   }

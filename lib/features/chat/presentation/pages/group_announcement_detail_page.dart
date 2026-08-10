@@ -1,6 +1,6 @@
-/// 群组公告详情页面，显示群组的完整公告内容。
-///
-/// 支持文本选择和滚动查看，当公告内容为空时显示占位提示。
+// 群组公告详情页面，显示群组的完整公告内容。
+//
+// 支持文本选择和滚动查看，当公告内容为空时显示占位提示。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:easy_localization/easy_localization.dart';

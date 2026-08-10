@@ -1,9 +1,9 @@
-/// Quill 编辑器语法高亮渲染器。
-///
-/// 为 Quill 内联代码构建带有语法着色属性的文本跨度，
-/// 保留 Quill 标准的 code 属性以保持可编辑性。
-///
-/// 代码块不再在 Quill 编辑器中渲染，而是通过自定义对话框发送。
+// Quill 编辑器语法高亮渲染器。
+//
+// 为 Quill 内联代码构建带有语法着色属性的文本跨度，
+// 保留 Quill 标准的 code 属性以保持可编辑性。
+//
+// 代码块不再在 Quill 编辑器中渲染，而是通过自定义对话框发送。
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/themes/github.dart';

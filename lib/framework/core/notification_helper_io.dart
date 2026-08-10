@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -16,7 +16,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
-import '../../framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 通知辅助类
 ///
@@ -85,7 +85,7 @@ class NotificationHelper {
     try {
       imagePath = await getIconPath();
     } catch (e) {
-      log.error('获取图标失败: $e');
+      debugLog('获取图标失败: $e');
     }
 
     final windows = WindowsInitializationSettings(
@@ -119,7 +119,7 @@ class NotificationHelper {
     if (!DeviceUtil.isRealMobile()) return true;
     final result = await appPermissionService.request(Permission.notification);
     if (result == AppPermissionResult.granted) return true;
-    log.info('通知权限不可用，本次通知已跳过: $result');
+    debugLog('通知权限不可用，本次通知已跳过: $result');
     return false;
   }
 
@@ -157,7 +157,7 @@ class NotificationHelper {
       final byteData = await rootBundle.load(Assets.images.appIconPng.path);
       await file.writeAsBytes(byteData.buffer.asUint8List());
     }
-    log.info('获取图标成功: ${file.path}');
+    debugLog('获取图标成功: ${file.path}');
     return file.path;
   }
 
@@ -218,7 +218,7 @@ class NotificationHelper {
         }
       }
     } catch (e) {
-      log.error('解析通知头像失败: $e');
+      debugLog('解析通知头像失败: $e');
     }
 
     return null;
@@ -245,7 +245,7 @@ class NotificationHelper {
         await entry.file.delete();
       }
     } catch (e) {
-      log.debug('清理通知头像缓存失败: $e');
+      debugLog('清理通知头像缓存失败: $e');
     }
   }
 
@@ -264,7 +264,7 @@ class NotificationHelper {
         return false;
       }
     } catch (e) {
-      log.error('判断窗口状态失败，降级为发送通知: $e');
+      debugLog('判断窗口状态失败，降级为发送通知: $e');
     }
     return true;
   }
@@ -296,12 +296,12 @@ class NotificationHelper {
           return;
         }
       } catch (e) {
-        log.warning('无法解析通话通知载荷: $e');
+        debugLog('无法解析通话通知载荷: $e');
       }
     }
 
     if (roomId != null) {
-      log.info('用户点击通知，准备跳转房间: $roomId');
+      debugLog('用户点击通知，准备跳转房间: $roomId');
 
       _onOpenRoom?.call(roomId);
 
@@ -321,7 +321,7 @@ class NotificationHelper {
       await desktop.windowManager.show();
       await desktop.windowManager.focus();
     } catch (e) {
-      log.error('唤醒窗口失败: $e');
+      debugLog('唤醒窗口失败: $e');
     }
   }
 
@@ -506,7 +506,7 @@ class NotificationHelper {
           'count': count < 0 ? 0 : count,
         });
       } catch (e) {
-        log.warning('更新 Windows 任务栏角标失败: $e');
+        debugLog('更新 Windows 任务栏角标失败: $e');
       }
       return;
     }
@@ -522,7 +522,7 @@ class NotificationHelper {
       if (!supported) return;
       await AppBadgePlus.updateBadge(count <= 0 ? 0 : count);
     } catch (e) {
-      log.warning('更新应用角标失败: $e');
+      debugLog('更新应用角标失败: $e');
     }
   }
 }

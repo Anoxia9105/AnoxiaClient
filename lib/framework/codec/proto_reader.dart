@@ -6,7 +6,7 @@ import 'dart:typed_data';
 /// 一次性读取所有字段到 Map，字段值类型：
 /// - wire 0 → int (varint)
 /// - wire 2 → Uint8List (raw bytes)
-/// - 重复字段 → List<dynamic>（同一 fieldNum 出现多次时自动升级为 List）
+/// - 重复字段 → `List<dynamic>`（同一 fieldNum 出现多次时自动升级为 List）
 class ProtoReader {
   final Uint8List _data;
   int _pos;

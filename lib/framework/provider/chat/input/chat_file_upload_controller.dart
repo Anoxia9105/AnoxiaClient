@@ -1,9 +1,9 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
@@ -131,7 +131,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
         }
       } catch (e, st) {
         if (isLastAttempt) {
-          log.error('文件上传失败: $e\n$st');
+          debugLog('文件上传失败: $e\n$st');
           _markFailed(attachments);
           return;
         }

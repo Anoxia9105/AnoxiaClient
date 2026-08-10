@@ -1,7 +1,7 @@
-/// 直播房间控制器
-///
-/// 基于 LiveKit 管理直播房间的连接、音视频控制和屏幕共享功能。
-/// 保持活跃状态，不随 UI 销毁而释放。
+// 直播房间控制器
+//
+// 基于 LiveKit 管理直播房间的连接、音视频控制和屏幕共享功能。
+// 保持活跃状态，不随 UI 销毁而释放。
 import 'dart:async';
 
 import 'package:anoxia/common/constants/api.dart';
@@ -9,7 +9,7 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -60,7 +60,7 @@ class LiveRoomController extends _$LiveRoomController {
 
       listener
         ..on<RoomConnectedEvent>((_) {
-          log.info('直播房间已连接: $roomId');
+          debugLog('直播房间已连接: $roomId');
           state = AsyncData(
             _buildState(room, token, isReconnecting: false, connectionError: null),
           );
@@ -109,7 +109,7 @@ class LiveRoomController extends _$LiveRoomController {
 
       return _buildState(room, token);
     } catch (e) {
-      log.error('直播房间初始化失败: $e');
+      debugLog('直播房间初始化失败: $e');
       rethrow;
     }
   }

@@ -6,7 +6,7 @@ import 'package:anoxia/framework/domain/chat_contact_vo.dart';
 import 'package:anoxia/framework/domain/contact_request.dart';
 import 'package:anoxia/framework/domain/user_search_response.dart';
 import 'package:anoxia/framework/local_cache/local_data_source.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 
 /// 联系人仓库实现
@@ -26,7 +26,7 @@ class ContactRepositoryImpl implements ContactRepository {
   @override
   Future<List<ChatContactVO>> getLocalContacts() async {
     final contacts = await local.getContacts();
-    log.debug('[Cache] ContactRepository: local hit count=${contacts.length}');
+    debugLog('[Cache] ContactRepository: local hit count=${contacts.length}');
     return contacts;
   }
 
@@ -37,10 +37,10 @@ class ContactRepositoryImpl implements ContactRepository {
       final list = (response.data['data'] as List)
           .map((e) => ChatContactVO.fromJson(e as Map<String, dynamic>))
           .toList();
-      log.debug('[Cache] ContactRepository: synced ${list.length} contacts');
+      debugLog('[Cache] ContactRepository: synced ${list.length} contacts');
       return list;
     } catch (e) {
-      log.error('[Cache] ContactRepository: sync failed: $e');
+      debugLog('[Cache] ContactRepository: sync failed: $e');
       rethrow;
     }
   }
@@ -67,12 +67,12 @@ class ContactRepositoryImpl implements ContactRepository {
         API.contactUserDetail,
         queryParameters: {'userId': userId},
       );
-      log.debug(
+      debugLog(
         '[Contact] ContactRepositoryImpl: fetched detail for userId=$userId',
       );
       return ChatContactDetailVO.fromJson(response.data['data']);
     } catch (e) {
-      log.error('[Contact] ContactRepositoryImpl: getContactDetail failed: $e');
+      debugLog('[Contact] ContactRepositoryImpl: getContactDetail failed: $e');
       rethrow;
     }
   }
@@ -92,12 +92,12 @@ class ContactRepositoryImpl implements ContactRepository {
           'pageSize': pageSize,
         },
       );
-      log.debug(
+      debugLog(
         '[Contact] ContactRepositoryImpl: searched users for name=$name',
       );
       return UserSearchResponse.fromJson(response.data);
     } catch (e) {
-      log.error('[Contact] ContactRepositoryImpl: searchUsers failed: $e');
+      debugLog('[Contact] ContactRepositoryImpl: searchUsers failed: $e');
       rethrow;
     }
   }
@@ -109,12 +109,12 @@ class ContactRepositoryImpl implements ContactRepository {
       final list = (response.data['data'] as List)
           .map((e) => ChatContactRequestVO.fromJson(e as Map<String, dynamic>))
           .toList();
-      log.debug(
+      debugLog(
         '[Contact] ContactRepositoryImpl: fetched ${list.length} contact requests',
       );
       return list;
     } catch (e) {
-      log.error(
+      debugLog(
         '[Contact] ContactRepositoryImpl: fetchContactRequests failed: $e',
       );
       rethrow;
@@ -132,11 +132,11 @@ class ContactRepositoryImpl implements ContactRepository {
           'source': 0,
         },
       );
-      log.debug(
+      debugLog(
         '[Contact] ContactRepositoryImpl: handleContactRequest requestId=$requestId accepted=$isAccepted',
       );
     } catch (e) {
-      log.error(
+      debugLog(
         '[Contact] ContactRepositoryImpl: handleContactRequest failed: $e',
       );
       rethrow;
@@ -152,12 +152,12 @@ class ContactRepositoryImpl implements ContactRepository {
         data: request.toJson(),
       );
       final success = response.data['code'] == 200;
-      log.debug(
+      debugLog(
         '[Contact] ContactRepositoryImpl: sendContactRequest toUserId=$toUserId success=$success',
       );
       return success;
     } catch (e) {
-      log.error('[Contact] ContactRepositoryImpl: sendContactRequest failed: $e');
+      debugLog('[Contact] ContactRepositoryImpl: sendContactRequest failed: $e');
       return false;
     }
   }

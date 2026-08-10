@@ -1,7 +1,7 @@
-/// 应用主题管理
-///
-/// 提供主题切换、强调色选择和主题构建功能。
-/// 支持亮色/暗色模式与多种强调色方案的组合，共 20 种预设主题。
+// 应用主题管理
+//
+// 提供主题切换、强调色选择和主题构建功能。
+// 支持亮色/暗色模式与多种强调色方案的组合，共 20 种预设主题。
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 

@@ -1,6 +1,6 @@
-/// 聊天室选择对话框，用于在选择转发目标等场景中挑选聊天室。
-///
-/// 展示当前可用的聊天室列表，用户点击选择后返回选中的聊天室。
+// 聊天室选择对话框，用于在选择转发目标等场景中挑选聊天室。
+//
+// 展示当前可用的聊天室列表，用户点击选择后返回选中的聊天室。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';

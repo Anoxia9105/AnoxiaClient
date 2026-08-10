@@ -1,9 +1,9 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/chat_room_vo.dart';
-import '../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../auth/auth_controller.dart';
 import '../chat/message/room_message_service.dart';
 import '../chat/message/system_event_service.dart';
@@ -34,7 +34,7 @@ class LoginBootstrapOrchestrator {
   Future<void> run({required String reason}) async {
     final existing = _inflight;
     if (existing != null) {
-      log.info('[Bootstrap] 复用正在执行的初始化链路, reason=$reason');
+      debugLog('[Bootstrap] 复用正在执行的初始化链路, reason=$reason');
       return existing;
     }
 
@@ -52,11 +52,11 @@ class LoginBootstrapOrchestrator {
   Future<void> _runInternal({required String reason}) async {
     final user = _ref.read(authControllerProvider).value;
     if (user == null) {
-      log.info('[Bootstrap] 当前未登录，跳过初始化链路, reason=$reason');
+      debugLog('[Bootstrap] 当前未登录，跳过初始化链路, reason=$reason');
       return;
     }
 
-    log.info('[Bootstrap] 开始执行初始化链路, reason=$reason');
+    debugLog('[Bootstrap] 开始执行初始化链路, reason=$reason');
 
     // Step 1: 先拉房间列表，作为后续房间预热的前置依赖。
     final rooms = await _safeReadRoomList();
@@ -69,7 +69,7 @@ class LoginBootstrapOrchestrator {
     // Step 3: 后台预热当前房间。预热是体验优化，不能阻塞 App 进入主界面。
     unawaited(_warmUpActiveRoomContext(rooms));
 
-    log.info('[Bootstrap] 初始化链路完成, reason=$reason');
+    debugLog('[Bootstrap] 初始化链路完成, reason=$reason');
   }
 
   Future<List<ChatRoomVO>> _safeReadRoomList() async {
@@ -78,10 +78,10 @@ class LoginBootstrapOrchestrator {
       await roomListNotifier.refresh(silent: false).timeout(_roomListTimeout);
       return _ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     } on TimeoutException catch (e, st) {
-      log.warning('[Bootstrap] 房间列表预加载超时，降级为空列表继续启动', e, st);
+      debugLog('[Bootstrap] 房间列表预加载超时，降级为空列表继续启动', e, st);
       return const <ChatRoomVO>[];
     } catch (e, st) {
-      log.error('[Bootstrap] 房间列表预加载失败，降级为空列表', e, st);
+      debugLog('[Bootstrap] 房间列表预加载失败，降级为空列表', e, st);
       return const <ChatRoomVO>[];
     }
   }
@@ -103,9 +103,9 @@ class LoginBootstrapOrchestrator {
           .syncRoomMessages(targetRoomId, room?.lastMessage?.seq)
           .timeout(_warmUpTimeout);
     } on TimeoutException catch (e, st) {
-      log.warning('[Bootstrap] 房间消息预热超时，继续后续流程', e, st);
+      debugLog('[Bootstrap] 房间消息预热超时，继续后续流程', e, st);
     } catch (e, st) {
-      log.error('[Bootstrap] 房间消息预热失败，继续后续流程', e, st);
+      debugLog('[Bootstrap] 房间消息预热失败，继续后续流程', e, st);
     }
 
     try {
@@ -113,9 +113,9 @@ class LoginBootstrapOrchestrator {
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(targetRoomId, timeout: _warmUpTimeout);
     } on TimeoutException catch (e, st) {
-      log.warning('[Bootstrap] 房间成员预热超时，继续后续流程', e, st);
+      debugLog('[Bootstrap] 房间成员预热超时，继续后续流程', e, st);
     } catch (e, st) {
-      log.error('[Bootstrap] 房间成员预热失败，继续后续流程', e, st);
+      debugLog('[Bootstrap] 房间成员预热失败，继续后续流程', e, st);
     }
   }
 }

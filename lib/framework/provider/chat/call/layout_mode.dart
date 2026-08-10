@@ -1,6 +1,6 @@
-/// 通话布局模式
-///
-/// 根据通话参与者数量和屏幕共享状态，自动计算适合的 UI 布局模式。
+// 通话布局模式
+//
+// 根据通话参与者数量和屏幕共享状态，自动计算适合的 UI 布局模式。
 import 'package:livekit_client/livekit_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/domain/room_state.dart';

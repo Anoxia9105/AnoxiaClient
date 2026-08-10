@@ -1,7 +1,7 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -68,7 +68,7 @@ class _AppScaffoldState extends State<AppScaffold> {
         },
       );
     } catch (e) {
-      log.error('hotkey_manager: 注册失败，错误信息为: $e');
+      debugLog('hotkey_manager: 注册失败，错误信息为: $e');
     }
   }
 

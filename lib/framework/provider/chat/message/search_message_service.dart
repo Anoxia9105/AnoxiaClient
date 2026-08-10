@@ -1,8 +1,8 @@
-﻿import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 part 'search_message_service.g.dart';
 
@@ -76,7 +76,7 @@ class SearchMessageService extends _$SearchMessageService {
         totalMatches: result.totalMatches,
       );
     } catch (e) {
-      log.error('搜索消息失败: $e');
+      debugLog('搜索消息失败: $e');
       state = state.copyWith(isLoading: false);
     }
   }

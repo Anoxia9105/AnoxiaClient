@@ -11,7 +11,7 @@ import '../../protocol/message/message_enum.dart';
 import '../../protocol/message/message_payload.dart';
 import '../../protocol/message/room_message.dart';
 import '../../protocol/packet_type.dart';
-import '../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// IM V5 鍗忚鍏ㄩ噺缂栬В鐮佸櫒
 ///
@@ -54,7 +54,7 @@ class ImPacketV5 {
 
       return decodeEnvelope(frame.body);
     } catch (e, st) {
-      log.error('[ImPacketV5] decodeFrame failed', e, st);
+      debugLog('[ImPacketV5] decodeFrame failed', e, st);
       return null;
     }
   }
@@ -81,7 +81,7 @@ class ImPacketV5 {
         payload: payloadBytes,
       );
     } catch (e, st) {
-      log.error('[ImPacketV5] decodeEnvelope failed', e, st);
+      debugLog('[ImPacketV5] decodeEnvelope failed', e, st);
       return null;
     }
   }
@@ -128,7 +128,7 @@ class ImPacketV5 {
         clientTimestamp: _zeroToNull(f.getInt64(9)),
       );
     } catch (e, st) {
-      log.error('[ImPacketV5] decodeRoomMessage failed', e, st);
+      debugLog('[ImPacketV5] decodeRoomMessage failed', e, st);
       return null;
     }
   }
@@ -148,7 +148,7 @@ class ImPacketV5 {
         timestamp: _zeroToNull(f.getInt64(8)),
       );
     } catch (e, st) {
-      log.error('[ImPacketV5] decodeHighMessage failed', e, st);
+      debugLog('[ImPacketV5] decodeHighMessage failed', e, st);
       return null;
     }
   }
@@ -167,7 +167,7 @@ class ImPacketV5 {
         extra: properties.isEmpty ? null : properties.cast<String, dynamic>(),
       );
     } catch (e, st) {
-      log.error('[ImPacketV5] decodeEventMessage failed', e, st);
+      debugLog('[ImPacketV5] decodeEventMessage failed', e, st);
       return null;
     }
   }

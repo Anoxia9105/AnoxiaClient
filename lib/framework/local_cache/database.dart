@@ -1,7 +1,7 @@
-/// 本地数据库层
-///
-/// 基于 Drift 的 SQLite 数据库，管理用户、会话、消息、联系人等缓存表，
-/// 包含数据库迁移策略和各个 DAO 访问器。
+// 本地数据库层
+//
+// 基于 Drift 的 SQLite 数据库，管理用户、会话、消息、联系人等缓存表，
+// 包含数据库迁移策略和各个 DAO 访问器。
 import 'package:drift/drift.dart';
 
 // 用 dart.library.io 判定平台而非 dart.library.html：

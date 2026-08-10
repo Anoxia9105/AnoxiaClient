@@ -185,6 +185,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final ratio = await _pickAspectRatioPreset();
     if (!mounted) return;
 
+    // 裁剪循环中有多次 await，提前捕获主题避免异步间隙后使用 context。
+    final colorScheme = Theme.of(context).colorScheme;
     final croppedFiles = <PlatformFile>[];
     for (final xFile in picked) {
       final cropped = await ImageCropper().cropImage(
@@ -195,9 +197,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'toolbar_image'.tr(),
-            toolbarWidgetColor: Theme.of(context).colorScheme.onPrimary,
-            toolbarColor: Theme.of(context).colorScheme.primary,
-            activeControlsWidgetColor: Theme.of(context).colorScheme.primary,
+            toolbarWidgetColor: colorScheme.onPrimary,
+            toolbarColor: colorScheme.primary,
+            activeControlsWidgetColor: colorScheme.primary,
           ),
           IOSUiSettings(title: 'toolbar_image'.tr()),
         ],

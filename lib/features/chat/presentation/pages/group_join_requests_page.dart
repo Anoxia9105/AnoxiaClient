@@ -1,6 +1,6 @@
-/// 群组入群申请管理页面，用于查看和处理群组的入群申请。
-///
-/// 展示所有待处理、已批准和已拒绝的入群申请，管理员可以批准或拒绝申请。
+// 群组入群申请管理页面，用于查看和处理群组的入群申请。
+//
+// 展示所有待处理、已批准和已拒绝的入群申请，管理员可以批准或拒绝申请。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';

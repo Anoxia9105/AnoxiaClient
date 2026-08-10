@@ -1,6 +1,6 @@
-/// 回复目标消息管理
-///
-/// 维护各房间当前正在回复的目标消息，支持按房间 ID 设置和清除回复目标。
+// 回复目标消息管理
+//
+// 维护各房间当前正在回复的目标消息，支持按房间 ID 设置和清除回复目标。
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

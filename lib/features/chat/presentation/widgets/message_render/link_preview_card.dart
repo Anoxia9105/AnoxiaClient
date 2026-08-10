@@ -1,7 +1,7 @@
-/// 消息链接预览卡片组件。
-///
-/// 自动提取消息中的 URL，通过后台 Isolate 异步获取网页元数据，
-/// 并以卡片形式展示标题、描述、缩略图等信息。
+// 消息链接预览卡片组件。
+//
+// 自动提取消息中的 URL，通过后台 Isolate 异步获取网页元数据，
+// 并以卡片形式展示标题、描述、缩略图等信息。
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';

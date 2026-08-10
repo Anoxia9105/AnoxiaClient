@@ -1,7 +1,7 @@
-/// 聊天消息领域模型。
-///
-/// 表示一条聊天消息的完整数据，包含消息 ID、内容、发送者、
-/// 消息类型、投递状态等属性，支持 JSON 反序列化和 RoomMessage 转换。
+// 聊天消息领域模型。
+//
+// 表示一条聊天消息的完整数据，包含消息 ID、内容、发送者、
+// 消息类型、投递状态等属性，支持 JSON 反序列化和 RoomMessage 转换。
 import 'dart:convert';
 
 import 'package:anoxia/framework/protocol/message/room_message.dart';

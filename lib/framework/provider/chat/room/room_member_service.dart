@@ -1,10 +1,10 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/framework/provider/core/group_repository_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../domain/chat_room_member_vo.dart';
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../auth/auth_controller.dart';
 import '../../contact/contact_list_controller.dart';
 
@@ -121,7 +121,7 @@ class RoomMemberService extends _$RoomMemberService {
             }
           });
 
-    log.info('🚀 拉取房间 $roomId 成员列表');
+    debugLog('🚀 拉取房间 $roomId 成员列表');
 
     try {
       final membersList = await ref
@@ -137,15 +137,15 @@ class RoomMemberService extends _$RoomMemberService {
       state = {...state, roomId: members};
       _syncedRoomIds.add(roomId);
 
-      log.info('✅ 房间 $roomId 成员同步完成，共 ${members.length} 人');
+      debugLog('✅ 房间 $roomId 成员同步完成，共 ${members.length} 人');
     } on DioException catch (e, st) {
       if (CancelToken.isCancel(e)) {
-        log.info('[RoomMember] 房间 $roomId 成员同步已超时取消');
+        debugLog('[RoomMember] 房间 $roomId 成员同步已超时取消');
         return;
       }
-      log.error('❌ 同步成员失败', e, st);
+      debugLog('❌ 同步成员失败', e, st);
     } catch (e, st) {
-      log.error('❌ 同步成员失败', e, st);
+      debugLog('❌ 同步成员失败', e, st);
     } finally {
       timeoutTimer?.cancel();
     }
@@ -203,7 +203,7 @@ class RoomMemberService extends _$RoomMemberService {
   /// 返回 'ADDED'（已直接加入）、'PENDING'（已邀请，等待管理员审核）或 null（失败）。
   Future<String?> addMembers(String roomId, List<int> userIds) async {
     try {
-      log.info('🚀 添加成员 $userIds 到房间 $roomId');
+      debugLog('🚀 添加成员 $userIds 到房间 $roomId');
 
       final result = await ref
           .read(groupRepositoryProvider)
@@ -215,7 +215,7 @@ class RoomMemberService extends _$RoomMemberService {
 
       return result;
     } catch (e, st) {
-      log.error('❌ 添加成员失败', e, st);
+      debugLog('❌ 添加成员失败', e, st);
       return null;
     }
   }
@@ -226,7 +226,7 @@ class RoomMemberService extends _$RoomMemberService {
   /// [targetUserId] 被踢出的用户 ID
   Future<bool> kickMember(String roomId, int targetUserId) async {
     try {
-      log.info('🚀 从房间 $roomId 踢出用户 $targetUserId');
+      debugLog('🚀 从房间 $roomId 踢出用户 $targetUserId');
 
       final ok = await ref
           .read(groupRepositoryProvider)
@@ -242,7 +242,7 @@ class RoomMemberService extends _$RoomMemberService {
 
       return false;
     } catch (e, st) {
-      log.error('❌ 踢人失败', e, st);
+      debugLog('❌ 踢人失败', e, st);
       return false;
     }
   }

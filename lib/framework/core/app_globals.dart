@@ -15,9 +15,6 @@ final GlobalKey<NavigatorState> appNavigatorKey =
 final ProviderContainer globalContainer = ProviderContainer(
   // 可按需开启观察者，用于调试 Provider 生命周期
   // observers: [
-  //   TalkerRiverpodObserver(
-  //     talker: log,
-  //     settings: const TalkerRiverpodLoggerSettings(printProviderDisposed: true),
-  //   ),
+  //   ProviderLogger(),
   // ],
 );

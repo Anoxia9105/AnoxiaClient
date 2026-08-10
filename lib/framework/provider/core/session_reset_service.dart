@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
@@ -41,7 +41,7 @@ class SessionResetService {
 
   void reset(Ref ref, {required SessionResetReason reason}) {
     final reasonLabel = reason.name;
-    log.info('[SessionReset] 开始重置会话状态, reason=$reasonLabel');
+    debugLog('[SessionReset] 开始重置会话状态, reason=$reasonLabel');
 
     // 使用全局容器执行失效，避免在 AuthController 的 provider 上下文内
     // invalidate 依赖到间接依赖 auth 的 provider 时触发环依赖断言。
@@ -65,7 +65,7 @@ class SessionResetService {
     container.invalidate(roomSearchQueryProvider);
     container.invalidate(chatFavoriteListProvider);
 
-    log.info(
+    debugLog(
       '[SessionReset] 会话状态重置完成, reason=$reasonLabel, scopes=${managedScopes.length}',
     );
   }

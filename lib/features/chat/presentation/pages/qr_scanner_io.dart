@@ -1,7 +1,7 @@
-/// 扫码组件原生实现（Android / iOS / 桌面）。
-///
-/// 直接封装 mobile_scanner 的 [MobileScanner] 与 [MobileScannerController]，
-/// 识别到二维码时将原始内容通过 [QrScannerController.onDetect] 回调出去。
+// 扫码组件原生实现（Android / iOS / 桌面）。
+//
+// 直接封装 mobile_scanner 的 [MobileScanner] 与 [MobileScannerController]，
+// 识别到二维码时将原始内容通过 [QrScannerController.onDetect] 回调出去。
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 

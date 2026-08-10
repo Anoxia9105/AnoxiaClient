@@ -1,6 +1,6 @@
-/// 通话邀请浮层组件，根据不同的通话邀请阶段显示对应的 UI 卡片。
-///
-/// 支持来电接听/拒绝、通话已被他处接听/拒绝、邀请取消、对方忙线、通话结束等状态展示。
+// 通话邀请浮层组件，根据不同的通话邀请阶段显示对应的 UI 卡片。
+//
+// 支持来电接听/拒绝、通话已被他处接听/拒绝、邀请取消、对方忙线、通话结束等状态展示。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:easy_localization/easy_localization.dart';

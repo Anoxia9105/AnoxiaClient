@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/sticker/sticker_packs_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -189,7 +190,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
             loading: () => const Center(child: CircularProgressIndicator()),
             // error: (error, stackTrace) => _buildLoadError(),
             error: (error, stackTrace) {
-              print('加载表情包失败: $error\n$stackTrace');
+              debugLog('加载表情包失败: $error', error, stackTrace);
               return _buildLoadError();
             },
             data: (packs) => _buildStickerGrid(packs),

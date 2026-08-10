@@ -725,7 +725,7 @@ class MessagePayload {
 
   // ==================== 私有工具方法 ====================
 
-  /// 将任意值安全转为 Map<String, dynamic>。
+  /// 将任意值安全转为 `Map<String, dynamic>`。
   static Map<String, dynamic>? _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value);

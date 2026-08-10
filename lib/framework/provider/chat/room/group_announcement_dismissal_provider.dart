@@ -1,6 +1,6 @@
-/// 群公告关闭状态管理。
-///
-/// 记录每个房间中被关闭的公告内容，当公告内容变更时自动重新显示。
+// 群公告关闭状态管理。
+//
+// 记录每个房间中被关闭的公告内容，当公告内容变更时自动重新显示。
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

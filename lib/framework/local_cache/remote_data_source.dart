@@ -1,7 +1,7 @@
-/// 远程数据源
-///
-/// 通过 HTTP API 与后端交互，获取会话列表、消息历史和发送消息，
-/// 为同步仓库提供远程数据。同时定义远程发送结果的数据类。
+// 远程数据源
+//
+// 通过 HTTP API 与后端交互，获取会话列表、消息历史和发送消息，
+// 为同步仓库提供远程数据。同时定义远程发送结果的数据类。
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';

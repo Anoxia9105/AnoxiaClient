@@ -1,7 +1,7 @@
-/// 设备身份标识管理。
-///
-/// 提供安装级别的稳定设备标识，供 HTTP 登录、WebSocket 和推送服务共享。
-/// 重新安装会生成新的标识，账号登出不会清除该标识。
+// 设备身份标识管理。
+//
+// 提供安装级别的稳定设备标识，供 HTTP 登录、WebSocket 和推送服务共享。
+// 重新安装会生成新的标识，账号登出不会清除该标识。
 import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';

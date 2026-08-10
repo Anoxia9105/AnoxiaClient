@@ -1,7 +1,6 @@
 // Web 端 window_manager 空实现桩。
 // 仅在浏览器编译（dart.library.html）时被引用；所有方法均为 no-op，
 // 因为 Web 没有原生窗口概念。类名/方法签名需与真实包保持一致以便调用点编译通过。
-import 'dart:ui';
 import 'package:flutter/widgets.dart';
 
 enum TitleBarStyle { hidden, normal }

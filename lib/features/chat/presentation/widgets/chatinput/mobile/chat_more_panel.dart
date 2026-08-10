@@ -1,6 +1,6 @@
-/// 移动端聊天附件和通话操作面板。
-///
-/// 提供图片、文件、@提及、语音通话和视频通话等快捷操作入口。
+// 移动端聊天附件和通话操作面板。
+//
+// 提供图片、文件、@提及、语音通话和视频通话等快捷操作入口。
 import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';

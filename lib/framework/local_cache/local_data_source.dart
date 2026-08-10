@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
@@ -7,7 +7,7 @@ import '../domain/chat_message.dart';
 import '../domain/chat_room_vo.dart';
 import '../domain/user_info.dart';
 import '../protocol/message/message_enum.dart';
-import '../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../protocol/message/message_payload.dart';
 import 'database.dart';
 
@@ -18,7 +18,7 @@ class LocalDataSource {
 
   Future<List<ChatRoomVO>> getConversations() async {
     final rows = await db.conversationDao.getConversations();
-    log.debug('[DB] getConversations → ${rows.length} rows');
+    debugLog('[DB] getConversations → ${rows.length} rows');
     return rows.map(_conversationFromRow).toList();
   }
 
@@ -40,7 +40,7 @@ class LocalDataSource {
       offset: offset,
       beforeSeq: beforeSeq,
     );
-    log.debug(
+    debugLog(
       '[DB] getMessages convId=$convId offset=$offset → ${rows.length} rows',
     );
     return rows.reversed.map(_messageFromRow).toList();
@@ -75,13 +75,13 @@ class LocalDataSource {
         final seq = message.seq?.toString() ?? '';
         final ts = message.timestamp?.toString() ?? '';
         if (roomId.isEmpty) {
-          log.warning(
+          debugLog(
             '[DB] applyIncomingMessage: 丢弃入站消息，messageId/clientMsgId 与 roomId 均为空',
           );
           return false;
         }
         messageId = 'fallback_${roomId}_${senderId}_${seq}_$ts';
-        log.warning(
+        debugLog(
           '[DB] applyIncomingMessage: 入站消息缺 messageId，使用派生兜底 id=$messageId',
         );
         msg = message.copyWith(messageId: messageId);
@@ -184,7 +184,7 @@ class LocalDataSource {
   }
 
   Future<void> upsertConversation(ChatRoomVO room) async {
-    log.debug(
+    debugLog(
       '[DB] upsertConversation roomId=${room.roomId} peerId=${room.peerId}',
     );
     await _ensurePeerUsersExist([room]);
@@ -195,7 +195,7 @@ class LocalDataSource {
 
   Future<void> upsertConversations(Iterable<ChatRoomVO> rooms) async {
     final roomList = rooms.toList();
-    log.debug(
+    debugLog(
       '[DB] upsertConversations count=${roomList.length} ids=${roomList.map((r) => r.roomId).toList()}',
     );
     await _ensurePeerUsersExist(roomList);
@@ -220,7 +220,7 @@ class LocalDataSource {
         )
         .toList();
     if (missing.isNotEmpty) {
-      log.debug(
+      debugLog(
         '[DB] _ensurePeerUsersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}',
       );
       await db.userDao.insertOrUpdateUsers(missing);
@@ -229,7 +229,7 @@ class LocalDataSource {
 
   Future<void> upsertMessage(ChatMessage message) async {
     final row = _messageToRow(message);
-    log.debug(
+    debugLog(
       '[DB] upsertMessage id=${message.messageId} room=${message.roomId} seq=${message.seq} status=${message.deliveryStatus}',
     );
     await db.transaction(() async {
@@ -256,7 +256,7 @@ class LocalDataSource {
     final rows = messages.map(_messageToRow).toList();
     if (rows.isEmpty) return;
 
-    log.debug('[DB] upsertMessages count=${rows.length}');
+    debugLog('[DB] upsertMessages count=${rows.length}');
     for (final conversationId
         in rows.map((row) => row.conversationId).toSet()) {
       await _ensureConversationExists(conversationId);
@@ -281,7 +281,7 @@ class LocalDataSource {
         )
         .toList();
     if (missing.isNotEmpty) {
-      log.debug(
+      debugLog(
         '[DB] _ensureMessageSendersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}',
       );
       await db.userDao.insertOrUpdateUsers(missing);
@@ -289,7 +289,7 @@ class LocalDataSource {
   }
 
   Future<void> upsertUser(UserInfo user) {
-    log.debug('[DB] upsertUser userId=${user.userId} name=${user.nickName}');
+    debugLog('[DB] upsertUser userId=${user.userId} name=${user.nickName}');
     final now = DateTime.now();
     return db.userDao.insertOrUpdateUser(
       CachedUsersCompanion(
@@ -307,13 +307,13 @@ class LocalDataSource {
   }
 
   Future<void> markConversationAsRead(String conversationId, {int? seq}) {
-    log.debug('[DB] markConversationAsRead convId=$conversationId seq=$seq');
+    debugLog('[DB] markConversationAsRead convId=$conversationId seq=$seq');
     return db.conversationDao.markAsRead(conversationId, lastReadSeq: seq);
   }
 
   Future<List<ChatMessage>> pendingOutgoingMessages() async {
     final rows = await db.messageDao.getPendingOutgoingMessages();
-    log.debug('[DB] pendingOutgoingMessages → ${rows.length} pending');
+    debugLog('[DB] pendingOutgoingMessages → ${rows.length} pending');
     return rows.map(_messageFromRow).toList();
   }
 
@@ -334,7 +334,7 @@ class LocalDataSource {
     int? seq,
     DateTime? sentAt,
   }) {
-    log.debug(
+    debugLog(
       '[DB] updateDeliveryStatus id=$messageId → $status serverMsgId=$serverMessageId seq=$seq',
     );
     return db.messageDao.updateDeliveryStatus(
@@ -377,7 +377,7 @@ class LocalDataSource {
   }
 
   Future<void> deleteConversationCache(String conversationId) async {
-    log.debug('[DB] deleteConversationCache convId=$conversationId');
+    debugLog('[DB] deleteConversationCache convId=$conversationId');
     await db.transaction(() async {
       await (db.delete(
         db.messages,
@@ -401,7 +401,7 @@ class LocalDataSource {
   /// 一律连同其消息与同步水位一起清除，避免聊天列表出现「别人的房间」。
   Future<void> deleteConversationsNotIn(Iterable<String> keepIds) async {
     final keep = keepIds.toSet();
-    log.debug('[DB] deleteConversationsNotIn keep=${keep.length} ids');
+    debugLog('[DB] deleteConversationsNotIn keep=${keep.length} ids');
     await db.transaction(() async {
       if (keep.isEmpty) {
         await db.delete(db.messages).go();
@@ -512,7 +512,7 @@ class LocalDataSource {
   Future<void> _ensureConversationExists(String conversationId) async {
     final existing = await db.conversationDao.getConversation(conversationId);
     if (existing != null) return;
-    log.debug(
+    debugLog(
       '[DB] _ensureConversationExists: create stub convId=$conversationId',
     );
     final now = DateTime.now();
@@ -635,7 +635,7 @@ class LocalDataSource {
   /// 获取本地所有联系人
   Future<List<ChatContactVO>> getContacts() async {
     final rows = await db.contactDao.getAllContacts();
-    log.debug('[DB] getContacts → ${rows.length} rows');
+    debugLog('[DB] getContacts → ${rows.length} rows');
     return rows.map(_contactFromRow).toList();
   }
 
@@ -650,20 +650,20 @@ class LocalDataSource {
   Future<void> upsertContacts(Iterable<ChatContactVO> contacts) async {
     final valid = contacts.where((c) => c.contactId != null).toList();
     if (valid.isEmpty) return;
-    log.debug('[DB] upsertContacts count=${valid.length}');
+    debugLog('[DB] upsertContacts count=${valid.length}');
     await db.contactDao.insertOrUpdateContacts(valid.map(_contactToCompanion));
   }
 
   /// 插入或更新单个联系人
   Future<void> upsertContact(ChatContactVO contact) async {
     if (contact.contactId == null) return;
-    log.debug('[DB] upsertContact contactId=${contact.contactId}');
+    debugLog('[DB] upsertContact contactId=${contact.contactId}');
     await db.contactDao.insertOrUpdateContact(_contactToCompanion(contact));
   }
 
   /// 删除联系人（解除好友时调用）
   Future<void> deleteContact(int contactId) async {
-    log.debug('[DB] deleteContact contactId=$contactId');
+    debugLog('[DB] deleteContact contactId=$contactId');
     await db.contactDao.deleteContact(contactId);
   }
 
@@ -680,7 +680,7 @@ class LocalDataSource {
   // ── 私有转换 ──────────────────────────────────────────────────────────────
 
   Future<void> clearSessionCache() async {
-    log.info('[DB] clearSessionCache: remove chat/contact local data');
+    debugLog('[DB] clearSessionCache: remove chat/contact local data');
     await db.clearSessionCache();
   }
 

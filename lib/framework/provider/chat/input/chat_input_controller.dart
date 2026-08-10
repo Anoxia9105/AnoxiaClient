@@ -1,4 +1,4 @@
-﻿// ignore_for_file: experimental_member_use
+// ignore_for_file: experimental_member_use
 
 import 'dart:async';
 import 'dart:convert';
@@ -38,7 +38,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../room/room_member_service.dart';
 
 part 'chat_input_controller.g.dart';
@@ -92,7 +92,7 @@ class ChatInputController extends _$ChatInputController {
           enableExternalRichPaste: false, // 禁止外部富文本粘贴，仅保留纯文本
           // --- 图片粘贴处理 ---
           onImagePaste: (Uint8List imageBytes) async {
-            log.info('pasted image bytes: ${imageBytes.lengthInBytes}');
+            debugLog('pasted image bytes: ${imageBytes.lengthInBytes}');
 
             // 将粘贴的图片交给 ChatImageUploadController 上传，
             // 上传完成后会自动插入到编辑器（通过 Delta 插入图片标记）
@@ -279,7 +279,7 @@ class ChatInputController extends _$ChatInputController {
 
     // 成员未同步则跳过
     if (roomMembers.isEmpty) {
-      log.debug('room ${room.roomId} members not synced, skip typing');
+      debugLog('room ${room.roomId} members not synced, skip typing');
       return;
     }
 
@@ -293,7 +293,7 @@ class ChatInputController extends _$ChatInputController {
 
     // 对方不在线则不发送
     if (peerMember.onlineStatus != true) {
-      log.debug('${peerMember.nickName} offline, skip typing: $isTyping');
+      debugLog('${peerMember.nickName} offline, skip typing: $isTyping');
       return;
     }
 
@@ -526,8 +526,9 @@ class ChatInputController extends _$ChatInputController {
       if (!UploadValidator.validateSingleFile(
         ref.read(toastServiceProvider),
         file,
-      ))
+      )) {
         continue;
+      }
       final imageSize = await _readImageSizeFromFile(file.path!);
       uploadList.add(
         Attachment(
@@ -577,8 +578,9 @@ class ChatInputController extends _$ChatInputController {
       if (!UploadValidator.validateSingleFile(
         ref.read(toastServiceProvider),
         file,
-      ))
+      )) {
         continue;
+      }
       final id = const Uuid().v4();
       if (file.bytes != null) filesById[id] = file;
       uploadList.add(
@@ -701,7 +703,7 @@ class ChatInputController extends _$ChatInputController {
             .upsertMessage(
               localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
             );
-        log.warning('voice upload failed: empty response');
+        debugLog('voice upload failed: empty response');
         return;
       }
 
@@ -725,7 +727,7 @@ class ChatInputController extends _$ChatInputController {
           .upsertMessage(
             localMsg.copyWith(deliveryStatus: DeliveryStatus.failed),
           );
-      log.error('语音消息发送异常: $e');
+      debugLog('语音消息发送异常: $e');
     }
   }
 
@@ -782,7 +784,7 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('发送语音消息: $clientMsgId');
+    debugLog('发送语音消息: $clientMsgId');
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: MessageType.audio,
       attachments: attachments,
@@ -877,7 +879,7 @@ class ChatInputController extends _$ChatInputController {
     final String clientMsgId = const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      log.error('send failed: missing user');
+      debugLog('send failed: missing user');
       return;
     }
     final payloadWithReply = _withReplyTarget(type, payload);
@@ -912,7 +914,7 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    log.info('发送消息[$type]: clientMsgId=$clientMsgId');
+    debugLog('发送消息[$type]: clientMsgId=$clientMsgId');
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: type,
       attachments: derivedAttachments,

@@ -1,7 +1,7 @@
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/favorite_repository.dart';
 import 'package:anoxia/framework/domain/chat_favorite.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 
 /// 收藏仓库实现
@@ -44,7 +44,7 @@ class FavoriteRepositoryImpl implements FavoriteRepository {
       final response = await DioClient().post('${API.chatFavoriteAdd}/$messageId');
       return response.data['code'] == 200;
     } catch (e) {
-      log.error('收藏消息失败: $e');
+      debugLog('收藏消息失败: $e');
       return false;
     }
   }
@@ -57,7 +57,7 @@ class FavoriteRepositoryImpl implements FavoriteRepository {
       );
       return response.data['code'] == 200;
     } catch (e) {
-      log.error('取消收藏失败: $e');
+      debugLog('取消收藏失败: $e');
       return false;
     }
   }

@@ -58,7 +58,9 @@ class DesktopSidebar extends ConsumerWidget {
                   return SidebarButton(
                     padding: const EdgeInsets.all(10),
                     index: index,
-                    name: item.name.tr(),
+                    name: item.name == 'sidebar_favorites'
+                        ? 'sidebar_favorites_short'.tr()
+                        : item.name.tr(),
                     icon: item.icon,
                   );
                 }),

@@ -1,11 +1,11 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -263,7 +263,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     try {
       await ref.read(callRepositoryProvider).rejectCall(roomId);
     } catch (error) {
-      log.warning('[CallInvitation] failed to persist rejection: $error');
+      debugLog('[CallInvitation] failed to persist rejection: $error');
     }
   }
 
@@ -354,7 +354,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       try {
         await desktopWindow.close();
       } catch (error) {
-        log.warning('[CallInvitation] failed to close rejected call: $error');
+        debugLog('[CallInvitation] failed to close rejected call: $error');
       }
     }
   }
@@ -441,7 +441,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       final decoded = jsonDecode(content);
       return decoded is Map<String, dynamic> ? decoded : const {};
     } catch (e) {
-      log.warning('[CallInvitation] invalid high message payload: $content');
+      debugLog('[CallInvitation] invalid high message payload: $content');
       return const {};
     }
   }

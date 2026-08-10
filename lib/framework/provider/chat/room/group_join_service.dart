@@ -1,6 +1,6 @@
-/// 群组加入服务
-///
-/// 提供群组预览、加入群组、查看入群申请和处理入群审批等接口。
+// 群组加入服务
+//
+// 提供群组预览、加入群组、查看入群申请和处理入群审批等接口。
 import 'package:anoxia/framework/domain/group_preview.dart';
 import 'package:anoxia/framework/provider/core/group_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

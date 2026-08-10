@@ -1,5 +1,5 @@
-﻿import 'package:anoxia/framework/domain/user_search_response.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/domain/user_search_response.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,7 +40,7 @@ class UserSearchService extends _$UserSearchService {
       state = searchResponse;
       return searchResponse;
     } catch (e, st) {
-      log.error('搜索用户失败: $e', e, st);
+      debugLog('搜索用户失败: $e', e, st);
       rethrow;
     }
   }

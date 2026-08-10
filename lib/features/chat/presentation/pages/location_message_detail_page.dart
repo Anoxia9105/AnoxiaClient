@@ -1,6 +1,6 @@
-/// 位置消息详情页面，在地图上展示收到的位置消息。
-///
-/// 使用 flutter_map 渲染地图，支持切换地图源，显示位置标题、地址和坐标信息。
+// 位置消息详情页面，在地图上展示收到的位置消息。
+//
+// 使用 flutter_map 渲染地图，支持切换地图源，显示位置标题、地址和坐标信息。
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';

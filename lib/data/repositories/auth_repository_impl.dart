@@ -4,7 +4,7 @@ import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/auth_repository.dart';
 import 'package:anoxia/framework/domain/captcha_model.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:dio/dio.dart';
 
@@ -164,7 +164,7 @@ class AuthRepositoryImpl implements AuthRepository {
           )
           .timeout(const Duration(seconds: 2));
     } catch (e) {
-      log.warning('[Auth] 后端登出请求失败（忽略）: $e');
+      debugLog('[Auth] 后端登出请求失败（忽略）: $e');
     }
   }
 

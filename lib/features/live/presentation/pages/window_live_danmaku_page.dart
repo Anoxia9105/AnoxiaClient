@@ -352,7 +352,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
                     controller: _controller,
                     decoration: InputDecoration(
                       hintText: 'live_danmaku_placeholder'.tr(),
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),

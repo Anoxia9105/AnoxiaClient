@@ -3,7 +3,7 @@ import 'package:anoxia/domain/repositories/group_repository.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:dio/dio.dart';
 
@@ -118,7 +118,7 @@ class GroupRepositoryImpl implements GroupRepository {
       if (res.data['code'] != 200) return null;
       return res.data['data']?.toString();
     } catch (e, st) {
-      log.error('[Group] 添加成员失败', e, st);
+      debugLog('[Group] 添加成员失败', e, st);
       return null;
     }
   }
@@ -132,7 +132,7 @@ class GroupRepositoryImpl implements GroupRepository {
       );
       return res.data['code'] == 200;
     } catch (e, st) {
-      log.error('[Group] 踢人失败', e, st);
+      debugLog('[Group] 踢人失败', e, st);
       return false;
     }
   }

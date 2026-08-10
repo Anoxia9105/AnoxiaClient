@@ -1,15 +1,15 @@
-/// 扫码组件 Web 实现。
-///
-/// 浏览器端没有 mobile_scanner，这里使用 getUserMedia 打开摄像头，并通过
-/// 标准 Shape Detection API（BarcodeDetector）逐帧识别二维码。视频预览通过
-/// [HtmlElementView] 嵌入，识别结果经 [QrScannerController.onDetect] 回调。
-///
-/// 注意：BarcodeDetector 仅在部分浏览器（如 Chrome/Edge）可用，不支持时
-/// [QrScannerController.error] 会被置为提示文案，由上层展示降级 UI。
-///
-/// 本文件使用 dart:js_interop + package:web 做 JS 互操作（而非已废弃的
-/// dart:js / dart:js_util），可与未来的 Wasm 编译兼容。互操作类型采用
-/// `extension type ... implements JSObject` 写法，以兼容当前 SDK 的 js_interop。
+// 扫码组件 Web 实现。
+//
+// 浏览器端没有 mobile_scanner，这里使用 getUserMedia 打开摄像头，并通过
+// 标准 Shape Detection API（BarcodeDetector）逐帧识别二维码。视频预览通过
+// [HtmlElementView] 嵌入，识别结果经 [QrScannerController.onDetect] 回调。
+//
+// 注意：BarcodeDetector 仅在部分浏览器（如 Chrome/Edge）可用，不支持时
+// [QrScannerController.error] 会被置为提示文案，由上层展示降级 UI。
+//
+// 本文件使用 dart:js_interop + package:web 做 JS 互操作（而非已废弃的
+// dart:js / dart:js_util），可与未来的 Wasm 编译兼容。互操作类型采用
+// `extension type ... implements JSObject` 写法，以兼容当前 SDK 的 js_interop。
 import 'dart:async';
 import 'dart:js_interop';
 import 'dart:ui_web' as ui_web;

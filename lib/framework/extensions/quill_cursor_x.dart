@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
-import '../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 extension QuillEditorX on GlobalKey<QuillEditorState> {
   /// 安全获取当前光标在屏幕上的全局坐标
@@ -25,7 +25,7 @@ extension QuillEditorX on GlobalKey<QuillEditorState> {
       final offset = renderEditor.localToGlobal(caretRect.topRight);
       return offset;
     } catch (e) {
-      log.error('获取光标坐标失败: $e');
+      debugLog('获取光标坐标失败: $e');
       return null;
     }
   }

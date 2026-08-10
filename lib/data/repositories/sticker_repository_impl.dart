@@ -1,7 +1,7 @@
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/sticker_repository.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 
 /// 表情包仓库实现
@@ -27,12 +27,12 @@ class StickerRepositoryImpl implements StickerRepository {
         data: {'name': name, 'iconUrl': ?iconUrl},
       );
       if (response.data is! Map || response.data['code'] != 200) {
-        log.error('创建自定义表情包失败: ${response.data}');
+        debugLog('创建自定义表情包失败: ${response.data}');
         return 0;
       }
       return int.tryParse(response.data['data']?.toString() ?? '') ?? 0;
     } catch (e, st) {
-      log.error('创建自定义表情包失败', e, st);
+      debugLog('创建自定义表情包失败', e, st);
       return 0;
     }
   }
@@ -56,7 +56,7 @@ class StickerRepositoryImpl implements StickerRepository {
       );
       return response.data is Map && response.data['code'] == 200;
     } catch (e, st) {
-      log.error('新增自定义表情失败: $e\n$st');
+      debugLog('新增自定义表情失败: $e\n$st');
       return false;
     }
   }
@@ -69,7 +69,7 @@ class StickerRepositoryImpl implements StickerRepository {
       );
       return response.data is Map && response.data['code'] == 200;
     } catch (e, st) {
-      log.error('删除自定义表情包失败: $e\n$st');
+      debugLog('删除自定义表情包失败: $e\n$st');
       return false;
     }
   }
@@ -82,7 +82,7 @@ class StickerRepositoryImpl implements StickerRepository {
       );
       return response.data is Map && response.data['code'] == 200;
     } catch (e, st) {
-      log.error('删除自定义表情失败: $e\n$st');
+      debugLog('删除自定义表情失败: $e\n$st');
       return false;
     }
   }
@@ -100,7 +100,7 @@ class StickerRepositoryImpl implements StickerRepository {
       return rawData['rows'] as List;
     }
 
-    log.error('表情包接口返回格式异常: $data');
+    debugLog('表情包接口返回格式异常: $data');
     return const [];
   }
 }

@@ -1,7 +1,7 @@
-/// 本地缓存 Provider 注册
-///
-/// 定义 AppDatabase、LocalDataSource、RemoteDataSource 和 SyncRepository
-/// 的 Riverpod Provider，并监听网络状态以自动触发同步恢复。
+// 本地缓存 Provider 注册
+//
+// 定义 AppDatabase、LocalDataSource、RemoteDataSource 和 SyncRepository
+// 的 Riverpod Provider，并监听网络状态以自动触发同步恢复。
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/domain/repositories/chat_repository.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../domain/chat_message.dart';
 import '../domain/chat_room_vo.dart';
-import '../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import '../protocol/message/message_enum.dart';
 import 'local_data_source.dart';
 import 'remote_data_source.dart';
@@ -30,10 +30,12 @@ class SyncRepository implements ChatRepository {
   /// 正在进行的 syncMessages Future，按 convId 去重
   final Map<String, Future<void>> _syncMessagesInflight = {};
 
+  @override
   Stream<List<ChatRoomVO>> watchConversations() {
     return _local.watchConversations();
   }
 
+  @override
   Stream<List<ChatMessage>> watchMessages(
     String convId, {
     int? limit = 50,
@@ -46,12 +48,14 @@ class SyncRepository implements ChatRepository {
     );
   }
 
+  @override
   Future<List<ChatRoomVO>> getConversations({bool sync = true}) async {
     final localRooms = await _local.getConversations();
     if (sync) unawaited(syncConversations());
     return localRooms;
   }
 
+  @override
   Future<List<ChatMessage>> getMessagesForConversation(
     String convId, {
     int limit = 50,
@@ -69,6 +73,7 @@ class SyncRepository implements ChatRepository {
     return localMessages;
   }
 
+  @override
   Future<void> syncConversations() {
     // 已有正在进行的同步，直接复用，避免并发重复请求
     return _syncConversationsInflight ??= _doSyncConversations().whenComplete(
@@ -91,7 +96,7 @@ class SyncRepository implements ChatRepository {
         lastSyncedAt: DateTime.now(),
       );
     } catch (e, st) {
-      log.error('syncConversations failed', e, st);
+      debugLog('syncConversations failed', e, st);
       await _local.logSyncFailure(
         scope: 'conversations',
         action: 'syncConversations',
@@ -100,6 +105,7 @@ class SyncRepository implements ChatRepository {
     }
   }
 
+  @override
   Future<void> syncMessages(String convId, {DateTime? since}) {
     // 同一会话已在同步中，直接复用，避免并发重复请求
     return _syncMessagesInflight[convId] ??= _doSyncMessages(
@@ -152,7 +158,7 @@ class SyncRepository implements ChatRepository {
         lastSeq: maxSeq,
       );
     } catch (e, st) {
-      log.error('syncMessages failed: $convId', e, st);
+      debugLog('syncMessages failed: $convId', e, st);
       await _local.logSyncFailure(
         scope: 'messages',
         scopeId: convId,
@@ -162,6 +168,7 @@ class SyncRepository implements ChatRepository {
     }
   }
 
+  @override
   Future<ChatMessage> sendMessage(ChatMessage message) async {
     final localMessage = _ensureLocalSendingMessage(message);
     await _local.upsertMessage(localMessage);
@@ -192,7 +199,7 @@ class SyncRepository implements ChatRepository {
         deliveryStatus: DeliveryStatus.sent,
       );
     } catch (e, st) {
-      log.error('sendMessage failed', e, st);
+      debugLog('sendMessage failed', e, st);
       await _local.updateDeliveryStatus(
         localMessage.messageId!,
         DeliveryStatus.failed,
@@ -207,6 +214,7 @@ class SyncRepository implements ChatRepository {
     }
   }
 
+  @override
   Future<void> retryPendingOutgoing() async {
     if (!await _hasNetwork()) return;
 
@@ -218,6 +226,7 @@ class SyncRepository implements ChatRepository {
     }
   }
 
+  @override
   Future<void> markAsRead(
     String conversationId, {
     String? messageId,
@@ -229,7 +238,7 @@ class SyncRepository implements ChatRepository {
     try {
       await _remote.markAsRead(conversationId, seq: seq);
     } catch (e, st) {
-      log.error('markAsRead failed', e, st);
+      debugLog('markAsRead failed', e, st);
       await _local.logSyncFailure(
         scope: 'conversations',
         scopeId: conversationId,
@@ -239,16 +248,19 @@ class SyncRepository implements ChatRepository {
     }
   }
 
+  @override
   Future<void> cacheIncomingMessage(ChatMessage message) async {
     await _local.upsertMessage(
       message.copyWith(deliveryStatus: DeliveryStatus.sent),
     );
   }
 
+  @override
   Future<void> cacheLocalMessage(ChatMessage message) {
     return _local.upsertMessage(message);
   }
 
+  @override
   Future<void> onNetworkRecovered() async {
     await syncConversations();
     await retryPendingOutgoing();

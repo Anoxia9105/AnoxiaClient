@@ -558,7 +558,7 @@ class _RoomSwitchTile extends StatelessWidget {
 class _JoinRequestsBadge extends ConsumerStatefulWidget {
   final String roomId;
 
-  const _JoinRequestsBadge({super.key, required this.roomId});
+  const _JoinRequestsBadge({required this.roomId});
 
   @override
   ConsumerState<_JoinRequestsBadge> createState() => _JoinRequestsBadgeState();

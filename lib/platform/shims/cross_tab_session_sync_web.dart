@@ -23,7 +23,7 @@ import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
 
-import '../../framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 跨标签页会话事件动作
 enum CrossTabAuthAction { login, logout }
@@ -102,13 +102,13 @@ class CrossTabSessionSync {
     try {
       web.window.localStorage.setItem(_markerKey, payload);
     } catch (e) {
-      log.warning('[CrossTabSync] 哨兵键写入失败: $e');
+      debugLog('[CrossTabSync] 哨兵键写入失败: $e');
     }
     // 2. 加速通道：BroadcastChannel 即时广播
     try {
       _channel.postMessage(payload.toJS);
     } catch (e) {
-      log.warning('[CrossTabSync] BroadcastChannel 广播失败: $e');
+      debugLog('[CrossTabSync] BroadcastChannel 广播失败: $e');
     }
   }
 
@@ -123,7 +123,7 @@ class CrossTabSessionSync {
       return;
     }
     if (key.endsWith(_tokenKeySuffix)) {
-      log.info('[CrossTabSync] 检测到 Token 存储键变化: $key');
+      debugLog('[CrossTabSync] 检测到 Token 存储键变化: $key');
       _handlePayload(
         jsonEncode({
           'action': event.newValue == null ? 'logout' : 'login',
@@ -183,7 +183,7 @@ class CrossTabSessionSync {
     if (signature == _lastHandled) return;
     _lastHandled = signature;
 
-    log.info(
+    debugLog(
       '[CrossTabSync] 收到其它标签页事件: $action, userId=$userId, '
       'ts=$issuedAt, source=$source',
     );

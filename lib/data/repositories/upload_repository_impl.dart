@@ -1,5 +1,5 @@
 import 'package:anoxia/domain/repositories/upload_repository.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:cross_file/cross_file.dart';
 
@@ -12,7 +12,7 @@ class UploadRepositoryImpl implements UploadRepository {
   Future<List<String>> uploadFiles(List<XFile> files) async {
     try {
       final fileNames = files.map((f) => f.name).join(', ');
-      log.info('[Upload] uploadFiles 开始上传: $fileNames');
+      debugLog('[Upload] uploadFiles 开始上传: $fileNames');
 
       final res = await DioClient().uploadFiles(
         '/file/uploadBatch',
@@ -21,15 +21,15 @@ class UploadRepositoryImpl implements UploadRepository {
 
       final rawList = res.data is Map ? res.data['data'] : res.data;
       if (rawList is! List) {
-        log.warning('[Upload] uploadFiles: 服务器返回空/无效响应 -> ${res.data}');
+        debugLog('[Upload] uploadFiles: 服务器返回空/无效响应 -> ${res.data}');
         return [];
       }
 
       final urls = rawList.map((e) => e.toString()).toList();
-      log.info('[Upload] uploadFiles 上传成功: ${urls.length} 个文件');
+      debugLog('[Upload] uploadFiles 上传成功: ${urls.length} 个文件');
       return urls;
     } catch (e, st) {
-      log.error('[Upload] uploadFiles 上传异常: $e', st);
+      debugLog('[Upload] uploadFiles 上传异常: $e', st);
       return [];
     }
   }

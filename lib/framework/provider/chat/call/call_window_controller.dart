@@ -1,7 +1,7 @@
-/// 通话窗口控制器
-///
-/// 管理桌面端通话独立窗口的创建、显示、设置同步和成员邀请。
-/// 基于 Riverpod 的 KeepAlive Provider，通过多窗口框架实现子窗口通信。
+// 通话窗口控制器
+//
+// 管理桌面端通话独立窗口的创建、显示、设置同步和成员邀请。
+// 基于 Riverpod 的 KeepAlive Provider，通过多窗口框架实现子窗口通信。
 import 'dart:convert';
 
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
@@ -11,7 +11,7 @@ import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 
-import '../../../logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'channel.dart';
 import 'call_initial_media.dart';
 
@@ -27,7 +27,7 @@ class CallWindowController extends _$CallWindowController {
   WindowController? build() {
     Channel.callChannel.setMethodCallHandler((call) async {
       if (call.method == 'on_call_window_close') {
-        log.info('收到窗口关闭');
+        debugLog('收到窗口关闭');
         state = null;
       } else if (call.method == 'invite_call_members') {
         _sendMemberInvites(Map<String, dynamic>.from(call.arguments as Map));
@@ -122,7 +122,7 @@ class CallWindowController extends _$CallWindowController {
     if (state == null) return;
 
     try {
-      log.info('调用Call窗口设置: $payload');
+      debugLog('调用Call窗口设置: $payload');
       await Channel.callChannel.invokeMethod(
         Channel.callChannelMethod,
         payload,
@@ -130,7 +130,7 @@ class CallWindowController extends _$CallWindowController {
     } catch (e, st) {
       // The child engine may still be registering its handler, or may have
       // closed between the state check and this invocation.
-      log.warning('Call窗口设置同步失败，已忽略本次更新', e, st);
+      debugLog('Call窗口设置同步失败，已忽略本次更新', e, st);
     }
   }
 }

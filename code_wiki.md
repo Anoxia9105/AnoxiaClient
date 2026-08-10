@@ -97,15 +97,15 @@
 ```
 lib/
 ├── main.dart                    # 应用程序入口文件
-├── App.dart                     # 应用根组件
+├── app.dart                     # 应用根组件
 ├── gen/                         # 资源生成代码
 │   ├── assets.gen.dart          # 静态资源引用
 │   └── fonts.gen.dart           # 字体资源引用
 │
 ├── common/                      # 通用模块（工具、常量、基础组件）
 │   ├── constants/
-│   │   ├── API.dart             # API 接口地址常量
-│   │   └── StorageKeys.dart     # 存储键名常量
+│   │   ├── api.dart               # API 接口地址常量
+│   │   └── storage_keys.dart      # 存储键名常量
 │   ├── utils/
 │   │   ├── DateUtil.dart        # 日期时间工具类
 │   │   ├── Debouncer.dart       # 防抖工具类
@@ -209,8 +209,8 @@ lib/
 │   │   │   └── token_provider.dart
 │   │   ├── chat/                 # 聊天模块
 │   │   │   ├── call/             # 音视频通话
-│   │   │   │   ├── Channel.dart
-│   │   │   │   ├── LayoutMode.dart
+│   │   │   │   ├── channel.dart
+│   │   │   │   ├── layout_mode.dart
 │   │   │   │   ├── call_status_provider.dart
 │   │   │   │   ├── call_window_controller.dart
 │   │   │   │   ├── mobile_call_session_provider.dart
@@ -506,9 +506,9 @@ final ProviderContainer globalContainer = ProviderContainer();
 
 这样可以避免 `RoomController`、`ChatMessages`、`WsController` 等 keepAlive Provider 在多窗口之间共享单例状态，导致通话窗口污染主窗口当前聊天室、消息列表或媒体状态。子窗口需要的聊天室、通话、直播和 WebSocket 状态应在自己的组件树内按需构建。
 
-#### 3.1.2 App.dart
+#### 3.1.2 app.dart
 
-**文件路径**: `lib/App.dart`
+**文件路径**: `lib/app.dart`
 
 **职责描述**: 应用根组件，负责初始化系统事件服务、桌面端托盘/窗口管理、移动端角标监听、主题/多语言配置。
 
@@ -1186,7 +1186,7 @@ flutter run -d chrome      # Web
 
 ### 9.4 API 配置
 
-**文件路径**: `lib/common/constants/API.dart`
+**文件路径**: `lib/common/constants/api.dart`
 
 ```dart
 // 生产环境
@@ -1278,7 +1278,7 @@ Text('item_count').trplural('other', 10)
 
 ### 12.1 如何添加新的 API 接口？
 
-1. 在 `lib/common/constants/API.dart` 中添加接口常量
+1. 在 `lib/common/constants/api.dart` 中添加接口常量
 2. 在对应业务 Provider 中使用 `DioClient()` 调用
 
 ### 12.2 如何添加新的消息类型？

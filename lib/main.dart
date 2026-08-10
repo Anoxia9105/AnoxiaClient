@@ -31,7 +31,7 @@ import 'common/constants/api.dart';
 import 'common/utils/device_util.dart';
 import 'common/utils/sp_util.dart';
 import 'features/app/presentation/pages/error_page.dart';
-import 'framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'framework/network/dio_client.dart';
 import 'framework/network/token_manager.dart';
 import 'framework/local_cache/cache_providers.dart';
@@ -47,7 +47,7 @@ import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 
 /// 应用入口
 Future<void> main(List<String> args) async {
-  log.info('程序启动参数：$args');
+  debugLog('程序启动参数：$args');
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
@@ -62,18 +62,18 @@ Future<void> main(List<String> args) async {
     //
     // WASM 下错误处理链路（如 FlutterError.presentError → dumpErrorToConsole）
     // 可能触发二次异常 Platform._operatingSystem，把控制台刷屏并掩盖原始错误。
-    // 用 try-catch 包裹确保原始错误被完整记录到 Talker；不再调用
-    // presentError（会递归触发 onError），改由 ErrorWidget.builder + Talker
+    // 用 try-catch 包裹确保原始错误被完整记录到 debugLog；不再调用
+    // presentError（会递归触发 onError），改由 ErrorWidget.builder + debugLog
     // 控制台输出负责展示。
     FlutterError.onError = (FlutterErrorDetails details) {
       try {
-        log.error(
+        debugLog(
           'FlutterError: ${details.exceptionAsString()}',
           details.exception,
           details.stack,
         );
       } catch (_) {
-        // Talker 日志记录本身失败时，用 debugPrint 兜底（WASM 安全）
+        // debugLog 本身失败时，用 debugPrint 兜底（WASM 安全）
         debugPrint('FlutterError (log failed): ${details.exception}');
       }
     };
@@ -83,7 +83,7 @@ Future<void> main(List<String> args) async {
     // （ErrorPage），不再显示 Flutter 默认红屏。
     ErrorWidget.builder = (FlutterErrorDetails details) {
       try {
-        log.error(
+        debugLog(
           'Build 失败: ${details.exceptionAsString()}',
           details.exception,
           details.stack,
@@ -106,7 +106,7 @@ Future<void> main(List<String> args) async {
     // 捕获 Zone 外未处理的异步错误（返回 true 阻止默认处理，避免触发 Platform）
     PlatformDispatcher.instance.onError = (error, stack) {
       try {
-        log.error('未捕获异步错误', error, stack);
+        debugLog('未捕获异步错误', error, stack);
       } catch (_) {
         debugPrint('Async error: $error');
       }
@@ -134,7 +134,7 @@ Future<void> main(List<String> args) async {
       await runMainApp();
     }
   } catch (e, stack) {
-    log.error('应用启动失败', e, stack);
+    debugLog('应用启动失败', e, stack);
     // 启动失败兜底（显示错误页面）
     runApp(_buildErrorPage('应用启动失败：$e'));
   }
@@ -146,7 +146,7 @@ void _backgroundAsyncInit() {
       try {
         // 读包信息即使失败，也不影响用户进 App
         PackageInfo packageInfo = await PackageInfo.fromPlatform();
-        log.info('App Version: ${packageInfo.version}');
+        debugLog('App Version: ${packageInfo.version}');
 
         if (!DeviceUtil.isWeb) {
           // 查更新设置硬超时，防止启动阶段等待过久
@@ -158,14 +158,14 @@ void _backgroundAsyncInit() {
               .read(appUpdateCheckerProvider.notifier)
               .syncResult(updateInfo, currentVersion: packageInfo.version);
           if (updateInfo != null && updateInfo.forceUpdate) {
-            log.info('检测到强制更新，切换至更新页面');
+            debugLog('检测到强制更新，切换至更新页面');
             await runUpdateApp(updateInfo);
           }
         }
       } on TimeoutException {
-        log.warning('后台更新检查超时，已跳过本次检查');
+        debugLog('后台更新检查超时，已跳过本次检查');
       } catch (e) {
-        log.error('后台异步初始化异常: $e');
+        debugLog('后台异步初始化异常: $e');
       }
     }());
   });
@@ -189,7 +189,7 @@ Future<void> _handleDesktopWindows(List<String> args) async {
       await runMainApp();
     }
   } catch (e, stack) {
-    log.error('桌面窗口初始化失败', e, stack);
+    debugLog('桌面窗口初始化失败', e, stack);
     runApp(_buildErrorPage('窗口初始化失败：$e'));
   }
 }
@@ -236,7 +236,7 @@ void _installCrossTabSessionSync() {
     if (!shouldReload || reloadPending) return;
     reloadPending = true;
 
-    log.info(
+    debugLog(
       '[CrossTabSync] 检测到其它标签页${event.action.name}'
       '（userId=${event.userId}），清空共享缓存并重载页面',
     );
@@ -245,7 +245,7 @@ void _installCrossTabSessionSync() {
     try {
       await globalContainer.read(localDataSourceProvider).clearSessionCache();
     } catch (e, st) {
-      log.warning('[CrossTabSync] 清空本地会话缓存失败（忽略）: $e', e, st);
+      debugLog('[CrossTabSync] 清空本地会话缓存失败（忽略）: $e', e, st);
     }
     CrossTabSessionSync.instance.reload();
   });
@@ -256,7 +256,7 @@ Future<void> runMainApp() async {
   try {
     // 预加载全局 Token（主窗口核心逻辑）
     final token = await TokenManager.instance.getToken();
-    log.info('主窗口启动，Token available: ${token?.isNotEmpty == true}');
+    debugLog('主窗口启动，Token available: ${token?.isNotEmpty == true}');
     NotificationHelper().configure(
       onOpenRoom: (roomId) {
         globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
@@ -313,7 +313,7 @@ Future<void> runMainApp() async {
     final startLocale = _resolveStartLocale();
     DioClient().setLocale(startLocale);
 
-    log.info('''
+    debugLog('''
  _______
 < 主窗口启动 >
  -------
@@ -342,7 +342,7 @@ Future<void> runMainApp() async {
       ),
     );
   } catch (e, stack) {
-    log.error('主窗口启动失败', e, stack);
+    debugLog('主窗口启动失败', e, stack);
     runApp(_buildErrorPage('主窗口启动失败：$e'));
   }
 }
@@ -350,8 +350,8 @@ Future<void> runMainApp() async {
 /// 启动子窗口（继承全局容器 + 适配子窗口配置）
 Future<void> runSubApp(WindowController controller) async {
   try {
-    log.info('子窗口启动，参数：${controller.arguments}');
-    log.info('''
+    debugLog('子窗口启动，参数：${controller.arguments}');
+    debugLog('''
  _______
 < 子窗口启动 >
  -------
@@ -387,7 +387,7 @@ Future<void> runSubApp(WindowController controller) async {
       ),
     );
   } catch (e, stack) {
-    log.error('子窗口启动失败', e, stack);
+    debugLog('子窗口启动失败', e, stack);
     runApp(_buildErrorPage('子窗口启动失败：$e'));
   }
 }
@@ -420,7 +420,7 @@ Future<ProviderContainer> _createIsolatedWindowContainer() async {
 /// 启动更新窗口
 Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
   try {
-    log.info('''
+    debugLog('''
  _______
 < 更新启动 >
  -------
@@ -447,7 +447,7 @@ Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
       ),
     );
   } catch (e, stack) {
-    log.error('更新窗口启动失败', e, stack);
+    debugLog('更新窗口启动失败', e, stack);
     runApp(_buildErrorPage('更新窗口启动失败：$e'));
   }
 }
@@ -589,7 +589,7 @@ Future<AppUpdateInfo?> _checkUpdate() async {
       return remoteData;
     }
   } catch (e) {
-    log.error('检查更新失败: $e');
+    debugLog('检查更新失败: $e');
   }
   return null;
 }

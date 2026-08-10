@@ -1,7 +1,7 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
-import 'package:anoxia/framework/logs/talker.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -52,7 +52,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     super.initState();
     windowManager.setPreventClose(true);
     windowManager.addListener(this);
-    log.info('初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}');
+    debugLog('初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}');
 
     final args = jsonDecode(widget.controller.arguments);
     _themeIndex = args['themeIndex'] ?? 0;
@@ -74,7 +74,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     ref.read(roomTokenProvider(_roomId));
 
     Channel.callChannel.setMethodCallHandler((call) async {
-      log.info('CAll|>>> 收到数据$call');
+      debugLog('CAll|>>> 收到数据$call');
       if (call.method == Channel.callChannelMethod) {
         final data = call.arguments as Map;
         setState(() {
@@ -98,7 +98,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
       try {
         await Channel.callChannel.invokeMethod('on_call_window_close');
       } catch (e) {
-        log.error('发送关闭消息失败', e);
+        debugLog('发送关闭消息失败', e);
       }
       await windowManager.setPreventClose(false);
 
@@ -139,7 +139,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
               ? const Center(child: CircularProgressIndicator())
               : tokenAsync.when(
                   data: (token) {
-                    log.info('Token 获取成功（开始启动通话）: $token');
+                    debugLog('Token 获取成功（开始启动通话）: $token');
                     return CallRoomPage(token: token);
                   },
                   error: (err, stack) => Center(

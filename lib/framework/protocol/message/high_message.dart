@@ -1,3 +1,6 @@
+// ignore_for_file: constant_identifier_names
+// 旧协议常量名（TYPING_STATUS/CALL_* 等）保留为兼容别名，见下方「旧名称别名」块。
+
 import '../i_packet.dart';
 
 /// 高优先级消息类型枚举（V5 协议对齐）

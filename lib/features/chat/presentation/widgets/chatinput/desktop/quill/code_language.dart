@@ -1,7 +1,7 @@
-/// Quill 编辑器代码语言定义与检测工具。
-///
-/// 提供代码语言数据模型和基于正则的代码语言自动检测，
-/// 不依赖 highlight.js 的 auto-detect 以避免安全风险。
+// Quill 编辑器代码语言定义与检测工具。
+//
+// 提供代码语言数据模型和基于正则的代码语言自动检测，
+// 不依赖 highlight.js 的 auto-detect 以避免安全风险。
 import 'dart:convert';
 
 import 'package:flutter_quill/flutter_quill.dart';

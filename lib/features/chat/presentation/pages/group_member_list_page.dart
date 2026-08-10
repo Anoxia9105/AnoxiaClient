@@ -1,6 +1,6 @@
-/// 群组成员列表页面，展示群组中的所有成员信息。
-///
-/// 进入页面时自动同步成员列表，点击成员可跳转至联系人详情页。
+// 群组成员列表页面，展示群组中的所有成员信息。
+//
+// 进入页面时自动同步成员列表，点击成员可跳转至联系人详情页。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
@@ -142,7 +142,7 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
 
     // 成员还不是联系人时，展示群成员基础资料
     if (contact == null) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       await presentAdaptivePage(
         context,
         builder: (_) => MemberBasicInfoPage(member: member),
@@ -151,7 +151,7 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
     }
 
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     await presentAdaptivePage(
       context,

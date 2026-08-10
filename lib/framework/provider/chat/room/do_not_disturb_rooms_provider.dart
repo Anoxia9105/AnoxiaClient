@@ -1,6 +1,6 @@
-/// 免打扰房间管理
-///
-/// 维护免打扰房间 ID 集合，支持启用/禁用/切换免打扰状态，并持久化到本地存储。
+// 免打扰房间管理
+//
+// 维护免打扰房间 ID 集合，支持启用/禁用/切换免打扰状态，并持久化到本地存储。
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../common/utils/sp_util.dart';
