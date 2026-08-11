@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
@@ -177,6 +178,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   .setTheme(compatibilityIndex);
             },
           ),
+          // 背景图（皮肤）功能：仅桌面端和 Web 端提供
+          if (DeviceUtil.isDesktop(context) || DeviceUtil.isWeb)
+            const SettingsBackgroundSection(),
           SettingsLanguageSection(
             selectedLanguageCode: context.locale.languageCode,
             isDesktop: DeviceUtil.isDesktop(context),

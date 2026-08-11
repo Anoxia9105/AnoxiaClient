@@ -1,10 +1,14 @@
-﻿import 'package:flutter/foundation.dart';
+﻿import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' as legacy;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../gen/fonts.gen.dart';
+import '../../../common/utils/file_util.dart';
 import '../../../common/utils/sp_util.dart';
 import '../../theme/app_theme.dart';
 
@@ -70,7 +74,7 @@ const List<AppFontOption> appFontOptions = [
 ];
 
 /// 全局字体状态（持久化）
-class AppFontController extends StateNotifier<String> {
+class AppFontController extends legacy.StateNotifier<String> {
   static const String _storageKey = 'app_font_key';
 
   AppFontController() : super(_load());
@@ -97,11 +101,11 @@ class AppFontController extends StateNotifier<String> {
   }
 }
 
-final appFontProvider = StateNotifierProvider<AppFontController, String>((ref) {
+final appFontProvider = legacy.StateNotifierProvider<AppFontController, String>((ref) {
   return AppFontController();
 });
 
-class ThemeModeController extends StateNotifier<Brightness> {
+class ThemeModeController extends legacy.StateNotifier<Brightness> {
   static const String _storageKey = 'theme_brightness';
 
   ThemeModeController() : super(_load());
@@ -122,11 +126,11 @@ class ThemeModeController extends StateNotifier<Brightness> {
 }
 
 final themeModeProvider =
-    StateNotifierProvider<ThemeModeController, Brightness>(
+    legacy.StateNotifierProvider<ThemeModeController, Brightness>(
       (ref) => ThemeModeController(),
     );
 
-class ThemeAccentController extends StateNotifier<int> {
+class ThemeAccentController extends legacy.StateNotifier<int> {
   static const String _storageKey = 'theme_accent_index';
 
   ThemeAccentController() : super(_load());
@@ -146,7 +150,7 @@ class ThemeAccentController extends StateNotifier<int> {
   }
 }
 
-final themeAccentProvider = StateNotifierProvider<ThemeAccentController, int>(
+final themeAccentProvider = legacy.StateNotifierProvider<ThemeAccentController, int>(
   (ref) => ThemeAccentController(),
 );
 
@@ -199,6 +203,71 @@ ThemeData appTheme(Ref ref) {
     primaryTextTheme: primaryTextTheme,
   );
 }
+
+/// 背景图状态（持久化）
+///
+/// 存储值为文件路径（原生端）或 data URI（Web 端）。
+/// null 表示未设置背景图。
+class BackgroundImageController extends legacy.StateNotifier<String?> {
+  static const String _storageKey = 'bg_image_path';
+
+  BackgroundImageController() : super(_load());
+
+  static String? _load() {
+    return SPUtil.instance.get(_storageKey);
+  }
+
+  /// 从图片字节设置背景图
+  Future<void> setFromBytes(Uint8List bytes) async {
+    final ref = await FileUtil.saveBackgroundImage(bytes);
+    if (ref == null) return;
+    // 清除旧背景
+    if (state != null) {
+      await _deleteOld(state!);
+    }
+    state = ref;
+    await SPUtil.instance.set(_storageKey, ref);
+  }
+
+  /// 清除背景图
+  Future<void> clear() async {
+    if (state == null) return;
+    await _deleteOld(state!);
+    state = null;
+    await SPUtil.instance.delete(_storageKey);
+  }
+
+  Future<void> _deleteOld(String ref) async {
+    if (ref.startsWith('data:')) return;
+    await FileUtil.deleteBackgroundImageFile(ref);
+  }
+}
+
+final backgroundImageProvider =
+    legacy.StateNotifierProvider<BackgroundImageController, String?>(
+  (ref) => BackgroundImageController(),
+);
+
+/// 背景图 ImageProvider（供 AppScaffold 渲染用）
+///
+/// 原生端返回 [FileImage]，Web 端返回 [MemoryImage]，未设置返回 null。
+/// 注意：此 provider 仅在桌面/Web 端有意义，移动端不使用。
+final backgroundImageProvider2 = Provider<ImageProvider?>((ref) {
+  final path = ref.watch(backgroundImageProvider);
+  if (path == null) return null;
+  if (path.startsWith('data:')) {
+    try {
+      final base64Str = path.split(',').last;
+      return MemoryImage(base64Decode(base64Str));
+    } catch (_) {
+      return null;
+    }
+  }
+  if (kIsWeb) return null;
+  final file = File(path);
+  if (!file.existsSync()) return null;
+  return FileImage(file);
+});
 
 TextTheme _buildTextTheme(String fontKey, TextTheme baseTextTheme) {
   switch (fontKey) {

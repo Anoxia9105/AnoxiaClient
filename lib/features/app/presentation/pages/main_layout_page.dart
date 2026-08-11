@@ -128,7 +128,7 @@ class _DesktopContentCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 16, 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: cs.surface.withValues(alpha: 0.88),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: cs.outlineVariant.withValues(alpha: isDark ? 0.16 : 0.28),

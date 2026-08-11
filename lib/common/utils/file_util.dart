@@ -1,10 +1,12 @@
 ﻿import 'dart:io';
+import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/utils/string_util.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -187,6 +189,58 @@ class FileUtil {
         }
       }
     } catch (_) {}
+  }
+
+  /// 保存背景图到本地存储
+  ///
+  /// 原生端：保存图片文件到文档目录，返回文件路径。
+  /// Web 端：将图片压缩后转 base64 存入，返回 `data:image/jpeg;base64,...` URI。
+  static Future<String?> saveBackgroundImage(Uint8List bytes) async {
+    final compressed = compressImage(bytes);
+    if (kIsWeb) {
+      final base64Str = base64Encode(compressed);
+      return 'data:image/jpeg;base64,$base64Str';
+    }
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final bgDir = Directory('${dir.path}${Platform.pathSeparator}bg');
+      if (!await bgDir.exists()) {
+        await bgDir.create(recursive: true);
+      }
+      final file = File(
+          '${bgDir.path}${Platform.pathSeparator}background.jpg');
+      await file.writeAsBytes(compressed);
+      return file.path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 删除原生端背景图文件（Web 端无需操作）
+  static Future<void> deleteBackgroundImageFile(String path) async {
+    if (kIsWeb) return;
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
+  /// 压缩图片到合理尺寸（最长边 1920px，JPEG quality 70）
+  static Uint8List compressImage(Uint8List bytes) {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+    const maxDim = 1920;
+    var result = decoded;
+    if (decoded.width > maxDim || decoded.height > maxDim) {
+      if (decoded.width >= decoded.height) {
+        result = img.copyResize(decoded, width: maxDim);
+      } else {
+        result = img.copyResize(decoded, height: maxDim);
+      }
+    }
+    return Uint8List.fromList(img.encodeJpg(result, quality: 70));
   }
 
   /// 保存文件到下载目录（仅 Windows/macOS）

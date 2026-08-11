@@ -2,9 +2,11 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/hotkey_manager_shim.dart';
 
 /// 应用通用 Scaffold 组件
@@ -13,7 +15,7 @@ import 'package:anoxia/platform/shims/hotkey_manager_shim.dart';
 /// - 移动端：简洁的 Scaffold，无应用栏
 /// 提供全局快捷键（Ctrl/Cmd + K）触发全局搜索弹窗
 /// 使用渐变背景和系统状态栏样式适配，提升整体视觉一致性
-class AppScaffold extends StatefulWidget {
+class AppScaffold extends ConsumerStatefulWidget {
   final Widget body;
   final Widget? title;
   final Widget? bottomNavigationBar;
@@ -32,10 +34,10 @@ class AppScaffold extends StatefulWidget {
   });
 
   @override
-  State<AppScaffold> createState() => _AppScaffoldState();
+  ConsumerState<AppScaffold> createState() => _AppScaffoldState();
 }
 
-class _AppScaffoldState extends State<AppScaffold> {
+class _AppScaffoldState extends ConsumerState<AppScaffold> {
   // 定义全局快捷键：Ctrl + K (或 Mac 上的 Cmd + K)
   final HotKey _searchHotKey = HotKey(
     key: PhysicalKeyboardKey.keyK,
@@ -122,11 +124,28 @@ class _AppScaffoldState extends State<AppScaffold> {
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     );
 
+    final bgImage = ref.watch(backgroundImageProvider2);
+
+    BoxDecoration decoration;
+    if (bgImage != null) {
+      decoration = BoxDecoration(
+        image: DecorationImage(
+          image: bgImage,
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          opacity: 1.0,
+        ),
+      );
+    } else {
+      decoration = BoxDecoration(gradient: gradient);
+    }
+
     return Container(
-      decoration: BoxDecoration(gradient: gradient),
+      decoration: decoration,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: Scaffold(
+          backgroundColor: Colors.transparent,
           appBar: appBar,
           body: widget.body,
           bottomNavigationBar: widget.bottomNavigationBar,
