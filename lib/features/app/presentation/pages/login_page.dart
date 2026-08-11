@@ -267,11 +267,15 @@ class _LoginPageState extends ConsumerState<LoginPage>
       decoration: InputDecoration(
         hintText: 'login_page_account_or_email'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.never,
-        prefixIcon: HugeIcon(
-          icon: HugeIcons.strokeRoundedAt,
-          color: colorScheme.onSurfaceVariant,
-          size: 18,
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 12, right: 8),
+          child: HugeIcon(
+            icon: HugeIcons.strokeRoundedAt,
+            color: colorScheme.onSurfaceVariant,
+            size: 16,
+          ),
         ),
+        prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -301,17 +305,22 @@ class _LoginPageState extends ConsumerState<LoginPage>
       decoration: InputDecoration(
         hintText: 'login_page_password'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.never,
-        prefixIcon: HugeIcon(
-          icon: HugeIcons.strokeRoundedLock,
-          color: colorScheme.onSurfaceVariant,
-          size: 18,
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 12, right: 8),
+          child: HugeIcon(
+            icon: HugeIcons.strokeRoundedLock,
+            color: colorScheme.onSurfaceVariant,
+            size: 16,
+          ),
         ),
+        prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
         suffixIcon: IconButton(
           icon: HugeIcon(
             icon: _obscurePassword
                 ? HugeIcons.strokeRoundedViewOff
                 : HugeIcons.strokeRoundedView,
             color: colorScheme.onSurfaceVariant,
+            size: 16,
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
@@ -352,11 +361,16 @@ class _LoginPageState extends ConsumerState<LoginPage>
             ],
             decoration: InputDecoration(
               hintText: 'login_page_captcha'.tr(),
-              prefixIcon: HugeIcon(
-                icon: HugeIcons.strokeRoundedShield01,
-                color: colorScheme.onSurfaceVariant,
-                size: 18,
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 12, right: 8),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedShield01,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 16,
+                ),
               ),
+              prefixIconConstraints:
+                  const BoxConstraints.tightFor(width: 36, height: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -523,10 +537,11 @@ class _CaptchaImage extends ConsumerWidget {
                 color: colorScheme.surfaceContainerHigh,
                 child: InkWell(
                   onTap: () => ref.invalidate(getCaptchaProvider),
+                  mouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
                     width: 120,
-                    height: 40,
+                    height: 48,
                     child: Image.memory(
                       base64Decode(captcha.imgBase64),
                       fit: BoxFit.cover,
@@ -538,7 +553,7 @@ class _CaptchaImage extends ConsumerWidget {
           },
           loading: () => Container(
             width: 120,
-            height: 40,
+            height: 48,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(12),
@@ -552,7 +567,7 @@ class _CaptchaImage extends ConsumerWidget {
           ),
           error: (e, st) => Container(
             width: 120,
-            height: 40,
+            height: 48,
             decoration: BoxDecoration(
               color: colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(12),

@@ -29,8 +29,8 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
 /// 管理邮箱、图形验证码、邮箱验证码、新密码等输入框的控制器，
 /// 以及发送/验证/提交状态和倒计时逻辑。
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
-  /// 验证码容器高度，与默认输入框高度保持一致
-  static const double _captchaHeight = 56;
+  /// 验证码容器高度，与输入框高度保持一致（dense 主题默认 48）
+  static const double _captchaHeight = 48;
 
   final _emailCtrl = TextEditingController();
   final _captchaCtrl = TextEditingController();
@@ -234,6 +234,16 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           decoration: InputDecoration(
             labelText: 'login_page_forget_email'.tr(),
             hintText: 'login_page_forget_email'.tr(),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 12, right: 8),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedAt,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            prefixIconConstraints:
+                const BoxConstraints.tightFor(width: 36, height: 16),
           ),
           inputFormatters: [LengthLimitingTextInputFormatter(100)],
         ),
@@ -248,6 +258,16 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   decoration: InputDecoration(
                     labelText: 'login_page_captcha'.tr(),
                     hintText: 'login_page_captcha'.tr(),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 8),
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedShield01,
+                        size: 16,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    prefixIconConstraints:
+                        const BoxConstraints.tightFor(width: 36, height: 16),
                   ),
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(4),
@@ -271,6 +291,16 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   decoration: InputDecoration(
                     labelText: 'login_page_forget_email_code'.tr(),
                     hintText: 'login_page_forget_email_code'.tr(),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 8),
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedMailOpen01,
+                        size: 16,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    prefixIconConstraints:
+                        const BoxConstraints.tightFor(width: 36, height: 16),
                   ),
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(6),
@@ -368,10 +398,20 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     decoration: InputDecoration(
       labelText: label,
       hintText: label,
+      prefixIcon: Padding(
+        padding: const EdgeInsets.only(left: 12, right: 8),
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedLock,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
       suffixIcon: IconButton(
         onPressed: onToggle,
         icon: HugeIcon(
           icon: obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
+          size: 16,
         ),
       ),
     ),
@@ -405,6 +445,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       color: colorScheme.surfaceContainerHigh,
       child: InkWell(
         onTap: _loadCaptcha,
+        mouseCursor: SystemMouseCursors.click,
         child: SizedBox(
           width: 120,
           height: _captchaHeight,
@@ -419,6 +460,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Future<void> _loadCaptcha() async {
     try {
+      // getCaptchaProvider 是缓存型 provider，点击刷新前必须先失效，
+      // 否则 read 到的是缓存的旧验证码
+      ref.invalidate(getCaptchaProvider);
       final res = await ref.read(getCaptchaProvider.future);
       if (!mounted) return;
       setState(() {

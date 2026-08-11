@@ -194,3 +194,9 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
+  # 应用默认字体（桌面/移动端注册；Web 构建由 tool_build.ps1 自动剔除，
+  # Web 端强制使用浏览器系统字体）
+  fonts:
+    - family: HarmonyOS
+      fonts:
+        - asset: assets/fonts/HarmonyOS.ttf

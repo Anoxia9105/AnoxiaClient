@@ -76,15 +76,18 @@ class AppFontController extends StateNotifier<String> {
   AppFontController() : super(_load());
 
   static String _load() {
+    // 默认 HarmonyOS：字体已随应用打包，启动即可用，避免默认 Roboto
+    // （google_fonts 运行时 CDN 拉取，国内不可达）静默回退系统中文字体
+    // 导致粗细不一致；用户之前设置过的字体优先。
     final saved = SPUtil.instance.get(
       _storageKey,
-      defValue: AppFontKeys.roboto,
+      defValue: AppFontKeys.harmonyOS,
     );
 
     if (saved != null && appFontOptions.any((option) => option.key == saved)) {
       return saved;
     }
-    return AppFontKeys.roboto;
+    return AppFontKeys.harmonyOS;
   }
 
   void setFont(String fontKey) {

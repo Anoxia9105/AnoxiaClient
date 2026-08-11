@@ -309,13 +309,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         children: [field, const SizedBox(height: 10), button],
       );
     }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: field),
-        const SizedBox(width: 10),
-        button,
-      ],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: field),
+          const SizedBox(width: 10),
+          button,
+        ],
+      ),
     );
   }
 
@@ -423,7 +425,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ],
     decoration: InputDecoration(
       hintText: hint,
-      prefixIcon: HugeIcon(icon: icon),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.only(left: 12, right: 8),
+        child: HugeIcon(
+          icon: icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     ),
     validator: validator,
@@ -444,11 +454,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     autofillHints: const [AutofillHints.newPassword],
     decoration: InputDecoration(
       hintText: hint,
-      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedLock),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.only(left: 12, right: 8),
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedLock,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
       suffixIcon: IconButton(
         onPressed: onToggle,
         icon: HugeIcon(
           icon: obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
+          size: 16,
         ),
       ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -464,7 +483,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   );
 
 Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Expanded(
         child: _field(
@@ -483,11 +501,13 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
           .when(
             data: (captcha) => InkWell(
               onTap: _refreshCaptcha,
+              mouseCursor: SystemMouseCursors.click,
               borderRadius: BorderRadius.circular(12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: SizedBox(
                   width: isMobile ? 104 : 120,
+                  height: 48,
                   child: Image.memory(
                     base64Decode(captcha.imgBase64),
                     fit: BoxFit.cover,
@@ -515,6 +535,7 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
   Widget _captchaPlaceholder(Widget child, ColorScheme scheme, bool isMobile) =>
       SizedBox(
         width: isMobile ? 104 : 120,
+        height: 48,
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
