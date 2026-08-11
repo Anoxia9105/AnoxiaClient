@@ -270,6 +270,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         prefixIcon: HugeIcon(
           icon: HugeIcons.strokeRoundedAt,
           color: colorScheme.onSurfaceVariant,
+          size: 18,
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
@@ -303,6 +304,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         prefixIcon: HugeIcon(
           icon: HugeIcons.strokeRoundedLock,
           color: colorScheme.onSurfaceVariant,
+          size: 18,
         ),
         suffixIcon: IconButton(
           icon: HugeIcon(
@@ -353,6 +355,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               prefixIcon: HugeIcon(
                 icon: HugeIcons.strokeRoundedShield01,
                 color: colorScheme.onSurfaceVariant,
+                size: 18,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),

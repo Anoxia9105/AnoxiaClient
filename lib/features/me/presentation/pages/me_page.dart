@@ -79,7 +79,7 @@ class _MyPageState extends ConsumerState<MyPage> {
         centerTitle: true,
         title: Text('me_page_title'.tr()),
       ),
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: authAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => Center(child: Text('chat_load_failed'.tr())),

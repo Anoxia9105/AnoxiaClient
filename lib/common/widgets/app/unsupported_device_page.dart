@@ -44,7 +44,7 @@ class UnsupportedDevicePage extends StatelessWidget {
                     ),
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedSmartPhone01,
-                      size: 38,
+                      size: 24,
                       color: cs.onPrimaryContainer,
                     ),
                   ),

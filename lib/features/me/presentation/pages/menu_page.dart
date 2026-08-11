@@ -337,7 +337,7 @@ class MenuPage extends ConsumerWidget {
             ? HugeIcons.strokeRoundedMoon02
             : HugeIcons.strokeRoundedSun03,
         color: Colors.white.withValues(alpha: 0.85),
-        size: 21,
+        size: 18,
       ),
       title: Text(
         'sidebar_dark_mode'.tr(),

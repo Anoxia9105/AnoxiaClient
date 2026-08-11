@@ -150,7 +150,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedLockPassword),
+        prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedLockPassword, size: 16),
       ),
     );
   }

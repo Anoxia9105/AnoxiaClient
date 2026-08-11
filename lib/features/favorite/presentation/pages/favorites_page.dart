@@ -452,7 +452,7 @@ class _FavoriteListPanel extends StatelessWidget {
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedBookmark01,
                       color: cs.primary,
-                      size: 20,
+                      size: 18,
                     ),
                   ),
                   const SizedBox(width: 10),

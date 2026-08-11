@@ -79,23 +79,27 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
                 top: bubbleTop,
                 child: Material(
                   color: Colors.transparent,
-                  child: BubbleWidget(
-                    arrowDirection: AxisDirection.up,
-                    arrowOffset: arrowOffset,
-                    backgroundColor: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    shadows: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    border: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                      width: 0.5,
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: colorScheme,
                     ),
-                    contentBuilder: (ctx) => Container(
+                    child: BubbleWidget(
+                      arrowDirection: AxisDirection.up,
+                      arrowOffset: arrowOffset,
+                      backgroundColor: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      shadows: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        width: 0.5,
+                      ),
+                      contentBuilder: (ctx) => Container(
                       // 宽度自适应最长文案，所有菜单项等宽、内容统一居中
                       width: menuWidth,
                       padding: const EdgeInsets.symmetric(
@@ -132,6 +136,7 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
                 ),
               ),
             ],

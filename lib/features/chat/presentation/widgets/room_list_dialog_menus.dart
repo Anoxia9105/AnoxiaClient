@@ -58,7 +58,7 @@ class RoomListDialogMenus {
           child: BubbleWidget(
             arrowDirection: AxisDirection.up,
             // 气泡宽度随文案自适应，移动端箭头偏移跟随宽度，保持指向右上角按钮
-            arrowOffset: isMobile ? menuWidth + 34 : 25,
+            arrowOffset: isMobile ? menuWidth - 20 : 25,
             backgroundColor: Theme.of(context).colorScheme.surface,
             // 1. 增加精致圆角与柔和阴影
             borderRadius: BorderRadius.circular(10),
