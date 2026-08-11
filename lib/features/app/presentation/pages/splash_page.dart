@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
+import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -185,6 +186,25 @@ class _SplashPageState extends ConsumerState<SplashPage>
                                   color: primaryColor.withValues(alpha: 0.65),
                                   borderRadius: BorderRadius.circular(2),
                                 ),
+                              ),
+                              const SizedBox(height: 16),
+                              Builder(
+                                builder: (context) {
+                                  final versionAsync = ref.watch(appVersionProvider);
+                                  return versionAsync.maybeWhen(
+                                    data: (version) => Text(
+                                      'v$version',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        fontSize: 11,
+                                        letterSpacing: 0.5,
+                                        color: theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    orElse: () => const SizedBox.shrink(),
+                                  );
+                                },
                               ),
                             ],
                           ),
