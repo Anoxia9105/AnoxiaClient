@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -29,7 +30,7 @@ class ContactRecommendDialog extends ConsumerWidget {
               onPressed: () => ref
                   .read(roomListServiceProvider.notifier)
                   .refresh(silent: false),
-              icon: const Icon(Icons.refresh),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
               label: Text('contact_recommend_load_failed'.tr()),
             ),
           ),

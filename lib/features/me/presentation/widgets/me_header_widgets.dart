@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -78,11 +79,11 @@ class MeProfileCard extends StatelessWidget {
                     _Chip(icon: _sexIcon(user.sex), text: _sexText(user.sex)),
                     if (user.email.trim().isNotEmpty)
                       _Chip(
-                        icon: Icons.alternate_email_rounded,
+                        icon: HugeIcons.strokeRoundedAt,
                         text: user.email,
                       ),
                     if (user.phoneNumber.trim().isNotEmpty)
-                      _Chip(icon: Icons.phone_outlined, text: user.phoneNumber),
+                      _Chip(icon: HugeIcons.strokeRoundedCall, text: user.phoneNumber),
                   ],
                 ),
               ],
@@ -104,20 +105,20 @@ class MeProfileCard extends StatelessWidget {
     }
   }
 
-  IconData _sexIcon(String sex) {
+  List<List<dynamic>> _sexIcon(String sex) {
     switch (sex) {
       case '0':
-        return Icons.male_rounded;
+        return HugeIcons.strokeRoundedMaleSymbol;
       case '1':
-        return Icons.female_rounded;
+        return HugeIcons.strokeRoundedFemaleSymbol;
       default:
-        return Icons.person_outline_rounded;
+        return HugeIcons.strokeRoundedUser;
     }
   }
 }
 
 class _Chip extends StatelessWidget {
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final String text;
 
   const _Chip({required this.icon, required this.text});
@@ -134,7 +135,7 @@ class _Chip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.9)),
+          HugeIcon(icon: icon, size: 12, color: Colors.white.withValues(alpha: 0.9)),
           const SizedBox(width: 5),
           Text(
             text,
@@ -186,7 +187,7 @@ class MeTabSwitcher extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.person_outline_rounded, size: 16),
+                const HugeIcon(icon: HugeIcons.strokeRoundedUser, size: 16),
                 const SizedBox(width: 6),
                 Text('me_profile_edit_title'.tr()),
               ],
@@ -196,7 +197,7 @@ class MeTabSwitcher extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.lock_outline_rounded, size: 16),
+                const HugeIcon(icon: HugeIcons.strokeRoundedLock, size: 16),
                 const SizedBox(width: 6),
                 Text('me_password_title'.tr()),
               ],

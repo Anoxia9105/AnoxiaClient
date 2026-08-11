@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/provider/chat/sticker/custom_sticker_controller.dart';
@@ -6,7 +7,6 @@ import 'package:anoxia/framework/provider/chat/sticker/sticker_packs_provider.da
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
@@ -294,7 +294,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
                 shape: BoxShape.circle,
                 border: Border.all(color: scheme.surface, width: 1.5),
               ),
-              child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
+              child: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 12, color: Colors.white),
             ),
           ),
         ),

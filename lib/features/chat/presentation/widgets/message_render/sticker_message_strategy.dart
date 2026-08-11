@@ -7,6 +7,7 @@
 library;
 
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
@@ -59,8 +60,8 @@ class StickerMessageStrategy extends MessageRenderStrategy {
           borderRadius: BorderRadius.circular(8),
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
         ),
-        child: Icon(
-          Icons.broken_image_outlined,
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedImageNotFound01,
           color: Theme.of(context).colorScheme.outline,
         ),
       ),

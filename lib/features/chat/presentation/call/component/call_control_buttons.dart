@@ -1,9 +1,9 @@
 ﻿import 'package:anoxia/common/widgets/toast.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/component/device_menu.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 构建分裂按钮（左侧功能按钮 + 右侧下拉箭头）
 ///
@@ -61,7 +61,7 @@ Widget buildSplitButton({
                 onTap: onArrowTap,
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: Icon(Icons.keyboard_arrow_down_rounded, size: 14),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, size: 14),
                 ),
               ),
             ),

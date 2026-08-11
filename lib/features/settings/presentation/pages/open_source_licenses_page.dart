@@ -1,4 +1,5 @@
 import 'package:anoxia/oss_licenses.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -98,8 +99,8 @@ class OpenSourceLicensesPage extends StatelessWidget {
                           const SizedBox(height: 6),
                           Align(
                             alignment: Alignment.centerRight,
-                            child: Icon(
-                              Icons.chevron_right_rounded,
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedArrowRight01,
                               color: Theme.of(
                                 context,
                               ).colorScheme.onSurfaceVariant,

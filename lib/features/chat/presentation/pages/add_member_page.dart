@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -64,8 +65,8 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                       color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      Icons.group,
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedUserGroup,
                       color: colorScheme.onPrimary,
                       size: 20,
                     ),

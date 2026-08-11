@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
@@ -11,7 +12,6 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 聊天上下文深度搜索页面
 /// 功能：显示搜索结果列表，自动定位到匹配消息，高亮显示匹配范围
@@ -331,8 +331,8 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: Icon(
-                        Icons.broken_image_outlined,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedImageNotFound01,
                         color: colorScheme.outline,
                         size: 32,
                       ),
@@ -505,16 +505,16 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                 hintStyle: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.outline,
                 ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
+                prefixIcon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedSearch02,
                   color: colorScheme.outline,
                   size: 20,
                 ),
                 suffixIcon:
                     _searchController.text.isNotEmpty && !searchState.isLoading
                     ? IconButton(
-                        icon: Icon(
-                          Icons.clear_rounded,
+                        icon: HugeIcon(
+                          icon: HugeIcons.strokeRoundedCancel01,
                           color: colorScheme.outline,
                           size: 18,
                         ),

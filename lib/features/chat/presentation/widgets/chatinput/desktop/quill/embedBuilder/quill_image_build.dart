@@ -1,4 +1,5 @@
 ﻿import 'dart:convert';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:io';
 
 import 'package:anoxia/framework/domain/upload_entry.dart';
@@ -62,7 +63,7 @@ class QuillImageBuild implements EmbedBuilder {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.cloud_off, color: Colors.red, size: 32),
+                  const HugeIcon(icon: HugeIcons.strokeRoundedCloudOff, color: Colors.red, size: 32),
                   Text(
                     'upload_failed'.tr(),
                     style: const TextStyle(
@@ -93,14 +94,14 @@ class QuillImageBuild implements EmbedBuilder {
         bytes,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const Center(
-          child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 36, color: Colors.grey),
         ),
       );
     }
 
     if (url == null || url.isEmpty) {
       return const Center(
-        child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+        child: HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 36, color: Colors.grey),
       );
     }
 
@@ -112,7 +113,7 @@ class QuillImageBuild implements EmbedBuilder {
         url,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const Center(
-          child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 36, color: Colors.grey),
         ),
       );
     }

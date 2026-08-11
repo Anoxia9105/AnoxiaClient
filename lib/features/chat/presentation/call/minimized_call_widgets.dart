@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/features/chat/presentation/call/mobile/mobile_call_timer.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/mobile_participant_surface.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +32,8 @@ class MinimizedAudioCall extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.1),
             ),
-            child: const Icon(
-              Icons.call_rounded,
+            child: const HugeIcon(
+              icon: HugeIcons.strokeRoundedCall02,
               color: Colors.white,
               size: 25,
             ),
@@ -87,7 +88,7 @@ class MinimizedVideoCall extends StatelessWidget {
       return const ColoredBox(
         color: Color(0xFF171A22),
         child: Center(
-          child: Icon(Icons.videocam_off_rounded, color: Colors.white54),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, color: Colors.white54),
         ),
       );
     }

@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/desktop/connection_status_tag.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/common/widgets/desktop/header_search_entry.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
@@ -6,7 +7,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import '../../../gen/assets.gen.dart';
 

@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/date_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
@@ -8,7 +9,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../framework/provider/chat/room/room_member_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';

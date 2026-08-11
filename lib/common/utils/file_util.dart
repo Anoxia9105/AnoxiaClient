@@ -1,4 +1,5 @@
 ﻿import 'dart:io';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/utils/string_util.dart';
 import 'package:file_picker/file_picker.dart';
@@ -85,30 +86,30 @@ class FileUtil {
         : p.extension(fileName).toLowerCase().replaceFirst('.', '');
     if (nameExtension.isNotEmpty) ext = nameExtension;
 
-    IconData icon;
+    List<List<dynamic>> icon;
     Color color;
 
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp']
         .contains(ext)) {
-      icon = Icons.image_rounded;
+      icon = HugeIcons.strokeRoundedImage01;
       color = Colors.blueAccent;
     } else if (['mp4', 'mov', 'avi', 'mkv', 'webm'].contains(ext)) {
-      icon = Icons.movie_rounded;
+      icon = HugeIcons.strokeRoundedFilmRoll01;
       color = Colors.deepPurpleAccent;
     } else if (['mp3', 'wav', 'aac', 'flac', 'ogg'].contains(ext)) {
-      icon = Icons.audiotrack_rounded;
+      icon = HugeIcons.strokeRoundedMusicNote01;
       color = Colors.green;
     } else if (['pdf'].contains(ext)) {
-      icon = Icons.picture_as_pdf_rounded;
+      icon = HugeIcons.strokeRoundedPdf01;
       color = Colors.redAccent;
     } else if (['doc', 'docx', 'odt', 'rtf', 'txt', 'md'].contains(ext)) {
-      icon = Icons.description_rounded;
+      icon = HugeIcons.strokeRoundedFile01;
       color = Colors.indigo;
     } else if (['xls', 'xlsx', 'csv', 'ods'].contains(ext)) {
-      icon = Icons.table_chart_rounded;
+      icon = HugeIcons.strokeRoundedTable01;
       color = Colors.teal;
     } else if (['ppt', 'pptx', 'odp'].contains(ext)) {
-      icon = Icons.slideshow_rounded;
+      icon = HugeIcons.strokeRoundedPresentation01;
       color = Colors.deepOrange;
     } else if ([
       'dart',
@@ -132,20 +133,20 @@ class FileUtil {
       'yaml',
       'yml',
     ].contains(ext)) {
-      icon = Icons.code_rounded;
+      icon = HugeIcons.strokeRoundedCode;
       color = Colors.cyan.shade700;
     } else if (['zip', 'rar', '7z', 'tar', 'gz'].contains(ext)) {
-      icon = Icons.folder_zip_rounded;
+      icon = HugeIcons.strokeRoundedFolderZip;
       color = Colors.orange;
     } else if (ext == 'error') {
-      icon = Icons.error_outline_rounded;
+      icon = HugeIcons.strokeRoundedAlertCircle;
       color = Colors.redAccent;
     } else {
-      icon = Icons.insert_drive_file_rounded;
+      icon = HugeIcons.strokeRoundedFile02;
       color = Colors.blueGrey;
     }
 
-    return Icon(icon, size: 24, color: color);
+    return HugeIcon(icon: icon, size: 24, color: color);
   }
 
   /// 判断是否为图片文件

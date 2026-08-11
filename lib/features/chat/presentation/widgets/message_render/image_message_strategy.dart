@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -70,7 +71,7 @@ class ImageMessageStrategy extends MessageRenderStrategy {
               placeholder: (context, url) =>
                   _buildPlaceholder(displayWidth, displayHeight),
               errorWidget: (context, url, error) =>
-                  const Icon(Icons.broken_image, size: 50),
+                  const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 50),
               filterQuality: FilterQuality.medium,
             ),
           ),
@@ -116,7 +117,7 @@ class ImageMessageStrategy extends MessageRenderStrategy {
                 placeholder: (context, url) =>
                     _buildPlaceholder(gridSize, gridSize),
                 errorWidget: (context, url, error) =>
-                    const Icon(Icons.broken_image, size: 30),
+                    const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 30),
                 filterQuality: FilterQuality.medium,
               ),
             ),

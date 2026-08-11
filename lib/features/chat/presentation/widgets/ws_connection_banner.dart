@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/provider/ws/ws_state.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -24,13 +25,13 @@ class WsConnectionBanner extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final (icon, text, bg, fg) = switch (state.status) {
       WsStatus.connecting => (
-        Icons.wifi_protected_setup_rounded,
+        HugeIcons.strokeRoundedWifiConnected01,
         'appbar_connecting'.tr(),
         cs.primaryContainer.withValues(alpha: .7),
         cs.primary,
       ),
       WsStatus.error => (
-        Icons.error_outline_rounded,
+        HugeIcons.strokeRoundedAlertCircle,
         state.error?.trim().isNotEmpty == true
             ? 'appbar_connection_lost'.tr()
             : 'appbar_connection_lost'.tr(),
@@ -38,13 +39,13 @@ class WsConnectionBanner extends StatelessWidget {
         cs.error,
       ),
       WsStatus.disconnected => (
-        Icons.portable_wifi_off_rounded,
+        HugeIcons.strokeRoundedWifiOff02,
         'appbar_connection_lost'.tr(),
         cs.errorContainer.withValues(alpha: .85),
         cs.error,
       ),
       WsStatus.connected => (
-        Icons.check,
+        HugeIcons.strokeRoundedTick01,
         '',
         Colors.transparent,
         Colors.transparent,
@@ -62,7 +63,7 @@ class WsConnectionBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: fg),
+          HugeIcon(icon: icon, size: 16, color: fg),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

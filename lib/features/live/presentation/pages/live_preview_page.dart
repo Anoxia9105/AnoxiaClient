@@ -3,6 +3,7 @@
 // 在正式开播前提供预览和配置界面，用户可以选择摄像头或屏幕共享源、
 // 设置直播可见性，并通过预览确认画面效果后再开播。
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/component/window_screen_select_dialog.dart';
@@ -211,7 +212,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
             ? null
             : IconButton(
                 onPressed: () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.arrow_back),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
               ),
         automaticallyImplyLeading: !isDesktop,
         flexibleSpace: isDesktop
@@ -222,12 +223,12 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
             IconButton(
               tooltip: 'call_minimize_tooltip'.tr(),
               onPressed: () => windowManager.minimize(),
-              icon: const Icon(Icons.minimize),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedMinimize01),
             ),
             IconButton(
               tooltip: 'call_close_tooltip'.tr(),
               onPressed: () => windowManager.close(),
-              icon: const Icon(Icons.close),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
             ),
           ],
         ],
@@ -275,12 +276,12 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                           segments: [
                             ButtonSegment(
                               value: LiveVisibility.public,
-                              icon: const Icon(Icons.public),
+                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedGlobe02),
                               label: Text('live_visibility_public'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveVisibility.private,
-                              icon: const Icon(Icons.lock_outline),
+                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedLock),
                               label: Text('live_visibility_private'.tr()),
                             ),
                           ],
@@ -298,12 +299,12 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                           segments: [
                             ButtonSegment(
                               value: LiveSource.camera,
-                              icon: const Icon(Icons.videocam),
+                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedVideo01),
                               label: Text('live_source_camera'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveSource.screen,
-                              icon: const Icon(Icons.screen_share),
+                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
                               label: Text('live_source_screen_short'.tr()),
                             ),
                           ],
@@ -337,7 +338,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.live_tv),
+                            : const HugeIcon(icon: HugeIcons.strokeRoundedLiveStreaming01),
                         label: Text(_starting ? 'live_starting'.tr() : 'live_start_now'.tr()),
                       ),
                     ],
@@ -365,7 +366,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.videocam_off, color: Colors.white70, size: 64),
+              const HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, color: Colors.white70, size: 64),
               const SizedBox(height: 12),
               Text(
                 '预览启动失败：$_error',
@@ -386,7 +387,7 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
     final track = _previewTrack;
     if (track == null) {
       return const Center(
-        child: Icon(Icons.videocam_off, color: Colors.white70, size: 64),
+        child: HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, color: Colors.white70, size: 64),
       );
     }
 

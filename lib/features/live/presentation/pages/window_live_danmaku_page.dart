@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -277,7 +278,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
             IconButton(
               tooltip: 'live_reconnect_tooltip'.tr(),
               onPressed: _loading ? null : _connect,
-              icon: const Icon(Icons.refresh),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
             ),
           ],
         ),
@@ -360,7 +361,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
                 const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: _sendMessage,
-                  icon: const Icon(Icons.send),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedSent),
                   label: Text('toolbar_send'.tr()),
                 ),
               ],

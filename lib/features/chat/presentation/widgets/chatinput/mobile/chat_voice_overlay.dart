@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/voice_record_controller.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -53,8 +54,8 @@ class _VoiceIndicator extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            willCancel ? Icons.undo_rounded : Icons.mic_rounded,
+          HugeIcon(
+            icon: willCancel ? HugeIcons.strokeRoundedUndo : HugeIcons.strokeRoundedMic01,
             size: 48,
             color: willCancel
                 ? Theme.of(context).colorScheme.error

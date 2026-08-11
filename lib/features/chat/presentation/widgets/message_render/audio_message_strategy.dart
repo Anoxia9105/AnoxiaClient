@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -124,9 +125,11 @@ class _AudioBubbleState extends State<_AudioBubble> {
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              child: Icon(
+              child: HugeIcon(
                 key: ValueKey(isPlaying),
-                isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                icon: isPlaying
+                    ? HugeIcons.strokeRoundedPauseCircle
+                    : HugeIcons.strokeRoundedPlay,
                 color: widget.textColor,
                 size: 22,
               ),

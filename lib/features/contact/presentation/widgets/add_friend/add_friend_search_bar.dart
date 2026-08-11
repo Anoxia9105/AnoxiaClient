@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
 /// 添加好友搜索栏组件
@@ -50,15 +51,15 @@ class AddFriendSearchBar extends StatelessWidget {
                     color: colorScheme.outline,
                     fontSize: 14,
                   ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
+                  prefixIcon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedSearch02,
                     color: colorScheme.primary,
                     size: 20,
                   ),
                   suffixIcon: controller.text.isNotEmpty
                       ? IconButton(
-                          icon: Icon(
-                            Icons.clear_rounded,
+                          icon: HugeIcon(
+                            icon: HugeIcons.strokeRoundedCancel01,
                             color: colorScheme.outline,
                             size: 18,
                           ),
@@ -92,7 +93,7 @@ class AddFriendSearchBar extends StatelessWidget {
                         dimension: 17,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.arrow_forward_rounded, size: 20),
+                    : const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20),
               ),
             ),
           ],

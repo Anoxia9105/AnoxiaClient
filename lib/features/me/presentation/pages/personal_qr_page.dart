@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -246,7 +247,7 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
                                       color: cs.onSecondaryContainer,
                                     ),
                                   )
-                                : const Icon(Icons.save_alt_rounded, size: 18),
+                                : const HugeIcon(icon: HugeIcons.strokeRoundedSave, size: 18),
                             label: Text('me_qr_save_image'.tr()),
                           ),
                         ),
@@ -264,7 +265,7 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
                                     color: cs.onPrimary,
                                   ),
                                 )
-                              : const Icon(Icons.share_outlined, size: 18),
+                              : const HugeIcon(icon: HugeIcons.strokeRoundedShare01, size: 18),
                           label: Text('me_qr_share_image'.tr()),
                         ),
                       ),

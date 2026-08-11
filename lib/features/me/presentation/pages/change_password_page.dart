@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/constants/api.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -80,7 +81,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.lock_reset_rounded, color: cs.primary),
+          HugeIcon(icon: HugeIcons.strokeRoundedLockSync01, color: cs.primary),
           const SizedBox(width: 10),
           Text('me_password_title'.tr()),
         ],
@@ -127,7 +128,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   dimension: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.lock_reset_rounded, size: 18),
+              : const HugeIcon(icon: HugeIcons.strokeRoundedLockSync01, size: 18),
           label: Text('me_password_submit'.tr()),
         ),
       ],
@@ -149,7 +150,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        prefixIcon: const Icon(Icons.password_rounded),
+        prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedLockPassword),
       ),
     );
   }
@@ -238,7 +239,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         color: cs.onSecondaryContainer,
                       ),
                     )
-                  : const Icon(Icons.lock_reset_outlined, size: 18),
+                  : const HugeIcon(icon: HugeIcons.strokeRoundedLockSync01, size: 18),
               label: Text('me_password_submit'.tr()),
             ),
           ),
@@ -310,7 +311,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded, size: 20, color: cs.outline),
+          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),
         ],
       ),
       onTap: onTap,

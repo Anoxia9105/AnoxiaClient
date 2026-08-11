@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -57,7 +58,7 @@ void main() {
 
       expect(find.text('搜狗翻译'), findsOneWidget);
       expect(find.text('文本翻译服务'), findsOneWidget);
-      expect(find.byIcon(Icons.link_rounded), findsOneWidget);
+      expect(find.byType(HugeIcon), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(tester.takeException(), isNull);
     });

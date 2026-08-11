@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/device_util.dart';
@@ -702,7 +703,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
           ? null
           : IconButton(
               onPressed: _leaveRoom,
-              icon: const Icon(Icons.arrow_back),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
             ),
       automaticallyImplyLeading: !isDesktop,
       flexibleSpace: isDesktop
@@ -713,12 +714,12 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
           IconButton(
             tooltip: 'call_minimize_tooltip'.tr(),
             onPressed: () => windowManager.minimize(),
-            icon: const Icon(Icons.minimize),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedMinimize01),
           ),
           IconButton(
             tooltip: 'call_close_tooltip'.tr(),
             onPressed: _leaveRoom,
-            icon: const Icon(Icons.close),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
           ),
         ],
       ],
@@ -770,8 +771,8 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
             color: Colors.black,
             child: participants.isEmpty
                 ? const Center(
-                    child: Icon(
-                      Icons.live_tv,
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedLiveStreaming01,
                       size: 72,
                       color: Colors.white70,
                     ),

@@ -1,8 +1,8 @@
 import 'package:anoxia/framework/core/notification_helper.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_item_card.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// Web 端浏览器通知授权分区
 ///

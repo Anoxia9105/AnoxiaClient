@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/date_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/simple_list_tile.dart';
@@ -16,7 +17,6 @@ import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 房间列表项组件
 ///
@@ -209,8 +209,8 @@ class RoomListItem extends ConsumerWidget {
                   // 既提示静音状态，又避免未读数角标打扰用户。所有端统一生效。
                   ? Tooltip(
                       message: 'chat_do_not_disturb'.tr(),
-                      child: Icon(
-                        Icons.notifications_off_outlined,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedNotificationOff02,
                         size: 15,
                         color: Theme.of(context).colorScheme.outline,
                       ),
@@ -297,8 +297,8 @@ class RoomListItem extends ConsumerWidget {
       ),
       _buildMenuItem(
         icon: isDoNotDisturb
-            ? Icons.notifications_active_outlined
-            : Icons.notifications_off_outlined,
+            ? HugeIcons.strokeRoundedNotification02
+            : HugeIcons.strokeRoundedNotificationOff02,
         label: isDoNotDisturb
             ? 'chat_enable_notifications'.tr()
             : 'chat_do_not_disturb'.tr(),
@@ -397,9 +397,9 @@ class RoomListItem extends ConsumerWidget {
     return result == true;
   }
 
-  /// 构建上下文菜单项
+/// 构建上下文菜单项
   PopupMenuItem<String> _buildMenuItem({
-    required dynamic icon,
+    required List<List<dynamic>> icon,
     required String label,
     required String value,
     Color? color,
@@ -409,10 +409,7 @@ class RoomListItem extends ConsumerWidget {
       height: 36,
       child: Row(
         children: [
-          if (icon is IconData)
-            Icon(icon, size: 16, color: color)
-          else
-            HugeIcon(icon: icon, size: 16, color: color),
+          HugeIcon(icon: icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(label, style: TextStyle(fontSize: 13, color: color)),
         ],

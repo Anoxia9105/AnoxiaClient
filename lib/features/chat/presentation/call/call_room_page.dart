@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/call_window_room_body.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/call_mobile_room_body.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -75,7 +76,7 @@ class CallRoomPage extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: Colors.red.shade600, size: 48),
+            HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, color: Colors.red.shade600, size: 48),
             const SizedBox(height: 24),
             Text(
               'call_connection_failed'.tr(),

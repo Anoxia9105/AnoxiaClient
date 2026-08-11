@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
 /// 颜色选择器工具类
@@ -124,8 +125,8 @@ class ColorsBox {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.format_color_reset_rounded,
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedColors,
                       size: 18,
                       color: theme.colorScheme.primary,
                     ),

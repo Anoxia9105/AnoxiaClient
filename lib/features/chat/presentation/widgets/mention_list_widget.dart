@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -223,8 +224,8 @@ class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
                           color: colorScheme.primaryContainer,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.group,
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedUserGroup,
                           size: 18,
                           color: colorScheme.onPrimaryContainer,
                         ),

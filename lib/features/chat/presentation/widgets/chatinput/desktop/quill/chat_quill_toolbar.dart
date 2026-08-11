@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/dialogs/code_input_dialog.dart';
@@ -15,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../../../common/widgets/toast.dart';
 import 'colors_box.dart';
@@ -256,7 +256,7 @@ import 'colors_box.dart';
                           onLocationSubmit(location);
                         }
                       },
-                      icon: const Icon(Icons.location_on_outlined, size: 16),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedLocation01, size: 16),
                     ),
                     // _buildActionButton(
                     //   HugeIcons.strokeRoundedLeftToRightListBullet,

@@ -3,6 +3,7 @@
 // 自动提取消息中的 URL，通过后台 Isolate 异步获取网页元数据，
 // 并以卡片形式展示标题、描述、缩略图等信息。
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:isolate';
@@ -487,8 +488,8 @@ class _PreviewThumbnail extends StatelessWidget {
               dimension: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : Icon(
-              Icons.link_rounded,
+          : HugeIcon(
+              icon: HugeIcons.strokeRoundedLink01,
               color: Theme.of(context).colorScheme.primary,
               size: 28,
             ),

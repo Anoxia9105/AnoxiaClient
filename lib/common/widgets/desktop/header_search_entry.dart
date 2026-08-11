@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
 /// 头部搜索入口
@@ -28,7 +29,7 @@ class HeaderSearchEntry extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_rounded, size: 15, color: colorScheme.outline),
+            HugeIcon(icon: HugeIcons.strokeRoundedSearch02, size: 15, color: colorScheme.outline),
             const SizedBox(width: 6),
             SizedBox(
               width: 145,

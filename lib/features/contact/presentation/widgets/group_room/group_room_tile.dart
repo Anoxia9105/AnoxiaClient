@@ -1,8 +1,8 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 群聊列表项组件
 ///

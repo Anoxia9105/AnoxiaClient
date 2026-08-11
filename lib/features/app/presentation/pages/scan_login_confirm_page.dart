@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/auth_repository_provider.dart';
@@ -99,8 +100,8 @@ class _ScanLoginConfirmPageState extends ConsumerState<ScanLoginConfirmPage> {
                   color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: Icon(
-                  Icons.desktop_windows_rounded,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedComputer,
                   size: 48,
                   color: colorScheme.onPrimaryContainer,
                 ),

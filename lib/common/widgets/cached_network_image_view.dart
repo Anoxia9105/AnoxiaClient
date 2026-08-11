@@ -1,4 +1,5 @@
 import 'package:cross_cache/cross_cache.dart' as cross_cache;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
 /// 全局图片缓存实例
@@ -107,7 +108,7 @@ class CachedNetworkImageView extends StatelessWidget {
       },
       errorBuilder: (context, error, stackTrace) {
         return errorWidget?.call(context, imageUrl, error) ??
-            const Icon(Icons.broken_image);
+            const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01);
       },
     );
   }

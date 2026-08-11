@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_list_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
@@ -26,7 +27,6 @@ import 'package:anoxia/framework/provider/contact/contact_selection_controller.d
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 
@@ -106,7 +106,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                       },
                     )
                   : null,
-              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
               onTap: () async {
                 if (isGroup) {
                   await presentAdaptivePage(
@@ -163,7 +163,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 subtitle: Text(
                   currentRoom.roomName ?? currentRoom.roomDescription ?? '',
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
                 onTap: () {
                   presentAdaptivePage(
                     context,
@@ -182,8 +182,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 ),
                 title: Text('chat_group_announcement'.tr()),
                 subtitle: Text(currentRoom.roomDescription ?? ''),
-                trailing: Icon(
-                  isAdmin ? Icons.edit_outlined : Icons.arrow_forward_ios,
+                trailing: HugeIcon(
+                  icon: isAdmin
+                      ? HugeIcons.strokeRoundedEdit02
+                      : HugeIcons.strokeRoundedArrowRight01,
                   size: isAdmin ? 18 : 14,
                 ),
                 onTap: () {
@@ -206,7 +208,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   size: 22,
                 ),
                 title: Text('chat_group_qr_code'.tr()),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
                 onTap: () {},
               ),
               _buildMaterialListTile(
@@ -216,7 +218,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   size: 22,
                 ),
                 title: Text('chat_share_group'.tr()),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
                 onTap: () async {
                   if (currentRoom.roomStatus == 2 ||
                       currentRoom.roomStatus == 3) {
@@ -256,14 +258,14 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               if (isAdmin && currentRoom.joinPolicy != 0)
                 _buildMaterialListTile(
                   context,
-                  leading: const Icon(Icons.how_to_reg_outlined, size: 22),
+                  leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserCheck01, size: 22),
                   title: Text('group_join_requests_title'.tr()),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _JoinRequestsBadge(roomId: roomId),
                       const SizedBox(width: 6),
-                      const Icon(Icons.arrow_forward_ios, size: 14),
+                      const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
                     ],
                   ),
                   onTap: () => presentAdaptivePage(
@@ -284,7 +286,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               size: 22,
             ),
             title: Text('search_context_title'.tr()),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
             onTap: () {
               presentAdaptivePage(
                 context,
@@ -312,7 +314,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               },
             ),
             _RoomSwitchTile(
-              leading: const Icon(Icons.notifications_off_outlined, size: 22),
+              leading: const HugeIcon(icon: HugeIcons.strokeRoundedNotificationOff02, size: 22),
               title: Text('chat_do_not_disturb'.tr()),
               subtitle: Text('chat_do_not_disturb_hint'.tr()),
               value: ref.watch(doNotDisturbRoomsProvider).contains(roomId),

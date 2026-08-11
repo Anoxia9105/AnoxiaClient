@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/sticker/sticker_packs_provider.dart';
@@ -7,7 +8,6 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 聊天表情选择器组件
 ///

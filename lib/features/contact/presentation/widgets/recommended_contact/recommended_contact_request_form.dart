@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,7 @@ class _RecommendedContactRequestFormState
         ),
         child: Row(
           children: [
-            Icon(Icons.check_circle, color: colorScheme.primary),
+            HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: colorScheme.primary),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -92,7 +93,7 @@ class _RecommendedContactRequestFormState
                     color: Colors.white,
                   ),
                 )
-              : const Icon(Icons.person_add_alt_1),
+              : const HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01),
           label: Text(
             _isSending
                 ? 'contact_friend_request_sending'.tr()

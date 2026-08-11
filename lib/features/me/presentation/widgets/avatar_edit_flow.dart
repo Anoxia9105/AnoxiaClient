@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -150,7 +151,7 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _uploading ? null : _pickImage,
-                  icon: const Icon(Icons.image_outlined, size: 18),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedImage01, size: 18),
                   label: Text('me_avatar_reselect'.tr()),
                 ),
               ),
@@ -163,7 +164,7 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
                           dimension: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.check_rounded, size: 18),
+                      : const HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18),
                   label: Text('me_avatar_confirm'.tr()),
                 ),
               ),
@@ -184,7 +185,7 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: _pickImage,
-            icon: const Icon(Icons.photo_library_outlined, size: 18),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedGalleryHorizontalEnd, size: 18),
             label: Text('me_avatar_choose'.tr()),
           ),
         ],

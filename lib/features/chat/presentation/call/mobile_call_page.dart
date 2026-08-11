@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -81,7 +82,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
               ),
               leading: IconButton(
                 tooltip: 'call_minimize_tooltip'.tr(),
-                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, size: 32),
 
                 /// 最小化
                 onPressed: () {

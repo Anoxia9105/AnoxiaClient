@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -88,8 +89,8 @@ class ErrorPage extends StatelessWidget {
                     color: scheme.errorContainer,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.error_outline,
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedAlertCircle,
                     size: 48,
                     color: scheme.onErrorContainer,
                   ),
@@ -144,14 +145,14 @@ class ErrorPage extends StatelessWidget {
                     if (onRetry != null)
                       FilledButton.icon(
                         onPressed: onRetry,
-                        icon: const Icon(Icons.refresh),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
                         label: Text(
                           _t(context, 'error_page_retry', '重试'),
                         ),
                       ),
                     OutlinedButton.icon(
                       onPressed: () => _copy(context),
-                      icon: const Icon(Icons.copy),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01),
                       label: Text(_t(context, 'error_page_copy', '复制错误信息')),
                     ),
                     if (onClose != null)

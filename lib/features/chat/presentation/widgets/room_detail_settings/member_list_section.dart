@@ -1,11 +1,11 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/breathing_dot.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 内部隔离组件：群成员行式列表区块，防止成员列表数据更新时触发整个 Settings 树重构
 ///
@@ -109,8 +109,8 @@ class MemberListSection extends ConsumerWidget {
           color: isOnline ? Colors.green : colorScheme.onSurfaceVariant,
         ),
       ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
+      trailing: HugeIcon(
+        icon: HugeIcons.strokeRoundedArrowRight01,
         size: 14,
         color: colorScheme.outline,
       ),
@@ -142,8 +142,8 @@ class MemberListSection extends ConsumerWidget {
         'member_add_title'.tr(),
         style: const TextStyle(fontSize: 14),
       ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
+      trailing: HugeIcon(
+        icon: HugeIcons.strokeRoundedArrowRight01,
         size: 14,
         color: colorScheme.outline,
       ),

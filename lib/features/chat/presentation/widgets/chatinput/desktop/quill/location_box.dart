@@ -3,6 +3,7 @@
 // 桌面端聊天输入框中的位置分享组件，提供地图选点发送位置消息的功能。
 // 支持定位当前位置、拖拽选点、切换瓦片图源等操作。
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -207,13 +208,10 @@ class _LocationBoxState extends State<LocationBox> {
                     child: Center(
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 42),
-                        child: Icon(
-                          Icons.location_pin,
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedLocation01,
                           size: 48,
                           color: Colors.redAccent,
-                          shadows: [
-                            Shadow(blurRadius: 6, color: Colors.black38),
-                          ],
                         ),
                       ),
                     ),
@@ -245,7 +243,7 @@ class _LocationBoxState extends State<LocationBox> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(Icons.my_location),
+                              : const HugeIcon(icon: HugeIcons.strokeRoundedMapPinpoint01),
                         ),
                         const SizedBox(height: 8),
                         FloatingActionButton.small(
@@ -254,7 +252,7 @@ class _LocationBoxState extends State<LocationBox> {
                             args: [source.localizedName],
                           ),
                           onPressed: _cycleTileSource,
-                          child: const Icon(Icons.layers_outlined),
+                          child: const HugeIcon(icon: HugeIcons.strokeRoundedLayers01),
                         ),
                       ],
                     ),
@@ -289,7 +287,7 @@ class _Header extends StatelessWidget {
       height: 56,
       child: Row(
         children: [
-          IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
+          IconButton(onPressed: onClose, icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01)),
           Expanded(
             child: Text(
               'location_picker_title'.tr(),
@@ -381,7 +379,7 @@ class _SelectionCard extends StatelessWidget {
             const SizedBox(width: 8),
             FilledButton.icon(
               onPressed: onSend,
-              icon: const Icon(Icons.send_outlined),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedSent02),
               label: Text('toolbar_send'.tr()),
             ),
           ],

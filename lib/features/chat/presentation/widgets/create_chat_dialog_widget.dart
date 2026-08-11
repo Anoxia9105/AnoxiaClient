@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/sorted_contact_groups_widget.dart';
@@ -91,8 +92,8 @@ class _CreateChatDialogWidgetState
                 horizontal: 14,
                 vertical: 13,
               ),
-              prefixIcon: Icon(
-                Icons.edit_note_rounded,
+              prefixIcon: HugeIcon(
+                icon: HugeIcons.strokeRoundedEdit02,
                 color: colorScheme.primary,
               ),
               border: OutlineInputBorder(
@@ -400,7 +401,7 @@ class _CreateChatDialogWidgetState
                           overflow: TextOverflow.ellipsis,
                         ),
                         trailing: IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 18),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18),
                           onPressed: () => ref
                               .read(selectedContactIdsProvider.notifier)
                               .remove(id),

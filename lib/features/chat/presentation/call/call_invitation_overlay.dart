@@ -2,6 +2,7 @@
 //
 // 支持来电接听/拒绝、通话已被他处接听/拒绝、邀请取消、对方忙线、通话结束等状态展示。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -93,10 +94,10 @@ class _IncomingCallCard extends ConsumerWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: cs.surface, width: 3),
                       ),
-                      child: Icon(
-                        invitation.initialMedia.value == 'video'
-                            ? Icons.videocam_rounded
-                            : Icons.call_rounded,
+                      child: HugeIcon(
+                        icon: invitation.initialMedia.value == 'video'
+                            ? HugeIcons.strokeRoundedVideo01
+                            : HugeIcons.strokeRoundedCall02,
                         size: 16,
                         color: Colors.white,
                       ),
@@ -133,7 +134,7 @@ class _IncomingCallCard extends ConsumerWidget {
                               .read(callInvitationControllerProvider.notifier)
                               .reject(invitation);
                         },
-                        icon: const Icon(Icons.call_end),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedCallEnd01),
                         label: Text('notification_call_reject'.tr()),
                       ),
                     ),
@@ -145,7 +146,7 @@ class _IncomingCallCard extends ConsumerWidget {
                               .read(callInvitationControllerProvider.notifier)
                               .acceptAndOpen(invitation);
                         },
-                        icon: const Icon(Icons.call),
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedCall02),
                         label: Text('notification_call_accept'.tr()),
                       ),
                     ),

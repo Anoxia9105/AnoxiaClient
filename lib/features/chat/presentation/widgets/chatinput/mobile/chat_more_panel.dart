@@ -2,6 +2,7 @@
 //
 // 提供图片、文件、@提及、语音通话和视频通话等快捷操作入口。
 import 'package:anoxia/common/utils/device_util.dart' show DeviceUtil;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_bar_handlers.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
@@ -12,7 +13,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'chat_action_item.dart';
 

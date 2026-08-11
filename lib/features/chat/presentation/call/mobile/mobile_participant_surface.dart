@@ -2,6 +2,7 @@
 //
 // 支持视频渲染、画面替代占位、麦克风静音指示、说话状态动画、连接质量指示等功能。
 import 'dart:convert';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_placeholder.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_status_indicators.dart';
@@ -218,8 +219,8 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                                 progress: _speakingController.value,
                                 compact: widget.compact,
                               )
-                            : Icon(
-                                isMuted ? Icons.mic_off : Icons.mic,
+                            : HugeIcon(
+                                icon: isMuted ? HugeIcons.strokeRoundedMicOff01 : HugeIcons.strokeRoundedMic01,
                                 size: widget.compact ? 12 : 15,
                                 color: Colors.white,
                               ),

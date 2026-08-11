@@ -1,11 +1,11 @@
 import 'package:anoxia/framework/provider/core/network_provider.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 连接状态标签组件
 ///

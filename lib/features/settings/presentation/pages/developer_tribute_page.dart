@@ -1,8 +1,8 @@
 import 'dart:math' as math;
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 开发者致敬页面
 ///
@@ -97,7 +97,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                         context,
                       ).closeButtonTooltip,
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                     ),
                   ),
                   const Spacer(),

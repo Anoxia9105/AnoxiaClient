@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -92,31 +94,27 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       children: [
                         _buildHeader(colorScheme, textTheme),
                         const SizedBox(height: 36),
-                        if (_showScanMode) ...[
-                          _buildModeSwitcher(),
-                          const SizedBox(height: 28),
-                        ],
-                        if (_mode == _LoginMode.scan)
-                          const _ScanLoginPanel()
-                        else ...[
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildUsernameField(colorScheme),
-                                const SizedBox(height: 16),
-                                _buildPasswordField(colorScheme),
-                                const SizedBox(height: 16),
-                                _buildCaptchaField(colorScheme),
-                                const SizedBox(height: 28),
-                                _buildLoginButton(colorScheme, loginMutation),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          _buildFooterLinks(colorScheme),
-                        ],
+                        // 密码 / 扫码 两种登录方式独立成视图，切换时平滑过渡
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: ScaleTransition(
+                                scale: Tween<double>(
+                                  begin: 0.98,
+                                  end: 1.0,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: _mode == _LoginMode.scan
+                              ? _buildScanView(colorScheme)
+                              : _buildPasswordView(colorScheme, loginMutation),
+                        ),
                       ],
                     ),
                   ),
@@ -129,30 +127,97 @@ class _LoginPageState extends ConsumerState<LoginPage>
     );
   }
 
-  /// 登录方式切换器（密码登录 / 扫码登录）
-  Widget _buildModeSwitcher() {
-    return SegmentedButton<_LoginMode>(
-      segments: [
-        ButtonSegment(
-          value: _LoginMode.password,
-          icon: const Icon(Icons.key_rounded, size: 18),
-          label: Text('login_scan_password_mode'.tr()),
+  /// 密码登录视图（仅展示密码表单；桌面/Web 底部提供切到扫码登录的入口）
+  Widget _buildPasswordView(
+    ColorScheme colorScheme,
+    MutationState<void> loginMutation,
+  ) {
+    return Column(
+      key: const ValueKey(_LoginMode.password),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildUsernameField(colorScheme),
+              const SizedBox(height: 16),
+              _buildPasswordField(colorScheme),
+              const SizedBox(height: 16),
+              _buildCaptchaField(colorScheme),
+              const SizedBox(height: 28),
+              _buildLoginButton(colorScheme, loginMutation),
+            ],
+          ),
         ),
-        ButtonSegment(
-          value: _LoginMode.scan,
-          icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-          label: Text('login_scan_title'.tr()),
+        const SizedBox(height: 20),
+        _buildFooterLinks(colorScheme),
+        if (_showScanMode) _buildSwitchToScan(colorScheme),
+      ],
+    );
+  }
+
+  /// 扫码登录视图（仅展示二维码；桌面/Web 底部提供切到密码登录的入口）
+  Widget _buildScanView(ColorScheme colorScheme) {
+    return Column(
+      key: const ValueKey(_LoginMode.scan),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _ScanLoginPanel(),
+        if (_showScanMode) _buildSwitchToPassword(colorScheme),
+      ],
+    );
+  }
+
+  /// 登录方式分隔线（居中“或”）
+  Widget _buildModeDivider(ColorScheme colorScheme) {
+    return Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'login_scan_or'.tr(),
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+          ),
+        ),
+        const Expanded(child: Divider()),
+      ],
+    );
+  }
+
+  /// 切换到扫码登录的入口
+  Widget _buildSwitchToScan(ColorScheme colorScheme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 20),
+        _buildModeDivider(colorScheme),
+        TextButton.icon(
+          onPressed: () => setState(() => _mode = _LoginMode.scan),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedQrCode01, size: 18),
+          label: Text('login_scan_switch_to_scan'.tr()),
+          style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
         ),
       ],
-      selected: {_mode},
-      onSelectionChanged: (selection) {
-        setState(() => _mode = selection.first);
-      },
-      showSelectedIcon: false,
-      style: SegmentedButton.styleFrom(
-        visualDensity: VisualDensity.compact,
-        textStyle: const TextStyle(fontSize: 13),
-      ),
+    );
+  }
+
+  /// 切换到密码登录的入口
+  Widget _buildSwitchToPassword(ColorScheme colorScheme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 16),
+        _buildModeDivider(colorScheme),
+        TextButton.icon(
+          onPressed: () => setState(() => _mode = _LoginMode.password),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedKey02, size: 18),
+          label: Text('login_scan_switch_to_password'.tr()),
+          style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+        ),
+      ],
     );
   }
 
@@ -202,8 +267,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
       decoration: InputDecoration(
         hintText: 'login_page_account_or_email'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.never,
-        prefixIcon: Icon(
-          Icons.alternate_email_rounded,
+        prefixIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedAt,
           color: colorScheme.onSurfaceVariant,
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -235,15 +300,15 @@ class _LoginPageState extends ConsumerState<LoginPage>
       decoration: InputDecoration(
         hintText: 'login_page_password'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.never,
-        prefixIcon: Icon(
-          Icons.lock_outline_rounded,
+        prefixIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedLock,
           color: colorScheme.onSurfaceVariant,
         ),
         suffixIcon: IconButton(
-          icon: Icon(
-            _obscurePassword
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
+          icon: HugeIcon(
+            icon: _obscurePassword
+                ? HugeIcons.strokeRoundedViewOff
+                : HugeIcons.strokeRoundedView,
             color: colorScheme.onSurfaceVariant,
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -285,8 +350,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
             ],
             decoration: InputDecoration(
               hintText: 'login_page_captcha'.tr(),
-              prefixIcon: Icon(
-                Icons.shield_outlined,
+              prefixIcon: HugeIcon(
+                icon: HugeIcons.strokeRoundedShield01,
                 color: colorScheme.onSurfaceVariant,
               ),
               border: OutlineInputBorder(
@@ -490,8 +555,8 @@ class _CaptchaImage extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: Icon(
-                Icons.refresh_rounded,
+              icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedRefresh01,
                 color: colorScheme.onErrorContainer,
               ),
               onPressed: () => ref.invalidate(getCaptchaProvider),
@@ -565,10 +630,10 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
     final session = ref.watch(scanLoginControllerProvider);
 
     return session.when(
-      loading: () => _buildLoading(colorScheme),
+      loading: () => _buildLoading(),
       error: (e, st) => _buildError(colorScheme),
       data: (session) {
-        if (session == null) return _buildLoading(colorScheme);
+        if (session == null) return _buildLoading();
 
         final ticket = session.ticket;
         if (_countdownFor != ticket.ticket) {
@@ -597,7 +662,7 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
                 const SizedBox(width: 16),
                 TextButton.icon(
                   onPressed: _startSession,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 18),
                   label: Text('login_scan_refresh'.tr()),
                 ),
               ],
@@ -644,19 +709,16 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
     );
   }
 
-  Widget _buildLoading(ColorScheme colorScheme) {
-    return Column(
+  /// 加载中骨架屏（布局与二维码卡片一致）
+  Widget _buildLoading() {
+    return const Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox.square(
-          dimension: 48,
-          child: CircularProgressIndicator(strokeWidth: 3),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'login_scan_loading'.tr(),
-          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
-        ),
+        _QrSkeleton(),
+        SizedBox(height: 18),
+        SkeletonLine(width: 120, height: 12),
+        SizedBox(height: 14),
+        SkeletonLine(width: 170, height: 10),
       ],
     );
   }
@@ -665,7 +727,7 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.error_outline_rounded, size: 48, color: colorScheme.error),
+        HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, size: 48, color: colorScheme.error),
         const SizedBox(height: 12),
         Text(
           'login_scan_error'.tr(),
@@ -674,10 +736,98 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _startSession,
-          icon: const Icon(Icons.refresh_rounded, size: 18),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 18),
           label: Text('login_scan_retry'.tr()),
         ),
       ],
+    );
+  }
+}
+
+/// 扫码登录骨架屏
+///
+/// 布局与真实二维码卡片一致：三个角落的寻像图形 + 中部数据模块占位。
+class _QrSkeleton extends StatelessWidget {
+  const _QrSkeleton();
+
+  /// 模拟数据模块的位置（相对卡片内边距区域）
+  static const List<Offset> _dots = [
+    Offset(60, 60),
+    Offset(88, 60),
+    Offset(116, 60),
+    Offset(60, 88),
+    Offset(116, 88),
+    Offset(60, 116),
+    Offset(88, 116),
+    Offset(116, 116),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 224,
+      height: 224,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Stack(
+        children: [
+          const Positioned(left: 0, top: 0, child: _QrFinderPattern()),
+          const Positioned(right: 0, top: 0, child: _QrFinderPattern()),
+          const Positioned(left: 0, bottom: 0, child: _QrFinderPattern()),
+          for (final offset in _dots)
+            Positioned(
+              left: offset.dx,
+              top: offset.dy,
+              child: const SkeletonBox(width: 12, height: 12, radius: 3),
+            ),
+          const Positioned(right: 0, bottom: 0, child: _QrAlignmentPattern()),
+        ],
+      ),
+    );
+  }
+}
+
+/// 二维码寻像图形（三个角落的“回”字占位）
+class _QrFinderPattern extends StatelessWidget {
+  const _QrFinderPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SkeletonBox(width: 44, height: 44, radius: 8),
+          SkeletonBox(width: 22, height: 22, radius: 4),
+        ],
+      ),
+    );
+  }
+}
+
+/// 二维码对齐图形（右下角小“回”字占位）
+class _QrAlignmentPattern extends StatelessWidget {
+  const _QrAlignmentPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 27,
+      height: 27,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SkeletonBox(width: 27, height: 27, radius: 6),
+          SkeletonBox(width: 11, height: 11, radius: 3),
+        ],
+      ),
     );
   }
 }

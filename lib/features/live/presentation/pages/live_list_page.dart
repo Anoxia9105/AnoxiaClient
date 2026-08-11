@@ -3,6 +3,7 @@
 // 展示公开直播间列表，提供创建直播、加入指定直播间等功能。
 // 支持桌面端多窗口模式和移动端页面内导航两种进入方式。
 import 'dart:convert';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -12,7 +13,6 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 直播列表页面
 ///
@@ -113,7 +113,7 @@ class _LiveListPageState extends State<LiveListPage> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.live_tv),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedLiveStreaming01),
                   label: Text('live_go_preview_start'.tr()),
                 ),
               ],
@@ -392,7 +392,7 @@ class _LiveListPageState extends State<LiveListPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openStartLiveDialog,
-        icon: const Icon(Icons.add_to_photos_outlined),
+        icon: const HugeIcon(icon: HugeIcons.strokeRoundedImageAdd01),
         label: Text('live_start_action'.tr()),
       ),
       body: RefreshIndicator(
@@ -460,12 +460,12 @@ class _LiveListAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           tooltip: 'live_join_by_room_id'.tr(),
           onPressed: onJoinTap,
-          icon: const Icon(Icons.meeting_room_outlined),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedMeetingRoom),
         ),
         IconButton(
           tooltip: 'live_refresh_tooltip'.tr(),
           onPressed: loadingRooms ? null : onRefreshTap,
-          icon: const Icon(Icons.refresh),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
         ),
       ],
     );
@@ -565,7 +565,7 @@ class _LiveRoomListItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.open_in_new),
+              const HugeIcon(icon: HugeIcons.strokeRoundedArrowUpRight01),
             ],
           ),
         ),
@@ -611,12 +611,12 @@ class _StartLiveDialogBody extends StatelessWidget {
             segments: [
               ButtonSegment(
                 value: LiveVisibility.public,
-                icon: const Icon(Icons.public),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedGlobe02),
                 label: Text('live_visibility_public'.tr()),
               ),
               ButtonSegment(
                 value: LiveVisibility.private,
-                icon: const Icon(Icons.lock_outline),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedLock),
                 label: Text('live_visibility_private'.tr()),
               ),
             ],
@@ -629,12 +629,12 @@ class _StartLiveDialogBody extends StatelessWidget {
             segments: [
               ButtonSegment(
                 value: LiveSource.camera,
-                icon: const Icon(Icons.videocam),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedVideo01),
                 label: Text('live_source_camera'.tr()),
               ),
               ButtonSegment(
                 value: LiveSource.screen,
-                icon: const Icon(Icons.screen_share),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
                 label: Text('live_source_screen'.tr()),
               ),
             ],

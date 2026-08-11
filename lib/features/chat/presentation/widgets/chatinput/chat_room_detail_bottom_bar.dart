@@ -1,10 +1,10 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_input_field.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_status_tag.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_input_skeleton.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 聊天房间详情页底部栏组件
 ///

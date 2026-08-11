@@ -1,4 +1,5 @@
 import 'package:anoxia/common/constants/api.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -75,7 +76,7 @@ class _MyPageState extends ConsumerState<MyPage> {
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: DeviceUtil.isRealMobile(),
+        centerTitle: true,
         title: Text('me_page_title'.tr()),
       ),
       backgroundColor: Colors.transparent,
@@ -118,7 +119,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               context,
               title: 'me_profile_nickname'.tr(),
               value: _nickController.text,
-              icon: Icons.badge_outlined,
+              icon: HugeIcons.strokeRoundedBadge,
               onTap: () => _editTextItem(
                 context,
                 title: 'me_profile_nickname'.tr(),
@@ -134,7 +135,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               context,
               title: 'me_profile_email'.tr(),
               value: _emailController.text,
-              icon: Icons.email_outlined,
+              icon: HugeIcons.strokeRoundedMail01,
               onTap: () => _editTextItem(
                 context,
                 title: 'me_profile_email'.tr(),
@@ -150,7 +151,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               context,
               title: 'me_profile_phone'.tr(),
               value: _phoneController.text,
-              icon: Icons.phone_outlined,
+              icon: HugeIcons.strokeRoundedCall,
               onTap: () => _editTextItem(
                 context,
                 title: 'me_profile_phone'.tr(),
@@ -166,7 +167,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               context,
               title: 'me_profile_gender'.tr(),
               value: _genderLabel(),
-              icon: Icons.wc_outlined,
+              icon: HugeIcons.strokeRoundedToilet01,
               onTap: () => _editSelectItem(
                 context,
                 title: 'me_profile_gender'.tr(),
@@ -195,7 +196,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               context,
               title: 'me_password_submit'.tr(),
               value: 'common_go_edit'.tr(),
-              icon: Icons.lock_outline_rounded,
+              icon: HugeIcons.strokeRoundedLock,
               onTap: () {
                 if (!DeviceUtil.isMobile(context)) {
                   showDialog<bool>(
@@ -251,8 +252,8 @@ class _MyPageState extends ConsumerState<MyPage> {
                           width: 1.5,
                         ),
                       ),
-                      child: Icon(
-                        Icons.photo_camera_rounded,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedCamera02,
                         size: 13,
                         color: cs.onPrimary,
                       ),
@@ -294,7 +295,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                 MaterialPageRoute(builder: (_) => PersonalQrPage(user: user)),
               );
             },
-            icon: const Icon(Icons.qr_code_2_rounded),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedQrCode01),
           ),
         ],
       ),
@@ -308,7 +309,7 @@ class _MyPageState extends ConsumerState<MyPage> {
       visualDensity: const VisualDensity(vertical: -1),
       minVerticalPadding: 10,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      leading: const Icon(Icons.account_circle_outlined, size: 22),
+      leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserCircle, size: 22),
       title: Text('me_avatar'.tr(), style: const TextStyle(fontSize: 14.5)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -318,7 +319,7 @@ class _MyPageState extends ConsumerState<MyPage> {
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12.5),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded, size: 20, color: cs.outline),
+          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),
         ],
       ),
       onTap: () => _editAvatar(context),
@@ -356,7 +357,7 @@ class _MyPageState extends ConsumerState<MyPage> {
     BuildContext context, {
     required String title,
     required String value,
-    required IconData icon,
+    required List<List<dynamic>> icon,
     required VoidCallback onTap,
   }) {
     final cs = Theme.of(context).colorScheme;
@@ -365,7 +366,7 @@ class _MyPageState extends ConsumerState<MyPage> {
       visualDensity: const VisualDensity(vertical: -1),
       minVerticalPadding: 14,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      leading: Icon(icon, size: 20, color: cs.onSurfaceVariant),
+      leading: HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
       title: Text(title, style: const TextStyle(fontSize: 14.5)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -380,7 +381,7 @@ class _MyPageState extends ConsumerState<MyPage> {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded, size: 20, color: cs.outline),
+          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),
         ],
       ),
       onTap: onTap,

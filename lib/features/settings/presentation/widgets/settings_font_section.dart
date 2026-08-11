@@ -1,7 +1,7 @@
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
@@ -91,7 +91,7 @@ class _FontOptionTile extends StatelessWidget {
               ),
             ),
             if (selected)
-              Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+              HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: colorScheme.primary),
           ],
         ),
       ),

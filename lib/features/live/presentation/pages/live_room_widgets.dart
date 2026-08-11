@@ -1,3 +1,4 @@
+
 /// 直播间页面组件库
 ///
 /// 包含直播间 UI 的所有子组件，如底部控制栏、房间头部、弹幕面板、
@@ -117,7 +118,7 @@ class _BottomControlSection extends StatelessWidget {
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: onSendMessage,
-                      icon: const Icon(Icons.send, color: Colors.white),
+                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedSent, color: Colors.white),
                     ),
                   ],
                 ),
@@ -419,7 +420,7 @@ class _LiveSidePanel extends StatelessWidget {
               const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: onSend,
-                icon: const Icon(Icons.send, size: 16),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedSent, size: 16),
                 label: Text('toolbar_send'.tr()),
               ),
             ],
@@ -482,19 +483,19 @@ class _LiveControls extends StatelessWidget {
         if (isHost || cohostActive)
           FilledButton.icon(
             onPressed: onToggleCamera,
-            icon: const Icon(Icons.videocam),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedVideo01),
             label: Text('live_source_camera'.tr()),
           ),
         if (isHost || cohostActive)
           FilledButton.icon(
             onPressed: onToggleMic,
-            icon: const Icon(Icons.mic),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedMic01),
             label: Text('live_microphone'.tr()),
           ),
         if (isHost)
           FilledButton.icon(
             onPressed: onShareScreen,
-            icon: const Icon(Icons.screen_share),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
             label: Text('live_share_screen'.tr()),
           ),
         if (!isHost)
@@ -502,10 +503,12 @@ class _LiveControls extends StatelessWidget {
             onPressed: cohostActive
                 ? null
                 : (cohostRequested ? onCancelCohostRequest : onRequestCohost),
-            icon: Icon(
-              cohostActive
-                  ? Icons.record_voice_over
-                  : (cohostRequested ? Icons.hourglass_top : Icons.call),
+            icon: HugeIcon(
+              icon: cohostActive
+                  ? HugeIcons.strokeRoundedMic02
+                  : (cohostRequested
+                        ? HugeIcons.strokeRoundedHourglass
+                        : HugeIcons.strokeRoundedCall02),
             ),
             label: Text(
               cohostActive ? '连麦中' : (cohostRequested ? '取消申请' : '申请连麦'),
@@ -513,7 +516,7 @@ class _LiveControls extends StatelessWidget {
           ),
         FilledButton.icon(
           onPressed: onLeave,
-          icon: const Icon(Icons.exit_to_app),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedLogout02),
           label: Text(isHost ? '结束直播' : '离开'),
         ),
       ],
@@ -551,7 +554,7 @@ class _CohostRequestBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.record_voice_over, color: Colors.white),
+          const HugeIcon(icon: HugeIcons.strokeRoundedMic02, color: Colors.white),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -622,7 +625,7 @@ class _LiveVideoSurface extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.videocam_off, size: 72, color: Colors.white54),
+                const HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, size: 72, color: Colors.white54),
                 const SizedBox(height: 8),
                 Text(label, style: const TextStyle(color: Colors.white70)),
               ],

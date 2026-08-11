@@ -2,6 +2,7 @@
 //
 // 使用 flutter_map 渲染地图，支持切换地图源，显示位置标题、地址和坐标信息。
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -88,11 +89,10 @@ class _LocationMessageDetailPageState extends State<LocationMessageDetailPage> {
                     width: 52,
                     height: 52,
                     alignment: Alignment.topCenter,
-                    child: const Icon(
-                      Icons.location_pin,
+                    child: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedLocation01,
                       size: 48,
                       color: Colors.redAccent,
-                      shadows: [Shadow(blurRadius: 6, color: Colors.black38)],
                     ),
                   ),
                 ],
@@ -108,14 +108,14 @@ class _LocationMessageDetailPageState extends State<LocationMessageDetailPage> {
                   heroTag: null,
                   tooltip: 'location_selected_point'.tr(),
                   onPressed: () => _mapController.move(_point, 16),
-                  child: const Icon(Icons.location_searching),
+                  child: const HugeIcon(icon: HugeIcons.strokeRoundedMapPinpoint01),
                 ),
                 const SizedBox(height: 8),
                 FloatingActionButton.small(
                   heroTag: null,
                   tooltip: 'map_source'.tr(args: [source.localizedName]),
                   onPressed: _cycleSource,
-                  child: const Icon(Icons.layers_outlined),
+                  child: const HugeIcon(icon: HugeIcons.strokeRoundedLayers01),
                 ),
               ],
             ),

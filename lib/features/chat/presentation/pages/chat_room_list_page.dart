@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_item.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_list_skeleton.dart';
@@ -7,7 +8,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 聊天房间列表页面
 ///
@@ -65,12 +65,12 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         //               style: const TextStyle(fontSize: 14),
         //               decoration: InputDecoration(
         //                 counterText: '',
-        //                 prefixIcon: const Icon(Icons.search, size: 20),
+        //                 prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 20),
         //                 // 有搜索内容时显示清除按钮
         //                 suffixIcon:
         //                     ref.watch(roomSearchQueryProvider).isNotEmpty
         //                     ? IconButton(
-        //                         icon: const Icon(Icons.cancel, size: 16),
+        //                         icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16),
         //                         onPressed: () {
         //                           _searchController.clear();
         //                           ref
@@ -170,11 +170,11 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
               horizontal: 10,
               vertical: 0,
             ), // 上下为0，垂直居中
-            prefixIcon: const Icon(Icons.search, size: 16), // 图标缩小
+            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 16), // 图标缩小
             suffixIcon: ref.watch(roomSearchQueryProvider).isNotEmpty
                 ? IconButton(
                     mouseCursor: SystemMouseCursors.click,
-                    icon: const Icon(Icons.cancel, size: 14),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14),
                     onPressed: () {
                       _searchController.clear();
                       ref.read(roomSearchQueryProvider.notifier).update('');

@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/breathing_dot.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_settings_page.dart';
@@ -9,7 +10,6 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../../../../../framework/protocol/message/high_message.dart';

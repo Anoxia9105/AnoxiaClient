@@ -7,9 +7,9 @@
 library;
 
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 系统消息展示数据
 ///

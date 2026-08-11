@@ -1,9 +1,9 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/bubble_menu.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 联系人详情右上角弹出菜单按钮
 ///
@@ -139,7 +139,7 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
         );
         overlay.insert(entry);
       },
-      icon: const Icon(Icons.more_horiz),
+      icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreHorizontal),
     );
   }
 }

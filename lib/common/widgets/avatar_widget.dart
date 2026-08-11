@@ -1,7 +1,7 @@
 ﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 头像状态枚举
 enum AvatarStatus { none, online, offline, busy }

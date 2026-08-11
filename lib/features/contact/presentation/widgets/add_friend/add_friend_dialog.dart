@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -136,8 +137,8 @@ class _AddFriendDialogState extends ConsumerState<AddFriendDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.phone_android_outlined,
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedSmartPhone01,
                       size: 18,
                       color: colorScheme.outline,
                     ),

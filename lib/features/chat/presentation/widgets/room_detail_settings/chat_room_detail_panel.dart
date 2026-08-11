@@ -1,7 +1,7 @@
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_detail_settings_body.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 桌面端右侧聊天详情面板
 ///

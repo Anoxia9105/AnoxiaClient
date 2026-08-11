@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -91,8 +92,10 @@ class _MeProfileItemEditDialogState extends State<MeProfileItemEditDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(
-            widget.isSelect ? Icons.tune_rounded : Icons.edit_outlined,
+          HugeIcon(
+            icon: widget.isSelect
+                ? HugeIcons.strokeRoundedSlidersVertical
+                : HugeIcons.strokeRoundedEdit02,
             color: cs.primary,
           ),
           const SizedBox(width: 10),
@@ -115,7 +118,7 @@ class _MeProfileItemEditDialogState extends State<MeProfileItemEditDialog> {
                   dimension: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.check_rounded, size: 18),
+              : const HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18),
           label: Text('common_save'.tr()),
         ),
       ],
@@ -159,8 +162,8 @@ class _MeProfileItemEditDialogState extends State<MeProfileItemEditDialog> {
               ),
               title: Text(option.label),
               trailing: selected
-                  ? Icon(Icons.check_circle_rounded, color: cs.primary)
-                  : const Icon(Icons.circle_outlined),
+                  ? HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: cs.primary)
+                  : const HugeIcon(icon: HugeIcons.strokeRoundedCircle),
               onTap: _saving
                   ? null
                   : () => setState(() => _selected = option.value),
@@ -306,8 +309,8 @@ class _MeProfileItemEditPageState extends State<MeProfileItemEditPage> {
         return ListTile(
           title: Text(item.label),
           trailing: selected
-              ? Icon(
-                  Icons.check_rounded,
+              ? HugeIcon(
+                  icon: HugeIcons.strokeRoundedTick01,
                   color: Theme.of(context).colorScheme.primary,
                 )
               : null,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/device_util.dart';
@@ -10,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/platform/shims/image_cropper_shim.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
@@ -71,6 +71,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   void initState() {
     super.initState();
     _focusNode = ref.read(chatFocusNodeProvider(widget.roomId));
+    // 监听键盘焦点变化，驱动胶囊输入框的聚焦高亮
+    _focusNode.addListener(_handleFocusChanged);
     _inputController = MobileTextInputController();
     _voiceController = VoiceRecordController()
       ..onMaxDurationReached = _onVoiceMaxDuration;
@@ -81,6 +83,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     if (!DeviceUtil.isWeb) {
       unawaited(_voiceController.warmUp());
     }
+  }
+
+  void _handleFocusChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onVoiceMaxDuration() {
@@ -99,6 +105,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
     _inputController.dispose();
     _voiceController.dispose();
     super.dispose();
@@ -343,6 +350,146 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     );
   }
 
+  /// 发送按钮（实心主题色圆形，悬浮增强发送意图）
+  Widget _buildSendButton({required VoidCallback onTap}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: 'toolbar_send'.tr(),
+      child: Material(
+        color: colorScheme.primary,
+        shape: const CircleBorder(),
+        elevation: 2,
+        shadowColor: colorScheme.primary.withValues(alpha: 0.4),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox.square(
+            dimension: 40,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedSent,
+              size: 22,
+              color: colorScheme.onPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 胶囊输入容器（文本 / 语音共用）
+  ///
+  /// 圆角胶囊视觉：常态浅色悬浮，聚焦 / 录音时主题色高亮描边，
+  /// 阴影随状态增强，自动适配亮暗主题。
+  Widget _buildInputCapsule({required Widget child}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isRecording = _voiceController.isRecording;
+    final isActive = _focusNode.hasFocus || _isVoicePressing || isRecording;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      constraints: const BoxConstraints(minHeight: 42),
+      decoration: BoxDecoration(
+        color: isRecording
+            ? colorScheme.primary
+            : isActive
+            ? colorScheme.surfaceContainerHigh
+            : colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(21),
+        border: Border.all(
+          color: isRecording
+              ? Colors.transparent
+              : _focusNode.hasFocus
+              ? colorScheme.primary
+              : colorScheme.outlineVariant.withValues(
+                  alpha: isDark ? 0.25 : 0.45,
+                ),
+          width: _focusNode.hasFocus ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: isDark ? (isActive ? 0.32 : 0.18) : (isActive ? 0.10 : 0.05),
+            ),
+            blurRadius: isActive ? 14 : 8,
+            offset: Offset(0, isActive ? 4 : 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  /// 文本输入胶囊（键盘模式）
+  Widget _buildTextCapsule() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final focusNode = ref.watch(chatFocusNodeProvider(widget.roomId));
+    return _buildInputCapsule(
+      child: TextField(
+        controller: _inputController.textController,
+        focusNode: focusNode,
+        minLines: 1,
+        maxLines: 4,
+        textInputAction: TextInputAction.newline,
+        style: const TextStyle(fontSize: 15),
+        cursorColor: colorScheme.primary,
+        decoration: InputDecoration(
+          hintText: 'chat_input_placeholder'.tr(),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+        ),
+        onChanged: _handleTextChanged,
+        onTap: () {
+          if (!_focusNode.hasFocus) {
+            _focusNode.requestFocus();
+          }
+          _panelController.updatePanelType(ChatBottomPanelType.keyboard);
+          widget.bottomSheet();
+        },
+      ),
+    );
+  }
+
+  /// 语音输入胶囊（按住说话模式）
+  Widget _buildVoiceCapsule() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListenableBuilder(
+      listenable: _voiceController,
+      builder: (_, _) {
+        final isRecording = _voiceController.isRecording;
+        return _buildInputCapsule(
+          child: Container(
+            alignment: Alignment.center,
+            constraints: const BoxConstraints(minHeight: 42),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            child: AnimatedScale(
+              scale: _isVoicePressing ? 0.98 : 1.0,
+              duration: const Duration(milliseconds: 80),
+              curve: Curves.easeOut,
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isRecording ? FontWeight.w600 : FontWeight.normal,
+                  color: isRecording
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                ),
+                child: Text('hold_to_talk'.tr()),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -440,60 +587,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                                   );
                             }
                           },
-                          child: ListenableBuilder(
-                            listenable: _voiceController,
-                            builder: (_, _) => Container(
-                              height: 40,
-                              alignment: Alignment.center,
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              child: AnimatedScale(
-                                scale: _isVoicePressing ? 0.98 : 1.0,
-                                duration: const Duration(milliseconds: 80),
-                                curve: Curves.easeOut,
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 80),
-                                  curve: Curves.easeOut,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: _voiceController.isRecording
-                                        ? colorScheme.primary
-                                        : _isVoicePressing
-                                        ? colorScheme.surfaceContainerHigh
-                                        : colorScheme.surfaceContainer,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text('hold_to_talk'.tr()),
-                                ),
-                              ),
-                            ),
-                          ),
+                          child: _buildVoiceCapsule(),
                         )
-                      : TextField(
-                          controller: _inputController.textController,
-                          focusNode: focusNode,
-                          minLines: 1,
-                          maxLines: 4,
-                          textInputAction: TextInputAction.newline,
-                          decoration: InputDecoration(
-                            hintText: 'chat_input_placeholder'.tr(),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 8,
-                            ),
-                          ),
-                          onChanged: _handleTextChanged,
-                          onTap: () {
-                            if (!_focusNode.hasFocus) {
-                              _focusNode.requestFocus();
-                            }
-                            _panelController.updatePanelType(
-                              ChatBottomPanelType.keyboard,
-                            );
-                            widget.bottomSheet();
-                          },
-                        ),
+                      : _buildTextCapsule(),
                 ),
               ),
               // 表情按钮
@@ -533,8 +629,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                           key: const ValueKey('typing_state_button'),
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildCompactButton(
-                              tooltipMessage: 'toolbar_send'.tr(),
+                            _buildSendButton(
                               onTap: () {
                                 final data = _inputController.buildSendData();
                                 if (data == null) return;
@@ -559,8 +654,6 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                                 }
                                 _inputController.clear();
                               },
-                              icon: HugeIcons.strokeRoundedSent,
-                              color: colorScheme.primary,
                             ),
                           ],
                         ),

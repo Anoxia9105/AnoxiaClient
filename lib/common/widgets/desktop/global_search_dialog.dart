@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/framework/provider/desktop/desktop_search_controller.dart';
@@ -42,7 +43,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                     .updateQuery(v),
                 decoration: InputDecoration(
                   hintText: '${'search'.tr()}（会话 / 联系人）',
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch02),
                   suffixText: 'Ctrl+K',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -69,8 +70,8 @@ class GlobalSearchDialog extends ConsumerWidget {
                           ...searchState.rooms.map(
                             (room) => _ResultTile(
                               icon: room.roomType == 1
-                                  ? Icons.groups_2_outlined
-                                  : Icons.person_outline,
+                                  ? HugeIcons.strokeRoundedUserGroup02
+                                  : HugeIcons.strokeRoundedUser,
                               title:
                                   room.roomName ??
                                   'chat_unknown_conversation'.tr(),
@@ -97,7 +98,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                         else
                           ...searchState.contacts.map(
                             (contact) => _ResultTile(
-                              icon: Icons.badge_outlined,
+                              icon: HugeIcons.strokeRoundedBadge,
                               title: contact.remark?.isNotEmpty == true
                                   ? contact.remark!
                                   : (contact.nickName ??
@@ -164,7 +165,7 @@ class _ResultEmpty extends StatelessWidget {
 }
 
 class _ResultTile extends StatelessWidget {
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -180,7 +181,7 @@ class _ResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       dense: true,
-      leading: Icon(icon, size: 18),
+      leading: HugeIcon(icon: icon, size: 18),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: subtitle.isEmpty
           ? null

@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:flutter/material.dart';
 
 import 'settings_item_card.dart';
 
@@ -101,7 +101,7 @@ class _LanguageOption extends StatelessWidget {
               ),
             ),
             if (selected)
-              Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+              HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: colorScheme.primary),
           ],
         ),
       ),

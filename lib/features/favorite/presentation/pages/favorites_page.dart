@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -180,8 +181,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline,
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedAlertCircle,
             color: Theme.of(context).colorScheme.error,
             size: 28,
           ),
@@ -355,12 +356,12 @@ class _FavoriteDetailMobilePage extends ConsumerWidget {
               if (!context.mounted) return;
               Toast.showToast('chat_copy_success'.tr());
             },
-            icon: const Icon(Icons.copy_rounded),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01),
           ),
           IconButton(
             tooltip: 'favorite_remove'.tr(),
             onPressed: () => _remove(context, ref),
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02),
           ),
         ],
       ),
@@ -448,8 +449,8 @@ class _FavoriteListPanel extends StatelessWidget {
                       color: cs.primaryContainer,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
-                      Icons.bookmark_rounded,
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedBookmark01,
                       color: cs.primary,
                       size: 20,
                     ),
@@ -513,7 +514,7 @@ class _FavoriteListPanel extends StatelessWidget {
                   IconButton(
                     tooltip: 'call_window_retry'.tr(),
                     onPressed: onRefresh,
-                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 20),
                   ),
                 ],
               ),
@@ -529,8 +530,8 @@ class _FavoriteListPanel extends StatelessWidget {
                       fontSize: 12.5,
                       color: cs.onSurfaceVariant.withValues(alpha: .7),
                     ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
+                    prefixIcon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedSearch02,
                       size: 18,
                       color: cs.onSurfaceVariant,
                     ),
@@ -542,8 +543,8 @@ class _FavoriteListPanel extends StatelessWidget {
                               searchController.clear();
                               onQueryChanged('');
                             },
-                            icon: Icon(
-                              Icons.close_rounded,
+                            icon: HugeIcon(
+                              icon: HugeIcons.strokeRoundedCancel01,
                               color: cs.onSurfaceVariant,
                             ),
                           )
@@ -563,7 +564,7 @@ class _FavoriteListPanel extends StatelessWidget {
                       if (index == 0) {
                         return _TypeFilterChip(
                           label: 'favorite_all_types'.tr(),
-                          icon: Icons.apps_rounded,
+                          icon: HugeIcons.strokeRoundedGrid,
                           selected: typeFilter == null,
                           onTap: () => onTypeChanged(null),
                         );
@@ -686,8 +687,8 @@ class _FavoriteListItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(
-                Icons.bookmark_rounded,
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedBookmark01,
                 size: 14,
                 color: selected
                     ? style.color
@@ -704,7 +705,7 @@ class _FavoriteListItem extends StatelessWidget {
 /// 类型筛选 Chip
 class _TypeFilterChip extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -730,9 +731,7 @@ class _TypeFilterChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 14,
+              HugeIcon(icon: icon, size: 14,
                 color: selected ? cs.onPrimary : cs.onSurfaceVariant,
               ),
               const SizedBox(width: 5),
@@ -771,7 +770,7 @@ class _TypeChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_typeStyle(type).icon, size: 12, color: color),
+          HugeIcon(icon: _typeStyle(type).icon, size: 12, color: color),
           const SizedBox(width: 4),
           Text(
             _typeLabel(type),
@@ -857,8 +856,8 @@ class _FavoriteDetailPanel extends StatelessWidget {
                   color: style.color.withValues(alpha: .14),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  style.icon,
+                child: HugeIcon(
+                  icon: style.icon,
                   size: 22,
                   color: _typeColor(context, type),
                 ),
@@ -946,12 +945,12 @@ class _FavoriteDetailPanel extends StatelessWidget {
                   if (!context.mounted) return;
                   Toast.showToast('chat_copy_success'.tr());
                 },
-                icon: const Icon(Icons.copy_rounded, size: 20),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 20),
               ),
               IconButton(
                 tooltip: 'favorite_remove'.tr(),
                 onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 20),
               ),
             ],
           ),
@@ -1118,7 +1117,7 @@ class _FavoriteTextDetailCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.format_quote_rounded, size: 18, color: cs.primary),
+              HugeIcon(icon: HugeIcons.strokeRoundedQuoteDown, size: 18, color: cs.primary),
               const SizedBox(width: 6),
               Text(
                 'favorite_text_type'.tr(),
@@ -1194,7 +1193,7 @@ class _EmptyFavorites extends StatelessWidget {
               ),
               border: Border.all(color: cs.primary.withValues(alpha: .15)),
             ),
-            child: Icon(Icons.bookmarks_rounded, size: 40, color: cs.primary),
+            child: HugeIcon(icon: HugeIcons.strokeRoundedBookmark03, size: 40, color: cs.primary),
           ),
           const SizedBox(height: 16),
           Text(
@@ -1217,7 +1216,7 @@ class _EmptyFavorites extends StatelessWidget {
           const SizedBox(height: 16),
           FilledButton.tonalIcon(
             onPressed: onRefresh,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 18),
             label: Text('call_window_retry'.tr()),
           ),
         ],
@@ -1240,7 +1239,7 @@ class _NoMatchFavorites extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off_rounded, size: 34, color: cs.onSurfaceVariant),
+          HugeIcon(icon: HugeIcons.strokeRoundedSearchRemove, size: 34, color: cs.onSurfaceVariant),
           const SizedBox(height: 10),
           Text(
             'favorite_no_result'.tr(),
@@ -1249,7 +1248,7 @@ class _NoMatchFavorites extends StatelessWidget {
           const SizedBox(height: 12),
           FilledButton.tonalIcon(
             onPressed: onClearFilters,
-            icon: const Icon(Icons.filter_alt_off_rounded, size: 18),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedFilterRemove, size: 18),
             label: Text('favorite_clear_filter'.tr()),
           ),
         ],
@@ -1378,32 +1377,32 @@ class _FavoriteDetailSkeleton extends StatelessWidget {
 
 /// 消息类型展示样式（图标 + 主题色）
 class _TypeStyle {
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final MaterialColor color;
 
   const _TypeStyle(this.icon, this.color);
 }
 
 const Map<MessageType, _TypeStyle> _typeStyles = {
-  MessageType.text: _TypeStyle(Icons.format_quote_rounded, Colors.blue),
-  MessageType.richText: _TypeStyle(Icons.article_rounded, Colors.teal),
-  MessageType.image: _TypeStyle(Icons.image_rounded, Colors.purple),
-  MessageType.audio: _TypeStyle(Icons.mic_rounded, Colors.orange),
-  MessageType.video: _TypeStyle(Icons.videocam_rounded, Colors.red),
-  MessageType.file: _TypeStyle(Icons.insert_drive_file_rounded, Colors.indigo),
+  MessageType.text: _TypeStyle(HugeIcons.strokeRoundedQuoteDown, Colors.blue),
+  MessageType.richText: _TypeStyle(HugeIcons.strokeRoundedFile02, Colors.teal),
+  MessageType.image: _TypeStyle(HugeIcons.strokeRoundedImage01, Colors.purple),
+  MessageType.audio: _TypeStyle(HugeIcons.strokeRoundedMic01, Colors.orange),
+  MessageType.video: _TypeStyle(HugeIcons.strokeRoundedVideo01, Colors.red),
+  MessageType.file: _TypeStyle(HugeIcons.strokeRoundedFile02, Colors.indigo),
   MessageType.emoji: _TypeStyle(
-    Icons.sentiment_satisfied_alt_rounded,
+    HugeIcons.strokeRoundedHappy01,
     Colors.amber,
   ),
-  MessageType.location: _TypeStyle(Icons.place_rounded, Colors.green),
-  MessageType.card: _TypeStyle(Icons.badge_rounded, Colors.cyan),
-  MessageType.system: _TypeStyle(Icons.info_rounded, Colors.blueGrey),
+  MessageType.location: _TypeStyle(HugeIcons.strokeRoundedLocation01, Colors.green),
+  MessageType.card: _TypeStyle(HugeIcons.strokeRoundedBadge, Colors.cyan),
+  MessageType.system: _TypeStyle(HugeIcons.strokeRoundedInformationCircle, Colors.blueGrey),
 };
 
 /// 获取消息类型的展示样式
 _TypeStyle _typeStyle(MessageType type) {
   return _typeStyles[type] ??
-      const _TypeStyle(Icons.description_rounded, Colors.blueGrey);
+      const _TypeStyle(HugeIcons.strokeRoundedFile01, Colors.blueGrey);
 }
 
 /// 获取消息类型在明暗主题下适配的展示颜色

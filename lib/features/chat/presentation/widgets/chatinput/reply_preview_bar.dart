@@ -3,6 +3,7 @@
 // 在聊天输入框上方显示被引用消息的预览条，展示发送者、时间和内容摘要。
 // 支持点击跳转到原消息、清除引用等操作。
 import 'package:anoxia/common/utils/date_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -102,7 +103,7 @@ class ReplyPreviewBar extends ConsumerWidget {
             IconButton(
               tooltip: 'chat_reply_cancel_tooltip'.tr(),
               onPressed: onClear,
-              icon: const Icon(Icons.close, size: 16),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16),
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 28, height: 28),

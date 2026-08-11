@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_empty_state.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
@@ -76,8 +77,10 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(
-            isDesktop ? Icons.close_rounded : Icons.arrow_back_ios_new_rounded,
+          icon: HugeIcon(
+            icon: isDesktop
+                ? HugeIcons.strokeRoundedCancel01
+                : HugeIcons.strokeRoundedArrowLeft01,
             color: colorScheme.onSurface,
             size: 22,
           ),

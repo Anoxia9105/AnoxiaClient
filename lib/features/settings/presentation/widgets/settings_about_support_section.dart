@@ -1,11 +1,11 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
@@ -334,8 +334,8 @@ class _ActionRow extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowRight01,
               color: colorScheme.onSurfaceVariant,
             ),
           ],
@@ -406,8 +406,8 @@ class _UpdateCard extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                Icons.chevron_right_rounded,
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
                 color: colorScheme.onSurfaceVariant,
               ),
           ],

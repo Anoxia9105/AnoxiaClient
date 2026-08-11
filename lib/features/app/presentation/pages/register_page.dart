@@ -2,6 +2,7 @@
 //
 // 第一步验证邮箱并获取验证码，第二步填写用户名和密码完成注册。
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/validators.dart';
@@ -132,7 +133,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               Navigator.of(context).pop();
             }
           },
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
         ),
       ],
     ),
@@ -140,7 +141,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Widget _buildHeader(BuildContext context, ColorScheme scheme) => Column(
     children: [
-      Icon(Icons.person_add_alt_1_rounded, size: 42, color: scheme.primary),
+      HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, size: 42, color: scheme.primary),
       const SizedBox(height: 10),
       Text(
         'register_title'.tr(),
@@ -207,7 +208,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           shape: BoxShape.circle,
         ),
         child: complete
-            ? Icon(Icons.check_rounded, size: 18, color: scheme.onPrimary)
+            ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: scheme.onPrimary)
             : Text(
                 '$index',
                 style: TextStyle(
@@ -239,7 +240,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           _field(
             controller: _emailCtrl,
             hint: 'register_email'.tr(),
-            icon: Icons.alternate_email_rounded,
+            icon: HugeIcons.strokeRoundedAt,
             maxLength: 50,
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
@@ -265,7 +266,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.verified_outlined),
+                  : const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkBadge01),
               label: Text('register_verify_and_continue'.tr()),
             ),
           ),
@@ -278,7 +279,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final field = _field(
       controller: _emailCodeCtrl,
       hint: 'register_email_code'.tr(),
-      icon: Icons.mark_email_read_outlined,
+      icon: HugeIcons.strokeRoundedMailOpen01,
       maxLength: 6,
       keyboardType: TextInputType.text,
       inputFormatters: [
@@ -332,7 +333,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ),
           child: Row(
             children: [
-              Icon(Icons.verified_rounded, color: scheme.primary),
+              HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkBadge01, color: scheme.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -352,7 +353,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         _field(
           controller: _usernameCtrl,
           hint: 'register_username'.tr(),
-          icon: Icons.person_outline_rounded,
+          icon: HugeIcons.strokeRoundedUser,
           maxLength: 30,
           autofillHints: const [AutofillHints.newUsername],
           validator: (value) {
@@ -404,7 +405,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Widget _field({
     required TextEditingController controller,
     required String hint,
-    required IconData icon,
+    required List<List<dynamic>> icon,
     int? maxLength,
     TextInputType? keyboardType,
     Iterable<String>? autofillHints,
@@ -422,7 +423,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ],
     decoration: InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon),
+      prefixIcon: HugeIcon(icon: icon),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     ),
     validator: validator,
@@ -443,11 +444,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     autofillHints: const [AutofillHints.newPassword],
     decoration: InputDecoration(
       hintText: hint,
-      prefixIcon: const Icon(Icons.lock_outline_rounded),
+      prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedLock),
       suffixIcon: IconButton(
         onPressed: onToggle,
-        icon: Icon(
-          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        icon: HugeIcon(
+          icon: obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
         ),
       ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -469,7 +470,7 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
         child: _field(
           controller: _captchaCtrl,
           hint: 'login_page_captcha'.tr(),
-          icon: Icons.shield_outlined,
+          icon: HugeIcons.strokeRoundedShield01,
           maxLength: 4,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
@@ -502,7 +503,7 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
             error: (_, _) => _captchaPlaceholder(
               IconButton(
                 onPressed: _refreshCaptcha,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01),
               ),
               scheme,
               isMobile,

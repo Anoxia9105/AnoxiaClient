@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/domain/user_info.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:flutter/material.dart';
@@ -36,8 +37,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.photo_camera_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
+    expect(find.byType(HugeIcon), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

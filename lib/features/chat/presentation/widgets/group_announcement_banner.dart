@@ -2,6 +2,7 @@
 //
 // 支持查看公告详情和关闭横幅，关闭后相同内容的公告不再显示。
 import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/room/group_announcement_dismissal_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -50,8 +51,8 @@ class GroupAnnouncementBanner extends ConsumerWidget {
         child: Row(
           children: [
             const SizedBox(width: 12),
-            Icon(
-              Icons.campaign_outlined,
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedMegaphone01,
               size: 19,
               color: colorScheme.onSecondaryContainer,
             ),
@@ -78,7 +79,7 @@ class GroupAnnouncementBanner extends ConsumerWidget {
                   .read(groupAnnouncementDismissalProvider.notifier)
                   .dismiss(roomId, content),
               tooltip: 'chat_group_announcement_close'.tr(),
-              icon: const Icon(Icons.close, size: 18),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18),
               color: colorScheme.onSecondaryContainer,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 40, height: 40),

@@ -3,6 +3,7 @@
 // 实现位置类型消息的渲染逻辑，将位置信息渲染为包含地图预览和坐标信息的卡片。
 // 点击可跳转到详细地图页面。
 import 'package:anoxia/features/chat/presentation/pages/location_message_detail_page.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/location/map_tile_source.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -89,16 +90,10 @@ class _LocationMessage extends StatelessWidget {
                                 width: 38,
                                 height: 38,
                                 alignment: Alignment.topCenter,
-                                child: const Icon(
-                                  Icons.location_pin,
+                                child: const HugeIcon(
+                                  icon: HugeIcons.strokeRoundedLocation01,
                                   size: 36,
                                   color: Colors.redAccent,
-                                  shadows: [
-                                    Shadow(
-                                      blurRadius: 4,
-                                      color: Colors.black38,
-                                    ),
-                                  ],
                                 ),
                               ),
                             ],

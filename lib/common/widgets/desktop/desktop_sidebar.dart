@@ -1,4 +1,6 @@
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
@@ -6,7 +8,6 @@ import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 
 import '../../../framework/provider/layout/layout_controller.dart';
@@ -75,25 +76,9 @@ class DesktopSidebar extends ConsumerWidget {
                   tooltip: 'sidebar_logout'.tr(),
                   onPressed: () async {
                     // 弹出确认对话框
-                    final shouldLogout = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('logout'.tr()),
-                        content: Text('logout_confirm_hint'.tr()),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text('cancel'.tr()),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text('confirm'.tr()),
-                          ),
-                        ],
-                      ),
-                    );
+                    final shouldLogout = await showLogoutConfirmDialog(context);
                     // 如果用户点击了“确定”且对话框未关闭，执行登出
-                    if (shouldLogout == true) {
+                    if (shouldLogout) {
                       ref.read(authControllerProvider.notifier).logout();
                     }
                   },

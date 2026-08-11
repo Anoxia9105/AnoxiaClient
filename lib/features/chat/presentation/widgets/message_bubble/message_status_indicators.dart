@@ -5,6 +5,7 @@
 library;
 
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -74,7 +75,7 @@ class DeliveryStatusIndicator extends ConsumerWidget {
       case DeliveryStatus.failed:
         return GestureDetector(
           onTap: () => MessageResender.resend(ref, message),
-          child: const Icon(Icons.error, size: 16, color: Colors.red),
+          child: const HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, size: 16, color: Colors.red),
         );
       case DeliveryStatus.sent:
         return const SizedBox.shrink();

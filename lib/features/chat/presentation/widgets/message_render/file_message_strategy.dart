@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/file_util.dart';
@@ -497,8 +498,8 @@ class _FileMessageListState extends State<_FileMessageList> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Icon(
-                            Icons.check_circle_rounded,
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedCheckmarkCircle01,
                             size: 12,
                             color: colorScheme.primary,
                           ),
@@ -588,8 +589,8 @@ class _FileMessageListState extends State<_FileMessageList> {
         tooltip: 'file_show_in_folder'.tr(),
         visualDensity: VisualDensity.compact,
         onPressed: () => _showFileLocation(file),
-        icon: Icon(
-          Icons.folder_open_rounded,
+        icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedFolderOpen,
           size: 19,
           color: colorScheme.primary,
         ),
@@ -600,8 +601,8 @@ class _FileMessageListState extends State<_FileMessageList> {
       tooltip: 'file_download'.tr(),
       visualDensity: VisualDensity.compact,
       onPressed: () => _downloadFile(file),
-      icon: Icon(
-        Icons.download_rounded,
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedDownload01,
         size: 19,
         color: colorScheme.onSurfaceVariant,
       ),

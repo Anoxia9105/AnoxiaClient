@@ -1,10 +1,17 @@
 ﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
+import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
+
+import 'change_password_page.dart';
+import 'me_page.dart';
+import 'personal_qr_page.dart';
 
 /// 抽屉左侧菜单页面（带完整个人信息展示）
 class MenuPage extends ConsumerWidget {
@@ -90,17 +97,17 @@ class MenuPage extends ConsumerWidget {
                     child: Column(
                       children: [
                         _buildInfoRow(
-                          icon: Icons.wc_outlined,
+                          icon: HugeIcons.strokeRoundedToilet01,
                           value: _parseGender(user.sex),
                         ),
                         const SizedBox(height: 10),
                         _buildInfoRow(
-                          icon: Icons.email_outlined,
+                          icon: HugeIcons.strokeRoundedMail01,
                           value: user.email.isNotEmpty ? user.email : '--',
                         ),
                         const SizedBox(height: 10),
                         _buildInfoRow(
-                          icon: Icons.phone_outlined,
+                          icon: HugeIcons.strokeRoundedCall,
                           value: user.phoneNumber.isNotEmpty
                               ? user.phoneNumber
                               : '--',
@@ -128,6 +135,7 @@ class MenuPage extends ConsumerWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
+                  // 第一组：个人中心 / 我的二维码 / 修改密码 / 深色模式
                   Material(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
@@ -136,32 +144,47 @@ class MenuPage extends ConsumerWidget {
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedUser,
-                          title: 'me_page_title'.tr(), // 资料修改/详情入口
+                          title: 'me_page_title'.tr(), // 个人中心
+                          onTap: () => _pushPage(context, const MyPage()),
+                        ),
+                        _buildTileDivider(),
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedQrCode01,
+                          title: 'me_my_qr'.tr(), // 我的二维码
                           onTap: () {
-                            // 开发意图：点击后跳转至对应的详情页修改
+                            final user = ref.read(authControllerProvider).value;
+                            if (user != null) {
+                              _pushPage(context, PersonalQrPage(user: user));
+                            }
                           },
                         ),
                         _buildTileDivider(),
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedLock,
-                          title: 'me_password_submit'.tr(), // 密码修改
-                          onTap: () {
-                            // 开发意图：点击激活密码表单
-                          },
+                          title: 'me_password_submit'.tr(), // 修改密码
+                          onTap: () =>
+                              _pushPage(context, const ChangePasswordPage()),
                         ),
                         _buildTileDivider(),
+                        _buildDarkModeTile(ref),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 第二组：设置
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Column(
+                      children: [
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedSettings01,
                           title: 'sidebar_setting'.tr(), // 设置页面
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const SettingsPage(),
-                              ),
-                            );
-                          },
+                          onTap: () =>
+                              _pushPage(context, const SettingsPage()),
                         ),
                       ],
                     ),
@@ -173,13 +196,6 @@ class MenuPage extends ConsumerWidget {
             // 4. 底部退出登录
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
-              // child: _buildMenuTile(
-              //   context,
-              //   icon: Icons.logout_rounded,
-              //   title: 'logout'.tr(),
-              //   isDanger: true,
-              //   onTap: () => _showLogoutConfirmDialog(context, ref),
-              // ),
               child: TextButton.icon(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
@@ -195,8 +211,13 @@ class MenuPage extends ConsumerWidget {
                   ),
                 ),
                 label: Text('sidebar_logout'.tr()),
-                onPressed: () => _showLogoutConfirmDialog(context, ref),
-                icon: const Icon(Icons.logout_rounded),
+                onPressed: () async {
+                  final shouldLogout = await showLogoutConfirmDialog(context);
+                  if (shouldLogout && context.mounted) {
+                    await ref.read(authControllerProvider.notifier).logout();
+                  }
+                },
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedLogout01),
               ),
             ),
           ],
@@ -206,10 +227,13 @@ class MenuPage extends ConsumerWidget {
   }
 
   /// 封装行内信息展示条（左图标 + 标签，右半透白数据）
-  Widget _buildInfoRow({required IconData icon, required String value}) {
+  Widget _buildInfoRow({
+    required List<List<dynamic>> icon,
+    required String value,
+  }) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.6)),
+        HugeIcon(icon: icon, size: 16, color: Colors.white.withValues(alpha: 0.6)),
         const SizedBox(width: 4),
         Expanded(
           flex: 2,
@@ -273,8 +297,8 @@ class MenuPage extends ConsumerWidget {
           fontWeight: isDanger ? FontWeight.w500 : FontWeight.normal,
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
+      trailing: HugeIcon(
+        icon: HugeIcons.strokeRoundedArrowRight01,
         size: 20,
         color: displayColor.withValues(alpha: 0.65),
       ),
@@ -291,35 +315,54 @@ class MenuPage extends ConsumerWidget {
     );
   }
 
-  /// 登出二次确认弹窗
-  void _showLogoutConfirmDialog(BuildContext context, WidgetRef ref) {
-    showAdaptiveDialog(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: Text('logout'.tr()),
-        content: Text('logout_confirm_hint'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'cancel'.tr(),
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await ref.read(authControllerProvider.notifier).logout();
-            },
-            child: Text(
-              'confirm'.tr(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
+  /// 推入新页面（抽屉菜单项统一跳转入口）
+  void _pushPage(BuildContext context, Widget page) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => page));
+  }
+
+  /// 深色模式快捷开关
+  ///
+  /// 与设置页行为一致：切换亮度并同步兼容主题索引（保留强调色）。
+  Widget _buildDarkModeTile(WidgetRef ref) {
+    final isDark = ref.watch(themeModeProvider) == Brightness.dark;
+    return SwitchListTile(
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -1),
+      minVerticalPadding: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      secondary: HugeIcon(
+        icon: isDark
+            ? HugeIcons.strokeRoundedMoon02
+            : HugeIcons.strokeRoundedSun03,
+        color: Colors.white.withValues(alpha: 0.85),
+        size: 21,
+      ),
+      title: Text(
+        'sidebar_dark_mode'.tr(),
+        style: const TextStyle(color: Colors.white, fontSize: 14.5),
+      ),
+      value: isDark,
+      activeThumbColor: Colors.white,
+      activeTrackColor: Colors.white.withValues(alpha: 0.45),
+      inactiveThumbColor: Colors.white,
+      inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+      onChanged: (_) => _toggleDarkMode(ref),
+    );
+  }
+
+  /// 切换亮/暗模式
+  void _toggleDarkMode(WidgetRef ref) {
+    final next = ref.read(themeModeProvider) == Brightness.dark
+        ? Brightness.light
+        : Brightness.dark;
+    ref.read(themeModeProvider.notifier).setMode(next);
+    final accentIndex = ref.read(themeAccentProvider);
+    ref.read(themeIndexProvider.notifier).setTheme(
+      AppTheme.compatibilityThemeIndex(
+        brightness: next,
+        accentIndex: accentIndex,
       ),
     );
   }

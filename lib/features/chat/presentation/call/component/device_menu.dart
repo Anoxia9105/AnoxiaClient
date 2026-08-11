@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -6,7 +7,6 @@ import 'package:anoxia/features/chat/presentation/call/component/volume_indicato
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:livekit_client/livekit_client.dart';
 
 /// 设备菜单项数据
@@ -254,8 +254,8 @@ class _DeviceMenuContent extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                       iconSize: 16,
                       tooltip: 'call_close_tooltip'.tr(),
-                      icon: Icon(
-                        Icons.close_rounded,
+                      icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedCancel01,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -323,8 +323,10 @@ class _DeviceItemTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            Icon(
-              item.selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+            HugeIcon(
+              icon: item.selected
+                  ? HugeIcons.strokeRoundedCheckmarkCircle01
+                  : HugeIcons.strokeRoundedCircle,
               size: 18,
               color: item.selected ? primary : theme.colorScheme.outlineVariant,
             ),
@@ -360,8 +362,8 @@ class _EmptyDevices extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.devices_other_outlined,
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedLaptop,
             size: 30,
             color: theme.colorScheme.outline,
           ),
@@ -424,8 +426,8 @@ class _LocalVolumeFooterState extends State<LocalVolumeFooter> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.mic,
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedMic01,
             size: 14,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

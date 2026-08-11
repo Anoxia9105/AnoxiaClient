@@ -1,4 +1,5 @@
 ﻿import 'dart:math' as math;
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
@@ -12,7 +13,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/platform/shims/image_gallery_saver_plus_shim.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -609,7 +609,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.broken_image, color: Colors.white54, size: 50),
+          const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, color: Colors.white54, size: 50),
           const SizedBox(height: 8),
           Text(
             'image_failed_to_load'.tr(),

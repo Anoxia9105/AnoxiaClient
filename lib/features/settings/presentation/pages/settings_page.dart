@@ -147,7 +147,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        centerTitle: DeviceUtil.isRealMobile(),
+        centerTitle: true,
         title: Text('settings_page_title'.tr()),
       ),
       body: ListView(

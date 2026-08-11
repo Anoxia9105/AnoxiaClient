@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_recommend_dialog.dart';
 import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
@@ -11,7 +12,6 @@ import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 联系人详情操作按钮组件
 ///

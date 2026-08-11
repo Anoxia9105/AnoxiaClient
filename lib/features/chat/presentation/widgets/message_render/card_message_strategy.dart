@@ -3,6 +3,7 @@
 // 实现卡片类型消息的渲染逻辑，将 CardPayload 数据渲染为可点击的卡片组件。
 // 支持联系人卡片和群组卡片的识别与跳转。
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -148,8 +149,8 @@ class _CardThumbnail extends StatelessWidget {
         color: colorScheme.surface,
         alignment: Alignment.center,
         child: imageUrl == null
-            ? Icon(
-                Icons.badge_outlined,
+            ? HugeIcon(
+                icon: HugeIcons.strokeRoundedBadge,
                 size: 24,
                 color: colorScheme.onSurfaceVariant,
               )
@@ -164,8 +165,8 @@ class _CardThumbnail extends StatelessWidget {
                     .round(),
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.medium,
-                errorBuilder: (_, _, _) => Icon(
-                  Icons.badge_outlined,
+                errorBuilder: (_, _, _) => HugeIcon(
+                  icon: HugeIcons.strokeRoundedBadge,
                   size: 24,
                   color: colorScheme.onSurfaceVariant,
                 ),

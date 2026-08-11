@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /// 会议计时器组件

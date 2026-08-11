@@ -1,5 +1,5 @@
-import 'package:hugeicons/hugeicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 part 'layout_controller.g.dart';
 

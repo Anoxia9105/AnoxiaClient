@@ -1,7 +1,7 @@
 import 'package:anoxia/framework/theme/app_theme.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'settings_item_card.dart';
 
@@ -186,7 +186,7 @@ class _BrightnessTile extends StatelessWidget {
               ),
             ),
             if (selected)
-              Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+              HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: colorScheme.primary),
           ],
         ),
       ),
@@ -269,8 +269,8 @@ class _AccentSwatch extends StatelessWidget {
               ),
             ),
             child: selected
-                ? Icon(
-                    Icons.check_rounded,
+                ? HugeIcon(
+                    icon: HugeIcons.strokeRoundedTick01,
                     color: colorScheme.onPrimary,
                     size: 18,
                   )

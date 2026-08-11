@@ -2,6 +2,7 @@
 //
 // 支持音频通话和视频通话两种模式，群组通话中额外显示邀请成员按钮。
 import 'package:anoxia/framework/domain/room_state.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -82,7 +83,7 @@ class MobileCallControls extends ConsumerWidget {
                 children: [
                 _CallControlButton(
                   tooltip: state.micEnabled ? 'call_mic_mute'.tr() : 'call_mic_unmute'.tr(),
-                  icon: state.micEnabled ? Icons.mic : Icons.mic_off,
+                  icon: state.micEnabled ? HugeIcons.strokeRoundedMic01 : HugeIcons.strokeRoundedMicOff01,
                   active: state.micEnabled,
                   onPressed: notifier.toggleMic,
                 ),
@@ -90,8 +91,8 @@ class MobileCallControls extends ConsumerWidget {
                 _CallControlButton(
                   tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
                   icon: state.speakerOn
-                      ? Icons.volume_up_rounded
-                      : Icons.hearing_rounded,
+                      ? HugeIcons.strokeRoundedVolumeUp
+                      : HugeIcons.strokeRoundedEar,
                   active: state.speakerOn,
                   onPressed: notifier.toggleSpeaker,
                 ),
@@ -100,15 +101,15 @@ class MobileCallControls extends ConsumerWidget {
                   _CallControlButton(
                     tooltip: state.cameraEnabled ? 'call_camera_off'.tr() : 'call_camera_on'.tr(),
                     icon: state.cameraEnabled
-                        ? Icons.videocam_rounded
-                        : Icons.videocam_off_rounded,
+                        ? HugeIcons.strokeRoundedVideo01
+                        : HugeIcons.strokeRoundedVideoOff,
                     active: state.cameraEnabled,
                     onPressed: notifier.toggleCamera,
                   ),
                   const SizedBox(width: 10),
                   _CallControlButton(
                     tooltip: 'call_switch_camera_tooltip'.tr(),
-                    icon: Icons.cameraswitch_rounded,
+                    icon: HugeIcons.strokeRoundedCameraRotated01,
                     active: false,
                     enabled: state.cameraEnabled,
                     onPressed: notifier.switchCamera,
@@ -121,7 +122,7 @@ class MobileCallControls extends ConsumerWidget {
                 const SizedBox(width: 10),
                 _CallControlButton(
                   tooltip: 'call_hangup_tooltip'.tr(),
-                  icon: Icons.call_end_rounded,
+                  icon: HugeIcons.strokeRoundedCallEnd01,
                   backgroundColor: const Color(0xFFE53945),
                   foregroundColor: Colors.white,
                   onPressed: () => _hangUp(ref, notifier),
@@ -165,7 +166,7 @@ class _CallControlButton extends StatelessWidget {
   final String tooltip;
 
   /// 按钮图标
-  final IconData icon;
+  final List<List<dynamic>> icon;
 
   /// 点击回调
   final Future<void> Function() onPressed;
@@ -202,8 +203,8 @@ class _CallControlButton extends StatelessWidget {
             onTap: enabled ? () => onPressed() : null,
             child: SizedBox.square(
               dimension: 52,
-              child: Icon(
-                icon,
+              child: HugeIcon(
+                icon: icon,
                 color: enabled ? resolvedForeground : Colors.white30,
                 size: 24,
               ),

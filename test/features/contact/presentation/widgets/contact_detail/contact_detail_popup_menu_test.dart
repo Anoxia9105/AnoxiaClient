@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_popup_menu.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -53,7 +54,7 @@ void main() {
     await tester.tap(find.text('open dialog'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byType(HugeIcon));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 

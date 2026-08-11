@@ -1,9 +1,9 @@
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_detail_header.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_info_tile.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 群成员基本信息页
 ///

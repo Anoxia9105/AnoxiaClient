@@ -2,6 +2,7 @@
 //
 // 展示所有待处理、已批准和已拒绝的入群申请，管理员可以批准或拒绝申请。
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -46,7 +47,7 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
           return Center(
             child: TextButton.icon(
               onPressed: _reload,
-              icon: const Icon(Icons.refresh),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
               label: Text('chat_operation_retry_failed'.tr()),
             ),
           );
@@ -81,11 +82,11 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                           onPressed: () => _handle(row, false),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.check),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedTick01),
                           onPressed: () => _handle(row, true),
                         ),
                       ],

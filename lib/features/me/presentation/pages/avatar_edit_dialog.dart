@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ class AvatarEditDialog extends StatelessWidget {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.account_circle_outlined, color: cs.primary),
+          HugeIcon(icon: HugeIcons.strokeRoundedUserCircle, color: cs.primary),
           const SizedBox(width: 10),
           Expanded(child: Text('me_avatar_upload_title'.tr())),
         ],

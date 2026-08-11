@@ -1,7 +1,7 @@
 import 'dart:math';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 右上角气泡菜单公共构建工具
 ///

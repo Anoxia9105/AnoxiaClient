@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
 /// 更新页面相关组件集合
@@ -46,8 +47,8 @@ class UpdateHeaderCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               color: colorScheme.primaryContainer,
             ),
-            child: Icon(
-              Icons.system_update_alt_rounded,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedSystemUpdate02,
               color: colorScheme.onPrimaryContainer,
               size: 26,
             ),
@@ -144,8 +145,8 @@ class UpdateReleaseNotesCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.article_outlined,
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedFile01,
                 size: 16,
                 color: colorScheme.primary,
               ),
@@ -255,7 +256,7 @@ class UpdateActionArea extends StatelessWidget {
             ),
           ),
           onPressed: onStartDownload,
-          icon: const Icon(Icons.download_rounded),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedDownload01),
           label: Text(
             hasStarted ? 'update_retry_download'.tr() : 'update_now'.tr(),
           ),
@@ -284,10 +285,10 @@ class UpdateActionArea extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                progress >= 1
-                    ? Icons.inventory_2_outlined
-                    : Icons.downloading_rounded,
+              HugeIcon(
+                icon: progress >= 1
+                    ? HugeIcons.strokeRoundedSmartPhone01
+                    : HugeIcons.strokeRoundedDownload04,
                 size: 18,
                 color: colorScheme.primary,
               ),
@@ -337,8 +338,8 @@ class UpdateErrorCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedAlertCircle,
             color: colorScheme.onErrorContainer,
             size: 20,
           ),

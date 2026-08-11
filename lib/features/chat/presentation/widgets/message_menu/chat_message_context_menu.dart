@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:flutter/gestures.dart';
@@ -7,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_quill/quill_delta.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';

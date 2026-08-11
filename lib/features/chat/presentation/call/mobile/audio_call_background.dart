@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /// 音频通话背景组件
@@ -45,8 +46,8 @@ class AudioCallBackground extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.08),
                       border: Border.all(color: Colors.white12),
                     ),
-                    child: const Icon(
-                      Icons.call_rounded,
+                    child: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCall02,
                       color: Colors.white,
                       size: 46,
                     ),

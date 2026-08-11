@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -195,7 +196,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
                           onPressed: () => context.pop(),
-                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 18),
                           label: Text('common_back'.tr()),
                           style: TextButton.styleFrom(
                             foregroundColor: Theme.of(

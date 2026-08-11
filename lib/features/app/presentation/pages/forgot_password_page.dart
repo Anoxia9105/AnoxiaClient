@@ -2,6 +2,7 @@
 //
 // 第一步输入邮箱并通过图形验证码发送邮箱验证码，验证通过后进入第二步设置新密码。
 import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 
 import 'package:anoxia/common/utils/validators.dart';
@@ -123,7 +124,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               Navigator.of(context).pop();
             }
           },
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
         ),
       ],
     ),
@@ -131,7 +132,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Widget _buildHeader(ColorScheme colorScheme) => Column(
     children: [
-      Icon(Icons.password_rounded, size: 42, color: colorScheme.primary),
+      HugeIcon(icon: HugeIcons.strokeRoundedLockPassword, size: 42, color: colorScheme.primary),
       const SizedBox(height: 10),
       Text(
         'login_page_forget_dialog_title'.tr(),
@@ -198,7 +199,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           shape: BoxShape.circle,
         ),
         child: complete
-            ? Icon(Icons.check_rounded, size: 18, color: colorScheme.onPrimary)
+            ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: colorScheme.onPrimary)
             : Text(
                 '$index',
                 style: TextStyle(
@@ -369,8 +370,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       hintText: label,
       suffixIcon: IconButton(
         onPressed: onToggle,
-        icon: Icon(
-          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        icon: HugeIcon(
+          icon: obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
         ),
       ),
     ),

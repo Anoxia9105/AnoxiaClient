@@ -1,11 +1,11 @@
 ﻿import 'dart:async';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:anoxia/framework/theme/app_colors.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 桌面端屏幕共享：弹出窗口/屏幕选择对话框
 ///
@@ -218,7 +218,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
           const Spacer(),
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
           ),
         ],
       ),
@@ -331,7 +331,7 @@ class ThumbnailWidget extends StatelessWidget {
                           gaplessPlayback: true,
                         )
                       : const Center(
-                          child: Icon(Icons.monitor, color: Colors.white24),
+                          child: HugeIcon(icon: HugeIcons.strokeRoundedComputer, color: Colors.white24),
                         ),
                 ),
               ),

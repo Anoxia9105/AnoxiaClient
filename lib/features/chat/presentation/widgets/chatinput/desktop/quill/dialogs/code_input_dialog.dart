@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -83,7 +84,7 @@ class _CodeInputDialogState extends State<CodeInputDialog> {
                     child: Text('toolbar_send'.tr()),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
                     onPressed: widget.onCancel ?? () => Navigator.of(context).pop(),
                   ),
                 ],

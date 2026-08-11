@@ -1,4 +1,5 @@
 ﻿import 'dart:ui';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/foundation.dart';
@@ -151,7 +152,7 @@ class Toast {
   static void _buildToast(
     String message,
     Color color,
-    Icon icon,
+    Widget icon,
     Alignment align,
     Duration duration,
   ) {
@@ -189,11 +190,7 @@ class Toast {
                   color: Colors.white.withValues(alpha: .22),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon.icon,
-                  color: Colors.white,
-                  size: _defaultIconSize,
-                ),
+                child: icon,
               ),
               const SizedBox(width: 7),
               Flexible(
@@ -234,8 +231,8 @@ class Toast {
       case ToastType.warning:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(230, 162, 60, 1),
-          const Icon(
-            Icons.warning_amber,
+          const HugeIcon(
+            icon: HugeIcons.strokeRoundedAlert02,
             color: Colors.white,
             size: _defaultIconSize,
           ),
@@ -243,8 +240,8 @@ class Toast {
       case ToastType.error:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(245, 108, 108, 1),
-          const Icon(
-            Icons.error_outline,
+          const HugeIcon(
+            icon: HugeIcons.strokeRoundedAlertCircle,
             color: Colors.white,
             size: _defaultIconSize,
           ),
@@ -252,8 +249,8 @@ class Toast {
       case ToastType.success:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(103, 194, 58, 1),
-          const Icon(
-            Icons.check_circle_outline,
+          const HugeIcon(
+            icon: HugeIcons.strokeRoundedCheckmarkCircle02,
             color: Colors.white,
             size: _defaultIconSize,
           ),
@@ -261,8 +258,8 @@ class Toast {
       case ToastType.info:
         return _ToastConfig(
           defaultColor ?? const Color.fromRGBO(144, 147, 153, 1),
-          const Icon(
-            Icons.info_outline,
+          const HugeIcon(
+            icon: HugeIcons.strokeRoundedInformationCircle,
             color: Colors.white,
             size: _defaultIconSize,
           ),
@@ -274,7 +271,7 @@ class Toast {
 /// Toast 配置内部类
 class _ToastConfig {
   final Color color;
-  final Icon icon;
+  final Widget icon;
 
   _ToastConfig(this.color, this.icon);
 }

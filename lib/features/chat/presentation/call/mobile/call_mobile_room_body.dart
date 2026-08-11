@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/audio_call_background.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
@@ -97,7 +98,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       return const ColoredBox(
         color: Color(0xFF161922),
         child: Center(
-          child: Icon(Icons.call_rounded, color: Colors.white, size: 42),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedCall02, color: Colors.white, size: 42),
         ),
       );
     }
@@ -276,8 +277,8 @@ class MobileVideoLayout extends StatelessWidget {
                   child: IconButton(
                     tooltip: 'call_back_to_grid_tooltip'.tr(),
                     onPressed: () => onFocusChanged(null),
-                    icon: const Icon(
-                      Icons.grid_view_rounded,
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedGridView,
                       color: Colors.white,
                     ),
                   ),

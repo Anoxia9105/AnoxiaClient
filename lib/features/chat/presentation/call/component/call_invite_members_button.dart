@@ -2,6 +2,7 @@
 //
 // 点击按钮弹出成员选择对话框，允许从群成员中选择未加入当前通话的成员进行邀请。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
@@ -13,7 +14,6 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 /// 通话邀请成员按钮
 ///

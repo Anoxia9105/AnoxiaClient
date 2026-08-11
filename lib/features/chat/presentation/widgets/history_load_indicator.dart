@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -58,8 +59,8 @@ class HistoryLoadIndicator extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.error_outline,
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedAlertCircle,
                 size: 14,
                 color: theme.colorScheme.error.withValues(alpha: 0.7),
               ),
