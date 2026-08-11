@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/utils/validators.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -289,19 +290,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ? null
           : 'register_email_code_invalid'.tr(),
     );
-    final button = OutlinedButton(
-      onPressed: _isSendingCode || _countdown > 0 ? null : _sendEmailCode,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 48),
+    final button = SizedBox(
+      height: 44,
+      child: OutlinedButton(
+        onPressed: _isSendingCode || _countdown > 0 ? null : _sendEmailCode,
+        child: _isSendingCode
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(
+                _countdown > 0 ? '${_countdown}s' : 'register_send_code'.tr(),
+              ),
       ),
-      child: _isSendingCode
-          ? const SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Text(
-              _countdown > 0 ? '${_countdown}s' : 'register_send_code'.tr(),
-            ),
     );
     if (isMobile) {
       return Column(
@@ -309,15 +310,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         children: [field, const SizedBox(height: 10), button],
       );
     }
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: field),
-          const SizedBox(width: 10),
-          button,
-        ],
-      ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(child: field),
+        const SizedBox(width: 10),
+        button,
+      ],
     );
   }
 
@@ -483,6 +482,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   );
 
 Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Expanded(
         child: _field(
@@ -496,55 +496,12 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
         ),
       ),
       SizedBox(width: isMobile ? 8 : 10),
-      ref
-          .watch(getCaptchaProvider)
-          .when(
-            data: (captcha) => InkWell(
-              onTap: _refreshCaptcha,
-              mouseCursor: SystemMouseCursors.click,
-              borderRadius: BorderRadius.circular(12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: isMobile ? 104 : 120,
-                  height: 48,
-                  child: Image.memory(
-                    base64Decode(captcha.imgBase64),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-            loading: () => _captchaPlaceholder(
-              const CircularProgressIndicator(strokeWidth: 2),
-              scheme,
-              isMobile,
-            ),
-            error: (_, _) => _captchaPlaceholder(
-              IconButton(
-                onPressed: _refreshCaptcha,
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01),
-              ),
-              scheme,
-              isMobile,
-            ),
-          ),
+      _RegisterCaptchaImage(
+        width: isMobile ? 104 : 120,
+        onTap: _refreshCaptcha,
+      ),
     ],
   );
-
-  Widget _captchaPlaceholder(Widget child, ColorScheme scheme, bool isMobile) =>
-      SizedBox(
-        width: isMobile ? 104 : 120,
-        height: 48,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: child,
-        ),
-      );
 
   void _refreshCaptcha() {
     _captchaCtrl.clear();
@@ -668,13 +625,101 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
       error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
 
   void _showMessage(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
+    Toast.showToast(
+      message,
+      type: isError ? ToastType.error : ToastType.success,
+    );
+  }
+}
+
+/// 注册页验证码图片
+class _RegisterCaptchaImage extends ConsumerStatefulWidget {
+  const _RegisterCaptchaImage({required this.width, required this.onTap});
+
+  final double width;
+  final VoidCallback onTap;
+
+  @override
+  ConsumerState<_RegisterCaptchaImage> createState() =>
+      _RegisterCaptchaImageState();
+}
+
+class _RegisterCaptchaImageState
+    extends ConsumerState<_RegisterCaptchaImage> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ref.watch(getCaptchaProvider).when(
+      data: (captcha) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovering = true),
+        onExit: (_) => setState(() => _isHovering = false),
+        child: Material(
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          color: scheme.surfaceContainerHigh,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: widget.width,
+              height: 44,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.memory(
+                    base64Decode(captcha.imgBase64),
+                    fit: BoxFit.cover,
+                  ),
+                  if (_isHovering)
+                    Container(
+                      color: scheme.primary.withValues(alpha: 0.12),
+                      alignment: Alignment.center,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedRefresh01,
+                        color: scheme.primary,
+                        size: 20,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
-      );
+      ),
+      loading: () => SizedBox(
+        width: widget.width,
+        height: 44,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      error: (_, _) => SizedBox(
+        width: widget.width,
+        height: 44,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: scheme.errorContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            onPressed: widget.onTap,
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedRefresh01,
+              color: scheme.onErrorContainer,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

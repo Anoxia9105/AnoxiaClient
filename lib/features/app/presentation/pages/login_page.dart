@@ -348,7 +348,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   Widget _buildCaptchaField(ColorScheme colorScheme) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: TextFormField(
@@ -518,11 +518,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
 /// 验证码图片 Widget
 ///
 /// 使用 Consumer 监听 provider，避免父级重建导致验证码重新渲染
-class _CaptchaImage extends ConsumerWidget {
+class _CaptchaImage extends ConsumerStatefulWidget {
   const _CaptchaImage();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_CaptchaImage> createState() => _CaptchaImageState();
+}
+
+class _CaptchaImageState extends ConsumerState<_CaptchaImage> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ref
@@ -531,20 +538,39 @@ class _CaptchaImage extends ConsumerWidget {
           data: (captcha) {
             return Tooltip(
               message: 'login_page_captcha'.tr(),
-              child: Material(
-                borderRadius: BorderRadius.circular(12),
-                clipBehavior: Clip.antiAlias,
-                color: colorScheme.surfaceContainerHigh,
-                child: InkWell(
-                  onTap: () => ref.invalidate(getCaptchaProvider),
-                  mouseCursor: SystemMouseCursors.click,
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isHovering = true),
+                onExit: (_) => setState(() => _isHovering = false),
+                cursor: SystemMouseCursors.click,
+                child: Material(
                   borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 120,
-                    height: 48,
-                    child: Image.memory(
-                      base64Decode(captcha.imgBase64),
-                      fit: BoxFit.cover,
+                  clipBehavior: Clip.antiAlias,
+                  color: colorScheme.surfaceContainerHigh,
+                  child: InkWell(
+                    onTap: () => ref.invalidate(getCaptchaProvider),
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 120,
+                      height: 44,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.memory(
+                            base64Decode(captcha.imgBase64),
+                            fit: BoxFit.cover,
+                          ),
+                          if (_isHovering)
+                            Container(
+                              color: colorScheme.primary.withValues(alpha: 0.12),
+                              alignment: Alignment.center,
+                              child: HugeIcon(
+                                icon: HugeIcons.strokeRoundedRefresh01,
+                                color: colorScheme.primary,
+                                size: 20,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -553,7 +579,7 @@ class _CaptchaImage extends ConsumerWidget {
           },
           loading: () => Container(
             width: 120,
-            height: 48,
+            height: 44,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(12),
@@ -567,7 +593,7 @@ class _CaptchaImage extends ConsumerWidget {
           ),
           error: (e, st) => Container(
             width: 120,
-            height: 48,
+            height: 44,
             decoration: BoxDecoration(
               color: colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(12),
