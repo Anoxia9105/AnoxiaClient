@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
+import 'package:dio/dio.dart';
 
 import '../../domain/repositories/app_background_repository.dart';
 import '../../framework/domain/app_background.dart';
@@ -21,13 +22,33 @@ class AppBackgroundRepositoryImpl implements AppBackgroundRepository {
   Future<AppBackgroundState> upload({
     required Uint8List bytes,
     required String fileName,
+    UploadProgressCallback? onProgress,
   }) async {
-    final response = await _client.uploadFile(
-      '/user/backgrounds',
-      file: XFile.fromData(bytes, name: fileName),
-      contentType: _contentType(fileName),
-    );
-    return _parse(response.data);
+    try {
+      final response = await _client.uploadFile(
+        '/user/backgrounds',
+        file: XFile.fromData(bytes, name: fileName),
+        contentType: _contentType(fileName),
+        onSendProgress: onProgress,
+      );
+      return _parse(response.data);
+    } on DioException catch (error) {
+      final responseBody = error.response?.data;
+      if (responseBody is Map && responseBody['msg'] != null) {
+        throw AppBackgroundException(responseBody['msg'].toString());
+      }
+      if (error.response?.statusCode == 413) {
+        throw const AppBackgroundException.localized(
+          'settings_bg_media_gateway_limit',
+        );
+      }
+      if (error.type == DioExceptionType.sendTimeout) {
+        throw const AppBackgroundException.localized(
+          'settings_bg_media_upload_timeout',
+        );
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -49,7 +70,16 @@ class AppBackgroundRepositoryImpl implements AppBackgroundRepository {
   }
 
   AppBackgroundState _parse(dynamic responseBody) {
-    if (responseBody is! Map || responseBody['code'] != 200) {
+    if (responseBody is Map && responseBody['code'] != 200) {
+      final message = responseBody['msg']?.toString().trim();
+      if (message?.isNotEmpty == true) {
+        throw AppBackgroundException(message!);
+      }
+      throw const AppBackgroundException.localized(
+        'settings_bg_media_upload_failed',
+      );
+    }
+    if (responseBody is! Map) {
       throw const FormatException('Invalid app background response');
     }
     final data = responseBody['data'];
@@ -68,7 +98,9 @@ class AppBackgroundRepositoryImpl implements AppBackgroundRepository {
       'gif' => 'image/gif',
       'webm' => 'video/webm',
       'mp4' => 'video/mp4',
-      _ => throw ArgumentError.value(fileName, 'fileName', '不支持的背景媒体'),
+      _ => throw const AppBackgroundException.localized(
+        'settings_bg_media_unsupported',
+      ),
     };
   }
 }

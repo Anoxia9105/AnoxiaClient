@@ -54,6 +54,7 @@ class AppBackgroundState {
   final double surfaceOpacity;
   final bool loading;
   final bool uploading;
+  final double? uploadProgress;
   final String? error;
 
   const AppBackgroundState({
@@ -62,6 +63,7 @@ class AppBackgroundState {
     this.surfaceOpacity = defaultSurfaceOpacity,
     this.loading = false,
     this.uploading = false,
+    this.uploadProgress,
     this.error,
   });
 
@@ -108,6 +110,8 @@ class AppBackgroundState {
     double? surfaceOpacity,
     bool? loading,
     bool? uploading,
+    double? uploadProgress,
+    bool clearUploadProgress = false,
     String? error,
     bool clearError = false,
   }) => AppBackgroundState(
@@ -121,6 +125,9 @@ class AppBackgroundState {
     ),
     loading: loading ?? this.loading,
     uploading: uploading ?? this.uploading,
+    uploadProgress: clearUploadProgress
+        ? null
+        : uploadProgress?.clamp(0, 1) ?? this.uploadProgress,
     error: clearError ? null : (error ?? this.error),
   );
 
@@ -138,6 +145,7 @@ class AppBackgroundState {
       surfaceOpacity == other.surfaceOpacity &&
       loading == other.loading &&
       uploading == other.uploading &&
+      uploadProgress == other.uploadProgress &&
       error == other.error;
 
   @override
@@ -147,6 +155,7 @@ class AppBackgroundState {
     surfaceOpacity,
     loading,
     uploading,
+    uploadProgress,
     error,
   );
 

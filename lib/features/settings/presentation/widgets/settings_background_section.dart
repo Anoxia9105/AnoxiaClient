@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/utils/device_util.dart';
+import '../../../../domain/repositories/app_background_repository.dart';
 import '../../../../framework/domain/app_background.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
 import 'settings_item_card.dart';
@@ -46,9 +47,14 @@ class SettingsBackgroundSection extends ConsumerWidget {
       if (context.mounted) {
         _showMessage(context, 'settings_bg_image_set_success'.tr());
       }
-    } catch (_) {
+    } catch (error) {
       if (context.mounted) {
-        _showMessage(context, 'settings_bg_media_upload_failed'.tr());
+        _showMessage(
+          context,
+          error is AppBackgroundException
+              ? (error.isLocalizationKey ? error.message.tr() : error.message)
+              : 'settings_bg_media_upload_failed'.tr(),
+        );
       }
     }
   }
@@ -88,7 +94,15 @@ class SettingsBackgroundSection extends ConsumerWidget {
                           icon: HugeIcons.strokeRoundedUpload01,
                           size: 18,
                         ),
-                  label: Text('settings_bg_media_upload'.tr()),
+                  label: Text(
+                    state.uploading
+                        ? 'settings_bg_media_uploading'.tr(
+                            args: [
+                              '${((state.uploadProgress ?? 0) * 100).round()}',
+                            ],
+                          )
+                        : 'settings_bg_media_upload'.tr(),
+                  ),
                 ),
               ),
               if (state.activeAsset != null) ...[
@@ -103,6 +117,22 @@ class SettingsBackgroundSection extends ConsumerWidget {
                 ),
               ],
             ],
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            child: state.uploading
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: state.uploadProgress,
+                        minHeight: 6,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
           if (state.assets.isNotEmpty) ...[
             const SizedBox(height: 18),

@@ -20,9 +20,13 @@ class DioClient {
         /// 请求拦截器：注入鉴权 Token
         onRequest: (options, handler) async {
           debugLog('Dio request -> ${options.method} ${options.uri}');
-          // 确保 Content-Type 被正确设置
-          options.contentType = 'application/json';
-          options.headers['Content-Type'] = 'application/json';
+          if (options.data is FormData) {
+            options.contentType = 'multipart/form-data';
+            options.headers['Content-Type'] = 'multipart/form-data';
+          } else {
+            options.contentType = 'application/json';
+            options.headers['Content-Type'] = 'application/json';
+          }
           options.headers['Accept-Language'] = _acceptLanguage;
           debugLog('Dio request headers -> ${options.headers}');
           debugLog('Dio request data -> ${options.data}');
@@ -223,6 +227,8 @@ class DioClient {
     bool auth = true,
     Options? options,
     CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    Duration sendTimeout = const Duration(minutes: 10),
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -240,10 +246,14 @@ class DioClient {
         path,
         data: formData,
         options: _mergeOptions(
-          options?.copyWith(contentType: 'multipart/form-data'),
+          (options ?? Options()).copyWith(
+            contentType: 'multipart/form-data',
+            sendTimeout: sendTimeout,
+          ),
           auth: auth,
         ),
         cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
       );
     } on DioException catch (_) {
       rethrow;
@@ -331,7 +341,7 @@ class DioClient {
     extra['auth'] = auth;
     return (options ?? Options()).copyWith(
       extra: extra,
-      contentType: 'application/json',
+      contentType: options?.contentType ?? 'application/json',
     );
   }
 }

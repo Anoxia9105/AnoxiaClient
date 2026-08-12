@@ -56,5 +56,19 @@ void main() {
 
       expect(AppBackgroundState.fromJson(state.toJson()), state);
     });
+
+    test('clamps upload progress and can clear it after completion', () {
+      const state = AppBackgroundState(uploading: true, uploadProgress: 0);
+
+      final uploading = state.copyWith(uploadProgress: 1.4);
+      final completed = uploading.copyWith(
+        uploading: false,
+        clearUploadProgress: true,
+      );
+
+      expect(uploading.uploadProgress, 1);
+      expect(completed.uploadProgress, isNull);
+      expect(completed.uploading, isFalse);
+    });
   });
 }

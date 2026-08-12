@@ -229,15 +229,31 @@ class AppBackgroundController extends Notifier<AppBackgroundState> {
 
   Future<void> upload(Uint8List bytes, String fileName) async {
     if (state.uploading) return;
-    state = state.copyWith(uploading: true, clearError: true);
+    state = state.copyWith(
+      uploading: true,
+      uploadProgress: 0,
+      clearError: true,
+    );
     try {
       await _replace(
         await ref
             .read(appBackgroundRepositoryProvider)
-            .upload(bytes: bytes, fileName: fileName),
+            .upload(
+              bytes: bytes,
+              fileName: fileName,
+              onProgress: (sent, total) {
+                if (total > 0) {
+                  state = state.copyWith(uploadProgress: sent / total);
+                }
+              },
+            ),
       );
     } catch (_) {
-      state = state.copyWith(uploading: false, error: 'upload_failed');
+      state = state.copyWith(
+        uploading: false,
+        clearUploadProgress: true,
+        error: 'upload_failed',
+      );
       rethrow;
     }
   }
