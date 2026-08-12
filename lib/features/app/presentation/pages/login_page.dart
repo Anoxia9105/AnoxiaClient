@@ -6,6 +6,7 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/features/app/presentation/pages/register_page.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/scan_login_controller.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
@@ -30,9 +31,6 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage>
     with SingleTickerProviderStateMixin {
-  /// 表单验证 Key
-  final _formKey = GlobalKey<FormState>();
-
   /// 用户名输入控制器
   final _usernameCtrl = TextEditingController();
 
@@ -136,20 +134,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
       key: const ValueKey(_LoginMode.password),
       mainAxisSize: MainAxisSize.min,
       children: [
-        Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildUsernameField(colorScheme),
-              const SizedBox(height: 16),
-              _buildPasswordField(colorScheme),
-              const SizedBox(height: 16),
-              _buildCaptchaField(colorScheme),
-              const SizedBox(height: 28),
-              _buildLoginButton(colorScheme, loginMutation),
-            ],
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildUsernameField(colorScheme),
+            const SizedBox(height: 16),
+            _buildPasswordField(colorScheme),
+            const SizedBox(height: 16),
+            _buildCaptchaField(colorScheme),
+            const SizedBox(height: 28),
+            _buildLoginButton(colorScheme, loginMutation),
+          ],
         ),
         const SizedBox(height: 20),
         _buildFooterLinks(colorScheme),
@@ -258,7 +253,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Widget _buildUsernameField(ColorScheme colorScheme) {
-    return TextFormField(
+    return TextField(
       controller: _usernameCtrl,
       textInputAction: TextInputAction.next,
       keyboardType: TextInputType.emailAddress,
@@ -286,17 +281,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'login_page_username_validator_notnull'.tr();
-        }
-        return null;
-      },
     );
   }
 
   Widget _buildPasswordField(ColorScheme colorScheme) {
-    return TextFormField(
+    return TextField(
       controller: _passwordCtrl,
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.next,
@@ -334,15 +323,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'login_page_password_validator_notnull'.tr();
-        }
-        if (value.length < 5 || value.length > 50) {
-          return 'login_page_password_validator_regex'.tr();
-        }
-        return null;
-      },
     );
   }
 
@@ -351,10 +331,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: TextFormField(
+          child: TextField(
             controller: _codeCtrl,
             textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _handleLogin(),
+            onSubmitted: (_) => _handleLogin(),
             inputFormatters: [
               LengthLimitingTextInputFormatter(4),
               FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
@@ -383,12 +363,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 borderSide: BorderSide(color: colorScheme.primary, width: 2),
               ),
             ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'login_page_captcha_validator_notnull'.tr();
-              }
-              return null;
-            },
           ),
         ),
         const SizedBox(width: 12),
@@ -476,7 +450,38 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Future<void> _handleLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final username = _usernameCtrl.text.trim();
+    final password = _passwordCtrl.text;
+    final code = _codeCtrl.text.trim();
+
+    if (username.isEmpty) {
+      Toast.showToast(
+        'login_page_username_validator_notnull'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (password.isEmpty) {
+      Toast.showToast(
+        'login_page_password_validator_notnull'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (password.length < 5 || password.length > 50) {
+      Toast.showToast(
+        'login_page_password_validator_regex'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (code.isEmpty) {
+      Toast.showToast(
+        'login_page_captcha_validator_notnull'.tr(),
+        type: ToastType.error,
+      );
+      return;
+    }
 
     final captcha = ref.read(getCaptchaProvider).value;
     if (captcha == null) {

@@ -30,8 +30,6 @@ class RegisterPage extends ConsumerStatefulWidget {
 /// 管理两步注册流程的状态：邮箱验证码发送、邮箱验证、账号信息填写和提交。
 /// 包含邮箱是否已验证的切换，以及密码可见性控制。
 class _RegisterPageState extends ConsumerState<RegisterPage> {
-  final _emailFormKey = GlobalKey<FormState>();
-  final _accountFormKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _emailCodeCtrl = TextEditingController();
   final _captchaCtrl = TextEditingController();
@@ -233,11 +231,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Widget _buildEmailStep(ColorScheme scheme, bool isMobile) => KeyedSubtree(
     key: const ValueKey('email-step'),
-    child: Form(
-      key: _emailFormKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
           _field(
             controller: _emailCtrl,
             hint: 'register_email'.tr(),
@@ -245,7 +241,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             maxLength: 50,
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
-            validator: Validators.email,
             onChanged: _emailCodeSent ? _onEmailChanged : null,
           ),
           const SizedBox(height: 14),
@@ -273,8 +268,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ),
         ],
       ),
-    ),
-  );
+    );
 
   Widget _emailCodeRow(bool isMobile) {
     final field = _field(
@@ -286,9 +280,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
       ],
-      validator: (value) => RegExp(r'^[a-zA-Z0-9]{6}$').hasMatch(value ?? '')
-          ? null
-          : 'register_email_code_invalid'.tr(),
     );
     final button = SizedBox(
       height: 44,
@@ -320,9 +311,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
   }
 
-  Widget _buildAccountStep(ColorScheme scheme) => Form(
-    key: _accountFormKey,
-    child: Column(
+  Widget _buildAccountStep(ColorScheme scheme) => Column(
       key: const ValueKey('account-step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -357,12 +346,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           icon: HugeIcons.strokeRoundedUser,
           maxLength: 30,
           autofillHints: const [AutofillHints.newUsername],
-          validator: (value) {
-            final text = value?.trim() ?? '';
-            return RegExp(r'^[a-zA-Z_]\w{1,29}$').hasMatch(text)
-                ? null
-                : 'register_username_invalid'.tr();
-          },
         ),
         const SizedBox(height: 14),
         _passwordField(
@@ -379,9 +362,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           onToggle: () => setState(
             () => _obscureConfirmPassword = !_obscureConfirmPassword,
           ),
-          validator: (value) => value == _passwordCtrl.text
-              ? null
-              : 'register_password_mismatch'.tr(),
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -400,8 +380,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ),
         ),
       ],
-    ),
-  );
+    );
 
   Widget _field({
     required TextEditingController controller,
@@ -411,9 +390,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     TextInputType? keyboardType,
     Iterable<String>? autofillHints,
     List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
     ValueChanged<String>? onChanged,
-  }) => TextFormField(
+  }) => TextField(
     controller: controller,
     keyboardType: keyboardType,
     autofillHints: autofillHints,
@@ -435,7 +413,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     ),
-    validator: validator,
   );
 
   Widget _passwordField({
@@ -443,8 +420,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     required String hint,
     required bool obscure,
     required VoidCallback onToggle,
-    String? Function(String?)? validator,
-  }) => TextFormField(
+  }) => TextField(
     controller: controller,
     obscureText: obscure,
     maxLength: 20,
@@ -471,14 +447,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     ),
-    validator:
-        validator ??
-        (value) {
-          final length = value?.length ?? 0;
-          return length < 5 || length > 20
-              ? 'register_password_invalid'.tr()
-              : null;
-        },
   );
 
 Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
@@ -545,7 +513,15 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
   }
 
   Future<void> _verifyEmail() async {
-    if (!(_emailFormKey.currentState?.validate() ?? false)) return;
+    final emailError = Validators.email(_emailCtrl.text.trim());
+    if (emailError != null) {
+      _showMessage(emailError, isError: true);
+      return;
+    }
+    if (!RegExp(r'^[a-zA-Z0-9]{6}$').hasMatch(_emailCodeCtrl.text.trim())) {
+      _showMessage('register_email_code_invalid'.tr(), isError: true);
+      return;
+    }
     setState(() => _isVerifyingEmail = true);
     try {
       final token = await ref
@@ -595,7 +571,21 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
   }
 
   Future<void> _submit() async {
-    if (!(_accountFormKey.currentState?.validate() ?? false)) return;
+    final username = _usernameCtrl.text.trim();
+    if (!RegExp(r'^[a-zA-Z_]\w{1,29}$').hasMatch(username)) {
+      _showMessage('register_username_invalid'.tr(), isError: true);
+      return;
+    }
+    final password = _passwordCtrl.text;
+    final passwordLength = password.length;
+    if (passwordLength < 5 || passwordLength > 20) {
+      _showMessage('register_password_invalid'.tr(), isError: true);
+      return;
+    }
+    if (password != _confirmPasswordCtrl.text) {
+      _showMessage('register_password_mismatch'.tr(), isError: true);
+      return;
+    }
     final token = _emailVerificationToken;
     if (token == null) return;
 

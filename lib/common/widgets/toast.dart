@@ -16,8 +16,8 @@ export '../../framework/core/toast_service.dart' show ToastType;
 class Toast {
   static const _defaultDuration = Duration(seconds: 3);
   static const _defaultMargin = EdgeInsets.all(15);
-  static const _defaultIconSize = 13.0;
-  static const _defaultRadius = 9.0;
+  static const _defaultIconSize = 15.0;
+  static const _defaultRadius = 14.0;
 
   /// Windows 桌面端禁用毛玻璃效果，避免兼容性问题
   static bool get _enableBlurEffect {
@@ -156,53 +156,73 @@ class Toast {
     Alignment align,
     Duration duration,
   ) {
+    final surfaceColor = Color.lerp(color, Colors.black, 0.16) ?? color;
+
     BotToast.showCustomText(
       align: align,
       duration: duration,
+      animationDuration: const Duration(milliseconds: 1),
+      animationReverseDuration: const Duration(milliseconds: 1),
       toastBuilder: (_) {
         final toastBody = Container(
-          constraints: const BoxConstraints(maxWidth: 380),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          constraints: const BoxConstraints(maxWidth: 360),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: .92),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color, surfaceColor],
+            ),
             borderRadius: BorderRadius.circular(_defaultRadius),
             border: Border.all(
-              color: Colors.white.withValues(alpha: .18),
+              color: Colors.white.withValues(alpha: .16),
               width: 0.8,
             ),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, 0.12),
-                blurRadius: 10,
-                offset: Offset(0, 4),
+                color: color.withValues(alpha: .30),
+                blurRadius: 20,
+                spreadRadius: -4,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .16),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 20,
-                height: 20,
+                width: 26,
+                height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .22),
+                  color: Colors.white.withValues(alpha: .20),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .26),
+                    width: 1,
+                  ),
                 ),
                 child: icon,
               ),
-              const SizedBox(width: 7),
+              const SizedBox(width: 11),
               Flexible(
                 child: Text(
                   message,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 13.5,
                     color: Colors.white,
-                    height: 1.28,
-                    fontWeight: FontWeight.w400,
+                    height: 1.35,
+                    letterSpacing: 0.1,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -210,16 +230,33 @@ class Toast {
           ),
         );
 
-        return SafeArea(
+        final body = SafeArea(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(_defaultRadius),
             child: _enableBlurEffect
                 ? BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                     child: toastBody,
                   )
                 : toastBody,
           ),
+        );
+
+        return TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 340),
+          curve: Curves.easeOutCubic,
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, (1 - value) * 12),
+              child: Transform.scale(
+                scale: 0.96 + 0.04 * value,
+                alignment: Alignment.center,
+                child: Opacity(opacity: value, child: child),
+              ),
+            );
+          },
+          child: body,
         );
       },
     );
