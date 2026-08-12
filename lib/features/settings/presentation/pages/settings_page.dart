@@ -1,15 +1,21 @@
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
+import 'package:anoxia/features/me/presentation/pages/change_password_page.dart';
+import 'package:anoxia/features/me/presentation/pages/me_page.dart';
+import 'package:anoxia/features/me/presentation/pages/personal_qr_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_account_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_split_view.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_sticker_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_theme_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_web_notification_section.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -19,6 +25,7 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/utils/device_util.dart';
 
@@ -131,6 +138,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _showActionResult(result);
   }
 
+  void _openProfile() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const MyPage()));
+  }
+
+  void _openPersonalQrCode() {
+    final user = ref.read(authControllerProvider).value;
+    if (user == null) return;
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => PersonalQrPage(user: user)));
+  }
+
+  void _openChangePassword() {
+    if (DeviceUtil.isDesktop(context)) {
+      showDialog<void>(
+        context: context,
+        builder: (_) => const ChangePasswordDialog(),
+      );
+      return;
+    }
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ChangePasswordPage()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final pageState = ref.watch(settingsPageControllerProvider);
@@ -151,78 +185,119 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         centerTitle: true,
         title: Text('settings_page_title'.tr()),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          SettingsThemeSection(
-            selectedBrightness: themeMode,
-            selectedAccentIndex: themeAccentIndex,
-            onBrightnessChanged: (brightness) {
-              ref.read(themeModeProvider.notifier).setMode(brightness);
-              final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                brightness: brightness,
-                accentIndex: themeAccentIndex,
-              );
-              ref
-                  .read(themeIndexProvider.notifier)
-                  .setTheme(compatibilityIndex);
-            },
-            onAccentChanged: (index) {
-              ref.read(themeAccentProvider.notifier).setAccent(index);
-              final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                brightness: themeMode,
-                accentIndex: index,
-              );
-              ref
-                  .read(themeIndexProvider.notifier)
-                  .setTheme(compatibilityIndex);
-            },
+      body: SettingsSplitView(
+        destinations: [
+          SettingsDestination(
+            title: 'settings_account_title'.tr(),
+            subtitle: 'settings_account_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedUserAccount,
+            builder: (_) => SettingsAccountSection(
+              onOpenProfile: _openProfile,
+              onOpenQrCode: _openPersonalQrCode,
+              onChangePassword: _openChangePassword,
+            ),
           ),
-          // 背景图（皮肤）功能：仅桌面端和 Web 端提供
-          if (DeviceUtil.supportsCustomBackground(context))
-            const SettingsBackgroundSection(),
-          SettingsLanguageSection(
-            selectedLanguageCode: context.locale.languageCode,
-            isDesktop: DeviceUtil.isDesktop(context),
-            onLanguageChanged: (localeCode) {
-              context.setLocale(Locale(localeCode));
-              DioClient().setLocale(localeCode);
-              if (ref.read(callWindowControllerProvider) != null) {
-                ref
-                    .read(callWindowControllerProvider.notifier)
-                    .updateSettings(localeCode: localeCode);
-              }
-            },
+          SettingsDestination(
+            title: 'settings_appearance_title'.tr(),
+            subtitle: 'settings_appearance_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedColors,
+            builder: (_) => Column(
+              children: [
+                SettingsThemeSection(
+                  selectedBrightness: themeMode,
+                  selectedAccentIndex: themeAccentIndex,
+                  onBrightnessChanged: (brightness) {
+                    ref.read(themeModeProvider.notifier).setMode(brightness);
+                    final compatibilityIndex = AppTheme.compatibilityThemeIndex(
+                      brightness: brightness,
+                      accentIndex: themeAccentIndex,
+                    );
+                    ref
+                        .read(themeIndexProvider.notifier)
+                        .setTheme(compatibilityIndex);
+                  },
+                  onAccentChanged: (index) {
+                    ref.read(themeAccentProvider.notifier).setAccent(index);
+                    final compatibilityIndex = AppTheme.compatibilityThemeIndex(
+                      brightness: themeMode,
+                      accentIndex: index,
+                    );
+                    ref
+                        .read(themeIndexProvider.notifier)
+                        .setTheme(compatibilityIndex);
+                  },
+                ),
+                if (DeviceUtil.supportsCustomBackground(context))
+                  const SettingsBackgroundSection(),
+                // Web 已强制使用系统字体，避免 Google Fonts CDN 不可达时无声回退。
+                if (!DeviceUtil.isWeb)
+                  SettingsFontSection(
+                    selectedFontKey: fontKey,
+                    isDesktop: DeviceUtil.isDesktop(context),
+                    onFontChanged: (selectedFont) {
+                      ref.read(appFontProvider.notifier).setFont(selectedFont);
+                    },
+                  ),
+              ],
+            ),
           ),
-          // Web 端隐藏字体切换：字体选项均为 Google Fonts（运行时 CDN 拉取，
-          // 国内基本不可达，实际早已无声回退系统字体），Web 已强制系统字体。
-          if (!DeviceUtil.isWeb)
-            SettingsFontSection(
-              selectedFontKey: fontKey,
+          SettingsDestination(
+            title: 'settings_page_language_title'.tr(),
+            subtitle: 'settings_page_language_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedLanguageSquare,
+            builder: (_) => SettingsLanguageSection(
+              selectedLanguageCode: context.locale.languageCode,
               isDesktop: DeviceUtil.isDesktop(context),
-              onFontChanged: (selectedFont) {
-                ref.read(appFontProvider.notifier).setFont(selectedFont);
+              onLanguageChanged: (localeCode) {
+                context.setLocale(Locale(localeCode));
+                DioClient().setLocale(localeCode);
+                if (ref.read(callWindowControllerProvider) != null) {
+                  ref
+                      .read(callWindowControllerProvider.notifier)
+                      .updateSettings(localeCode: localeCode);
+                }
               },
             ),
-          // 浏览器通知权限必须在用户手势中申请，这里提供显式入口；原生端不显示。
-          if (DeviceUtil.isWeb) const SettingsWebNotificationSection(),
-          const SettingsStickerSection(),
-          SettingsFeedbackSection(
-            formKey: _feedbackFormKey,
-            titleController: _feedbackTitleController,
-            contentController: _feedbackContentController,
-            contactController: _feedbackContactController,
-            submitting: pageState.submittingFeedback,
-            onSubmit: _submitFeedback,
           ),
-          SettingsAboutSupportSection(
-            appVersionText: appVersionText,
-            hasAppUpdate: hasUpdateBadge,
-            pageState: pageState,
-            onCheckUpdate: _checkUpdate,
-            onNavigateToUpdatePage: _navigateToUpdatePage,
-            onOpenOpenSourceLicenses: _navigateToOpenSourceLicenses,
-            onOpenDeveloperTribute: _openDeveloperTribute,
+          if (DeviceUtil.isWeb)
+            SettingsDestination(
+              title: 'settings_web_notification_title'.tr(),
+              subtitle: 'settings_web_notification_subtitle'.tr(),
+              icon: HugeIcons.strokeRoundedNotification01,
+              builder: (_) => const SettingsWebNotificationSection(),
+            ),
+          SettingsDestination(
+            title: 'settings_sticker_title'.tr(),
+            subtitle: 'settings_sticker_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedSticker,
+            builder: (_) => const SettingsStickerSection(),
+          ),
+          SettingsDestination(
+            title: 'settings_feedback_title'.tr(),
+            subtitle: 'settings_feedback_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedMessage02,
+            builder: (_) => SettingsFeedbackSection(
+              formKey: _feedbackFormKey,
+              titleController: _feedbackTitleController,
+              contentController: _feedbackContentController,
+              contactController: _feedbackContactController,
+              submitting: pageState.submittingFeedback,
+              onSubmit: _submitFeedback,
+            ),
+          ),
+          SettingsDestination(
+            title: 'settings_page_about_title'.tr(),
+            subtitle: 'settings_page_about_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedInformationCircle,
+            builder: (_) => SettingsAboutSupportSection(
+              appVersionText: appVersionText,
+              hasAppUpdate: hasUpdateBadge,
+              pageState: pageState,
+              onCheckUpdate: _checkUpdate,
+              onNavigateToUpdatePage: _navigateToUpdatePage,
+              onOpenOpenSourceLicenses: _navigateToOpenSourceLicenses,
+              onOpenDeveloperTribute: _openDeveloperTribute,
+            ),
           ),
         ],
       ),

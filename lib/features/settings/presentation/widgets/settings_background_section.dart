@@ -150,12 +150,17 @@ class SettingsBackgroundSection extends ConsumerWidget {
               ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
-            SizedBox(
-              height: 92,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
+            LayoutBuilder(
+              builder: (context, constraints) => GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: constraints.maxWidth >= 720 ? 4 : 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 16 / 9,
+                ),
                 itemCount: state.assets.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final asset = state.assets[index];
                   return _BackgroundAssetTile(
@@ -233,7 +238,6 @@ class _BackgroundAssetTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          width: 132,
           decoration: BoxDecoration(
             color: colors.surfaceContainerHighest.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(8),
@@ -248,7 +252,12 @@ class _BackgroundAssetTile extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(7),
                 child: asset.type == AppBackgroundMediaType.image
-                    ? Image.network(asset.url, fit: BoxFit.cover)
+                    ? Image.network(
+                        asset.url,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        isAntiAlias: true,
+                      )
                     : BackgroundVideoThumbnail(url: asset.url),
               ),
               const Positioned(
@@ -267,18 +276,41 @@ class _BackgroundAssetTile extends StatelessWidget {
                 ),
               ),
               Positioned(
-                top: 4,
-                right: 4,
-                child: IconButton.filledTonal(
+                top: 6,
+                right: 6,
+                child: IconButton.filled(
                   tooltip: 'settings_bg_media_delete'.tr(),
                   onPressed: onDelete,
-                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 36,
+                    height: 36,
+                  ),
+                  padding: EdgeInsets.zero,
                   icon: const HugeIcon(
                     icon: HugeIcons.strokeRoundedDelete02,
-                    size: 14,
+                    size: 16,
                   ),
                 ),
               ),
+              if (selected)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedTick02,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                ),
               Positioned(
                 left: 6,
                 right: 6,
