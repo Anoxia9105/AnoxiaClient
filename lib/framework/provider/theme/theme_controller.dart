@@ -249,9 +249,12 @@ class AppBackgroundController extends Notifier<AppBackgroundState> {
             bytes: bytes,
             fileName: fileName,
             onProgress: (sent, total) {
-              if (total > 0) {
-                state = state.copyWith(uploadProgress: sent / total);
-              }
+              state = state.copyWith(
+                uploadProgress: AppBackgroundState.displayUploadProgress(
+                  sent,
+                  total,
+                ),
+              );
             },
           );
       final desiredOpacity = state.surfaceOpacity;

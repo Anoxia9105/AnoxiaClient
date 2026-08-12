@@ -159,6 +159,7 @@
   "settings_bg_media_subtitle": "Cloud-synced images and videos for desktop and Web PC mode",
   "settings_bg_media_upload": "Upload image or video",
   "settings_bg_media_uploading": "Uploading {}%",
+  "settings_bg_media_saving": "Saving to the cloud…",
   "settings_bg_media_library": "My backgrounds",
   "settings_bg_media_delete": "Delete background",
   "settings_bg_media_too_large": "Images are limited to 15MB and videos to 100MB",

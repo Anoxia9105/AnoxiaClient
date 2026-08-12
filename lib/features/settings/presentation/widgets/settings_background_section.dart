@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +9,7 @@ import '../../../../common/widgets/toast.dart';
 import '../../../../domain/repositories/app_background_repository.dart';
 import '../../../../framework/domain/app_background.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
+import 'background_video_thumbnail.dart';
 import 'settings_item_card.dart';
 
 class SettingsBackgroundSection extends ConsumerWidget {
@@ -31,7 +30,7 @@ class SettingsBackgroundSection extends ConsumerWidget {
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    final bytes = file.bytes == null ? null : Uint8List.fromList(file.bytes!);
+    final bytes = file.bytes;
     if (bytes == null || bytes.isEmpty) return;
 
     final extension = file.extension?.toLowerCase();
@@ -97,11 +96,14 @@ class SettingsBackgroundSection extends ConsumerWidget {
                         ),
                   label: Text(
                     state.uploading
-                        ? 'settings_bg_media_uploading'.tr(
-                            args: [
-                              '${((state.uploadProgress ?? 0) * 100).round()}',
-                            ],
-                          )
+                        ? (state.uploadProgress ?? 0) >=
+                                  AppBackgroundState.transferProgressWeight
+                              ? 'settings_bg_media_saving'.tr()
+                              : 'settings_bg_media_uploading'.tr(
+                                  args: [
+                                    '${((state.uploadProgress ?? 0) * 100).round()}',
+                                  ],
+                                )
                         : 'settings_bg_media_upload'.tr(),
                   ),
                 ),
@@ -128,7 +130,11 @@ class SettingsBackgroundSection extends ConsumerWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(999),
                       child: LinearProgressIndicator(
-                        value: state.uploadProgress,
+                        value:
+                            (state.uploadProgress ?? 0) >=
+                                AppBackgroundState.transferProgressWeight
+                            ? null
+                            : state.uploadProgress,
                         minHeight: 6,
                       ),
                     ),
@@ -221,7 +227,7 @@ class _BackgroundAssetTile extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: asset.name,
+      label: asset.displayName,
       child: InkWell(
         onTap: onSelect,
         borderRadius: BorderRadius.circular(8),
@@ -243,16 +249,22 @@ class _BackgroundAssetTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(7),
                 child: asset.type == AppBackgroundMediaType.image
                     ? Image.network(asset.url, fit: BoxFit.cover)
-                    : ColoredBox(
-                        color: colors.surfaceContainerHighest,
-                        child: Center(
-                          child: HugeIcon(
-                            icon: HugeIcons.strokeRoundedVideo01,
-                            color: colors.primary,
-                            size: 28,
-                          ),
-                        ),
-                      ),
+                    : BackgroundVideoThumbnail(url: asset.url),
+              ),
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 34,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Color(0xB3000000)],
+                    ),
+                  ),
+                ),
               ),
               Positioned(
                 top: 4,
@@ -272,7 +284,7 @@ class _BackgroundAssetTile extends StatelessWidget {
                 right: 6,
                 bottom: 5,
                 child: Text(
-                  asset.name,
+                  asset.displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(

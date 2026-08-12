@@ -159,6 +159,7 @@
   "settings_bg_media_subtitle": "デスクトップと Web PC モード向けのクラウド同期画像・動画",
   "settings_bg_media_upload": "画像または動画をアップロード",
   "settings_bg_media_uploading": "アップロード中 {}%",
+  "settings_bg_media_saving": "クラウドに保存しています…",
   "settings_bg_media_library": "マイ背景",
   "settings_bg_media_delete": "背景を削除",
   "settings_bg_media_too_large": "画像は15MB、動画は100MBまでです",

@@ -22,7 +22,8 @@ class DioClient {
           debugLog('Dio request -> ${options.method} ${options.uri}');
           if (options.data is FormData) {
             options.contentType = 'multipart/form-data';
-            options.headers['Content-Type'] = 'multipart/form-data';
+            options.headers.remove('Content-Type');
+            options.headers.remove('content-type');
           } else {
             options.contentType = 'application/json';
             options.headers['Content-Type'] = 'application/json';
@@ -229,6 +230,7 @@ class DioClient {
     CancelToken? cancelToken,
     ProgressCallback? onSendProgress,
     Duration sendTimeout = const Duration(minutes: 10),
+    Duration receiveTimeout = const Duration(minutes: 10),
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -249,6 +251,7 @@ class DioClient {
           (options ?? Options()).copyWith(
             contentType: 'multipart/form-data',
             sendTimeout: sendTimeout,
+            receiveTimeout: receiveTimeout,
           ),
           auth: auth,
         ),

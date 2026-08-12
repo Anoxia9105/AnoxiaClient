@@ -89,5 +89,26 @@ void main() {
       expect(merged.uploadProgress, 0.42);
       expect(merged.surfaceOpacity, 0.7);
     });
+
+    test('reserves the final upload progress for cloud persistence', () {
+      expect(AppBackgroundState.displayUploadProgress(0, 100), 0);
+      expect(AppBackgroundState.displayUploadProgress(50, 100), 0.45);
+      expect(AppBackgroundState.displayUploadProgress(100, 100), 0.9);
+      expect(AppBackgroundState.displayUploadProgress(120, 100), 0.9);
+      expect(AppBackgroundState.displayUploadProgress(1, 0), 0);
+    });
+  });
+
+  group('AppBackgroundAsset', () {
+    test('falls back to the decoded URL filename when name is empty', () {
+      const asset = AppBackgroundAsset(
+        id: 7,
+        type: AppBackgroundMediaType.video,
+        url: 'https://cdn.example.com/backgrounds/demo%20video.mp4',
+        name: '',
+      );
+
+      expect(asset.displayName, 'demo video.mp4');
+    });
   });
 }

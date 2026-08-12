@@ -32,6 +32,13 @@ class AppBackgroundAsset {
     'name': name,
   };
 
+  String get displayName {
+    if (name.trim().isNotEmpty) return name.trim();
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.pathSegments.isEmpty) return 'background';
+    return Uri.decodeComponent(uri.pathSegments.last);
+  }
+
   @override
   bool operator ==(Object other) =>
       other is AppBackgroundAsset &&
@@ -48,6 +55,12 @@ class AppBackgroundState {
   static const double defaultSurfaceOpacity = 0.86;
   static const double minSurfaceOpacity = 0.45;
   static const double maxSurfaceOpacity = 0.96;
+  static const double transferProgressWeight = 0.9;
+
+  static double displayUploadProgress(int sent, int total) {
+    if (total <= 0) return 0;
+    return (sent / total).clamp(0, 1) * transferProgressWeight;
+  }
 
   final List<AppBackgroundAsset> assets;
   final int? activeAssetId;
