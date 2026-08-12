@@ -29,6 +29,7 @@ class AppBackgroundRepositoryImpl implements AppBackgroundRepository {
         '/user/backgrounds',
         file: XFile.fromData(bytes, name: fileName),
         contentType: _contentType(fileName),
+        data: {'fileName': fileName},
         onSendProgress: onProgress,
       );
       return _parse(response.data);
