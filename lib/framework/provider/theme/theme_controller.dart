@@ -1,5 +1,3 @@
-﻿import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,8 +6,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../gen/fonts.gen.dart';
-import '../../../common/utils/file_util.dart';
 import '../../../common/utils/sp_util.dart';
+import '../../domain/app_background.dart';
+import '../auth/token_provider.dart';
+import '../core/app_background_repository_provider.dart';
 import '../../theme/app_theme.dart';
 
 part 'theme_controller.g.dart';
@@ -101,9 +101,11 @@ class AppFontController extends legacy.StateNotifier<String> {
   }
 }
 
-final appFontProvider = legacy.StateNotifierProvider<AppFontController, String>((ref) {
-  return AppFontController();
-});
+final appFontProvider = legacy.StateNotifierProvider<AppFontController, String>(
+  (ref) {
+    return AppFontController();
+  },
+);
 
 class ThemeModeController extends legacy.StateNotifier<Brightness> {
   static const String _storageKey = 'theme_brightness';
@@ -150,9 +152,10 @@ class ThemeAccentController extends legacy.StateNotifier<int> {
   }
 }
 
-final themeAccentProvider = legacy.StateNotifierProvider<ThemeAccentController, int>(
-  (ref) => ThemeAccentController(),
-);
+final themeAccentProvider =
+    legacy.StateNotifierProvider<ThemeAccentController, int>(
+      (ref) => ThemeAccentController(),
+    );
 
 /// 主题索引 Provider
 ///
@@ -204,70 +207,99 @@ ThemeData appTheme(Ref ref) {
   );
 }
 
-/// 背景图状态（持久化）
-///
-/// 存储值为文件路径（原生端）或 data URI（Web 端）。
-/// null 表示未设置背景图。
-class BackgroundImageController extends legacy.StateNotifier<String?> {
-  static const String _storageKey = 'bg_image_path';
-
-  BackgroundImageController() : super(_load());
-
-  static String? _load() {
-    return SPUtil.instance.get(_storageKey);
-  }
-
-  /// 从图片字节设置背景图
-  Future<void> setFromBytes(Uint8List bytes) async {
-    final ref = await FileUtil.saveBackgroundImage(bytes);
-    if (ref == null) return;
-    // 清除旧背景
-    if (state != null) {
-      await _deleteOld(state!);
+class AppBackgroundController extends Notifier<AppBackgroundState> {
+  @override
+  AppBackgroundState build() {
+    final token = ref.watch(tokenCacheProvider);
+    if (token != null && token.isNotEmpty) {
+      Future<void>.microtask(refresh);
     }
-    state = ref;
-    await SPUtil.instance.set(_storageKey, ref);
+    return const AppBackgroundState();
   }
 
-  /// 清除背景图
-  Future<void> clear() async {
-    if (state == null) return;
-    await _deleteOld(state!);
-    state = null;
-    await SPUtil.instance.delete(_storageKey);
+  Future<void> refresh() async {
+    if (state.loading) return;
+    state = state.copyWith(loading: true, clearError: true);
+    try {
+      await _replace(await ref.read(appBackgroundRepositoryProvider).fetch());
+    } catch (_) {
+      state = state.copyWith(loading: false, error: 'load_failed');
+    }
   }
 
-  Future<void> _deleteOld(String ref) async {
-    if (ref.startsWith('data:')) return;
-    await FileUtil.deleteBackgroundImageFile(ref);
+  Future<void> upload(Uint8List bytes, String fileName) async {
+    if (state.uploading) return;
+    state = state.copyWith(uploading: true, clearError: true);
+    try {
+      await _replace(
+        await ref
+            .read(appBackgroundRepositoryProvider)
+            .upload(bytes: bytes, fileName: fileName),
+      );
+    } catch (_) {
+      state = state.copyWith(uploading: false, error: 'upload_failed');
+      rethrow;
+    }
+  }
+
+  void previewOpacity(double opacity) {
+    state = state.copyWith(surfaceOpacity: opacity);
+  }
+
+  Future<void> savePreference({int? activeAssetId}) async {
+    final previous = state;
+    if (activeAssetId != null) {
+      state = state.copyWith(activeAssetId: activeAssetId);
+    }
+    try {
+      await _replace(
+        await ref
+            .read(appBackgroundRepositoryProvider)
+            .updatePreference(
+              activeAssetId: state.activeAssetId,
+              surfaceOpacity: state.surfaceOpacity,
+            ),
+      );
+    } catch (_) {
+      state = previous.copyWith(error: 'save_failed');
+      rethrow;
+    }
+  }
+
+  Future<void> disable() async {
+    final previous = state;
+    state = state.copyWith(clearActiveAsset: true);
+    try {
+      await _replace(
+        await ref
+            .read(appBackgroundRepositoryProvider)
+            .updatePreference(
+              activeAssetId: null,
+              surfaceOpacity: state.surfaceOpacity,
+            ),
+      );
+    } catch (_) {
+      state = previous.copyWith(error: 'save_failed');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteAsset(int assetId) async {
+    await _replace(
+      await ref.read(appBackgroundRepositoryProvider).delete(assetId),
+    );
+  }
+
+  Future<void> _replace(AppBackgroundState next) {
+    state = next;
+    return Future<void>.value();
   }
 }
 
-final backgroundImageProvider =
-    legacy.StateNotifierProvider<BackgroundImageController, String?>(
-  (ref) => BackgroundImageController(),
-);
-
-/// 背景图 ImageProvider（供 AppScaffold 渲染用）
-///
-/// 原生端返回 [FileImage]，Web 端返回 [MemoryImage]，未设置返回 null。
-/// 注意：此 provider 仅在桌面/Web 端有意义，移动端不使用。
-final backgroundImageProvider2 = Provider<ImageProvider?>((ref) {
-  final path = ref.watch(backgroundImageProvider);
-  if (path == null) return null;
-  if (path.startsWith('data:')) {
-    try {
-      final base64Str = path.split(',').last;
-      return MemoryImage(base64Decode(base64Str));
-    } catch (_) {
-      return null;
-    }
-  }
-  if (kIsWeb) return null;
-  final file = File(path);
-  if (!file.existsSync()) return null;
-  return FileImage(file);
-});
+final appBackgroundProvider =
+    NotifierProvider<AppBackgroundController, AppBackgroundState>(
+      AppBackgroundController.new,
+    );
 
 TextTheme _buildTextTheme(String fontKey, TextTheme baseTextTheme) {
   switch (fontKey) {

@@ -458,6 +458,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       Toast.showToast(
         'login_page_username_validator_notnull'.tr(),
         type: ToastType.error,
+        singleton: true,
       );
       return;
     }
@@ -465,6 +466,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       Toast.showToast(
         'login_page_password_validator_notnull'.tr(),
         type: ToastType.error,
+        singleton: true,
       );
       return;
     }
@@ -472,6 +474,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       Toast.showToast(
         'login_page_password_validator_regex'.tr(),
         type: ToastType.error,
+        singleton: true,
       );
       return;
     }
@@ -479,6 +482,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       Toast.showToast(
         'login_page_captcha_validator_notnull'.tr(),
         type: ToastType.error,
+        singleton: true,
       );
       return;
     }

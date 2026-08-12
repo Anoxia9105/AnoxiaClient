@@ -61,7 +61,9 @@ class DioClient {
                 if (handler != null && !_isUnauthorizedHandling) {
                   _isUnauthorizedHandling = true;
                   unawaited(
-                    handler().whenComplete(() => _isUnauthorizedHandling = false),
+                    handler().whenComplete(
+                      () => _isUnauthorizedHandling = false,
+                    ),
                   );
                   debugLog('鉴权失败，已触发登出并跳转登录页');
                 }
@@ -216,6 +218,7 @@ class DioClient {
     String path, {
     required XFile file,
     String fileField = 'file',
+    String? contentType,
     Map<String, dynamic>? data,
     bool auth = true,
     Options? options,
@@ -226,6 +229,9 @@ class DioClient {
         fileField: MultipartFile.fromBytes(
           await file.readAsBytes(),
           filename: file.name,
+          contentType: contentType == null
+              ? null
+              : DioMediaType.parse(contentType),
         ),
         ...?data,
       });

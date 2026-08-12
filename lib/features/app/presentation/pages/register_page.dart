@@ -618,6 +618,7 @@ Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
     Toast.showToast(
       message,
       type: isError ? ToastType.error : ToastType.success,
+      singleton: true,
     );
   }
 }

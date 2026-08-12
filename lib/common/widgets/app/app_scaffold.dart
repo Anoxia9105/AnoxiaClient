@@ -1,7 +1,9 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
+import 'package:anoxia/common/widgets/app/app_background_layer.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
+import 'package:anoxia/framework/domain/app_background.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -124,32 +126,70 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     );
 
-    final bgImage = ref.watch(backgroundImageProvider2);
-
-    BoxDecoration decoration;
-    if (bgImage != null) {
-      decoration = BoxDecoration(
-        image: DecorationImage(
-          image: bgImage,
-          fit: BoxFit.cover,
-          alignment: Alignment.center,
-          opacity: 1.0,
-        ),
-      );
-    } else {
-      decoration = BoxDecoration(gradient: gradient);
-    }
+    final supportsBackground = DeviceUtil.supportsCustomBackground(context);
+    final backgroundState = ref.watch(appBackgroundProvider);
+    final candidateAsset = backgroundState.activeAsset;
+    final activeAsset =
+        supportsBackground &&
+            (candidateAsset?.type != AppBackgroundMediaType.video ||
+                DeviceUtil.supportsVideoBackground())
+        ? candidateAsset
+        : null;
+    final baseTheme = Theme.of(context);
+    final contentTheme = activeAsset == null
+        ? baseTheme
+        : _transparentContentTheme(baseTheme, backgroundState.surfaceOpacity);
 
     return Container(
-      decoration: decoration,
+      decoration: BoxDecoration(gradient: gradient),
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: appBar,
-          body: widget.body,
-          bottomNavigationBar: widget.bottomNavigationBar,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (activeAsset != null)
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: AppBackgroundLayer(
+                  key: ValueKey(activeAsset.id),
+                  asset: activeAsset,
+                ),
+              ),
+            Theme(
+              data: contentTheme,
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: appBar,
+                body: widget.body,
+                bottomNavigationBar: widget.bottomNavigationBar,
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  ThemeData _transparentContentTheme(ThemeData theme, double opacity) {
+    final colors = theme.colorScheme;
+    Color glass(Color color) => color.withValues(alpha: opacity);
+    return theme.copyWith(
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: glass(colors.surface),
+      cardColor: glass(colors.surface),
+      colorScheme: colors.copyWith(
+        surface: glass(colors.surface),
+        surfaceContainerLowest: glass(colors.surfaceContainerLowest),
+        surfaceContainerLow: glass(colors.surfaceContainerLow),
+        surfaceContainer: glass(colors.surfaceContainer),
+        surfaceContainerHigh: glass(colors.surfaceContainerHigh),
+        surfaceContainerHighest: glass(colors.surfaceContainerHighest),
+      ),
+      cardTheme: theme.cardTheme.copyWith(color: glass(colors.surface)),
+      dialogTheme: theme.dialogTheme.copyWith(
+        backgroundColor: glass(colors.surface),
       ),
     );
   }

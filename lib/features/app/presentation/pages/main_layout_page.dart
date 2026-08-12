@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/app/unsupported_device_page.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_sidebar.dart';
 import 'package:anoxia/common/widgets/app/mobile_bottom_bar.dart';
@@ -123,12 +123,13 @@ class _DesktopContentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final surfaceOpacity = cs.surface.a < 1 ? 0.12 : 0.88;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 16, 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: cs.surface.withValues(alpha: 0.88),
+          color: cs.surface.withValues(alpha: surfaceOpacity),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: cs.outlineVariant.withValues(alpha: isDark ? 0.16 : 0.28),

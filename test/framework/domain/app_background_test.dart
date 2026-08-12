@@ -1,0 +1,60 @@
+import 'package:anoxia/framework/domain/app_background.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  group('AppBackgroundState', () {
+    test('parses cloud assets and clamps opacity', () {
+      final state = AppBackgroundState.fromJson({
+        'activeAssetId': 7,
+        'surfaceOpacity': 1.4,
+        'assets': [
+          {
+            'id': 7,
+            'mediaType': 'VIDEO',
+            'url': 'https://cdn.example.com/background.mp4',
+            'name': 'Ocean',
+          },
+        ],
+      });
+
+      expect(state.activeAsset?.id, 7);
+      expect(state.activeAsset?.type, AppBackgroundMediaType.video);
+      expect(state.surfaceOpacity, AppBackgroundState.maxSurfaceOpacity);
+    });
+
+    test('falls back safely for malformed cloud values', () {
+      final state = AppBackgroundState.fromJson({
+        'activeAssetId': 'missing',
+        'surfaceOpacity': 'invalid',
+        'assets': [
+          {
+            'id': 3,
+            'mediaType': 'unknown',
+            'url': 'https://cdn.example.com/not-media',
+          },
+        ],
+      });
+
+      expect(state.assets, isEmpty);
+      expect(state.activeAsset, isNull);
+      expect(state.surfaceOpacity, AppBackgroundState.defaultSurfaceOpacity);
+    });
+
+    test('round-trips the active selection and opacity', () {
+      const state = AppBackgroundState(
+        assets: [
+          AppBackgroundAsset(
+            id: 2,
+            type: AppBackgroundMediaType.image,
+            url: 'https://cdn.example.com/background.webp',
+            name: 'Forest',
+          ),
+        ],
+        activeAssetId: 2,
+        surfaceOpacity: 0.72,
+      );
+
+      expect(AppBackgroundState.fromJson(state.toJson()), state);
+    });
+  });
+}

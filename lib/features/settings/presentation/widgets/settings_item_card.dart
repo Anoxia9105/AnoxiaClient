@@ -31,7 +31,9 @@ class SettingItemCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: contentPadding ?? const EdgeInsets.fromLTRB(20, 18, 20, 20),
       decoration: BoxDecoration(
-        color: colorScheme.surface.withValues(alpha: 0.92),
+        color: colorScheme.surface.a < 1
+            ? colorScheme.surface
+            : colorScheme.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.14)),
         boxShadow: [

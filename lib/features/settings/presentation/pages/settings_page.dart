@@ -146,7 +146,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         centerTitle: true,
         title: Text('settings_page_title'.tr()),
@@ -179,7 +179,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             },
           ),
           // 背景图（皮肤）功能：仅桌面端和 Web 端提供
-          if (DeviceUtil.isDesktop(context) || DeviceUtil.isWeb)
+          if (DeviceUtil.supportsCustomBackground(context))
             const SettingsBackgroundSection(),
           SettingsLanguageSection(
             selectedLanguageCode: context.locale.languageCode,

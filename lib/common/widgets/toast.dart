@@ -19,6 +19,9 @@ class Toast {
   static const _defaultIconSize = 15.0;
   static const _defaultRadius = 14.0;
 
+  /// 单例 Toast 句柄：传 [singleton] 时复用，保证同一时刻只显示一个
+  static CancelFunc? _singletonCancel;
+
   /// Windows 桌面端禁用毛玻璃效果，避免兼容性问题
   static bool get _enableBlurEffect {
     if (kIsWeb) return true;
@@ -98,9 +101,11 @@ class Toast {
     ToastType type = ToastType.info,
     Alignment align = Alignment.bottomCenter,
     Duration duration = const Duration(seconds: 3),
+    bool singleton = false,
   }) {
     final config = _toastConfig(type);
-    _buildToast(message, config.color, config.icon, align, duration);
+    if (singleton) _singletonCancel?.call();
+    _singletonCancel = _buildToast(message, config.color, config.icon, align, duration);
   }
 
   /// 显示主题色的提示框
@@ -110,12 +115,14 @@ class Toast {
     ToastType type = ToastType.info,
     Alignment align = Alignment.bottomCenter,
     Duration duration = const Duration(seconds: 6),
+    bool singleton = false,
   }) {
     final config = _toastConfig(
       type,
       defaultColor: Theme.of(context).primaryColor,
     );
-    _buildToast(message, config.color, config.icon, align, duration);
+    if (singleton) _singletonCancel?.call();
+    _singletonCancel = _buildToast(message, config.color, config.icon, align, duration);
   }
 
   /// 显示自定义 Widget（关联 context）
@@ -149,7 +156,7 @@ class Toast {
   }
 
   /// 构建 Toast 视图
-  static void _buildToast(
+  static CancelFunc _buildToast(
     String message,
     Color color,
     Widget icon,
@@ -158,7 +165,7 @@ class Toast {
   ) {
     final surfaceColor = Color.lerp(color, Colors.black, 0.16) ?? color;
 
-    BotToast.showCustomText(
+    return BotToast.showCustomText(
       align: align,
       duration: duration,
       animationDuration: const Duration(milliseconds: 1),
@@ -166,7 +173,7 @@ class Toast {
       toastBuilder: (_) {
         final toastBody = Container(
           constraints: const BoxConstraints(maxWidth: 360),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -181,14 +188,8 @@ class Toast {
             ),
             boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: .30),
-                blurRadius: 20,
-                spreadRadius: -4,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .16),
-                blurRadius: 12,
+                color: Colors.black.withValues(alpha: .18),
+                blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],

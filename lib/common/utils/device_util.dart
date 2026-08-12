@@ -58,8 +58,16 @@ class DeviceUtil {
   static bool isDesktop(BuildContext context) =>
       getDeviceType(context) == DeviceType.desktop;
 
+  /// 自定义背景仅在原生桌面端和 Web PC 宽屏模式启用。
+  static bool supportsCustomBackground(BuildContext context) =>
+      isRealDesktop() || (kIsWeb && isDesktop(context));
+
+  /// 当前视频播放器后端覆盖 Web、Windows 与 macOS；Linux 仅启用静态背景。
+  static bool supportsVideoBackground() => kIsWeb || isWindows() || isMacOS();
+
   /// 判断是否为真实桌面环境（不包括 Web）
-  static bool isRealDesktop() => !kIsWeb &&
+  static bool isRealDesktop() =>
+      !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.windows ||
           defaultTargetPlatform == TargetPlatform.linux ||
           defaultTargetPlatform == TargetPlatform.macOS);
@@ -73,27 +81,25 @@ class DeviceUtil {
   /// 判断是否为真实 Web 环境
   static bool isRealWeb() => kIsWeb;
 
-
   /// 判断是不是macOS
   static bool isMacOS() =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+
   /// 判断是不是Windows
   static bool isWindows() =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+
   /// 判断是不是Linux
   static bool isLinux() =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
+
   /// 判断是不是Android
   static bool isAndroid() =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   /// 判断是不是iOS
-  static bool isIOS() =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static bool isIOS() => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 }
 
 /// 设备类型枚举
-enum DeviceType {
-  desktop,
-  tablet,
-  mobile,
-}
+enum DeviceType { desktop, tablet, mobile }

@@ -631,6 +631,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     Toast.showToast(
       message,
       type: isError ? ToastType.error : ToastType.success,
+      singleton: true,
     );
   }
 }
