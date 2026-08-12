@@ -32,10 +32,15 @@ class LogoutConfirmDialog extends StatelessWidget {
           color: colorScheme.errorContainer,
           shape: BoxShape.circle,
         ),
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedLogout01,
-          size: 20,
-          color: colorScheme.onErrorContainer,
+        child: Center(
+          child: SizedBox.square(
+            dimension: 18,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedLogout01,
+              size: 14,
+              color: colorScheme.onErrorContainer,
+            ),
+          ),
         ),
       ),
       title: Text(

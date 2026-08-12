@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/utils/device_util.dart';
+import '../../../../common/widgets/toast.dart';
 import '../../../../domain/repositories/app_background_repository.dart';
 import '../../../../framework/domain/app_background.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
@@ -38,31 +39,31 @@ class SettingsBackgroundSection extends ConsumerWidget {
     final maxBytes = (isVideo ? 100 : 15) * 1024 * 1024;
     if (bytes.length > maxBytes) {
       if (context.mounted) {
-        _showMessage(context, 'settings_bg_media_too_large'.tr());
+        Toast.showToast(
+          'settings_bg_media_too_large'.tr(),
+          type: ToastType.error,
+        );
       }
       return;
     }
     try {
       await ref.read(appBackgroundProvider.notifier).upload(bytes, file.name);
       if (context.mounted) {
-        _showMessage(context, 'settings_bg_image_set_success'.tr());
+        Toast.showToast(
+          'settings_bg_image_set_success'.tr(),
+          type: ToastType.success,
+        );
       }
     } catch (error) {
       if (context.mounted) {
-        _showMessage(
-          context,
+        Toast.showToast(
           error is AppBackgroundException
               ? (error.isLocalizationKey ? error.message.tr() : error.message)
               : 'settings_bg_media_upload_failed'.tr(),
+          type: ToastType.error,
         );
       }
     }
-  }
-
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

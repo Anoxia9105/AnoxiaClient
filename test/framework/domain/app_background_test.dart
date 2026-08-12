@@ -70,5 +70,24 @@ void main() {
       expect(completed.uploadProgress, isNull);
       expect(completed.uploading, isFalse);
     });
+
+    test('keeps local upload progress when merging unrelated cloud state', () {
+      const uploading = AppBackgroundState(
+        uploading: true,
+        uploadProgress: 0.42,
+        surfaceOpacity: 0.7,
+      );
+      const remote = AppBackgroundState(surfaceOpacity: 0.65);
+
+      final merged = uploading.mergeRemote(
+        remote,
+        preserveUpload: true,
+        surfaceOpacityOverride: uploading.surfaceOpacity,
+      );
+
+      expect(merged.uploading, isTrue);
+      expect(merged.uploadProgress, 0.42);
+      expect(merged.surfaceOpacity, 0.7);
+    });
   });
 }

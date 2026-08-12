@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
@@ -128,7 +128,10 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   dimension: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const HugeIcon(icon: HugeIcons.strokeRoundedLockSync01, size: 18),
+              : const HugeIcon(
+                  icon: HugeIcons.strokeRoundedLockSync01,
+                  size: 18,
+                ),
           label: Text('me_password_submit'.tr()),
         ),
       ],
@@ -150,7 +153,20 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedLockPassword, size: 16),
+        prefixIcon: const SizedBox(
+          width: 36,
+          height: 18,
+          child: Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedLockPassword,
+              size: 14,
+            ),
+          ),
+        ),
+        prefixIconConstraints: const BoxConstraints.tightFor(
+          width: 36,
+          height: 18,
+        ),
       ),
     );
   }
@@ -239,7 +255,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         color: cs.onSecondaryContainer,
                       ),
                     )
-                  : const HugeIcon(icon: HugeIcons.strokeRoundedLockSync01, size: 18),
+                  : const HugeIcon(
+                      icon: HugeIcons.strokeRoundedLockSync01,
+                      size: 18,
+                    ),
               label: Text('me_password_submit'.tr()),
             ),
           ),
@@ -311,7 +330,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             ),
           ),
           const SizedBox(width: 4),
-          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowRight01,
+            size: 20,
+            color: cs.outline,
+          ),
         ],
       ),
       onTap: onTap,

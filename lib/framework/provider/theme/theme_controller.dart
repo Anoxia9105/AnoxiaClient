@@ -221,7 +221,15 @@ class AppBackgroundController extends Notifier<AppBackgroundState> {
     if (state.loading) return;
     state = state.copyWith(loading: true, clearError: true);
     try {
-      await _replace(await ref.read(appBackgroundRepositoryProvider).fetch());
+      final remote = await ref.read(appBackgroundRepositoryProvider).fetch();
+      final local = state;
+      await _replace(
+        local.mergeRemote(
+          remote,
+          preserveUpload: local.uploading,
+          surfaceOpacityOverride: local.uploading ? local.surfaceOpacity : null,
+        ),
+      );
     } catch (_) {
       state = state.copyWith(loading: false, error: 'load_failed');
     }
@@ -235,18 +243,28 @@ class AppBackgroundController extends Notifier<AppBackgroundState> {
       clearError: true,
     );
     try {
+      final remote = await ref
+          .read(appBackgroundRepositoryProvider)
+          .upload(
+            bytes: bytes,
+            fileName: fileName,
+            onProgress: (sent, total) {
+              if (total > 0) {
+                state = state.copyWith(uploadProgress: sent / total);
+              }
+            },
+          );
+      final desiredOpacity = state.surfaceOpacity;
+      final persisted = desiredOpacity == remote.surfaceOpacity
+          ? remote
+          : await ref
+                .read(appBackgroundRepositoryProvider)
+                .updatePreference(
+                  activeAssetId: remote.activeAssetId,
+                  surfaceOpacity: desiredOpacity,
+                );
       await _replace(
-        await ref
-            .read(appBackgroundRepositoryProvider)
-            .upload(
-              bytes: bytes,
-              fileName: fileName,
-              onProgress: (sent, total) {
-                if (total > 0) {
-                  state = state.copyWith(uploadProgress: sent / total);
-                }
-              },
-            ),
+        state.mergeRemote(persisted, surfaceOpacityOverride: desiredOpacity),
       );
     } catch (_) {
       state = state.copyWith(
@@ -263,21 +281,35 @@ class AppBackgroundController extends Notifier<AppBackgroundState> {
   }
 
   Future<void> savePreference({int? activeAssetId}) async {
+    if (state.uploading) {
+      if (activeAssetId != null) {
+        state = state.copyWith(activeAssetId: activeAssetId);
+      }
+      return;
+    }
     final previous = state;
     if (activeAssetId != null) {
       state = state.copyWith(activeAssetId: activeAssetId);
     }
     try {
+      final remote = await ref
+          .read(appBackgroundRepositoryProvider)
+          .updatePreference(
+            activeAssetId: state.activeAssetId,
+            surfaceOpacity: state.surfaceOpacity,
+          );
+      final local = state;
       await _replace(
-        await ref
-            .read(appBackgroundRepositoryProvider)
-            .updatePreference(
-              activeAssetId: state.activeAssetId,
-              surfaceOpacity: state.surfaceOpacity,
-            ),
+        local.mergeRemote(
+          remote,
+          preserveUpload: local.uploading,
+          surfaceOpacityOverride: local.surfaceOpacity,
+        ),
       );
     } catch (_) {
-      state = previous.copyWith(error: 'save_failed');
+      state = state.uploading
+          ? state.copyWith(error: 'save_failed')
+          : previous.copyWith(error: 'save_failed');
       rethrow;
     }
   }

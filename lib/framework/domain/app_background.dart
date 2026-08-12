@@ -131,6 +131,17 @@ class AppBackgroundState {
     error: clearError ? null : (error ?? this.error),
   );
 
+  AppBackgroundState mergeRemote(
+    AppBackgroundState remote, {
+    bool preserveUpload = false,
+    double? surfaceOpacityOverride,
+  }) => remote.copyWith(
+    surfaceOpacity: surfaceOpacityOverride,
+    uploading: preserveUpload ? uploading : remote.uploading,
+    uploadProgress: preserveUpload ? uploadProgress : remote.uploadProgress,
+    clearUploadProgress: !preserveUpload && remote.uploadProgress == null,
+  );
+
   Map<String, dynamic> toJson() => {
     'assets': assets.map((item) => item.toJson()).toList(growable: false),
     'activeAssetId': activeAssetId,
