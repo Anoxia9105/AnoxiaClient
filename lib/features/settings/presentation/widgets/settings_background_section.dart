@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/utils/device_util.dart';
+import '../../../../common/widgets/cached_network_image_view.dart';
 import '../../../../common/widgets/toast.dart';
 import '../../../../domain/repositories/app_background_repository.dart';
 import '../../../../framework/domain/app_background.dart';
@@ -73,6 +74,7 @@ class SettingsBackgroundSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 18),
         Row(
           children: [
             Expanded(
@@ -246,13 +248,14 @@ class _BackgroundAssetTile extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(7),
                 child: asset.type == AppBackgroundMediaType.image
-                    ? Image.network(
-                        asset.url,
+                    ? Image(
+                        image: appCachedNetworkImageProvider(asset.url),
                         fit: BoxFit.cover,
                         filterQuality: FilterQuality.high,
                         isAntiAlias: true,
+                        gaplessPlayback: true,
                       )
-                    : BackgroundVideoThumbnail(url: asset.url),
+                    : const BackgroundVideoThumbnail(),
               ),
               const Positioned(
                 left: 0,

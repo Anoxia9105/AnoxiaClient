@@ -43,7 +43,10 @@ class GlobalSearchDialog extends ConsumerWidget {
                     .updateQuery(v),
                 decoration: InputDecoration(
                   hintText: '${'search'.tr()}（会话 / 联系人）',
-                  prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch02),
+                  prefixIcon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedSearch02,
+                    size: 16,
+                  ),
                   suffixText: 'Ctrl+K',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

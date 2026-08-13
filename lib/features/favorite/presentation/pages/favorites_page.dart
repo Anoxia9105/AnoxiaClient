@@ -452,7 +452,7 @@ class _FavoriteListPanel extends StatelessWidget {
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedBookmark01,
                       color: cs.primary,
-                      size: 18,
+                      size: 15,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -532,7 +532,7 @@ class _FavoriteListPanel extends StatelessWidget {
                     ),
                     prefixIcon: HugeIcon(
                       icon: HugeIcons.strokeRoundedSearch02,
-                      size: 18,
+                      size: 15,
                       color: cs.onSurfaceVariant,
                     ),
                     suffixIcon: query.isNotEmpty
@@ -850,15 +850,15 @@ class _FavoriteDetailPanel extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: style.color.withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: HugeIcon(
                   icon: style.icon,
-                  size: 22,
+                  size: 16,
                   color: _typeColor(context, type),
                 ),
               ),
@@ -945,12 +945,12 @@ class _FavoriteDetailPanel extends StatelessWidget {
                   if (!context.mounted) return;
                   Toast.showToast('chat_copy_success'.tr());
                 },
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 20),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 17),
               ),
               IconButton(
                 tooltip: 'favorite_remove'.tr(),
                 onPressed: onDelete,
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 20),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 17),
               ),
             ],
           ),

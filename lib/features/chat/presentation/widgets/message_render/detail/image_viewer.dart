@@ -16,6 +16,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/image_gallery_saver_plus_shim.dart';
 import 'package:photo_view/photo_view.dart';
 
+import '../image_render_metrics.dart';
+
 /// 图片查看器组件
 ///
 /// 提供全屏图片预览功能，支持：
@@ -71,6 +73,9 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   static const double _minScaleFactor = 0.5;
   // 最大缩放倍数
   static const double _maxScaleFactor = 4.0;
+  double _viewerInitialScale = 1;
+  double _viewerMinScale = _minScaleFactor;
+  double _viewerMaxScale = _maxScaleFactor;
 
   @override
   void initState() {
@@ -134,11 +139,13 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   /// 鼠标滚轮缩放事件处理（桌面端）
   void _onPointerSignal(PointerSignalEvent evt) {
     if (evt is PointerScrollEvent) {
-      final double oldScale = _controller.scale ?? 1.0;
-      final double delta = evt.scrollDelta.dy < 0 ? (1 + _step) : (1 - _step);
-      final double target = (oldScale * delta).clamp(
-        _minScaleFactor,
-        _maxScaleFactor,
+      final double target = imageViewerScaleForScroll(
+        currentScale: _controller.scale,
+        initialScale: _viewerInitialScale,
+        scrollDeltaY: evt.scrollDelta.dy,
+        step: _step,
+        minScale: _viewerMinScale,
+        maxScale: _viewerMaxScale,
       );
       _controller.scale = target;
     }
@@ -146,20 +153,26 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
 
   /// 放大
   void _zoomIn() {
-    final double oldScale = _controller.scale ?? 1.0;
-    final double target = (oldScale * (1 + _step)).clamp(
-      _minScaleFactor,
-      _maxScaleFactor,
+    final double target = imageViewerScaleForScroll(
+      currentScale: _controller.scale,
+      initialScale: _viewerInitialScale,
+      scrollDeltaY: -1,
+      step: _step,
+      minScale: _viewerMinScale,
+      maxScale: _viewerMaxScale,
     );
     _controller.scale = target;
   }
 
   /// 缩小
   void _zoomOut() {
-    final double oldScale = _controller.scale ?? 1.0;
-    final double target = (oldScale * (1 - _step)).clamp(
-      _minScaleFactor,
-      _maxScaleFactor,
+    final double target = imageViewerScaleForScroll(
+      currentScale: _controller.scale,
+      initialScale: _viewerInitialScale,
+      scrollDeltaY: 1,
+      step: _step,
+      minScale: _viewerMinScale,
+      maxScale: _viewerMaxScale,
     );
     _controller.scale = target;
   }
@@ -318,7 +331,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
               color: Colors.white,
               size: 20,
             ),
-            onPressed: () => _controller.scale = _controller.initial.scale,
+            onPressed: () => _controller.scale = _viewerInitialScale,
           ),
           // 下载（下载中禁用）
           IconButton(
@@ -342,6 +355,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                 builder: (context, constraints) {
                   // 计算缩放边界：默认原图 1:1，超大图等比缩放至不超出屏幕
                   final scales = _computeScales(attachment, constraints);
+                  _rememberScaleBounds(scales);
                   return GestureDetector(
                     // 点击任意位置关闭（外层确保即使图片加载失败也能关闭）
                     onTap: () => Navigator.pop(context),
@@ -500,7 +514,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     // 在下一帧重置缩放为初始状态
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _controller.scale = _controller.initial.scale;
+      _controller.scale = _viewerInitialScale;
     });
   }
 
@@ -545,6 +559,17 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       minScale: min,
       maxScale: max,
     );
+  }
+
+  void _rememberScaleBounds(_PhotoViewScales scales) {
+    if (scales.initialScale is! num ||
+        scales.minScale is! num ||
+        scales.maxScale is! num) {
+      return;
+    }
+    _viewerInitialScale = (scales.initialScale as num).toDouble();
+    _viewerMinScale = (scales.minScale as num).toDouble();
+    _viewerMaxScale = (scales.maxScale as num).toDouble();
   }
 
   /// 获取图片实际尺寸：优先解码结果，其次附件元数据

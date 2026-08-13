@@ -285,15 +285,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 if (DeviceUtil.supportsCustomBackground(context))
                   const SettingsBackgroundSection(),
-                // Web 已强制使用系统字体，避免 Google Fonts CDN 不可达时无声回退。
-                if (!DeviceUtil.isWeb)
-                  SettingsFontSection(
-                    selectedFontKey: fontKey,
-                    isDesktop: DeviceUtil.isDesktop(context),
-                    onFontChanged: (selectedFont) {
-                      ref.read(appFontProvider.notifier).setFont(selectedFont);
-                    },
-                  ),
               ],
             ),
           ),
@@ -301,18 +292,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'settings_page_language_title'.tr(),
             subtitle: 'settings_page_language_subtitle'.tr(),
             icon: HugeIcons.strokeRoundedLanguageSquare,
-            builder: (_) => SettingsLanguageSection(
-              selectedLanguageCode: context.locale.languageCode,
-              isDesktop: DeviceUtil.isDesktop(context),
-              onLanguageChanged: (localeCode) {
-                context.setLocale(Locale(localeCode));
-                DioClient().setLocale(localeCode);
-                if (ref.read(callWindowControllerProvider) != null) {
-                  ref
-                      .read(callWindowControllerProvider.notifier)
-                      .updateSettings(localeCode: localeCode);
-                }
-              },
+            builder: (_) => Column(
+              children: [
+                SettingsLanguageSection(
+                  selectedLanguageCode: context.locale.languageCode,
+                  isDesktop: DeviceUtil.isDesktop(context),
+                  onLanguageChanged: (localeCode) {
+                    context.setLocale(Locale(localeCode));
+                    DioClient().setLocale(localeCode);
+                    if (ref.read(callWindowControllerProvider) != null) {
+                      ref
+                          .read(callWindowControllerProvider.notifier)
+                          .updateSettings(localeCode: localeCode);
+                    }
+                  },
+                ),
+                if (!DeviceUtil.isWeb) ...[
+                  const SizedBox(height: 24),
+                  SettingsFontSection(
+                    selectedFontKey: fontKey,
+                    isDesktop: DeviceUtil.isDesktop(context),
+                    onFontChanged: (selectedFont) {
+                      ref.read(appFontProvider.notifier).setFont(selectedFont);
+                    },
+                  ),
+                ],
+              ],
             ),
           ),
           SettingsDestination(

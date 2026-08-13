@@ -21,7 +21,22 @@ class SettingsFontSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'settings_page_fonts_title'.tr(),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'settings_page_fonts_subtitle'.tr(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
         for (var index = 0; index < appFontOptions.length; index++) ...[
           _FontOptionTile(
             label: appFontOptions[index].labelKey.tr(),

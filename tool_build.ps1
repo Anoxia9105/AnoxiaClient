@@ -37,41 +37,44 @@ function Strip-Fonts {
 
 $backup = $null
 if ($Target -eq 'web') {
-    $backup = Get-Content -Path $PUBSPEC -Raw -Encoding UTF8
+    $backup = [System.IO.File]::ReadAllBytes($PUBSPEC)
+    $backupText = [System.Text.Encoding]::UTF8.GetString($backup)
     Strip-Fonts -Path $PUBSPEC
     $newText = Get-Content -Path $PUBSPEC -Raw
-    if ($newText -eq $backup) {
+    if ($newText -eq $backupText) {
         $backup = $null
     } else {
         Write-Host '>>> pubspec.yaml fonts section temporarily removed (web build)'
     }
 }
 
+$rc = 1
 try {
     Write-Host ">>> $FLUTTER_BIN pub get"
     & $FLUTTER_BIN pub get
     if ($LASTEXITCODE -ne 0) {
         Write-Host "flutter pub get failed (rc=$LASTEXITCODE)"
-        exit $LASTEXITCODE
+        $rc = $LASTEXITCODE
+    } else {
+        $extra = @()
+        if ($Target -eq 'web') {
+            $extra += '--no-tree-shake-icons'
+            if ($Wasm) { $extra += '--wasm' }
+        }
+
+        $buildTarget = $Target
+        if ($Target -eq 'android') { $buildTarget = 'apk' }
+
+        Write-Host ">>> $FLUTTER_BIN build $buildTarget $Mode $extra"
+        & $FLUTTER_BIN build $buildTarget $Mode @extra
+        $rc = $LASTEXITCODE
+        Write-Host "flutter build $Target $Mode rc=$rc"
     }
-
-    $extra = @()
-    if ($Target -eq 'web') {
-        $extra += '--no-tree-shake-icons'
-        if ($Wasm) { $extra += '--wasm' }
-    }
-
-    $buildTarget = $Target
-    if ($Target -eq 'android') { $buildTarget = 'apk' }
-
-    Write-Host ">>> $FLUTTER_BIN build $buildTarget $Mode $extra"
-    & $FLUTTER_BIN build $buildTarget $Mode @extra
-    $rc = $LASTEXITCODE
-    Write-Host "flutter build $Target $Mode rc=$rc"
-    exit $rc
 } finally {
     if ($null -ne $backup) {
-        [System.IO.File]::WriteAllText($PUBSPEC, $backup)
+        [System.IO.File]::WriteAllBytes($PUBSPEC, $backup)
         Write-Host '>>> pubspec.yaml restored (fonts section)'
     }
 }
+
+exit $rc
