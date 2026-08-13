@@ -54,15 +54,18 @@ class RoomListService extends _$RoomListService {
   /// 空态 UI 只能由 fetch 结果决定，非空缓存则允许立即展示。
   bool _initialFetchDone = false;
 
-  /// 剔除旧版真实官方房间。
+  /// 剔除误用前端保留 ID 的服务端房间。
   ///
-  /// 历史上服务端会在注册时创建与官方账号的真实聊天房间，现已改为纯前端
-  /// 虚拟房间。这里把残留的真实官方房间从列表移除，并就地标记本地删除，
-  /// 确保下次启动不再出现重复房间。
-  List<ChatRoomVO> _pruneLegacyOfficialRooms(List<ChatRoomVO> rooms) {
-    final legacy = rooms.where(OfficialRoomConfig.isLegacyOfficialRoom).toList();
-    if (legacy.isEmpty) return rooms;
-    for (final room in legacy) {
+  /// 虚拟官方入口只存在于展示层。若缓存或接口异常返回同 ID 的真实房间，
+  /// 将其从普通会话列表移除并清理本地副本，避免出现重复入口。
+  List<ChatRoomVO> _pruneReservedOfficialRoomCollisions(
+    List<ChatRoomVO> rooms,
+  ) {
+    final collisions = rooms
+        .where(OfficialRoomConfig.usesReservedVirtualRoomId)
+        .toList();
+    if (collisions.isEmpty) return rooms;
+    for (final room in collisions) {
       final id = room.roomId;
       if (id != null) {
         unawaited(
@@ -71,7 +74,7 @@ class RoomListService extends _$RoomListService {
       }
     }
     return rooms
-        .where((r) => !OfficialRoomConfig.isLegacyOfficialRoom(r))
+        .where((r) => !OfficialRoomConfig.usesReservedVirtualRoomId(r))
         .toList();
   }
 
@@ -95,7 +98,7 @@ class RoomListService extends _$RoomListService {
           // 首次拉取完成前，空缓存不覆盖 state（保持 loading 到 fetch 出结果），
           // 避免「先显示无数据、后显示列表」的闪烁；有缓存房间则立即上屏。
           if (!_initialFetchDone && rooms.isEmpty) return;
-          state = AsyncValue.data(_pruneLegacyOfficialRooms(rooms));
+          state = AsyncValue.data(_pruneReservedOfficialRoomCollisions(rooms));
         });
     ref.onDispose(subscription.cancel);
 
@@ -181,7 +184,7 @@ class RoomListService extends _$RoomListService {
       final rooms = await ref
           .read(syncConversationsUseCaseProvider)(sync: false)
           .timeout(_startupFetchTimeout);
-      return _pruneLegacyOfficialRooms(rooms);
+      return _pruneReservedOfficialRoomCollisions(rooms);
     } on TimeoutException catch (e, st) {
       debugLog('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
       return state.value ?? const <ChatRoomVO>[];
@@ -587,7 +590,10 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
       if (query.isEmpty) return base;
 
       return base.where((room) {
-        final nameMatch = (room.roomName ?? '').toLowerCase().contains(query);
+        final searchableName = room.isOfficial
+            ? 'official_room_name'.tr()
+            : (room.roomName ?? '');
+        final nameMatch = searchableName.toLowerCase().contains(query);
         final msgMatch = (room.lastMessage?.content ?? '')
             .toLowerCase()
             .contains(query);
@@ -617,9 +623,10 @@ final filteredSortedRoomListAsyncProvider =
         final filteredRooms = query.isEmpty
             ? base
             : base.where((room) {
-                final nameMatch = (room.roomName ?? '').toLowerCase().contains(
-                  query,
-                );
+                final searchableName = room.isOfficial
+                    ? 'official_room_name'.tr()
+                    : (room.roomName ?? '');
+                final nameMatch = searchableName.toLowerCase().contains(query);
                 final msgMatch = (room.lastMessage?.content ?? '')
                     .toLowerCase()
                     .contains(query);

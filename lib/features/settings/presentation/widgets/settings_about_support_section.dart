@@ -10,15 +10,13 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// 作者联系方式与对外链接占位符。
-///
-/// 接入真实信息后直接修改下面的常量即可。
-const String _authorEmail = 'your-email@example.com';
-const String _authorGithubUrl = 'https://github.com/your-name';
-const String _sponsorUrl = 'https://github.com/sponsors/your-name';
-const String _privacyPolicyUrl = 'https://example.com/privacy';
-const String _termsUrl = 'https://example.com/terms';
-const String _appShareUrl = 'https://github.com/your-name/anoxia';
+/// 作者联系方式与对外链接。
+const String _authorEmail = 'zhangj9105@gmail.com';
+const String _authorGithubUrl = 'https://github.com/crazydavet';
+const String _sponsorUrl = 'https://www.anoxia.cn/sponsor.html';
+const String _privacyPolicyUrl = 'https://www.anoxia.cn/privacy.html';
+const String _termsUrl = 'https://www.anoxia.cn/terms.html';
+const String _appShareUrl = 'https://www.anoxia.cn';
 
 /// 设置-关于与支持区块
 ///

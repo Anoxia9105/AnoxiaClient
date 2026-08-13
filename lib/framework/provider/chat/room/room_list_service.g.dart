@@ -387,7 +387,7 @@ final class FilteredRoomListProvider
   }
 }
 
-String _$filteredRoomListHash() => r'0e47e41201b9766847de60788be25e3e55b0c4d4';
+String _$filteredRoomListHash() => r'd453141813eb632dbee0545b42fb9ddd93ae1949';
 
 /// 总未读消息数
 ///

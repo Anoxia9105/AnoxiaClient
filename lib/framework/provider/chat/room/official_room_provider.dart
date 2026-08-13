@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/chat_room_vo.dart';
@@ -13,9 +12,7 @@ part 'official_room_provider.g.dart';
 ChatRoomVO officialRoom(Ref ref) {
   return ChatRoomVO(
     roomId: OfficialRoomConfig.virtualRoomId,
-    roomName: 'official_room_name'.tr(),
     roomAvatar: '',
-    roomDescription: 'official_room_welcome_desc'.tr(),
     roomStatus: 0,
     roomType: RoomType.official.index,
     unreadCount: 0,

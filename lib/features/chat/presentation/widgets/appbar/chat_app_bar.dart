@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/breathing_dot.dart';
@@ -8,6 +8,7 @@ import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -59,7 +60,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           final peerDisplayName = peerContact?.remark?.trim().isNotEmpty == true
               ? peerContact!.remark!.trim()
               : peerContact?.nickName?.trim();
-          final displayTitle = room.roomType == 1
+          final displayTitle = room.isOfficial
+              ? 'official_room_name'.tr()
+              : room.roomType == 1
               ? '${room.roomName} (${members.length})'
               : (peerDisplayName?.isNotEmpty == true
                     ? peerDisplayName!
@@ -82,11 +85,26 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: Row(
               children: [
                 // 房间头像
-                AvatarWidget(
-                  url: room.roomAvatar,
-                  name: displayTitle,
-                  size: 40,
-                ),
+                if (room.isOfficial)
+                  Container(
+                    width: 40,
+                    height: 40,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Assets.images.appIconPng.image(
+                      fit: BoxFit.contain,
+                      semanticLabel: displayTitle,
+                    ),
+                  )
+                else
+                  AvatarWidget(
+                    url: room.roomAvatar,
+                    name: displayTitle,
+                    size: 40,
+                  ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -123,6 +141,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       actions: () {
         // 如果房间尚未准备好，不展示右侧动作栏
         if (room == null) return <Widget>[];
+
+        // 官方帮助页所有内容均在当前屏展示，不提供聊天详情或更多操作。
+        if (room.isOfficial) return <Widget>[];
 
         /// 移动端暂不显示通话和成员管理按钮，放在更多菜单里
         if (DeviceUtil.isMobile(context)) {
@@ -169,6 +190,21 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     List<ChatRoomMemberVO> members,
     bool isTyping,
   ) {
+    if (room.isOfficial) {
+      return SizedBox(
+        height: 20,
+        child: Text(
+          'official_room_list_hint'.tr(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
     // 单聊且正在输入 → 显示“对方正在输入...”
     if (room.roomType == 0 && isTyping) {
       return Container(

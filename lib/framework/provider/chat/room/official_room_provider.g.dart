@@ -58,4 +58,4 @@ final class OfficialRoomProvider
   }
 }
 
-String _$officialRoomHash() => r'd6e71a57e3ad733de74f6f38086936b375cfeaa3';
+String _$officialRoomHash() => r'7c23006ff00f558258c5e317235b73300ea6dff7';

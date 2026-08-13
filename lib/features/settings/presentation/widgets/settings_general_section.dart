@@ -1,4 +1,6 @@
 import 'package:anoxia/framework/provider/setting/hide_official_room_provider.dart';
+import 'package:anoxia/framework/domain/official_room_config.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,7 @@ class SettingsGeneralSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hidden = ref.watch(hideOfficialRoomProvider);
+    final visible = !hidden;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -21,21 +24,26 @@ class SettingsGeneralSection extends ConsumerWidget {
           icon: HugeIcons.strokeRoundedMegaphone01,
           size: 22,
         ),
-        title: Text('settings_hide_official_room'.tr()),
-        subtitle: Text('settings_hide_official_room_desc'.tr()),
+        title: Text('settings_show_official_room'.tr()),
+        subtitle: Text('settings_show_official_room_desc'.tr()),
         trailing: Transform.scale(
           scale: 0.85,
           child: Switch.adaptive(
-            value: hidden,
-            onChanged: (value) {
-              ref.read(hideOfficialRoomProvider.notifier).setHidden(value);
-            },
+            value: visible,
+            onChanged: (value) => _setVisible(ref, value),
           ),
         ),
-        onTap: () {
-          ref.read(hideOfficialRoomProvider.notifier).setHidden(!hidden);
-        },
+        onTap: () => _setVisible(ref, !visible),
       ),
     );
+  }
+
+  void _setVisible(WidgetRef ref, bool visible) {
+    if (!visible &&
+        ref.read(activeRoomIdProvider) == OfficialRoomConfig.virtualRoomId) {
+      ref.read(activeRoomIdProvider.notifier).setActive(null);
+      ref.read(chatRightPanelVisibleProvider.notifier).state = false;
+    }
+    ref.read(hideOfficialRoomProvider.notifier).setHidden(!visible);
   }
 }

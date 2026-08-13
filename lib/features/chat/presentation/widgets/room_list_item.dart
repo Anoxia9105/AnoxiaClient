@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/date_util.dart';
+import 'package:anoxia/common/utils/date_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -14,6 +14,7 @@ import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,7 +56,9 @@ class RoomListItem extends ConsumerWidget {
         : null;
 
     // 计算展示的名字：备注名 > 联系人昵称 > 房间名
-    final displayRoomName = isSingle
+    final displayRoomName = isOfficial
+        ? 'official_room_name'.tr()
+        : isSingle
         ? (() {
             final remark = (peerContact?.remark ?? '').trim();
             if (remark.isNotEmpty) return remark;
@@ -87,6 +90,9 @@ class RoomListItem extends ConsumerWidget {
     final tile = SimpleListTile(
       onTap: () async {
         if (room.roomId != null) {
+          if (isOfficial) {
+            ref.read(chatRightPanelVisibleProvider.notifier).state = false;
+          }
           ref.read(activeRoomIdProvider.notifier).setActive(room.roomId!);
 
           // 用宽度断点判定布局（与 chat_page.dart 一致），而非 isRealMobile()。
@@ -111,42 +117,20 @@ class RoomListItem extends ConsumerWidget {
       leading: () {
         if (isOfficial) {
           final cs = Theme.of(context).colorScheme;
-          return AvatarWidget(
-            url: room.roomAvatar,
-            name: displayRoomName,
-            statusWidget: Tooltip(
-              message: 'official_room_name'.tr(),
-              child: Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      cs.primary.withValues(alpha: 0.92),
-                      cs.primary.withValues(alpha: 0.6),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: cs.surface,
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.primary.withValues(alpha: 0.28),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedMegaphone01,
-                  size: 10,
-                  strokeWidth: 2,
-                  color: cs.onPrimary,
-                ),
+          return Tooltip(
+            message: displayRoomName,
+            child: Container(
+              width: 44,
+              height: 44,
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.18)),
+              ),
+              child: Assets.images.appIconPng.image(
+                fit: BoxFit.contain,
+                semanticLabel: displayRoomName,
               ),
             ),
           );
@@ -177,10 +161,7 @@ class RoomListItem extends ConsumerWidget {
                   ],
                 ),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: cs.surface,
-                  width: 1.5,
-                ),
+                border: Border.all(color: cs.surface, width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: cs.primary.withValues(alpha: 0.28),
@@ -442,7 +423,7 @@ class RoomListItem extends ConsumerWidget {
     return result == true;
   }
 
-/// 构建上下文菜单项
+  /// 构建上下文菜单项
   PopupMenuItem<String> _buildMenuItem({
     required List<List<dynamic>> icon,
     required String label,
