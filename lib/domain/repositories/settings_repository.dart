@@ -1,4 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:anoxia/framework/domain/app_update_info.dart';
+
+/// 待上传的反馈图片。
+class FeedbackImageAttachment {
+  final String name;
+  final Uint8List bytes;
+
+  const FeedbackImageAttachment({required this.name, required this.bytes});
+}
 
 /// 反馈提交结果
 class FeedbackSubmitResult {
@@ -23,6 +33,7 @@ abstract interface class SettingsRepository {
     required String contact,
     required String clientType,
     required String appVersion,
+    List<FeedbackImageAttachment> images = const [],
   });
 
   /// 检查应用更新

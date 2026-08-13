@@ -1,6 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
-import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -90,90 +89,13 @@ class _SettingsAboutSupportSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AppIntro(version: widget.appVersionText, onTap: _handleVersionTap),
-        const SizedBox(height: 14),
-        Text(
-          'settings_about_description'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            height: 1.55,
-          ),
+        _AppOverviewCard(
+          version: widget.appVersionText,
+          onVersionTap: _handleVersionTap,
         ),
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            _InfoPill(
-              icon: HugeIcons.strokeRoundedMessageUser01,
-              text: 'settings_about_im_focus'.tr(),
-            ),
-            _InfoPill(
-              icon: HugeIcons.strokeRoundedShield01,
-              text: 'settings_about_privacy'.tr(),
-            ),
-            _InfoPill(
-              icon: HugeIcons.strokeRoundedRocket01,
-              text: 'settings_about_one_person'.tr(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        _SectionLabel(text: 'settings_about_contact_title'.tr()),
-        const SizedBox(height: 10),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedMail01,
-          title: 'settings_about_email'.tr(),
-          subtitle: _authorEmail,
-          onTap: () => _launchEmail(context),
-        ),
-        const SizedBox(height: 12),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedGithub,
-          title: 'settings_about_github'.tr(),
-          subtitle: _authorGithubUrl,
-          onTap: () => _launchUrl(context, _authorGithubUrl),
-        ),
-        const SizedBox(height: 18),
-        _SectionLabel(text: 'settings_about_more_title'.tr()),
-        const SizedBox(height: 10),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedHeartCheck,
-          title: 'settings_about_sponsor'.tr(),
-          subtitle: 'settings_about_sponsor_subtitle'.tr(),
-          onTap: () => _launchUrl(context, _sponsorUrl),
-        ),
-        const SizedBox(height: 12),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedShare01,
-          title: 'settings_about_share'.tr(),
-          subtitle: 'settings_about_share_subtitle'.tr(),
-          onTap: () => _shareApp(context),
-        ),
-        const SizedBox(height: 12),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedLock,
-          title: 'settings_about_privacy_policy'.tr(),
-          subtitle: 'settings_about_privacy_policy_subtitle'.tr(),
-          onTap: () => _launchUrl(context, _privacyPolicyUrl),
-        ),
-        const SizedBox(height: 12),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedLegal01,
-          title: 'settings_about_terms'.tr(),
-          subtitle: 'settings_about_terms_subtitle'.tr(),
-          onTap: () => _launchUrl(context, _termsUrl),
-        ),
-        const SizedBox(height: 12),
-        _ActionRow(
-          icon: HugeIcons.strokeRoundedCode,
-          title: 'settings_open_source_title'.tr(),
-          subtitle: 'settings_about_open_source_subtitle'.tr(),
-          onTap: widget.onOpenOpenSourceLicenses,
-        ),
-        const SizedBox(height: 12),
-        // Web 端通过浏览器刷新即可获取最新版本，不提供检查更新入口
+        // Web 端通过浏览器刷新即可获取最新版本，不提供检查更新入口。
         if (!DeviceUtil.isWeb) ...[
+          const SizedBox(height: 16),
           _UpdateCard(
             updateInfo: updateInfo,
             checkingUpdate: widget.pageState.checkingUpdate,
@@ -181,15 +103,20 @@ class _SettingsAboutSupportSectionState
             onCheckUpdate: widget.onCheckUpdate,
           ),
           if (widget.pageState.updateErrorKey != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              widget.pageState.updateErrorKey!.tr(),
-              style: TextStyle(color: colorScheme.error, fontSize: 12),
+            const SizedBox(height: 8),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                widget.pageState.updateErrorKey!.tr(),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: colorScheme.error),
+              ),
             ),
           ],
           if (updateInfo?.hasUpdate == true &&
               updateInfo?.downloadUrl.isNotEmpty == true) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -203,6 +130,93 @@ class _SettingsAboutSupportSectionState
             ),
           ],
         ],
+        const SizedBox(height: 24),
+        _SectionLabel(text: 'settings_about_contact_title'.tr()),
+        const SizedBox(height: 8),
+        _ActionGroup(
+          key: const Key('about-contact-group'),
+          children: [
+            _ActionRow(
+              icon: HugeIcons.strokeRoundedMail01,
+              title: 'settings_about_email'.tr(),
+              subtitle: _authorEmail,
+              onTap: () => _launchEmail(context),
+            ),
+            _ActionRow(
+              icon: HugeIcons.strokeRoundedGithub,
+              title: 'settings_about_github'.tr(),
+              subtitle: _authorGithubUrl,
+              onTap: () => _launchUrl(context, _authorGithubUrl),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _SectionLabel(text: 'settings_about_more_title'.tr()),
+        const SizedBox(height: 8),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final useColumns = constraints.maxWidth >= 600;
+            final actions = [
+              _SupportShortcut(
+                key: const Key('about-sponsor-action'),
+                icon: HugeIcons.strokeRoundedHeartCheck,
+                title: 'settings_about_sponsor'.tr(),
+                subtitle: 'settings_about_sponsor_subtitle'.tr(),
+                onTap: () => _launchUrl(context, _sponsorUrl),
+              ),
+              _SupportShortcut(
+                key: const Key('about-share-action'),
+                icon: HugeIcons.strokeRoundedShare01,
+                title: 'settings_about_share'.tr(),
+                subtitle: 'settings_about_share_subtitle'.tr(),
+                onTap: () => _shareApp(context),
+              ),
+            ];
+            if (!useColumns) {
+              return Column(
+                children: [
+                  actions.first,
+                  const SizedBox(height: 10),
+                  actions.last,
+                ],
+              );
+            }
+            return IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: actions.first),
+                  const SizedBox(width: 12),
+                  Expanded(child: actions.last),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        _ActionGroup(
+          key: const Key('about-resource-group'),
+          children: [
+            _ActionRow(
+              icon: HugeIcons.strokeRoundedLock,
+              title: 'settings_about_privacy_policy'.tr(),
+              subtitle: 'settings_about_privacy_policy_subtitle'.tr(),
+              onTap: () => _launchUrl(context, _privacyPolicyUrl),
+            ),
+            _ActionRow(
+              icon: HugeIcons.strokeRoundedLegal01,
+              title: 'settings_about_terms'.tr(),
+              subtitle: 'settings_about_terms_subtitle'.tr(),
+              onTap: () => _launchUrl(context, _termsUrl),
+            ),
+            _ActionRow(
+              icon: HugeIcons.strokeRoundedCode,
+              title: 'settings_open_source_title'.tr(),
+              subtitle: 'settings_about_open_source_subtitle'.tr(),
+              onTap: widget.onOpenOpenSourceLicenses,
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -214,12 +228,18 @@ class _SettingsAboutSupportSectionState
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         if (context.mounted) {
-          Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+          Toast.showToast(
+            'settings_about_link_failed'.tr(),
+            type: ToastType.error,
+          );
         }
       }
     } catch (_) {
       if (context.mounted) {
-        Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+        Toast.showToast(
+          'settings_about_link_failed'.tr(),
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -230,12 +250,18 @@ class _SettingsAboutSupportSectionState
     try {
       if (!await launchUrl(uri)) {
         if (context.mounted) {
-          Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+          Toast.showToast(
+            'settings_about_link_failed'.tr(),
+            type: ToastType.error,
+          );
         }
       }
     } catch (_) {
       if (context.mounted) {
-        Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+        Toast.showToast(
+          'settings_about_link_failed'.tr(),
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -244,14 +270,14 @@ class _SettingsAboutSupportSectionState
   Future<void> _shareApp(BuildContext context) async {
     try {
       await SharePlus.instance.share(
-        ShareParams(
-          title: 'Anoxia IM Client',
-          text: _appShareUrl,
-        ),
+        ShareParams(title: 'Anoxia IM Client', text: _appShareUrl),
       );
     } catch (_) {
       if (context.mounted) {
-        Toast.showToast('settings_about_share_failed'.tr(), type: ToastType.error);
+        Toast.showToast(
+          'settings_about_share_failed'.tr(),
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -278,70 +304,126 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// 应用介绍组件
-///
-/// 显示应用图标、名称和版本号，版本号可点击触发彩蛋。
-class _AppIntro extends StatelessWidget {
-  /// 版本号
+/// 应用概览卡片，集中展示品牌、版本、简介与产品特性。
+class _AppOverviewCard extends StatelessWidget {
   final String version;
+  final VoidCallback onVersionTap;
 
-  /// 点击回调
-  final VoidCallback onTap;
-
-  const _AppIntro({required this.version, required this.onTap});
+  const _AppOverviewCard({required this.version, required this.onVersionTap});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      key: const Key('about-overview-card'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.12)),
+        color: colorScheme.primaryContainer.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.16)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-            alignment: Alignment.center,
-            child: Assets.images.appLogo.image(
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Anoxia IM Client',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: colorScheme.onSurface,
+          Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                   ),
                 ),
-                const SizedBox(height: 4),
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onTap,
-                    child: Text(
-                      '${'settings_app_version'.tr()} $version',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        decoration: TextDecoration.underline,
-                        decorationColor: colorScheme.outline,
+                child: Assets.images.appLogo.image(
+                  filterQuality: FilterQuality.high,
+                  semanticLabel: 'Anoxia IM Client',
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Anoxia IM Client',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          key: const Key('about-version-button'),
+                          canRequestFocus: true,
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: onVersionTap,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Center(
+                                child: Text(
+                                  '${'settings_app_version'.tr()} $version',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Divider(
+            height: 1,
+            color: colorScheme.primary.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'settings_about_description'.tr(),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.55,
             ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InfoPill(
+                icon: HugeIcons.strokeRoundedMessageUser01,
+                text: 'settings_about_im_focus'.tr(),
+              ),
+              _InfoPill(
+                icon: HugeIcons.strokeRoundedShield01,
+                text: 'settings_about_privacy'.tr(),
+              ),
+              _InfoPill(
+                icon: HugeIcons.strokeRoundedRocket01,
+                text: 'settings_about_one_person'.tr(),
+              ),
+            ],
           ),
         ],
       ),
@@ -366,22 +448,27 @@ class _InfoPill extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.36),
+        color: colorScheme.surface.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           HugeIcon(icon: icon, size: 15, color: colorScheme.primary),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w800,
+          Flexible(
+            child: Text(
+              text,
+              softWrap: true,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -393,6 +480,117 @@ class _InfoPill extends StatelessWidget {
 /// 操作行组件
 ///
 /// 带图标、标题、副标题和箭头的可点击操作入口。
+class _ActionGroup extends StatelessWidget {
+  final List<_ActionRow> children;
+
+  const _ActionGroup({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < children.length; index += 1) ...[
+            children[index],
+            if (index < children.length - 1)
+              Divider(
+                height: 1,
+                indent: 62,
+                color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 强调支持类操作，在宽屏下可与同级操作并排显示。
+class _SupportShortcut extends StatelessWidget {
+  final List<List<dynamic>> icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SupportShortcut({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: colorScheme.secondaryContainer.withValues(alpha: 0.34),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.18)),
+      ),
+      child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 96),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _IconSurface(icon: icon, emphasized: true),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowUpRight01,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ActionRow extends StatelessWidget {
   /// 图标
   final List<List<dynamic>> icon;
@@ -418,21 +616,15 @@ class _ActionRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
       mouseCursor: SystemMouseCursors.click,
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colorScheme.outlineVariant),
-        ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 68),
         child: Row(
           children: [
-            HugeIcon(icon: icon, size: 22, color: colorScheme.primary),
             const SizedBox(width: 12),
+            _IconSurface(icon: icon),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +633,7 @@ class _ActionRow extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -456,10 +648,43 @@ class _ActionRow extends StatelessWidget {
             ),
             HugeIcon(
               icon: HugeIcons.strokeRoundedArrowRight01,
+              size: 18,
               color: colorScheme.onSurfaceVariant,
             ),
+            const SizedBox(width: 14),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _IconSurface extends StatelessWidget {
+  final List<List<dynamic>> icon;
+  final bool emphasized;
+
+  const _IconSurface({required this.icon, this.emphasized = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: emphasized
+            ? colorScheme.secondaryContainer
+            : colorScheme.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      alignment: Alignment.center,
+      child: HugeIcon(
+        icon: icon,
+        size: 20,
+        color: emphasized
+            ? colorScheme.onSecondaryContainer
+            : colorScheme.primary,
       ),
     );
   }
@@ -492,45 +717,60 @@ class _UpdateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      mouseCursor: checkingUpdate
-          ? SystemMouseCursors.basic
-          : SystemMouseCursors.click,
-      onTap: checkingUpdate ? null : onCheckUpdate,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colorScheme.outlineVariant),
+    return Semantics(
+      button: true,
+      enabled: !checkingUpdate,
+      child: Material(
+        color: hasAppUpdate
+            ? colorScheme.tertiaryContainer.withValues(alpha: 0.32)
+            : colorScheme.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: hasAppUpdate
+                ? colorScheme.tertiary.withValues(alpha: 0.22)
+                : colorScheme.outlineVariant.withValues(alpha: 0.72),
+          ),
         ),
-        child: Row(
-          children: [
-            HugeIcon(
-              icon: hasAppUpdate
-                  ? HugeIcons.strokeRoundedUpload03
-                  : HugeIcons.strokeRoundedCloudSavingDone01,
-              size: 22,
-              color: hasAppUpdate
-                  ? const Color(0xFFFF9800)
-                  : colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: _UpdateCopy(updateInfo: updateInfo)),
-            if (checkingUpdate)
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
-                color: colorScheme.onSurfaceVariant,
+        child: InkWell(
+          mouseCursor: checkingUpdate
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.click,
+          onTap: checkingUpdate ? null : onCheckUpdate,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 72),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  _IconSurface(
+                    icon: hasAppUpdate
+                        ? HugeIcons.strokeRoundedUpload03
+                        : HugeIcons.strokeRoundedCloudSavingDone01,
+                    emphasized: hasAppUpdate,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _UpdateCopy(updateInfo: updateInfo)),
+                  if (checkingUpdate)
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        semanticsLabel: 'settings_update_checking'.tr(),
+                      ),
+                    )
+                  else
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowRight01,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                ],
               ),
-          ],
+            ),
+          ),
         ),
       ),
     );
@@ -550,6 +790,9 @@ class _UpdateCopy extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final hasUpdate = updateInfo?.hasUpdate == true;
+    final statusColor = hasUpdate
+        ? colorScheme.onTertiaryContainer
+        : colorScheme.onSurface;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,16 +805,24 @@ class _UpdateCopy extends StatelessWidget {
                     ? '${'update_new_version'.tr()}: ${updateInfo!.latestVersion}'
                     : 'settings_update_check'.tr(),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: hasUpdate
-                      ? const Color(0xFFFF9800)
-                      : colorScheme.onSurface,
-                  fontWeight: FontWeight.w800,
+                  color: statusColor,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
             if (hasUpdate) ...[
               const SizedBox(width: 8),
-              const VibratingBadge(isDot: true),
+              Semantics(
+                label: 'update_new_version'.tr(),
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: colorScheme.tertiary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
             ],
           ],
         ),

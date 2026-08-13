@@ -1,15 +1,16 @@
-﻿import 'package:anoxia/data/repositories/settings_repository_impl.dart';
+import 'package:anoxia/data/repositories/settings_repository_impl.dart';
 import 'package:anoxia/domain/repositories/settings_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 // AppUpdateInfo is re-exported from domain/app_update_info.dart
-export 'package:anoxia/framework/domain/app_update_info.dart' show AppUpdateInfo;
+export 'package:anoxia/framework/domain/app_update_info.dart'
+    show AppUpdateInfo;
 
 // FeedbackSubmitResult / SettingsRepository are re-exported from domain layer
 export 'package:anoxia/domain/repositories/settings_repository.dart'
-    show FeedbackSubmitResult, SettingsRepository;
+    show FeedbackImageAttachment, FeedbackSubmitResult, SettingsRepository;
 
 /// 获取应用版本号
 final appVersionProvider = FutureProvider<String>((ref) async {

@@ -2,6 +2,7 @@ import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/settings_repository.dart';
 import 'package:anoxia/framework/domain/app_update_info.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:dio/dio.dart';
 
 /// 设置仓库实现
 ///
@@ -15,17 +16,26 @@ class SettingsRepositoryImpl implements SettingsRepository {
     required String contact,
     required String clientType,
     required String appVersion,
+    List<FeedbackImageAttachment> images = const [],
   }) async {
     try {
+      final formData = FormData.fromMap({
+        'title': title,
+        'content': content,
+        'contact': contact,
+        'clientType': clientType,
+        'appVersion': appVersion,
+        if (images.isNotEmpty)
+          'files': images
+              .map(
+                (image) =>
+                    MultipartFile.fromBytes(image.bytes, filename: image.name),
+              )
+              .toList(),
+      });
       final res = await DioClient().post(
-        API.feedbackSubmit,
-        data: {
-          'title': title,
-          'content': content,
-          'contact': contact,
-          'clientType': clientType,
-          'appVersion': appVersion,
-        },
+        API.feedbackSubmitWithImages,
+        data: formData,
       );
 
       final ok = res.data is Map && res.data['code'] == 200;

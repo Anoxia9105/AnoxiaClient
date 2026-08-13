@@ -76,7 +76,7 @@ class _MyPageState extends ConsumerState<MyPage> {
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
+        centerTitle: DeviceUtil.isMobile(context),
         title: Text('me_page_title'.tr()),
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,

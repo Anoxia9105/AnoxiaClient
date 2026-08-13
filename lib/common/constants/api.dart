@@ -100,6 +100,7 @@ class API {
 
   /// 提交用户反馈
   static const String feedbackSubmit = '/feedback/submit';
+  static const String feedbackSubmitWithImages = '/feedback/submit/images';
 
   // ======================== 聊天室接口 ========================
   /// 获取聊天室列表
@@ -179,7 +180,8 @@ class API {
   static const String stickerCustomPackDelete = '/chat/sticker/custom/pack';
 
   /// 删除用户自定义表情包内的单个表情（{id}）
-  static const String stickerCustomStickerDelete = '/chat/sticker/custom/sticker';
+  static const String stickerCustomStickerDelete =
+      '/chat/sticker/custom/sticker';
 
   // ======================== 通话 ========================
   /// 获取通话 token

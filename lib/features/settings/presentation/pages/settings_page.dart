@@ -26,6 +26,7 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/utils/device_util.dart';
@@ -52,6 +53,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   /// 反馈联系方式编辑控制器
   final _feedbackContactController = TextEditingController();
+
+  final List<FeedbackImageAttachment> _feedbackImages = [];
+
+  static const int _feedbackImageLimit = 3;
+  static const int _feedbackImageMaxBytes = 5 * 1024 * 1024;
 
   @override
   void dispose() {
@@ -127,6 +133,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           content: _feedbackContentController.text.trim(),
           contact: _feedbackContactController.text.trim(),
           clientType: clientType,
+          images: _feedbackImages,
         );
 
     if (!mounted) return;
@@ -135,8 +142,56 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _feedbackTitleController.clear();
       _feedbackContentController.clear();
       _feedbackContactController.clear();
+      setState(_feedbackImages.clear);
     }
     _showActionResult(result);
+  }
+
+  Future<void> _pickFeedbackImages() async {
+    final remaining = _feedbackImageLimit - _feedbackImages.length;
+    if (remaining <= 0) {
+      Toast.showToast(
+        'settings_feedback_image_limit'.tr(),
+        type: ToastType.info,
+      );
+      return;
+    }
+
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp'],
+      allowMultiple: true,
+      withData: true,
+    );
+    if (!mounted || result == null) return;
+
+    final picked = <FeedbackImageAttachment>[];
+    for (final file in result.files.take(remaining)) {
+      final bytes = file.bytes;
+      if (bytes == null) continue;
+      if (bytes.length > _feedbackImageMaxBytes) {
+        Toast.showToast(
+          'settings_feedback_image_too_large'.tr(args: [file.name]),
+          type: ToastType.error,
+        );
+        continue;
+      }
+      picked.add(FeedbackImageAttachment(name: file.name, bytes: bytes));
+    }
+
+    if (result.files.length > remaining) {
+      Toast.showToast(
+        'settings_feedback_image_limit'.tr(),
+        type: ToastType.info,
+      );
+    }
+    if (picked.isNotEmpty) {
+      setState(() => _feedbackImages.addAll(picked));
+    }
+  }
+
+  void _removeFeedbackImage(int index) {
+    setState(() => _feedbackImages.removeAt(index));
   }
 
   void _openProfile() {
@@ -183,7 +238,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        centerTitle: true,
+        centerTitle: DeviceUtil.isMobile(context),
         title: Text('settings_page_title'.tr()),
       ),
       body: SettingsSplitView(
@@ -288,7 +343,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               titleController: _feedbackTitleController,
               contentController: _feedbackContentController,
               contactController: _feedbackContactController,
+              images: _feedbackImages,
               submitting: pageState.submittingFeedback,
+              onPickImages: _pickFeedbackImages,
+              onRemoveImage: _removeFeedbackImage,
               onSubmit: _submitFeedback,
             ),
           ),

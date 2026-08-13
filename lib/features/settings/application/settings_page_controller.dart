@@ -111,6 +111,7 @@ class SettingsPageController extends Notifier<SettingsPageState> {
     required String content,
     required String contact,
     required String clientType,
+    List<FeedbackImageAttachment> images = const [],
   }) async {
     if (state.submittingFeedback) {
       return const SettingsActionResult(
@@ -130,6 +131,7 @@ class SettingsPageController extends Notifier<SettingsPageState> {
             contact: contact,
             clientType: clientType,
             appVersion: appVersion,
+            images: images,
           );
 
       if (result.success) {
