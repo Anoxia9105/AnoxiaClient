@@ -571,6 +571,7 @@
   "upload_failed_retry": "上传失败，请删除重试",
   "quill_image_plain": "[图像]",
   "quill_file_plain": "[文件]",
+  "quill_audio_plain": "[语音]",
   "search_unknown": "未知",
   "search_image_placeholder": "[图片]",
   "search_user_prefix": "用户 {}",

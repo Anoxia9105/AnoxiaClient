@@ -571,6 +571,7 @@
   "upload_failed_retry": "Upload failed, please delete and retry",
   "quill_image_plain": "[Image]",
   "quill_file_plain": "[File]",
+  "quill_audio_plain": "[Voice message]",
   "search_unknown": "Unknown",
   "search_image_placeholder": "[Image]",
   "search_user_prefix": "User {}",

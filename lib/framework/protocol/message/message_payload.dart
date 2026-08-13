@@ -505,10 +505,20 @@ class MessagePayload {
     if (audioPayload != null) {
       return MessagePayload(
         content: '[audio]',
+        // 本地平铺 JSON（toFlatJson）把 audioDuration 放在顶层，
+        // 服务端嵌套 JSON 放在 audio.durationMs，两种形式都要兼容，
+        // 否则本地缓存往返会丢失语音时长（渲染恒为 0）。
         audioDuration: _readInt(
-          audioPayload['durationMs'] ?? audioPayload['duration_ms'],
+          audioPayload['durationMs'] ??
+              audioPayload['duration_ms'] ??
+              json['audioDuration'],
         ),
-        audio: _readAttachment(audioPayload['audio'])?.copyWith(kind: 'AUDIO'),
+        // 与 image 分支一致：服务端嵌套 JSON 是 audio.audio，本地平铺 JSON
+        // 直接把附件放在顶层 audio 字段，两种形式都要兼容，否则缓存往返
+        // 会丢失语音附件。
+        audio: _readAttachment(
+          audioPayload['audio'] ?? audioPayload,
+        )?.copyWith(kind: 'AUDIO'),
         waveform: _readString(audioPayload, ['waveform']),
       );
     }
@@ -523,7 +533,9 @@ class MessagePayload {
         mentions: _readMentions(interaction),
         mentionAll: _readMentionAll(interaction),
         audioDuration: _readInt(
-          videoPayload['durationMs'] ?? videoPayload['duration_ms'],
+          videoPayload['durationMs'] ??
+              videoPayload['duration_ms'] ??
+              json['audioDuration'],
         ),
         video: _readAttachment(videoPayload['video'])?.copyWith(kind: 'VIDEO'),
         cover: _readAttachment(videoPayload['cover'])?.copyWith(kind: 'IMAGE'),

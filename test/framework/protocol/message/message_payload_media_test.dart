@@ -51,4 +51,26 @@ void main() {
     expect(decodedFile.file?.url, file.url);
     expect(decodedFile.content, 'document');
   });
+
+  test('flat audio payload keeps duration through JSON round trip', () {
+    const audio = Attachment(
+      id: 'audio-1',
+      kind: 'AUDIO',
+      url: 'https://example.com/voice.ogg',
+      name: 'voice.ogg',
+      type: 'audio/ogg',
+    );
+    const payload = MessagePayload(
+      content: '[audio]',
+      audio: audio,
+      audioDuration: 42000,
+    );
+
+    final decoded = MessagePayload.fromJson(payload.toJson());
+
+    expect(decoded.audio?.id, audio.id);
+    expect(decoded.audio?.kind, 'AUDIO');
+    expect(decoded.audioDuration, 42000);
+    expect(decoded.mediaAttachments, hasLength(1));
+  });
 }

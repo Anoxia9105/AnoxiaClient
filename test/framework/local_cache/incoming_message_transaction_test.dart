@@ -209,4 +209,50 @@ void main() {
     expect(messages, hasLength(1));
     expect(messages.single.seq, 157);
   });
+
+  test('own echo with a new server id is not a fresh insert', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final local = LocalDataSource(database);
+    const roomId = 'room-echo';
+    const clientMsgId = 'client-echo';
+
+    await local.upsertMessage(
+      ChatMessage(
+        messageId: clientMsgId,
+        clientMsgId: clientMsgId,
+        roomId: roomId,
+        senderId: 42,
+        messageType: MessageType.text,
+        content: 'sending',
+        seq: 0,
+        timestamp: 1000,
+        deliveryStatus: DeliveryStatus.sending,
+      ),
+    );
+
+    // 服务端回显先于 ACK 到达：messageId 是服务端新 id，但 clientMsgId 一致。
+    expect(
+      await local.applyIncomingMessage(
+        ChatMessage(
+          messageId: 'server-echo-id',
+          clientMsgId: clientMsgId,
+          roomId: roomId,
+          senderId: 42,
+          messageType: MessageType.text,
+          content: 'sending',
+          seq: 0,
+          timestamp: 1050,
+        ),
+        incrementUnread: false,
+      ),
+      false,
+    );
+
+    // 主键原地换绑：不应残留旧的乐观消息行。
+    final messages = await local.getMessagesForConversation(roomId);
+    expect(messages, hasLength(1));
+    expect(messages.single.messageId, 'server-echo-id');
+    expect(messages.single.clientMsgId, clientMsgId);
+  });
 }

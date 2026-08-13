@@ -91,10 +91,9 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
               )
             : Material(
                 color: colorScheme.surfaceContainerLow,
-                elevation: 10,
-                shadowColor: Colors.black.withValues(alpha: 0.28),
-                clipBehavior: Clip.antiAlias,
-                borderRadius: BorderRadius.circular(24),
+                // 移动端为平铺底栏：外层不再带圆角/阴影，避免与外层胶囊输入
+                // 框的圆角描边叠加成「两个输入框错位」的视觉
+                elevation: 0,
                 child: content,
               ),
       ),

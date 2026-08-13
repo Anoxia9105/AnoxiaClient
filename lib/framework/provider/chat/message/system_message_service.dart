@@ -7,6 +7,8 @@ import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 
@@ -105,6 +107,19 @@ class SystemMessageService extends _$SystemMessageService {
   ///
   /// 根据通话状态生成通知内容并推送到系统通知栏
   void _sendDesktopNotification(String roomId, String action, RoomMessage msg) {
+    // 移动端 App 在前台时不需要系统通知栏提醒（通话页已有实时界面反馈），
+    // 与普通消息的通知策略保持一致，避免前台频繁弹通知。
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final isAppForeground =
+        lifecycle == null ||
+        lifecycle == AppLifecycleState.resumed ||
+        lifecycle == AppLifecycleState.inactive;
+    final isMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    if (isMobile && isAppForeground) return;
+
     final rooms =
         ref.read(roomListServiceProvider).value ?? const <ChatRoomVO>[];
     final room = RoomLookupHelper.findByRoomId(rooms, roomId) ?? ChatRoomVO();

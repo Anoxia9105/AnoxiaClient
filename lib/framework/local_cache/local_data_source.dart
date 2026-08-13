@@ -126,7 +126,12 @@ class LocalDataSource {
         clearUnread: clearUnread,
       );
       await _advanceMessageWatermark(row.conversationId, message.seq);
-      return existing == null;
+      // 以是否按 clientMsgId 找到先前记录为准，而不是按 messageId：
+      // 服务端会把自己的消息回显给发送方（ACK 与回显到达顺序不定），
+      // 回显的 messageId 可能是服务端新 id 或派生兜底 id，此时 existing
+      // 为 null，但按 clientMsgId 能找到已存在的记录 → 视为重复写入，
+      // 避免自己的回显被当作新消息再次触发房间位置更新与通知。
+      return previous == null;
     });
   }
 

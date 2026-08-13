@@ -571,6 +571,7 @@
   "upload_failed_retry": "アップロード失敗、削除して再試行してください",
   "quill_image_plain": "[画像]",
   "quill_file_plain": "[ファイル]",
+  "quill_audio_plain": "[ボイスメッセージ]",
   "search_unknown": "不明",
   "search_image_placeholder": "[画像]",
   "search_user_prefix": "ユーザー {}",

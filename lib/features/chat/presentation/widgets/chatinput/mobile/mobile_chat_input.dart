@@ -364,10 +364,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox.square(
-            dimension: 40,
+            dimension: 34,
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedSent,
-              size: 22,
+              size: 17,
               color: colorScheme.onPrimary,
             ),
           ),
