@@ -5,6 +5,7 @@ enum RoomType {
   singleChat, // 单聊
   groupChat, // 群聊
   aiChat, // AI 对话
+  official, // 官方虚拟房间（纯前端展示，不支持聊天/通话）
 }
 
 /// 聊天室视图对象
@@ -47,6 +48,9 @@ class ChatRoomVO {
 
   /// 是否展开搜索栏
   final bool? isOpenSearch;
+
+  /// 是否为官方虚拟房间（纯前端展示，不支持聊天/通话/成员管理）
+  bool get isOfficial => roomType == RoomType.official.index;
 
   ChatRoomVO({
     this.roomId,

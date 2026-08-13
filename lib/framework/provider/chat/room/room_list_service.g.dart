@@ -45,7 +45,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'7809db34bd2ab2b94633d093a8dfc921507f205b';
+String _$roomListServiceHash() => r'7d65f074d9b6d7914db37a1ad7aaf94694cec217';
 
 /// 聊天室列表服务
 ///
@@ -189,7 +189,7 @@ final class RoomEntryTaskProvider
   }
 }
 
-String _$roomEntryTaskHash() => r'9ee43633afe9c8696d5966c08bf7d2581fc6be2f';
+String _$roomEntryTaskHash() => r'08384663bb5a80a64775a420540e5d0542004b2d';
 
 /// 进入房间时的初始化任务
 ///
@@ -387,7 +387,7 @@ final class FilteredRoomListProvider
   }
 }
 
-String _$filteredRoomListHash() => r'd7a5059f2c9a0664a8496af0847451044ab7e5d4';
+String _$filteredRoomListHash() => r'0e47e41201b9766847de60788be25e3e55b0c4d4';
 
 /// 总未读消息数
 ///
@@ -502,7 +502,7 @@ final class CurrentRoomProvider
   }
 }
 
-String _$currentRoomHash() => r'9009ae10d2da0a78d42f726b1d12747a1054a025';
+String _$currentRoomHash() => r'0a08f62d9c4bed84d2f73af25b7eb3737e2093c0';
 
 /// 根据房间 ID 获取对应的聊天室对象
 

@@ -3,8 +3,6 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'settings_item_card.dart';
-
 /// 字体设置组件
 ///
 /// 提供全局字体选择功能，选择后会实时应用到全应用。
@@ -22,23 +20,18 @@ class SettingsFontSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingItemCard(
-      title: 'settings_page_fonts_title'.tr(),
-      subtitle: 'settings_page_fonts_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedText,
-      child: Column(
-        children: [
-          for (var index = 0; index < appFontOptions.length; index++) ...[
-            _FontOptionTile(
-              label: appFontOptions[index].labelKey.tr(),
-              fontKey: appFontOptions[index].key,
-              selectedFontKey: selectedFontKey,
-              onFontChanged: onFontChanged,
-            ),
-            if (index != appFontOptions.length - 1) const SizedBox(height: 8),
-          ],
+    return Column(
+      children: [
+        for (var index = 0; index < appFontOptions.length; index++) ...[
+          _FontOptionTile(
+            label: appFontOptions[index].labelKey.tr(),
+            fontKey: appFontOptions[index].key,
+            selectedFontKey: selectedFontKey,
+            onFontChanged: onFontChanged,
+          ),
+          if (index != appFontOptions.length - 1) const SizedBox(height: 8),
         ],
-      ),
+      ],
     );
   }
 }

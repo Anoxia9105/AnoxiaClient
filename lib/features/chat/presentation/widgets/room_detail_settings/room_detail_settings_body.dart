@@ -24,6 +24,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/official_room_help_panel.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,6 +51,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     final currentRoom = ref.watch(currentRoomProvider(roomId));
     if (currentRoom == null) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    // 官方虚拟房间：展示选项式帮助，不渲染成员 / 资料 / 危险操作
+    if (currentRoom.isOfficial) {
+      return const OfficialRoomHelpPanel();
     }
 
     final isGroup = currentRoom.roomType == 1;

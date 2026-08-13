@@ -1,6 +1,4 @@
 import 'package:anoxia/framework/core/notification_helper.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:anoxia/features/settings/presentation/widgets/settings_item_card.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -56,39 +54,34 @@ class _SettingsWebNotificationSectionState
     final colorScheme = theme.colorScheme;
     final granted = _granted ?? false;
 
-    return SettingItemCard(
-      title: 'settings_web_notification_title'.tr(),
-      subtitle: 'settings_web_notification_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedNotification01,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              granted
-                  ? 'settings_web_notification_granted'.tr()
-                  : 'settings_web_notification_not_granted'.tr(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: granted ? colorScheme.primary : colorScheme.error,
-                fontWeight: FontWeight.w600,
-              ),
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            granted
+                ? 'settings_web_notification_granted'.tr()
+                : 'settings_web_notification_not_granted'.tr(),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: granted ? colorScheme.primary : colorScheme.error,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
-          FilledButton.tonal(
-            onPressed: (granted || _requesting) ? null : _request,
-            child: _requesting
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.onSecondaryContainer,
-                    ),
-                  )
-                : Text('settings_web_notification_enable'.tr()),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 12),
+        FilledButton.tonal(
+          onPressed: (granted || _requesting) ? null : _request,
+          child: _requesting
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.onSecondaryContainer,
+                  ),
+                )
+              : Text('settings_web_notification_enable'.tr()),
+        ),
+      ],
     );
   }
 }

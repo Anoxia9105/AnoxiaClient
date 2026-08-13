@@ -24,6 +24,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/chat_message.dart';
 import '../../../domain/chat_room_vo.dart';
+import '../../../domain/official_room_config.dart';
+import 'official_room_provider.dart';
+import '../../setting/hide_official_room_provider.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 
 part 'room_list_service.g.dart';
@@ -51,6 +54,27 @@ class RoomListService extends _$RoomListService {
   /// 空态 UI 只能由 fetch 结果决定，非空缓存则允许立即展示。
   bool _initialFetchDone = false;
 
+  /// 剔除旧版真实官方房间。
+  ///
+  /// 历史上服务端会在注册时创建与官方账号的真实聊天房间，现已改为纯前端
+  /// 虚拟房间。这里把残留的真实官方房间从列表移除，并就地标记本地删除，
+  /// 确保下次启动不再出现重复房间。
+  List<ChatRoomVO> _pruneLegacyOfficialRooms(List<ChatRoomVO> rooms) {
+    final legacy = rooms.where(OfficialRoomConfig.isLegacyOfficialRoom).toList();
+    if (legacy.isEmpty) return rooms;
+    for (final room in legacy) {
+      final id = room.roomId;
+      if (id != null) {
+        unawaited(
+          ref.read(localDataSourceProvider).markConversationDeleted(id),
+        );
+      }
+    }
+    return rooms
+        .where((r) => !OfficialRoomConfig.isLegacyOfficialRoom(r))
+        .toList();
+  }
+
   @override
   FutureOr<List<ChatRoomVO>> build() async {
     ref.onDispose(() {
@@ -71,7 +95,7 @@ class RoomListService extends _$RoomListService {
           // 首次拉取完成前，空缓存不覆盖 state（保持 loading 到 fetch 出结果），
           // 避免「先显示无数据、后显示列表」的闪烁；有缓存房间则立即上屏。
           if (!_initialFetchDone && rooms.isEmpty) return;
-          state = AsyncValue.data(rooms);
+          state = AsyncValue.data(_pruneLegacyOfficialRooms(rooms));
         });
     ref.onDispose(subscription.cancel);
 
@@ -154,9 +178,10 @@ class RoomListService extends _$RoomListService {
       // 先等待会话同步完成，避免首次加载显示空列表
       await ref.read(syncConversationsUseCaseProvider).sync();
       // 同步完成后获取会话列表（不再触发后台同步）
-      return await ref
+      final rooms = await ref
           .read(syncConversationsUseCaseProvider)(sync: false)
           .timeout(_startupFetchTimeout);
+      return _pruneLegacyOfficialRooms(rooms);
     } on TimeoutException catch (e, st) {
       debugLog('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
       return state.value ?? const <ChatRoomVO>[];
@@ -494,10 +519,10 @@ class ActiveRoomId extends _$ActiveRoomId {
 /// 确保消息和成员数据已同步到本地
 @riverpod
 Future<void> roomEntryTask(Ref ref, String roomId) async {
-  final roomListAsync = ref.read(roomListServiceProvider);
-  final rooms = roomListAsync.value ?? [];
+  final room = ref.watch(currentRoomProvider(roomId));
 
-  final room = RoomLookupHelper.findByRoomId(rooms, roomId);
+  // 官方虚拟房间无需同步消息 / 成员
+  if (room?.isOfficial ?? false) return;
 
   await Future.wait([
     ref
@@ -529,6 +554,19 @@ class RoomSearchQuery extends _$RoomSearchQuery {
   void update(String query) => state = query;
 }
 
+/// 在房间列表中注入虚拟官方房间（受显隐开关控制）。
+List<ChatRoomVO> _injectOfficialRoom(
+  List<ChatRoomVO> rooms,
+  bool hidden,
+  ChatRoomVO official,
+) {
+  if (hidden) return rooms;
+  if (rooms.any((r) => r.roomId == OfficialRoomConfig.virtualRoomId)) {
+    return rooms;
+  }
+  return [official, ...rooms];
+}
+
 /// 根据关键词过滤后的聊天室列表
 ///
 /// 匹配规则：房间名称 或 最后一条消息内容
@@ -541,9 +579,14 @@ List<ChatRoomVO> filteredRoomList(Ref ref) {
 
   return roomListAsync.maybeWhen(
     data: (rooms) {
-      if (query.isEmpty) return rooms;
+      final base = _injectOfficialRoom(
+        rooms,
+        ref.watch(hideOfficialRoomProvider),
+        ref.watch(officialRoomProvider),
+      );
+      if (query.isEmpty) return base;
 
-      return rooms.where((room) {
+      return base.where((room) {
         final nameMatch = (room.roomName ?? '').toLowerCase().contains(query);
         final msgMatch = (room.lastMessage?.content ?? '')
             .toLowerCase()
@@ -566,9 +609,14 @@ final filteredSortedRoomListAsyncProvider =
       final pinnedIds = ref.watch(pinnedRoomsProvider);
 
       return roomListAsync.whenData((rooms) {
+        final base = _injectOfficialRoom(
+          rooms,
+          ref.watch(hideOfficialRoomProvider),
+          ref.watch(officialRoomProvider),
+        );
         final filteredRooms = query.isEmpty
-            ? rooms
-            : rooms.where((room) {
+            ? base
+            : base.where((room) {
                 final nameMatch = (room.roomName ?? '').toLowerCase().contains(
                   query,
                 );
@@ -617,6 +665,12 @@ int totalUnreadCount(Ref ref) {
 /// 根据房间 ID 获取对应的聊天室对象
 @riverpod
 ChatRoomVO? currentRoom(Ref ref, String roomId) {
+  // 官方虚拟房间直接返回构造好的虚拟房间（受显隐开关控制）
+  if (roomId == OfficialRoomConfig.virtualRoomId) {
+    if (ref.watch(hideOfficialRoomProvider)) return null;
+    return ref.watch(officialRoomProvider);
+  }
+
   // 1. 监听整个房间列表的状态
   final roomListState = ref.watch(roomListServiceProvider);
 

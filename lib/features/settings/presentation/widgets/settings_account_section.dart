@@ -1,4 +1,3 @@
-import 'package:anoxia/features/settings/presentation/widgets/settings_item_card.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -18,35 +17,29 @@ class SettingsAccountSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingItemCard(
-      title: 'settings_account_title'.tr(),
-      subtitle: 'settings_account_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedUserAccount,
-      contentPadding: const EdgeInsets.fromLTRB(8, 18, 8, 8),
-      child: Column(
-        children: [
-          _AccountTile(
-            icon: HugeIcons.strokeRoundedUser,
-            title: 'me_page_title'.tr(),
-            subtitle: 'settings_account_profile_subtitle'.tr(),
-            onTap: onOpenProfile,
-          ),
-          _divider(context),
-          _AccountTile(
-            icon: HugeIcons.strokeRoundedQrCode01,
-            title: 'me_my_qr'.tr(),
-            subtitle: 'settings_account_qr_subtitle'.tr(),
-            onTap: onOpenQrCode,
-          ),
-          _divider(context),
-          _AccountTile(
-            icon: HugeIcons.strokeRoundedLock,
-            title: 'me_password_title'.tr(),
-            subtitle: 'settings_account_password_subtitle'.tr(),
-            onTap: onChangePassword,
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        _AccountTile(
+          icon: HugeIcons.strokeRoundedUser,
+          title: 'me_page_title'.tr(),
+          subtitle: 'settings_account_profile_subtitle'.tr(),
+          onTap: onOpenProfile,
+        ),
+        _divider(context),
+        _AccountTile(
+          icon: HugeIcons.strokeRoundedQrCode01,
+          title: 'me_my_qr'.tr(),
+          subtitle: 'settings_account_qr_subtitle'.tr(),
+          onTap: onOpenQrCode,
+        ),
+        _divider(context),
+        _AccountTile(
+          icon: HugeIcons.strokeRoundedLock,
+          title: 'me_password_title'.tr(),
+          subtitle: 'settings_account_password_subtitle'.tr(),
+          onTap: onChangePassword,
+        ),
+      ],
     );
   }
 

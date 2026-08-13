@@ -210,11 +210,24 @@ class _SettingsDetailPanel extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    destination.title,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      HugeIcon(
+                        icon: destination.icon,
+                        size: 30,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          destination.title,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -229,6 +242,7 @@ class _SettingsDetailPanel extends StatelessWidget {
                     height: 1,
                     color: colorScheme.outlineVariant.withValues(alpha: 0.55),
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),

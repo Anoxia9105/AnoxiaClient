@@ -1,13 +1,24 @@
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import 'settings_item_card.dart';
+/// 作者联系方式与对外链接占位符。
+///
+/// 接入真实信息后直接修改下面的常量即可。
+const String _authorEmail = 'your-email@example.com';
+const String _authorGithubUrl = 'https://github.com/your-name';
+const String _sponsorUrl = 'https://github.com/sponsors/your-name';
+const String _privacyPolicyUrl = 'https://example.com/privacy';
+const String _termsUrl = 'https://example.com/terms';
+const String _appShareUrl = 'https://github.com/your-name/anoxia';
 
 /// 设置-关于与支持区块
 ///
@@ -78,81 +89,192 @@ class _SettingsAboutSupportSectionState
     final updateInfo = widget.pageState.updateInfo;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SettingItemCard(
-      title: 'settings_page_about_title'.tr(),
-      subtitle: 'settings_page_about_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedLink01,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _AppIntro(version: widget.appVersionText, onTap: _handleVersionTap),
-          const SizedBox(height: 14),
-          Text(
-            'settings_about_description'.tr(),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.55,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _AppIntro(version: widget.appVersionText, onTap: _handleVersionTap),
+        const SizedBox(height: 14),
+        Text(
+          'settings_about_description'.tr(),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            height: 1.55,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            _InfoPill(
+              icon: HugeIcons.strokeRoundedMessageUser01,
+              text: 'settings_about_im_focus'.tr(),
             ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _InfoPill(
-                icon: HugeIcons.strokeRoundedMessageUser01,
-                text: 'settings_about_im_focus'.tr(),
-              ),
-              _InfoPill(
-                icon: HugeIcons.strokeRoundedShield01,
-                text: 'settings_about_privacy'.tr(),
-              ),
-              _InfoPill(
-                icon: HugeIcons.strokeRoundedRocket01,
-                text: 'settings_about_one_person'.tr(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _ActionRow(
-            icon: HugeIcons.strokeRoundedGithub,
-            title: 'settings_open_source_title'.tr(),
-            subtitle: 'settings_about_open_source_subtitle'.tr(),
-            onTap: widget.onOpenOpenSourceLicenses,
-          ),
-          const SizedBox(height: 12),
-          // Web 端通过浏览器刷新即可获取最新版本，不提供检查更新入口
-          if (!DeviceUtil.isWeb) ...[
-            _UpdateCard(
-              updateInfo: updateInfo,
-              checkingUpdate: widget.pageState.checkingUpdate,
-              hasAppUpdate: widget.hasAppUpdate,
-              onCheckUpdate: widget.onCheckUpdate,
+            _InfoPill(
+              icon: HugeIcons.strokeRoundedShield01,
+              text: 'settings_about_privacy'.tr(),
             ),
-            if (widget.pageState.updateErrorKey != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                widget.pageState.updateErrorKey!.tr(),
-                style: TextStyle(color: colorScheme.error, fontSize: 12),
-              ),
-            ],
-            if (updateInfo?.hasUpdate == true &&
-                updateInfo?.downloadUrl.isNotEmpty == true) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => widget.onNavigateToUpdatePage(updateInfo!),
-                  icon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedDownload01,
-                    size: 18,
-                  ),
-                  label: Text('update_now'.tr()),
+            _InfoPill(
+              icon: HugeIcons.strokeRoundedRocket01,
+              text: 'settings_about_one_person'.tr(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        _SectionLabel(text: 'settings_about_contact_title'.tr()),
+        const SizedBox(height: 10),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedMail01,
+          title: 'settings_about_email'.tr(),
+          subtitle: _authorEmail,
+          onTap: () => _launchEmail(context),
+        ),
+        const SizedBox(height: 12),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedGithub,
+          title: 'settings_about_github'.tr(),
+          subtitle: _authorGithubUrl,
+          onTap: () => _launchUrl(context, _authorGithubUrl),
+        ),
+        const SizedBox(height: 18),
+        _SectionLabel(text: 'settings_about_more_title'.tr()),
+        const SizedBox(height: 10),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedHeartCheck,
+          title: 'settings_about_sponsor'.tr(),
+          subtitle: 'settings_about_sponsor_subtitle'.tr(),
+          onTap: () => _launchUrl(context, _sponsorUrl),
+        ),
+        const SizedBox(height: 12),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedShare01,
+          title: 'settings_about_share'.tr(),
+          subtitle: 'settings_about_share_subtitle'.tr(),
+          onTap: () => _shareApp(context),
+        ),
+        const SizedBox(height: 12),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedLock,
+          title: 'settings_about_privacy_policy'.tr(),
+          subtitle: 'settings_about_privacy_policy_subtitle'.tr(),
+          onTap: () => _launchUrl(context, _privacyPolicyUrl),
+        ),
+        const SizedBox(height: 12),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedLegal01,
+          title: 'settings_about_terms'.tr(),
+          subtitle: 'settings_about_terms_subtitle'.tr(),
+          onTap: () => _launchUrl(context, _termsUrl),
+        ),
+        const SizedBox(height: 12),
+        _ActionRow(
+          icon: HugeIcons.strokeRoundedCode,
+          title: 'settings_open_source_title'.tr(),
+          subtitle: 'settings_about_open_source_subtitle'.tr(),
+          onTap: widget.onOpenOpenSourceLicenses,
+        ),
+        const SizedBox(height: 12),
+        // Web 端通过浏览器刷新即可获取最新版本，不提供检查更新入口
+        if (!DeviceUtil.isWeb) ...[
+          _UpdateCard(
+            updateInfo: updateInfo,
+            checkingUpdate: widget.pageState.checkingUpdate,
+            hasAppUpdate: widget.hasAppUpdate,
+            onCheckUpdate: widget.onCheckUpdate,
+          ),
+          if (widget.pageState.updateErrorKey != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              widget.pageState.updateErrorKey!.tr(),
+              style: TextStyle(color: colorScheme.error, fontSize: 12),
+            ),
+          ],
+          if (updateInfo?.hasUpdate == true &&
+              updateInfo?.downloadUrl.isNotEmpty == true) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => widget.onNavigateToUpdatePage(updateInfo!),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedDownload01,
+                  size: 18,
                 ),
+                label: Text('update_now'.tr()),
               ),
-            ],
+            ),
           ],
         ],
+      ],
+    );
+  }
+
+  /// 打开外部链接，失败时提示。
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (context.mounted) {
+          Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+        }
+      }
+    } catch (_) {
+      if (context.mounted) {
+        Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+      }
+    }
+  }
+
+  /// 发送邮件给作者。
+  Future<void> _launchEmail(BuildContext context) async {
+    final uri = Uri(scheme: 'mailto', path: _authorEmail);
+    try {
+      if (!await launchUrl(uri)) {
+        if (context.mounted) {
+          Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+        }
+      }
+    } catch (_) {
+      if (context.mounted) {
+        Toast.showToast('settings_about_link_failed'.tr(), type: ToastType.error);
+      }
+    }
+  }
+
+  /// 分享应用。
+  Future<void> _shareApp(BuildContext context) async {
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          title: 'Anoxia IM Client',
+          text: _appShareUrl,
+        ),
+      );
+    } catch (_) {
+      if (context.mounted) {
+        Toast.showToast('settings_about_share_failed'.tr(), type: ToastType.error);
+      }
+    }
+  }
+}
+
+/// 分区标签组件
+///
+/// 用于「关于与支持」区块内分组的标签文字。
+class _SectionLabel extends StatelessWidget {
+  /// 标签文本
+  final String text;
+
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w800,
       ),
     );
   }

@@ -14,13 +14,15 @@ class AddFriendDialog extends ConsumerStatefulWidget {
 
   const AddFriendDialog({super.key, required this.user});
 
-  /// 显示对话框并返回发送是否成功
-  static Future<bool> show(BuildContext context, UserVO user) async {
+  /// 显示对话框并返回发送结果。
+  ///
+  /// 返回 `true` 表示发送成功，`false` 表示发送失败，`null` 表示用户取消。
+  static Future<bool?> show(BuildContext context, UserVO user) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (_) => AddFriendDialog(user: user),
     );
-    return result == true;
+    return result;
   }
 
   @override

@@ -9,6 +9,7 @@ import 'package:anoxia/features/settings/presentation/widgets/settings_about_sup
 import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_general_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_split_view.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_sticker_section.dart';
@@ -258,6 +259,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 }
               },
             ),
+          ),
+          SettingsDestination(
+            title: 'settings_general_title'.tr(),
+            subtitle: 'settings_general_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedSettings01,
+            builder: (_) => const SettingsGeneralSection(),
           ),
           if (DeviceUtil.isWeb)
             SettingsDestination(

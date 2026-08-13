@@ -318,7 +318,7 @@ class ChatInputController extends _$ChatInputController {
   /// 5. 清空输入框并恢复焦点（桌面端）
   void sendMessage() {
     final room = ref.read(currentRoomProvider(roomId));
-    if (room == null || state.document.isEmpty()) return;
+    if (room == null || room.isOfficial || state.document.isEmpty()) return;
 
     final uploadState = {
       ...ref.read(chatImageUploadControllerProvider.notifier).urlMap,

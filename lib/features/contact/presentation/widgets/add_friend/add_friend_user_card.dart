@@ -100,20 +100,27 @@ class AddFriendUserCard extends StatelessWidget {
                           ),
                         ),
                       )
-                    : FilledButton.tonal(
+                    : FilledButton(
                         onPressed: onTapAdd,
                         style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
+                            horizontal: 16,
                             vertical: 8,
                           ),
-                          minimumSize: const Size(60, 32),
+                          minimumSize: const Size(64, 34),
                           visualDensity: VisualDensity.compact,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
                         ),
                         child: Text(
                           'add_friend_add_btn'.tr(),
                           style: textTheme.labelLarge?.copyWith(
                             fontWeight: FontWeight.w700,
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                       ),

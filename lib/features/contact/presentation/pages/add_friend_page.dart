@@ -175,14 +175,16 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
   }
 
   Future<void> _sendFriendRequest(UserVO user) async {
-    final success = await AddFriendDialog.show(context, user);
+    final result = await AddFriendDialog.show(context, user);
     if (!mounted) return;
+    // 用户取消（返回 null）时不展示任何提示
+    if (result == null) return;
 
     _showSnack(
-      text: success
+      text: result
           ? 'add_friend_request_sent'.tr()
           : 'add_friend_request_failed'.tr(),
-      backgroundColor: success
+      backgroundColor: result
           ? Theme.of(context).colorScheme.primary
           : Theme.of(context).colorScheme.error,
     );

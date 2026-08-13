@@ -8,8 +8,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'settings_item_card.dart';
-
 /// 设置-自定义表情包区块
 ///
 /// 允许用户上传自己的图片作为表情包，上传成功后会在聊天表情面板
@@ -129,61 +127,56 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
       orElse: () => const <StickerPack>[],
     );
 
-    return SettingItemCard(
-      title: 'settings_sticker_title'.tr(),
-      subtitle: 'settings_sticker_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedSticker,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: stickerState.uploading ? null : _handleUpload,
-              icon: stickerState.uploading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const HugeIcon(
-                      icon: HugeIcons.strokeRoundedUpload01,
-                      size: 18,
-                    ),
-              label: Text(
-                stickerState.uploading
-                    ? 'settings_sticker_uploading'.tr()
-                    : 'settings_sticker_upload'.tr(),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: stickerState.uploading ? null : _handleUpload,
+            icon: stickerState.uploading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const HugeIcon(
+                    icon: HugeIcons.strokeRoundedUpload01,
+                    size: 18,
+                  ),
+            label: Text(
+              stickerState.uploading
+                  ? 'settings_sticker_uploading'.tr()
+                  : 'settings_sticker_upload'.tr(),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'settings_sticker_upload_tip'.tr(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'settings_sticker_upload_tip'.tr(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(height: 12),
-          if (stickerState.uploading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (customPacks.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text(
-                  'settings_sticker_empty'.tr(),
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
+        ),
+        const SizedBox(height: 12),
+        if (stickerState.uploading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (customPacks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text(
+                'settings_sticker_empty'.tr(),
+                style: TextStyle(color: scheme.onSurfaceVariant),
               ),
-            )
-          else
-            for (final pack in customPacks) _buildPack(pack, stickerState),
-        ],
-      ),
+            ),
+          )
+        else
+          for (final pack in customPacks) _buildPack(pack, stickerState),
+      ],
     );
   }
 

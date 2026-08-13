@@ -3,8 +3,6 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'settings_item_card.dart';
-
 /// 设置-主题区块
 ///
 /// 提供亮暗主题切换和强调色选择功能，包含亮度模式选择卡片
@@ -36,64 +34,59 @@ class SettingsThemeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingItemCard(
-      title: 'settings_page_theme_title'.tr(),
-      subtitle: 'settings_page_theme_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedColors,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(text: 'settings_theme_mode'.tr()),
-          const SizedBox(height: 10),
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(text: 'settings_theme_mode'.tr()),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _BrightnessTile(
+                label: 'settings_theme_light'.tr(),
+                icon: HugeIcons.strokeRoundedSun03,
+                brightness: Brightness.light,
+                selectedBrightness: selectedBrightness,
+                onChanged: onBrightnessChanged,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _BrightnessTile(
+                label: 'settings_theme_dark'.tr(),
+                icon: HugeIcons.strokeRoundedMoon02,
+                brightness: Brightness.dark,
+                selectedBrightness: selectedBrightness,
+                onChanged: onBrightnessChanged,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        _SectionLabel(text: 'settings_theme_accent_color'.tr()),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
             children: [
-              Expanded(
-                child: _BrightnessTile(
-                  label: 'settings_theme_light'.tr(),
-                  icon: HugeIcons.strokeRoundedSun03,
-                  brightness: Brightness.light,
-                  selectedBrightness: selectedBrightness,
-                  onChanged: onBrightnessChanged,
+              for (
+                var index = 0;
+                index < AppTheme.accentOptions.length;
+                index++
+              ) ...[
+                _AccentSwatch(
+                  color: AppTheme.accentOptions[index].color,
+                  label: AppTheme.accentOptions[index].localizedName,
+                  selected: selectedAccentIndex == index,
+                  onTap: () => onAccentChanged(index),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _BrightnessTile(
-                  label: 'settings_theme_dark'.tr(),
-                  icon: HugeIcons.strokeRoundedMoon02,
-                  brightness: Brightness.dark,
-                  selectedBrightness: selectedBrightness,
-                  onChanged: onBrightnessChanged,
-                ),
-              ),
+                if (index != AppTheme.accentOptions.length - 1)
+                  const SizedBox(width: 12),
+              ],
             ],
           ),
-          const SizedBox(height: 18),
-          _SectionLabel(text: 'settings_theme_accent_color'.tr()),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (
-                  var index = 0;
-                  index < AppTheme.accentOptions.length;
-                  index++
-                ) ...[
-                  _AccentSwatch(
-                    color: AppTheme.accentOptions[index].color,
-                    label: AppTheme.accentOptions[index].localizedName,
-                    selected: selectedAccentIndex == index,
-                    onTap: () => onAccentChanged(index),
-                  ),
-                  if (index != AppTheme.accentOptions.length - 1)
-                    const SizedBox(width: 12),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

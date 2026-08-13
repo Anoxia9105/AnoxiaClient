@@ -46,6 +46,7 @@ class RoomListItem extends ConsumerWidget {
     final activeId = ref.watch(activeRoomIdProvider);
     final isSelected = activeId == room.roomId;
     final isSingle = room.roomType == 0;
+    final isOfficial = room.isOfficial;
 
     // 监听联系人状态，用于显示备注名
     final contactMap = ref.watch(contactListServiceProvider).value;
@@ -108,6 +109,48 @@ class RoomListItem extends ConsumerWidget {
       borderRadius: BorderRadius.circular(8),
       selected: isSelected,
       leading: () {
+        if (isOfficial) {
+          final cs = Theme.of(context).colorScheme;
+          return AvatarWidget(
+            url: room.roomAvatar,
+            name: displayRoomName,
+            statusWidget: Tooltip(
+              message: 'official_room_name'.tr(),
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cs.primary.withValues(alpha: 0.92),
+                      cs.primary.withValues(alpha: 0.6),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: cs.surface,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.primary.withValues(alpha: 0.28),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMegaphone01,
+                  size: 10,
+                  strokeWidth: 2,
+                  color: cs.onPrimary,
+                ),
+              ),
+            ),
+          );
+        }
         if (isSingle) {
           return AvatarWidget(
             url: room.roomAvatar,
@@ -174,7 +217,9 @@ class RoomListItem extends ConsumerWidget {
         ],
       ),
       subtitle: Text(
-        _lastMessagePreview(room.lastMessage),
+        isOfficial
+            ? 'official_room_list_hint'.tr()
+            : _lastMessagePreview(room.lastMessage),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 12),
@@ -225,7 +270,7 @@ class RoomListItem extends ConsumerWidget {
     return GestureDetector(
       // 右键点击（桌面端）显示上下文菜单
       onSecondaryTapDown: (details) async {
-        if (roomId == null) return;
+        if (roomId == null || isOfficial) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
         if (context.mounted) {
           _showContextMenu(
@@ -240,7 +285,7 @@ class RoomListItem extends ConsumerWidget {
 
       // 长按（移动端）显示上下文菜单
       onLongPressStart: (details) async {
-        if (roomId == null) return;
+        if (roomId == null || isOfficial) return;
         await ref.read(roomMemberServiceProvider.notifier).syncMembers(roomId);
         if (context.mounted) {
           _showContextMenu(

@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/features/chat/presentation/widgets/official_room_home_view.dart';
 
 /// 聊天房间详情页面
 ///
@@ -104,6 +105,16 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   Widget build(BuildContext context) {
     final currentRoom = ref.watch(currentRoomProvider(widget.roomId));
     if (currentRoom == null) return const NoConversationPage();
+
+    // 官方虚拟房间：纯前端展示，不渲染消息流与输入框
+    if (currentRoom.isOfficial) {
+      return Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: ChatAppBar(roomId: widget.roomId),
+        body: const OfficialRoomHomeView(),
+      );
+    }
 
     final entryTask = ref.watch(roomEntryTaskProvider(widget.roomId));
 

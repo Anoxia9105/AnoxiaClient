@@ -143,8 +143,8 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         }
 
         return [
-          /// 通话按钮（房间正常状态才显示，禁言/封禁/解散不显示）
-          if (room.roomStatus == 0) ...[
+          /// 通话按钮（房间正常状态才显示，官方虚拟房间 / 禁言 / 封禁不显示）
+          if (room.roomStatus == 0 && !room.isOfficial) ...[
             ChatCallButtonWidget(roomId: roomId), // 通话按钮组件化
           ],
 

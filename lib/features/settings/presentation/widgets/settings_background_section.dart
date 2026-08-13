@@ -10,7 +10,6 @@ import '../../../../domain/repositories/app_background_repository.dart';
 import '../../../../framework/domain/app_background.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
 import 'background_video_thumbnail.dart';
-import 'settings_item_card.dart';
 
 class SettingsBackgroundSection extends ConsumerWidget {
   const SettingsBackgroundSection({super.key});
@@ -71,144 +70,139 @@ class SettingsBackgroundSection extends ConsumerWidget {
     final controller = ref.read(appBackgroundProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SettingItemCard(
-      title: 'settings_bg_image_title'.tr(),
-      subtitle: 'settings_bg_media_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedImage01,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: state.uploading
-                      ? null
-                      : () => _pickBackground(context, ref),
-                  icon: state.uploading
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const HugeIcon(
-                          icon: HugeIcons.strokeRoundedUpload01,
-                          size: 18,
-                        ),
-                  label: Text(
-                    state.uploading
-                        ? (state.uploadProgress ?? 0) >=
-                                  AppBackgroundState.transferProgressWeight
-                              ? 'settings_bg_media_saving'.tr()
-                              : 'settings_bg_media_uploading'.tr(
-                                  args: [
-                                    '${((state.uploadProgress ?? 0) * 100).round()}',
-                                  ],
-                                )
-                        : 'settings_bg_media_upload'.tr(),
-                  ),
-                ),
-              ),
-              if (state.activeAsset != null) ...[
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: controller.disable,
-                  icon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedCancel01,
-                    size: 18,
-                  ),
-                  label: Text('settings_bg_image_clear'.tr()),
-                ),
-              ],
-            ],
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            child: state.uploading
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value:
-                            (state.uploadProgress ?? 0) >=
-                                AppBackgroundState.transferProgressWeight
-                            ? null
-                            : state.uploadProgress,
-                        minHeight: 6,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: state.uploading
+                    ? null
+                    : () => _pickBackground(context, ref),
+                icon: state.uploading
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const HugeIcon(
+                        icon: HugeIcons.strokeRoundedUpload01,
+                        size: 18,
                       ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          if (state.assets.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            Text(
-              'settings_bg_media_library'.tr(),
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            LayoutBuilder(
-              builder: (context, constraints) => GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: constraints.maxWidth >= 720 ? 4 : 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 16 / 9,
-                ),
-                itemCount: state.assets.length,
-                itemBuilder: (context, index) {
-                  final asset = state.assets[index];
-                  return _BackgroundAssetTile(
-                    asset: asset,
-                    selected: asset.id == state.activeAssetId,
-                    onSelect: () =>
-                        controller.savePreference(activeAssetId: asset.id),
-                    onDelete: () => controller.deleteAsset(asset.id),
-                  );
-                },
-              ),
-            ),
-          ],
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'settings_bg_surface_opacity'.tr(),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                label: Text(
+                  state.uploading
+                      ? (state.uploadProgress ?? 0) >=
+                                AppBackgroundState.transferProgressWeight
+                            ? 'settings_bg_media_saving'.tr()
+                            : 'settings_bg_media_uploading'.tr(
+                                args: [
+                                  '${((state.uploadProgress ?? 0) * 100).round()}',
+                                ],
+                              )
+                      : 'settings_bg_media_upload'.tr(),
                 ),
               ),
-              Text('${(state.surfaceOpacity * 100).round()}%'),
+            ),
+            if (state.activeAsset != null) ...[
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: controller.disable,
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedCancel01,
+                  size: 18,
+                ),
+                label: Text('settings_bg_image_clear'.tr()),
+              ),
             ],
-          ),
-          Slider(
-            value: state.surfaceOpacity,
-            min: AppBackgroundState.minSurfaceOpacity,
-            max: AppBackgroundState.maxSurfaceOpacity,
-            divisions: 51,
-            label: '${(state.surfaceOpacity * 100).round()}%',
-            onChanged: state.activeAsset == null
-                ? null
-                : controller.previewOpacity,
-            onChangeEnd: state.activeAsset == null
-                ? null
-                : (_) => controller.savePreference(),
-          ),
+          ],
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          child: state.uploading
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value:
+                          (state.uploadProgress ?? 0) >=
+                              AppBackgroundState.transferProgressWeight
+                          ? null
+                          : state.uploadProgress,
+                      minHeight: 6,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        if (state.assets.isNotEmpty) ...[
+          const SizedBox(height: 18),
           Text(
-            'settings_bg_surface_opacity_hint'.tr(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            'settings_bg_media_library'.tr(),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) => GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: constraints.maxWidth >= 720 ? 4 : 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 16 / 9,
+              ),
+              itemCount: state.assets.length,
+              itemBuilder: (context, index) {
+                final asset = state.assets[index];
+                return _BackgroundAssetTile(
+                  asset: asset,
+                  selected: asset.id == state.activeAssetId,
+                  onSelect: () =>
+                      controller.savePreference(activeAssetId: asset.id),
+                  onDelete: () => controller.deleteAsset(asset.id),
+                );
+              },
             ),
           ),
         ],
-      ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'settings_bg_surface_opacity'.tr(),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Text('${(state.surfaceOpacity * 100).round()}%'),
+          ],
+        ),
+        Slider(
+          value: state.surfaceOpacity,
+          min: AppBackgroundState.minSurfaceOpacity,
+          max: AppBackgroundState.maxSurfaceOpacity,
+          divisions: 51,
+          label: '${(state.surfaceOpacity * 100).round()}%',
+          onChanged: state.activeAsset == null
+              ? null
+              : controller.previewOpacity,
+          onChangeEnd: state.activeAsset == null
+              ? null
+              : (_) => controller.savePreference(),
+        ),
+        Text(
+          'settings_bg_surface_opacity_hint'.tr(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

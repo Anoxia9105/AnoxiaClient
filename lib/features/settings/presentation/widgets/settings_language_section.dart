@@ -2,8 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 
-import 'settings_item_card.dart';
-
 /// 语言设置组件
 ///
 /// 提供应用语言选择功能，支持英语、中文、日语等多语言切换
@@ -21,34 +19,29 @@ class SettingsLanguageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingItemCard(
-      title: 'settings_page_language_title'.tr(),
-      subtitle: 'settings_page_language_subtitle'.tr(),
-      icon: HugeIcons.strokeRoundedLanguageSquare,
-      child: Column(
-        children: [
-          _LanguageOption(
-            label: 'settings_language_chinese'.tr(),
-            value: 'zh',
-            selectedLanguageCode: selectedLanguageCode,
-            onLanguageChanged: onLanguageChanged,
-          ),
-          const SizedBox(height: 8),
-          _LanguageOption(
-            label: 'settings_language_english'.tr(),
-            value: 'en',
-            selectedLanguageCode: selectedLanguageCode,
-            onLanguageChanged: onLanguageChanged,
-          ),
-          const SizedBox(height: 8),
-          _LanguageOption(
-            label: 'settings_language_japanese'.tr(),
-            value: 'ja',
-            selectedLanguageCode: selectedLanguageCode,
-            onLanguageChanged: onLanguageChanged,
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        _LanguageOption(
+          label: 'settings_language_chinese'.tr(),
+          value: 'zh',
+          selectedLanguageCode: selectedLanguageCode,
+          onLanguageChanged: onLanguageChanged,
+        ),
+        const SizedBox(height: 8),
+        _LanguageOption(
+          label: 'settings_language_english'.tr(),
+          value: 'en',
+          selectedLanguageCode: selectedLanguageCode,
+          onLanguageChanged: onLanguageChanged,
+        ),
+        const SizedBox(height: 8),
+        _LanguageOption(
+          label: 'settings_language_japanese'.tr(),
+          value: 'ja',
+          selectedLanguageCode: selectedLanguageCode,
+          onLanguageChanged: onLanguageChanged,
+        ),
+      ],
     );
   }
 }

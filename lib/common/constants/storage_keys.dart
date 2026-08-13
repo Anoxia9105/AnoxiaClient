@@ -20,4 +20,7 @@ class StorageKeys {
   /// 用于自动恢复登录时校验本地会话缓存是否属于当前用户；
   /// 若不一致则先清空本地缓存，避免展示上一个账号的残留数据。
   static const String lastLoginUserId = 'LAST_LOGIN_USER_ID';
+
+  /// 是否隐藏官方虚拟房间（布尔值，true=隐藏）
+  static const String officialRoomHidden = 'OFFICIAL_ROOM_HIDDEN';
 }
