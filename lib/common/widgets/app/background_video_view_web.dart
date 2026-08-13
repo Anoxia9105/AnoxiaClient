@@ -15,6 +15,8 @@ void configureBackgroundVideoElement(
     ..autoplay = autoplay
     ..controls = false
     ..playsInline = true
+    // 非自动播放的媒体库缩略图也需要加载首帧，metadata 模式只保证
+    // 时长/尺寸信息，在部分浏览器中仍会显示为空白。
     ..preload = 'auto'
     ..setAttribute('disablepictureinpicture', '')
     ..setAttribute('disableremoteplayback', '')

@@ -9,43 +9,57 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('later background selection wins when responses finish out of order', () async {
-    final repository = _ControlledBackgroundRepository();
-    final container = ProviderContainer(
-      overrides: [appBackgroundRepositoryProvider.overrideWithValue(repository)],
-    );
-    addTearDown(container.dispose);
+  test(
+    'rapid background selections are persisted in order and latest wins',
+    () async {
+      final repository = _ControlledBackgroundRepository();
+      final container = ProviderContainer(
+        overrides: [
+          appBackgroundRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    final controller = container.read(appBackgroundProvider.notifier);
-    final first = controller.savePreference(activeAssetId: 1);
-    final second = controller.savePreference(activeAssetId: 2);
+      final controller = container.read(appBackgroundProvider.notifier);
+      final first = controller.savePreference(activeAssetId: 1);
+      final second = controller.savePreference(activeAssetId: 2);
 
-    repository.preferenceRequests[1].complete(_state(activeAssetId: 2));
-    await second;
-    repository.preferenceRequests[0].complete(_state(activeAssetId: 1));
-    await first;
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.preferenceRequests, hasLength(1));
+      repository.preferenceRequests.single.complete(_state(activeAssetId: 1));
+      await first;
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.preferenceRequests, hasLength(2));
+      repository.preferenceRequests.last.complete(_state(activeAssetId: 2));
+      await second;
 
-    expect(container.read(appBackgroundProvider).activeAssetId, 2);
-  });
+      expect(container.read(appBackgroundProvider).activeAssetId, 2);
+    },
+  );
 
-  test('an older refresh cannot overwrite a selection made while loading', () async {
-    final repository = _ControlledBackgroundRepository();
-    final container = ProviderContainer(
-      overrides: [appBackgroundRepositoryProvider.overrideWithValue(repository)],
-    );
-    addTearDown(container.dispose);
+  test(
+    'an older refresh cannot overwrite a selection made while loading',
+    () async {
+      final repository = _ControlledBackgroundRepository();
+      final container = ProviderContainer(
+        overrides: [
+          appBackgroundRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    final controller = container.read(appBackgroundProvider.notifier);
-    final refresh = controller.refresh();
-    final selection = controller.savePreference(activeAssetId: 2);
+      final controller = container.read(appBackgroundProvider.notifier);
+      final refresh = controller.refresh();
+      final selection = controller.savePreference(activeAssetId: 2);
 
-    repository.fetchRequest.complete(_state(activeAssetId: 1));
-    await refresh;
-    repository.preferenceRequests.single.complete(_state(activeAssetId: 2));
-    await selection;
+      repository.fetchRequest.complete(_state(activeAssetId: 1));
+      await refresh;
+      repository.preferenceRequests.single.complete(_state(activeAssetId: 2));
+      await selection;
 
-    expect(container.read(appBackgroundProvider).activeAssetId, 2);
-  });
+      expect(container.read(appBackgroundProvider).activeAssetId, 2);
+    },
+  );
 }
 
 AppBackgroundState _state({required int activeAssetId}) => AppBackgroundState(
@@ -84,8 +98,7 @@ class _ControlledBackgroundRepository implements AppBackgroundRepository {
   }
 
   @override
-  Future<AppBackgroundState> delete(int assetId) =>
-      throw UnimplementedError();
+  Future<AppBackgroundState> delete(int assetId) => throw UnimplementedError();
 
   @override
   Future<AppBackgroundState> upload({

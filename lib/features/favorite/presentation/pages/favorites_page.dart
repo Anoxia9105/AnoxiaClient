@@ -530,10 +530,19 @@ class _FavoriteListPanel extends StatelessWidget {
                       fontSize: 12.5,
                       color: cs.onSurfaceVariant.withValues(alpha: .7),
                     ),
-                    prefixIcon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedSearch02,
-                      size: 15,
-                      color: cs.onSurfaceVariant,
+                    prefixIconConstraints: const BoxConstraints.tightFor(
+                      width: 34,
+                      height: 34,
+                    ),
+                    prefixIcon: Center(
+                      child: SizedBox.square(
+                        dimension: 15,
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedSearch02,
+                          size: 14,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                     suffixIcon: query.isNotEmpty
                         ? IconButton(
@@ -850,16 +859,21 @@ class _FavoriteDetailPanel extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: style.color.withValues(alpha: .14),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: HugeIcon(
-                  icon: style.icon,
-                  size: 16,
-                  color: _typeColor(context, type),
+                child: Center(
+                  child: SizedBox.square(
+                    dimension: 14,
+                    child: HugeIcon(
+                      icon: style.icon,
+                      size: 13,
+                      color: _typeColor(context, type),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

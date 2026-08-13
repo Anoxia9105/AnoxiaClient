@@ -4,19 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('video thumbnail renders the video first frame without autoplay', (
-    tester,
-  ) async {
-    const url = 'https://cdn.example.com/background.mp4';
+  testWidgets(
+    'video thumbnail renders the video first frame without autoplay',
+    (tester) async {
+      const url = 'https://cdn.example.com/background.mp4';
 
-    await tester.pumpWidget(
-      const MaterialApp(home: BackgroundVideoThumbnail(url: url)),
-    );
+      await tester.pumpWidget(
+        const MaterialApp(home: BackgroundVideoThumbnail(url: url)),
+      );
 
-    final preview = tester.widget<BackgroundVideoView>(
-      find.byType(BackgroundVideoView),
-    );
-    expect(preview.url, url);
-    expect(preview.autoplay, isFalse);
-  });
+      final preview = tester.widget<BackgroundVideoView>(
+        find.byType(BackgroundVideoView),
+      );
+      expect(preview.url, url);
+      expect(preview.autoplay, isFalse);
+    },
+  );
 }

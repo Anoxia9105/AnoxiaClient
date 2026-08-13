@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../../common/widgets/app/background_video_view.dart';
+
 class BackgroundVideoThumbnail extends StatelessWidget {
-  const BackgroundVideoThumbnail({super.key});
+  final String url;
+
+  const BackgroundVideoThumbnail({super.key, required this.url});
 
   @override
   Widget build(BuildContext context) {
@@ -12,6 +16,7 @@ class BackgroundVideoThumbnail extends StatelessWidget {
         ColoredBox(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
+        BackgroundVideoView(key: ValueKey(url), url: url, autoplay: false),
         const Center(
           child: DecoratedBox(
             decoration: BoxDecoration(

@@ -39,7 +39,11 @@ class _BackgroundVideoViewState extends State<BackgroundVideoView> {
 
   Future<void> _initialize() async {
     final token = ++_initializationToken;
-    final cachedFile = await _DesktopBackgroundVideoCache.get(widget.url);
+    // 缩略图只需要首帧，直接让播放器按需读取，避免为媒体库中的每个视频
+    // 下载完整文件。实际播放背景时仍使用磁盘缓存。
+    final cachedFile = widget.autoplay
+        ? await _DesktopBackgroundVideoCache.get(widget.url)
+        : null;
     if (!mounted || token != _initializationToken) return;
 
     final controller = cachedFile == null

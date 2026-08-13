@@ -161,6 +161,7 @@ class SettingsBackgroundSection extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final asset = state.assets[index];
                 return _BackgroundAssetTile(
+                  key: ValueKey(asset.id),
                   asset: asset,
                   selected: asset.id == state.activeAssetId,
                   onSelect: () =>
@@ -177,9 +178,9 @@ class SettingsBackgroundSection extends ConsumerWidget {
             Expanded(
               child: Text(
                 'settings_bg_surface_opacity'.tr(),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             Text('${(state.surfaceOpacity * 100).round()}%'),
@@ -200,9 +201,9 @@ class SettingsBackgroundSection extends ConsumerWidget {
         ),
         Text(
           'settings_bg_surface_opacity_hint'.tr(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
       ],
     );
@@ -216,6 +217,7 @@ class _BackgroundAssetTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   const _BackgroundAssetTile({
+    super.key,
     required this.asset,
     required this.selected,
     required this.onSelect,
@@ -255,7 +257,7 @@ class _BackgroundAssetTile extends StatelessWidget {
                         isAntiAlias: true,
                         gaplessPlayback: true,
                       )
-                    : const BackgroundVideoThumbnail(),
+                    : BackgroundVideoThumbnail(url: asset.url),
               ),
               const Positioned(
                 left: 0,
