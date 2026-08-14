@@ -4,6 +4,7 @@ import 'package:anoxia/features/chat/presentation/call/mobile/audio_call_backgro
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,8 +61,10 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       return _buildPipContent(participants, isVideoCall);
     }
 
-    return ColoredBox(
-      color: const Color(0xFF0D0F14),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+      ),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -138,8 +141,10 @@ class MobileVideoLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (participants.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
       );
     }
 

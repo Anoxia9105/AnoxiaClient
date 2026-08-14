@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:anoxia/common/constants/call_window_sizes.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -101,12 +102,13 @@ class MobileCallSessionController extends _$MobileCallSessionController {
   void updatePosition(Offset delta, double screenWidth, double screenHeight) {
     if (state == null) return;
 
-    final widgetWidth = state!.initialMedia == CallInitialMedia.audio
-        ? 176.0
-        : 120.0;
-    final widgetHeight = state!.initialMedia == CallInitialMedia.audio
-        ? 72.0
-        : 180.0;
+    final isAudio = state!.initialMedia == CallInitialMedia.audio;
+    final widgetWidth = isAudio
+        ? CallWindowSizes.audioWidth
+        : CallWindowSizes.videoWidth;
+    final widgetHeight = isAudio
+        ? CallWindowSizes.audioHeight
+        : CallWindowSizes.videoHeight;
 
     double newX = state!.position.dx + delta.dx;
     double newY = state!.position.dy + delta.dy;
@@ -131,9 +133,9 @@ class MobileCallSessionController extends _$MobileCallSessionController {
     final currentX = state!.position.dx;
     final currentY = state!.position.dy;
     final widgetWidth = state!.initialMedia == CallInitialMedia.audio
-        ? 176.0
-        : 120.0;
-    const padding = 16.0; // 离屏幕边缘的间距
+        ? CallWindowSizes.audioWidth
+        : CallWindowSizes.videoWidth;
+    const padding = CallWindowSizes.edgePadding; // 离屏幕边缘的间距
 
     // 计算中心点判断靠左还是靠右
     double targetX;

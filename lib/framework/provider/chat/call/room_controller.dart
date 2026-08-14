@@ -884,6 +884,10 @@ class RoomController extends _$RoomController {
     _isLeaving = true;
 
     final currentState = state.value;
+    // 无论是否成功连接过，都要先把 token 标记为已处理：
+    // 连接失败（错误态）时 state.value 为 null，若只标记成功路径，
+    // 此时 leave() 后的 invalidateSelf 会重建并再次尝试连接。
+    _disposedTokens.add(currentState?.token ?? token);
     if (currentState != null) {
       // 先释放 listener，避免 disconnect 同步触发 RoomDisconnectedEvent
       // 在 Web WASM 上 disconnect 可能同步完成并触发事件回调
@@ -903,9 +907,6 @@ class RoomController extends _$RoomController {
       try {
         await currentState.room.dispose();
       } catch (_) {}
-
-      // 标记 token，阻止 invalidateSelf 重建时重新创建 Room 并连接
-      _disposedTokens.add(currentState.token);
     }
     ref.invalidateSelf();
   }

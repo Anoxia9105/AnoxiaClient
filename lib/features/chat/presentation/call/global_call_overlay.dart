@@ -1,3 +1,4 @@
+import 'package:anoxia/common/constants/call_window_sizes.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile_call_page.dart';
 import 'package:anoxia/features/chat/presentation/call/minimized_call_widgets.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -212,11 +213,15 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                 child: Material(
                   elevation: 10,
                   color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(isVideoCall ? 16 : 36),
+                  borderRadius: BorderRadius.circular(isVideoCall ? 12 : 28),
                   clipBehavior: Clip.antiAlias,
                   child: SizedBox(
-                    width: isVideoCall ? 120 : 176,
-                    height: isVideoCall ? 180 : 72,
+                    width: isVideoCall
+                        ? CallWindowSizes.videoWidth
+                        : CallWindowSizes.audioWidth,
+                    height: isVideoCall
+                        ? CallWindowSizes.videoHeight
+                        : CallWindowSizes.audioHeight,
                     child: isVideoCall
                         ? MinimizedVideoCall(roomState: roomState)
                         : MinimizedAudioCall(

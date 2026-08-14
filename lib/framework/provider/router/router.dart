@@ -5,6 +5,7 @@ import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/
 import 'package:anoxia/features/app/presentation/pages/error_page.dart';
 import 'package:anoxia/features/app/presentation/pages/login_page.dart';
 import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
+import 'package:anoxia/features/app/presentation/pages/not_found_page.dart';
 import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
@@ -50,6 +51,17 @@ GoRouter router(Ref ref) {
     initialLocation: const SplashRoute().location,
     debugLogDiagnostics: true,
     routes: $appRoutes,
+    errorBuilder: (context, state) {
+      final error = state.error;
+      // 未匹配到任何路由（如访问 /chat 这类不存在的路径）时展示 404 页；
+      // 其他路由异常展示通用错误页。
+      final isRouteNotFound =
+          error != null && error.message.contains('no routes for location');
+      if (isRouteNotFound) {
+        return const NotFoundPage();
+      }
+      return ErrorPage(message: error?.toString());
+    },
     redirect: (context, state) {
       final initStatus = ref.read(appInitializerProvider);
       final authStatus = ref.read(authControllerProvider);

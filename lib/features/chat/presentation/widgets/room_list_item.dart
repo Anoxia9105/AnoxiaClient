@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/date_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/simple_list_tile.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
@@ -393,34 +394,14 @@ class RoomListItem extends ConsumerWidget {
     }
   }
 
-  Future<bool> _showDeleteConversationConfirm(BuildContext context) async {
-    final result = await showAdaptiveDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: Text('chat_delete_conversation'.tr()),
-        content: Text('chat_delete_conversation_confirm_hint'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'cancel'.tr(),
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              'confirm'.tr(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<bool> _showDeleteConversationConfirm(BuildContext context) {
+    return showDangerConfirmDialog(
+      context,
+      icon: HugeIcons.strokeRoundedDelete02,
+      title: 'chat_delete_conversation'.tr(),
+      content: 'chat_delete_conversation_confirm_hint'.tr(),
+      confirmLabel: 'chat_delete_conversation'.tr(),
     );
-    return result == true;
   }
 
   /// 构建上下文菜单项

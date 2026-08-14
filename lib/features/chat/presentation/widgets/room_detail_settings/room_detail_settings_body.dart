@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_list_section.dart';
@@ -29,7 +30,6 @@ import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/o
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 
 /// 房间详情设置的核心内容（成员网格 + 资料 + 通知开关 + 危险操作）
 ///
@@ -469,38 +469,39 @@ class RoomDetailSettingsBody extends ConsumerWidget {
 
     if (isGroup && isAdmin && roomStatus == 0) {
       actionLabel = 'chat_dissolve_group'.tr();
-      onTap = () => _showConfirmDialog(
+      onTap = () => _runDangerAction(
         context,
+        ref,
+        icon: HugeIcons.strokeRoundedCancel01,
         title: 'chat_dissolve_group'.tr(),
         content: 'chat_dissolve_group_confirm_hint'.tr(),
-        onConfirm: () async {
-          await ref
-              .read(roomListServiceProvider.notifier)
-              .dissolveGroup(roomId);
-          if (context.mounted) context.go('/chat');
-        },
+        confirmLabel: 'chat_dissolve_group'.tr(),
+        action: () =>
+            ref.read(roomListServiceProvider.notifier).dissolveGroup(roomId),
       );
     } else if (isGroup) {
       actionLabel = 'chat_exit_group'.tr();
-      onTap = () => _showConfirmDialog(
+      onTap = () => _runDangerAction(
         context,
+        ref,
+        icon: HugeIcons.strokeRoundedLogout01,
         title: 'chat_exit_group'.tr(),
         content: 'chat_exit_group_confirm_hint'.tr(),
-        onConfirm: () async {
-          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-          if (context.mounted) context.go('/chat');
-        },
+        confirmLabel: 'chat_exit_group'.tr(),
+        action: () =>
+            ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
       );
     } else {
       actionLabel = 'chat_delete_conversation'.tr();
-      onTap = () => _showConfirmDialog(
+      onTap = () => _runDangerAction(
         context,
+        ref,
+        icon: HugeIcons.strokeRoundedDelete02,
         title: 'chat_delete_conversation'.tr(),
         content: 'chat_delete_conversation_confirm_hint'.tr(),
-        onConfirm: () async {
-          await ref.read(roomListServiceProvider.notifier).leaveRoom(roomId);
-          if (context.mounted) context.go('/chat');
-        },
+        confirmLabel: 'chat_delete_conversation'.tr(),
+        action: () =>
+            ref.read(roomListServiceProvider.notifier).leaveRoom(roomId),
       );
     }
 
@@ -520,41 +521,34 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     );
   }
 
-  void _showConfirmDialog(
-    BuildContext context, {
+  /// 危险操作流程：弹出确认弹窗 → 执行操作 → 清空活跃房间并返回会话列表。
+  ///
+  /// 移动端设置页由 [Navigator] 压栈进入，操作后需连同聊天详情页一起弹回；
+  /// 桌面端为内嵌右侧面板（无压栈），`popUntil` 是空操作，仅清空活跃房间即可。
+  Future<void> _runDangerAction(
+    BuildContext context,
+    WidgetRef ref, {
+    required List<List<dynamic>> icon,
     required String title,
     required String content,
-    required VoidCallback onConfirm,
-  }) {
-    showAdaptiveDialog(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'cancel'.tr(),
-              style: TextStyle(color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onConfirm();
-            },
-            child: Text(
-              'confirm'.tr(),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+    required String confirmLabel,
+    required Future<void> Function() action,
+  }) async {
+    final confirmed = await showDangerConfirmDialog(
+      context,
+      icon: icon,
+      title: title,
+      content: content,
+      confirmLabel: confirmLabel,
     );
+    if (!confirmed || !context.mounted) return;
+
+    await action();
+    if (!context.mounted) return;
+
+    // 清空活跃房间，回到会话列表（不再导航到不存在的 /chat 路由）
+    ref.read(activeRoomIdProvider.notifier).setActive(null);
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 }
 

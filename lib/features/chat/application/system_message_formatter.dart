@@ -136,6 +136,13 @@ class SystemMessageFormatter {
           namedArgs: {'nickName': message.properties['nickName'] ?? ''},
         ),
       ),
+      'USER_LEFT' => SystemMessageDisplay(
+        action: action,
+        icon: HugeIcons.strokeRoundedLogout01,
+        text: 'system_msg_left'.tr(
+          namedArgs: {'nickName': message.properties['nickName'] ?? ''},
+        ),
+      ),
       'ROOM_CLOSED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedHome03,
@@ -165,7 +172,9 @@ class SystemMessageFormatter {
       'CALL_REJECTED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedCallEnd03,
-        text: '${message.properties['nickName'] ?? '--'} 拒绝了通话',
+        text: 'system_msg_call_rejected'.tr(
+          namedArgs: {'nickName': message.properties['nickName'] ?? '--'},
+        ),
       ),
       'ROOM_DISSOLVED' => SystemMessageDisplay(
         action: action,
@@ -199,6 +208,11 @@ class SystemMessageFormatter {
           icon: HugeIcons.strokeRoundedHome03,
           text: 'system_msg_room_unbanned'.tr(),
         ),
+      'ROOM_CREATED' => SystemMessageDisplay(
+        action: action,
+        icon: HugeIcons.strokeRoundedHome03,
+        text: 'system_msg_room_created'.tr(),
+      ),
       _ => SystemMessageDisplay(
           action: action,
           icon: HugeIcons.strokeRoundedSettingsError02,

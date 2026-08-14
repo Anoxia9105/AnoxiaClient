@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
@@ -142,20 +143,13 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
               : tokenAsync.when(
                   data: (token) {
                     debugLog('Token 获取成功（开始启动通话）: $token');
-                    return CallRoomPage(token: token);
+                    return CallRoomPage(token: token, roomId: _roomId);
                   },
-                  error: (err, stack) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('call_window_room_creation_failed'.tr()),
-                        FilledButton(
-                          onPressed: () =>
-                              ref.invalidate(roomTokenProvider(_roomId)),
-                          child: Text('call_window_retry'.tr()),
-                        ),
-                      ],
-                    ),
+                  error: (err, stack) => CallErrorState(
+                    roomId: _roomId,
+                    title: _title,
+                    errorText: 'call_window_room_creation_failed'.tr(),
+                    detail: err.toString(),
                   ),
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),

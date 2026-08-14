@@ -1,4 +1,5 @@
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -61,18 +62,14 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   Widget build(BuildContext context) {
     final session = ref.watch(mobileCallSessionControllerProvider);
     final inPip = session?.isInPipMode ?? false;
-    // Web 端通话承载桌面布局（CommandBar + 磁贴），外壳跟随应用主题，
-    // 不再使用移动端的深色全屏壳；真实移动端保持原有深色沉浸式样式。
-    final isWeb = DeviceUtil.isWeb;
-    final darkShell = isWeb ? null : const Color(0xFF0D0F14);
+    // 通话外壳跟随应用主题（scaffoldGradient），手机端不再硬编码深色背景。
     final scaffold = Scaffold(
-      backgroundColor: darkShell,
+      backgroundColor: Colors.transparent,
 
       appBar: inPip
           ? null
           : AppBar(
-              backgroundColor: darkShell,
-              foregroundColor: isWeb ? null : Colors.white,
+              backgroundColor: Colors.transparent,
               elevation: 0,
               centerTitle: true,
               title: Text(
@@ -82,7 +79,10 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
               ),
               leading: IconButton(
                 tooltip: 'call_minimize_tooltip'.tr(),
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, size: 32),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowDown01,
+                  size: 24,
+                ),
 
                 /// 最小化
                 onPressed: () {
@@ -95,11 +95,9 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
 
       body: _buildBody(session?.token),
     );
-    if (!isWeb) return scaffold;
     return Container(
       decoration: BoxDecoration(
-        gradient:
-            Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+        gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
       ),
       child: scaffold,
     );
@@ -108,7 +106,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
   Widget _buildBody(String? token) {
     /// 已存在Token
     if (token != null && token.isNotEmpty) {
-      return CallRoomPage(token: token);
+      return CallRoomPage(token: token, roomId: widget.roomId);
     }
 
     /// 首次拉取Token
@@ -124,34 +122,23 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
               .updateToken(newToken);
         });
 
-        return CallRoomPage(token: newToken);
+        return CallRoomPage(token: newToken, roomId: widget.roomId);
       },
 
       error: (err, stack) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-
-            children: [
-              Text('call_window_room_creation_failed'.tr()),
-
-              const SizedBox(height: 12),
-
-              FilledButton(
-                onPressed: () {
-                  ref.invalidate(roomTokenProvider(widget.roomId));
-                },
-
-                child: Text('call_window_retry'.tr()),
-              ),
-            ],
-          ),
+        return CallErrorState(
+          roomId: widget.roomId,
+          title: widget.title,
+          errorText: 'call_window_room_creation_failed'.tr(),
+          detail: err.toString(),
         );
       },
 
       loading: () {
-        return const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+        return Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         );
       },
     );

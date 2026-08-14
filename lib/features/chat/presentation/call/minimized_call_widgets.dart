@@ -15,30 +15,36 @@ class MinimizedAudioCall extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF2B3245), Color(0xFF171B25)],
         ),
         border: Border.all(color: Colors.white12),
-        borderRadius: BorderRadius.circular(36),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.1),
             ),
-            child: const HugeIcon(
-              icon: HugeIcons.strokeRoundedCall02,
-              color: Colors.white,
-              size: 25,
+            child: const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedCall02,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -50,7 +56,7 @@ class MinimizedAudioCall extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white70,
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -59,9 +65,9 @@ class MinimizedAudioCall extends StatelessWidget {
                   joinedAt: joinedAt,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -88,7 +94,15 @@ class MinimizedVideoCall extends StatelessWidget {
       return const ColoredBox(
         color: Color(0xFF171A22),
         child: Center(
-          child: HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, color: Colors.white54),
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedVideoOff,
+              color: Colors.white54,
+              size: 22,
+            ),
+          ),
         ),
       );
     }
@@ -96,7 +110,7 @@ class MinimizedVideoCall extends StatelessWidget {
       participant: participant,
       compact: true,
       showStatus: false,
-      borderRadius: 16,
+      borderRadius: 12,
     );
   }
 }
