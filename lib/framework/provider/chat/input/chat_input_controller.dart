@@ -698,11 +698,13 @@ class ChatInputController extends _$ChatInputController {
 
     try {
       // 2. 上传语音文件
-      final urls = await ref.read(uploadRepositoryProvider).uploadFiles([
-        XFile(file.path),
-      ]);
+      final results = await ref
+          .read(uploadRepositoryProvider)
+          .uploadFiles([XFile(file.path)], clientFileIds: [clientMsgId]);
 
-      if (urls.isEmpty) {
+      if (results.isEmpty ||
+          !results.first.isSuccess ||
+          results.first.url == null) {
         // 上传失败，标记消息为 failed
         ref
             .read(chatMessagesProvider.notifier)
@@ -713,7 +715,7 @@ class ChatInputController extends _$ChatInputController {
         return;
       }
 
-      final url = urls.first;
+      final url = results.first.url!;
 
       // 3. 发送真正的语音消息
       _doSendVoice(

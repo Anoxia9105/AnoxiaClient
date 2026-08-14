@@ -11,13 +11,28 @@ class UploadEntry {
   /// 服务器返回的文件访问地址（仅 [status] 为 [UploadStatus.success] 时有值）
   final String? serverUrl;
 
-  const UploadEntry({required this.status, this.serverUrl});
+  /// 已发送与总字节数；仅上传中状态使用。
+  final int sentBytes;
+  final int totalBytes;
+
+  const UploadEntry({
+    required this.status,
+    this.serverUrl,
+    this.sentBytes = 0,
+    this.totalBytes = 0,
+  });
 
   /// 上传中状态的常量实例
   static const uploading = UploadEntry(status: UploadStatus.uploading);
 
   /// 上传失败状态的常量实例
   static const failed = UploadEntry(status: UploadStatus.failed);
+
+  static UploadEntry uploadingProgress(int sent, int total) => UploadEntry(
+    status: UploadStatus.uploading,
+    sentBytes: sent,
+    totalBytes: total,
+  );
 
   /// 创建一个表示上传成功的实例
   static UploadEntry success(String url) =>
@@ -31,4 +46,7 @@ class UploadEntry {
 
   /// 是否上传失败
   bool get isFailed => status == UploadStatus.failed;
+
+  double get progress =>
+      totalBytes <= 0 ? 0 : (sentBytes / totalBytes).clamp(0, 1).toDouble();
 }

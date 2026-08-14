@@ -9,6 +9,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 /// 自定义表情包上传结果
 class StickerUploadResult {
@@ -84,9 +85,7 @@ class CustomStickerController extends Notifier<CustomStickerState> {
 
     final files = result.files.where(_isImageFile).toList();
     if (files.isEmpty) {
-      return const StickerUploadResult(
-        errorKey: 'settings_sticker_no_image',
-      );
+      return const StickerUploadResult(errorKey: 'settings_sticker_no_image');
     }
     if (files.length > maxStickerCount) {
       files.removeRange(maxStickerCount, files.length);
@@ -103,14 +102,23 @@ class CustomStickerController extends Notifier<CustomStickerState> {
 
     state = state.copyWith(uploading: true);
     try {
-      final urls = await ref.read(uploadRepositoryProvider).uploadFiles(xFiles);
-      if (urls.isEmpty) {
+      final clientFileIds = List.generate(
+        xFiles.length,
+        (_) => const Uuid().v4(),
+      );
+      final results = await ref
+          .read(uploadRepositoryProvider)
+          .uploadFiles(xFiles, clientFileIds: clientFileIds);
+      final successful = results
+          .where((result) => result.isSuccess && result.url != null)
+          .toList();
+      if (successful.isEmpty) {
         return const StickerUploadResult(
           errorKey: 'settings_sticker_upload_failed',
         );
       }
 
-      final packId = await _ensureCustomPack(urls.first);
+      final packId = await _ensureCustomPack(successful.first.url!);
       if (packId <= 0) {
         return const StickerUploadResult(
           errorKey: 'settings_sticker_upload_failed',
@@ -119,11 +127,13 @@ class CustomStickerController extends Notifier<CustomStickerState> {
 
       var added = 0;
       final repository = ref.read(stickerRepositoryProvider);
-      for (var i = 0; i < urls.length && i < xFiles.length; i++) {
+      for (final upload in successful) {
+        final i = clientFileIds.indexOf(upload.clientFileId);
+        if (i < 0) continue;
         final (width, height) = await _decodeDimensions(xFiles[i]);
         final ok = await repository.addCustomSticker(
           packId,
-          urls[i],
+          upload.url!,
           width: width,
           height: height,
         );
@@ -202,8 +212,8 @@ class CustomStickerController extends Notifier<CustomStickerState> {
 
   bool _isImageFile(PlatformFile file) {
     // Web 端 bytes 已就绪、path 为 null；原生端 path 有值、bytes 为 null。
-    final hasContent = file.bytes != null ||
-        (file.path != null && file.path!.isNotEmpty);
+    final hasContent =
+        file.bytes != null || (file.path != null && file.path!.isNotEmpty);
     if (!hasContent || file.size > maxStickerBytes) return false;
     final name = file.name.toLowerCase();
     return _imageExtensions.any(name.endsWith);
@@ -229,5 +239,7 @@ class CustomStickerController extends Notifier<CustomStickerState> {
   }
 }
 
-final customStickerControllerProvider = NotifierProvider.autoDispose<
-    CustomStickerController, CustomStickerState>(CustomStickerController.new);
+final customStickerControllerProvider =
+    NotifierProvider.autoDispose<CustomStickerController, CustomStickerState>(
+      CustomStickerController.new,
+    );

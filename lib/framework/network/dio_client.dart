@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cross_file/cross_file.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
 
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -233,16 +234,22 @@ class DioClient {
     Duration receiveTimeout = const Duration(minutes: 10),
   }) async {
     try {
-      final formData = FormData.fromMap({
-        fileField: MultipartFile.fromBytes(
-          await file.readAsBytes(),
-          filename: file.name,
-          contentType: contentType == null
-              ? null
-              : DioMediaType.parse(contentType),
-        ),
-        ...?data,
-      });
+      final effectiveContentType = contentType ?? file.mimeType;
+      final mediaType = effectiveContentType == null
+          ? null
+          : DioMediaType.parse(effectiveContentType);
+      final multipartFile = !kIsWeb && file.path.isNotEmpty
+          ? await MultipartFile.fromFile(
+              file.path,
+              filename: file.name,
+              contentType: mediaType,
+            )
+          : MultipartFile.fromBytes(
+              await file.readAsBytes(),
+              filename: file.name,
+              contentType: mediaType,
+            );
+      final formData = FormData.fromMap({fileField: multipartFile, ...?data});
 
       return await _dio.post(
         path,

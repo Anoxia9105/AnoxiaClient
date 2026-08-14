@@ -175,49 +175,71 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     if (pickedFiles != null) _filesById.addAll(pickedFiles);
     _markUploading(images);
 
-    final files = <XFile>[];
+    var pendingFiles = <XFile>[];
+    var pendingImages = <Attachment>[];
     for (final i in images) {
       final local = _filesById[i.id];
       if (local?.bytes != null) {
-        files.add(XFile.fromData(local!.bytes!, name: i.name ?? local.name));
+        pendingFiles.add(
+          XFile.fromData(local!.bytes!, name: i.name ?? local.name),
+        );
+        pendingImages.add(i);
       } else if (i.url != null && i.url!.isNotEmpty) {
-        files.add(XFile(i.url!));
+        pendingFiles.add(XFile(i.url!));
+        pendingImages.add(i);
       }
     }
-    if (files.isEmpty) return;
+    if (pendingFiles.isEmpty) {
+      _markFailed(images);
+      return;
+    }
 
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
         debugLog(
           '[ImageUpload] 第$attempt次上传尝试, '
-          '文件: ${files.map((f) => f.name).join(', ')}',
+          '文件: ${pendingFiles.map((f) => f.name).join(', ')}',
         );
 
-        final urls = await ref
+        final results = await ref
             .read(uploadRepositoryProvider)
-            .uploadFiles(files);
+            .uploadFiles(
+              pendingFiles,
+              clientFileIds: pendingImages.map((image) => image.id!).toList(),
+              onProgress: _updateProgress,
+            );
+        state = {
+          ...state,
+          for (final result in results)
+            if (result.isSuccess &&
+                result.url != null &&
+                state.containsKey(result.clientFileId))
+              result.clientFileId: UploadEntry.success(result.url!),
+        };
 
-        if (urls.isNotEmpty) {
-          debugLog('[ImageUpload] 上传成功: $urls');
-          state = {
-            ...state,
-            for (int i = 0; i < images.length && i < urls.length; i++)
-              if (state.containsKey(images[i].id))
-                images[i].id!: UploadEntry.success(urls[i]),
-          };
-          return;
+        final failedIds = results
+            .where(
+              (result) => !result.isSuccess && result.errorCode != 'CANCELLED',
+            )
+            .map((result) => result.clientFileId)
+            .toSet();
+        final nextFiles = <XFile>[];
+        final nextImages = <Attachment>[];
+        for (var i = 0; i < pendingImages.length; i++) {
+          if (failedIds.contains(pendingImages[i].id)) {
+            nextFiles.add(pendingFiles[i]);
+            nextImages.add(pendingImages[i]);
+          }
         }
-
-        debugLog('[ImageUpload] 第$attempt次上传返回空URL列表');
-        if (isLastAttempt) {
-          _markFailed(images);
-          return;
-        }
+        pendingFiles = nextFiles;
+        pendingImages = nextImages;
+        if (pendingFiles.isEmpty) return;
+        if (isLastAttempt) _markFailed(pendingImages);
       } catch (e, st) {
         debugLog('[ImageUpload] 第$attempt次上传异常: $e', st);
         if (isLastAttempt) {
-          _markFailed(images);
+          _markFailed(pendingImages);
           return;
         }
       }
@@ -242,6 +264,16 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     state = {...state, ...failed};
   }
 
+  void _updateProgress(String id, int sent, int total) {
+    if (!state.containsKey(id)) return;
+    state = {...state, id: UploadEntry.uploadingProgress(sent, total)};
+  }
+
+  void cancelUpload(String id) {
+    ref.read(uploadRepositoryProvider).cancelUpload(id);
+    if (state.containsKey(id)) state = {...state, id: UploadEntry.failed};
+  }
+
   /// 只保留仍在编辑器中的附件上传状态
   ///
   /// 用户退格删除正在上传/已失败的 embed 时，若不清理对应记录，
@@ -250,6 +282,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     final removed = state.keys.where((id) => !ids.contains(id)).toList();
     if (removed.isEmpty) return;
     for (final id in removed) {
+      ref.read(uploadRepositoryProvider).cancelUpload(id);
       _filesById.remove(id);
     }
     state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));

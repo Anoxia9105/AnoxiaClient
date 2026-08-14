@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:anoxia/domain/models/upload_file_result.dart';
 import 'package:anoxia/domain/repositories/upload_repository.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
@@ -12,10 +13,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _SuccessfulUploadRepository implements UploadRepository {
   @override
-  Future<List<String>> uploadFiles(List<XFile> files) async => [
+  Future<List<UploadFileResult>> uploadFiles(
+    List<XFile> files, {
+    required List<String> clientFileIds,
+    UploadProgressCallback? onProgress,
+  }) async => [
     for (var index = 0; index < files.length; index++)
-      'https://example.test/upload-$index',
+      UploadFileResult(
+        clientFileId: clientFileIds[index],
+        isSuccess: true,
+        url: 'https://example.test/upload-$index',
+      ),
   ];
+
+  @override
+  void cancelUpload(String clientFileId) {}
 }
 
 void main() {

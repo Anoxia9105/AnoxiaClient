@@ -106,16 +106,21 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     if (pickedFiles != null) _filesById.addAll(pickedFiles);
     _markUploading(attachments);
 
-    final files = <XFile>[];
+    var pendingFiles = <XFile>[];
+    var pendingAttachments = <Attachment>[];
     for (final a in attachments) {
       final local = _filesById[a.id];
       if (local?.bytes != null) {
-        files.add(XFile.fromData(local!.bytes!, name: a.name ?? local.name));
+        pendingFiles.add(
+          XFile.fromData(local!.bytes!, name: a.name ?? local.name),
+        );
+        pendingAttachments.add(a);
       } else if (a.url != null && a.url!.isNotEmpty) {
-        files.add(XFile(a.url!));
+        pendingFiles.add(XFile(a.url!));
+        pendingAttachments.add(a);
       }
     }
-    if (files.isEmpty) {
+    if (pendingFiles.isEmpty) {
       _markFailed(attachments);
       return;
     }
@@ -123,30 +128,44 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
-        final urls = await ref
+        final results = await ref
             .read(uploadRepositoryProvider)
-            .uploadFiles(files);
+            .uploadFiles(
+              pendingFiles,
+              clientFileIds: pendingAttachments.map((a) => a.id!).toList(),
+              onProgress: _updateProgress,
+            );
+        state = {
+          ...state,
+          for (final result in results)
+            if (result.isSuccess &&
+                result.url != null &&
+                state.containsKey(result.clientFileId))
+              result.clientFileId: UploadEntry.success(result.url!),
+        };
 
-        if (urls.isNotEmpty) {
-          // 只回写仍在编辑器中的条目：用户删除 embed 后对应记录已被
-          // retain() 清理，不能再把成功/失败状态加回来阻塞发送按钮
-          state = {
-            ...state,
-            for (int i = 0; i < attachments.length && i < urls.length; i++)
-              if (state.containsKey(attachments[i].id))
-                attachments[i].id!: UploadEntry.success(urls[i]),
-          };
-          return;
+        final failedIds = results
+            .where(
+              (result) => !result.isSuccess && result.errorCode != 'CANCELLED',
+            )
+            .map((result) => result.clientFileId)
+            .toSet();
+        final nextFiles = <XFile>[];
+        final nextAttachments = <Attachment>[];
+        for (var i = 0; i < pendingAttachments.length; i++) {
+          if (failedIds.contains(pendingAttachments[i].id)) {
+            nextFiles.add(pendingFiles[i]);
+            nextAttachments.add(pendingAttachments[i]);
+          }
         }
-
-        if (isLastAttempt) {
-          _markFailed(attachments);
-          return;
-        }
+        pendingFiles = nextFiles;
+        pendingAttachments = nextAttachments;
+        if (pendingFiles.isEmpty) return;
+        if (isLastAttempt) _markFailed(pendingAttachments);
       } catch (e, st) {
         if (isLastAttempt) {
           debugLog('文件上传失败: $e\n$st');
-          _markFailed(attachments);
+          _markFailed(pendingAttachments);
           return;
         }
       }
@@ -174,6 +193,16 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     state = {...state, ...failed};
   }
 
+  void _updateProgress(String id, int sent, int total) {
+    if (!state.containsKey(id)) return;
+    state = {...state, id: UploadEntry.uploadingProgress(sent, total)};
+  }
+
+  void cancelUpload(String id) {
+    ref.read(uploadRepositoryProvider).cancelUpload(id);
+    if (state.containsKey(id)) state = {...state, id: UploadEntry.failed};
+  }
+
   /// 只保留仍在编辑器中的附件上传状态
   ///
   /// 用户退格删除正在上传/已失败的 embed 时，若不清理对应记录，
@@ -182,6 +211,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     final removed = state.keys.where((id) => !ids.contains(id)).toList();
     if (removed.isEmpty) return;
     for (final id in removed) {
+      ref.read(uploadRepositoryProvider).cancelUpload(id);
       _filesById.remove(id);
     }
     state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));

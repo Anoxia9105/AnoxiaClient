@@ -1,36 +1,108 @@
+import 'dart:math' as math;
+
+import 'package:anoxia/domain/models/upload_file_result.dart';
 import 'package:anoxia/domain/repositories/upload_repository.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:dio/dio.dart';
 
-/// 文件上传仓库实现
+/// 文件上传仓库实现。
 ///
-/// 通过远程数据源（HTTP API）提供文件上传操作。
-/// 实现 [UploadRepository] 抽象接口，供 UI 层 Provider 使用。
+/// 每个文件使用独立请求和稳定的 clientFileId，避免批量响应部分失败后 URL 错位。
 class UploadRepositoryImpl implements UploadRepository {
+  static const int _maxConcurrentUploads = 2;
+
+  final Map<String, CancelToken> _activeCancels = {};
+
   @override
-  Future<List<String>> uploadFiles(List<XFile> files) async {
-    try {
-      final fileNames = files.map((f) => f.name).join(', ');
-      debugLog('[Upload] uploadFiles 开始上传: $fileNames');
-
-      final res = await DioClient().uploadFiles(
-        '/file/uploadBatch',
-        files: files,
-      );
-
-      final rawList = res.data is Map ? res.data['data'] : res.data;
-      if (rawList is! List) {
-        debugLog('[Upload] uploadFiles: 服务器返回空/无效响应 -> ${res.data}');
-        return [];
-      }
-
-      final urls = rawList.map((e) => e.toString()).toList();
-      debugLog('[Upload] uploadFiles 上传成功: ${urls.length} 个文件');
-      return urls;
-    } catch (e, st) {
-      debugLog('[Upload] uploadFiles 上传异常: $e', st);
-      return [];
+  Future<List<UploadFileResult>> uploadFiles(
+    List<XFile> files, {
+    required List<String> clientFileIds,
+    UploadProgressCallback? onProgress,
+  }) async {
+    if (files.length != clientFileIds.length) {
+      throw ArgumentError('files 与 clientFileIds 数量必须一致');
     }
+    if (files.isEmpty) return const [];
+
+    final results = List<UploadFileResult?>.filled(files.length, null);
+    var nextIndex = 0;
+
+    Future<void> worker() async {
+      while (nextIndex < files.length) {
+        final index = nextIndex++;
+        results[index] = await _uploadOne(
+          files[index],
+          clientFileIds[index],
+          onProgress,
+        );
+      }
+    }
+
+    await Future.wait(
+      List.generate(
+        math.min(_maxConcurrentUploads, files.length),
+        (_) => worker(),
+      ),
+    );
+    return results.cast<UploadFileResult>();
+  }
+
+  Future<UploadFileResult> _uploadOne(
+    XFile file,
+    String clientFileId,
+    UploadProgressCallback? onProgress,
+  ) async {
+    final cancelToken = CancelToken();
+    _activeCancels[clientFileId]?.cancel('replaced by a new upload attempt');
+    _activeCancels[clientFileId] = cancelToken;
+
+    try {
+      final response = await DioClient().uploadFile(
+        '/file/uploadV2',
+        file: file,
+        data: {'clientFileId': clientFileId},
+        cancelToken: cancelToken,
+        onSendProgress: onProgress == null
+            ? null
+            : (sent, total) => onProgress(clientFileId, sent, total),
+      );
+      final body = response.data;
+      final data = body is Map ? body['data'] : null;
+      if (body is Map && body['code'] == 200 && data is Map) {
+        final url = data['url']?.toString();
+        if (url != null && url.isNotEmpty) {
+          return UploadFileResult(
+            clientFileId: clientFileId,
+            isSuccess: true,
+            url: url,
+          );
+        }
+      }
+      return UploadFileResult(
+        clientFileId: clientFileId,
+        isSuccess: false,
+        errorCode: data is Map
+            ? data['errorCode']?.toString()
+            : 'INVALID_RESPONSE',
+      );
+    } on DioException catch (error, stackTrace) {
+      debugLog('[Upload] $clientFileId 上传失败: $error', stackTrace);
+      return UploadFileResult(
+        clientFileId: clientFileId,
+        isSuccess: false,
+        errorCode: CancelToken.isCancel(error) ? 'CANCELLED' : 'NETWORK_ERROR',
+      );
+    } finally {
+      if (identical(_activeCancels[clientFileId], cancelToken)) {
+        _activeCancels.remove(clientFileId);
+      }
+    }
+  }
+
+  @override
+  void cancelUpload(String clientFileId) {
+    _activeCancels.remove(clientFileId)?.cancel('cancelled by user');
   }
 }
