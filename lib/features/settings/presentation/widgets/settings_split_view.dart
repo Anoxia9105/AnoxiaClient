@@ -98,11 +98,7 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
           final colorScheme = Theme.of(context).colorScheme;
           return Scaffold(
             backgroundColor: colorScheme.surface,
-            appBar: AppBar(
-              backgroundColor: colorScheme.surface,
-              foregroundColor: colorScheme.onSurface,
-              title: Text(destination.title),
-            ),
+            appBar: AppBar(title: Text(destination.title)),
             body: _SettingsDetailPanel(destination: destination, compact: true),
           );
         },

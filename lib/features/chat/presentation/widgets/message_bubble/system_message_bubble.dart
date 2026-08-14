@@ -1,4 +1,4 @@
-﻿/// 系统消息气泡
+/// 系统消息气泡
 ///
 /// 系统消息（如“xxx加入了群聊”）的专用渲染组件，无头像、无气泡，居中显示。
 library;
@@ -14,6 +14,7 @@ class SystemMessageBubble extends StatelessWidget {
   final MessageRenderStrategy strategy;
   final Color textColor;
   final double horizontalPadding;
+  final double verticalPadding;
 
   const SystemMessageBubble({
     super.key,
@@ -21,12 +22,16 @@ class SystemMessageBubble extends StatelessWidget {
     required this.strategy,
     required this.textColor,
     required this.horizontalPadding,
+    required this.verticalPadding,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4, horizontal: horizontalPadding),
+      padding: EdgeInsets.symmetric(
+        vertical: verticalPadding,
+        horizontal: horizontalPadding,
+      ),
       child: strategy.buildContent(context, message, textColor),
     );
   }

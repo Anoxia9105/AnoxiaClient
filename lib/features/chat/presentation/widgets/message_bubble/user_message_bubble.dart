@@ -1,4 +1,4 @@
-﻿/// 用户消息气泡（含头像、昵称、内容、状态指示器）
+/// 用户消息气泡（含头像、昵称、内容、状态指示器）
 ///
 /// 包含完整的用户消息布局组件：
 /// - UserMessageBubble：顶层布局，控制整体对齐
@@ -21,7 +21,7 @@ import 'package:anoxia/features/chat/presentation/widgets/message_render/base/me
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
 
 // 导入拆分的子组件
 import 'bubble_shell.dart';
@@ -33,33 +33,36 @@ class UserMessageBubble extends StatelessWidget {
   final ChatMessage message;
   final MessageRenderStrategy strategy;
   final MessageBubbleViewData view;
+  final ChatMessageLayout layout;
 
   const UserMessageBubble({
     super.key,
     required this.message,
     required this.strategy,
     required this.view,
+    required this.layout,
   });
 
   @override
   Widget build(BuildContext context) {
-    final direction = view.isCurrentUser
-        ? TextDirection.rtl
-        : TextDirection.ltr;
+    final direction = layout.placeOnLeft
+        ? TextDirection.ltr
+        : TextDirection.rtl;
 
     return Container(
       margin: EdgeInsets.symmetric(
-        vertical: 6,
-        horizontal: view.horizontalPadding,
+        vertical: layout.verticalMargin,
+        horizontal: layout.horizontalPadding,
       ),
       child: Column(
-        crossAxisAlignment: view.isCurrentUser
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: layout.placeOnLeft
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: [
           MessageHeader(
             isCurrentUser: view.isCurrentUser,
             senderName: view.senderName,
+            horizontalInset: layout.headerInset,
           ),
           const SizedBox(height: 2),
           Row(
@@ -69,15 +72,16 @@ class UserMessageBubble extends StatelessWidget {
               AvatarWidget(
                 url: view.senderAvatar,
                 name: view.senderName,
-                size: 32,
+                size: layout.avatarSize,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: layout.avatarGap),
               Flexible(
                 child: MessageBubbleRow(
                   message: message,
                   strategy: strategy,
                   view: view,
                   direction: direction,
+                  trailingSpace: layout.trailingSpace,
                 ),
               ),
             ],
@@ -92,11 +96,13 @@ class UserMessageBubble extends StatelessWidget {
 class MessageHeader extends StatelessWidget {
   final bool isCurrentUser;
   final String? senderName;
+  final double horizontalInset;
 
   const MessageHeader({
     super.key,
     required this.isCurrentUser,
     required this.senderName,
+    required this.horizontalInset,
   });
 
   @override
@@ -108,7 +114,7 @@ class MessageHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 45),
+      padding: EdgeInsets.symmetric(horizontal: horizontalInset),
       child: Text(
         isCurrentUser ? 'chat_me'.tr() : senderName ?? 'chat_unknown_user'.tr(),
         style: style,
@@ -123,6 +129,7 @@ class MessageBubbleRow extends ConsumerWidget {
   final MessageRenderStrategy strategy;
   final MessageBubbleViewData view;
   final TextDirection direction;
+  final double trailingSpace;
 
   const MessageBubbleRow({
     super.key,
@@ -130,6 +137,7 @@ class MessageBubbleRow extends ConsumerWidget {
     required this.strategy,
     required this.view,
     required this.direction,
+    required this.trailingSpace,
   });
 
   @override
@@ -151,7 +159,7 @@ class MessageBubbleRow extends ConsumerWidget {
           isMentionedMe: view.isMentionedMe,
           isCurrentUser: view.isCurrentUser,
         ),
-        SizedBox(width: 20.w), // 留出右侧间距（依赖 screenutil）
+        SizedBox(width: trailingSpace),
       ],
     );
   }

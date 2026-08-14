@@ -175,11 +175,11 @@ class SettingsFeedbackSection extends StatelessWidget {
       hintText: hint,
       alignLabelWithHint: alignLabelWithHint,
       prefixIcon: Padding(
-        padding: const EdgeInsets.all(13),
+        padding: const EdgeInsets.all(15),
         child: HugeIcon(
           icon: icon,
           color: colorScheme.onSurfaceVariant,
-          size: 20,
+          size: 16,
         ),
       ),
       filled: true,

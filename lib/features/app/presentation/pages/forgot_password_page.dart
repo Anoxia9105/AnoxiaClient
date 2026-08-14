@@ -11,7 +11,8 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
+import 'package:flutter/services.dart'
+    show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 忘记密码页面
@@ -134,7 +135,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Widget _buildHeader(ColorScheme colorScheme) => Column(
     children: [
-      HugeIcon(icon: HugeIcons.strokeRoundedLockPassword, size: 42, color: colorScheme.primary),
+      HugeIcon(
+        icon: HugeIcons.strokeRoundedLockPassword,
+        size: 42,
+        color: colorScheme.primary,
+      ),
       const SizedBox(height: 10),
       Text(
         'login_page_forget_dialog_title'.tr(),
@@ -167,7 +172,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         child: Container(
           height: 2,
           margin: const EdgeInsets.symmetric(horizontal: 10),
-          color: _emailVerified ? colorScheme.primary : colorScheme.outlineVariant,
+          color: _emailVerified
+              ? colorScheme.primary
+              : colorScheme.outlineVariant,
         ),
       ),
       _stepBadge(
@@ -201,7 +208,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           shape: BoxShape.circle,
         ),
         child: complete
-            ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: colorScheme.onPrimary)
+            ? HugeIcon(
+                icon: HugeIcons.strokeRoundedTick01,
+                size: 18,
+                color: colorScheme.onPrimary,
+              )
             : Text(
                 '$index',
                 style: TextStyle(
@@ -240,12 +251,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               padding: const EdgeInsets.only(left: 12, right: 8),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedAt,
-                size: 16,
+                size: 14,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            prefixIconConstraints:
-                const BoxConstraints.tightFor(width: 36, height: 16),
+            prefixIconConstraints: const BoxConstraints.tightFor(
+              width: 36,
+              height: 16,
+            ),
           ),
           inputFormatters: [LengthLimitingTextInputFormatter(100)],
         ),
@@ -263,12 +276,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedShield01,
-                      size: 16,
+                      size: 14,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  prefixIconConstraints:
-                      const BoxConstraints.tightFor(width: 36, height: 16),
+                  prefixIconConstraints: const BoxConstraints.tightFor(
+                    width: 36,
+                    height: 16,
+                  ),
                 ),
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(4),
@@ -294,12 +309,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedMailOpen01,
-                      size: 16,
+                      size: 14,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  prefixIconConstraints:
-                      const BoxConstraints.tightFor(width: 36, height: 16),
+                  prefixIconConstraints: const BoxConstraints.tightFor(
+                    width: 36,
+                    height: 16,
+                  ),
                 ),
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(6),
@@ -332,8 +349,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         SizedBox(
           height: 46,
           child: FilledButton(
-            onPressed:
-                (_isVerifyingEmail || _isSendingCode) ? null : _handleVerifyEmail,
+            onPressed: (_isVerifyingEmail || _isSendingCode)
+                ? null
+                : _handleVerifyEmail,
             child: _isVerifyingEmail
                 ? const SizedBox.square(
                     dimension: 16,
@@ -364,8 +382,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         _passwordField(
           controller: _confirmPasswordCtrl,
           obscure: _obscureConfirmPassword,
-          onToggle: () =>
-              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+          onToggle: () => setState(
+            () => _obscureConfirmPassword = !_obscureConfirmPassword,
+          ),
           label: 'login_page_forget_confirm_password'.tr(),
         ),
         const SizedBox(height: 18),
@@ -403,15 +422,20 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         padding: const EdgeInsets.only(left: 12, right: 8),
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedLock,
-          size: 16,
+          size: 14,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
+      prefixIconConstraints: const BoxConstraints.tightFor(
+        width: 36,
+        height: 16,
+      ),
       suffixIcon: IconButton(
         onPressed: onToggle,
         icon: HugeIcon(
-          icon: obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
+          icon: obscure
+              ? HugeIcons.strokeRoundedViewOff
+              : HugeIcons.strokeRoundedView,
           size: 16,
         ),
       ),

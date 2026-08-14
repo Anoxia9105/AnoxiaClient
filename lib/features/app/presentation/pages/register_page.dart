@@ -11,7 +11,11 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter, TextInputFormatter;
+import 'package:flutter/services.dart'
+    show
+        FilteringTextInputFormatter,
+        LengthLimitingTextInputFormatter,
+        TextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 注册页面
@@ -140,7 +144,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Widget _buildHeader(BuildContext context, ColorScheme scheme) => Column(
     children: [
-      HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, size: 42, color: scheme.primary),
+      HugeIcon(
+        icon: HugeIcons.strokeRoundedUserAdd01,
+        size: 42,
+        color: scheme.primary,
+      ),
       const SizedBox(height: 10),
       Text(
         'register_title'.tr(),
@@ -207,7 +215,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           shape: BoxShape.circle,
         ),
         child: complete
-            ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 18, color: scheme.onPrimary)
+            ? HugeIcon(
+                icon: HugeIcons.strokeRoundedTick01,
+                size: 18,
+                color: scheme.onPrimary,
+              )
             : Text(
                 '$index',
                 style: TextStyle(
@@ -234,41 +246,41 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-          _field(
-            controller: _emailCtrl,
-            hint: 'register_email'.tr(),
-            icon: HugeIcons.strokeRoundedAt,
-            maxLength: 50,
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            onChanged: _emailCodeSent ? _onEmailChanged : null,
-          ),
+        _field(
+          controller: _emailCtrl,
+          hint: 'register_email'.tr(),
+          icon: HugeIcons.strokeRoundedAt,
+          maxLength: 50,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          onChanged: _emailCodeSent ? _onEmailChanged : null,
+        ),
+        const SizedBox(height: 14),
+        if (!_emailCodeSent || _countdown <= 0) ...[
+          _captchaRow(scheme, isMobile),
           const SizedBox(height: 14),
-          if (!_emailCodeSent || _countdown <= 0) ...[
-            _captchaRow(scheme, isMobile),
-            const SizedBox(height: 14),
-          ],
-          _emailCodeRow(isMobile),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 52,
-            child: FilledButton.icon(
-              onPressed: _isVerifyingEmail ? null : _verifyEmail,
-              icon: _isVerifyingEmail
-                  ? const SizedBox.square(
-                      dimension: 19,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.3,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkBadge01),
-              label: Text('register_verify_and_continue'.tr()),
-            ),
-          ),
         ],
-      ),
-    );
+        _emailCodeRow(isMobile),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 52,
+          child: FilledButton.icon(
+            onPressed: _isVerifyingEmail ? null : _verifyEmail,
+            icon: _isVerifyingEmail
+                ? const SizedBox.square(
+                    dimension: 19,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.3,
+                      color: Colors.white,
+                    ),
+                  )
+                : const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkBadge01),
+            label: Text('register_verify_and_continue'.tr()),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _emailCodeRow(bool isMobile) {
     final field = _field(
@@ -312,75 +324,77 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   Widget _buildAccountStep(ColorScheme scheme) => Column(
-      key: const ValueKey('account-step'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: scheme.primaryContainer.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkBadge01, color: scheme.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  _emailCtrl.text.trim(),
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+    key: const ValueKey('account-step'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: scheme.primaryContainer.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedCheckmarkBadge01,
+              color: scheme.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _emailCtrl.text.trim(),
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              TextButton(
-                onPressed: _resetEmailVerification,
-                child: Text('register_change_email'.tr()),
-              ),
-            ],
-          ),
+            ),
+            TextButton(
+              onPressed: _resetEmailVerification,
+              child: Text('register_change_email'.tr()),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        _field(
-          controller: _usernameCtrl,
-          hint: 'register_username'.tr(),
-          icon: HugeIcons.strokeRoundedUser,
-          maxLength: 30,
-          autofillHints: const [AutofillHints.newUsername],
+      ),
+      const SizedBox(height: 16),
+      _field(
+        controller: _usernameCtrl,
+        hint: 'register_username'.tr(),
+        icon: HugeIcons.strokeRoundedUser,
+        maxLength: 30,
+        autofillHints: const [AutofillHints.newUsername],
+      ),
+      const SizedBox(height: 14),
+      _passwordField(
+        controller: _passwordCtrl,
+        hint: 'register_password'.tr(),
+        obscure: _obscurePassword,
+        onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+      ),
+      const SizedBox(height: 14),
+      _passwordField(
+        controller: _confirmPasswordCtrl,
+        hint: 'register_confirm_password'.tr(),
+        obscure: _obscureConfirmPassword,
+        onToggle: () =>
+            setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+      ),
+      const SizedBox(height: 24),
+      SizedBox(
+        height: 52,
+        child: FilledButton(
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox.square(
+                  dimension: 21,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
+              : Text('register_submit'.tr()),
         ),
-        const SizedBox(height: 14),
-        _passwordField(
-          controller: _passwordCtrl,
-          hint: 'register_password'.tr(),
-          obscure: _obscurePassword,
-          onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
-        ),
-        const SizedBox(height: 14),
-        _passwordField(
-          controller: _confirmPasswordCtrl,
-          hint: 'register_confirm_password'.tr(),
-          obscure: _obscureConfirmPassword,
-          onToggle: () => setState(
-            () => _obscureConfirmPassword = !_obscureConfirmPassword,
-          ),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          height: 52,
-          child: FilledButton(
-            onPressed: _isSubmitting ? null : _submit,
-            child: _isSubmitting
-                ? const SizedBox.square(
-                    dimension: 21,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text('register_submit'.tr()),
-          ),
-        ),
-      ],
-    );
+      ),
+    ],
+  );
 
   Widget _field({
     required TextEditingController controller,
@@ -406,11 +420,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         padding: const EdgeInsets.only(left: 12, right: 8),
         child: HugeIcon(
           icon: icon,
-          size: 16,
+          size: 14,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
+      prefixIconConstraints: const BoxConstraints.tightFor(
+        width: 36,
+        height: 16,
+      ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
@@ -433,15 +450,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         padding: const EdgeInsets.only(left: 12, right: 8),
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedLock,
-          size: 16,
+          size: 14,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
+      prefixIconConstraints: const BoxConstraints.tightFor(
+        width: 36,
+        height: 16,
+      ),
       suffixIcon: IconButton(
         onPressed: onToggle,
         icon: HugeIcon(
-          icon: obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
+          icon: obscure
+              ? HugeIcons.strokeRoundedViewOff
+              : HugeIcons.strokeRoundedView,
           size: 16,
         ),
       ),
@@ -449,7 +471,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ),
   );
 
-Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
+  Widget _captchaRow(ColorScheme scheme, bool isMobile) => Row(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Expanded(
@@ -635,82 +657,83 @@ class _RegisterCaptchaImage extends ConsumerStatefulWidget {
       _RegisterCaptchaImageState();
 }
 
-class _RegisterCaptchaImageState
-    extends ConsumerState<_RegisterCaptchaImage> {
+class _RegisterCaptchaImageState extends ConsumerState<_RegisterCaptchaImage> {
   bool _isHovering = false;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return ref.watch(getCaptchaProvider).when(
-      data: (captcha) => MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovering = true),
-        onExit: (_) => setState(() => _isHovering = false),
-        child: Material(
-          borderRadius: BorderRadius.circular(12),
-          clipBehavior: Clip.antiAlias,
-          color: scheme.surfaceContainerHigh,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: widget.width,
-              height: 44,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.memory(
-                    base64Decode(captcha.imgBase64),
-                    fit: BoxFit.cover,
-                  ),
-                  if (_isHovering)
-                    Container(
-                      color: scheme.primary.withValues(alpha: 0.12),
-                      alignment: Alignment.center,
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedRefresh01,
-                        color: scheme.primary,
-                        size: 20,
+    return ref
+        .watch(getCaptchaProvider)
+        .when(
+          data: (captcha) => MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _isHovering = true),
+            onExit: (_) => setState(() => _isHovering = false),
+            child: Material(
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              color: scheme.surfaceContainerHigh,
+              child: InkWell(
+                onTap: widget.onTap,
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: widget.width,
+                  height: 44,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.memory(
+                        base64Decode(captcha.imgBase64),
+                        fit: BoxFit.cover,
                       ),
-                    ),
-                ],
+                      if (_isHovering)
+                        Container(
+                          color: scheme.primary.withValues(alpha: 0.12),
+                          alignment: Alignment.center,
+                          child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedRefresh01,
+                            color: scheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
-      loading: () => SizedBox(
-        width: widget.width,
-        height: 44,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-      error: (_, _) => SizedBox(
-        width: widget.width,
-        height: 44,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: scheme.errorContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            onPressed: widget.onTap,
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedRefresh01,
-              color: scheme.onErrorContainer,
+          loading: () => SizedBox(
+            width: widget.width,
+            height: 44,
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
-        ),
-      ),
-    );
+          error: (_, _) => SizedBox(
+            width: widget.width,
+            height: 44,
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: scheme.errorContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                onPressed: widget.onTap,
+                icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedRefresh01,
+                  color: scheme.onErrorContainer,
+                ),
+              ),
+            ),
+          ),
+        );
   }
 }

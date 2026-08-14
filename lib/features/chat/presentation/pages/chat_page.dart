@@ -7,6 +7,7 @@ import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.da
 import 'package:anoxia/features/chat/presentation/pages/chat_room_list_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/chat_room_detail_panel.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,10 +37,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     }
 
     final activeRoomId = ref.watch(activeRoomIdProvider);
+    final focusModeEnabled = ref.watch(chatFocusModeProvider);
     final showRightPanel = ref.watch(chatRightPanelVisibleProvider);
     final room = activeRoomId != null
         ? ref.watch(currentRoomProvider(activeRoomId))
         : null;
+
+    if (focusModeEnabled && activeRoomId?.isNotEmpty == true) {
+      return ChatRoomDetail(
+        key: ValueKey('focused-chat-$activeRoomId'),
+        roomId: activeRoomId!,
+      );
+    }
 
     final isCompactWidth = MediaQuery.of(context).size.width < 1000;
     final canShowRightPanel = showRightPanel && activeRoomId != null;

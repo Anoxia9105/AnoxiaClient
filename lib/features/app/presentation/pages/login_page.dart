@@ -13,7 +13,8 @@ import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
+import 'package:flutter/services.dart'
+    show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -267,10 +268,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
           child: HugeIcon(
             icon: HugeIcons.strokeRoundedAt,
             color: colorScheme.onSurfaceVariant,
-            size: 16,
+            size: 14,
           ),
         ),
-        prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
+        prefixIconConstraints: const BoxConstraints.tightFor(
+          width: 36,
+          height: 16,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -299,10 +303,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
           child: HugeIcon(
             icon: HugeIcons.strokeRoundedLock,
             color: colorScheme.onSurfaceVariant,
-            size: 16,
+            size: 14,
           ),
         ),
-        prefixIconConstraints: const BoxConstraints.tightFor(width: 36, height: 16),
+        prefixIconConstraints: const BoxConstraints.tightFor(
+          width: 36,
+          height: 16,
+        ),
         suffixIcon: IconButton(
           icon: HugeIcon(
             icon: _obscurePassword
@@ -346,11 +353,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 child: HugeIcon(
                   icon: HugeIcons.strokeRoundedShield01,
                   color: colorScheme.onSurfaceVariant,
-                  size: 16,
+                  size: 14,
                 ),
               ),
-              prefixIconConstraints:
-                  const BoxConstraints.tightFor(width: 36, height: 16),
+              prefixIconConstraints: const BoxConstraints.tightFor(
+                width: 36,
+                height: 16,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -570,7 +579,9 @@ class _CaptchaImageState extends ConsumerState<_CaptchaImage> {
                           ),
                           if (_isHovering)
                             Container(
-                              color: colorScheme.primary.withValues(alpha: 0.12),
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.12,
+                              ),
                               alignment: Alignment.center,
                               child: HugeIcon(
                                 icon: HugeIcons.strokeRoundedRefresh01,
@@ -704,7 +715,9 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'login_scan_countdown'.tr(namedArgs: {'seconds': '$_remaining'}),
+                  'login_scan_countdown'.tr(
+                    namedArgs: {'seconds': '$_remaining'},
+                  ),
                   style: TextStyle(
                     fontSize: 13,
                     color: _remaining <= 10
@@ -715,7 +728,10 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
                 const SizedBox(width: 16),
                 TextButton.icon(
                   onPressed: _startSession,
-                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 18),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedRefresh01,
+                    size: 18,
+                  ),
                   label: Text('login_scan_refresh'.tr()),
                 ),
               ],
@@ -780,7 +796,11 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, size: 48, color: colorScheme.error),
+        HugeIcon(
+          icon: HugeIcons.strokeRoundedAlertCircle,
+          size: 48,
+          color: colorScheme.error,
+        ),
         const SizedBox(height: 12),
         Text(
           'login_scan_error'.tr(),
@@ -789,7 +809,10 @@ class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _startSession,
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 18),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedRefresh01,
+            size: 18,
+          ),
           label: Text('login_scan_retry'.tr()),
         ),
       ],

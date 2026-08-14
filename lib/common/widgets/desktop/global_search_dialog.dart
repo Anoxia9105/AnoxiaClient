@@ -45,7 +45,11 @@ class GlobalSearchDialog extends ConsumerWidget {
                   hintText: '${'search'.tr()}（会话 / 联系人）',
                   prefixIcon: const HugeIcon(
                     icon: HugeIcons.strokeRoundedSearch02,
-                    size: 16,
+                    size: 14,
+                  ),
+                  prefixIconConstraints: const BoxConstraints.tightFor(
+                    width: 34,
+                    height: 34,
                   ),
                   suffixText: 'Ctrl+K',
                   border: OutlineInputBorder(
@@ -66,7 +70,9 @@ class GlobalSearchDialog extends ConsumerWidget {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       children: [
-                        _ResultSectionTitle(title: 'global_search_section_conversations'.tr()),
+                        _ResultSectionTitle(
+                          title: 'global_search_section_conversations'.tr(),
+                        ),
                         if (searchState.rooms.isEmpty)
                           const _ResultEmpty(text: '未找到相关会话')
                         else
@@ -95,7 +101,9 @@ class GlobalSearchDialog extends ConsumerWidget {
                             ),
                           ),
                         const SizedBox(height: 8),
-                        _ResultSectionTitle(title: 'global_search_section_contacts'.tr()),
+                        _ResultSectionTitle(
+                          title: 'global_search_section_contacts'.tr(),
+                        ),
                         if (searchState.contacts.isEmpty)
                           const _ResultEmpty(text: '未找到相关联系人')
                         else

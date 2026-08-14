@@ -54,7 +54,11 @@ class AddFriendSearchBar extends StatelessWidget {
                   prefixIcon: HugeIcon(
                     icon: HugeIcons.strokeRoundedSearch02,
                     color: colorScheme.primary,
-                    size: 20,
+                    size: 16,
+                  ),
+                  prefixIconConstraints: const BoxConstraints.tightFor(
+                    width: 36,
+                    height: 36,
                   ),
                   suffixIcon: controller.text.isNotEmpty
                       ? IconButton(
@@ -93,7 +97,10 @@ class AddFriendSearchBar extends StatelessWidget {
                         dimension: 17,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20),
+                    : const HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        size: 20,
+                      ),
               ),
             ),
           ],

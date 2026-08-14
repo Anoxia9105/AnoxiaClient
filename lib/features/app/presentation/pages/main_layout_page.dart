@@ -10,7 +10,10 @@ import 'package:anoxia/features/live/presentation/pages/live_list_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
+import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
+import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
@@ -39,10 +42,28 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
   @override
   Widget build(BuildContext context) {
     final layout = ref.watch(layoutControllerProvider);
+    final desktopLayoutPreference = ref.watch(desktopLayoutProvider);
+    final focusModeEnabled = ref.watch(chatFocusModeProvider);
+    final activeRoomId = ref.watch(activeRoomIdProvider);
     // 确保索引在有效范围内，防止数组越界
     final safeIndex = layout.currentIndex.clamp(0, layout.items.length - 1);
 
     final size = MediaQuery.of(context).size;
+    final supportsDesktopLayout = DeviceUtil.supportsDesktopLayoutPreference(
+      context,
+    );
+    final desktopLayoutStyle = supportsDesktopLayout
+        ? resolveDesktopLayoutStyle(
+            desktopLayoutPreference,
+            availableWidth: size.width,
+          )
+        : DesktopLayoutStyle.card;
+    final chatFocusActive = shouldUseChatFocusMode(
+      enabled: focusModeEnabled,
+      isWideLayout: !DeviceUtil.isMobile(context),
+      currentIndex: safeIndex,
+      activeRoomId: activeRoomId,
+    );
 
     // 设备屏幕过小：展示品牌化提示页（非纯文本），而不是直接崩溃或溢出
     if (DeviceUtil.isScreenTooSmall(context) && !_forceEnterSmallDevice) {
@@ -59,20 +80,40 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
         body: Row(
           children: [
             /// 桌面端和平板显示侧边栏，移动端不显示
-            if (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context))
-              const DesktopSidebar(),
+            if (!chatFocusActive &&
+                (DeviceUtil.isDesktop(context) || DeviceUtil.isTablet(context)))
+              DesktopSidebar(layoutStyle: desktopLayoutStyle),
             Expanded(
               child: Scaffold(
                 backgroundColor: Colors.transparent,
                 body: IndexedStack(
                   index: safeIndex,
-                  children: const [
-                    _DesktopContentCard(child: ChatPage()),
-                    _DesktopContentCard(child: ContactPage()),
-                    _DesktopContentCard(child: LiveListPage()),
-                    _DesktopContentCard(child: FavoritesPage()),
-                    _DesktopContentCard(child: MyPage()),
-                    _DesktopContentCard(child: SettingsPage()),
+                  children: [
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      focused: chatFocusActive,
+                      child: const ChatPage(),
+                    ),
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      child: const ContactPage(),
+                    ),
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      child: const LiveListPage(),
+                    ),
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      child: const FavoritesPage(),
+                    ),
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      child: const MyPage(),
+                    ),
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      child: const SettingsPage(),
+                    ),
                   ],
                 ),
               ),
@@ -107,45 +148,75 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
   }
 }
 
-class _DesktopContentCard extends StatelessWidget {
+class _DesktopContentSurface extends StatelessWidget {
   final Widget child;
+  final DesktopLayoutStyle layoutStyle;
+  final bool focused;
 
-  const _DesktopContentCard({required this.child});
+  const _DesktopContentSurface({
+    required this.child,
+    required this.layoutStyle,
+    this.focused = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (DeviceUtil.isMobile(context)) {
+    if (DeviceUtil.isMobile(context) || focused) {
       return child;
     }
 
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final surfaceOpacity = cs.surface.a < 1 ? 0.12 : 0.88;
+    final isFlat = layoutStyle == DesktopLayoutStyle.flat;
+
+    // 两种布局共用同一棵 Widget 树（Padding → DecoratedBox → ClipRRect），
+    // 仅调整装饰参数，避免切换布局时子树结构变化导致子页面重建、
+    // 丢失页面状态（如设置页左侧选中的导航项）。
+    final surfaceOpacity = isFlat
+        ? (cs.surface.a < 1 ? 0.78 : 0.96)
+        : (cs.surface.a < 1 ? 0.12 : 0.88);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 16, 16),
+      padding: isFlat
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(14, 12, 16, 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: cs.surface.withValues(alpha: surfaceOpacity),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: cs.outlineVariant.withValues(alpha: isDark ? 0.16 : 0.28),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.12),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
-            ),
-            BoxShadow(
-              color: cs.primary.withValues(alpha: isDark ? 0.10 : 0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(18),
+          border: isFlat
+              ? Border(
+                  left: BorderSide(
+                    color: cs.outlineVariant.withValues(
+                      alpha: isDark ? 0.18 : 0.34,
+                    ),
+                  ),
+                )
+              : Border.all(
+                  color: cs.outlineVariant.withValues(
+                    alpha: isDark ? 0.16 : 0.28,
+                  ),
+                ),
+          boxShadow: isFlat
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.12),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                  BoxShadow(
+                    color: cs.primary.withValues(alpha: isDark ? 0.10 : 0.06),
+                    blurRadius: 18,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
-        child: ClipRRect(borderRadius: BorderRadius.circular(18), child: child),
+        child: ClipRRect(
+          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(18),
+          child: child,
+        ),
       ),
     );
   }

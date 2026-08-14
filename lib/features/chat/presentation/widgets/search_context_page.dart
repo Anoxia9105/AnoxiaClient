@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -505,10 +505,20 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                 hintStyle: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.outline,
                 ),
-                prefixIcon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedSearch02,
-                  color: colorScheme.outline,
-                  size: 20,
+                prefixIcon: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Center(
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedSearch02,
+                      color: colorScheme.outline,
+                      size: 16,
+                    ),
+                  ),
+                ),
+                prefixIconConstraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
                 ),
                 suffixIcon:
                     _searchController.text.isNotEmpty && !searchState.isLoading

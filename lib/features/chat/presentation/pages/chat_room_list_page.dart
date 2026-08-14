@@ -170,11 +170,27 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
               horizontal: 10,
               vertical: 0,
             ), // 上下为0，垂直居中
-            prefixIcon: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 16), // 图标缩小
+            prefixIcon: const SizedBox(
+              width: 30,
+              height: 32,
+              child: Center(
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedSearch01,
+                  size: 14,
+                ),
+              ),
+            ),
+            prefixIconConstraints: const BoxConstraints.tightFor(
+              width: 30,
+              height: 32,
+            ),
             suffixIcon: ref.watch(roomSearchQueryProvider).isNotEmpty
                 ? IconButton(
                     mouseCursor: SystemMouseCursors.click,
-                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCancel01,
+                      size: 14,
+                    ),
                     onPressed: () {
                       _searchController.clear();
                       ref.read(roomSearchQueryProvider.notifier).update('');

@@ -16,6 +16,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../../../framework/protocol/message/high_message.dart';
 import '../../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../../framework/provider/chat/room/room_list_service.dart';
+import '../../../../../framework/provider/chat/chat_focus_mode_controller.dart';
 
 /// 聊天房间 AppBar 组件
 ///
@@ -143,7 +144,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (room == null) return <Widget>[];
 
         // 官方帮助页所有内容均在当前屏展示，不提供聊天详情或更多操作。
-        if (room.isOfficial) return <Widget>[];
+        if (room.isOfficial && DeviceUtil.isMobile(context)) {
+          return <Widget>[];
+        }
 
         /// 移动端暂不显示通话和成员管理按钮，放在更多菜单里
         if (DeviceUtil.isMobile(context)) {
@@ -164,20 +167,32 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         }
 
         return [
+          IconButton(
+            mouseCursor: SystemMouseCursors.click,
+            tooltip: ref.watch(chatFocusModeProvider)
+                ? 'chat_focus_exit'.tr()
+                : 'chat_focus_enter'.tr(),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedChangeScreenMode,
+              size: 20,
+            ),
+            onPressed: ref.read(chatFocusModeProvider.notifier).toggle,
+          ),
           /// 通话按钮（房间正常状态才显示，官方虚拟房间 / 禁言 / 封禁不显示）
           if (room.roomStatus == 0 && !room.isOfficial) ...[
             ChatCallButtonWidget(roomId: roomId), // 通话按钮组件化
           ],
 
           // 更多按钮
-          IconButton(
-            mouseCursor: SystemMouseCursors.click,
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical),
-            onPressed: () {
-              ref.read(chatRightPanelVisibleProvider.notifier).state = !ref
-                  .read(chatRightPanelVisibleProvider);
-            },
-          ),
+          if (!room.isOfficial)
+            IconButton(
+              mouseCursor: SystemMouseCursors.click,
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical),
+              onPressed: () {
+                ref.read(chatRightPanelVisibleProvider.notifier).state = !ref
+                    .read(chatRightPanelVisibleProvider);
+              },
+            ),
         ];
       }(),
     );

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 void main() {
-  testWidgets('compact settings detail uses theme surface colors', (
+  testWidgets('compact settings detail inherits the shared AppBar theme', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -18,6 +18,7 @@ void main() {
         theme: ThemeData(
           colorScheme: scheme,
           scaffoldBackgroundColor: Colors.transparent,
+          appBarTheme: const AppBarTheme(backgroundColor: Colors.amber),
         ),
         home: Scaffold(
           backgroundColor: Colors.black,
@@ -42,9 +43,6 @@ void main() {
         .widgetList<Scaffold>(find.byType(Scaffold))
         .map((scaffold) => scaffold.backgroundColor);
     expect(scaffoldColors, contains(scheme.surface));
-    expect(
-      tester.widget<AppBar>(find.byType(AppBar)).backgroundColor,
-      scheme.surface,
-    );
+    expect(tester.widget<AppBar>(find.byType(AppBar)).backgroundColor, isNull);
   });
 }

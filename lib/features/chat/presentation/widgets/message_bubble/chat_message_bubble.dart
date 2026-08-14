@@ -1,4 +1,4 @@
-﻿/// 聊天消息气泡组件 - 主入口
+/// 聊天消息气泡组件 - 主入口
 ///
 /// 职责：根据消息类型选择渲染策略，分发到系统消息或用户消息布局。
 /// 依赖：通过 Riverpod 获取当前用户、房间成员等数据，使用策略模式渲染不同消息类型。
@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
 
 // 导入拆分后的子组件
 import 'system_message_bubble.dart';
@@ -33,6 +34,12 @@ class ChatMessageBubble extends ConsumerWidget {
 
       // 2. 聚合所有展示所需的视图数据（颜色、是否自己、是否@我等）
       final view = MessageBubbleViewData.resolve(context, ref, message);
+      final density = ref.watch(chatContentDensityProvider);
+      final layout = resolveChatMessageLayout(
+        density,
+        isCurrentUser: view.isCurrentUser,
+        baseHorizontalPadding: view.horizontalPadding,
+      );
 
       // 3. 系统消息单独处理（无头像、无气泡、居中显示）
       if (message.messageType == MessageType.system) {
@@ -40,12 +47,18 @@ class ChatMessageBubble extends ConsumerWidget {
           message: message,
           strategy: strategy,
           textColor: view.textColor,
-          horizontalPadding: view.horizontalPadding,
+          horizontalPadding: layout.horizontalPadding,
+          verticalPadding: layout.verticalMargin,
         );
       }
 
       // 4. 普通用户消息（含头像、昵称、气泡、状态指示器）
-      return UserMessageBubble(message: message, strategy: strategy, view: view);
+      return UserMessageBubble(
+        message: message,
+        strategy: strategy,
+        view: view,
+        layout: layout,
+      );
     } catch (e, stack) {
       // 单条消息渲染失败不影响整个列表。WASM 下可能因 Platform._operatingSystem
       // 等异常导致渲染中断，这里隔离错误并显示降级 UI，同时记录原始堆栈以便定位。

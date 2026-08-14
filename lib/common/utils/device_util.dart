@@ -62,6 +62,10 @@ class DeviceUtil {
   static bool supportsCustomBackground(BuildContext context) =>
       isRealDesktop() || (kIsWeb && isDesktop(context));
 
+  /// 桌面布局偏好仅在原生桌面端和 Web PC 宽屏模式生效。
+  static bool supportsDesktopLayoutPreference(BuildContext context) =>
+      isRealDesktop() || (kIsWeb && isDesktop(context));
+
   /// 当前视频播放器后端覆盖 Web、Windows 与 macOS；Linux 仅启用静态背景。
   static bool supportsVideoBackground() => kIsWeb || isWindows() || isMacOS();
 

@@ -7,16 +7,22 @@ import 'package:anoxia/features/settings/presentation/pages/developer_tribute_pa
 import 'package:anoxia/features/settings/presentation/widgets/settings_account_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_chat_density_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_chat_focus_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_general_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_layout_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_split_view.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_sticker_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_theme_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_web_notification_section.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
+import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -228,8 +234,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final themeMode = ref.watch(themeModeProvider);
     final themeAccentIndex = ref.watch(themeAccentProvider);
     final fontKey = ref.watch(appFontProvider);
+    final desktopLayoutPreference = ref.watch(desktopLayoutProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
     final hasUpdateBadge = ref.watch(hasAppUpdateProvider);
+    final supportsDesktopLayout = DeviceUtil.supportsDesktopLayoutPreference(
+      context,
+    );
 
     final appVersionText = appVersionAsync.maybeWhen(
       data: (value) => value,
@@ -239,8 +249,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
         centerTitle: DeviceUtil.isMobile(context),
         title: Text('settings_page_title'.tr()),
       ),
@@ -286,6 +294,31 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         .setTheme(compatibilityIndex);
                   },
                 ),
+                if (supportsDesktopLayout) ...[
+                  const SizedBox(height: 24),
+                  SettingsLayoutSection(
+                    selectedPreference: desktopLayoutPreference,
+                    onChanged: (preference) => ref
+                        .read(desktopLayoutProvider.notifier)
+                        .setPreference(preference),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                SettingsChatDensitySection(
+                  selectedDensity: ref.watch(chatContentDensityProvider),
+                  onChanged: (density) => ref
+                      .read(chatContentDensityProvider.notifier)
+                      .setDensity(density),
+                ),
+                if (supportsDesktopLayout) ...[
+                  const SizedBox(height: 24),
+                  SettingsChatFocusSection(
+                    enabled: ref.watch(chatFocusModeProvider),
+                    onChanged: ref
+                        .read(chatFocusModeProvider.notifier)
+                        .setEnabled,
+                  ),
+                ],
                 if (DeviceUtil.supportsCustomBackground(context))
                   const SettingsBackgroundSection(),
               ],
