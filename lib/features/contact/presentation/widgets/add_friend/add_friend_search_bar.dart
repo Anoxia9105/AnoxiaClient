@@ -33,11 +33,8 @@ class AddFriendSearchBar extends StatelessWidget {
       child: Container(
         height: 52,
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-          ),
+          color: colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
@@ -53,11 +50,11 @@ class AddFriendSearchBar extends StatelessWidget {
                   ),
                   prefixIcon: HugeIcon(
                     icon: HugeIcons.strokeRoundedSearch02,
-                    color: colorScheme.primary,
-                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                    size: 14,
                   ),
                   prefixIconConstraints: const BoxConstraints.tightFor(
-                    width: 36,
+                    width: 32,
                     height: 36,
                   ),
                   suffixIcon: controller.text.isNotEmpty
@@ -82,25 +79,30 @@ class AddFriendSearchBar extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(5),
-              child: FilledButton(
-                onPressed: isSearching ? null : onSearch,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(42, 42),
-                  maximumSize: const Size(42, 42),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Tooltip(
+                message: 'add_friend_search_btn'.tr(),
+                child: FilledButton(
+                  onPressed: isSearching || controller.text.trim().isEmpty
+                      ? null
+                      : onSearch,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(42, 42),
+                    maximumSize: const Size(42, 42),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    padding: EdgeInsets.zero,
                   ),
-                  padding: EdgeInsets.zero,
+                  child: isSearching
+                      ? const SizedBox.square(
+                          dimension: 17,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const HugeIcon(
+                          icon: HugeIcons.strokeRoundedArrowRight01,
+                          size: 19,
+                        ),
                 ),
-                child: isSearching
-                    ? const SizedBox.square(
-                        dimension: 17,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const HugeIcon(
-                        icon: HugeIcons.strokeRoundedArrowRight01,
-                        size: 20,
-                      ),
               ),
             ),
           ],

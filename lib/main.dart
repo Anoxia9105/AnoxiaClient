@@ -30,6 +30,7 @@ import 'app.dart';
 import 'common/constants/api.dart';
 import 'common/utils/device_util.dart';
 import 'common/utils/sp_util.dart';
+import 'common/widgets/toast.dart';
 import 'features/app/presentation/pages/error_page.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'framework/network/dio_client.dart';
@@ -534,6 +535,7 @@ Widget _buildAppWrapper(Widget home, {String? startLocale}) {
 Widget _buildErrorPage(String message) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
+    scaffoldMessengerKey: Toast.messengerKey,
     home: ErrorPage(
       message: message,
       onClose: () {

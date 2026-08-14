@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/live/presentation/pages/live_preview_page.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
@@ -83,6 +84,7 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
     final room = _room;
     return MaterialApp(
       title: room == null ? '新建直播' : room.title,
+      scaffoldMessengerKey: Toast.messengerKey,
       builder: BotToastInit(),
       navigatorObservers: [BotToastNavigatorObserver()],
       debugShowCheckedModeBanner: false,
@@ -91,9 +93,9 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
       locale: context.locale,
       home: room == null
           ? LivePreviewPage(
-            visibility: _initialVisibility,
-            initialTitle: _initialTitle,
-            initialSource: _initialSource,
+              visibility: _initialVisibility,
+              initialTitle: _initialTitle,
+              initialSource: _initialSource,
               onStart:
                   ({
                     required title,
@@ -162,7 +164,6 @@ class _WindowLivePreviewPageState extends State<WindowLivePreviewPage>
           : LiveSource.camera,
     );
   }
-
 }
 
 /// 直播房间窗口数据

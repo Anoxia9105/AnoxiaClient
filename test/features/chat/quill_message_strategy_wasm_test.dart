@@ -69,15 +69,42 @@ void main() {
     // 单行应小于两行高度；高度超过一行即为换行。
     expect(size.height, lessThan(30));
   }, skip: !_isWasm);
+
+  testWidgets('WASM 引用消息保留左侧引用条', (tester) async {
+    final message = _richTextMessage([
+      {'insert': '被引用的内容'},
+      {
+        'insert': '\n',
+        'attributes': {'blockquote': true},
+      },
+    ]);
+
+    await tester.pumpWidget(_testApp(message, forceWasmRenderer: true));
+    await tester.pump();
+
+    final quoteDecoration = tester
+        .widgetList<Container>(find.byType(Container))
+        .map((container) => container.decoration)
+        .whereType<BoxDecoration>()
+        .where((decoration) {
+          final border = decoration.border;
+          return border is Border && border.left.width == 4;
+        });
+
+    expect(quoteDecoration, hasLength(1));
+    expect(find.text('被引用的内容'), findsOneWidget);
+  });
 }
 
-Widget _testApp(ChatMessage message) {
+Widget _testApp(ChatMessage message, {bool forceWasmRenderer = false}) {
   return MaterialApp(
     home: Scaffold(
       body: Align(
         alignment: Alignment.topLeft,
         child: Builder(
-          builder: (context) => QuillMessageStrategy().buildContent(
+          builder: (context) => QuillMessageStrategy(
+            forceWasmRenderer: forceWasmRenderer,
+          ).buildContent(
             context,
             message,
             Colors.black,

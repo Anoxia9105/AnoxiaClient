@@ -155,6 +155,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     if (!mounted) return;
     Toast.showToast(
       success ? 'favorite_remove_success'.tr() : 'favorite_remove_failed'.tr(),
+      type: success ? ToastType.success : ToastType.error,
     );
     if (success) ref.invalidate(chatFavoriteListProvider);
   }
@@ -331,6 +332,7 @@ class _FavoriteDetailMobilePage extends ConsumerWidget {
     if (!context.mounted) return;
     Toast.showToast(
       success ? 'favorite_remove_success'.tr() : 'favorite_remove_failed'.tr(),
+      type: success ? ToastType.success : ToastType.error,
     );
     if (success) {
       ref.invalidate(chatFavoriteListProvider);
@@ -354,7 +356,10 @@ class _FavoriteDetailMobilePage extends ConsumerWidget {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: copyText));
               if (!context.mounted) return;
-              Toast.showToast('chat_copy_success'.tr());
+              Toast.showToast(
+                'chat_copy_success'.tr(),
+                type: ToastType.success,
+              );
             },
             icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01),
           ),
@@ -962,7 +967,10 @@ class _FavoriteDetailPanel extends StatelessWidget {
                       : _displaySummary(item, item.summary);
                   await Clipboard.setData(ClipboardData(text: copyText));
                   if (!context.mounted) return;
-                  Toast.showToast('chat_copy_success'.tr());
+                  Toast.showToast(
+                    'chat_copy_success'.tr(),
+                    type: ToastType.success,
+                  );
                 },
                 icon: const HugeIcon(
                   icon: HugeIcons.strokeRoundedCopy01,

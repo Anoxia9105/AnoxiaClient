@@ -62,17 +62,32 @@ class LiveRoomController extends _$LiveRoomController {
         ..on<RoomConnectedEvent>((_) {
           debugLog('直播房间已连接: $roomId');
           state = AsyncData(
-            _buildState(room, token, isReconnecting: false, connectionError: null),
+            _buildState(
+              room,
+              token,
+              isReconnecting: false,
+              connectionError: null,
+            ),
           );
         })
         ..on<RoomReconnectingEvent>((_) {
           state = AsyncData(
-            _buildState(room, token, isReconnecting: true, connectionError: null),
+            _buildState(
+              room,
+              token,
+              isReconnecting: true,
+              connectionError: null,
+            ),
           );
         })
         ..on<RoomReconnectedEvent>((_) {
           state = AsyncData(
-            _buildState(room, token, isReconnecting: false, connectionError: null),
+            _buildState(
+              room,
+              token,
+              isReconnecting: false,
+              connectionError: null,
+            ),
           );
         })
         ..on<RoomDisconnectedEvent>((event) {
@@ -127,9 +142,19 @@ class LiveRoomController extends _$LiveRoomController {
       final next = !current.cameraEnabled;
       await current.room.localParticipant?.setCameraEnabled(next);
       state = AsyncData(current.copyWith(cameraEnabled: next));
-      ref.read(toastServiceProvider).showNotificationNow(next ? 'live_camera_turned_on'.tr() : 'live_camera_turned_off'.tr());
+      ref
+          .read(toastServiceProvider)
+          .showNotificationNow(
+            next ? 'live_camera_turned_on'.tr() : 'live_camera_turned_off'.tr(),
+            type: ToastType.success,
+          );
     } catch (e) {
-      ref.read(toastServiceProvider).showNotificationNow('live_switch_camera_error'.tr(args: [e.toString()]));
+      ref
+          .read(toastServiceProvider)
+          .showNotificationNow(
+            'live_switch_camera_error'.tr(args: [e.toString()]),
+            type: ToastType.error,
+          );
     } finally {
       _isTogglingCamera = false;
     }
@@ -149,7 +174,12 @@ class LiveRoomController extends _$LiveRoomController {
       await current.room.localParticipant?.setMicrophoneEnabled(next);
       state = AsyncData(current.copyWith(micEnabled: next));
     } catch (e) {
-      ref.read(toastServiceProvider).showNotificationNow('live_switch_microphone_error'.tr(args: [e.toString()]));
+      ref
+          .read(toastServiceProvider)
+          .showNotificationNow(
+            'live_switch_microphone_error'.tr(args: [e.toString()]),
+            type: ToastType.error,
+          );
     } finally {
       _isTogglingMic = false;
     }
@@ -163,9 +193,7 @@ class LiveRoomController extends _$LiveRoomController {
   /// 开启屏幕共享时，桌面端由 UI 层先弹出屏幕/窗口选择对话框。
   /// 关闭屏幕共享时，会移除已发布的屏幕共享轨道。
   /// 通过 [_isTogglingScreen] 防止重复操作。
-  Future<void> toggleScreenShare({
-    String? sourceId,
-  }) async {
+  Future<void> toggleScreenShare({String? sourceId}) async {
     if (_isTogglingScreen) return;
     _isTogglingScreen = true;
     try {
@@ -189,7 +217,12 @@ class LiveRoomController extends _$LiveRoomController {
         state = AsyncData(
           current.copyWith(screenSharing: true, screenShareTrack: screenTrack),
         );
-        ref.read(toastServiceProvider).showNotificationNow('live_screen_share_started'.tr());
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow(
+              'live_screen_share_started'.tr(),
+              type: ToastType.success,
+            );
       } else {
         TrackPublication? screenPub;
         for (final publication in localParticipant.videoTrackPublications) {
@@ -204,10 +237,20 @@ class LiveRoomController extends _$LiveRoomController {
         state = AsyncData(
           current.copyWith(screenSharing: false, screenShareTrack: null),
         );
-        ref.read(toastServiceProvider).showNotificationNow('live_screen_share_stopped'.tr());
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow(
+              'live_screen_share_stopped'.tr(),
+              type: ToastType.success,
+            );
       }
     } catch (e) {
-      ref.read(toastServiceProvider).showNotificationNow('live_switch_screen_share_error'.tr(args: [e.toString()]));
+      ref
+          .read(toastServiceProvider)
+          .showNotificationNow(
+            'live_switch_screen_share_error'.tr(args: [e.toString()]),
+            type: ToastType.error,
+          );
     } finally {
       _isTogglingScreen = false;
     }

@@ -233,6 +233,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
           'chat_input_length_limit'.tr(
             args: [ChatInputLimit.maxCharacters.toString()],
           ),
+          type: ToastType.warning,
         );
         return;
       }
@@ -257,8 +258,9 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
       // 并正确计算光标偏移，避免 wasm 渲染时序下 render children 与 document
       // 不同步导致的 childAtPosition null 崩溃。
       final start = selection.start;
-      final deleteLen =
-          selection.isCollapsed ? 0 : selection.end - selection.start;
+      final deleteLen = selection.isCollapsed
+          ? 0
+          : selection.end - selection.start;
       controller.replaceText(
         start,
         deleteLen,
@@ -294,6 +296,7 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
         /// 聊天工具栏
         ChatQuillToolbar(
           controller: controller,
+          focusNode: focusNode,
           roomId: widget.roomId,
           onSend: () {
             ref

@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
@@ -40,7 +40,7 @@ class ChatBarHandlers {
     CallInitialMedia initialMedia = CallInitialMedia.audio,
   }) async {
     if ((room.roomId ?? '').isEmpty) {
-      Toast.showToast('appbar_connection_lost'.tr());
+      Toast.showToast('appbar_connection_lost'.tr(), type: ToastType.warning);
       return;
     }
     final tokenFuture = ref.read(roomTokenProvider(room.roomId ?? '').future);
@@ -54,7 +54,10 @@ class ChatBarHandlers {
               .read(mobileCallSessionControllerProvider.notifier)
               .enterCallPage();
         } else {
-          Toast.showToast('call_already_in_other'.tr());
+          Toast.showToast(
+            'call_already_in_other'.tr(),
+            type: ToastType.warning,
+          );
         }
         return;
       }
@@ -221,20 +224,20 @@ class ChatBarHandlers {
                           if (dialogContext.mounted) {
                             Navigator.of(dialogContext).pop();
                           }
-                          BotToast.showText(
-                            text: success
+                          Toast.showToast(
+                            success
                                 ? (isMute
                                       ? 'chat_mute_success'.tr()
                                       : 'chat_unmute_success'.tr())
                                 : 'chat_operation_retry_failed'.tr(),
+                            type: success ? ToastType.success : ToastType.error,
                           );
                         } catch (e) {
                           cancelLoading();
                           setState(() => submitting = false);
-                          BotToast.showText(
-                            text: 'chat_operation_failed'.tr(
-                              args: [e.toString()],
-                            ),
+                          Toast.showToast(
+                            'chat_operation_failed'.tr(args: [e.toString()]),
+                            type: ToastType.error,
                           );
                         }
                       },
@@ -306,15 +309,15 @@ class ChatBarHandlers {
                     .read(roomMemberServiceProvider.notifier)
                     .kickMember(roomId, member.userId ?? -1);
                 cancelLoading();
-                BotToast.showText(
-                  text: success
-                      ? 'chat_kick_success'.tr()
-                      : 'chat_kick_failed'.tr(),
+                Toast.showToast(
+                  success ? 'chat_kick_success'.tr() : 'chat_kick_failed'.tr(),
+                  type: success ? ToastType.success : ToastType.error,
                 );
               } catch (e) {
                 cancelLoading();
-                BotToast.showText(
-                  text: 'chat_operation_failed'.tr(args: [e.toString()]),
+                Toast.showToast(
+                  'chat_operation_failed'.tr(args: [e.toString()]),
+                  type: ToastType.error,
                 );
               }
             },

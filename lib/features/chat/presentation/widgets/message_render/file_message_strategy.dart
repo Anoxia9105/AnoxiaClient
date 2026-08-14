@@ -43,7 +43,9 @@ class FileMessageStrategy extends MessageRenderStrategy {
       return const SizedBox.shrink();
     }
 
-    final currentUser = ProviderScope.containerOf(context).read(authControllerProvider).value;
+    final currentUser = ProviderScope.containerOf(
+      context,
+    ).read(authControllerProvider).value;
     final isSelf = message.senderId == currentUser?.userId;
 
     return _FileMessageList(fileList: fileList, isSelf: isSelf);
@@ -193,13 +195,16 @@ class _FileMessageListState extends State<_FileMessageList> {
   Future<void> _openFileLocation(String filePath) async {
     // Web 端无文件系统概念，无法"打开所在位置"
     if (kIsWeb) {
-      Toast.showToast('file_open_dir_failed'.tr(args: ['web']));
+      Toast.showToast(
+        'file_open_dir_failed'.tr(args: ['web']),
+        type: ToastType.error,
+      );
       return;
     }
 
     final file = File(filePath);
     if (!file.existsSync()) {
-      Toast.showToast('file_not_found'.tr());
+      Toast.showToast('file_not_found'.tr(), type: ToastType.error);
       return;
     }
 
@@ -224,7 +229,10 @@ class _FileMessageListState extends State<_FileMessageList> {
 
     final openResult = await OpenFilex.open(file.parent.path);
     if (openResult.type != ResultType.done) {
-      Toast.showToast('file_open_dir_failed'.tr(args: [openResult.message]));
+      Toast.showToast(
+        'file_open_dir_failed'.tr(args: [openResult.message]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -247,7 +255,7 @@ class _FileMessageListState extends State<_FileMessageList> {
     if (kIsWeb) {
       final url = file.url;
       if (url == null || url.isEmpty) {
-        Toast.showToast('file_url_invalid'.tr());
+        Toast.showToast('file_url_invalid'.tr(), type: ToastType.error);
         return;
       }
       await launchUrl(Uri.parse(url));
@@ -260,19 +268,25 @@ class _FileMessageListState extends State<_FileMessageList> {
     }
     final result = await OpenFilex.open(path);
     if (result.type != ResultType.done) {
-      Toast.showToast('file_open_failed'.tr(args: [result.message]));
+      Toast.showToast(
+        'file_open_failed'.tr(args: [result.message]),
+        type: ToastType.error,
+      );
     }
   }
 
   Future<void> _showFileLocation(Attachment file) async {
     // Web 端无"打开所在位置"概念
     if (kIsWeb) {
-      Toast.showToast('file_open_dir_failed'.tr(args: ['web']));
+      Toast.showToast(
+        'file_open_dir_failed'.tr(args: ['web']),
+        type: ToastType.error,
+      );
       return;
     }
     final path = await _resolveExistingPath(file);
     if (path == null) {
-      Toast.showToast('file_not_found'.tr());
+      Toast.showToast('file_not_found'.tr(), type: ToastType.error);
       return;
     }
     await _openFileLocation(path);
@@ -287,10 +301,13 @@ class _FileMessageListState extends State<_FileMessageList> {
     if (kIsWeb) {
       final url = file.url;
       if (url == null || url.isEmpty) {
-        Toast.showToast('file_url_invalid'.tr());
+        Toast.showToast('file_url_invalid'.tr(), type: ToastType.error);
         return;
       }
-      final downloaded = await WebDownload.downloadUrl(url, _buildFileName(file));
+      final downloaded = await WebDownload.downloadUrl(
+        url,
+        _buildFileName(file),
+      );
       if (!downloaded) {
         await launchUrl(Uri.parse(url));
       }
@@ -328,7 +345,7 @@ class _FileMessageListState extends State<_FileMessageList> {
     }
 
     if ((file.url ?? '').isEmpty) {
-      Toast.showToast('file_url_invalid'.tr());
+      Toast.showToast('file_url_invalid'.tr(), type: ToastType.error);
       return;
     }
 
@@ -367,15 +384,24 @@ class _FileMessageListState extends State<_FileMessageList> {
         _downloadedPathMap[key] = savePath;
       });
 
-      Toast.showToast('file_download_complete'.tr(args: [fileName]));
+      Toast.showToast(
+        'file_download_complete'.tr(args: [fileName]),
+        type: ToastType.success,
+      );
       if (openAfterDownload) {
         final openResult = await OpenFilex.open(savePath);
         if (openResult.type != ResultType.done) {
-          Toast.showToast('file_open_failed'.tr(args: [openResult.message]));
+          Toast.showToast(
+            'file_open_failed'.tr(args: [openResult.message]),
+            type: ToastType.error,
+          );
         }
       }
     } catch (e) {
-      Toast.showToast('file_download_failed'.tr(args: [e.toString()]));
+      Toast.showToast(
+        'file_download_failed'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
       if (!mounted) return;
       setState(() {
         _progressMap.remove(key);
@@ -430,9 +456,7 @@ class _FileMessageListState extends State<_FileMessageList> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => isDownloaded
-            ? _openLocalFile(file)
-            : _downloadFile(file),
+        onTap: () => isDownloaded ? _openLocalFile(file) : _downloadFile(file),
         borderRadius: BorderRadius.circular(10),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

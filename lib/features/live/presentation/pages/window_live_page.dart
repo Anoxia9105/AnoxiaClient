@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/live/presentation/pages/live_room_page.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
@@ -85,6 +86,7 @@ class _WindowLivePageState extends State<WindowLivePage> with WindowListener {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: _title.isEmpty ? '直播' : _title,
+      scaffoldMessengerKey: Toast.messengerKey,
       builder: BotToastInit(),
       navigatorObservers: [BotToastNavigatorObserver()],
       debugShowCheckedModeBanner: false,
@@ -92,7 +94,11 @@ class _WindowLivePageState extends State<WindowLivePage> with WindowListener {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       home: _roomId.isEmpty
-          ? Scaffold(body: Center(child: Text('live_window_params_missing_room_id'.tr())))
+          ? Scaffold(
+              body: Center(
+                child: Text('live_window_params_missing_room_id'.tr()),
+              ),
+            )
           : LiveRoomPage(
               roomId: _roomId,
               title: _title,

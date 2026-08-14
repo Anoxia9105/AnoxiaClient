@@ -11,18 +11,15 @@ class AddFriendSearchSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
       itemCount: 6,
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      separatorBuilder: (context, index) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.6),
-            ),
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
           ),
           child: const Row(
             children: [

@@ -251,7 +251,7 @@ class MessageContent extends ConsumerWidget {
     final roomId = message.roomId;
     if (roomId == null || roomId.isEmpty) return;
     if (quotedLookup.hasValue && quotedLookup.value == null) {
-      Toast.showToast('chat_quote_not_found'.tr());
+      Toast.showToast('chat_quote_not_found'.tr(), type: ToastType.error);
       return;
     }
     ref

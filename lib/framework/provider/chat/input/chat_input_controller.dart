@@ -267,6 +267,7 @@ class ChatInputController extends _$ChatInputController {
           'chat_input_length_limit'.tr(
             args: [ChatInputLimit.maxCharacters.toString()],
           ),
+          type: ToastType.warning,
         );
   }
 

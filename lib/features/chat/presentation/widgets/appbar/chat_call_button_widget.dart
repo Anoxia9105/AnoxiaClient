@@ -65,7 +65,7 @@ class ChatCallButtonWidget extends ConsumerWidget {
       children: [
         IconButton(
           mouseCursor: SystemMouseCursors.click,
-          tooltip: 'call_microphone'.tr(),
+          tooltip: 'appbar_voice_meeting_tooltip'.tr(),
           onPressed: () => ChatBarHandlers.onCallPressed(
             context,
             ref,
@@ -80,7 +80,7 @@ class ChatCallButtonWidget extends ConsumerWidget {
         ),
         IconButton(
           mouseCursor: SystemMouseCursors.click,
-          tooltip: 'call_camera'.tr(),
+          tooltip: 'appbar_video_meeting_tooltip'.tr(),
           onPressed: () => ChatBarHandlers.onCallPressed(
             context,
             ref,

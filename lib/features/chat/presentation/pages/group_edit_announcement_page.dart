@@ -3,7 +3,7 @@
 // 提供文本输入框用于编辑公告，支持提交更新到服务器。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
-import 'package:bot_toast/bot_toast.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,10 +65,11 @@ class _GroupEditAnnouncementPageState
     if (!mounted) return;
     setState(() => _saving = false);
 
-    BotToast.showText(
-      text: ok
+    Toast.showToast(
+      ok
           ? 'chat_group_announcement_update_success'.tr()
           : 'chat_operation_retry_failed'.tr(),
+      type: ok ? ToastType.success : ToastType.error,
     );
     if (ok) {
       Navigator.of(context).pop(true);
@@ -111,9 +112,7 @@ class _GroupEditAnnouncementPageState
           textInputAction: TextInputAction.newline,
           decoration: InputDecoration(
             hintText: 'chat_group_announcement_hint'.tr(),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ),

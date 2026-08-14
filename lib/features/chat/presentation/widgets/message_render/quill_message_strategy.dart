@@ -32,23 +32,34 @@ const _kIsWasm = kIsWeb && !bool.fromEnvironment('dart.library.html');
 /// - @提及用户高亮
 /// - 动态宽度计算
 class QuillMessageStrategy extends MessageRenderStrategy {
+  QuillMessageStrategy({@visibleForTesting this.forceWasmRenderer = false});
+
+  @visibleForTesting
+  final bool forceWasmRenderer;
+
   @override
   Widget buildContent(
     BuildContext context,
     ChatMessage message,
     Color textColor,
   ) {
-    return _QuillInternalRenderer(message: message, textColor: textColor);
+    return _QuillInternalRenderer(
+      message: message,
+      textColor: textColor,
+      forceWasmRenderer: forceWasmRenderer,
+    );
   }
 }
 
 class _QuillInternalRenderer extends StatefulWidget {
   final ChatMessage message;
   final Color textColor;
+  final bool forceWasmRenderer;
 
   const _QuillInternalRenderer({
     required this.message,
     required this.textColor,
+    required this.forceWasmRenderer,
   });
 
   @override
@@ -88,6 +99,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
   /// WASM 模式下 flutter_quill 的 Document 往返可能产出空列表或格式异常，
   /// 导致消息渲染空白。直接缓存 JSON 解析后的原始 ops 可以绕过此问题。
   List<dynamic>? _rawDeltaOps;
+
+  bool get _useWasmRenderer => _kIsWasm || widget.forceWasmRenderer;
 
   @override
   void initState() {
@@ -163,7 +176,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     // 等不兼容问题，因此不能直接复用编辑器。但这里仍需按 Delta 渲染，不能使用
     // Document.toPlainText()：该方法会把 mention 等 embed 转成对象替换符 \uFFFC，
     // 同时会丢失 color/bold/italic 等所有 attributes。
-    if (_kIsWasm) {
+    if (_useWasmRenderer) {
       return LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = _safeMaxWidth(context, constraints.maxWidth);
@@ -323,7 +336,7 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     // letterSpacing）会继承气泡默认样式。测量时必须使用同一份已合并的样式，
     // 否则继承下来的 letterSpacing 会让实际渲染行宽大于测量值，最后一个字
     // 被挤到下一行。桌面分支用 QuillEditor，样式不走此合并路径，故保持原样。
-    final baseStyle = _kIsWasm
+    final baseStyle = _useWasmRenderer
         ? _wasmRenderStyle(context)
         : _wasmBaseStyle(context);
     final textScaler = MediaQuery.textScalerOf(context);
@@ -428,13 +441,57 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
     final plainSpans = <InlineSpan>[];
     String pendingCodeText = '';
 
-    void flushPlain() {
+    void flushPlain({bool isBlockQuote = false}) {
       if (plainSpans.isEmpty) return;
       // TextSpan 不复制 children 列表，必须先拍快照再 clear，
       // 否则 clear() 会同时清空 TextSpan.children 导致渲染空白。
       final spans = List<InlineSpan>.of(plainSpans);
       plainSpans.clear();
-      children.add(Text.rich(TextSpan(style: baseStyle, children: spans)));
+      final richText = Text.rich(TextSpan(style: baseStyle, children: spans));
+      children.add(
+        isBlockQuote
+            ? Container(
+                padding: const EdgeInsets.only(left: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      width: 4,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: richText,
+              )
+            : richText,
+      );
+    }
+
+    void appendPlainText(
+      String rawText,
+      String displayText,
+      TextStyle style, {
+      required bool isBlockQuote,
+    }) {
+      final lines = displayText.split('\n');
+      for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        final line = lines[lineIndex];
+        if (line.isNotEmpty) {
+          plainSpans.add(TextSpan(text: line, style: style));
+        }
+        if (lineIndex < lines.length - 1) {
+          flushPlain(isBlockQuote: isBlockQuote);
+        }
+      }
+
+      // 最后一个 Delta op 的文档终止换行会被 _displayText 去掉，
+      // 但它携带的 blockquote 是行级属性，仍必须用它结束并包装当前行。
+      if (rawText.endsWith('\n') && !displayText.endsWith('\n')) {
+        flushPlain(isBlockQuote: isBlockQuote);
+      } else if (isBlockQuote && !rawText.contains('\n')) {
+        // 兼容服务端传来的非标准 Delta：blockquote 直接挂在文本 op 上。
+        flushPlain(isBlockQuote: true);
+      }
     }
 
     void flushCodeBlock() {
@@ -450,6 +507,8 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
       final attributes = op['attributes'];
       final isCodeBlock = attributes is Map &&
           attributes.containsKey(Attribute.codeBlock.key);
+      final isBlockQuote = attributes is Map &&
+          attributes.containsKey(Attribute.blockQuote.key);
 
       if (insert is String) {
         if (isCodeBlock) {
@@ -458,11 +517,11 @@ class _QuillInternalRendererState extends State<_QuillInternalRenderer> {
           pendingCodeText += _displayText(opsJson, index, insert);
         } else {
           flushCodeBlock();
-          plainSpans.add(
-            TextSpan(
-              text: _displayText(opsJson, index, insert),
-              style: _inlineStyle(context, baseStyle, attributes),
-            ),
+          appendPlainText(
+            insert,
+            _displayText(opsJson, index, insert),
+            _inlineStyle(context, baseStyle, attributes),
+            isBlockQuote: isBlockQuote,
           );
         }
         continue;

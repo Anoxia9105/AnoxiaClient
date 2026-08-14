@@ -22,10 +22,13 @@ import 'package:anoxia/platform/shims/window_manager_shim.dart';
 class LivePreviewPage extends StatefulWidget {
   /// 直播的可见性设置
   final LiveVisibility visibility;
+
   /// 初始直播源类型
   final LiveSource initialSource;
+
   /// 初始标题文本
   final String initialTitle;
+
   /// 开播回调，传入标题、可见性、直播源和屏幕源 ID 后由父级处理开播逻辑
   final Future<void> Function({
     required String title,
@@ -171,11 +174,17 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
     if (_starting) return;
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      Toast.showNotificationNow('live_title_required'.tr());
+      Toast.showNotificationNow(
+        'live_title_required'.tr(),
+        type: ToastType.warning,
+      );
       return;
     }
     if (title.length > 60) {
-      Toast.showNotificationNow('live_title_max_length'.tr());
+      Toast.showNotificationNow(
+        'live_title_max_length'.tr(),
+        type: ToastType.warning,
+      );
       return;
     }
 
@@ -190,7 +199,10 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      Toast.showNotificationNow('live_start_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_start_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
       setState(() => _starting = false);
       if (_previewTrack == null) {
         await _startPreview();
@@ -276,12 +288,16 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                           segments: [
                             ButtonSegment(
                               value: LiveVisibility.public,
-                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedGlobe02),
+                              icon: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedGlobe02,
+                              ),
                               label: Text('live_visibility_public'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveVisibility.private,
-                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedLock),
+                              icon: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedLock,
+                              ),
                               label: Text('live_visibility_private'.tr()),
                             ),
                           ],
@@ -299,12 +315,17 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                           segments: [
                             ButtonSegment(
                               value: LiveSource.camera,
-                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedVideo01),
+                              icon: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedVideo01,
+                              ),
                               label: Text('live_source_camera'.tr()),
                             ),
                             ButtonSegment(
                               value: LiveSource.screen,
-                              icon: const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
+                              icon: const HugeIcon(
+                                icon:
+                                    HugeIcons.strokeRoundedComputerScreenShare,
+                              ),
                               label: Text('live_source_screen_short'.tr()),
                             ),
                           ],
@@ -321,7 +342,9 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          'live_info_template'.tr(args: [_visibility.trLabel(), _source.trLabel()]),
+                          'live_info_template'.tr(
+                            args: [_visibility.trLabel(), _source.trLabel()],
+                          ),
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ),
@@ -338,8 +361,14 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const HugeIcon(icon: HugeIcons.strokeRoundedLiveStreaming01),
-                        label: Text(_starting ? 'live_starting'.tr() : 'live_start_now'.tr()),
+                            : const HugeIcon(
+                                icon: HugeIcons.strokeRoundedLiveStreaming01,
+                              ),
+                        label: Text(
+                          _starting
+                              ? 'live_starting'.tr()
+                              : 'live_start_now'.tr(),
+                        ),
                       ),
                     ],
                   ),
@@ -366,7 +395,11 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, color: Colors.white70, size: 64),
+              const HugeIcon(
+                icon: HugeIcons.strokeRoundedVideoOff,
+                color: Colors.white70,
+                size: 64,
+              ),
               const SizedBox(height: 12),
               Text(
                 '预览启动失败：$_error',
@@ -387,7 +420,11 @@ class _LivePreviewPageState extends State<LivePreviewPage> {
     final track = _previewTrack;
     if (track == null) {
       return const Center(
-        child: HugeIcon(icon: HugeIcons.strokeRoundedVideoOff, color: Colors.white70, size: 64),
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedVideoOff,
+          color: Colors.white70,
+          size: 64,
+        ),
       );
     }
 

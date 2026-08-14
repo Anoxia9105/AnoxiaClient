@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
@@ -122,6 +123,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         : ref.watch(roomTokenProvider(_roomId));
     return MaterialApp(
       title: _title,
+      scaffoldMessengerKey: Toast.messengerKey,
       theme: themeData,
       builder: BotToastInit(),
       debugShowCheckedModeBanner: false,

@@ -3,7 +3,7 @@
 // 提供文本输入框用于编辑群组名称，支持提交更新到服务器。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
-import 'package:bot_toast/bot_toast.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +50,7 @@ class _GroupEditNamePageState extends ConsumerState<GroupEditNamePage> {
   Future<void> _submit() async {
     final nextName = _controller.text.trim();
     if (nextName.isEmpty) {
-      BotToast.showText(text: 'create_group_name_empty'.tr());
+      Toast.showToast('create_group_name_empty'.tr(), type: ToastType.warning);
       return;
     }
     if (nextName == widget.initialName.trim()) {
@@ -65,8 +65,11 @@ class _GroupEditNamePageState extends ConsumerState<GroupEditNamePage> {
     if (!mounted) return;
     setState(() => _saving = false);
 
-    BotToast.showText(
-      text: ok ? 'chat_group_name_update_success'.tr() : 'chat_operation_retry_failed'.tr(),
+    Toast.showToast(
+      ok
+          ? 'chat_group_name_update_success'.tr()
+          : 'chat_operation_retry_failed'.tr(),
+      type: ok ? ToastType.success : ToastType.error,
     );
     if (ok) {
       Navigator.of(context).pop(true);
@@ -109,9 +112,7 @@ class _GroupEditNamePageState extends ConsumerState<GroupEditNamePage> {
           onSubmitted: (_) => _submit(),
           decoration: InputDecoration(
             hintText: 'create_group_name_hint'.tr(),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ),

@@ -25,10 +25,7 @@ part 'live_room_models.dart';
 /// 屏幕共享等完整的直播体验。
 
 /// 直播可见性枚举
-enum LiveVisibility {
-  public,
-  private;
-}
+enum LiveVisibility { public, private }
 
 /// 直播可见性扩展
 extension LiveVisibilityX on LiveVisibility {
@@ -36,7 +33,9 @@ extension LiveVisibilityX on LiveVisibility {
   String get label => this == LiveVisibility.public ? '公开' : '私密';
 
   /// 获取国际化标签
-  String trLabel() => this == LiveVisibility.public ? 'live_visibility_public'.tr() : 'live_visibility_private'.tr();
+  String trLabel() => this == LiveVisibility.public
+      ? 'live_visibility_public'.tr()
+      : 'live_visibility_private'.tr();
 }
 
 /// 直播可见性编解码扩展
@@ -53,10 +52,7 @@ extension LiveVisibilityCodec on LiveVisibility {
 }
 
 /// 直播来源枚举
-enum LiveSource {
-  camera,
-  screen;
-}
+enum LiveSource { camera, screen }
 
 /// 直播来源扩展
 extension LiveSourceX on LiveSource {
@@ -64,7 +60,9 @@ extension LiveSourceX on LiveSource {
   String get label => this == LiveSource.camera ? '摄像头' : '屏幕共享';
 
   /// 获取国际化标签
-  String trLabel() => this == LiveSource.camera ? 'live_source_camera'.tr() : 'live_source_screen'.tr();
+  String trLabel() => this == LiveSource.camera
+      ? 'live_source_camera'.tr()
+      : 'live_source_screen'.tr();
 }
 
 /// 直播来源编解码扩展
@@ -222,6 +220,7 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         if (!mounted) return;
         Toast.showNotificationNow(
           widget.source == LiveSource.camera ? '需要开启摄像头和麦克风权限' : '需要开启麦克风权限',
+          type: ToastType.warning,
         );
         Navigator.of(context).pop();
         return;
@@ -259,7 +258,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       }
     } catch (e) {
       _initialMediaStarted = false;
-      Toast.showNotificationNow('live_start_video_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_start_video_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -331,7 +333,9 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
             final removed = _cohostRequests.remove(identity);
             if (removed != null && mounted) {
               setState(() {});
-              Toast.showNotificationNow('live_cohost_request_cancelled'.tr(args: [removed.name]));
+              Toast.showNotificationNow(
+                'live_cohost_request_cancelled'.tr(args: [removed.name]),
+              );
             }
             return;
           }
@@ -361,9 +365,17 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
             _cohostActive = accepted;
           });
           if (accepted) {
-            Toast.showNotificationNow('live_cohost_request_accepted'.tr());
+            Toast.showNotificationNow(
+              'live_cohost_request_accepted'.tr(),
+              type: ToastType.success,
+            );
           } else {
-            Toast.showNotificationNow(reason?.isNotEmpty == true ? reason! : 'live_cohost_request_rejected'.tr());
+            Toast.showNotificationNow(
+              reason?.isNotEmpty == true
+                  ? reason!
+                  : 'live_cohost_request_rejected'.tr(),
+              type: ToastType.warning,
+            );
           }
           if (accepted) {
             unawaited(_enableAudienceMic());
@@ -371,7 +383,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
           break;
       }
     } catch (e) {
-      Toast.showNotificationNow('live_interact_message_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_interact_message_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -435,7 +450,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       );
     } catch (e) {
       _joinMessageSent = false;
-      Toast.showNotificationNow('live_enter_notify_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_enter_notify_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -486,7 +504,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     if (_lastSentText == text &&
         _lastSentAt != null &&
         now.difference(_lastSentAt!) < const Duration(seconds: 2)) {
-      Toast.showNotificationNow('live_send_too_fast'.tr());
+      Toast.showNotificationNow(
+        'live_send_too_fast'.tr(),
+        type: ToastType.warning,
+      );
       return;
     }
     _lastSentText = text;
@@ -510,7 +531,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         },
       );
     } catch (e) {
-      Toast.showNotificationNow('live_danmaku_send_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_danmaku_send_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -526,7 +550,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       liveRoomControllerProvider(widget.roomId, widget.isHost),
     );
     if (current.value?.connectionState.name != 'connected') {
-      Toast.showNotificationNow('live_not_ready_retry'.tr());
+      Toast.showNotificationNow(
+        'live_not_ready_retry'.tr(),
+        type: ToastType.warning,
+      );
       return;
     }
 
@@ -539,10 +566,16 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         topic: _cohostRequestTopic,
         payload: {'identity': identity, 'name': name, 'action': 'request'},
       );
-      Toast.showNotificationNow('live_cohost_request_sent'.tr());
+      Toast.showNotificationNow(
+        'live_cohost_request_sent'.tr(),
+        type: ToastType.success,
+      );
     } catch (e) {
       _clearCohostRequestState();
-      Toast.showNotificationNow('live_cohost_request_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_cohost_request_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -563,9 +596,15 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         topic: _cohostRequestTopic,
         payload: {'identity': identity, 'action': 'cancel'},
       );
-      Toast.showNotificationNow('live_cohost_request_cancelled_success'.tr());
+      Toast.showNotificationNow(
+        'live_cohost_request_cancelled_success'.tr(),
+        type: ToastType.success,
+      );
     } catch (e) {
-      Toast.showNotificationNow('live_cohost_request_cancel_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_cohost_request_cancel_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -575,7 +614,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     _cohostRequestTimer = Timer(_cohostRequestTimeout, () {
       if (!mounted || !_cohostRequested || _cohostActive) return;
       _clearCohostRequestState();
-      Toast.showNotificationNow('live_cohost_request_timeout'.tr());
+      Toast.showNotificationNow(
+        'live_cohost_request_timeout'.tr(),
+        type: ToastType.warning,
+      );
     });
   }
 
@@ -621,7 +663,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
         },
       );
     } catch (e) {
-      Toast.showNotificationNow('live_cohost_request_process_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_cohost_request_process_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -635,7 +680,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
       permissionName: '麦克风',
     );
     if (!mic) {
-      Toast.showNotificationNow('live_mic_permission_required_for_cohost'.tr());
+      Toast.showNotificationNow(
+        'live_mic_permission_required_for_cohost'.tr(),
+        type: ToastType.warning,
+      );
       return;
     }
     await ref
@@ -684,7 +732,10 @@ class _LiveRoomPageState extends ConsumerState<LiveRoomPage> {
     _handledAudienceDisconnected = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Toast.showNotificationNow('live_ended_or_disconnected'.tr());
+      Toast.showNotificationNow(
+        'live_ended_or_disconnected'.tr(),
+        type: ToastType.warning,
+      );
       unawaited(_leaveRoom());
     });
   }

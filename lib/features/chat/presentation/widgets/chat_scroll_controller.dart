@@ -182,7 +182,7 @@ class ChatScrollController {
       if (!windowGrew) break;
     }
 
-    Toast.showToast('chat_jump_message_not_found'.tr());
+    Toast.showToast('chat_jump_message_not_found'.tr(), type: ToastType.error);
   }
 
   /// 滚动到指定消息（按索引精确跳转，Web 与原生一致）

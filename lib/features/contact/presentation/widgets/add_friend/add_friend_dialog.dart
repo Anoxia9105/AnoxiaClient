@@ -46,218 +46,182 @@ class _AddFriendDialogState extends ConsumerState<AddFriendDialog> {
     final user = widget.user;
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 460),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.18),
-              blurRadius: 28,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primaryContainer.withValues(alpha: 0.85),
-                    colorScheme.secondaryContainer.withValues(alpha: 0.75),
-                  ],
-                ),
-              ),
-              child: Row(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 8,
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.14),
+      backgroundColor: colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  AvatarWidget(
-                    url: user.avatar,
-                    name: user.nickName,
-                    size: 54,
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.nickName,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 18,
-                            color: colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'add_friend_username'.tr(args: [user.userName]),
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onPrimaryContainer
-                                .withValues(alpha: 0.8),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'add_friend_request_title'.tr(),
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'close'.tr(),
+                    onPressed: _isSending
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCancel01,
+                      size: 20,
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            if (user.phonenumber != null)
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(
-                      alpha: 0.7,
-                    ),
-                    width: 1,
-                  ),
+                  color: colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedSmartPhone01,
-                      size: 18,
-                      color: colorScheme.outline,
+                    AvatarWidget(
+                      url: user.avatar,
+                      name: user.nickName,
+                      size: 52,
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      user.phonenumber!,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontSize: 14,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.nickName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'add_friend_username'.tr(args: [user.userName]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if ((user.phonenumber ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'add_friend_phone'.tr(
+                                args: [user.phonenumber!],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _remarkController,
-              decoration: InputDecoration(
-                hintText: 'add_friend_verify_hint'.tr(),
-                hintStyle: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.outline,
-                  fontSize: 15,
+              const SizedBox(height: 20),
+              Text(
+                'add_friend_verify_label'.tr(),
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: colorScheme.outlineVariant,
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: colorScheme.primary,
-                    width: 1.5,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-                filled: true,
-                fillColor: colorScheme.surface,
               ),
-              style: textTheme.bodyMedium?.copyWith(fontSize: 15),
-              maxLines: 3,
-              maxLength: 100,
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 46),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: BorderSide(
-                        color: colorScheme.outlineVariant,
-                        width: 1,
-                      ),
-                      textStyle: textTheme.bodyMedium?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    child: Text('add_friend_cancel'.tr()),
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                'add_friend_verify_optional'.tr(),
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.2),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _remarkController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'add_friend_verify_hint'.tr(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.5,
                     ),
-                    child: ElevatedButton(
-                      onPressed: _isSending ? null : _send,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 46),
+                  ),
+                  contentPadding: const EdgeInsets.all(14),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHigh,
+                ),
+                minLines: 3,
+                maxLines: 4,
+                maxLength: 100,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: _isSending
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                        elevation: 0,
-                        textStyle: textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                      ),
+                      child: Text('add_friend_cancel'.tr()),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _isSending ? null : _send,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: _isSending
-                          ? SizedBox(
-                              height: 24,
-                              width: 24,
+                          ? SizedBox.square(
+                              dimension: 20,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.onPrimary,
-                                ),
+                                strokeWidth: 2.2,
+                                color: colorScheme.onPrimary,
                               ),
                             )
                           : Text('add_friend_send'.tr()),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/group_announcement_dismissal_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/message_notification_policy.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
@@ -213,6 +214,8 @@ class RoomListService extends _$RoomListService {
       final oldRoom = RoomLookupHelper.findByRoomId(rooms, newMessage.roomId);
       if (oldRoom != null) {
         final lifecycle = WidgetsBinding.instance.lifecycleState;
+        // Flutter maps a hidden Web window/tab to AppLifecycleState.hidden.
+        // Source: https://api.flutter.dev/flutter/dart-ui/AppLifecycleState.html
         final isAppForeground =
             lifecycle == null ||
             lifecycle == AppLifecycleState.resumed ||
@@ -223,12 +226,15 @@ class RoomListService extends _$RoomListService {
         final isDoNotDisturb = ref
             .read(doNotDisturbRoomsProvider)
             .contains(newMessage.roomId);
-        final shouldShowLocalNotification =
-            !isSelfMessage &&
-            !isCallSystemMessage &&
-            !isCurrentRoom &&
-            !isDoNotDisturb &&
-            !(isMobile && isAppForeground);
+        final shouldShowLocalNotification = shouldShowLocalMessageNotification(
+          isSelfMessage: isSelfMessage,
+          isCallSystemMessage: isCallSystemMessage,
+          isCurrentRoom: isCurrentRoom,
+          isDoNotDisturb: isDoNotDisturb,
+          isMobile: isMobile,
+          isAppForeground: isAppForeground,
+          isWeb: kIsWeb,
+        );
 
         // 发送桌面通知（窗口是否聚焦由 NotificationHelper 内部判断）
         if (shouldShowLocalNotification) {

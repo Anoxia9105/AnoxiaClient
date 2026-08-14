@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
@@ -16,6 +16,7 @@ import 'package:anoxia/platform/shims/tray_manager_shim.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'common/utils/device_util.dart';
+import 'common/widgets/toast.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
@@ -120,12 +121,16 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
             : 'call_media_audio'.tr();
         final body =
             invitation.isGroup && invitation.callerName.trim().isNotEmpty
-            ? 'call_invitation_group_body'.tr(args: [invitation.callerName.trim(), mediaLabel])
+            ? 'call_invitation_group_body'.tr(
+                args: [invitation.callerName.trim(), mediaLabel],
+              )
             : 'call_invitation_p2p_body'.tr(args: [mediaLabel]);
         unawaited(
           NotificationHelper().showIncomingCall(
             payload: invitation.toNotificationPayload(),
-            title: displayName.isEmpty ? 'call_invitation_new_title'.tr() : displayName,
+            title: displayName.isEmpty
+                ? 'call_invitation_new_title'.tr()
+                : displayName,
             body: body,
             avatarUrl:
                 invitation.isGroup && invitation.roomAvatar.trim().isNotEmpty
@@ -234,6 +239,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
 
     return MaterialApp.router(
       title: 'Anoxia',
+      scaffoldMessengerKey: Toast.messengerKey,
       routerConfig: ref.watch(routerProvider),
       theme: appTheme,
       builder: (context, child) {

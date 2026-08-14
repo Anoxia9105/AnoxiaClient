@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
@@ -48,11 +49,10 @@ class ErrorPage extends StatelessWidget {
         : message ?? _t(context, 'error_page_generic', '页面遇到了一些问题');
     try {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_t(context, 'error_page_copied', '错误信息已复制')),
-          duration: const Duration(seconds: 2),
-        ),
+      Toast.showToast(
+        _t(context, 'error_page_copied', '错误信息已复制'),
+        type: ToastType.success,
+        duration: const Duration(seconds: 2),
       );
     } catch (_) {}
   }
@@ -68,8 +68,7 @@ class ErrorPage extends StatelessWidget {
     }
 
     final messageText =
-        message ??
-        _t(context, 'error_page_generic', '页面遇到了一些问题，请重试');
+        message ?? _t(context, 'error_page_generic', '页面遇到了一些问题，请重试');
     final detailsText = details?.isNotEmpty == true ? details : null;
 
     return Scaffold(
@@ -145,10 +144,10 @@ class ErrorPage extends StatelessWidget {
                     if (onRetry != null)
                       FilledButton.icon(
                         onPressed: onRetry,
-                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh),
-                        label: Text(
-                          _t(context, 'error_page_retry', '重试'),
+                        icon: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedRefresh,
                         ),
+                        label: Text(_t(context, 'error_page_retry', '重试')),
                       ),
                     OutlinedButton.icon(
                       onPressed: () => _copy(context),
@@ -158,9 +157,7 @@ class ErrorPage extends StatelessWidget {
                     if (onClose != null)
                       TextButton(
                         onPressed: onClose,
-                        child: Text(
-                          _t(context, 'error_page_close', '关闭窗口'),
-                        ),
+                        child: Text(_t(context, 'error_page_close', '关闭窗口')),
                       ),
                   ],
                 ),

@@ -1,6 +1,8 @@
-﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_recommend_dialog.dart';
 import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
@@ -59,30 +61,21 @@ class ContactDetailActions extends ConsumerWidget {
                       final targetId = detail.userId;
                       if (targetId == null) return;
 
-                      ref
-                          .read(contactChatLoadingProvider.notifier)
-                          .set(true);
+                      ref.read(contactChatLoadingProvider.notifier).set(true);
 
                       try {
                         final roomId = await ref
                             .read(roomListServiceProvider.notifier)
                             .getOrCreateRoom(targetId);
 
-                        if (roomId != null) {
-                          ref
-                              .read(activeRoomIdProvider.notifier)
-                              .setActive(roomId);
-                          ref
-                              .read(layoutControllerProvider.notifier)
-                              .setIndex(0);
-                          if (context.mounted && isAdaptiveDialog(context)) {
-                            Navigator.of(context).pop();
-                          }
-                        }
+                        if (roomId == null || !context.mounted) return;
+                        await _openChatRoom(context, ref, roomId);
                       } finally {
-                        ref
-                            .read(contactChatLoadingProvider.notifier)
-                            .set(false);
+                        if (context.mounted) {
+                          ref
+                              .read(contactChatLoadingProvider.notifier)
+                              .set(false);
+                        }
                       }
                     },
               icon: isCreating
@@ -119,6 +112,32 @@ class ContactDetailActions extends ConsumerWidget {
     );
   }
 
+  Future<void> _openChatRoom(
+    BuildContext context,
+    WidgetRef ref,
+    String roomId,
+  ) async {
+    final activeRoomController = ref.read(activeRoomIdProvider.notifier);
+    activeRoomController.setActive(roomId);
+    ref.read(layoutControllerProvider.notifier).setIndex(0);
+
+    if (isAdaptiveDialog(context)) {
+      Navigator.of(context).pop();
+      return;
+    }
+    if (!DeviceUtil.isMobile(context)) return;
+
+    final navigator = Navigator.of(context);
+    navigator.popUntil((route) => route.isFirst);
+    try {
+      await navigator.push<void>(
+        MaterialPageRoute(builder: (_) => ChatRoomDetail(roomId: roomId)),
+      );
+    } finally {
+      activeRoomController.setActive(null);
+    }
+  }
+
   Future<void> _recommendToFriend(
     BuildContext context,
     WidgetRef ref,
@@ -140,8 +159,8 @@ class ContactDetailActions extends ConsumerWidget {
       title: detail.nickName?.trim().isNotEmpty == true
           ? detail.nickName!.trim()
           : (detail.userName?.trim().isNotEmpty == true
-              ? detail.userName!.trim()
-              : userId.toString()),
+                ? detail.userName!.trim()
+                : userId.toString()),
       summary: detail.userName,
       thumbnailUrl: detail.avatar,
       properties: {

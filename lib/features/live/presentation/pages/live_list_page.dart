@@ -62,6 +62,7 @@ class _LiveListPageState extends State<LiveListPage> {
     } catch (e) {
       Toast.showNotificationNow(
         'live_list_load_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
       );
     } finally {
       if (mounted) {
@@ -102,7 +103,10 @@ class _LiveListPageState extends State<LiveListPage> {
                   onPressed: () {
                     final title = titleController.text.trim();
                     if (title.isEmpty) {
-                      Toast.showNotificationNow('live_title_required'.tr());
+                      Toast.showNotificationNow(
+                        'live_title_required'.tr(),
+                        type: ToastType.warning,
+                      );
                       return;
                     }
                     Navigator.of(dialogContext).pop(
@@ -113,7 +117,9 @@ class _LiveListPageState extends State<LiveListPage> {
                       ),
                     );
                   },
-                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedLiveStreaming01),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedLiveStreaming01,
+                  ),
                   label: Text('live_go_preview_start'.tr()),
                 ),
               ],
@@ -265,7 +271,10 @@ class _LiveListPageState extends State<LiveListPage> {
         source: room.source,
       );
     } catch (e) {
-      Toast.showNotificationNow('live_enter_failed'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_enter_failed'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -634,7 +643,9 @@ class _StartLiveDialogBody extends StatelessWidget {
               ),
               ButtonSegment(
                 value: LiveSource.screen,
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedComputerScreenShare,
+                ),
                 label: Text('live_source_screen'.tr()),
               ),
             ],

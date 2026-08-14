@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -19,9 +19,7 @@ Future<bool> showContactDeleteConfirmDialog(
     builder: (dialogContext) {
       final colorScheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('contact_delete'.tr()),
         content: Text(
           'contact_delete_confirm_content'.tr(args: [nickName ?? '']),
@@ -55,14 +53,12 @@ Future<bool> showContactDeleteConfirmDialog(
           : null;
       Toast.showToast(
         msg?.isNotEmpty == true ? msg! : 'chat_operation_retry_failed'.tr(),
+        type: ToastType.error,
       );
       return false;
     }
 
-    Toast.showToast(
-      'contact_delete_success'.tr(),
-      type: ToastType.success,
-    );
+    Toast.showToast('contact_delete_success'.tr(), type: ToastType.success);
     return true;
   } catch (_) {
     Toast.showToast('contact_delete_failed'.tr(), type: ToastType.error);

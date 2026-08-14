@@ -187,6 +187,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           if (!room.isOfficial)
             IconButton(
               mouseCursor: SystemMouseCursors.click,
+              tooltip: 'appbar_conversation_detail_tooltip'.tr(),
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical),
               onPressed: () {
                 ref.read(chatRightPanelVisibleProvider.notifier).state = !ref

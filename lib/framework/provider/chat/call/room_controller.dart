@@ -433,7 +433,13 @@ class RoomController extends _$RoomController {
     debugLog("✋ $uid ${raised ? '举手' : '放手'}");
 
     // Toast 提示
-    ref.read(toastServiceProvider).showNotificationNow(raised ? 'call_hand_raised'.tr(args: [name]) : 'call_hand_lowered'.tr(args: [name]));
+    ref
+        .read(toastServiceProvider)
+        .showNotificationNow(
+          raised
+              ? 'call_hand_raised'.tr(args: [name])
+              : 'call_hand_lowered'.tr(args: [name]),
+        );
   }
 
   /// 处理远端表情/弹幕消息
@@ -482,9 +488,12 @@ class RoomController extends _$RoomController {
     debugLog("📢 收到主持人指令: ${muted ? '静音' : '取消静音'}");
 
     // Toast 提示
-    ref.read(toastServiceProvider).showNotificationNow(
-      muted ? '$senderName 将您静音 🔇' : '$senderName 取消了您的静音 🔈',
-    );
+    ref
+        .read(toastServiceProvider)
+        .showNotificationNow(
+          muted ? '$senderName 将您静音' : '$senderName 取消了您的静音',
+          type: muted ? ToastType.warning : ToastType.info,
+        );
   }
 
   Future<void> _onKickCommand(Map<String, dynamic> payload) async {
@@ -503,11 +512,13 @@ class RoomController extends _$RoomController {
     if (_removedFromCallHandled) return;
     _removedFromCallHandled = true;
 
-    ref.read(toastServiceProvider).showNotificationNow(
-      '$senderName 已将你移出通话',
-      type: ToastType.warning,
-      duration: const Duration(seconds: 2),
-    );
+    ref
+        .read(toastServiceProvider)
+        .showNotificationNow(
+          '$senderName 已将你移出通话',
+          type: ToastType.warning,
+          duration: const Duration(seconds: 2),
+        );
 
     final current = state.value;
     // 先释放 listener，避免 disconnect 同步触发事件回调
@@ -589,7 +600,12 @@ class RoomController extends _$RoomController {
           Permission.microphone,
         );
         if (permission != AppPermissionResult.granted) {
-          ref.read(toastServiceProvider).showNotificationNow('call_mic_permission_required'.tr());
+          ref
+              .read(toastServiceProvider)
+              .showNotificationNow(
+                'call_mic_permission_required'.tr(),
+                type: ToastType.warning,
+              );
           return;
         }
       }
@@ -617,7 +633,12 @@ class RoomController extends _$RoomController {
           Permission.camera,
         );
         if (permission != AppPermissionResult.granted) {
-          ref.read(toastServiceProvider).showNotificationNow('call_camera_permission_required'.tr());
+          ref
+              .read(toastServiceProvider)
+              .showNotificationNow(
+                'call_camera_permission_required'.tr(),
+                type: ToastType.warning,
+              );
           return;
         }
       }
@@ -1057,18 +1078,30 @@ class RoomController extends _$RoomController {
           .read(callRepositoryProvider)
           .removeParticipant(roomId, identity);
       if (ok) {
-        ref.read(toastServiceProvider).showNotificationNow('call_user_removed'.tr());
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow(
+              'call_user_removed'.tr(),
+              type: ToastType.success,
+            );
         debugLog('✅ 踢出参与者 $identity 成功');
         return true;
       } else {
         final msg = '未知错误';
-        ref.read(toastServiceProvider).showNotificationNow('call_kick_error'.tr(args: [msg]));
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow(
+              'call_kick_error'.tr(args: [msg]),
+              type: ToastType.error,
+            );
         debugLog('踢出参与者 $identity 失败: $msg');
         return false;
       }
     } catch (e) {
       debugLog('踢出参与者失败: $e');
-      ref.read(toastServiceProvider).showNotificationNow('call_kick_retry'.tr());
+      ref
+          .read(toastServiceProvider)
+          .showNotificationNow('call_kick_retry'.tr(), type: ToastType.error);
       return false;
     }
   }

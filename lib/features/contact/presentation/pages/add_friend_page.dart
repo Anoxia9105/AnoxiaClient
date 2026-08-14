@@ -1,5 +1,6 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_empty_state.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
@@ -63,7 +64,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     final contactIds = contactMap.keys.toSet();
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(
           'add_friend_title'.tr(),
@@ -74,7 +75,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           ),
         ),
         elevation: 0,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colorScheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: HugeIcon(
@@ -92,9 +93,51 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
+            constraints: const BoxConstraints(maxWidth: 720),
             child: Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedUserAdd02,
+                          size: 19,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'add_friend_search_to_add'.tr(),
+                              style: textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'add_friend_input_hint'.tr(),
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 AddFriendSearchBar(
                   controller: _searchController,
                   isSearching: _isSearching,
@@ -113,10 +156,10 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                       : searchService.rows.isNotEmpty
                       ? AnimationLimiter(
                           child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                             itemCount: searchService.rows.length,
                             separatorBuilder: (context, index) =>
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final user = searchService.rows[index];
                               final isFriend = contactIds.contains(user.userId);
@@ -161,10 +204,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
       await ref.read(userSearchServiceProvider.notifier).searchUsers(keyword);
     } catch (_) {
       if (!mounted) return;
-      _showSnack(
-        text: 'add_friend_search_failed'.tr(),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      );
+      Toast.showToast('add_friend_search_failed'.tr(), type: ToastType.error);
     } finally {
       if (mounted) {
         setState(() {
@@ -180,25 +220,11 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     // 用户取消（返回 null）时不展示任何提示
     if (result == null) return;
 
-    _showSnack(
-      text: result
+    Toast.showToast(
+      result
           ? 'add_friend_request_sent'.tr()
           : 'add_friend_request_failed'.tr(),
-      backgroundColor: result
-          ? Theme.of(context).colorScheme.primary
-          : Theme.of(context).colorScheme.error,
-    );
-  }
-
-  void _showSnack({required String text, required Color backgroundColor}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(text),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
+      type: result ? ToastType.success : ToastType.error,
     );
   }
 }

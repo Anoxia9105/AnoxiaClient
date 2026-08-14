@@ -21,22 +21,17 @@ class AddFriendEmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(22),
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.shadow.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: colorScheme.surfaceContainerHigh,
+                shape: BoxShape.circle,
               ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedSearch02,
-                size: 48,
-                color: colorScheme.outline.withValues(alpha: 0.6),
+                size: 28,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 18),
@@ -66,22 +61,17 @@ class AddFriendEmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(26),
+            width: 72,
+            height: 72,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              color: colorScheme.primaryContainer,
+              shape: BoxShape.circle,
             ),
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedUserAdd02,
-              size: 58,
-              color: colorScheme.primary.withValues(alpha: 0.6),
+              size: 32,
+              color: colorScheme.onPrimaryContainer,
             ),
           ),
           const SizedBox(height: 20),
@@ -90,7 +80,7 @@ class AddFriendEmptyState extends StatelessWidget {
             style: textTheme.titleLarge?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
-              fontSize: 18,
+              fontSize: 17,
             ),
           ),
           const SizedBox(height: 12),

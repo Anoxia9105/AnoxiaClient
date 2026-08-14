@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -184,13 +185,11 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   /// 移动端保存到相册，桌面端与 Web 下载到电脑。
   Future<void> _downloadImage() async {
     if (_downloading) return;
-    final messenger = ScaffoldMessenger.of(context);
-
     // 获取当前附件 URL
     final attachment = _currentAttachment(_galleryAttachments(watch: false));
     final url = attachment.url;
     if (url == null || url.isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text('image_load_failed'.tr())));
+      Toast.showToast('image_load_failed'.tr(), type: ToastType.error);
       return;
     }
 
@@ -201,14 +200,11 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       try {
         final ok = await WebDownload.downloadUrl(url, fileName);
         if (!mounted) return;
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              ok
-                  ? 'image_download_desktop_success'.tr()
-                  : 'image_download_failed'.tr(),
-            ),
-          ),
+        Toast.showToast(
+          ok
+              ? 'image_download_desktop_success'.tr()
+              : 'image_download_failed'.tr(),
+          type: ok ? ToastType.success : ToastType.error,
         );
       } finally {
         if (mounted) setState(() => _downloading = false);
@@ -217,7 +213,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     }
 
     if (!DeviceUtil.isRealMobile()) {
-      await _downloadImageToComputer(url, fileName, messenger);
+      await _downloadImageToComputer(url, fileName);
       return;
     }
 
@@ -225,16 +221,15 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     final granted = await _ensureGalleryPermission();
     if (!granted) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('gallery_permission_required'.tr())),
+      Toast.showToast(
+        'gallery_permission_required'.tr(),
+        type: ToastType.warning,
       );
       return;
     }
 
     setState(() => _downloading = true);
-    messenger.showSnackBar(
-      SnackBar(content: Text('image_download_started'.tr())),
-    );
+    Toast.showToast('image_download_started'.tr());
 
     try {
       // 使用 Dio 下载图片二进制数据
@@ -261,18 +256,13 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
           (result['isSuccess'] == true || result['isSuccess'] == 1);
 
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            ok ? 'image_download_success'.tr() : 'image_download_failed'.tr(),
-          ),
-        ),
+      Toast.showToast(
+        ok ? 'image_download_success'.tr() : 'image_download_failed'.tr(),
+        type: ok ? ToastType.success : ToastType.error,
       );
     } catch (_) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('image_download_failed'.tr())),
-      );
+      Toast.showToast('image_download_failed'.tr(), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -583,11 +573,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     );
   }
 
-  Future<void> _downloadImageToComputer(
-    String url,
-    String fileName,
-    ScaffoldMessengerState messenger,
-  ) async {
+  Future<void> _downloadImageToComputer(String url, String fileName) async {
     setState(() => _downloading = true);
     try {
       final response = await Dio().get<List<int>>(
@@ -607,14 +593,13 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       await XFile.fromData(bytes, name: fileName).saveTo(savePath);
 
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('image_download_desktop_success'.tr())),
+      Toast.showToast(
+        'image_download_desktop_success'.tr(),
+        type: ToastType.success,
       );
     } catch (_) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('image_download_failed'.tr())),
-      );
+      Toast.showToast('image_download_failed'.tr(), type: ToastType.error);
     } finally {
       if (mounted) setState(() => _downloading = false);
     }

@@ -3,6 +3,7 @@
 // 展示群组名称、头像、简介、管理员列表，并根据群组的加入策略和当前状态
 // 提供加入、申请加入或直接进入群组的操作入口。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -174,9 +175,7 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('group_card_join_failed'.tr())));
+        Toast.showToast('group_card_join_failed'.tr(), type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _busy = false);

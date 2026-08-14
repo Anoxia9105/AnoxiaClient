@@ -2,6 +2,7 @@
 //
 // 点击按钮弹出成员选择对话框，允许从群成员中选择未加入当前通话的成员进行邀请。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
@@ -105,9 +106,14 @@ class CallInviteMembersButton extends ConsumerWidget {
                           url: member.avatar ?? '',
                           name: member.nickName ?? '',
                         ),
-                        title: Text(member.nickName ?? 'call_member_id_prefix'.tr(args: [id.toString()])),
+                        title: Text(
+                          member.nickName ??
+                              'call_member_id_prefix'.tr(args: [id.toString()]),
+                        ),
                         subtitle: Text(
-                          member.onlineStatus == true ? 'contact_online'.tr() : 'contact_offline'.tr(),
+                          member.onlineStatus == true
+                              ? 'contact_online'.tr()
+                              : 'contact_offline'.tr(),
                         ),
                       );
                     },
@@ -147,8 +153,11 @@ class CallInviteMembersButton extends ConsumerWidget {
                             );
                       }
                       Navigator.pop(dialogContext);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('call_invite_sent_count'.tr(args: [selected.length.toString()]))),
+                      Toast.showToast(
+                        'call_invite_sent_count'.tr(
+                          args: [selected.length.toString()],
+                        ),
+                        type: ToastType.success,
                       );
                     },
               child: Text('call_send_invitation'.tr()),

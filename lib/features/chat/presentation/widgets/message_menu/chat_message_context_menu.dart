@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:convert';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -84,8 +84,7 @@ class _ChatMessageContextMenuState
     BuildContext context,
     Offset globalPosition,
   ) async {
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       globalPosition & const Size(40, 40),
       Offset.zero & overlay.size,
@@ -112,11 +111,7 @@ class _ChatMessageContextMenuState
     if (widget.message.messageType == MessageType.text ||
         widget.message.messageType == MessageType.richText) {
       items.add(
-        _buildItem(
-          'copy',
-          HugeIcons.strokeRoundedCopy01,
-          'chat_copy'.tr(),
-        ),
+        _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
     }
 
@@ -207,7 +202,7 @@ class _ChatMessageContextMenuState
 
     Clipboard.setData(ClipboardData(text: text)).then((_) {
       if (context.mounted) {
-        Toast.showToast('chat_copy_success'.tr());
+        Toast.showToast('chat_copy_success'.tr(), type: ToastType.success);
       }
     });
   }
@@ -232,8 +227,7 @@ class _ChatMessageContextMenuState
           } else if (op.data is Map) {
             final map = op.data as Map;
             if (map.containsKey('mention')) {
-              final userName =
-                  MentionUser.displayName(map['mention']) ?? '';
+              final userName = MentionUser.displayName(map['mention']) ?? '';
               sb.write('@$userName ');
             }
           }
@@ -276,11 +270,12 @@ class _ChatMessageContextMenuState
       if (context.mounted) {
         Toast.showToast(
           success ? 'chat_favorite_success'.tr() : 'chat_favorite_failed'.tr(),
+          type: success ? ToastType.success : ToastType.error,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        Toast.showToast('chat_favorite_error'.tr());
+        Toast.showToast('chat_favorite_error'.tr(), type: ToastType.error);
       }
     }
   }
@@ -296,11 +291,12 @@ class _ChatMessageContextMenuState
       if (context.mounted) {
         Toast.showToast(
           success ? 'chat_revoke_success'.tr() : 'chat_revoke_failed'.tr(),
+          type: success ? ToastType.success : ToastType.error,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        Toast.showToast('chat_revoke_error'.tr());
+        Toast.showToast('chat_revoke_error'.tr(), type: ToastType.error);
       }
     }
   }

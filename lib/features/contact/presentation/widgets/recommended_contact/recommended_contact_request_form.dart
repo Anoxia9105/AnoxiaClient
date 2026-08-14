@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -24,8 +25,7 @@ class RecommendedContactRequestForm extends ConsumerStatefulWidget {
 
 class _RecommendedContactRequestFormState
     extends ConsumerState<RecommendedContactRequestForm> {
-  final TextEditingController _verificationController =
-      TextEditingController();
+  final TextEditingController _verificationController = TextEditingController();
   bool _isSending = false;
   bool _requestSent = false;
 
@@ -48,7 +48,10 @@ class _RecommendedContactRequestFormState
         ),
         child: Row(
           children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: colorScheme.primary),
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+              color: colorScheme.primary,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -67,9 +70,9 @@ class _RecommendedContactRequestFormState
       children: [
         Text(
           'contact_friend_request_message'.tr(),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
         TextField(
@@ -129,19 +132,11 @@ class _RecommendedContactRequestFormState
       _isSending = false;
       _requestSent = success;
     });
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? 'add_friend_request_sent'.tr()
-                : 'add_friend_request_failed'.tr(),
-          ),
-          backgroundColor: success
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.error,
-        ),
-      );
+    Toast.showToast(
+      success
+          ? 'add_friend_request_sent'.tr()
+          : 'add_friend_request_failed'.tr(),
+      type: success ? ToastType.success : ToastType.error,
+    );
   }
 }

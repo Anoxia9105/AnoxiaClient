@@ -1,5 +1,6 @@
-﻿import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_list_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
@@ -25,7 +26,6 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/official_room_help_panel.dart';
-import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -98,7 +98,9 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 size: 22,
               ),
               title: Text(
-                isGroup ? 'chat_view_all_members'.tr() : 'chat_contact_info'.tr(),
+                isGroup
+                    ? 'chat_view_all_members'.tr()
+                    : 'chat_contact_info'.tr(),
               ),
               subtitle: isGroup
                   ? Consumer(
@@ -112,7 +114,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                       },
                     )
                   : null,
-              trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
+              trailing: const HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                size: 14,
+              ),
               onTap: () async {
                 if (isGroup) {
                   await presentAdaptivePage(
@@ -127,7 +132,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
 
                 final peerId = currentRoom.peerId;
                 if (peerId == null) {
-                  BotToast.showText(text: 'chat_operation_retry_failed'.tr());
+                  Toast.showToast(
+                    'chat_operation_retry_failed'.tr(),
+                    type: ToastType.error,
+                  );
                   return;
                 }
 
@@ -142,7 +150,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
 
                 final contact = contactMap?[peerId];
                 if (contact == null) {
-                  BotToast.showText(text: 'chat_operation_retry_failed'.tr());
+                  Toast.showToast(
+                    'chat_operation_retry_failed'.tr(),
+                    type: ToastType.error,
+                  );
                   return;
                 }
 
@@ -169,7 +180,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 subtitle: Text(
                   currentRoom.roomName ?? currentRoom.roomDescription ?? '',
                 ),
-                trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
+                trailing: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 14,
+                ),
                 onTap: () {
                   presentAdaptivePage(
                     context,
@@ -214,7 +228,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   size: 22,
                 ),
                 title: Text('chat_group_qr_code'.tr()),
-                trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
+                trailing: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 14,
+                ),
                 onTap: () {},
               ),
               _buildMaterialListTile(
@@ -224,11 +241,17 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   size: 22,
                 ),
                 title: Text('chat_share_group'.tr()),
-                trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
+                trailing: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 14,
+                ),
                 onTap: () async {
                   if (currentRoom.roomStatus == 2 ||
                       currentRoom.roomStatus == 3) {
-                    BotToast.showText(text: 'group_card_unavailable'.tr());
+                    Toast.showToast(
+                      'group_card_unavailable'.tr(),
+                      type: ToastType.warning,
+                    );
                     return;
                   }
                   final destination = await showChatRoomPicker(context);
@@ -253,10 +276,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                         ).notifier,
                       )
                       .sendCardMessage(card);
-                  BotToast.showText(
-                    text: sent
+                  Toast.showToast(
+                    sent
                         ? 'group_card_shared'.tr()
                         : 'contact_recommend_send_failed'.tr(),
+                    type: sent ? ToastType.success : ToastType.error,
                   );
                 },
               ),
@@ -264,14 +288,20 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               if (isAdmin && currentRoom.joinPolicy != 0)
                 _buildMaterialListTile(
                   context,
-                  leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserCheck01, size: 22),
+                  leading: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedUserCheck01,
+                    size: 22,
+                  ),
                   title: Text('group_join_requests_title'.tr()),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _JoinRequestsBadge(roomId: roomId),
                       const SizedBox(width: 6),
-                      const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
+                      const HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        size: 14,
+                      ),
                     ],
                   ),
                   onTap: () => presentAdaptivePage(
@@ -292,7 +322,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               size: 22,
             ),
             title: Text('search_context_title'.tr()),
-            trailing: const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14),
+            trailing: const HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowRight01,
+              size: 14,
+            ),
             onTap: () {
               presentAdaptivePage(
                 context,
@@ -320,7 +353,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               },
             ),
             _RoomSwitchTile(
-              leading: const HugeIcon(icon: HugeIcons.strokeRoundedNotificationOff02, size: 22),
+              leading: const HugeIcon(
+                icon: HugeIcons.strokeRoundedNotificationOff02,
+                size: 22,
+              ),
               title: Text('chat_do_not_disturb'.tr()),
               subtitle: Text('chat_do_not_disturb_hint'.tr()),
               value: ref.watch(doNotDisturbRoomsProvider).contains(roomId),
@@ -343,13 +379,17 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                       .read(roomListServiceProvider.notifier)
                       .muteRoom(roomId, value);
                   if (success) {
-                    BotToast.showText(
-                      text: value
+                    Toast.showToast(
+                      value
                           ? 'chat_mute_success'.tr()
                           : 'chat_unmute_success'.tr(),
+                      type: ToastType.success,
                     );
                   } else {
-                    BotToast.showText(text: 'chat_operation_retry_failed'.tr());
+                    Toast.showToast(
+                      'chat_operation_retry_failed'.tr(),
+                      type: ToastType.error,
+                    );
                   }
                 },
               ),
@@ -413,10 +453,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     ref.read(contactSelectionProvider.notifier).selectContact(contact);
 
     if (context.mounted) {
-      await presentAdaptivePage(
-        context,
-        builder: (_) => const ContactDetail(),
-      );
+      await presentAdaptivePage(context, builder: (_) => const ContactDetail());
     }
   }
 

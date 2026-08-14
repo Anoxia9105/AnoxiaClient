@@ -100,10 +100,16 @@ class _ScanLoginConfirmPageState extends ConsumerState<ScanLoginConfirmPage> {
                   color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedComputer,
-                  size: 48,
-                  color: colorScheme.onPrimaryContainer,
+                child: Center(
+                  child: SizedBox.square(
+                    key: const ValueKey('scan-login-computer-icon-box'),
+                    dimension: 40,
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedComputer,
+                      size: 40,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

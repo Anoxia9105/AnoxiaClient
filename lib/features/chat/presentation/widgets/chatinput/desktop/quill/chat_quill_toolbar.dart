@@ -2,7 +2,9 @@
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_color_style_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/dialogs/code_input_dialog.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toggle_style_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
@@ -37,6 +39,7 @@ import 'colors_box.dart';
   /// [onFilePressed] 文件按钮点击回调
   class ChatQuillToolbar extends ConsumerWidget {
   final QuillController controller;
+  final FocusNode focusNode;
   final String roomId;
   final VoidCallback onSend;
   final ValueChanged<LocationPayload> onLocationSubmit;
@@ -47,6 +50,7 @@ import 'colors_box.dart';
   const ChatQuillToolbar({
     super.key,
     required this.controller,
+    required this.focusNode,
     required this.roomId,
     required this.onSend,
     required this.onLocationSubmit,
@@ -175,11 +179,10 @@ import 'colors_box.dart';
                     ),
                     Builder(
                       builder: (context) {
-                        return IconButton(
-                          mouseCursor: SystemMouseCursors.click,
+                        return ChatQuillColorStyleButton(
+                          controller: controller,
+                          type: ChatQuillColorStyleType.foreground,
                           tooltip: 'toolbar_text_color'.tr(),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
                           onPressed: () {
                             Function? onCancel;
                             onCancel = Toast.showWidget(
@@ -187,23 +190,19 @@ import 'colors_box.dart';
                               child: ColorsBox.buildColorsWidget((hex) {
                                 controller.formatSelection(ColorAttribute(hex));
                                 onCancel?.call();
+                                focusNode.requestFocus();
                               }, context),
                             );
                           },
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedTextColor,
-                            size: 14,
-                          ),
                         );
                       },
                     ),
                     Builder(
                       builder: (context) {
-                        return IconButton(
-                          mouseCursor: SystemMouseCursors.click,
+                        return ChatQuillColorStyleButton(
+                          controller: controller,
+                          type: ChatQuillColorStyleType.background,
                           tooltip: 'toolbar_bg_color'.tr(),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
                           onPressed: () {
                             Function? onCancel;
                             onCancel = Toast.showWidget(
@@ -213,13 +212,10 @@ import 'colors_box.dart';
                                   BackgroundAttribute(hex),
                                 );
                                 onCancel?.call();
+                                focusNode.requestFocus();
                               }, context),
                             );
                           },
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedBackground,
-                            size: 14,
-                          ),
                         );
                       },
                     ),
@@ -382,24 +378,13 @@ import 'colors_box.dart';
     String tooltip,
     Color color,
   ) {
-    return IconButton(
-      mouseCursor: SystemMouseCursors.click,
+    return ChatQuillToggleStyleButton(
+      controller: controller,
+      focusNode: focusNode,
+      icon: icon,
+      attribute: attr,
       tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      onPressed: () {
-        // Read the current style at click time. The toolbar does not rebuild
-        // for every Quill selection/style change, so a value captured during
-        // build becomes stale after the first click.
-        final isSelected = controller
-            .getSelectionStyle()
-            .attributes
-            .containsKey(attr.key);
-        controller.formatSelection(
-          isSelected ? Attribute.clone(attr, null) : attr,
-        );
-      },
-      // 选中状态可以给个背景色或改变颜色
-      icon: HugeIcon(icon: icon, size: 16, color: color),
+      color: color,
     );
   }
 

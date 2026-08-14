@@ -217,7 +217,10 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
         ),
       );
     } catch (e) {
-      Toast.showNotificationNow('live_danmaku_parse_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_danmaku_parse_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -256,7 +259,10 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
         topic: _danmakuTopic,
       );
     } catch (e) {
-      Toast.showNotificationNow('live_danmaku_send_error'.tr(args: [e.toString()]));
+      Toast.showNotificationNow(
+        'live_danmaku_send_error'.tr(args: [e.toString()]),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -264,6 +270,7 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
   Widget build(BuildContext context) {
     return MaterialApp(
       title: _title.isEmpty ? '直播弹幕' : '弹幕 - $_title',
+      scaffoldMessengerKey: Toast.messengerKey,
       builder: BotToastInit(),
       navigatorObservers: [BotToastNavigatorObserver()],
       debugShowCheckedModeBanner: false,
@@ -300,9 +307,17 @@ class _WindowLiveDanmakuPageState extends State<WindowLiveDanmakuPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('live_danmaku_connect_failed'.tr(args: [(_error ?? '').toString()]), textAlign: TextAlign.center),
+              Text(
+                'live_danmaku_connect_failed'.tr(
+                  args: [(_error ?? '').toString()],
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _connect, child: Text('live_action_retry'.tr())),
+              FilledButton(
+                onPressed: _connect,
+                child: Text('live_action_retry'.tr()),
+              ),
             ],
           ),
         ),
