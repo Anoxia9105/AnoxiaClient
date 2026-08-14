@@ -522,19 +522,24 @@ class ChatInputController extends _$ChatInputController {
     if (files.isEmpty) return;
 
     final List<Attachment> uploadList = [];
-    for (final file in files.where((f) => f.path != null)) {
+    final filesById = <String, PlatformFile>{};
+    for (final file in files) {
       if (!UploadValidator.validateSingleFile(
         ref.read(toastServiceProvider),
         file,
       )) {
         continue;
       }
-      final imageSize = await _readImageSizeFromFile(file.path!);
+      final id = const Uuid().v4();
+      if (file.bytes != null) filesById[id] = file;
+      final imageSize = file.path != null
+          ? await _readImageSizeFromFile(file.path!)
+          : await _readImageSizeFromBytes(file.bytes ?? Uint8List(0));
       uploadList.add(
         Attachment(
-          id: const Uuid().v4(),
+          id: id,
           kind: 'IMAGE',
-          url: file.path!,
+          url: file.path,
           name: _basenameWithoutExtension(file.name),
           size: file.size,
           type: _imageMimeType(file.extension),
@@ -546,7 +551,7 @@ class ChatInputController extends _$ChatInputController {
     if (uploadList.isEmpty) return;
 
     final uploader = ref.read(chatImageUploadControllerProvider.notifier);
-    await uploader.uploadImages(uploadList);
+    await uploader.uploadImages(uploadList, pickedFiles: filesById);
 
     final urlMap = uploader.urlMap;
     final uploaded = uploadList
@@ -817,6 +822,20 @@ class ChatInputController extends _$ChatInputController {
   Future<(int?, int?)> _readImageSizeFromFile(String path) async {
     try {
       final bytes = await File(path).readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final size = (image.width, image.height);
+      image.dispose();
+      codec.dispose();
+      return size;
+    } catch (_) {
+      return (null, null);
+    }
+  }
+
+  Future<(int?, int?)> _readImageSizeFromBytes(Uint8List bytes) async {
+    try {
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
       final image = frame.image;

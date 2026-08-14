@@ -223,6 +223,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final pageState = ref.watch(settingsPageControllerProvider);
     final themeMode = ref.watch(themeModeProvider);
     final themeAccentIndex = ref.watch(themeAccentProvider);
@@ -236,8 +237,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         centerTitle: DeviceUtil.isMobile(context),
         title: Text('settings_page_title'.tr()),
       ),

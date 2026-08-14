@@ -94,10 +94,18 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
     final destination = widget.destinations[index];
     return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(destination.title)),
-          body: _SettingsDetailPanel(destination: destination, compact: true),
-        ),
+        builder: (context) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return Scaffold(
+            backgroundColor: colorScheme.surface,
+            appBar: AppBar(
+              backgroundColor: colorScheme.surface,
+              foregroundColor: colorScheme.onSurface,
+              title: Text(destination.title),
+            ),
+            body: _SettingsDetailPanel(destination: destination, compact: true),
+          );
+        },
       ),
     );
   }
@@ -189,7 +197,9 @@ class _SettingsDetailPanel extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
+        color: compact
+            ? colorScheme.surface
+            : colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(compact ? 0 : 14),
         border: compact
             ? null

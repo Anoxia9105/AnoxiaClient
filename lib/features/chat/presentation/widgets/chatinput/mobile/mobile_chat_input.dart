@@ -28,6 +28,8 @@ import 'chat_more_panel.dart';
 
 enum _MobileBottomPanelType { emoji, more }
 
+enum _ImageSelectionAction { sendOriginal, crop }
+
 /// 移动端聊天输入组件
 ///
 /// 提供移动端专用的聊天输入界面，支持：
@@ -189,6 +191,28 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final picked = await picker.pickMultiImage();
     if (picked.isEmpty || !mounted) return;
 
+    final action = await _pickImageSelectionAction();
+    if (action == null || !mounted) return;
+
+    if (action == _ImageSelectionAction.sendOriginal) {
+      final originalFiles = <PlatformFile>[];
+      for (final xFile in picked) {
+        originalFiles.add(
+          PlatformFile(
+            name: path.basename(xFile.path),
+            path: xFile.path,
+            size: await xFile.length(),
+          ),
+        );
+      }
+      if (!mounted) return;
+      await ref
+          .read(chatInputControllerProvider(widget.roomId).notifier)
+          .sendPickedImages(originalFiles);
+      _closeAllPanels();
+      return;
+    }
+
     final ratio = await _pickAspectRatioPreset();
     if (!mounted) return;
 
@@ -235,6 +259,45 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         .read(chatInputControllerProvider(widget.roomId).notifier)
         .sendPickedImages(croppedFiles);
     _closeAllPanels();
+  }
+
+  Future<_ImageSelectionAction?> _pickImageSelectionAction() {
+    return showModalBottomSheet<_ImageSelectionAction>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.of(ctx).pop(_ImageSelectionAction.crop),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedCrop,
+                    size: 19,
+                  ),
+                  label: Text('chat_image_crop_action'.tr()),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      Navigator.of(ctx).pop(_ImageSelectionAction.sendOriginal),
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedSent,
+                    size: 19,
+                  ),
+                  label: Text('toolbar_send'.tr()),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<CropAspectRatio?> _pickAspectRatioPreset() async {
@@ -410,7 +473,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
-              alpha: isDark ? (isActive ? 0.32 : 0.18) : (isActive ? 0.10 : 0.05),
+              alpha: isDark
+                  ? (isActive ? 0.32 : 0.18)
+                  : (isActive ? 0.10 : 0.05),
             ),
             blurRadius: isActive ? 14 : 8,
             offset: Offset(0, isActive ? 4 : 2),
@@ -437,6 +502,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         decoration: InputDecoration(
           hintText: 'chat_input_placeholder'.tr(),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          filled: false,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
@@ -699,7 +770,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       onEmojiSelected: _inputController.insertTextAtCursor,
                       onStickerSelected: (sticker) {
                         ref
-                            .read(chatInputControllerProvider(widget.roomId).notifier)
+                            .read(
+                              chatInputControllerProvider(
+                                widget.roomId,
+                              ).notifier,
+                            )
                             .sendStickerMessage(sticker);
                       },
                       showSearch: false,

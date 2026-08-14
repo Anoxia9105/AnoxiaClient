@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
@@ -183,8 +183,7 @@ class MenuPage extends ConsumerWidget {
                           context,
                           icon: HugeIcons.strokeRoundedSettings01,
                           title: 'sidebar_setting'.tr(), // 设置页面
-                          onTap: () =>
-                              _pushPage(context, const SettingsPage()),
+                          onTap: () => _pushPage(context, const SettingsPage()),
                         ),
                       ],
                     ),
@@ -233,7 +232,11 @@ class MenuPage extends ConsumerWidget {
   }) {
     return Row(
       children: [
-        HugeIcon(icon: icon, size: 16, color: Colors.white.withValues(alpha: 0.6)),
+        HugeIcon(
+          icon: icon,
+          size: 16,
+          color: Colors.white.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: 4),
         Expanded(
           flex: 2,
@@ -317,9 +320,7 @@ class MenuPage extends ConsumerWidget {
 
   /// 推入新页面（抽屉菜单项统一跳转入口）
   void _pushPage(BuildContext context, Widget page) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => page));
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
   /// 深色模式快捷开关
@@ -327,12 +328,12 @@ class MenuPage extends ConsumerWidget {
   /// 与设置页行为一致：切换亮度并同步兼容主题索引（保留强调色）。
   Widget _buildDarkModeTile(WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider) == Brightness.dark;
-    return SwitchListTile(
+    return ListTile(
       dense: true,
       visualDensity: const VisualDensity(vertical: -1),
       minVerticalPadding: 14,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      secondary: HugeIcon(
+      leading: HugeIcon(
         icon: isDark
             ? HugeIcons.strokeRoundedMoon02
             : HugeIcons.strokeRoundedSun03,
@@ -343,12 +344,23 @@ class MenuPage extends ConsumerWidget {
         'sidebar_dark_mode'.tr(),
         style: const TextStyle(color: Colors.white, fontSize: 14.5),
       ),
-      value: isDark,
-      activeThumbColor: Colors.white,
-      activeTrackColor: Colors.white.withValues(alpha: 0.45),
-      inactiveThumbColor: Colors.white,
-      inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
-      onChanged: (_) => _toggleDarkMode(ref),
+      trailing: SizedBox.square(
+        dimension: 44,
+        child: Center(
+          child: Transform.scale(
+            scale: 0.78,
+            child: Switch(
+              value: isDark,
+              activeThumbColor: Colors.white,
+              activeTrackColor: Colors.white.withValues(alpha: 0.45),
+              inactiveThumbColor: Colors.white,
+              inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+              onChanged: (_) => _toggleDarkMode(ref),
+            ),
+          ),
+        ),
+      ),
+      onTap: () => _toggleDarkMode(ref),
     );
   }
 
@@ -359,11 +371,13 @@ class MenuPage extends ConsumerWidget {
         : Brightness.dark;
     ref.read(themeModeProvider.notifier).setMode(next);
     final accentIndex = ref.read(themeAccentProvider);
-    ref.read(themeIndexProvider.notifier).setTheme(
-      AppTheme.compatibilityThemeIndex(
-        brightness: next,
-        accentIndex: accentIndex,
-      ),
-    );
+    ref
+        .read(themeIndexProvider.notifier)
+        .setTheme(
+          AppTheme.compatibilityThemeIndex(
+            brightness: next,
+            accentIndex: accentIndex,
+          ),
+        );
   }
 }

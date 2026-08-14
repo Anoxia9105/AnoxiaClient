@@ -110,13 +110,26 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       type: FileType.image,
     );
     if (result == null || result.files.isEmpty) return;
-    if (!UploadValidator.validate(ref.read(toastServiceProvider), controller, result.files)) return;
+    if (!UploadValidator.validate(
+      ref.read(toastServiceProvider),
+      controller,
+      result.files,
+    )) {
+      return;
+    }
 
     final List<Attachment> uploadList = [];
     for (final file in result.files) {
-      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
+      if (!UploadValidator.validateSingleFile(
+        ref.read(toastServiceProvider),
+        file,
+      )) {
+        continue;
+      }
       final id = const Uuid().v4();
-      if (file.bytes != null) _filesById[id] = file;
+      if (file.bytes != null) {
+        _filesById[id] = file;
+      }
       final imageSize = file.path != null
           ? await _readImageSizeFromFile(file.path!)
           : await _readImageSizeFromBytes(file.bytes ?? Uint8List(0));
@@ -154,16 +167,19 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   /// [images] 要上传的图片附件列表
   ///
   /// 使用批量上传接口，上传成功后更新状态为成功，失败则标记为失败
-  Future<void> uploadImages(List<Attachment> images) async {
+  Future<void> uploadImages(
+    List<Attachment> images, {
+    Map<String, PlatformFile>? pickedFiles,
+  }) async {
     if (images.isEmpty) return;
+    if (pickedFiles != null) _filesById.addAll(pickedFiles);
+    _markUploading(images);
 
     final files = <XFile>[];
     for (final i in images) {
       final local = _filesById[i.id];
       if (local?.bytes != null) {
-        files.add(
-          XFile.fromData(local!.bytes!, name: i.name ?? local.name),
-        );
+        files.add(XFile.fromData(local!.bytes!, name: i.name ?? local.name));
       } else if (i.url != null && i.url!.isNotEmpty) {
         files.add(XFile(i.url!));
       }
@@ -178,7 +194,9 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           '文件: ${files.map((f) => f.name).join(', ')}',
         );
 
-        final urls = await ref.read(uploadRepositoryProvider).uploadFiles(files);
+        final urls = await ref
+            .read(uploadRepositoryProvider)
+            .uploadFiles(files);
 
         if (urls.isNotEmpty) {
           debugLog('[ImageUpload] 上传成功: $urls');

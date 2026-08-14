@@ -20,7 +20,7 @@ part 'chat_file_upload_controller.g.dart';
 /// 处理文件选择和上传功能。采用 keepAlive 模式确保跨页面共享状态。
 ///
 /// 核心流程：
-/// 1. 用户选择文件 → 2. 创建 Attachment 对象 → 3. 标记为上传中 → 
+/// 1. 用户选择文件 → 2. 创建 Attachment 对象 → 3. 标记为上传中 →
 /// 4. 插入编辑器 → 5. 后台上传 → 6. 更新上传状态
 ///
 /// 状态管理：Map<文件ID, UploadEntry>，支持同时处理多个文件上传
@@ -47,13 +47,26 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       type: FileType.any,
     );
     if (result == null || result.files.isEmpty) return;
-    if (!UploadValidator.validate(ref.read(toastServiceProvider), controller, result.files)) return;
+    if (!UploadValidator.validate(
+      ref.read(toastServiceProvider),
+      controller,
+      result.files,
+    )) {
+      return;
+    }
 
     final List<Attachment> uploadList = [];
     for (final file in result.files) {
-      if (!UploadValidator.validateSingleFile(ref.read(toastServiceProvider), file)) continue;
+      if (!UploadValidator.validateSingleFile(
+        ref.read(toastServiceProvider),
+        file,
+      )) {
+        continue;
+      }
       final id = const Uuid().v4();
-      if (file.bytes != null) _filesById[id] = file;
+      if (file.bytes != null) {
+        _filesById[id] = file;
+      }
       uploadList.add(
         Attachment(
           id: id,
@@ -91,14 +104,13 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   }) async {
     if (attachments.isEmpty) return;
     if (pickedFiles != null) _filesById.addAll(pickedFiles);
+    _markUploading(attachments);
 
     final files = <XFile>[];
     for (final a in attachments) {
       final local = _filesById[a.id];
       if (local?.bytes != null) {
-        files.add(
-          XFile.fromData(local!.bytes!, name: a.name ?? local.name),
-        );
+        files.add(XFile.fromData(local!.bytes!, name: a.name ?? local.name));
       } else if (a.url != null && a.url!.isNotEmpty) {
         files.add(XFile(a.url!));
       }
@@ -111,7 +123,9 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
-        final urls = await ref.read(uploadRepositoryProvider).uploadFiles(files);
+        final urls = await ref
+            .read(uploadRepositoryProvider)
+            .uploadFiles(files);
 
         if (urls.isNotEmpty) {
           // 只回写仍在编辑器中的条目：用户删除 embed 后对应记录已被

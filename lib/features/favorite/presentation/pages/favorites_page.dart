@@ -514,7 +514,10 @@ class _FavoriteListPanel extends StatelessWidget {
                   IconButton(
                     tooltip: 'call_window_retry'.tr(),
                     onPressed: onRefresh,
-                    icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 20),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedRefresh01,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -740,7 +743,9 @@ class _TypeFilterChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(icon: icon, size: 14,
+              HugeIcon(
+                icon: icon,
+                size: 14,
                 color: selected ? cs.onPrimary : cs.onSurfaceVariant,
               ),
               const SizedBox(width: 5),
@@ -959,12 +964,18 @@ class _FavoriteDetailPanel extends StatelessWidget {
                   if (!context.mounted) return;
                   Toast.showToast('chat_copy_success'.tr());
                 },
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 17),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedCopy01,
+                  size: 17,
+                ),
               ),
               IconButton(
                 tooltip: 'favorite_remove'.tr(),
                 onPressed: onDelete,
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 17),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  size: 17,
+                ),
               ),
             ],
           ),
@@ -1131,7 +1142,11 @@ class _FavoriteTextDetailCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              HugeIcon(icon: HugeIcons.strokeRoundedQuoteDown, size: 18, color: cs.primary),
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedQuoteDown,
+                size: 18,
+                color: cs.primary,
+              ),
               const SizedBox(width: 6),
               Text(
                 'favorite_text_type'.tr(),
@@ -1187,14 +1202,17 @@ class _EmptyFavorites extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final mobile = DeviceUtil.isMobile(context);
+    final iconContainerSize = mobile ? 72.0 : 96.0;
+    final iconSize = mobile ? 30.0 : 40.0;
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 96,
-            height: 96,
+            width: iconContainerSize,
+            height: iconContainerSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -1207,7 +1225,11 @@ class _EmptyFavorites extends StatelessWidget {
               ),
               border: Border.all(color: cs.primary.withValues(alpha: .15)),
             ),
-            child: HugeIcon(icon: HugeIcons.strokeRoundedBookmark03, size: 40, color: cs.primary),
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedBookmark03,
+              size: iconSize,
+              color: cs.primary,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -1230,7 +1252,10 @@ class _EmptyFavorites extends StatelessWidget {
           const SizedBox(height: 16),
           FilledButton.tonalIcon(
             onPressed: onRefresh,
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 18),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedRefresh01,
+              size: 18,
+            ),
             label: Text('call_window_retry'.tr()),
           ),
         ],
@@ -1253,7 +1278,11 @@ class _NoMatchFavorites extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(icon: HugeIcons.strokeRoundedSearchRemove, size: 34, color: cs.onSurfaceVariant),
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedSearchRemove,
+            size: 34,
+            color: cs.onSurfaceVariant,
+          ),
           const SizedBox(height: 10),
           Text(
             'favorite_no_result'.tr(),
@@ -1262,7 +1291,10 @@ class _NoMatchFavorites extends StatelessWidget {
           const SizedBox(height: 12),
           FilledButton.tonalIcon(
             onPressed: onClearFilters,
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedFilterRemove, size: 18),
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedFilterRemove,
+              size: 18,
+            ),
             label: Text('favorite_clear_filter'.tr()),
           ),
         ],
@@ -1404,13 +1436,16 @@ const Map<MessageType, _TypeStyle> _typeStyles = {
   MessageType.audio: _TypeStyle(HugeIcons.strokeRoundedMic01, Colors.orange),
   MessageType.video: _TypeStyle(HugeIcons.strokeRoundedVideo01, Colors.red),
   MessageType.file: _TypeStyle(HugeIcons.strokeRoundedFile02, Colors.indigo),
-  MessageType.emoji: _TypeStyle(
-    HugeIcons.strokeRoundedHappy01,
-    Colors.amber,
+  MessageType.emoji: _TypeStyle(HugeIcons.strokeRoundedHappy01, Colors.amber),
+  MessageType.location: _TypeStyle(
+    HugeIcons.strokeRoundedLocation01,
+    Colors.green,
   ),
-  MessageType.location: _TypeStyle(HugeIcons.strokeRoundedLocation01, Colors.green),
   MessageType.card: _TypeStyle(HugeIcons.strokeRoundedBadge, Colors.cyan),
-  MessageType.system: _TypeStyle(HugeIcons.strokeRoundedInformationCircle, Colors.blueGrey),
+  MessageType.system: _TypeStyle(
+    HugeIcons.strokeRoundedInformationCircle,
+    Colors.blueGrey,
+  ),
 };
 
 /// 获取消息类型的展示样式
@@ -1446,8 +1481,15 @@ String _typeLabel(MessageType type) {
 /// 是否为协议媒体占位标记（如 `[image]`、`[IMAGE]`、`[empty]`）
 bool _isPlaceholderSummary(String text) {
   const markers = {
-    '[image]', '[audio]', '[video]', '[file]',
-    '[emoji]', '[location]', '[card]', '[system]', '[empty]',
+    '[image]',
+    '[audio]',
+    '[video]',
+    '[file]',
+    '[emoji]',
+    '[location]',
+    '[card]',
+    '[system]',
+    '[empty]',
   };
   return markers.contains(text.trim().toLowerCase());
 }

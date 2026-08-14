@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
@@ -6,7 +6,10 @@ import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
+import 'package:anoxia/platform/shims/web_download_shim.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +18,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/image_gallery_saver_plus_shim.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:path/path.dart' as path;
 
 import '../image_render_metrics.dart';
 
@@ -99,9 +103,9 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   void _loadImageSize(String url) {
     _removeImageSizeListener();
     final listener = _createImageSizeListener(url);
-    final stream = appCachedNetworkImageProvider(url).resolve(
-      const ImageConfiguration(),
-    );
+    final stream = appCachedNetworkImageProvider(
+      url,
+    ).resolve(const ImageConfiguration());
     _imageSizeStreamListener = listener;
     _imageSizeStream = stream;
     stream.addListener(listener);
@@ -177,23 +181,43 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     _controller.scale = target;
   }
 
-  /// 下载当前图片到相册
+  /// 移动端保存到相册，桌面端与 Web 下载到电脑。
   Future<void> _downloadImage() async {
     if (_downloading) return;
     final messenger = ScaffoldMessenger.of(context);
 
-    // 仅在真实移动设备上允许下载（非模拟器或桌面）
-    if (!DeviceUtil.isRealMobile()) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('image_download_mobile_only'.tr())),
-      );
+    // 获取当前附件 URL
+    final attachment = _currentAttachment(_galleryAttachments(watch: false));
+    final url = attachment.url;
+    if (url == null || url.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text('image_load_failed'.tr())));
       return;
     }
 
-    // 获取当前附件 URL
-    final url = _currentAttachment(_galleryAttachments(watch: false)).url;
-    if (url == null || url.isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text('image_load_failed'.tr())));
+    final fileName = _downloadFileName(attachment, url);
+
+    if (DeviceUtil.isWeb) {
+      setState(() => _downloading = true);
+      try {
+        final ok = await WebDownload.downloadUrl(url, fileName);
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              ok
+                  ? 'image_download_desktop_success'.tr()
+                  : 'image_download_failed'.tr(),
+            ),
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _downloading = false);
+      }
+      return;
+    }
+
+    if (!DeviceUtil.isRealMobile()) {
+      await _downloadImageToComputer(url, fileName, messenger);
       return;
     }
 
@@ -225,11 +249,10 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       }
 
       // 生成文件名并保存到系统相册
-      final fileName = 'anoxia_image_${DateTime.now().millisecondsSinceEpoch}';
       final result = await ImageGallerySaverPlus.saveImage(
         Uint8List.fromList(bytes),
         quality: 100,
-        name: fileName,
+        name: path.basenameWithoutExtension(fileName),
       );
 
       // 判断保存结果（isSuccess 可能为 bool 或 int）
@@ -382,9 +405,8 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                         basePosition: Alignment.center,
                         // 仅在当前附件与初始一致时启用 Hero 动画
                         heroAttributes: _heroAttributesFor(attachment),
-                        loadingBuilder: (context, event) => _buildLoading(
-                          event,
-                        ),
+                        loadingBuilder: (context, event) =>
+                            _buildLoading(event),
                         errorBuilder: (context, error, stackTrace) =>
                             _buildError(),
                       ),
@@ -561,6 +583,56 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     );
   }
 
+  Future<void> _downloadImageToComputer(
+    String url,
+    String fileName,
+    ScaffoldMessengerState messenger,
+  ) async {
+    setState(() => _downloading = true);
+    try {
+      final response = await Dio().get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = response.data;
+      if (data == null || data.isEmpty) throw Exception('empty bytes');
+
+      final bytes = Uint8List.fromList(data);
+      final savePath = await FilePicker.saveFile(
+        dialogTitle: 'file_download'.tr(),
+        fileName: fileName,
+        bytes: bytes,
+      );
+      if (savePath == null) return;
+      await XFile.fromData(bytes, name: fileName).saveTo(savePath);
+
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('image_download_desktop_success'.tr())),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('image_download_failed'.tr())),
+      );
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
+  }
+
+  String _downloadFileName(Attachment attachment, String url) {
+    final uriPath = Uri.tryParse(url)?.path ?? url;
+    final urlExtension = path.extension(uriPath);
+    var name = (attachment.name ?? '').trim();
+    if (name.isEmpty) {
+      name = 'anoxia_image_${DateTime.now().millisecondsSinceEpoch}';
+    }
+    if (path.extension(name).isEmpty) {
+      name += urlExtension.isNotEmpty ? urlExtension : '.jpg';
+    }
+    return name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+  }
+
   void _rememberScaleBounds(_PhotoViewScales scales) {
     if (scales.initialScale is! num ||
         scales.minScale is! num ||
@@ -634,7 +706,11 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, color: Colors.white54, size: 50),
+          const HugeIcon(
+            icon: HugeIcons.strokeRoundedImageNotFound01,
+            color: Colors.white54,
+            size: 50,
+          ),
           const SizedBox(height: 8),
           Text(
             'image_failed_to_load'.tr(),
