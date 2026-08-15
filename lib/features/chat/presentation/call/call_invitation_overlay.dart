@@ -238,25 +238,28 @@ class _OutgoingCallPage extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _CallAction(
-                      label: speakerOn
-                          ? 'call_switch_to_earpiece'.tr()
-                          : 'call_switch_to_speaker'.tr(),
-                      icon: speakerOn
-                          ? HugeIcons.strokeRoundedVolumeUp
-                          : HugeIcons.strokeRoundedEar,
-                      backgroundColor: cs.surfaceContainerHighest,
-                      foregroundColor: cs.onSurfaceVariant,
-                      onPressed: () {
-                        ref
-                            .read(
-                              callSpeakerPreferenceProvider(invitation.roomId)
-                                  .notifier,
-                            )
-                            .state = !speakerOn;
-                      },
-                    ),
-                    const SizedBox(width: 56),
+                    // 免提/听筒切换仅真机有意义（Web/桌面由系统输出设备决定）
+                    if (DeviceUtil.isRealMobile()) ...[
+                      _CallAction(
+                        label: speakerOn
+                            ? 'call_switch_to_earpiece'.tr()
+                            : 'call_switch_to_speaker'.tr(),
+                        icon: speakerOn
+                            ? HugeIcons.strokeRoundedVolumeUp
+                            : HugeIcons.strokeRoundedEar,
+                        backgroundColor: cs.surfaceContainerHighest,
+                        foregroundColor: cs.onSurfaceVariant,
+                        onPressed: () {
+                          ref
+                              .read(
+                                callSpeakerPreferenceProvider(invitation.roomId)
+                                    .notifier,
+                              )
+                              .state = !speakerOn;
+                        },
+                      ),
+                      const SizedBox(width: 56),
+                    ],
                     _CallAction(
                       label: 'call_cancel_call'.tr(),
                       icon: HugeIcons.strokeRoundedCallEnd01,
@@ -307,10 +310,16 @@ class _CallAction extends StatelessWidget {
             onTap: onPressed,
             child: SizedBox.square(
               dimension: 68,
-              child: HugeIcon(
-                icon: icon,
-                size: 28,
-                color: foregroundColor ?? Colors.white,
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: HugeIcon(
+                    icon: icon,
+                    size: 22,
+                    color: foregroundColor ?? Colors.white,
+                  ),
+                ),
               ),
             ),
           ),
@@ -494,7 +503,13 @@ class _RoundActionButton extends StatelessWidget {
           onTap: onPressed,
           child: SizedBox.square(
             dimension: 44,
-            child: HugeIcon(icon: icon, size: 20, color: Colors.white),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: HugeIcon(icon: icon, size: 18, color: Colors.white),
+              ),
+            ),
           ),
         ),
       ),

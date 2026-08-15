@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
@@ -115,25 +115,27 @@ class CommandBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
 
-                    // 扬声器按钮
-                    Builder(
-                      builder: (context) {
-                        return buildSplitButton(
-                          context: context,
-                          icon: state.speakerOn
-                              ? HugeIcons.strokeRoundedVolumeUp
-                              : HugeIcons.strokeRoundedVolumeOff,
-                          label: state.speakerOn
-                              ? 'call_speaker'.tr()
-                              : 'call_earpiece'.tr(),
-                          active: state.speakerOn,
-                          onTap: () => notifier.toggleSpeaker(),
-                          onArrowTap: () => _showAudioOutputMenu(
-                            context, ref, notifier, state,
-                          ),
-                        );
-                      },
-                    ),
+                    // 扬声器按钮（仅真实移动/桌面端；Web 由系统输出设备决定，
+                    // 无听筒/扬声器切换概念）
+                    if (!DeviceUtil.isWeb)
+                      Builder(
+                        builder: (context) {
+                          return buildSplitButton(
+                            context: context,
+                            icon: state.speakerOn
+                                ? HugeIcons.strokeRoundedVolumeUp
+                                : HugeIcons.strokeRoundedVolumeOff,
+                            label: state.speakerOn
+                                ? 'call_speaker'.tr()
+                                : 'call_earpiece'.tr(),
+                            active: state.speakerOn,
+                            onTap: () => notifier.toggleSpeaker(),
+                            onArrowTap: () => _showAudioOutputMenu(
+                              context, ref, notifier, state,
+                            ),
+                          );
+                        },
+                      ),
                     const SizedBox(width: 8),
 
                     // 举手按钮
