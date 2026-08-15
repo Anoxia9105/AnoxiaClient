@@ -225,12 +225,18 @@ class _CallControlButton extends StatelessWidget {
             onTap: enabled ? () => onPressed() : null,
             child: SizedBox.square(
               dimension: dim,
-              child: HugeIcon(
-                icon: icon,
-                color: enabled
-                    ? resolvedForeground
-                    : cs.onSurface.withValues(alpha: 0.3),
-                size: dim * 0.46,
+              child: Center(
+                child: SizedBox(
+                  width: dim * 0.38,
+                  height: dim * 0.38,
+                  child: HugeIcon(
+                    icon: icon,
+                    color: enabled
+                        ? resolvedForeground
+                        : cs.onSurface.withValues(alpha: 0.3),
+                    size: dim * 0.38,
+                  ),
+                ),
               ),
             ),
           ),

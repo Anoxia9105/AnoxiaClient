@@ -427,7 +427,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox.square(
-            dimension: 34,
+            dimension: 32,
             child: Center(
               child: SizedBox(
                 width: 15,
@@ -465,7 +465,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             : isActive
             ? colorScheme.surfaceContainerHigh
             : colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(21),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isRecording
               ? Colors.transparent

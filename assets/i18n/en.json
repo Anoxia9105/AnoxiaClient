@@ -961,6 +961,7 @@
   "call_ended": "Call ended",
   "call_calling": "Calling…",
   "call_cancel_call": "Cancel call",
+  "call_no_answer": "No answer",
   "call_answer_as_voice": "Answer as voice",
   "call_join_call": "Join",
   "call_ignore": "Ignore",

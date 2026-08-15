@@ -961,6 +961,7 @@
   "call_ended": "通話が終了しました",
   "call_calling": "呼び出し中…",
   "call_cancel_call": "通話をキャンセル",
+  "call_no_answer": "相手が出ませんでした",
   "call_answer_as_voice": "音声で応答",
   "call_join_call": "参加",
   "call_ignore": "無視",

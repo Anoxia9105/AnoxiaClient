@@ -52,6 +52,14 @@ class RoomController extends _$RoomController {
   bool _isTogglingScreen = false;
   bool _removedFromCallHandled = false;
 
+  /// 1:1 通话「远端全部离开」兜底检测定时器。
+  ///
+  /// 信令（CALL_END）可能因网络/进程被杀而丢失，这里用媒体层兜底：
+  /// 一旦曾出现过远端参与者，且连续 3 秒远端为空、房间仍连接且非重连态，
+  /// 判定对端已挂断/断线，本地结束通话（详见 [_schedulePeerGoneCheck]）。
+  Timer? _peerGoneTimer;
+  bool _everHadRemote = false;
+
   /// 防止 leave() 重入
   bool _isLeaving = false;
 
@@ -167,12 +175,16 @@ class RoomController extends _$RoomController {
         /// 新参与者加入房间
         ..on<ParticipantConnectedEvent>((e) {
           debugLog('➕ 参与者加入: ${e.participant.identity}');
+          // 远端参与者出现过：兜底检测可生效；有人加入时取消待触发的结束检测
+          _peerGoneTimer?.cancel();
+          _everHadRemote = true;
           _updateParticipants();
         })
         /// 参与者离开房间
         ..on<ParticipantDisconnectedEvent>((e) {
           debugLog('➖ 参与者离开: ${e.participant.identity}');
           _updateParticipants();
+          _schedulePeerGoneCheck();
         })
         /// 活跃发言者变化（SDK 根据音量实时检测）
         /// 将第一个发言者设为焦点，UI 层可以据此高亮或置顶
@@ -395,6 +407,44 @@ class RoomController extends _$RoomController {
     );
   }
 
+  /// 1:1 通话「远端全部离开」兜底检测。
+  ///
+  /// 触发条件（全部满足才判定结束，避免误杀）：
+  /// - 曾出现过远端参与者（排除刚接通、对方尚未加入的窗口期）
+  /// - 连续 3 秒远端为空
+  /// - 房间仍处于 connected 且非重连态（排除网络抖动重连期）
+  /// - 非群聊（群成员进出自如，不触发）
+  void _schedulePeerGoneCheck() {
+    _peerGoneTimer?.cancel();
+    _peerGoneTimer = Timer(const Duration(seconds: 3), () {
+      final current = state.value;
+      if (current == null || _isLeaving) return;
+      if (current.isReconnecting) return;
+      if (current.room.connectionState != ConnectionState.connected) return;
+      if (current.remoteParticipants.isNotEmpty) return;
+      if (!_everHadRemote) return;
+      final roomName = current.room.name ?? '';
+      if (roomName.isEmpty) return;
+      if (ref.read(callIsGroupProvider(roomName))) return;
+      debugLog('1:1 通话远端全部离开，判定通话结束（媒体层兜底）');
+      unawaited(_handlePeerLeft(roomName));
+    });
+  }
+
+  /// 对端挂断/断线兜底：本地结束通话（信令丢失时的最后保障）。
+  Future<void> _handlePeerLeft(String roomId) async {
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
+      final session = ref.read(mobileCallSessionControllerProvider);
+      if (session?.roomId != roomId) return;
+      ref.read(mobileCallSessionControllerProvider.notifier).end();
+      await leave();
+      ref.read(toastServiceProvider).showNotificationNow('call_ended'.tr());
+      return;
+    }
+    // 桌面端：关闭通话窗口（主窗口经 on_call_window_close 去重补发信令）
+    await windowManager.close();
+  }
+
   /// 处理自定义数据通道事件
   /// LiveKit 的 publishData 不会回传给发送方，
   /// 所以这里只处理其他人发来的消息
@@ -590,6 +640,8 @@ class RoomController extends _$RoomController {
   /// 释放 listener 和设备订阅等本地资源，不访问 provider state。
   /// 幂等操作，可安全重复调用。
   void _disposeResources() {
+    _peerGoneTimer?.cancel();
+    _peerGoneTimer = null;
     _listener?.dispose();
     _listener = null;
     _deviceSub?.cancel();

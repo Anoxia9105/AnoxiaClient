@@ -30,13 +30,14 @@ class CallInvitationOverlay extends ConsumerWidget {
     if (invitation == null) return const SizedBox.shrink();
 
     return switch (invitation.phase) {
-      CallInvitationPhase.incoming => DeviceUtil.isRealDesktop()
-          ? const SizedBox.shrink()
-          // 1:1 手机端全屏来电；Web 与群呼保留轻量横幅（通知式）
-          : (DeviceUtil.isRealMobile() && !invitation.isGroup)
-              ? _IncomingCallPage(invitation: invitation)
-              : _IncomingCallBanner(invitation: invitation),
-      CallInvitationPhase.outgoing => DeviceUtil.isRealDesktop()
+      CallInvitationPhase.incoming =>
+        // 1:1 手机端全屏来电；其余（Web/桌面/群呼）用轻量横幅
+        // 桌面端另由 app.dart 触发系统来电通知，两者并存
+        (DeviceUtil.isRealMobile() && !invitation.isGroup)
+            ? _IncomingCallPage(invitation: invitation)
+            : _IncomingCallBanner(invitation: invitation),
+      CallInvitationPhase.outgoing => (DeviceUtil.isRealDesktop() ||
+              invitation.isGroup)
           ? const SizedBox.shrink()
           : _OutgoingCallPage(invitation: invitation),
       CallInvitationPhase.acceptedElsewhere => const _CallNoticeCard(

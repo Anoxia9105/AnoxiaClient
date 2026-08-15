@@ -4,6 +4,7 @@ import 'package:anoxia/features/chat/presentation/call/mobile/audio_call_backgro
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,9 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     final title = session?.title ?? '';
     final roomId = session?.roomId ?? '';
     final participants = _participants;
+    // 音频通话页中央头像：取房间头像（1:1 即对方头像，群聊为群头像）
+    final roomAvatar =
+        roomId.isEmpty ? '' : ref.watch(currentRoomProvider(roomId))?.roomAvatar ?? '';
 
     if (isInPipMode) {
       return _buildPipContent(participants, isVideoCall);
@@ -80,7 +84,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
               ),
             )
           else
-            AudioCallBackground(title: title),
+            AudioCallBackground(title: title, avatarUrl: roomAvatar),
           Align(
             alignment: Alignment.bottomCenter,
             child: MobileCallControls(

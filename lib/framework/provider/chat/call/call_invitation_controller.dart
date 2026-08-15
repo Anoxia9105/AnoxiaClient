@@ -11,6 +11,7 @@ import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
@@ -20,6 +21,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/extensions/window_controller.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum CallInvitationPhase {
@@ -190,8 +192,9 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       callerAvatar: currentUser?.avatar ?? '',
       roomAvatar: room.roomAvatar ?? '',
     );
-    state = invite;
-    // 仅 1:1 需要振铃超时自动取消；群呼是加入式，不设取消定时。
+    state = isGroup ? null : invite;
+    // 仅 1:1 需要振铃超时自动取消；群呼是加入式，不设取消定时，
+    // 且不进入「呼出振铃」态（发起人直接进通话页）。
     if (!isGroup) {
       _scheduleAutoCancel(const Duration(seconds: 30));
     }
@@ -644,6 +647,10 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     _ringTimer = Timer(delay, () {
       final current = state;
       if (current?.phase == CallInvitationPhase.outgoing) {
+        // 提示「对方未接听」后自动取消
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow('call_no_answer'.tr());
         unawaited(cancelCurrent());
       }
     });

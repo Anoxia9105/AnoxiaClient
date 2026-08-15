@@ -1,17 +1,21 @@
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
-import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
 
 /// 音频通话背景组件
 ///
-/// 显示渐变背景 + 装饰光球 + 通话图标 + 房间名称。
-/// 背景跟随应用主题（scaffoldGradient），图标/文字颜色取自 colorScheme，
-/// 尺寸按屏幕宽度缩放，避免小屏上图标过大。
+/// 渐变主题背景 + 中央对方头像 + 房间名称 + 「语音通话中」。
+/// 保持简洁：无装饰光球、无图标圆环，头像即视觉中心。
 class AudioCallBackground extends StatelessWidget {
-  const AudioCallBackground({super.key, required this.title});
+  const AudioCallBackground({
+    super.key,
+    required this.title,
+    this.avatarUrl = '',
+  });
 
   final String title;
+  final String avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -21,89 +25,39 @@ class AudioCallBackground extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(gradient: gradient),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -90,
-            right: -70,
-            child: GlowOrb(
-              size: 260 * scale,
-              color: cs.primary.withValues(alpha: 0.16),
-            ),
-          ),
-          Positioned(
-            bottom: 100,
-            left: -90,
-            child: GlowOrb(
-              size: 240 * scale,
-              color: cs.tertiary.withValues(alpha: 0.12),
-            ),
-          ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 116),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 88 * scale,
-                    height: 88 * scale,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: cs.primary.withValues(alpha: 0.1),
-                      border: Border.all(color: cs.outlineVariant),
-                    ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedCall02,
-                      color: cs.primary,
-                      size: 36 * scale,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: 22 * scale,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'call_voice_call_in_progress'.tr(),
-                    style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: 13 * scale,
-                    ),
-                  ),
-                ],
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 116),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AvatarWidget(
+                size: 96 * scale,
+                url: avatarUrl,
+                name: title,
               ),
-            ),
+              const SizedBox(height: 24),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 22 * scale,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'call_voice_call_in_progress'.tr(),
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 13 * scale,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 装饰光球组件
-class GlowOrb extends StatelessWidget {
-  const GlowOrb({super.key, required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        boxShadow: [BoxShadow(color: color, blurRadius: 90, spreadRadius: 25)],
+        ),
       ),
     );
   }

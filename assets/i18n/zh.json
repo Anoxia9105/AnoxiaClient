@@ -961,6 +961,7 @@
   "call_ended": "通话已结束",
   "call_calling": "正在呼叫…",
   "call_cancel_call": "取消通话",
+  "call_no_answer": "对方未接听",
   "call_answer_as_voice": "以语音方式接听",
   "call_join_call": "加入",
   "call_ignore": "忽略",
