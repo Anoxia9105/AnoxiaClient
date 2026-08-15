@@ -42,6 +42,7 @@ class MobileCallControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
     final isGroup = ref.watch(callIsGroupProvider(roomId));
     return SafeArea(
@@ -52,24 +53,34 @@ class MobileCallControls extends ConsumerWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.34),
+              color: cs.onSurface.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(22),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              child: MobileCallTimer(joinedAt: state.joinedAt),
+              child: MobileCallTimer(
+                joinedAt: state.joinedAt,
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xE620222A),
+              color: cs.surface.withValues(alpha: 0.94),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white12),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.6),
+              ),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x66000000),
+                  color: Color(0x33000000),
                   blurRadius: 26,
                   offset: Offset(0, 12),
                 ),
@@ -185,28 +196,37 @@ class _CallControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final scale = (MediaQuery.sizeOf(context).width / 375)
+        .clamp(0.9, 1.1)
+        .toDouble();
+    final dim = (52 * scale).clamp(46.0, 56.0).toDouble();
     final resolvedBackground =
         backgroundColor ??
-        (active ? Colors.white : Colors.white.withValues(alpha: 0.12));
+        (active ? cs.primary : cs.surfaceContainerHighest);
     final resolvedForeground =
-        foregroundColor ?? (active ? const Color(0xFF15171D) : Colors.white);
+        foregroundColor ?? (active ? cs.onPrimary : cs.onSurfaceVariant);
     return Tooltip(
       message: tooltip,
       child: Semantics(
         button: true,
         label: tooltip,
         child: Material(
-          color: enabled ? resolvedBackground : Colors.white10,
+          color: enabled
+              ? resolvedBackground
+              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
           shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: enabled ? () => onPressed() : null,
             child: SizedBox.square(
-              dimension: 52,
+              dimension: dim,
               child: HugeIcon(
                 icon: icon,
-                color: enabled ? resolvedForeground : Colors.white30,
-                size: 24,
+                color: enabled
+                    ? resolvedForeground
+                    : cs.onSurface.withValues(alpha: 0.3),
+                size: dim * 0.46,
               ),
             ),
           ),

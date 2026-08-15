@@ -98,10 +98,17 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
 
   Widget _buildPipContent(List<Participant> participants, bool isVideoCall) {
     if (!isVideoCall) {
-      return const ColoredBox(
-        color: Color(0xFF161922),
+      final cs = Theme.of(context).colorScheme;
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+        ),
         child: Center(
-          child: HugeIcon(icon: HugeIcons.strokeRoundedCall02, color: Colors.white, size: 42),
+          child: HugeIcon(
+            icon: HugeIcons.strokeRoundedCall02,
+            color: cs.primary,
+            size: 28,
+          ),
         ),
       );
     }
@@ -109,7 +116,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
         widget.roomState.remoteParticipants.firstOrNull ??
         widget.roomState.room.localParticipant;
     if (participant == null) {
-      return const ColoredBox(color: Color(0xFF161922));
+      return const ColoredBox(color: Color(0xFF171A22));
     }
     return MobileParticipantSurface(
       participant: participant,

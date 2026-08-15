@@ -74,11 +74,17 @@ class _MeetingTimerState extends State<MeetingTimer> {
   @override
   Widget build(BuildContext context) {
     if (widget.joinedAt == null) {
-      return const Row(
+      return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
-          Text('--:--', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
+          Text(
+            '--:--',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       );
     }

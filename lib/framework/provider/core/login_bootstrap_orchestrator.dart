@@ -7,6 +7,7 @@ import 'package:anoxia/framework/logs/debug_log.dart';
 import '../auth/auth_controller.dart';
 import '../chat/message/room_message_service.dart';
 import '../chat/message/system_event_service.dart';
+import '../chat/message/system_message_service.dart';
 import '../chat/room/room_list_service.dart';
 import '../chat/room/room_lookup_helper.dart';
 import '../chat/room/room_member_service.dart';
@@ -64,6 +65,7 @@ class LoginBootstrapOrchestrator {
     // Step 2: 先挂常驻监听，避免消息流先到但消费者尚未就绪。
     _ref.read(chatMessagesProvider);
     _ref.read(systemEventServiceProvider);
+    _ref.read(systemMessageServiceProvider);
     _ref.read(appUpdateCheckerProvider);
 
     // Step 3: 后台预热当前房间。预热是体验优化，不能阻塞 App 进入主界面。

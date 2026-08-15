@@ -122,6 +122,17 @@ class PushManager {
     }
   }
 
+  /// 清空系统通知栏中的推送通知。
+  ///
+  /// 接听/拒绝/结束来电后调用，避免来电类推送通知残留在系统通知栏。
+  Future<void> clearNotifications() async {
+    try {
+      await _jpush.clearAllNotifications();
+    } catch (e) {
+      debugLog('清空推送通知失败（忽略）: $e');
+    }
+  }
+
   Future<bool> isNotificationEnabled() {
     return _jpush.isNotificationEnabled();
   }

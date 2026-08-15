@@ -40,3 +40,11 @@ final callInitialMediaProvider = StateProvider.family<CallInitialMedia, String>(
 final callIsGroupProvider = StateProvider.family<bool, String>(
   (ref, roomId) => false,
 );
+
+/// 通话免提偏好 Provider
+///
+/// 按房间 ID 维护，在「呼出振铃页 / 来电页」上切换免提时写入；
+/// 媒体连接建立时（[RoomController.build]）读取并应用，默认开启免提。
+final callSpeakerPreferenceProvider = StateProvider.family<bool, String>(
+  (ref, roomId) => true,
+);

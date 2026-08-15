@@ -5,6 +5,7 @@ import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
+import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
@@ -24,11 +25,12 @@ import 'package:easy_localization/easy_localization.dart';
 /// - 全体禁言/解除禁言
 /// - 踢出成员
 class ChatBarHandlers {
-  /// 发起或加入通话
+  /// 发起或加入通话。
   ///
-  /// 根据设备类型选择不同的通话方式：
-  /// - 移动端：驱动全局大厂 Stack 浮层（GlobalCallOverlay）自适应全屏展现
-  /// - 桌面端：打开独立的通话窗口
+  /// 按房间状态分流（P0 流程重构）：
+  /// - 房间已有进行中的通话 → 直接加入（不发送 CALL_INVITE）
+  /// - 群呼 → 发通知式邀请，发起人立即进入通话
+  /// - 1:1 → 进入「呼出振铃」态（收到 CALL_ACCEPT 后才连接媒体）
   ///
   /// [context] 构建上下文
   /// [ref] Riverpod 的 WidgetRef，用于访问 Provider
@@ -39,16 +41,21 @@ class ChatBarHandlers {
     ChatRoomVO room, {
     CallInitialMedia initialMedia = CallInitialMedia.audio,
   }) async {
-    if ((room.roomId ?? '').isEmpty) {
+    final roomId = room.roomId ?? '';
+    if (roomId.isEmpty) {
       Toast.showToast('appbar_connection_lost'.tr(), type: ToastType.warning);
       return;
     }
-    final tokenFuture = ref.read(roomTokenProvider(room.roomId ?? '').future);
+    final isGroup = room.roomType == 1;
+    final hasActiveCall = ref
+        .read(callStatusControllerProvider.notifier)
+        .statusOf(roomId)
+        .calling;
 
     if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
       final currentSession = ref.read(mobileCallSessionControllerProvider);
       if (currentSession != null) {
-        if (currentSession.roomId == room.roomId) {
+        if (currentSession.roomId == roomId) {
           // 💡 状态机逻辑回正：点击相同房间，纯状态控制切回全屏
           ref
               .read(mobileCallSessionControllerProvider.notifier)
@@ -62,35 +69,80 @@ class ChatBarHandlers {
         return;
       }
 
-      // 💡 首次起呼/进入房间：移除了旧的透明路由 push 代码，由全局组件自适应接管
-      final roomId = room.roomId ?? '';
-      final title = room.roomName ?? '';
-      ref.read(callIsGroupProvider(roomId).notifier).state = room.roomType == 1;
-      ref
-          .read(callInvitationControllerProvider.notifier)
-          .invite(room, initialMedia: initialMedia);
-      ref
-          .read(mobileCallSessionControllerProvider.notifier)
-          .start(roomId: roomId, title: title, initialMedia: initialMedia);
-    } else {
-      /// 桌面端直接打开通话窗口
+      ref.read(callIsGroupProvider(roomId).notifier).state = isGroup;
+
+      // 房间已有进行中的通话：直接加入（不发 CALL_INVITE，加入式）
+      if (hasActiveCall) {
+        ref
+            .read(mobileCallSessionControllerProvider.notifier)
+            .start(
+              roomId: roomId,
+              title: room.roomName ?? '',
+              initialMedia: initialMedia,
+            );
+        return;
+      }
+
+      // 💡 首次起呼：1:1 只进入振铃态（不连媒体）；群呼发起人直接进通话
       await ref
           .read(callInvitationControllerProvider.notifier)
           .invite(room, initialMedia: initialMedia);
-      String? prefetchedToken;
-      try {
-        prefetchedToken = await tokenFuture;
-      } catch (_) {}
+      if (isGroup) {
+        ref
+            .read(mobileCallSessionControllerProvider.notifier)
+            .start(
+              roomId: roomId,
+              title: room.roomName ?? '',
+              initialMedia: initialMedia,
+            );
+      }
+      return;
+    }
+
+    /// 桌面端：打开独立通话窗口
+    ref.read(callIsGroupProvider(roomId).notifier).state = isGroup;
+    final notifier = ref.read(callInvitationControllerProvider.notifier);
+
+    // 已有进行中的通话：直接加入（join 直连，token 缺失时窗口自行拉取）
+    if (hasActiveCall) {
       await ref
           .read(callWindowControllerProvider.notifier)
           .openCallWindow(
             title: room.roomName ?? '',
             themeIndex: ref.read(themeIndexProvider),
-            roomId: room.roomId ?? '',
+            roomId: roomId,
             initialMedia: initialMedia,
-            isGroup: room.roomType == 1,
-            token: prefetchedToken,
+            isGroup: isGroup,
+            join: true,
+            token: await _prefetchToken(ref, roomId),
           );
+      return;
+    }
+
+    await notifier.invite(room, initialMedia: initialMedia);
+    // 群呼：发起人窗口直接连接（join 直连）；
+    // 1:1：窗口进入「振铃态」，收到 ACCEPT 后再连接
+    final join = isGroup;
+    final token = join ? await _prefetchToken(ref, roomId) : null;
+    await ref
+        .read(callWindowControllerProvider.notifier)
+        .openCallWindow(
+          title: room.roomName ?? '',
+          themeIndex: ref.read(themeIndexProvider),
+          roomId: roomId,
+          initialMedia: initialMedia,
+          isGroup: isGroup,
+          join: join,
+          token: token,
+        );
+  }
+
+  /// 预取通话 token（失败返回 null，窗口侧会自行拉取）。
+  static Future<String?> _prefetchToken(WidgetRef ref, String roomId) async {
+    try {
+      return await ref.read(roomTokenProvider(roomId).future);
+    } catch (_) {
+      return null;
     }
   }
 

@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
@@ -12,8 +13,10 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:anoxia/framework/extensions/window_controller.dart';
@@ -24,6 +27,8 @@ enum CallInvitationPhase {
   outgoing,
   acceptedElsewhere,
   rejectedElsewhere,
+  /// 对方已拒绝（本端为呼出方，收到对方的 CALL_REJECT）
+  rejected,
   canceled,
   busy,
   ended,
@@ -127,6 +132,15 @@ final callInvitationControllerProvider =
 class CallInvitationController extends Notifier<CallInvitationState?> {
   Timer? _clearTimer;
 
+  /// 1:1 呼出振铃超时定时器：30s 未接自动发 CALL_CANCEL 并回到空闲。
+  Timer? _ringTimer;
+
+  /// 已发出/已确认结束的 roomId 集合，用于防止 CALL_END 重复发送。
+  ///
+  /// 桌面端 CALL_END 统一由通话窗口关闭回调（on_call_window_close）发出，
+  /// 而远端挂断/拒绝也会关闭窗口，需要借此去重，避免向对端回发多余的 CALL_END。
+  final Set<String> _endedRooms = <String>{};
+
   @override
   CallInvitationState? build() {
     final subscription = ref
@@ -142,12 +156,18 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
 
     ref.onDispose(() {
       _clearTimer?.cancel();
+      _ringTimer?.cancel();
       subscription.cancel();
     });
 
     return null;
   }
 
+  /// 发起通话（1:1 或群呼）。
+  ///
+  /// - 1:1：进入呼出振铃态，**不连接媒体**，等收到 CALL_ACCEPT 后才连；
+  ///   30s 无人接听自动发 CALL_CANCEL。
+  /// - 群呼：通知式邀请（成员看到横幅可加入），发起人自己直接进入通话。
   Future<void> invite(
     ChatRoomVO room, {
     CallInitialMedia initialMedia = CallInitialMedia.audio,
@@ -171,12 +191,19 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       roomAvatar: room.roomAvatar ?? '',
     );
     state = invite;
-    _scheduleClear(const Duration(seconds: 30));
+    // 仅 1:1 需要振铃超时自动取消；群呼是加入式，不设取消定时。
+    if (!isGroup) {
+      _scheduleAutoCancel(const Duration(seconds: 30));
+    }
 
     _send(HighMessageType.CALL_INVITE, invite, targetId: invite.targetId);
   }
 
-  /// 在群通话中定向提醒尚未入会的成员；群邀请不会触发来电弹窗。
+  /// 群通话中定向提醒尚未入会的成员。
+  ///
+  /// 群邀请是「通知式」提醒（不进入全屏振铃）：成员收到横幅后可一键加入，
+  /// 或稍后在聊天栏看到「加入通话」。这里不写全局邀请状态，
+  /// 避免打断发起人自己正在进行中的通话界面。
   Future<void> inviteMembers(
     ChatRoomVO room,
     Iterable<int> userIds, {
@@ -202,41 +229,112 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     }
   }
 
+  /// 取消呼出（振铃页「挂断」/ 超时自动取消）。
   Future<void> cancelCurrent() async {
+    _ringTimer?.cancel();
     final invite = state;
     if (invite == null) return;
+    _endedRooms.add(invite.roomId);
     _send(HighMessageType.CALL_CANCEL, invite, targetId: invite.targetId);
     state = null;
+    // 桌面端：呼出振铃窗口仍处于振铃态，取消后需关闭；
+    // 窗口关闭回调触发 endRoom 时会被 _endedRooms 去重，不会重复发信令。
+    if (DeviceUtil.isRealDesktop()) {
+      final window = ref.read(callWindowControllerProvider);
+      if (window != null) {
+        try {
+          await window.close();
+        } catch (_) {}
+      }
+    }
   }
 
+  /// 接听：发送 ACCEPT 信令并关闭本端来电提示。
   Future<void> accept(CallInvitationState invite) async {
     _send(HighMessageType.CALL_ACCEPT, invite, targetId: invite.callerId);
+    _clearIncomingNotifications();
     state = null;
   }
 
-  Future<void> acceptAndOpen(CallInvitationState invite) async {
-    await accept(invite);
-    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
-      ref
-          .read(mobileCallSessionControllerProvider.notifier)
-          .start(
-            roomId: invite.roomId,
-            title: invite.title,
-            initialMedia: invite.initialMedia,
-          );
-      return;
-    }
+  /// 接听并进入通话界面。
+  ///
+  /// [media] 可选：视频来电时「以语音方式接听」传入 audio，
+  /// 此时 ACCEPT 载荷与后续媒体都以语音为准。
+  Future<void> acceptAndOpen(
+    CallInvitationState invite, {
+    CallInitialMedia? media,
+  }) async {
+    final effective = media ?? invite.initialMedia;
+    await accept(invite.copyWith(initialMedia: effective));
+    await _openCallUi(invite.copyWith(initialMedia: effective));
+  }
 
-    await ref
-        .read(callWindowControllerProvider.notifier)
-        .openCallWindow(
-          title: invite.title,
-          themeIndex: ref.read(themeIndexProvider),
-          roomId: invite.roomId,
-          initialMedia: invite.initialMedia,
-          isGroup: invite.isGroup,
-          token: await ref.read(roomTokenProvider(invite.roomId).future),
-        );
+  /// 群呼通知横幅的「加入」：加入式直连，不发送 ACCEPT 信令。
+  Future<void> joinGroupCall(CallInvitationState invite) async {
+    _ringTimer?.cancel();
+    _clearIncomingNotifications();
+    state = null;
+    await _openCallUi(invite);
+  }
+
+  /// 忽略通知（群呼横幅的「忽略」）：仅本地关闭，不发送任何信令。
+  void dismissInvitation() {
+    _ringTimer?.cancel();
+    state = null;
+  }
+
+  /// 拒绝来电：发送 REJECT 信令，1:1 时由服务端落一条「对方已拒绝」系统消息。
+  Future<void> reject(CallInvitationState invite) async {
+    _send(HighMessageType.CALL_REJECT, invite, targetId: invite.callerId);
+    // 群呼为加入式，无拒绝语义，不落系统消息。
+    if (!invite.isGroup) {
+      unawaited(_persistRejection(invite.roomId));
+    }
+    _clearIncomingNotifications();
+    state = null;
+  }
+
+  Future<void> _persistRejection(String roomId) async {
+    try {
+      await ref.read(callRepositoryProvider).rejectCall(roomId);
+    } catch (error) {
+      debugLog('[CallInvitation] failed to persist rejection: $error');
+    }
+  }
+
+  /// 接听/拒绝/通话结束后清掉系统通知栏里残留的来电推送（仅移动端）。
+  void _clearIncomingNotifications() {
+    if (!DeviceUtil.isRealMobile()) return;
+    unawaited(PushManager.instance.clearNotifications());
+  }
+
+  /// 结束通话（挂断 / 桌面关窗）。
+  ///
+  /// 若仍处于呼出振铃态，则发 CALL_CANCEL（取消呼叫）；
+  /// 已接通后调用则发 CALL_END（正常挂断）。
+  Future<void> endRoom(String roomId, {String? title}) async {
+    if (roomId.isEmpty || _endedRooms.contains(roomId)) return;
+    _endedRooms.add(roomId);
+    _ringTimer?.cancel();
+    final current = state;
+    final invite = CallInvitationState(
+      inviteId: (current != null && current.roomId == roomId)
+          ? current.inviteId
+          : _newInviteId(roomId),
+      roomId: roomId,
+      title: title ?? current?.title ?? '',
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      phase: CallInvitationPhase.ended,
+      targetId: current?.targetId,
+    );
+    final wasOutgoing = current?.roomId == roomId &&
+        current?.phase == CallInvitationPhase.outgoing;
+    if (wasOutgoing) {
+      _send(HighMessageType.CALL_CANCEL, invite, targetId: invite.targetId);
+    } else {
+      _send(HighMessageType.CALL_END, invite);
+    }
+    if (state?.roomId == roomId) state = null;
   }
 
   /// Restores an invitation delivered through JPush while the IM WebSocket
@@ -251,35 +349,6 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       return;
     }
     _handleIncomingInvite(invite);
-  }
-
-  Future<void> reject(CallInvitationState invite) async {
-    _send(HighMessageType.CALL_REJECT, invite, targetId: invite.callerId);
-    unawaited(_persistRejection(invite.roomId));
-    state = null;
-  }
-
-  Future<void> _persistRejection(String roomId) async {
-    try {
-      await ref.read(callRepositoryProvider).rejectCall(roomId);
-    } catch (error) {
-      debugLog('[CallInvitation] failed to persist rejection: $error');
-    }
-  }
-
-  Future<void> endRoom(String roomId, {String? title}) async {
-    if (roomId.isEmpty) return;
-    final invite = CallInvitationState(
-      inviteId: state?.roomId == roomId
-          ? state!.inviteId
-          : _newInviteId(roomId),
-      roomId: roomId,
-      title: title ?? state?.title ?? '',
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      phase: CallInvitationPhase.ended,
-    );
-    _send(HighMessageType.CALL_END, invite);
-    if (state?.roomId == roomId) state = null;
   }
 
   void _handleHighMessage(HighMessage msg) {
@@ -305,20 +374,38 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       case HighMessageType.CALL_REJECT:
         _handleTerminalSignal(
           invite,
-          fromSelf,
-          CallInvitationPhase.rejectedElsewhere,
+          fromSelf: fromSelf,
+          selfPhase: CallInvitationPhase.rejectedElsewhere,
+          remotePhase: CallInvitationPhase.rejected,
         );
-        if (!fromSelf) unawaited(_endActiveCall(invite.roomId));
+        if (!fromSelf) {
+          _endedRooms.add(invite.roomId);
+          unawaited(_endActiveCall(invite.roomId));
+        }
+        _clearIncomingNotifications();
         break;
       case HighMessageType.CALL_CANCEL:
-        _handleTerminalSignal(invite, fromSelf, CallInvitationPhase.canceled);
+        _handleTerminalSignal(
+          invite,
+          fromSelf: fromSelf,
+          selfPhase: CallInvitationPhase.canceled,
+          remotePhase: CallInvitationPhase.canceled,
+        );
+        _clearIncomingNotifications();
         break;
       case HighMessageType.CALL_END:
-        _handleTerminalSignal(invite, fromSelf, CallInvitationPhase.ended);
-        ref.read(mobileCallSessionControllerProvider.notifier).end();
+        _handleTerminalSignal(
+          invite,
+          fromSelf: fromSelf,
+          selfPhase: CallInvitationPhase.ended,
+          remotePhase: CallInvitationPhase.ended,
+        );
+        _endedRooms.add(invite.roomId);
+        _clearIncomingNotifications();
+        unawaited(_endActiveCall(invite.roomId));
         break;
       case HighMessageType.CALL_BUSY:
-        if (!fromSelf && state?.roomId == roomId) {
+        if (!fromSelf && _isSameInvite(state, invite)) {
           state = invite.copyWith(phase: CallInvitationPhase.busy);
           _scheduleClear(const Duration(seconds: 2));
         }
@@ -344,10 +431,80 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     _scheduleClear(const Duration(seconds: 45));
   }
 
+  /// 对方已接听：结束呼出振铃并开始连接媒体。
+  ///
+  /// - 移动/Web：启动全局通话会话（拉取 token 后连接 LiveKit）。
+  /// - 桌面：通话窗口此时处于「振铃态」，通过 callChannel 通知其开始连接。
+  Future<void> _openCallAfterAccept(CallInvitationState invite) async {
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
+      // 呼出方视角：标题用对方名称（房间名），而非邀请 payload 里的自己昵称。
+      final room = ref.read(currentRoomProvider(invite.roomId));
+      ref.read(callIsGroupProvider(invite.roomId).notifier).state =
+          invite.isGroup;
+      ref
+          .read(mobileCallSessionControllerProvider.notifier)
+          .start(
+            roomId: invite.roomId,
+            title: room?.roomName ?? invite.title,
+            initialMedia: invite.initialMedia,
+          );
+      return;
+    }
+    final window = ref.read(callWindowControllerProvider);
+    if (window == null) return;
+    try {
+      final fresh = await ref
+          .read(callRepositoryProvider)
+          .fetchCallToken(invite.roomId);
+      await Channel.callChannel.invokeMethod('on_call_accepted', {
+        'token': fresh,
+      });
+    } catch (e) {
+      debugLog('[CallInvitation] 通知通话窗口开始连接失败: $e');
+    }
+  }
+
+  /// 打开通话界面（移动/Web 启动会话浮层；桌面打开独立通话窗口）。
+  Future<void> _openCallUi(CallInvitationState invite) async {
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
+      ref.read(callIsGroupProvider(invite.roomId).notifier).state =
+          invite.isGroup;
+      ref
+          .read(mobileCallSessionControllerProvider.notifier)
+          .start(
+            roomId: invite.roomId,
+            title: invite.title,
+            initialMedia: invite.initialMedia,
+          );
+      return;
+    }
+
+    await ref
+        .read(callWindowControllerProvider.notifier)
+        .openCallWindow(
+          title: invite.title,
+          themeIndex: ref.read(themeIndexProvider),
+          roomId: invite.roomId,
+          initialMedia: invite.initialMedia,
+          isGroup: invite.isGroup,
+          token: await ref.read(roomTokenProvider(invite.roomId).future),
+        );
+  }
+
   Future<void> _endActiveCall(String roomId) async {
     final mobileSession = ref.read(mobileCallSessionControllerProvider);
     if (mobileSession?.roomId == roomId) {
+      final token = mobileSession?.token;
+      // 先关闭会话，让通话浮层立即退出；再断开 LiveKit 房间释放摄像头/麦克风。
       ref.read(mobileCallSessionControllerProvider.notifier).end();
+      if (token != null && token.isNotEmpty) {
+        try {
+          await ref.read(roomControllerProvider(token).notifier).leave();
+        } catch (error) {
+          debugLog('[CallInvitation] 远端结束后清理通话资源失败: $error');
+        }
+      }
+      return;
     }
     final desktopWindow = ref.read(callWindowControllerProvider);
     if (desktopWindow != null) {
@@ -363,25 +520,48 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     CallInvitationState invite, {
     required bool fromSelf,
   }) {
-    if (fromSelf && state?.roomId == invite.roomId) {
+    if (!_isSameInvite(state, invite)) return;
+
+    if (fromSelf) {
+      // 我的其他设备已接听：本端停止振铃并提示。
       state = invite.copyWith(phase: CallInvitationPhase.acceptedElsewhere);
       _scheduleClear(const Duration(seconds: 2));
+      _clearIncomingNotifications();
       return;
     }
 
-    if (state?.roomId == invite.roomId) {
-      state = null;
+    // 对方接听：结束呼出振铃，开始连接媒体（振铃期未连 LiveKit）。
+    final wasOutgoing = state?.phase == CallInvitationPhase.outgoing;
+    state = null;
+    if (wasOutgoing) {
+      unawaited(_openCallAfterAccept(invite));
     }
   }
 
+  /// 终端信令（拒绝/取消/结束）处理。
+  ///
+  /// - [fromSelf]：信号来自我自己的其它设备（多端收敛），展示
+  ///   「已在其他设备接听/拒绝」等提示后短暂停留。
+  /// - 否则：信号来自对端，展示「对方已拒绝 / 通话邀请已取消 / 通话已结束」。
   void _handleTerminalSignal(
-    CallInvitationState invite,
-    bool fromSelf,
-    CallInvitationPhase phase,
-  ) {
-    if (state?.roomId != invite.roomId) return;
-    state = fromSelf ? invite.copyWith(phase: phase) : null;
-    if (fromSelf) _scheduleClear(const Duration(seconds: 2));
+    CallInvitationState invite, {
+    required bool fromSelf,
+    required CallInvitationPhase selfPhase,
+    required CallInvitationPhase remotePhase,
+  }) {
+    if (!_isSameInvite(state, invite)) return;
+    state = invite.copyWith(phase: fromSelf ? selfPhase : remotePhase);
+    _scheduleClear(const Duration(seconds: 2));
+  }
+
+  /// 是否为同一通呼叫（roomId + inviteId 双重匹配）。
+  ///
+  /// 多端收敛依赖 inviteId：一端接听/拒绝后，同一邀请的其它设备
+  /// 才会收到终端信号并停止振铃；同房间的第二次呼叫互不干扰。
+  bool _isSameInvite(CallInvitationState? current, CallInvitationState incoming) {
+    if (current == null) return false;
+    if (current.roomId != incoming.roomId) return false;
+    return current.inviteId == incoming.inviteId;
   }
 
   void _send(
@@ -456,6 +636,17 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       HighMessageType.CALL_BUSY => true,
       _ => false,
     };
+  }
+
+  /// 呼出振铃超时自动取消（1:1，30s 未接听）。
+  void _scheduleAutoCancel(Duration delay) {
+    _ringTimer?.cancel();
+    _ringTimer = Timer(delay, () {
+      final current = state;
+      if (current?.phase == CallInvitationPhase.outgoing) {
+        unawaited(cancelCurrent());
+      }
+    });
   }
 
   String _newInviteId(String roomId) {

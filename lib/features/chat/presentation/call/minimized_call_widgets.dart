@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/features/chat/presentation/call/mobile/mobile_call_timer.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/mobile_participant_surface.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
@@ -14,13 +15,12 @@ class MinimizedAudioCall extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2B3245), Color(0xFF171B25)],
-        ),
-        border: Border.all(color: Colors.white12),
+        gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+        border: Border.all(color: cs.outlineVariant),
         borderRadius: BorderRadius.circular(28),
       ),
       child: Row(
@@ -30,17 +30,13 @@ class MinimizedAudioCall extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.1),
+              color: cs.primary.withValues(alpha: 0.12),
             ),
-            child: const Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedCall02,
-                  color: Colors.white,
-                  size: 18,
-                ),
+            child: Center(
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedCall02,
+                color: cs.primary,
+                size: 18,
               ),
             ),
           ),
@@ -54,8 +50,8 @@ class MinimizedAudioCall extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -63,8 +59,8 @@ class MinimizedAudioCall extends StatelessWidget {
                 const SizedBox(height: 2),
                 MobileCallTimer(
                   joinedAt: joinedAt,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: cs.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
@@ -91,17 +87,14 @@ class MinimizedVideoCall extends StatelessWidget {
         roomState?.remoteParticipants.firstOrNull ??
         roomState?.room.localParticipant;
     if (participant == null) {
-      return const ColoredBox(
-        color: Color(0xFF171A22),
+      final cs = Theme.of(context).colorScheme;
+      return ColoredBox(
+        color: cs.surfaceContainerHighest,
         child: Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedVideoOff,
-              color: Colors.white54,
-              size: 22,
-            ),
+          child: HugeIcon(
+            icon: HugeIcons.strokeRoundedVideoOff,
+            color: cs.onSurfaceVariant,
+            size: 22,
           ),
         ),
       );

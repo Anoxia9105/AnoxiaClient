@@ -216,12 +216,14 @@ class CommandBar extends ConsumerWidget {
         ),
         child: InkWell(
           onTap: () async {
-            ref
-                .read(callInvitationControllerProvider.notifier)
-                .endRoom(state.room.name ?? '');
             if (DeviceUtil.isRealDesktop()) {
+              // 桌面端：CALL_END 统一由窗口关闭回调发出（onWindowClose
+              // → on_call_window_close），避免与挂断后关窗重复发送。
               windowManager.close();
             } else {
+              ref
+                  .read(callInvitationControllerProvider.notifier)
+                  .endRoom(state.room.name ?? '');
               try {
                 await Pip().dispose();
               } catch (e) {

@@ -258,6 +258,19 @@ class RoomController extends _$RoomController {
       // enumerateDevices 才会返回带名称的设备列表，否则菜单里全是空名称
       await _initLocalTracks(room);
 
+      // 应用「呼出振铃页 / 来电页」上选择的免提偏好（仅原生移动端生效；
+      // Web/桌面由系统输出设备决定，无听筒概念）。
+      final speakerPref = ref.read(
+        callSpeakerPreferenceProvider(room.name ?? ''),
+      );
+      if (!speakerPref && DeviceUtil.isRealMobile()) {
+        try {
+          await AudioManager.instance.setSpeakerOutputPreferred(false);
+        } catch (e) {
+          debugLog('应用免提偏好失败: $e');
+        }
+      }
+
       // 获取初始设备列表
       final devices = await _getInitialDevices();
 
@@ -268,7 +281,7 @@ class RoomController extends _$RoomController {
         micEnabled: room.localParticipant?.isMicrophoneEnabled() ?? false,
         cameraEnabled: room.localParticipant?.isCameraEnabled() ?? false,
         screenSharing: false,
-        speakerOn: true,
+        speakerOn: speakerPref,
         audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
         audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
         videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
@@ -928,26 +941,29 @@ class RoomController extends _$RoomController {
   ///
   /// 注意：publishData 不会回传给发送方自己，
   /// 需要本地状态更新的操作必须在调用此方法前先更新 state
-  Future<void> sendDataEvent({
+  Future<bool> sendDataEvent({
     required String topic,
     Map<String, dynamic> payload = const {},
     List<String>? destinationIdentities,
   }) async {
     final currentState = state.value;
-    if (currentState == null) return;
+    final local = currentState?.room.localParticipant;
+    if (currentState == null || local == null) return false;
     try {
       final data = jsonEncode({
         'payload': payload,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
-      await currentState.room.localParticipant?.publishData(
+      await local.publishData(
         utf8.encode(data),
         reliable: true,
         destinationIdentities: destinationIdentities,
         topic: topic,
       );
+      return true;
     } catch (e) {
       debugLog('发送数据事件失败: $e');
+      return false;
     }
   }
 
@@ -992,9 +1008,15 @@ class RoomController extends _$RoomController {
   ///   3. 再广播给房间内其他人
   Future<void> sendReaction(String message) async {
     final current = state.value;
-    if (current == null) return;
-    final uid = current.room.localParticipant?.identity ?? '';
-    if (uid.isEmpty) return;
+    final connected =
+        current != null &&
+        current.connectionState == ConnectionState.connected &&
+        current.room.localParticipant != null;
+    if (!connected || (current.room.localParticipant?.identity ?? '').isEmpty) {
+      _notifyReactionFailed();
+      return;
+    }
+    final uid = current.room.localParticipant!.identity;
 
     final meta = _parseParticipantMeta(current.room.localParticipant);
     final item = ReactionItem(
@@ -1012,7 +1034,7 @@ class RoomController extends _$RoomController {
     _scheduleReactionRemoval(item.id);
 
     // 广播给其他人
-    await sendDataEvent(
+    final sent = await sendDataEvent(
       topic: 'app-chat',
       payload: {
         'message': message,
@@ -1020,6 +1042,15 @@ class RoomController extends _$RoomController {
         'name': meta.name,
         'avatar': meta.avatar,
       },
+    );
+    if (!sent) _notifyReactionFailed();
+  }
+
+  /// 表情/弹幕发送失败（房间未连接或数据通道异常）时的用户提示。
+  void _notifyReactionFailed() {
+    ref.read(toastServiceProvider).showNotificationNow(
+      'call_reaction_failed'.tr(),
+      type: ToastType.warning,
     );
   }
 

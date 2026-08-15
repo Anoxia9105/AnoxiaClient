@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/call_window_room_body.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/call_mobile_room_body.dart';
@@ -43,10 +43,11 @@ class CallRoomPage extends ConsumerWidget {
       ),
       data: (roomState) {
         //  在这里根据设备类型进行端隔离分流！
-        //  仅真实移动端走移动端布局；Web 端与桌面端一致渲染桌面布局
-        //  （CommandBar + 参与者磁贴），由 MobileCallPage 提供主题外壳。
-        if (DeviceUtil.isRealMobile()) {
-          // 移动端：走专门为移动端设计的布局，传入 token 和 roomState
+        //  移动端与 Web 端统一走移动布局（CallMobileRoomBody，含移动端控制条）；
+        //  仅真实桌面端渲染桌面布局（CommandBar + 参与者磁贴）。
+        //  Web 端由 MobileCallPage 提供主题外壳。
+        if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
+          // 移动/Web：走专门为移动端设计的布局，传入 token 和 roomState
           return CallMobileRoomBody(roomState: roomState, token: token);
         } else {
           // 桌面端：直接走全屏的桌面布局，传入 token 和 roomState

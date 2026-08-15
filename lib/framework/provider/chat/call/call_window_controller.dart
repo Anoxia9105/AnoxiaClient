@@ -9,6 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -23,11 +24,23 @@ part 'call_window_controller.g.dart';
 /// 通过 [WindowController] 实现多窗口通信。
 @Riverpod(keepAlive: true)
 class CallWindowController extends _$CallWindowController {
+  /// 当前通话窗口绑定的房间 ID，用于窗口关闭时补发 CALL_END。
+  String? _activeRoomId;
+
   @override
   WindowController? build() {
     Channel.callChannel.setMethodCallHandler((call) async {
       if (call.method == 'on_call_window_close') {
         debugLog('收到窗口关闭');
+        final roomId = _activeRoomId;
+        _activeRoomId = null;
+        if (roomId != null && roomId.isNotEmpty) {
+          // 桌面端 CALL_END 统一在窗口关闭回调发出（挂断/X 关闭共用此路径），
+          // _endedRooms 去重防止对端已结束/已拒绝时重复发送。
+          ref
+              .read(callInvitationControllerProvider.notifier)
+              .endRoom(roomId);
+        }
         state = null;
       } else if (call.method == 'invite_call_members') {
         _sendMemberInvites(Map<String, dynamic>.from(call.arguments as Map));
@@ -73,7 +86,10 @@ class CallWindowController extends _$CallWindowController {
   ///
   /// 若窗口已存在则显示并同步设置，否则创建新窗口。
   /// [themeIndex] 主题索引；[title] 窗口标题；[roomId] 房间 ID；
-  /// [initialMedia] 初始媒体类型；[isGroup] 是否为群组通话；[token] 可选认证令牌。
+  /// [initialMedia] 初始媒体类型；[isGroup] 是否为群组通话；[token] 可选认证令牌；
+  /// [join] 是否为「加入式直连」（群呼发起/加入进行中通话）：
+  /// 为 true 时窗口即使没有 token 也会自行拉取并连接；
+  /// 为 false（1:1 呼出）时窗口进入振铃态，等待主窗口下发 `on_call_accepted`。
   Future<void> openCallWindow({
     required int themeIndex,
     required String title,
@@ -81,6 +97,7 @@ class CallWindowController extends _$CallWindowController {
     CallInitialMedia initialMedia = CallInitialMedia.audio,
     bool isGroup = false,
     String? token,
+    bool join = false,
   }) async {
     if (state != null) {
       await state!.show();
@@ -88,6 +105,7 @@ class CallWindowController extends _$CallWindowController {
       return;
     }
 
+    _activeRoomId = roomId;
     ref.read(callInitialMediaProvider(roomId).notifier).state = initialMedia;
     ref.read(callIsGroupProvider(roomId).notifier).state = isGroup;
     final controller = await WindowController.create(
@@ -99,6 +117,7 @@ class CallWindowController extends _$CallWindowController {
           'roomId': roomId,
           'initialMedia': initialMedia.value,
           'isGroup': isGroup,
+          'join': join,
           if (token != null && token.isNotEmpty) 'token': token,
         }),
       ),

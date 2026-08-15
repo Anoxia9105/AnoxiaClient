@@ -8,7 +8,9 @@ import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
+import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -70,7 +72,16 @@ class ChatMorePanel extends ConsumerWidget {
         ),
       );
       if (switchConfirmed != true || !context.mounted) return;
+      // 切换通话前先断开旧通话的 LiveKit 房间，释放摄像头/麦克风。
+      final oldToken = mobileSession?.token;
       ref.read(mobileCallSessionControllerProvider.notifier).end();
+      if (oldToken != null && oldToken.isNotEmpty) {
+        try {
+          await ref.read(roomControllerProvider(oldToken).notifier).leave();
+        } catch (e) {
+          debugLog('切换通话时清理旧房间失败: $e');
+        }
+      }
     }
 
     final room = ref.read(currentRoomProvider(roomId));

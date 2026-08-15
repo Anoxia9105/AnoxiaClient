@@ -12,6 +12,7 @@ class PushManager {
 
   Future<String> getRegistrationId() async => '';
   Future<bool> isNotificationEnabled() async => false;
+  Future<void> clearNotifications() async {}
 
   Future<String> getOrCreateDeviceUid() async {
     // 浏览器无稳定设备标识，须持久化到 localStorage，否则每次调用都生成新

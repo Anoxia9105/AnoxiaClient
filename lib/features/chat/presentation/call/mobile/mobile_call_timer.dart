@@ -86,8 +86,8 @@ class _MobileCallTimerState extends State<MobileCallTimer> {
       widget.joinedAt == null ? widget.placeholder : _format(_elapsed),
       style:
           widget.style ??
-          const TextStyle(
-            color: Colors.white,
+          TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 16,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.8,

@@ -21,6 +21,7 @@ import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
+import 'framework/provider/chat/message/system_message_service.dart';
 import 'framework/provider/ws/ws_controller.dart';
 import 'gen/assets.gen.dart';
 import 'framework/core/notification_helper.dart';
@@ -52,6 +53,9 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     super.initState();
     // 启动系统事件监听服务（禁言/封禁/解散等事件分发入口）
     ref.read(systemEventServiceProvider);
+
+    // 启动系统消息监听服务（房间通话开始/结束等桌面通知的发送方）
+    ref.read(systemMessageServiceProvider);
 
     // 桌面端：初始化托盘和窗口事件监听
     if (DeviceUtil.isRealDesktop()) {
@@ -96,7 +100,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     _callInvitationSubscription = ref.listenManual<CallInvitationState?>(
       callInvitationControllerProvider,
       (previous, next) {
-        if (!DeviceUtil.isRealDesktop()) return;
+        // 退出来电态即关闭相关来电系统通知（桌面/移动统一处理，避免接听后残留）。
         if (previous != null &&
             previous.phase == CallInvitationPhase.incoming) {
           final shouldCancel =
@@ -109,6 +113,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
             );
           }
         }
+        // 仅桌面端本地触发来电系统通知（移动端由 JPush 后台推送 + 前台顶部横幅负责）。
+        if (!DeviceUtil.isRealDesktop()) return;
         if (next?.phase != CallInvitationPhase.incoming) return;
         final invitation = next!;
         final displayName = invitation.isGroup
@@ -272,7 +278,9 @@ class _AppOverlays extends ConsumerWidget {
     return Stack(
       children: [
         child,
-        if ((DeviceUtil.isAndroid() || DeviceUtil.isWeb) && hasMobileCall)
+        // 移动端（Android/iOS）与 Web：通话会话由全局浮层接管；
+        // 桌面端走独立通话窗口，不需要应用内浮层。
+        if ((DeviceUtil.isRealMobile() || DeviceUtil.isWeb) && hasMobileCall)
           const GlobalCallOverlay(),
         const Positioned.fill(child: CallInvitationOverlay()),
       ],

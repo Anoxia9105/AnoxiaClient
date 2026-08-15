@@ -1,10 +1,13 @@
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /// 音频通话背景组件
 ///
-/// 显示渐变背景 + 装饰光球 + 通话图标 + 房间名称
+/// 显示渐变背景 + 装饰光球 + 通话图标 + 房间名称。
+/// 背景跟随应用主题（scaffoldGradient），图标/文字颜色取自 colorScheme，
+/// 尺寸按屏幕宽度缩放，避免小屏上图标过大。
 class AudioCallBackground extends StatelessWidget {
   const AudioCallBackground({super.key, required this.title});
 
@@ -12,25 +15,29 @@ class AudioCallBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
+    final scale = (MediaQuery.sizeOf(context).width / 375).clamp(0.85, 1.1);
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF202638), Color(0xFF11141D), Color(0xFF080A0F)],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: gradient),
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             top: -90,
             right: -70,
-            child: GlowOrb(size: 260, color: Color(0x334F7DFF)),
+            child: GlowOrb(
+              size: 260 * scale,
+              color: cs.primary.withValues(alpha: 0.16),
+            ),
           ),
-          const Positioned(
+          Positioned(
             bottom: 100,
             left: -90,
-            child: GlowOrb(size: 240, color: Color(0x2256E39F)),
+            child: GlowOrb(
+              size: 240 * scale,
+              color: cs.tertiary.withValues(alpha: 0.12),
+            ),
           ),
           Center(
             child: Padding(
@@ -39,17 +46,17 @@ class AudioCallBackground extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 104,
-                    height: 104,
+                    width: 88 * scale,
+                    height: 88 * scale,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.08),
-                      border: Border.all(color: Colors.white12),
+                      color: cs.primary.withValues(alpha: 0.1),
+                      border: Border.all(color: cs.outlineVariant),
                     ),
-                    child: const HugeIcon(
+                    child: HugeIcon(
                       icon: HugeIcons.strokeRoundedCall02,
-                      color: Colors.white,
-                      size: 46,
+                      color: cs.primary,
+                      size: 36 * scale,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -57,16 +64,19 @@ class AudioCallBackground extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 22 * scale,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'call_voice_call_in_progress'.tr(),
-                    style: const TextStyle(color: Colors.white60, fontSize: 14),
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: 13 * scale,
+                    ),
                   ),
                 ],
               ),
