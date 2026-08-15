@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
+import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/audio_call_background.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
@@ -289,9 +289,14 @@ class MobileVideoLayout extends StatelessWidget {
                   child: IconButton(
                     tooltip: 'call_back_to_grid_tooltip'.tr(),
                     onPressed: () => onFocusChanged(null),
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedGridView,
-                      color: Colors.white,
+                    icon: const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedGridView,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),

@@ -43,14 +43,17 @@ class CallRoomPage extends ConsumerWidget {
       ),
       data: (roomState) {
         //  在这里根据设备类型进行端隔离分流！
-        //  移动端与 Web 端统一走移动布局（CallMobileRoomBody，含移动端控制条）；
-        //  仅真实桌面端渲染桌面布局（CommandBar + 参与者磁贴）。
-        //  Web 端由 MobileCallPage 提供主题外壳。
-        if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
-          // 移动/Web：走专门为移动端设计的布局，传入 token 和 roomState
+        //  - 真实移动端：移动布局（CallMobileRoomBody，底部控制条）
+        //  - Web 窄窗（宽度 < 1024，手机/平板尺寸）：移动布局
+        //  - 真实桌面与 Web 宽屏（PC）：桌面布局（CommandBar + 参与者磁贴），
+        //    配合全局浮层的悬浮窗最小化，即「悬浮窗 + 桌面通话」
+        final useMobileLayout = DeviceUtil.isRealMobile() ||
+            (DeviceUtil.isWeb && !DeviceUtil.isDesktop(context));
+        if (useMobileLayout) {
+          // 移动/Web 窄窗：走专门为移动端设计的布局
           return CallMobileRoomBody(roomState: roomState, token: token);
         } else {
-          // 桌面端：直接走全屏的桌面布局，传入 token 和 roomState
+          // 桌面/Web 宽屏：走桌面布局
           return CallWindowRoomBody(roomState: roomState, token: token);
         }
       },

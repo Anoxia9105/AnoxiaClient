@@ -1,6 +1,7 @@
 // 移动端通话控制栏组件，提供通话中的麦克风、扬声器、摄像头、挂断等控制按钮。
 //
 // 支持音频通话和视频通话两种模式，群组通话中额外显示邀请成员按钮。
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
@@ -98,15 +99,18 @@ class MobileCallControls extends ConsumerWidget {
                   active: state.micEnabled,
                   onPressed: notifier.toggleMic,
                 ),
-                const SizedBox(width: 10),
-                _CallControlButton(
-                  tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
-                  icon: state.speakerOn
-                      ? HugeIcons.strokeRoundedVolumeUp
-                      : HugeIcons.strokeRoundedEar,
-                  active: state.speakerOn,
-                  onPressed: notifier.toggleSpeaker,
-                ),
+                // 听筒/扬声器切换仅真机有意义（Web/桌面由系统输出设备决定）
+                if (DeviceUtil.isRealMobile()) ...[
+                  const SizedBox(width: 10),
+                  _CallControlButton(
+                    tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
+                    icon: state.speakerOn
+                        ? HugeIcons.strokeRoundedVolumeUp
+                        : HugeIcons.strokeRoundedEar,
+                    active: state.speakerOn,
+                    onPressed: notifier.toggleSpeaker,
+                  ),
+                ],
                 if (isVideoCall) ...[
                   const SizedBox(width: 10),
                   _CallControlButton(

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
@@ -254,9 +254,14 @@ class _DeviceMenuContent extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                       iconSize: 16,
                       tooltip: 'call_close_tooltip'.tr(),
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedCancel01,
-                        color: theme.colorScheme.onSurfaceVariant,
+                      icon: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedCancel01,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ],

@@ -428,10 +428,16 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
           onTap: onTap,
           child: SizedBox.square(
             dimension: 34,
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedSent,
-              size: 17,
-              color: colorScheme.onPrimary,
+            child: Center(
+              child: SizedBox(
+                width: 15,
+                height: 15,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedSent,
+                  size: 15,
+                  color: colorScheme.onPrimary,
+                ),
+              ),
             ),
           ),
         ),

@@ -79,101 +79,105 @@ class _IncomingCallPage extends ConsumerWidget {
         : invitation.callerAvatar;
     final controller = ref.read(callInvitationControllerProvider.notifier);
 
-    return ColoredBox(
-      color: gradient?.colors.first ?? cs.surface,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            children: [
-              const Spacer(flex: 3),
-              // 头像 + 类型角标
-              Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomRight,
-                children: [
-                  AvatarWidget(size: 120, url: avatarUrl, name: displayName),
-                  Positioned(
-                    right: 2,
-                    bottom: 2,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: isVideo ? cs.tertiary : cs.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: cs.surface, width: 2.5),
+    // 独立全屏页用 Scaffold 包裹，保证 Material/InkWell/系统栏适配完整
+    return Scaffold(
+      backgroundColor: gradient?.colors.first ?? cs.surface,
+      body: ColoredBox(
+        color: gradient?.colors.first ?? cs.surface,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                const Spacer(flex: 3),
+                // 头像 + 类型角标
+                Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    AvatarWidget(size: 120, url: avatarUrl, name: displayName),
+                    Positioned(
+                      right: 2,
+                      bottom: 2,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: isVideo ? cs.tertiary : cs.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: cs.surface, width: 2.5),
+                        ),
+                        child: HugeIcon(
+                          icon: isVideo
+                              ? HugeIcons.strokeRoundedVideo01
+                              : HugeIcons.strokeRoundedCall02,
+                          size: 17,
+                          color: Colors.white,
+                        ),
                       ),
-                      child: HugeIcon(
-                        icon: isVideo
-                            ? HugeIcons.strokeRoundedVideo01
-                            : HugeIcons.strokeRoundedCall02,
-                        size: 17,
-                        color: Colors.white,
-                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isVideo
+                      ? 'call_invite_video_title'.tr()
+                      : 'call_invite_audio_title'.tr(),
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 15,
+                  ),
+                ),
+                const Spacer(flex: 4),
+                // 拒绝 / 接听
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _CallAction(
+                      label: 'notification_call_reject'.tr(),
+                      icon: HugeIcons.strokeRoundedCallEnd01,
+                      backgroundColor: const Color(0xFFE53945),
+                      onPressed: () => controller.reject(invitation),
+                    ),
+                    const SizedBox(width: 56),
+                    _CallAction(
+                      label: 'notification_call_accept'.tr(),
+                      icon: isVideo
+                          ? HugeIcons.strokeRoundedVideo01
+                          : HugeIcons.strokeRoundedCall02,
+                      backgroundColor: const Color(0xFF22C55E),
+                      onPressed: () => controller.acceptAndOpen(invitation),
+                    ),
+                  ],
+                ),
+                // 视频来电：以语音方式接听
+                if (isVideo) ...[
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () => controller.acceptAndOpen(
+                      invitation,
+                      media: CallInitialMedia.audio,
+                    ),
+                    child: Text(
+                      'call_answer_as_voice'.tr(),
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 28),
-              Text(
-                displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                isVideo
-                    ? 'call_invite_video_title'.tr()
-                    : 'call_invite_audio_title'.tr(),
-                style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 15,
-                ),
-              ),
-              const Spacer(flex: 4),
-              // 拒绝 / 接听
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _CallAction(
-                    label: 'notification_call_reject'.tr(),
-                    icon: HugeIcons.strokeRoundedCallEnd01,
-                    backgroundColor: const Color(0xFFE53945),
-                    onPressed: () => controller.reject(invitation),
-                  ),
-                  const SizedBox(width: 56),
-                  _CallAction(
-                    label: 'notification_call_accept'.tr(),
-                    icon: isVideo
-                        ? HugeIcons.strokeRoundedVideo01
-                        : HugeIcons.strokeRoundedCall02,
-                    backgroundColor: const Color(0xFF22C55E),
-                    onPressed: () => controller.acceptAndOpen(invitation),
-                  ),
-                ],
-              ),
-              // 视频来电：以语音方式接听
-              if (isVideo) ...[
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () => controller.acceptAndOpen(
-                    invitation,
-                    media: CallInitialMedia.audio,
-                  ),
-                  child: Text(
-                    'call_answer_as_voice'.tr(),
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
-                  ),
-                ),
+                const SizedBox(height: 28),
               ],
-              const SizedBox(height: 28),
-            ],
+            ),
           ),
         ),
       ),
@@ -202,64 +206,68 @@ class _OutgoingCallPage extends ConsumerWidget {
     );
     final controller = ref.read(callInvitationControllerProvider.notifier);
 
-    return ColoredBox(
-      color: gradient?.colors.first ?? cs.surface,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            children: [
-              const Spacer(flex: 3),
-              AvatarWidget(size: 120, url: avatarUrl, name: displayName),
-              const SizedBox(height: 28),
-              Text(
-                displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
+    // 独立全屏页用 Scaffold 包裹，保证 Material/InkWell/系统栏适配完整
+    return Scaffold(
+      backgroundColor: gradient?.colors.first ?? cs.surface,
+      body: ColoredBox(
+        color: gradient?.colors.first ?? cs.surface,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                const Spacer(flex: 3),
+                AvatarWidget(size: 120, url: avatarUrl, name: displayName),
+                const SizedBox(height: 28),
+                Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'call_calling'.tr(),
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
-              ),
-              const Spacer(flex: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _CallAction(
-                    label: speakerOn
-                        ? 'call_switch_to_earpiece'.tr()
-                        : 'call_switch_to_speaker'.tr(),
-                    icon: speakerOn
-                        ? HugeIcons.strokeRoundedVolumeUp
-                        : HugeIcons.strokeRoundedEar,
-                    backgroundColor: cs.surfaceContainerHighest,
-                    foregroundColor: cs.onSurfaceVariant,
-                    onPressed: () {
-                      ref
-                          .read(
-                            callSpeakerPreferenceProvider(invitation.roomId)
-                                .notifier,
-                          )
-                          .state = !speakerOn;
-                    },
-                  ),
-                  const SizedBox(width: 56),
-                  _CallAction(
-                    label: 'call_cancel_call'.tr(),
-                    icon: HugeIcons.strokeRoundedCallEnd01,
-                    backgroundColor: const Color(0xFFE53945),
-                    onPressed: () => controller.cancelCurrent(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-            ],
+                const SizedBox(height: 10),
+                Text(
+                  'call_calling'.tr(),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
+                ),
+                const Spacer(flex: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _CallAction(
+                      label: speakerOn
+                          ? 'call_switch_to_earpiece'.tr()
+                          : 'call_switch_to_speaker'.tr(),
+                      icon: speakerOn
+                          ? HugeIcons.strokeRoundedVolumeUp
+                          : HugeIcons.strokeRoundedEar,
+                      backgroundColor: cs.surfaceContainerHighest,
+                      foregroundColor: cs.onSurfaceVariant,
+                      onPressed: () {
+                        ref
+                            .read(
+                              callSpeakerPreferenceProvider(invitation.roomId)
+                                  .notifier,
+                            )
+                            .state = !speakerOn;
+                      },
+                    ),
+                    const SizedBox(width: 56),
+                    _CallAction(
+                      label: 'call_cancel_call'.tr(),
+                      icon: HugeIcons.strokeRoundedCallEnd01,
+                      backgroundColor: const Color(0xFFE53945),
+                      onPressed: () => controller.cancelCurrent(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+              ],
+            ),
           ),
         ),
       ),

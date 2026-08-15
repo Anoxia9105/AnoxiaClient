@@ -486,7 +486,7 @@ sequenceDiagram
 | T3 振铃超时：呼出 30s 自动发 `CALL_CANCEL` 并断开（若已连）；补齐两端超时对称 | `call_invitation_controller.dart`（`_scheduleAutoCancel`） | — | ✅ |
 | T4 群呼/加入语义修正：进行中通话点按钮=直接加入；群邀请=通知式横幅（加入/忽略） | `chat_bar_handlers.dart`、`call_invitation_controller.dart`、`call_invitation_overlay.dart`（群横幅） | — | ✅ |
 | T5 多端收敛：**结论：服务端无需改动**（私聊高频消息本身是 `sendToUser(targetId)+sendToUser(senderId)` 双向投递，天然到达同账号所有设备）；客户端按 `roomId+inviteId` 过滤 + 终端信号路径统一清理系统通知即可闭环 | `call_invitation_controller.dart`（`_isSameInvite`、`_clearIncomingNotifications` 覆盖全部终端路径） | — | ✅（仅客户端） |
-| T6 Web 端布局修正：入口与渲染统一（方案 A：Web 走移动布局） | `call_room_page.dart`（放开 `isWeb`）、`app.dart`（浮层挂载条件修复 iOS） | — | ✅ |
+| T6 Web 端布局修正：**修订结论（2026-08 二轮）**：Web 按窗口宽度自适应——宽屏（≥1024，PC 浏览器）走桌面布局（CommandBar + 磁贴 + 悬浮窗最小化，与桌面端一致）；窄窗（<1024，手机/平板尺寸）走移动布局；移动布局中的听筒/扬声器切换按钮仅真机显示（Web 无听筒概念） | `call_room_page.dart`（按 `DeviceUtil.isDesktop(context)` 分流）、`mobile_call_controls.dart`（扬声器切换仅真机）、`app.dart`（浮层挂载条件修复 iOS） | — | ✅ |
 
 ### 6.2 P1：UI 统一与细节
 
@@ -532,7 +532,7 @@ sequenceDiagram
 > 评审本文档时请逐条给出结论（✅ 同意 / ✏️ 修改 / ❌ 砍掉）。以下为你的答复与落地结果。
 
 1. **移动端来电形态**：全屏来电页替换横幅？（推荐：替换，P0）— **✅ 已按全屏来电页实现**（Web 保留横幅，桌面系统通知）
-2. **Web 端目标形态**：方案 A 复用移动布局 vs 方案 B 独立 Web 布局？（推荐 A，P0）— **✅ 已按方案 A 实现**
+2. **Web 端目标形态**：方案 A 复用移动布局 vs 方案 B 独立 Web 布局？（推荐 A，P0）— **✏️ 修订（2026-08 二轮）：按窗口宽度自适应**：宽屏（PC 浏览器）走桌面布局（悬浮窗+桌面通话，与桌面端一致）；窄窗（手机/平板尺寸）走移动布局；移动布局的听筒/扬声器切换仅真机显示
 3. **群呼是否振铃**：群成员收到的是"通知"还是"振铃"？（推荐：通知/加入式，不振铃）— **✅ 已按通知式横幅（加入/忽略）实现**
 4. **多端收敛的服务端实现**：接受新增"终端信令按房间广播"的协议改动吗？（P0 需要）— **✅ 同意。但实现时调研发现：私聊高频消息服务端本就是 `sendToUser(targetId)+sendToUser(senderId)` 双向投递，会到达同账号所有设备，多端收敛无需改服务端协议；已改为纯客户端收敛（inviteId 过滤 + 全终端路径清理系统通知）。若后续发现真机收敛问题，再补房间广播。**
 5. **呼出振铃页的"免提"开关**：是否本期就要？（推荐要，改动小）— **✅ 已实现**（`callSpeakerPreferenceProvider`，媒体连接时应用）

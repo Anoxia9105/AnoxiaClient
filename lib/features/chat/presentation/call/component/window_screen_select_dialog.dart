@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:flutter/material.dart';
@@ -209,7 +209,14 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          const HugeIcon(icon: HugeIcons.strokeRoundedComputerScreenShare),
+          const SizedBox(
+            width: 22,
+            height: 22,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedComputerScreenShare,
+              size: 22,
+            ),
+          ),
           const SizedBox(width: 10),
           Text(
             'call_share_select_title'.tr(),
@@ -218,7 +225,14 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
           const Spacer(),
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01),
+            icon: const SizedBox(
+              width: 20,
+              height: 20,
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedCancel01,
+                size: 20,
+              ),
+            ),
           ),
         ],
       ),
@@ -331,7 +345,15 @@ class ThumbnailWidget extends StatelessWidget {
                           gaplessPlayback: true,
                         )
                       : const Center(
-                          child: HugeIcon(icon: HugeIcons.strokeRoundedComputer, color: Colors.white24),
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedComputer,
+                              color: Colors.white24,
+                              size: 36,
+                            ),
+                          ),
                         ),
                 ),
               ),
