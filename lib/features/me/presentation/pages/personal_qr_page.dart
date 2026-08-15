@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/utils/app_permission.dart';
@@ -169,12 +169,9 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final qrData = jsonEncode({
-      'type': 'user_card',
-      'userId': widget.user.userId,
-      'userName': widget.user.userName,
-      'nickName': widget.user.nickName,
-    });
+    // 二维码编码短链接而非 JSON：微信等外部扫码器可识别为链接，
+    // 后端 /u/{userId} 提供名片落地页；App 内扫码由扫码页解析 URL 跳转。
+    final qrData = '${API.qrUserBaseUrl}${widget.user.userId}';
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,

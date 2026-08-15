@@ -19,6 +19,12 @@ class API {
   /// WebSocket 实时音视频通话接口地址
   static const String wsRoomBaseUrl = 'wss://live.anoxia.cn';
 
+  /// 个人二维码内容前缀（`/u/{userId}`）。
+  ///
+  /// 二维码编码的是链接而非 JSON，微信等外部扫码器可识别为 URL；
+  /// 后端同名路由提供用户名片落地页（AnoxiaServer UserQrController）。
+  static const String qrUserBaseUrl = 'https://chat.anoxia.cn/u/';
+
   /// 应用更新检查接口
   static const String appUpdateLatest = '/app/update/latest';
 

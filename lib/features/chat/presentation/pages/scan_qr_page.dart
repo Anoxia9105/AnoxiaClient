@@ -6,7 +6,11 @@ import 'dart:convert';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/app/presentation/pages/scan_login_confirm_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
+import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
+import 'package:anoxia/framework/domain/user_vo.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,17 +76,32 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
         return;
       }
 
-      Toast.showToast(
-        'chat_scan_user_card_detected'.tr(args: [card.userName]),
-        type: ToastType.success,
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => AddFriendPage(initialKeyword: card.userName),
-        ),
-      );
-      return;
+      // 新版 URL 名片（https://<host>/u/{userId}）：拉取用户详情后直接弹好友申请
+      // 对话框；未登录或拉取失败时降级为展示原始内容。
+      if (card.userId != null && card.userName.isEmpty) {
+        final handled = await _handleUrlUserCard(card.userId!);
+        if (handled) {
+          if (!mounted) return;
+          _handling = false;
+          await _controller.start();
+          return;
+        }
+      } else {
+        // 旧版 JSON 名片：跳转添加好友页按用户名搜索。
+        Toast.showToast(
+          'chat_scan_user_card_detected'.tr(args: [card.userName]),
+          type: ToastType.success,
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => AddFriendPage(initialKeyword: card.userName),
+          ),
+        );
+        return;
+      }
     }
+
+    if (!mounted) return;
 
     // 扫码登录二维码：跳转手机确认页
     final ticket = _tryParseScanLoginTicket(raw);
@@ -124,10 +143,58 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
     }
   }
 
+  /// 处理新版 URL 格式的用户名片（`https://<host>/u/{userId}`）。
+  ///
+  /// 拉取用户详情成功后弹好友申请对话框并返回 true（用户取消对话框也视为
+  /// 已处理）；未登录或拉取失败时返回 false，由调用方降级为展示原始内容。
+  Future<bool> _handleUrlUserCard(int userId) async {
+    try {
+      final detail = await ref
+          .read(contactRepositoryProvider)
+          .getContactDetail(userId);
+      if (!mounted) return false;
+      if (detail.userId == null &&
+          (detail.nickName ?? '').isEmpty &&
+          (detail.userName ?? '').isEmpty) {
+        return false;
+      }
+
+      final user = UserVO(
+        userId: detail.userId ?? userId,
+        userName: detail.userName ?? '',
+        nickName: detail.nickName ?? '',
+        avatar: detail.avatar,
+        phonenumber: detail.phoneNumber,
+        sex: detail.sex,
+      );
+      Toast.showToast(
+        'chat_scan_user_card_detected'.tr(args: [user.nickName]),
+        type: ToastType.success,
+      );
+      final result = await AddFriendDialog.show(context, user);
+      if (result == null || !mounted) return true;
+      Toast.showToast(
+        result
+            ? 'add_friend_request_sent'.tr()
+            : 'add_friend_request_failed'.tr(),
+        type: result ? ToastType.success : ToastType.error,
+      );
+      return true;
+    } catch (e, st) {
+      debugLog('[Scan] 拉取二维码用户详情失败: $e', e, st);
+      return false;
+    }
+  }
+
   /// 尝试将扫码结果解析为用户名片。
   ///
-  /// 返回 [_UserCardPayload] 如果内容为有效的用户名片 JSON，否则返回 null。
+  /// 优先解析新版 URL 格式（`https://<host>/u/{userId}`），
+  /// 其次兼容旧版 `user_card` JSON（历史已分享的二维码）。
+  /// 返回 [_UserCardPayload] 如果内容为有效的用户名片，否则返回 null。
   _UserCardPayload? _tryParseUserCard(String raw) {
+    final urlCard = _tryParseUserUrl(raw);
+    if (urlCard != null) return urlCard;
+
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return null;
@@ -147,6 +214,23 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       }
 
       return _UserCardPayload(userName: userName, userId: userId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 尝试将扫码结果解析为 URL 格式的用户名片（`https://<host>/u/{userId}`）。
+  _UserCardPayload? _tryParseUserUrl(String raw) {
+    try {
+      final uri = Uri.parse(raw.trim());
+      if (!uri.hasScheme) return null;
+      final scheme = uri.scheme.toLowerCase();
+      if (scheme != 'http' && scheme != 'https') return null;
+      final segments = uri.pathSegments;
+      if (segments.length != 2 || segments.first != 'u') return null;
+      final userId = int.tryParse(segments[1]);
+      if (userId == null) return null;
+      return _UserCardPayload(userName: '', userId: userId);
     } catch (_) {
       return null;
     }
@@ -316,7 +400,8 @@ class ScanQrResultPage extends StatelessWidget {
 class _UserCardPayload {
   const _UserCardPayload({required this.userName, this.userId});
 
-  /// 用户名。
+  /// 用户名（旧版 JSON 名片内嵌；URL 名片为 `https://<host>/u/{userId}` 时为空串，
+  /// 此时须依赖 [userId] 拉取用户详情）。
   final String userName;
 
   /// 用户 ID（可选）。
