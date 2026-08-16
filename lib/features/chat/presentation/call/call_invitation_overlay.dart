@@ -4,8 +4,8 @@
 //   用户通过通知的接听/拒绝动作处理；呼出振铃由独立通话窗口展示；
 //   其余阶段（忙线/取消/被拒等）保留轻量提示。
 // - 手机端：1:1 来电显示全屏来电页，呼出显示全屏振铃页；
-//   群呼邀请是「通知式」横幅（可加入/忽略）。
-// - Web 端：来电保留顶部非遮挡横幅（可接听/拒绝），呼出显示全屏振铃页。
+//   群呼邀请是「通知式」卡片（可加入/忽略）。
+// - Web/桌面端：来电显示右上角卡片通知（可接听/拒绝），呼出显示全屏振铃页。
 import 'package:anoxia/common/constants/call_window_sizes.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -46,11 +46,14 @@ class CallInvitationOverlay extends ConsumerWidget {
 
     return switch (invitation.phase) {
       CallInvitationPhase.incoming =>
-        // 1:1 手机端全屏来电；其余（Web/桌面/群呼）用轻量横幅
-        // 桌面端另由 app.dart 触发系统来电通知，两者并存
+        // 1:1 手机端全屏来电；桌面/Web 用右上角卡片通知；
+        // 移动端群呼用顶部居中卡片。桌面端另由 app.dart 触发系统来电通知，两者并存
         (DeviceUtil.isRealMobile() && !invitation.isGroup)
             ? _IncomingCallPage(invitation: invitation)
-            : _IncomingCallBanner(invitation: invitation),
+            : _IncomingCallBanner(
+                invitation: invitation,
+                alignTopRight: !DeviceUtil.isRealMobile(),
+              ),
       CallInvitationPhase.outgoing => (DeviceUtil.isRealDesktop() ||
               invitation.isGroup)
           ? const SizedBox.shrink()
@@ -420,15 +423,22 @@ class _CallAction extends StatelessWidget {
   }
 }
 
-/// 顶部来电横幅
+/// 来电通知卡片
 ///
-/// 非遮挡式：仅横幅区域拦截触摸，其余区域透传给下层界面。
+/// 非遮挡式：仅卡片区域拦截触摸，其余区域透传给下层界面。
 /// 展示来电者头像、名称和通话类型，并提供接听/拒绝按钮。
-/// 群呼横幅是「通知式」：按钮为 忽略/加入（加入式直连，不发 ACCEPT 信令）。
+/// 桌面/Web 端停在右上角（[alignTopRight]），移动端群呼停顶部居中；
+/// 群呼卡片是「通知式」：按钮为 忽略/加入（加入式直连，不发 ACCEPT 信令）。
 class _IncomingCallBanner extends ConsumerWidget {
-  const _IncomingCallBanner({required this.invitation});
+  const _IncomingCallBanner({
+    required this.invitation,
+    this.alignTopRight = false,
+  });
 
   final CallInvitationState invitation;
+
+  /// 是否为桌面/Web 的右上角卡片样式（内容自适应、限宽）。
+  final bool alignTopRight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -441,7 +451,7 @@ class _IncomingCallBanner extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: Align(
-        alignment: Alignment.topCenter,
+        alignment: alignTopRight ? Alignment.topRight : Alignment.topCenter,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: Material(
@@ -452,6 +462,8 @@ class _IncomingCallBanner extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
+                mainAxisSize:
+                    alignTopRight ? MainAxisSize.min : MainAxisSize.max,
                 children: [
                   Stack(
                     alignment: Alignment.bottomRight,
@@ -488,31 +500,36 @@ class _IncomingCallBanner extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          invitation.callerName.isEmpty
-                              ? invitation.title
-                              : invitation.callerName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          mediaLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: cs.onSurfaceVariant,
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: alignTopRight ? 200 : double.infinity,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            invitation.callerName.isEmpty
+                                ? invitation.title
+                                : invitation.callerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Text(
+                            mediaLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -563,7 +580,7 @@ class _IncomingCallBanner extends ConsumerWidget {
   }
 }
 
-/// 来电横幅上的圆形动作按钮
+/// 来电通知卡片上的圆形动作按钮
 class _RoundActionButton extends StatelessWidget {
   const _RoundActionButton({
     required this.tooltip,
