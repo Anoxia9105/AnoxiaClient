@@ -5,7 +5,8 @@
 //   其余阶段（忙线/取消/被拒等）保留轻量提示。
 // - 手机端：1:1 来电显示全屏来电页，呼出显示全屏振铃页；
 //   群呼邀请是「通知式」卡片（可加入/忽略）。
-// - Web/桌面端：来电显示右上角卡片通知（可接听/拒绝），呼出显示全屏振铃页。
+// - Web 端：来电保留顶部非遮挡横条（可接听/拒绝），呼出显示全屏振铃页；
+//   真实桌面端来电为右上角卡片通知。
 import 'package:anoxia/common/constants/call_window_sizes.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -46,13 +47,13 @@ class CallInvitationOverlay extends ConsumerWidget {
 
     return switch (invitation.phase) {
       CallInvitationPhase.incoming =>
-        // 1:1 手机端全屏来电；桌面/Web 用右上角卡片通知；
-        // 移动端群呼用顶部居中卡片。桌面端另由 app.dart 触发系统来电通知，两者并存
+        // 1:1 手机端全屏来电；真实桌面端用右上角卡片通知；
+        // Web 与移动端群呼保持顶部居中横条。桌面端另由 app.dart 触发系统来电通知，两者并存
         (DeviceUtil.isRealMobile() && !invitation.isGroup)
             ? _IncomingCallPage(invitation: invitation)
             : _IncomingCallBanner(
                 invitation: invitation,
-                alignTopRight: !DeviceUtil.isRealMobile(),
+                alignTopRight: DeviceUtil.isRealDesktop(),
               ),
       CallInvitationPhase.outgoing => (DeviceUtil.isRealDesktop() ||
               invitation.isGroup)
@@ -427,7 +428,7 @@ class _CallAction extends StatelessWidget {
 ///
 /// 非遮挡式：仅卡片区域拦截触摸，其余区域透传给下层界面。
 /// 展示来电者头像、名称和通话类型，并提供接听/拒绝按钮。
-/// 桌面/Web 端停在右上角（[alignTopRight]），移动端群呼停顶部居中；
+/// 真实桌面端停在右上角（[alignTopRight]），Web 与移动端群呼停顶部居中；
 /// 群呼卡片是「通知式」：按钮为 忽略/加入（加入式直连，不发 ACCEPT 信令）。
 class _IncomingCallBanner extends ConsumerWidget {
   const _IncomingCallBanner({
