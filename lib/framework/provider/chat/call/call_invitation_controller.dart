@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui' show Offset;
 
+import 'package:anoxia/common/constants/call_window_sizes.dart';
 import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
@@ -50,6 +52,12 @@ class CallInvitationState {
   final String callerAvatar;
   final String roomAvatar;
 
+  /// 是否已最小化到全局悬浮窗（仅本地 UI 状态，不随信令传输）
+  final bool minimized;
+
+  /// 悬浮窗坐标（仅本地 UI 状态）
+  final Offset position;
+
   const CallInvitationState({
     required this.inviteId,
     required this.roomId,
@@ -63,11 +71,15 @@ class CallInvitationState {
     this.callerName = '',
     this.callerAvatar = '',
     this.roomAvatar = '',
+    this.minimized = false,
+    this.position = const Offset(16, 150),
   });
 
   CallInvitationState copyWith({
     CallInvitationPhase? phase,
     CallInitialMedia? initialMedia,
+    bool? minimized,
+    Offset? position,
   }) {
     return CallInvitationState(
       inviteId: inviteId,
@@ -82,6 +94,8 @@ class CallInvitationState {
       callerName: callerName,
       callerAvatar: callerAvatar,
       roomAvatar: roomAvatar,
+      minimized: minimized ?? this.minimized,
+      position: position ?? this.position,
     );
   }
 
@@ -286,23 +300,63 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     state = null;
   }
 
-  /// 拒绝来电：发送 REJECT 信令，1:1 时由服务端落一条「对方已拒绝」系统消息。
-  Future<void> reject(CallInvitationState invite) async {
-    _send(HighMessageType.CALL_REJECT, invite, targetId: invite.callerId);
-    // 群呼为加入式，无拒绝语义，不落系统消息。
-    if (!invite.isGroup) {
-      unawaited(_persistRejection(invite.roomId));
-    }
-    _clearIncomingNotifications();
-    state = null;
+  /// 最小化邀请页到全局悬浮窗（手机/Web 全屏邀请页）。
+  void minimizeInvitation() {
+    final current = state;
+    if (current == null) return;
+    state = current.copyWith(minimized: true);
   }
 
-  Future<void> _persistRejection(String roomId) async {
-    try {
-      await ref.read(callRepositoryProvider).rejectCall(roomId);
-    } catch (error) {
-      debugLog('[CallInvitation] failed to persist rejection: $error');
+  /// 点击悬浮窗恢复全屏邀请页。
+  void restoreInvitation() {
+    final current = state;
+    if (current == null) return;
+    state = current.copyWith(minimized: false);
+  }
+
+  /// 悬浮窗拖拽中实时更新坐标（边界约束与通话悬浮窗一致）。
+  void updateInvitationPosition(
+    Offset delta,
+    double screenWidth,
+    double screenHeight,
+  ) {
+    final current = state;
+    if (current == null) return;
+    final widgetWidth = CallWindowSizes.audioWidth;
+    final widgetHeight = CallWindowSizes.audioHeight;
+    double newX = current.position.dx + delta.dx;
+    double newY = current.position.dy + delta.dy;
+    newX = newX.clamp(
+      0.0,
+      (screenWidth - widgetWidth).clamp(0.0, double.infinity),
+    );
+    newY = newY.clamp(
+      40.0,
+      (screenHeight - widgetHeight - 40.0).clamp(40.0, double.infinity),
+    );
+    state = current.copyWith(position: Offset(newX, newY));
+  }
+
+  /// 悬浮窗手势松开后自动吸边。
+  void snapInvitationToEdge(double screenWidth) {
+    final current = state;
+    if (current == null) return;
+    final widgetWidth = CallWindowSizes.audioWidth;
+    final padding = CallWindowSizes.edgePadding;
+    double targetX;
+    if ((current.position.dx + widgetWidth / 2) < screenWidth / 2) {
+      targetX = padding;
+    } else {
+      targetX = screenWidth - widgetWidth - padding;
     }
+    state = current.copyWith(position: Offset(targetX, current.position.dy));
+  }
+
+  /// 拒绝来电：发送 REJECT 信令，1:1 时由服务端在信令处落一条「对方已拒绝」系统消息。
+  Future<void> reject(CallInvitationState invite) async {
+    _send(HighMessageType.CALL_REJECT, invite, targetId: invite.callerId);
+    _clearIncomingNotifications();
+    state = null;
   }
 
   /// 接听/拒绝/通话结束后清掉系统通知栏里残留的来电推送（仅移动端）。
@@ -405,12 +459,22 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         );
         _endedRooms.add(invite.roomId);
         _clearIncomingNotifications();
-        unawaited(_endActiveCall(invite.roomId));
+        // 通话进行中（非振铃期）对方挂断：提示后再结束会话，避免界面
+        // 直接消失而用户不知道原因。
+        unawaited(_endActiveCall(invite.roomId, showPeerEndedNotice: !fromSelf));
         break;
       case HighMessageType.CALL_BUSY:
         if (!fromSelf && _isSameInvite(state, invite)) {
-          state = invite.copyWith(phase: CallInvitationPhase.busy);
-          _scheduleClear(const Duration(seconds: 2));
+          if (state?.minimized == true) {
+            // 悬浮窗态收到忙线：Toast 提示后直接清除，避免弹回全屏。
+            ref
+                .read(toastServiceProvider)
+                .showNotificationNow('call_peer_busy'.tr());
+            state = null;
+          } else {
+            state = invite.copyWith(phase: CallInvitationPhase.busy);
+            _scheduleClear(const Duration(seconds: 2));
+          }
         }
         break;
       default:
@@ -494,10 +558,18 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         );
   }
 
-  Future<void> _endActiveCall(String roomId) async {
+  Future<void> _endActiveCall(
+    String roomId, {
+    bool showPeerEndedNotice = false,
+  }) async {
     final mobileSession = ref.read(mobileCallSessionControllerProvider);
     if (mobileSession?.roomId == roomId) {
       final token = mobileSession?.token;
+      if (showPeerEndedNotice) {
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow('call_peer_ended'.tr());
+      }
       // 先关闭会话，让通话浮层立即退出；再断开 LiveKit 房间释放摄像头/麦克风。
       ref.read(mobileCallSessionControllerProvider.notifier).end();
       if (token != null && token.isNotEmpty) {
@@ -527,8 +599,16 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
 
     if (fromSelf) {
       // 我的其他设备已接听：本端停止振铃并提示。
-      state = invite.copyWith(phase: CallInvitationPhase.acceptedElsewhere);
-      _scheduleClear(const Duration(seconds: 2));
+      if (state?.minimized == true) {
+        // 悬浮窗态：Toast 提示后直接清除，避免弹回全屏。
+        ref
+            .read(toastServiceProvider)
+            .showNotificationNow('call_answered_elsewhere'.tr());
+        state = null;
+      } else {
+        state = invite.copyWith(phase: CallInvitationPhase.acceptedElsewhere);
+        _scheduleClear(const Duration(seconds: 2));
+      }
       _clearIncomingNotifications();
       return;
     }
@@ -553,6 +633,19 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     required CallInvitationPhase remotePhase,
   }) {
     if (!_isSameInvite(state, invite)) return;
+    if (state?.minimized == true) {
+      // 悬浮窗态收到终端信号：Toast 提示后直接清除，避免弹回全屏通知卡。
+      final effective = fromSelf ? selfPhase : remotePhase;
+      final text = switch (effective) {
+        CallInvitationPhase.rejected => 'call_rejected_by_peer',
+        CallInvitationPhase.rejectedElsewhere => 'call_rejected_elsewhere',
+        CallInvitationPhase.canceled => 'call_invitation_cancelled',
+        _ => 'call_ended',
+      };
+      ref.read(toastServiceProvider).showNotificationNow(text.tr());
+      state = null;
+      return;
+    }
     state = invite.copyWith(phase: fromSelf ? selfPhase : remotePhase);
     _scheduleClear(const Duration(seconds: 2));
   }

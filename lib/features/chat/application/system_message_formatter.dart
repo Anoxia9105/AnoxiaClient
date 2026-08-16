@@ -176,6 +176,13 @@ class SystemMessageFormatter {
           namedArgs: {'nickName': message.properties['nickName'] ?? '--'},
         ),
       ),
+      'CALL_CANCELED' => SystemMessageDisplay(
+        action: action,
+        icon: HugeIcons.strokeRoundedCallEnd03,
+        text: 'system_msg_call_cancelled'.tr(
+          namedArgs: {'nickName': message.properties['nickName'] ?? '--'},
+        ),
+      ),
       'ROOM_DISSOLVED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedCancel01,

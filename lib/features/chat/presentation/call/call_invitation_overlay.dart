@@ -6,6 +6,7 @@
 // - 手机端：1:1 来电显示全屏来电页，呼出显示全屏振铃页；
 //   群呼邀请是「通知式」横幅（可加入/忽略）。
 // - Web 端：来电保留顶部非遮挡横幅（可接听/拒绝），呼出显示全屏振铃页。
+import 'package:anoxia/common/constants/call_window_sizes.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
@@ -28,6 +29,20 @@ class CallInvitationOverlay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final invitation = ref.watch(callInvitationControllerProvider);
     if (invitation == null) return const SizedBox.shrink();
+
+    // 最小化态：只渲染可拖拽悬浮窗，不拦截整屏触摸；
+    // 点击小窗恢复全屏邀请页。
+    if (invitation.minimized) {
+      return Stack(
+        children: [
+          Positioned(
+            left: invitation.position.dx,
+            top: invitation.position.dy,
+            child: _MinimizedInvitationBubble(invitation: invitation),
+          ),
+        ],
+      );
+    }
 
     return switch (invitation.phase) {
       CallInvitationPhase.incoming =>
@@ -83,104 +98,139 @@ class _IncomingCallPage extends ConsumerWidget {
     // 独立全屏页用 Scaffold 包裹，保证 Material/InkWell/系统栏适配完整
     return Scaffold(
       backgroundColor: gradient?.colors.first ?? cs.surface,
-      body: ColoredBox(
-        color: gradient?.colors.first ?? cs.surface,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: [
-                const Spacer(flex: 3),
-                // 头像 + 类型角标
-                Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    AvatarWidget(size: 120, url: avatarUrl, name: displayName),
-                    Positioned(
-                      right: 2,
-                      bottom: 2,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: isVideo ? cs.tertiary : cs.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: cs.surface, width: 2.5),
-                        ),
-                        child: HugeIcon(
-                          icon: isVideo
-                              ? HugeIcons.strokeRoundedVideo01
-                              : HugeIcons.strokeRoundedCall02,
-                          size: 17,
-                          color: Colors.white,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: ColoredBox(
+              color: gradient?.colors.first ?? cs.surface,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 3),
+                      // 头像 + 类型角标
+                      Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          AvatarWidget(
+                            size: 120,
+                            url: avatarUrl,
+                            name: displayName,
+                          ),
+                          Positioned(
+                            right: 2,
+                            bottom: 2,
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: isVideo ? cs.tertiary : cs.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: cs.surface, width: 2.5),
+                              ),
+                              child: HugeIcon(
+                                icon: isVideo
+                                    ? HugeIcons.strokeRoundedVideo01
+                                    : HugeIcons.strokeRoundedCall02,
+                                size: 17,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                      const SizedBox(height: 10),
+                      Text(
+                        isVideo
+                            ? 'call_invite_video_title'.tr()
+                            : 'call_invite_audio_title'.tr(),
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const Spacer(flex: 4),
+                      // 拒绝 / 接听
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _CallAction(
+                            label: 'notification_call_reject'.tr(),
+                            icon: HugeIcons.strokeRoundedCallEnd01,
+                            backgroundColor: const Color(0xFFE53945),
+                            onPressed: () => controller.reject(invitation),
+                          ),
+                          const SizedBox(width: 56),
+                          _CallAction(
+                            label: 'notification_call_accept'.tr(),
+                            icon: isVideo
+                                ? HugeIcons.strokeRoundedVideo01
+                                : HugeIcons.strokeRoundedCall02,
+                            backgroundColor: const Color(0xFF22C55E),
+                            onPressed: () =>
+                                controller.acceptAndOpen(invitation),
+                          ),
+                        ],
+                      ),
+                      // 视频来电：以语音方式接听
+                      if (isVideo) ...[
+                        const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: () => controller.acceptAndOpen(
+                            invitation,
+                            media: CallInitialMedia.audio,
+                          ),
+                          child: Text(
+                            'call_answer_as_voice'.tr(),
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 28),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  isVideo
-                      ? 'call_invite_video_title'.tr()
-                      : 'call_invite_audio_title'.tr(),
-                  style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: 15,
-                  ),
-                ),
-                const Spacer(flex: 4),
-                // 拒绝 / 接听
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _CallAction(
-                      label: 'notification_call_reject'.tr(),
-                      icon: HugeIcons.strokeRoundedCallEnd01,
-                      backgroundColor: const Color(0xFFE53945),
-                      onPressed: () => controller.reject(invitation),
-                    ),
-                    const SizedBox(width: 56),
-                    _CallAction(
-                      label: 'notification_call_accept'.tr(),
-                      icon: isVideo
-                          ? HugeIcons.strokeRoundedVideo01
-                          : HugeIcons.strokeRoundedCall02,
-                      backgroundColor: const Color(0xFF22C55E),
-                      onPressed: () => controller.acceptAndOpen(invitation),
-                    ),
-                  ],
-                ),
-                // 视频来电：以语音方式接听
-                if (isVideo) ...[
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () => controller.acceptAndOpen(
-                      invitation,
-                      media: CallInitialMedia.audio,
-                    ),
-                    child: Text(
-                      'call_answer_as_voice'.tr(),
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 28),
-              ],
+              ),
             ),
           ),
-        ),
+          // 最小化到全局悬浮窗
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Material(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.7),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    tooltip: 'call_minimize_tooltip'.tr(),
+                    onPressed: () => controller.minimizeInvitation(),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowDown01,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -210,70 +260,105 @@ class _OutgoingCallPage extends ConsumerWidget {
     // 独立全屏页用 Scaffold 包裹，保证 Material/InkWell/系统栏适配完整
     return Scaffold(
       backgroundColor: gradient?.colors.first ?? cs.surface,
-      body: ColoredBox(
-        color: gradient?.colors.first ?? cs.surface,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: [
-                const Spacer(flex: 3),
-                AvatarWidget(size: 120, url: avatarUrl, name: displayName),
-                const SizedBox(height: 28),
-                Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: ColoredBox(
+              color: gradient?.colors.first ?? cs.surface,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 3),
+                      AvatarWidget(
+                        size: 120,
+                        url: avatarUrl,
+                        name: displayName,
+                      ),
+                      const SizedBox(height: 28),
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'call_calling'.tr(),
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const Spacer(flex: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // 免提/听筒切换仅真机有意义（Web/桌面由系统输出设备决定）
+                          if (DeviceUtil.isRealMobile()) ...[
+                            _CallAction(
+                              label: speakerOn
+                                  ? 'call_switch_to_earpiece'.tr()
+                                  : 'call_switch_to_speaker'.tr(),
+                              icon: speakerOn
+                                  ? HugeIcons.strokeRoundedVolumeUp
+                                  : HugeIcons.strokeRoundedEar,
+                              backgroundColor: cs.surfaceContainerHighest,
+                              foregroundColor: cs.onSurfaceVariant,
+                              onPressed: () {
+                                ref
+                                    .read(
+                                      callSpeakerPreferenceProvider(
+                                        invitation.roomId,
+                                      ).notifier,
+                                    )
+                                    .state = !speakerOn;
+                              },
+                            ),
+                            const SizedBox(width: 56),
+                          ],
+                          _CallAction(
+                            label: 'call_cancel_call'.tr(),
+                            icon: HugeIcons.strokeRoundedCallEnd01,
+                            backgroundColor: const Color(0xFFE53945),
+                            onPressed: () => controller.cancelCurrent(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'call_calling'.tr(),
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
-                ),
-                const Spacer(flex: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 免提/听筒切换仅真机有意义（Web/桌面由系统输出设备决定）
-                    if (DeviceUtil.isRealMobile()) ...[
-                      _CallAction(
-                        label: speakerOn
-                            ? 'call_switch_to_earpiece'.tr()
-                            : 'call_switch_to_speaker'.tr(),
-                        icon: speakerOn
-                            ? HugeIcons.strokeRoundedVolumeUp
-                            : HugeIcons.strokeRoundedEar,
-                        backgroundColor: cs.surfaceContainerHighest,
-                        foregroundColor: cs.onSurfaceVariant,
-                        onPressed: () {
-                          ref
-                              .read(
-                                callSpeakerPreferenceProvider(invitation.roomId)
-                                    .notifier,
-                              )
-                              .state = !speakerOn;
-                        },
-                      ),
-                      const SizedBox(width: 56),
-                    ],
-                    _CallAction(
-                      label: 'call_cancel_call'.tr(),
-                      icon: HugeIcons.strokeRoundedCallEnd01,
-                      backgroundColor: const Color(0xFFE53945),
-                      onPressed: () => controller.cancelCurrent(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
-              ],
+              ),
             ),
           ),
-        ),
+          // 最小化到全局悬浮窗
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Material(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.7),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    tooltip: 'call_minimize_tooltip'.tr(),
+                    onPressed: () => controller.minimizeInvitation(),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowDown01,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -511,6 +596,116 @@ class _RoundActionButton extends StatelessWidget {
                 child: HugeIcon(icon: icon, size: 18, color: Colors.white),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 通话邀请悬浮窗（最小化态）
+///
+/// 可拖拽并吸附屏幕边缘，点击恢复全屏邀请页。
+/// 尺寸与音频通话悬浮窗一致（150×56），振铃期无媒体画面，仅图标+名称+状态。
+class _MinimizedInvitationBubble extends ConsumerWidget {
+  const _MinimizedInvitationBubble({required this.invitation});
+
+  final CallInvitationState invitation;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final isVideo = invitation.initialMedia == CallInitialMedia.video;
+    final displayName = invitation.callerName.isEmpty
+        ? invitation.title
+        : invitation.callerName;
+    final statusText = invitation.phase == CallInvitationPhase.incoming
+        ? 'call_incoming'.tr()
+        : 'call_calling'.tr();
+
+    return GestureDetector(
+      onPanUpdate: (details) {
+        ref
+            .read(callInvitationControllerProvider.notifier)
+            .updateInvitationPosition(
+              details.delta,
+              MediaQuery.sizeOf(context).width,
+              MediaQuery.sizeOf(context).height,
+            );
+      },
+      onPanEnd: (_) {
+        ref
+            .read(callInvitationControllerProvider.notifier)
+            .snapInvitationToEdge(MediaQuery.sizeOf(context).width);
+      },
+      onTap: () {
+        ref.read(callInvitationControllerProvider.notifier).restoreInvitation();
+      },
+      child: Material(
+        elevation: 10,
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          width: CallWindowSizes.audioWidth,
+          height: CallWindowSizes.audioHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+            border: Border.all(color: cs.outlineVariant),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: cs.primary.withValues(alpha: 0.12),
+                ),
+                child: Center(
+                  child: HugeIcon(
+                    icon: isVideo
+                        ? HugeIcons.strokeRoundedVideo01
+                        : HugeIcons.strokeRoundedCall02,
+                    color: cs.primary,
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      statusText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -207,8 +207,10 @@ class RoomListService extends _$RoomListService {
     final isSelfMessage = newMessage.senderId == currentUser?.userId;
 
     final action = newMessage.properties['action']?.toString().toUpperCase();
-    final isCallSystemMessage =
-        action == 'CALL_STARTED' || action == 'CALL_ENDED';
+    final isCallSystemMessage = action == 'CALL_STARTED' ||
+        action == 'CALL_ENDED' ||
+        action == 'CALL_REJECTED' ||
+        action == 'CALL_CANCELED';
 
     state.whenData((rooms) {
       final oldRoom = RoomLookupHelper.findByRoomId(rooms, newMessage.roomId);

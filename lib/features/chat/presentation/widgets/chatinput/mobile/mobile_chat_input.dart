@@ -413,30 +413,30 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     );
   }
 
-  /// 发送按钮（实心主题色圆形，悬浮增强发送意图）
+  /// 发送按钮（实心主题色圆角方块）
+  ///
+  /// 与更多按钮同为 40×40 触控区，切换时无尺寸差导致的位移；
+  /// 圆角 12 与输入胶囊一致。
   Widget _buildSendButton({required VoidCallback onTap}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final borderRadius = BorderRadius.circular(12);
     return Tooltip(
       message: 'toolbar_send'.tr(),
       child: Material(
         color: colorScheme.primary,
-        shape: const CircleBorder(),
+        borderRadius: borderRadius,
         elevation: 2,
         shadowColor: colorScheme.primary.withValues(alpha: 0.4),
         child: InkWell(
-          customBorder: const CircleBorder(),
+          borderRadius: borderRadius,
           onTap: onTap,
           child: SizedBox.square(
-            dimension: 32,
+            dimension: 40,
             child: Center(
-              child: SizedBox(
-                width: 15,
-                height: 15,
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedSent,
-                  size: 15,
-                  color: colorScheme.onPrimary,
-                ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedSent,
+                size: 20,
+                color: colorScheme.onPrimary,
               ),
             ),
           ),
@@ -465,7 +465,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             : isActive
             ? colorScheme.surfaceContainerHigh
             : colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isRecording
               ? Colors.transparent

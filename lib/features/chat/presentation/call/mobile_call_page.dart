@@ -97,6 +97,9 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
     );
     return Container(
       decoration: BoxDecoration(
+        // 全页统一由这一层渐变绘制（AppBar 透明透出），
+        // 兜底色防止主题扩展缺失时页面变透明。
+        color: Theme.of(context).colorScheme.surface,
         gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
       ),
       child: scaffold,

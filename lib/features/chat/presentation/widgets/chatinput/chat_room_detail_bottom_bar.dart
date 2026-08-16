@@ -42,6 +42,7 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
     if (showSkeleton) return const ChatInputSkeleton();
 
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     /// 桌面布局：真实桌面环境，或宽度超过平板的 Web 页面
     final isDesktop = DeviceUtil.isRealDesktop() ||
@@ -89,11 +90,23 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
                 ),
                 child: content,
               )
-            : Material(
-                color: colorScheme.surfaceContainerLow,
-                // 移动端为平铺底栏：外层不再带圆角/阴影，避免与外层胶囊输入
-                // 框的圆角描边叠加成「两个输入框错位」的视觉
-                elevation: 0,
+            : Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerLow,
+                  // 移动端外层为悬浮圆角胶囊：阴影上浮避开屏幕底边，
+                  // 与内层输入胶囊（圆角 12 + 描边）形成嵌套层次。
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.35 : 0.14,
+                      ),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
                 child: content,
               ),
       ),

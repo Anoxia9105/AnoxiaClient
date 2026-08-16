@@ -25,11 +25,6 @@ class CallRepositoryImpl implements CallRepository {
   }
 
   @override
-  Future<void> rejectCall(String roomId) async {
-    await DioClient().post(API.callReject, data: {'roomId': roomId});
-  }
-
-  @override
   Future<String> fetchCallToken(String roomId) async {
     final res = await DioClient().get(
       API.callToken,

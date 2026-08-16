@@ -10,11 +10,6 @@ abstract interface class CallRepository {
   /// [roomId] 房间 ID；为空时直接返回空闲状态。
   Future<RoomCallStatus> fetchCallStatus(String roomId);
 
-  /// 记录私聊通话拒接系统消息
-  ///
-  /// [roomId] 通话房间 ID
-  Future<void> rejectCall(String roomId);
-
   /// 获取通话房间 JWT Token
   ///
   /// [roomId] 房间 ID

@@ -5,7 +5,6 @@ import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
-import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,54 +64,46 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       return _buildPipContent(participants, isVideoCall);
     }
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (isVideoCall)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 148),
-              child: MobileVideoLayout(
-                participants: participants,
-                focusedParticipantIdentity: _focusedParticipantIdentity,
-                onFocusChanged: (identity) {
-                  setState(() => _focusedParticipantIdentity = identity);
-                },
-              ),
-            )
-          else
-            AudioCallBackground(title: title, avatarUrl: roomAvatar),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: MobileCallControls(
-              state: widget.roomState,
-              roomId: roomId,
-              title: title,
-              isVideoCall: isVideoCall,
+    // 背景由外层 MobileCallPage 的统一渐变绘制（AppBar 与正文无缝衔接），
+    // 这里不再重复绘制渐变，避免「appbar 区域与页面颜色不一致」。
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (isVideoCall)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 148),
+            child: MobileVideoLayout(
+              participants: participants,
+              focusedParticipantIdentity: _focusedParticipantIdentity,
+              onFocusChanged: (identity) {
+                setState(() => _focusedParticipantIdentity = identity);
+              },
             ),
+          )
+        else
+          AudioCallBackground(title: title, avatarUrl: roomAvatar),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: MobileCallControls(
+            state: widget.roomState,
+            roomId: roomId,
+            title: title,
+            isVideoCall: isVideoCall,
           ),
-          ReactionOverlay(reactions: widget.roomState.reactions ?? []),
-        ],
-      ),
+        ),
+        ReactionOverlay(reactions: widget.roomState.reactions ?? []),
+      ],
     );
   }
 
   Widget _buildPipContent(List<Participant> participants, bool isVideoCall) {
     if (!isVideoCall) {
       final cs = Theme.of(context).colorScheme;
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
-        ),
-        child: Center(
-          child: HugeIcon(
-            icon: HugeIcons.strokeRoundedCall02,
-            color: cs.primary,
-            size: 28,
-          ),
+      return Center(
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedCall02,
+          color: cs.primary,
+          size: 28,
         ),
       );
     }
