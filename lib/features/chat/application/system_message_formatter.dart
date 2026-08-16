@@ -51,6 +51,7 @@ class SystemMessageFormatter {
     'CALL_STARTED',
     'CALL_ENDED',
     'CALL_REJECTED',
+    'CALL_CANCELED',
   };
 
   /// 判断消息是否为系统消息
@@ -166,7 +167,7 @@ class SystemMessageFormatter {
         action: action,
         icon: HugeIcons.strokeRoundedCallEnd03,
         text: 'system_msg_callend'.tr(
-          args: [message.properties['durationText'] ?? '--'],
+          args: [formatCallDuration(message)],
         ),
       ),
       'CALL_REJECTED' => SystemMessageDisplay(
@@ -226,6 +227,31 @@ class SystemMessageFormatter {
           text: 'system_msg_unknown'.tr(),
         ),
     };
+  }
+
+  /// 通话时长格式化（国际化）
+  ///
+  /// 优先使用服务端下发的 duration 秒数，按当前语言格式化为「x时x分」；
+  /// 时长不足 1 小时仅显示「x分」，超过 1 小时且整点时仅显示「x时」。
+  /// 秒数缺失时回退到服务端的 durationText（mm:ss 样式）。
+  static String formatCallDuration(ChatMessage message) {
+    final durationSec =
+        int.tryParse(message.properties['duration']?.toString() ?? '');
+    if (durationSec != null && durationSec >= 0) {
+      final hours = durationSec ~/ 3600;
+      final minutes = (durationSec % 3600) ~/ 60;
+      if (hours > 0 && minutes > 0) {
+        return 'call_duration_hours_minutes'.tr(
+          namedArgs: {'hours': '$hours', 'minutes': '$minutes'},
+        );
+      }
+      if (hours > 0) {
+        return 'call_duration_hours'.tr(args: ['$hours']);
+      }
+      return 'call_duration_minutes'.tr(args: ['$minutes']);
+    }
+    final durationText = message.properties['durationText']?.toString();
+    return (durationText == null || durationText.isEmpty) ? '--' : durationText;
   }
 
   /// 从消息中提取系统动作类型
