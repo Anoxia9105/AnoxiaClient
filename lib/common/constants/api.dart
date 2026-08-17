@@ -216,4 +216,17 @@ class API {
 
   /// 登出解绑设备
   static const String pushDeviceUnbind = '/push/device/unbind';
+
+  // ======================== 记事本接口 ========================
+  /// 记事本基础路径
+  static const String noteBase = '/note';
+
+  /// 获取记事本完整树
+  static const String noteTree = '/note/tree';
+
+  /// 搜索笔记
+  static const String noteSearch = '/note/search';
+
+  /// 文件夹基础路径
+  static const String noteFolderBase = '/note/folder';
 }

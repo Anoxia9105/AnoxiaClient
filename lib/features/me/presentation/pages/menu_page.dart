@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
+import 'package:anoxia/features/note/presentation/pages/note_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -158,6 +159,13 @@ class MenuPage extends ConsumerWidget {
                               _pushPage(context, PersonalQrPage(user: user));
                             }
                           },
+                        ),
+                        _buildTileDivider(),
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedNote01,
+                          title: 'sidebar_note'.tr(), // 记事本
+                          onTap: () => _pushPage(context, const NotesPage()),
                         ),
                         _buildTileDivider(),
                         _buildMenuTile(

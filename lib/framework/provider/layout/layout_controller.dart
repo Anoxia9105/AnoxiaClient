@@ -18,6 +18,10 @@ class LayoutController extends _$LayoutController {
       name: 'sidebar_favorites',
       icon: HugeIcons.strokeRoundedFavourite,
     ),
+    SidebarItem(
+      name: 'sidebar_note',
+      icon: HugeIcons.strokeRoundedNote01,
+    ),
     SidebarItem(name: 'sidebar_my', icon: HugeIcons.strokeRoundedUser),
     SidebarItem(
       name: 'sidebar_setting',

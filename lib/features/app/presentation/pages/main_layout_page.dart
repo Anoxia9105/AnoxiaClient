@@ -8,6 +8,7 @@ import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
+import 'package:anoxia/features/note/presentation/pages/note_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
@@ -100,6 +101,10 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
                     _DesktopContentSurface(
                       layoutStyle: desktopLayoutStyle,
                       child: const FavoritesPage(),
+                    ),
+                    _DesktopContentSurface(
+                      layoutStyle: desktopLayoutStyle,
+                      child: const NotesPage(),
                     ),
                     _DesktopContentSurface(
                       layoutStyle: desktopLayoutStyle,
