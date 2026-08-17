@@ -34,6 +34,7 @@ class UserMessageBubble extends StatelessWidget {
   final MessageRenderStrategy strategy;
   final MessageBubbleViewData view;
   final ChatMessageLayout layout;
+  final VoidCallback? onAvatarTap;
 
   const UserMessageBubble({
     super.key,
@@ -41,6 +42,7 @@ class UserMessageBubble extends StatelessWidget {
     required this.strategy,
     required this.view,
     required this.layout,
+    this.onAvatarTap,
   });
 
   @override
@@ -69,10 +71,14 @@ class UserMessageBubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             textDirection: direction,
             children: [
-              AvatarWidget(
-                url: view.senderAvatar,
-                name: view.senderName,
-                size: layout.avatarSize,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onAvatarTap,
+                child: AvatarWidget(
+                  url: view.senderAvatar,
+                  name: view.senderName,
+                  size: layout.avatarSize,
+                ),
               ),
               SizedBox(width: layout.avatarGap),
               Flexible(

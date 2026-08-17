@@ -3,8 +3,6 @@ import 'dart:convert';
 
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
-import 'package:anoxia/features/live/presentation/pages/window_live_page.dart';
-import 'package:anoxia/features/live/presentation/pages/window_live_preview_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
@@ -371,12 +369,7 @@ Future<void> runSubApp(WindowController controller) async {
       );
     }
 
-    final args = _parseWindowArguments(controller.arguments);
-    final Widget child = switch (args['type']) {
-      'live-preview' => WindowLivePreviewPage(controller: controller),
-      'live' => WindowLivePage(controller: controller),
-      _ => WindowCallPage(controller: controller),
-    };
+    final Widget child = WindowCallPage(controller: controller);
 
     final container = await _createIsolatedWindowContainer();
 
@@ -391,21 +384,6 @@ Future<void> runSubApp(WindowController controller) async {
     debugLog('子窗口启动失败', e, stack);
     runApp(_buildErrorPage('子窗口启动失败：$e'));
   }
-}
-
-Map<String, dynamic> _parseWindowArguments(dynamic arguments) {
-  if (arguments == null) {
-    return {};
-  }
-  try {
-    final decoded = arguments is Map
-        ? arguments
-        : jsonDecode(arguments.toString());
-    if (decoded is Map) {
-      return decoded.map((key, value) => MapEntry(key.toString(), value));
-    }
-  } catch (_) {}
-  return {};
 }
 
 /// 启动更新窗口

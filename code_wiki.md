@@ -15,7 +15,6 @@
 | 联系人管理 | 好友申请、联系人列表、群组管理 |
 | 富文本输入 | 基于 Flutter Quill 实现支持 Mention、文件嵌入的富文本编辑器 |
 | 多窗口支持 | 桌面端支持多窗口通话页面 |
-| 直播功能 | 支持直播列表、直播间观看、弹幕互动 |
 | 主题系统 | 支持 19 种预设主题（7 种亮色 + 12 种暗色） |
 | 多语言支持 | 支持中文、英文、日文三种语言 |
 
@@ -72,7 +71,7 @@
 │      │         │    │  ┌────────────────────────────────┐  │    │
 │      │         │    │  │          provider/              │  │    │
 │      │         │    │  │  ┌────┬─────┬──────┬─────┐   │ │  │    │
-│      │         │    │  │  │auth│chat │contact│live │... │ │  │    │
+│      │         │    │  │  │auth│chat │contact│... │ │  │    │
 │      │         │    │  │  └────┴─────┴──────┴─────┘   │ │  │    │
 │      │         │    │  └────────────────────────────────┘  │    │
 │      │         │    │  ┌──────────┬───────────────┐       │    │
@@ -83,7 +82,7 @@
 │      │         │    ┌──────────────────────────────────────┐    │
 │      │         │    │            features/                 │    │
 │      │         │    │  ┌──────┬──────┬────────┬────────┐ │    │
-│      │         │    │  │  app │ chat │ contact│  live  │ │    │
+│      │         │  │  │  app │ chat │ contact │    │ │    │
 │      │         │    │  └──────┴──────┴────────┴────────┘ │    │
 │      │         │    │  ┌──────┬──────┬────────┐         │    │
 │      │         │    │  │favorite│  me │ settings│        │    │
@@ -260,8 +259,6 @@ lib/
 │   │   │   └── desktop_search_controller.dart
 │   │   ├── layout/               # 布局管理
 │   │   │   └── layout_controller.dart
-│   │   ├── live/                 # 直播
-│   │   │   └── live_room_controller.dart
 │   │   ├── router/               # 路由
 │   │   │   └── router.dart
 │   │   ├── setting/              # 设置
@@ -415,15 +412,6 @@ lib/
     │   └── presentation/
     │       └── pages/
     │           └── favorites_page.dart
-    ├── live/                      # 直播模块
-    │   └── presentation/
-    │       └── pages/
-    │           ├── live_list_page.dart
-    │           ├── live_preview_page.dart
-    │           ├── live_room_page.dart
-    │           ├── window_live_danmaku_page.dart
-    │           ├── window_live_page.dart
-    │           └── window_live_preview_page.dart
     ├── me/                        # 个人中心模块
     │   └── presentation/
     │       ├── pages/
@@ -475,7 +463,7 @@ lib/
 |--------|---------|------|
 | `main()` | `Future<void>` | 应用主入口，协调初始化流程 |
 | `runMainApp()` | `Future<void>` | 启动主窗口，初始化全局状态和桌面窗口配置 |
-| `runSubApp()` | `Future<void>` | 启动子窗口（通话/直播窗口），使用隔离 Provider 容器 |
+| `runSubApp()` | `Future<void>` | 启动子窗口（通话窗口），使用隔离 Provider 容器 |
 | `runUpdateApp()` | `Future<void>` | 启动更新窗口，显示版本更新信息 |
 | `setupDesktopWindow()` | `Future<void>` | 配置桌面窗口尺寸和样式 |
 | `_createIsolatedWindowContainer()` | `Future<ProviderContainer>` | 为桌面子窗口创建局部容器，仅同步认证 token |
@@ -504,7 +492,7 @@ final ProviderContainer globalContainer = ProviderContainer();
 
 主窗口和更新窗口使用 `globalContainer` 持有应用级状态。桌面子窗口必须通过 `_createIsolatedWindowContainer()` 创建独立 `ProviderContainer`，只从 `TokenManager` 恢复并写入 `tokenCacheProvider`，不能复用主窗口容器。
 
-这样可以避免 `RoomController`、`ChatMessages`、`WsController` 等 keepAlive Provider 在多窗口之间共享单例状态，导致通话窗口污染主窗口当前聊天室、消息列表或媒体状态。子窗口需要的聊天室、通话、直播和 WebSocket 状态应在自己的组件树内按需构建。
+这样可以避免 `RoomController`、`ChatMessages`、`WsController` 等 keepAlive Provider 在多窗口之间共享单例状态，导致通话窗口污染主窗口当前聊天室、消息列表或媒体状态。子窗口需要的聊天室、通话和 WebSocket 状态应在自己的组件树内按需构建。
 
 #### 3.1.2 app.dart
 
@@ -1010,14 +998,14 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 │  │  - VoiceRecordCtrl │                  │                │       │
 │  └──────────────────────────────────────────────────────┘       │
 │                                                                 │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │   Contact    │    │    Live       │    │   Setting    │       │
-│  ├──────────────┤    ├──────────────┤    ├──────────────┤       │
-│  │ContactListSvc│    │LiveRoomCtrl   │   │SettingsProv  │       │
-│  │ContactDetail │    │               │    │UpdateCheck   │       │
-│  │ContactReqs   │    │               │    │              │       │
-│  │UserSearchSvc │    │               │    │              │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
+│  ┌──────────────┐    ┌──────────────┐       │
+│  │   Contact    │    │   Setting    │       │
+│  ├──────────────┤    ├──────────────┤       │
+│  │ContactListSvc│    │SettingsProv  │       │
+│  │ContactDetail │    │UpdateCheck   │       │
+│  │ContactReqs   │    │              │       │
+│  │UserSearchSvc │    │              │       │
+│  └──────────────┘    └──────────────┘       │
 │                                                                 │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
 │  │   Desktop    │    │    Theme     │    │    Core      │       │
@@ -1042,7 +1030,6 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 | `chatMessagesProvider` | `Notifier` | keepAlive | 消息存储 |
 | `roomListServiceProvider` | `AsyncNotifier` | keepAlive | 房间列表服务 |
 | `roomControllerProvider` | `Notifier` | keepAlive | 通话房间控制器 |
-| `liveRoomControllerProvider` | `Notifier` | keepAlive | 直播房间控制器 |
 | `contactListServiceProvider` | `AsyncNotifier` | keepAlive | 联系人列表服务 |
 | `appThemeProvider` | `Notifier` | keepAlive | 主题状态 |
 | `settingsProvider` | `Notifier` | keepAlive | 设置状态 |
@@ -1353,8 +1340,6 @@ Text('item_count').trplural('other', 10)
 | 消息 | `/chat/search` | GET | 搜索消息 |
 | 消息 | `/chat/recall` | GET | 撤回消息 |
 | 通话 | `/call/token` | GET | 获取通话 Token |
-| 直播 | `/live/list` | GET | 获取直播列表 |
-| 直播 | `/live/enter` | POST | 进入直播间 |
 | 更新 | `/app/update/latest` | GET | 检查版本更新 |
 
 ---

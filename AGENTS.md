@@ -34,7 +34,7 @@ flutter run -d windows / -d chrome / ...
 
 ## Architecture
 
-- `lib/main.dart` — entry: `runMainApp()` / `runSubApp()` / `runUpdateApp()`. Desktop sub-windows (call/live) must use an **isolated `ProviderContainer`** that only syncs the auth token (`_createIsolatedWindowContainer`); never share keepAlive chat/call/ws providers across windows.
+- `lib/main.dart` — entry: `runMainApp()` / `runSubApp()` / `runUpdateApp()`. Desktop sub-windows (call) must use an **isolated `ProviderContainer`** that only syncs the auth token (`_createIsolatedWindowContainer`); never share keepAlive chat/call/ws providers across windows.
 - `lib/framework/` — codec (protobuf), protocol (WS packets, registered in main via `PacketRegistry`), local_cache (drift + sync repository), network (Dio, TokenManager), provider (all Riverpod), theme, logs (talker).
 - `lib/features/<module>/presentation/{pages,widgets}` — UI per feature. `lib/common/` — constants (API base URLs live in `lib/common/constants/api.dart`, production defaults, local URLs commented), utils, shared widgets.
 - Provider layer (`lib/framework/provider/`) must not import `common/widgets/`, `features/*/presentation/`, or `DioClient` directly — enforced by `tool/check_architecture.dart`. UI dialogs/pickers belong at the UI call site (pass data/ids into controllers); HTTP goes through `domain/` repositories + `core/*_repository_provider.dart`. Whitelisted bridges: `toast_service_provider.dart` (Toast abstraction), `router.dart` (page composition).

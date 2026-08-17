@@ -22,6 +22,7 @@ class MessageBubbleViewData {
   final bool needsBubble; // 是否需要气泡背景（纯文本/富文本/音频需要，纯表情不需要）
   final String? senderName; // 发送者昵称（自己显示“我”，其他显示联系人名称）
   final String? senderAvatar; // 发送者头像URL
+  final ChatRoomMemberVO? senderMember; // 发送者在房间中的成员信息（用于点击头像查看资料）
   final Color bubbleColor; // 气泡背景色（自己为primary，对方为surfaceContainerHigh）
   final Color textColor; // 文字颜色（自己为onPrimary，对方为onSurface）
   final double horizontalPadding; // 左右边距（移动端8，桌面端50）
@@ -32,6 +33,7 @@ class MessageBubbleViewData {
     required this.needsBubble,
     required this.senderName,
     required this.senderAvatar,
+    required this.senderMember,
     required this.bubbleColor,
     required this.textColor,
     required this.horizontalPadding,
@@ -93,6 +95,7 @@ class MessageBubbleViewData {
           : ((senderMember?.avatar?.trim().isNotEmpty == true)
                 ? senderMember?.avatar
                 : senderContact?.avatar),
+      senderMember: senderMember,
       bubbleColor: bubbleColor,
       textColor: textColor,
       // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()

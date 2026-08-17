@@ -7,7 +7,13 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/features/chat/presentation/pages/member_basic_info_page.dart';
+import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
+import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
@@ -58,6 +64,7 @@ class ChatMessageBubble extends ConsumerWidget {
         strategy: strategy,
         view: view,
         layout: layout,
+        onAvatarTap: () => _openSenderDetail(context, ref, message, view),
       );
     } catch (e, stack) {
       // 单条消息渲染失败不影响整个列表。WASM 下可能因 Platform._operatingSystem
@@ -80,5 +87,50 @@ class ChatMessageBubble extends ConsumerWidget {
         ),
       );
     }
+  }
+
+  /// 点击发送者头像：与「会话详情」中点击成员的行为保持一致。
+  ///
+  /// 先在联系人列表中查找发送者，未找到时刷新联系人列表后重试；
+  /// 仍不是联系人则展示群成员基础资料页，否则进入联系人详情页。
+  Future<void> _openSenderDetail(
+    BuildContext context,
+    WidgetRef ref,
+    ChatMessage message,
+    MessageBubbleViewData view,
+  ) async {
+    final senderId = message.senderId;
+    if (senderId == null) return;
+
+    var contactMap = ref.read(contactListServiceProvider).value;
+
+    if (contactMap == null || !contactMap.containsKey(senderId)) {
+      await ref.read(contactListServiceProvider.notifier).refresh(quiet: true);
+      contactMap = ref.read(contactListServiceProvider).value;
+    }
+
+    final contact = contactMap?[senderId];
+
+    // 成员还不是联系人时，展示群成员基础资料
+    if (contact == null) {
+      final member = view.senderMember ??
+          ChatRoomMemberVO(
+            roomId: message.roomId,
+            userId: senderId,
+            nickName: view.senderName,
+            avatar: view.senderAvatar,
+          );
+      if (!context.mounted) return;
+      await presentAdaptivePage(
+        context,
+        builder: (_) => MemberBasicInfoPage(member: member),
+      );
+      return;
+    }
+
+    ref.read(contactSelectionProvider.notifier).selectContact(contact);
+    if (!context.mounted) return;
+
+    await presentAdaptivePage(context, builder: (_) => const ContactDetail());
   }
 }

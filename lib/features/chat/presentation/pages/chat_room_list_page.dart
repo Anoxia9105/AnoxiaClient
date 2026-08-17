@@ -282,7 +282,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                       size: 16,
                       color: theme.colorScheme.primary,
                     ),
-                    label: Text('live_rooms_action'.tr()),
+                    label: Text('chat_rooms_action'.tr()),
                   ),
                 ],
               ),

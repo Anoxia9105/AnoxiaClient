@@ -15,10 +15,6 @@ class LayoutController extends _$LayoutController {
       icon: HugeIcons.strokeRoundedContact01,
     ),
     SidebarItem(
-      name: 'sidebar_live',
-      icon: HugeIcons.strokeRoundedLiveStreaming01,
-    ),
-    SidebarItem(
       name: 'sidebar_favorites',
       icon: HugeIcons.strokeRoundedFavourite,
     ),

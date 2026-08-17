@@ -6,7 +6,6 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_page.dart';
 import 'package:anoxia/features/favorite/presentation/pages/favorites_page.dart';
-import 'package:anoxia/features/live/presentation/pages/live_list_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/menu_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
@@ -97,10 +96,6 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
                     _DesktopContentSurface(
                       layoutStyle: desktopLayoutStyle,
                       child: const ContactPage(),
-                    ),
-                    _DesktopContentSurface(
-                      layoutStyle: desktopLayoutStyle,
-                      child: const LiveListPage(),
                     ),
                     _DesktopContentSurface(
                       layoutStyle: desktopLayoutStyle,

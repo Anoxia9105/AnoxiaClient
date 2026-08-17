@@ -277,7 +277,7 @@ class RoomController extends _$RoomController {
       );
       if (!speakerPref && DeviceUtil.isRealMobile()) {
         try {
-          await AudioManager.instance.setSpeakerOutputPreferred(false);
+          await Hardware.instance.setSpeakerphoneOn(false);
         } catch (e) {
           debugLog('应用免提偏好失败: $e');
         }

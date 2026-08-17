@@ -14,6 +14,7 @@ import 'package:anoxia/features/chat/presentation/pages/group_join_requests_page
 import 'package:anoxia/features/chat/presentation/pages/group_edit_name_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_edit_announcement_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_announcement_detail_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_qr_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -232,7 +233,12 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   icon: HugeIcons.strokeRoundedArrowRight01,
                   size: 14,
                 ),
-                onTap: () {},
+                onTap: () {
+                  presentAdaptivePage(
+                    context,
+                    builder: (_) => GroupQrPage(roomId: roomId),
+                  );
+                },
               ),
               _buildMaterialListTile(
                 context,

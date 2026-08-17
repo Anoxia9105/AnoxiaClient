@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/app/presentation/pages/scan_login_confirm_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/contact/presentation/widgets/add_friend/add_friend_dialog.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
@@ -109,6 +110,21 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => ScanLoginConfirmPage(ticket: ticket),
+        ),
+      );
+      if (!mounted) return;
+      _handling = false;
+      await _controller.start();
+      return;
+    }
+
+    // 群聊二维码（https://<host>/g/{roomId}）：跳转群预览/加入页，
+    // 成员/非成员/已申请等状态由该页统一处理。
+    final groupRoomId = _tryParseGroupUrl(raw);
+    if (groupRoomId != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => GroupCardPreviewPage(roomId: groupRoomId),
         ),
       );
       if (!mounted) return;
@@ -231,6 +247,25 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
       final userId = int.tryParse(segments[1]);
       if (userId == null) return null;
       return _UserCardPayload(userName: '', userId: userId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 尝试将扫码结果解析为群聊二维码 URL（`https://<host>/g/{roomId}`）。
+  ///
+  /// 群房间 ID 为字符串（非数字 userId），命中后返回 roomId，否则返回 null。
+  String? _tryParseGroupUrl(String raw) {
+    try {
+      final uri = Uri.parse(raw.trim());
+      if (!uri.hasScheme) return null;
+      final scheme = uri.scheme.toLowerCase();
+      if (scheme != 'http' && scheme != 'https') return null;
+      final segments = uri.pathSegments;
+      if (segments.length != 2 || segments.first != 'g') return null;
+      final roomId = segments[1].trim();
+      if (roomId.isEmpty) return null;
+      return roomId;
     } catch (_) {
       return null;
     }

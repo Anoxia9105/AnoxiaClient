@@ -25,6 +25,13 @@ class API {
   /// 后端同名路由提供用户名片落地页（AnoxiaServer UserQrController）。
   static const String qrUserBaseUrl = 'https://chat.anoxia.cn/u/';
 
+  /// 群聊二维码内容前缀（`/g/{roomId}`）。
+  ///
+  /// 与个人二维码相同，编码的是链接而非 JSON，外部扫码器打开后端同名
+  /// 路由（AnoxiaServer GroupQrController）看到的是群信息落地页；
+  /// App 内扫码则由扫码页解析 URL 直接拉起群预览/加入流程。
+  static const String qrGroupBaseUrl = 'https://chat.anoxia.cn/g/';
+
   /// 应用更新检查接口
   static const String appUpdateLatest = '/app/update/latest';
 

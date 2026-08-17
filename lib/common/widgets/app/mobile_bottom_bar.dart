@@ -27,8 +27,7 @@ class MobileBottomBar extends ConsumerWidget {
     const contactsIndex = 1;
 
     final visibleEntries = layout.items.asMap().entries.where((entry) {
-      return entry.value.name != 'sidebar_setting' &&
-          entry.value.name != 'sidebar_live';
+      return entry.value.name != 'sidebar_setting';
     }).toList();
     final currentVisibleIndex = visibleEntries.indexWhere(
       (entry) => entry.key == layout.currentIndex,

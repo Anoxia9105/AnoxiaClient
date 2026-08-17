@@ -17,13 +17,6 @@ abstract interface class CallRepository {
   /// 请求失败时抛出异常。
   Future<String> fetchCallToken(String roomId);
 
-  /// 获取直播房间 token
-  ///
-  /// [roomId] 房间 ID
-  ///
-  /// 请求失败时抛出异常。
-  Future<String> fetchLiveToken(String roomId);
-
   /// 从通话房间移除参与者
   ///
   /// [roomId] 房间 ID

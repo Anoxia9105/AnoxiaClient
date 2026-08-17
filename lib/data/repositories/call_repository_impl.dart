@@ -38,18 +38,6 @@ class CallRepositoryImpl implements CallRepository {
   }
 
   @override
-  Future<String> fetchLiveToken(String roomId) async {
-    final res = await DioClient().get(
-      '/live/token',
-      queryParameters: {'roomId': roomId},
-    );
-    if (res.data?['code'] == 200) {
-      return res.data!['data'].toString();
-    }
-    throw Exception(res.data?['message'] ?? '获取直播 token 失败');
-  }
-
-  @override
   Future<bool> removeParticipant(String roomId, String identity) async {
     final res = await DioClient().get(
       API.callRemoveParticipant,
