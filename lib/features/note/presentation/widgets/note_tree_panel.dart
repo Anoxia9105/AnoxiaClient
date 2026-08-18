@@ -13,12 +13,13 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../common/widgets/toast.dart';
 import 'note_dialogs.dart';
+import 'note_share.dart';
 import 'note_tags_dialog.dart';
 import 'note_tree_dnd.dart';
 import 'note_trash_dialog.dart';
 
 /// 树节点操作
-enum _NodeAction { newNote, newSubfolder, rename, move, pin, tags, delete }
+enum _NodeAction { newNote, newSubfolder, rename, move, pin, tags, share, delete }
 
 /// 记事本树面板
 ///
@@ -508,6 +509,26 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     );
   }
 
+  /// 分享笔记到聊天（拉取全文后以快照卡片发送）
+  Future<void> _shareNote(NoteBrief note) async {
+    try {
+      final doc = await ref.read(noteRepositoryProvider).getNote(note.id);
+      if (!mounted) return;
+      await shareNoteToChat(
+        context,
+        ref,
+        noteId: doc.id,
+        title: doc.title,
+        content: doc.plainText,
+        preview: note.preview,
+        updatedAt: doc.updatedAt?.millisecondsSinceEpoch.toString(),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      Toast.showToast('note_share_failed'.tr(), type: ToastType.error);
+    }
+  }
+
   Widget _buildBody(
     BuildContext context,
     ColorScheme colorScheme,
@@ -965,6 +986,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           note.pinned ? 'note_unpin'.tr() : 'note_pin'.tr(),
         ),
         _menuEntry(_NodeAction.tags, HugeIcons.strokeRoundedTag01, 'note_tags'.tr()),
+        _menuEntry(_NodeAction.share, HugeIcons.strokeRoundedShare01, 'note_share'.tr()),
         _menuEntry(_NodeAction.move, HugeIcons.strokeRoundedMove01, 'note_move'.tr()),
         _menuEntry(_NodeAction.delete, HugeIcons.strokeRoundedDelete02, 'note_delete'.tr()),
       ],
@@ -975,6 +997,8 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           _togglePinned(note);
         case _NodeAction.tags:
           _editTags(note);
+        case _NodeAction.share:
+          _shareNote(note);
         case _NodeAction.move:
           _moveNote(note);
         case _NodeAction.delete:

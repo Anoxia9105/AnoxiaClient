@@ -1059,5 +1059,14 @@
   "note_markdown_copied": "Markdown をクリップボードにコピーしました",
   "note_markdown_imported": "Markdown をインポートしました",
   "note_markdown_import_confirm": "インポートすると現在のノート内容が置き換えられます。続行しますか？",
-  "note_markdown_import_failed": "インポートに失敗しました"
+  "note_markdown_import_failed": "インポートに失敗しました",
+  "note_share": "チャットに共有",
+  "note_share_sent": "{} に共有しました",
+  "note_share_failed": "共有に失敗しました",
+  "note_card_label": "ノート",
+  "note_card_preview": "ノート内容",
+  "note_card_copy": "内容をコピー",
+  "note_card_copy_done": "コピーしました",
+  "note_card_open": "ノートを開く",
+  "note_card_no_content": "コンテンツがありません"
 }

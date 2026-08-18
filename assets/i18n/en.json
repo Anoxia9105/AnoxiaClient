@@ -1059,5 +1059,14 @@
   "note_markdown_copied": "Markdown copied to clipboard",
   "note_markdown_imported": "Markdown content imported",
   "note_markdown_import_confirm": "Importing will replace the current note content. Continue?",
-  "note_markdown_import_failed": "Failed to import"
+  "note_markdown_import_failed": "Failed to import",
+  "note_share": "Share to chat",
+  "note_share_sent": "Shared to {}",
+  "note_share_failed": "Share failed",
+  "note_card_label": "Note",
+  "note_card_preview": "Note content",
+  "note_card_copy": "Copy content",
+  "note_card_copy_done": "Copied",
+  "note_card_open": "Open note",
+  "note_card_no_content": "No content"
 }

@@ -1059,5 +1059,14 @@
   "note_markdown_copied": "Markdown 已复制到剪贴板",
   "note_markdown_imported": "已导入 Markdown 内容",
   "note_markdown_import_confirm": "导入将替换当前笔记内容，确定继续吗？",
-  "note_markdown_import_failed": "导入失败"
+  "note_markdown_import_failed": "导入失败",
+  "note_share": "分享到聊天",
+  "note_share_sent": "已分享到 {}",
+  "note_share_failed": "分享失败",
+  "note_card_label": "记事本",
+  "note_card_preview": "记事本内容",
+  "note_card_copy": "复制内容",
+  "note_card_copy_done": "已复制",
+  "note_card_open": "打开笔记",
+  "note_card_no_content": "暂无内容"
 }

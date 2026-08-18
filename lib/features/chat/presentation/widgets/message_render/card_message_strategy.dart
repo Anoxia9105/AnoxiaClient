@@ -6,6 +6,7 @@ import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
+import 'package:anoxia/features/chat/presentation/pages/note_card_preview_page.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -51,18 +52,21 @@ class _CardMessage extends StatelessWidget {
         card.cardType == 'contact' && int.tryParse(card.entityId ?? '') != null;
     final isGroupCard =
         card.cardType == 'group' && card.entityId?.isNotEmpty == true;
+    final isNoteCard = card.cardType == 'note';
 
     return Material(
       color: colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: isContactCard || isGroupCard
+        onTap: isContactCard || isGroupCard || isNoteCard
             ? () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => isGroupCard
                       ? GroupCardPreviewPage(roomId: card.entityId!)
-                      : RecommendedContactDetailPage(card: card),
+                      : isNoteCard
+                          ? NoteCardPreviewPage(card: card)
+                          : RecommendedContactDetailPage(card: card),
                 ),
               )
             : null,
@@ -110,7 +114,9 @@ class _CardMessage extends StatelessWidget {
                               ? 'contact_card_label'.tr()
                               : (isGroupCard
                                     ? 'group_card_label'.tr()
-                                    : card.cardType!),
+                                    : (isNoteCard
+                                          ? 'note_card_label'.tr()
+                                          : card.cardType!)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.labelSmall?.copyWith(

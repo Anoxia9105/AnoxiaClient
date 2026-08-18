@@ -15,7 +15,10 @@ import '../widgets/note_tree_panel.dart';
 /// - 桌面端：左侧树面板 + 右侧编辑器（主从布局）
 /// - 移动端：树列表页，点击笔记 push 全屏编辑器
 class NotesPage extends ConsumerStatefulWidget {
-  const NotesPage({super.key});
+  /// 深链打开指定笔记（来自分享卡片等场景）
+  final int? initialNoteId;
+
+  const NotesPage({super.key, this.initialNoteId});
 
   @override
   ConsumerState<NotesPage> createState() => _NotesPageState();
@@ -23,6 +26,18 @@ class NotesPage extends ConsumerStatefulWidget {
 
 class _NotesPageState extends ConsumerState<NotesPage> {
   int? _selectedNoteId;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialNoteId;
+    if (initial != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _openNoteById(initial);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +81,10 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   }
 
   Future<void> _openNote(NoteBrief brief) async {
+    await _openNoteById(brief.id);
+  }
+
+  Future<void> _openNoteById(int noteId) async {
     // 切换前先把上一个会话的未保存内容落库，避免切换丢失
     await ref.read(noteSessionServiceProvider.notifier).save();
     if (!mounted) return;
@@ -73,7 +92,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     try {
       final doc = await ref
           .read(noteTreeServiceProvider.notifier)
-          .openNote(brief.id);
+          .openNote(noteId);
       if (!mounted) return;
       if (DeviceUtil.isMobile(context)) {
         await Navigator.of(context).push(

@@ -14,6 +14,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'note_quill_actions.dart';
 import 'note_quill_image_build.dart';
 import 'note_markdown_io.dart';
+import 'note_share.dart';
 import 'note_toolbar.dart';
 import 'note_versions_dialog.dart';
 
@@ -707,6 +708,17 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
         children: [
           Expanded(child: saveLabel),
           IconButton(
+            tooltip: 'note_share'.tr(),
+            visualDensity: VisualDensity.compact,
+            iconSize: 17,
+            onPressed: () => _shareNote(context),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedShare01,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          IconButton(
             tooltip: 'note_markdown_import'.tr(),
             visualDensity: VisualDensity.compact,
             iconSize: 17,
@@ -755,6 +767,19 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     final mm = dt.minute.toString().padLeft(2, '0');
     final ss = dt.second.toString().padLeft(2, '0');
     return '$hh:$mm:$ss';
+  }
+
+  Future<void> _shareNote(BuildContext context) async {
+    final session = ref.read(noteSessionServiceProvider);
+    if (session == null) return;
+    await shareNoteToChat(
+      context,
+      ref,
+      noteId: session.noteId,
+      title: session.title,
+      content: session.plainText,
+      updatedAt: session.lastSavedAt?.millisecondsSinceEpoch.toString(),
+    );
   }
 
   Future<void> _importMarkdown(BuildContext context) async {
