@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
@@ -373,6 +374,18 @@ mixin ThemeMixin {
     );
 
     // -------------------------
+    // 页面切换动画：统一从右向左滑入（iOS 风格推入）
+    // 替换各平台默认的淡入淡出/缩放（Android Zoom、桌面 FadeUpwards 等），
+    // 覆盖所有 MaterialPageRoute——go_router 类型路由与直接 Navigator.push 全部生效。
+    // -------------------------
+    final pageTransitionsTheme = PageTransitionsTheme(
+      builders: {
+        for (final platform in TargetPlatform.values)
+          platform: const CupertinoPageTransitionsBuilder(),
+      },
+    );
+
+    // -------------------------
     // 最终 ThemeData 组装并返回
     // -------------------------
     return ThemeData(
@@ -412,6 +425,7 @@ mixin ThemeMixin {
       dataTableTheme: dataTableTheme,
       dividerTheme: dividerTheme,
       listTileTheme: listTileTheme,
+      pageTransitionsTheme: pageTransitionsTheme,
     );
   }
 }
