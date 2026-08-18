@@ -14,6 +14,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'note_quill_actions.dart';
 import 'note_quill_image_build.dart';
 import 'note_markdown_io.dart';
+import 'note_pdf_io.dart';
 import 'note_share.dart';
 import 'note_toolbar.dart';
 import 'note_versions_dialog.dart';
@@ -741,6 +742,17 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
             ),
           ),
           IconButton(
+            tooltip: 'note_pdf_export'.tr(),
+            visualDensity: VisualDensity.compact,
+            iconSize: 17,
+            onPressed: () => _exportPdf(context),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedPdf01,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          IconButton(
             tooltip: 'note_versions'.tr(),
             visualDensity: VisualDensity.compact,
             iconSize: 17,
@@ -796,6 +808,17 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
       ref,
       title: widget.session.title,
       controller: controller,
+    );
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    final controller = _quillController;
+    if (controller == null) return;
+    await exportNotePdf(
+      context,
+      title: widget.session.title,
+      deltaJson: jsonEncode(controller.document.toDelta().toJson()),
+      updatedAtLabel: _formatTime(widget.session.lastSavedAt),
     );
   }
 }

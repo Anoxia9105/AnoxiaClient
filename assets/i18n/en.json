@@ -1068,5 +1068,8 @@
   "note_card_copy": "Copy content",
   "note_card_copy_done": "Copied",
   "note_card_open": "Open note",
-  "note_card_no_content": "No content"
+  "note_card_no_content": "No content",
+  "note_pdf_export": "Export PDF",
+  "note_pdf_exported": "PDF file exported",
+  "note_pdf_export_failed": "PDF export failed"
 }

@@ -1068,5 +1068,8 @@
   "note_card_copy": "内容をコピー",
   "note_card_copy_done": "コピーしました",
   "note_card_open": "ノートを開く",
-  "note_card_no_content": "コンテンツがありません"
+  "note_card_no_content": "コンテンツがありません",
+  "note_pdf_export": "PDF をエクスポート",
+  "note_pdf_exported": "PDF ファイルをエクスポートしました",
+  "note_pdf_export_failed": "PDF のエクスポートに失敗しました"
 }
