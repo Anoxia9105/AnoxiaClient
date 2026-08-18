@@ -1019,5 +1019,6 @@
   "note_move_failed": "Move failed",
   "note_delete_success": "Deleted",
   "note_delete_failed": "Delete failed",
-  "note_open_failed": "Failed to open note"
+  "note_open_failed": "Failed to open note",
+  "note_slash_no_result": "No matching command"
 }

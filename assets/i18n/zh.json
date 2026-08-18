@@ -1019,5 +1019,6 @@
   "note_move_failed": "移动失败",
   "note_delete_success": "已删除",
   "note_delete_failed": "删除失败",
-  "note_open_failed": "打开笔记失败"
+  "note_open_failed": "打开笔记失败",
+  "note_slash_no_result": "没有匹配的命令"
 }

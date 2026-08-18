@@ -1019,5 +1019,6 @@
   "note_move_failed": "移動に失敗しました",
   "note_delete_success": "削除しました",
   "note_delete_failed": "削除に失敗しました",
-  "note_open_failed": "メモを開けませんでした"
+  "note_open_failed": "メモを開けませんでした",
+  "note_slash_no_result": "一致するコマンドがありません"
 }
