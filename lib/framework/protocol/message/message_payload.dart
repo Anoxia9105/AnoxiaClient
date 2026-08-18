@@ -115,9 +115,27 @@ class CardPayload {
   }
 
   /// 将任意值转换为 `Map<String, String>`。
+  ///
+  /// 兼容两种服务端格式：
+  /// - `Map`：`{"content": "..."}`（本地缓存 / V5 本地序列化）
+  /// - `List`：`[{"key": "content", "value": "..."}]`
+  ///   （REST 历史接口按 V5 `StringProperty` 模型返回的键值对列表）
   static Map<String, String> _readStringMap(dynamic value) {
-    if (value is! Map) return const {};
-    return value.map((key, val) => MapEntry(key.toString(), val.toString()));
+    if (value is Map) {
+      return value.map((key, val) => MapEntry(key.toString(), val.toString()));
+    }
+    if (value is List) {
+      final result = <String, String>{};
+      for (final item in value) {
+        if (item is! Map) continue;
+        final key = item['key'] ?? item['k'];
+        if (key == null) continue;
+        final text = item['value'] ?? item['v'];
+        result[key.toString()] = text?.toString() ?? '';
+      }
+      return result;
+    }
+    return const {};
   }
 
   /// 从字符串列表中返回第一个非空字符串（去除首尾空格）。

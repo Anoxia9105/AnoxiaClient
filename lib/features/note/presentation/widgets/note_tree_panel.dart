@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
@@ -19,7 +19,16 @@ import 'note_tree_dnd.dart';
 import 'note_trash_dialog.dart';
 
 /// 树节点操作
-enum _NodeAction { newNote, newSubfolder, rename, move, pin, tags, share, delete }
+enum _NodeAction {
+  newNote,
+  newSubfolder,
+  rename,
+  move,
+  pin,
+  tags,
+  share,
+  delete,
+}
 
 /// 记事本树面板
 ///
@@ -143,10 +152,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     );
     if (name == null || !mounted) return;
     try {
-      await ref.read(noteTreeServiceProvider.notifier).renameFolder(
-            folder.id,
-            name,
-          );
+      await ref
+          .read(noteTreeServiceProvider.notifier)
+          .renameFolder(folder.id, name);
     } catch (e) {
       if (!mounted) return;
       Toast.showToast('note_rename_failed'.tr(), type: ToastType.error);
@@ -181,9 +189,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await ref
-          .read(noteTreeServiceProvider.notifier)
-          .deleteFolder(folder.id);
+      await ref.read(noteTreeServiceProvider.notifier).deleteFolder(folder.id);
       if (!mounted) return;
       Toast.showToast('note_delete_success'.tr(), type: ToastType.success);
     } catch (e) {
@@ -248,8 +254,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     return Column(
       children: [
         _buildHeader(context, colorScheme, treeAsync),
-        if (_query.isEmpty)
-          _buildActionRow(context, colorScheme),
+        if (_query.isEmpty) _buildActionRow(context, colorScheme),
         const SizedBox(height: 6),
         _buildSearchField(context, colorScheme),
         if (_query.isEmpty) ...[
@@ -274,7 +279,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       padding: const EdgeInsets.fromLTRB(14, 14, 8, 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: .6)),
+          bottom: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: .6),
+          ),
         ),
       ),
       child: Row(
@@ -502,11 +509,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
 
   /// 编辑笔记标签
   Future<void> _editTags(NoteBrief note) async {
-    await showNoteTagsDialog(
-      context,
-      noteId: note.id,
-      initialTags: note.tags,
-    );
+    await showNoteTagsDialog(context, noteId: note.id, initialTags: note.tags);
   }
 
   /// 分享笔记到聊天（拉取全文后以快照卡片发送）
@@ -539,9 +542,8 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     }
     if (_activeTag != null) {
       return treeAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         error: (e, _) => Center(child: Text('chat_load_failed'.tr())),
         data: (tree) => _buildTagFiltered(context, colorScheme, tree),
       );
@@ -659,7 +661,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
                   colorScheme.primary.withValues(alpha: .05),
                 ],
               ),
-              border: Border.all(color: colorScheme.primary.withValues(alpha: .15)),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: .15),
+              ),
             ),
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedNote01,
@@ -703,7 +707,11 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       children: [
         _wrapDnd(
           context: context,
-          item: NoteDragItem(isFolder: true, id: folder.id, containerId: containerId),
+          item: NoteDragItem(
+            isFolder: true,
+            id: folder.id,
+            containerId: containerId,
+          ),
           feedbackLabel: folder.name,
           targetContainerId: containerId,
           targetId: folder.id,
@@ -741,7 +749,11 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   }) {
     return _wrapDnd(
       context: context,
-      item: NoteDragItem(isFolder: false, id: note.id, containerId: containerId),
+      item: NoteDragItem(
+        isFolder: false,
+        id: note.id,
+        containerId: containerId,
+      ),
       feedbackLabel: note.title.isEmpty ? 'note_untitled'.tr() : note.title,
       targetContainerId: containerId,
       targetId: note.id,
@@ -829,14 +841,20 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
         } else {
           final target = tree.findFolder(targetId);
           if (target == null) return;
-          final ids = [...[for (final f in target.children) f.id], dragged.id];
+          final ids = [
+            ...[for (final f in target.children) f.id],
+            dragged.id,
+          ];
           await notifier.sortFolders(ids, targetId);
         }
       } else {
         if (targetIsFolder) {
           final target = tree.findFolder(targetId);
           if (target == null) return;
-          final ids = [...[for (final n in target.notes) n.id], dragged.id];
+          final ids = [
+            ...[for (final n in target.notes) n.id],
+            dragged.id,
+          ];
           await notifier.sortNotes(ids, targetId);
         } else {
           final ids = _reorderedIds(
@@ -854,7 +872,11 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   }
 
   /// 容器内有序 ID 列表（笔记或文件夹，按展示顺序）
-  List<int> _containerIds(NoteTree tree, int? containerId, {required bool folders}) {
+  List<int> _containerIds(
+    NoteTree tree,
+    int? containerId, {
+    required bool folders,
+  }) {
     if (containerId == null) {
       return folders
           ? [for (final f in tree.folders) f.id]
@@ -921,106 +943,320 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     );
   }
 
+  /// 右键 / 长按菜单（圆角卡片、图标底、危险项红色、分组分隔线）
+  Future<void> _showContextMenu(
+    BuildContext context,
+    Offset position, {
+    required List<List<dynamic>> headerIcon,
+    required String headerTitle,
+    required List<_ContextMenuEntry> entries,
+    required void Function(_NodeAction action) onSelected,
+  }) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final size = MediaQuery.sizeOf(context);
+    final relative = RelativeRect.fromLTRB(
+      position.dx,
+      position.dy,
+      size.width - position.dx,
+      size.height - position.dy,
+    );
+
+    final action = await showMenu<_NodeAction>(
+      context: context,
+      position: relative,
+      color: colorScheme.surfaceContainerLow,
+      elevation: 14,
+      shadowColor: Colors.black.withValues(alpha: .3),
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: .4),
+        ),
+      ),
+      constraints: const BoxConstraints(minWidth: 224, maxWidth: 300),
+      clipBehavior: Clip.antiAlias,
+      items: [
+        _ContextMenuHeaderEntry(icon: headerIcon, title: headerTitle),
+        const PopupMenuDivider(height: 10),
+        for (var i = 0; i < entries.length; i++) ...[
+          if (entries[i].separatorBefore) const PopupMenuDivider(height: 10),
+          _ContextMenuItem(entry: entries[i]),
+        ],
+      ],
+    );
+
+    if (!mounted || action == null) return;
+    onSelected(action);
+  }
+
   void _showFolderMenu(
     BuildContext context,
     Offset position,
     NoteFolderNode folder,
   ) {
-    final size = MediaQuery.sizeOf(context);
-    final relative = RelativeRect.fromLTRB(
-      position.dx,
-      position.dy,
-      size.width - position.dx,
-      size.height - position.dy,
-    );
-
-    showMenu<_NodeAction>(
-      context: context,
-      position: relative,
-      items: [
-        _menuEntry(_NodeAction.newNote, HugeIcons.strokeRoundedNote02, 'note_new'.tr()),
-        _menuEntry(_NodeAction.newSubfolder, HugeIcons.strokeRoundedFolderAdd, 'note_new_subfolder'.tr()),
-        _menuEntry(_NodeAction.rename, HugeIcons.strokeRoundedEdit02, 'note_rename'.tr()),
-        _menuEntry(_NodeAction.move, HugeIcons.strokeRoundedMove01, 'note_move'.tr()),
-        _menuEntry(_NodeAction.delete, HugeIcons.strokeRoundedDelete02, 'note_delete'.tr()),
+    _showContextMenu(
+      context,
+      position,
+      headerIcon: HugeIcons.strokeRoundedFolder01,
+      headerTitle: folder.name,
+      entries: [
+        _ContextMenuEntry(
+          _NodeAction.newNote,
+          HugeIcons.strokeRoundedNoteAdd,
+          'note_new'.tr(),
+        ),
+        _ContextMenuEntry(
+          _NodeAction.newSubfolder,
+          HugeIcons.strokeRoundedFolderAdd,
+          'note_new_subfolder'.tr(),
+        ),
+        _ContextMenuEntry(
+          _NodeAction.rename,
+          HugeIcons.strokeRoundedEdit02,
+          'note_rename'.tr(),
+          separatorBefore: true,
+        ),
+        _ContextMenuEntry(
+          _NodeAction.move,
+          HugeIcons.strokeRoundedMove01,
+          'note_move'.tr(),
+        ),
+        _ContextMenuEntry(
+          _NodeAction.delete,
+          HugeIcons.strokeRoundedDelete02,
+          'note_delete'.tr(),
+          danger: true,
+          separatorBefore: true,
+        ),
       ],
-    ).then((action) {
-      if (!mounted || action == null) return;
-      switch (action) {
-        case _NodeAction.newNote:
-          _createNote(folderId: folder.id);
-        case _NodeAction.newSubfolder:
-          _createFolder(parentId: folder.id);
-        case _NodeAction.rename:
-          _renameFolder(folder);
-        case _NodeAction.move:
-          _moveFolder(folder);
-        case _NodeAction.delete:
-          _deleteFolder(folder);
-        default:
-          break;
-      }
-    });
+      onSelected: (action) {
+        if (!mounted) return;
+        switch (action) {
+          case _NodeAction.newNote:
+            _createNote(folderId: folder.id);
+          case _NodeAction.newSubfolder:
+            _createFolder(parentId: folder.id);
+          case _NodeAction.rename:
+            _renameFolder(folder);
+          case _NodeAction.move:
+            _moveFolder(folder);
+          case _NodeAction.delete:
+            _deleteFolder(folder);
+          default:
+            break;
+        }
+      },
+    );
   }
 
-  void _showNoteMenu(
-    BuildContext context,
-    Offset position,
-    NoteBrief note,
-  ) {
-    final size = MediaQuery.sizeOf(context);
-    final relative = RelativeRect.fromLTRB(
-      position.dx,
-      position.dy,
-      size.width - position.dx,
-      size.height - position.dy,
-    );
-
-    showMenu<_NodeAction>(
-      context: context,
-      position: relative,
-      items: [
-        _menuEntry(
+  void _showNoteMenu(BuildContext context, Offset position, NoteBrief note) {
+    _showContextMenu(
+      context,
+      position,
+      headerIcon: HugeIcons.strokeRoundedNote01,
+      headerTitle: note.title.isEmpty ? 'note_untitled'.tr() : note.title,
+      entries: [
+        _ContextMenuEntry(
           _NodeAction.pin,
-          note.pinned ? HugeIcons.strokeRoundedPinOff : HugeIcons.strokeRoundedPin02,
+          note.pinned
+              ? HugeIcons.strokeRoundedPinOff
+              : HugeIcons.strokeRoundedPin02,
           note.pinned ? 'note_unpin'.tr() : 'note_pin'.tr(),
         ),
-        _menuEntry(_NodeAction.tags, HugeIcons.strokeRoundedTag01, 'note_tags'.tr()),
-        _menuEntry(_NodeAction.share, HugeIcons.strokeRoundedShare01, 'note_share'.tr()),
-        _menuEntry(_NodeAction.move, HugeIcons.strokeRoundedMove01, 'note_move'.tr()),
-        _menuEntry(_NodeAction.delete, HugeIcons.strokeRoundedDelete02, 'note_delete'.tr()),
+        _ContextMenuEntry(
+          _NodeAction.tags,
+          HugeIcons.strokeRoundedTag01,
+          'note_tags'.tr(),
+        ),
+        _ContextMenuEntry(
+          _NodeAction.share,
+          HugeIcons.strokeRoundedShare01,
+          'note_share'.tr(),
+        ),
+        _ContextMenuEntry(
+          _NodeAction.move,
+          HugeIcons.strokeRoundedMove01,
+          'note_move'.tr(),
+          separatorBefore: true,
+        ),
+        _ContextMenuEntry(
+          _NodeAction.delete,
+          HugeIcons.strokeRoundedDelete02,
+          'note_delete'.tr(),
+          danger: true,
+          separatorBefore: true,
+        ),
       ],
-    ).then((action) {
-      if (!mounted || action == null) return;
-      switch (action) {
-        case _NodeAction.pin:
-          _togglePinned(note);
-        case _NodeAction.tags:
-          _editTags(note);
-        case _NodeAction.share:
-          _shareNote(note);
-        case _NodeAction.move:
-          _moveNote(note);
-        case _NodeAction.delete:
-          _deleteNote(note);
-        default:
-          break;
-      }
-    });
+      onSelected: (action) {
+        if (!mounted) return;
+        switch (action) {
+          case _NodeAction.pin:
+            _togglePinned(note);
+          case _NodeAction.tags:
+            _editTags(note);
+          case _NodeAction.share:
+            _shareNote(note);
+          case _NodeAction.move:
+            _moveNote(note);
+          case _NodeAction.delete:
+            _deleteNote(note);
+          default:
+            break;
+        }
+      },
+    );
   }
+}
 
-  PopupMenuEntry<_NodeAction> _menuEntry(
-    _NodeAction action,
-    List<List<dynamic>> icon,
-    String label,
-  ) {
-    return PopupMenuItem<_NodeAction>(
-      value: action,
+/// 右键菜单条目描述
+class _ContextMenuEntry {
+  const _ContextMenuEntry(
+    this.action,
+    this.icon,
+    this.label, {
+    this.danger = false,
+    this.separatorBefore = false,
+  });
+
+  final _NodeAction action;
+  final List<List<dynamic>> icon;
+  final String label;
+
+  /// 危险操作（删除）：图标与文字使用错误色
+  final bool danger;
+
+  /// 在条目上方插入分组分隔线
+  final bool separatorBefore;
+}
+
+/// 右键菜单项：图标底 + 文字，带 hover 高亮
+class _ContextMenuItem extends PopupMenuEntry<_NodeAction> {
+  const _ContextMenuItem({required this.entry});
+
+  final _ContextMenuEntry entry;
+
+  @override
+  double get height => 42;
+
+  @override
+  bool represents(_NodeAction? value) => value == entry.action;
+
+  @override
+  State<PopupMenuEntry<_NodeAction>> createState() => _ContextMenuItemState();
+}
+
+class _ContextMenuItemState extends State<_ContextMenuItem> {
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final accent = widget.entry.danger
+        ? colorScheme.error
+        : colorScheme.primary;
+
+    return InkWell(
+      onTap: () => Navigator.of(context).pop(widget.entry.action),
+      borderRadius: BorderRadius.circular(10),
+      hoverColor: colorScheme.primaryContainer.withValues(alpha: .35),
+      highlightColor: accent.withValues(alpha: .1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: accent.withValues(
+                  alpha: widget.entry.danger ? .10 : .08,
+                ),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: HugeIcon(
+                icon: widget.entry.icon,
+                size: 16,
+                color: widget.entry.danger
+                    ? colorScheme.error
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                widget.entry.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: widget.entry.danger
+                      ? colorScheme.error
+                      : colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 右键菜单顶部标题（显示文件夹 / 笔记名）
+class _ContextMenuHeaderEntry extends PopupMenuEntry<_NodeAction> {
+  const _ContextMenuHeaderEntry({required this.icon, required this.title});
+
+  final List<List<dynamic>> icon;
+  final String title;
+
+  @override
+  double get height => 44;
+
+  @override
+  bool represents(_NodeAction? value) => false;
+
+  @override
+  State<PopupMenuEntry<_NodeAction>> createState() =>
+      _ContextMenuHeaderEntryState();
+}
+
+class _ContextMenuHeaderEntryState extends State<_ContextMenuHeaderEntry> {
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      color: colorScheme.primary.withValues(alpha: .05),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 16),
+          Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: HugeIcon(
+              icon: widget.icon,
+              size: 14,
+              color: colorScheme.primary,
+            ),
+          ),
           const SizedBox(width: 8),
-          Text(label),
+          Expanded(
+            child: Text(
+              widget.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1053,11 +1289,7 @@ class _ActionButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              HugeIcon(
-                icon: icon,
-                size: 15,
-                color: colorScheme.primary,
-              ),
+              HugeIcon(icon: icon, size: 15, color: colorScheme.primary),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -1139,7 +1371,10 @@ class _FolderRow extends StatelessWidget {
                 ),
                 if (folder.totalNoteCount > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(999),
@@ -1282,12 +1517,7 @@ class _NoteRow extends StatelessWidget {
       runSpacing: 2,
       children: [
         for (final name in shown)
-          _TagChip(
-            label: name,
-            selected: false,
-            dense: true,
-            onTap: null,
-          ),
+          _TagChip(label: name, selected: false, dense: true, onTap: null),
         if (overflow > 0)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -1409,7 +1639,9 @@ class _TagChip extends StatelessWidget {
             style: TextStyle(
               fontSize: dense ? 10 : 12,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: selected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
         ),

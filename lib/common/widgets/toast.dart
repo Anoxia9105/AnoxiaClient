@@ -9,10 +9,10 @@ export '../../framework/core/toast_service.dart' show ToastType;
 ///
 /// 类名为兼容现有调用保留；所有文本通知均通过 [ScaffoldMessenger] 显示，
 /// BotToast 仅继续承载依附式菜单等非通知浮层。
+/// 提示条占满屏幕宽度并保持贴底，行为与原生 SnackBar 一致，
+/// 仅背景色按类型区分，文字颜色随背景亮度自适应。
 class Toast {
   static const _defaultDuration = Duration(seconds: 3);
-  static const _mobileMargin = EdgeInsets.fromLTRB(16, 0, 16, 16);
-  static const _desktopWidth = 400.0;
 
   /// 每个应用/独立窗口的 MaterialApp 都应注册此 key。
   static final GlobalKey<ScaffoldMessengerState> messengerKey =
@@ -98,10 +98,10 @@ class Toast {
     VoidCallback? onTap,
   }) {
     final messenger = messengerKey.currentState;
-    final context = messengerKey.currentContext;
-    if (messenger == null || context == null) return () {};
+    if (messenger == null) return () {};
 
-    final isDesktopWidth = MediaQuery.sizeOf(context).width >= 600;
+    final bg = backgroundColor ?? _colorFor(type);
+    final textColor = _foregroundFor(bg);
     messenger.hideCurrentSnackBar();
     final controller = messenger.showSnackBar(
       SnackBar(
@@ -115,8 +115,8 @@ class Toast {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: textColor,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 height: 1.35,
@@ -124,11 +124,10 @@ class Toast {
             ),
           ),
         ),
-        backgroundColor: backgroundColor ?? _colorFor(type),
+        backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
         duration: duration,
-        width: isDesktopWidth ? _desktopWidth : null,
-        margin: isDesktopWidth ? null : _mobileMargin,
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 6,
@@ -144,5 +143,12 @@ class Toast {
       ToastType.warning => const Color(0xFF8A5A00),
       ToastType.info => const Color(0xFF455A64),
     };
+  }
+
+  /// 根据背景色亮度自动选择高对比度的文字颜色，保证可读性。
+  static Color _foregroundFor(Color background) {
+    return ThemeData.estimateBrightnessForColor(background) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
   }
 }

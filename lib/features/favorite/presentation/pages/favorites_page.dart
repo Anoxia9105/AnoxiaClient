@@ -5,6 +5,7 @@ import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_factory.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/base/message_render_strategy.dart';
+import 'package:anoxia/features/note/presentation/widgets/note_card_content.dart';
 import 'package:anoxia/framework/domain/chat_favorite.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
@@ -1024,6 +1025,18 @@ class _FavoriteDetailPanel extends StatelessWidget {
       );
     }
 
+    // 记事本卡片：展示完整快照内容（标题 + 更新时间 + 多行正文）
+    final card = message.payload?.card;
+    if (card?.cardType == 'note') {
+      return _FavoriteNoteDetailCard(
+        title: card!.displayTitle.isEmpty
+            ? 'note_untitled'.tr()
+            : card.displayTitle,
+        updatedMs: int.tryParse(card.properties['updatedAt'] ?? ''),
+        content: resolveNoteCardContent(card),
+      );
+    }
+
     // 纯文本：可选中文本卡片
     if (message.messageType == MessageType.text) {
       return _TextDetailCard(
@@ -1084,6 +1097,94 @@ class _FavoriteContentCard extends StatelessWidget {
         border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: child,
+    );
+  }
+}
+
+/// 记事本卡片收藏详情：标题 + 更新时间 + 完整快照内容（多行）
+class _FavoriteNoteDetailCard extends StatelessWidget {
+  final String title;
+  final int? updatedMs;
+  final String content;
+
+  const _FavoriteNoteDetailCard({
+    required this.title,
+    required this.updatedMs,
+    required this.content,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.surfaceContainerHighest.withValues(alpha: .55),
+            cs.surfaceContainerLow.withValues(alpha: .75),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedNote01,
+                  size: 14,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'note_card_label'.tr(),
+                style: TextStyle(
+                  color: cs.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              if (updatedMs != null && updatedMs! > 0)
+                Text(
+                  _formatDate(DateTime.fromMillisecondsSinceEpoch(updatedMs!)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Divider(height: 1, thickness: 0.5, color: cs.outlineVariant),
+          const SizedBox(height: 12),
+          SelectableText(
+            content.isEmpty ? 'note_card_no_content'.tr() : content,
+            style: TextStyle(fontSize: 15, height: 1.7, color: cs.onSurface),
+          ),
+        ],
+      ),
     );
   }
 }

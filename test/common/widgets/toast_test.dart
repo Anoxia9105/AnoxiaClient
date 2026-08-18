@@ -80,4 +80,49 @@ void main() {
     expect(find.text('第一条'), findsNothing);
     expect(find.text('第二条'), findsOneWidget);
   });
+
+  testWidgets('提示条占满屏幕宽度并保持在屏幕底部', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        scaffoldMessengerKey: Toast.messengerKey,
+        home: const Scaffold(),
+      ),
+    );
+
+    Toast.showToast('占满宽度');
+    await tester.pump();
+
+    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snackBar.width, double.infinity);
+    expect(snackBar.margin, isNull);
+
+    final snackBarRect = tester.getRect(find.byType(SnackBar));
+    final screenSize = tester.getSize(find.byType(MaterialApp));
+    expect(snackBarRect.width, moreOrLessEquals(screenSize.width));
+    expect(
+      snackBarRect.bottom,
+      moreOrLessEquals(screenSize.height, epsilon: 60),
+    );
+  });
+
+  testWidgets('文字颜色随背景亮度自适应', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        scaffoldMessengerKey: Toast.messengerKey,
+        home: const Scaffold(),
+      ),
+    );
+
+    Toast.showToast('深色背景', type: ToastType.info);
+    await tester.pump();
+    Text text = tester.widget<Text>(find.text('深色背景'));
+    expect(text.style!.color, Colors.white);
+
+    Toast.messengerKey.currentState!.clearSnackBars();
+    await tester.pump();
+    Toast.showNotificationNow('浅色背景', color: const Color(0xFFFEF7FF));
+    await tester.pump();
+    text = tester.widget<Text>(find.text('浅色背景'));
+    expect(text.style!.color, Colors.black);
+  });
 }

@@ -58,6 +58,16 @@ class LayoutController extends _$LayoutController {
     }
   }
 
+  /// 设置当前选中的页面为记事本页面
+  void setToNotes() {
+    final noteIndex = state.items.indexWhere(
+      (item) => item.name == 'sidebar_note',
+    );
+    if (noteIndex != -1) {
+      setIndex(noteIndex);
+    }
+  }
+
   /// 切换侧边栏展开/收起状态
   void toggleExtended() {
     state = state.copyWith(extendedValue: !state.extendedValue);
