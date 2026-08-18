@@ -310,6 +310,12 @@ const allDependencies = <Package>[
   _vector_graphics_codec,
   _vector_graphics_compiler,
   _vector_math,
+  _video_player,
+  _video_player_android,
+  _video_player_avfoundation,
+  _video_player_platform_interface,
+  _video_player_web,
+  _video_player_win,
   _vm_service,
   _watcher,
   _web,
@@ -363,6 +369,8 @@ const dependencies = <Package>[
   _lpinyin,
   _desktop_multi_window,
   _file_picker,
+  _video_player,
+  _video_player_win,
   _uuid,
   _package_info_plus,
   _path_provider,
@@ -399,7 +407,10 @@ const dependencies = <Package>[
   _http,
   _device_info_plus,
   _drift,
-  _sqlite3_flutter_libs
+  _sqlite3_flutter_libs,
+  _flutter_quill_delta_from_html,
+  _markdown,
+  _dart_quill_delta
 ];
 
 /// Direct `dev_dependencies`.
@@ -16776,6 +16787,238 @@ freely, subject to the following restrictions:
     devDependencies: [PackageRef('build_runner'), PackageRef('path'), PackageRef('test')],
   );
 
+/// video_player 2.14.0
+const _video_player = Package(
+    name: 'video_player',
+    description: 'Flutter plugin for displaying inline video with other Flutter widgets on Android, iOS, macOS and web.',
+    repository: 'https://github.com/flutter/packages/tree/main/packages/video_player/video_player',
+    authors: [],
+    version: '2.14.0',
+    license: '''Copyright 2013 The Flutter Authors
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('collection'), PackageRef('flutter'), PackageRef('html'), PackageRef('video_player_android'), PackageRef('video_player_avfoundation'), PackageRef('video_player_platform_interface'), PackageRef('video_player_web')],
+    devDependencies: [PackageRef('leak_tracker_flutter_testing')],
+  );
+
+/// video_player_android 2.12.0
+const _video_player_android = Package(
+    name: 'video_player_android',
+    description: 'Android implementation of the video_player plugin.',
+    repository: 'https://github.com/flutter/packages/tree/main/packages/video_player/video_player_android',
+    authors: [],
+    version: '2.12.0',
+    license: '''Copyright 2013 The Flutter Authors
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('video_player_platform_interface')],
+    devDependencies: [PackageRef('build_runner'), PackageRef('mockito')],
+  );
+
+/// video_player_avfoundation 2.11.0
+const _video_player_avfoundation = Package(
+    name: 'video_player_avfoundation',
+    description: 'iOS and macOS implementation of the video_player plugin.',
+    repository: 'https://github.com/flutter/packages/tree/main/packages/video_player/video_player_avfoundation',
+    authors: [],
+    version: '2.11.0',
+    license: '''Copyright 2013 The Flutter Authors
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('video_player_platform_interface')],
+    devDependencies: [PackageRef('build_runner'), PackageRef('mockito')],
+  );
+
+/// video_player_platform_interface 6.9.0
+const _video_player_platform_interface = Package(
+    name: 'video_player_platform_interface',
+    description: 'A common platform interface for the video_player plugin.',
+    repository: 'https://github.com/flutter/packages/tree/main/packages/video_player/video_player_platform_interface',
+    authors: [],
+    version: '6.9.0',
+    license: '''Copyright 2013 The Flutter Authors
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('plugin_platform_interface')],
+    devDependencies: [],
+  );
+
+/// video_player_web 2.4.0
+const _video_player_web = Package(
+    name: 'video_player_web',
+    description: 'Web platform implementation of video_player.',
+    repository: 'https://github.com/flutter/packages/tree/main/packages/video_player/video_player_web',
+    authors: [],
+    version: '2.4.0',
+    license: '''Copyright 2013 The Flutter Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('flutter_web_plugins'), PackageRef('video_player_platform_interface'), PackageRef('web')],
+    devDependencies: [],
+  );
+
+/// video_player_win 3.2.2
+const _video_player_win = Package(
+    name: 'video_player_win',
+    description: 'Video player for Windows, lightweight, using Windows built-in Media Foundation API. Windows implementation of the video_player plugin.',
+    homepage: 'https://github.com/jakky1/video_player_win',
+    repository: 'https://github.com/jakky1/video_player_win',
+    authors: [],
+    version: '3.2.2',
+    license: '''BSD 3-Clause License
+
+Copyright 2022, jakky1 (jakky1@gmail.com)
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('plugin_platform_interface'), PackageRef('video_player_platform_interface')],
+    devDependencies: [PackageRef('flutter_lints')],
+  );
+
 /// vm_service 15.2.0
 const _vm_service = Package(
     name: 'vm_service',
@@ -17349,12 +17592,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
     devDependencies: [PackageRef('coverage'), PackageRef('path'), PackageRef('test')],
   );
 
-/// anoxia 1.0.9
+/// anoxia 1.0.0
 const _anoxia = Package(
     name: 'anoxia',
     description: 'A high-performance, real-time IM (Instant Messaging) solution built with Flutter and Dart. Supports low-latency message delivery and robust state synchronization.',
     authors: [],
-    version: '1.0.9',
+    version: '1.0.0',
     license: '''MIT License
 
 Copyright (c) 2026 zhang52514
@@ -17378,7 +17621,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('flutter_screenutil'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('dio'), PackageRef('go_router'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('connectivity_plus'), PackageRef('permission_handler'), PackageRef('flutter_map'), PackageRef('latlong2'), PackageRef('geolocator'), PackageRef('easy_localization'), PackageRef('hugeicons'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('web_socket_channel'), PackageRef('tray_manager'), PackageRef('flutter_quill'), PackageRef('flutter_highlight'), PackageRef('highlight'), PackageRef('cross_file'), PackageRef('cross_cache'), PackageRef('photo_view'), PackageRef('window_manager'), PackageRef('bot_toast'), PackageRef('url_launcher'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('desktop_multi_window'), PackageRef('file_picker'), PackageRef('uuid'), PackageRef('package_info_plus'), PackageRef('path_provider'), PackageRef('open_filex'), PackageRef('pub_semver'), PackageRef('path'), PackageRef('characters'), PackageRef('intl'), PackageRef('share_plus'), PackageRef('web'), PackageRef('image'), PackageRef('emoji_picker_flutter'), PackageRef('flutter_local_notifications'), PackageRef('app_badge_plus'), PackageRef('pasteboard'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_zoom_drawer'), PackageRef('hotkey_manager'), PackageRef('flutter_background'), PackageRef('pip'), PackageRef('just_audio'), PackageRef('audio_waveforms'), PackageRef('jpush_flutter'), PackageRef('firebase_core'), PackageRef('firebase_messaging'), PackageRef('google_fonts'), PackageRef('chat_bottom_container'), PackageRef('mobile_scanner'), PackageRef('qr_flutter'), PackageRef('image_gallery_saver_plus'), PackageRef('image_cropper'), PackageRef('image_picker'), PackageRef('html'), PackageRef('http'), PackageRef('device_info_plus'), PackageRef('drift'), PackageRef('sqlite3_flutter_libs')],
+    dependencies: [PackageRef('flutter'), PackageRef('flutter_screenutil'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('dio'), PackageRef('go_router'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('connectivity_plus'), PackageRef('permission_handler'), PackageRef('flutter_map'), PackageRef('latlong2'), PackageRef('geolocator'), PackageRef('easy_localization'), PackageRef('hugeicons'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('web_socket_channel'), PackageRef('tray_manager'), PackageRef('flutter_quill'), PackageRef('flutter_highlight'), PackageRef('highlight'), PackageRef('cross_file'), PackageRef('cross_cache'), PackageRef('photo_view'), PackageRef('window_manager'), PackageRef('bot_toast'), PackageRef('url_launcher'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('desktop_multi_window'), PackageRef('file_picker'), PackageRef('video_player'), PackageRef('video_player_win'), PackageRef('uuid'), PackageRef('package_info_plus'), PackageRef('path_provider'), PackageRef('open_filex'), PackageRef('pub_semver'), PackageRef('path'), PackageRef('characters'), PackageRef('intl'), PackageRef('share_plus'), PackageRef('web'), PackageRef('image'), PackageRef('emoji_picker_flutter'), PackageRef('flutter_local_notifications'), PackageRef('app_badge_plus'), PackageRef('pasteboard'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_zoom_drawer'), PackageRef('hotkey_manager'), PackageRef('flutter_background'), PackageRef('pip'), PackageRef('just_audio'), PackageRef('audio_waveforms'), PackageRef('jpush_flutter'), PackageRef('firebase_core'), PackageRef('firebase_messaging'), PackageRef('google_fonts'), PackageRef('chat_bottom_container'), PackageRef('mobile_scanner'), PackageRef('qr_flutter'), PackageRef('image_gallery_saver_plus'), PackageRef('image_cropper'), PackageRef('image_picker'), PackageRef('html'), PackageRef('http'), PackageRef('device_info_plus'), PackageRef('drift'), PackageRef('sqlite3_flutter_libs'), PackageRef('flutter_quill_delta_from_html'), PackageRef('markdown'), PackageRef('dart_quill_delta')],
     devDependencies: [PackageRef('flutter_lints'), PackageRef('riverpod_generator'), PackageRef('riverpod_lint'), PackageRef('build_runner'), PackageRef('drift_dev'), PackageRef('flutter_gen_runner'), PackageRef('go_router_builder'), PackageRef('flutter_oss_licenses'), PackageRef('connectivity_plus_platform_interface'), PackageRef('plugin_platform_interface')],
   );
 

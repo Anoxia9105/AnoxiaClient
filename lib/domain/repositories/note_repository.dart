@@ -64,4 +64,19 @@ abstract interface class NoteRepository {
 
   /// 搜索笔记（标题 / 纯文本）
   Future<List<NoteBrief>> search(String keyword);
+
+  /// 版本历史列表（版本号倒序）
+  Future<List<NoteDocVersion>> getVersions(int noteId);
+
+  /// 还原到指定版本（服务端会先快照当前状态，还原可逆）
+  Future<bool> restoreVersion(int noteId, int version);
+
+  /// 标签列表（含关联笔记数）
+  Future<List<NoteTag>> getTags();
+
+  /// 整体替换笔记标签（find-or-create，[tags] 为 null/空则清空）
+  Future<bool> replaceTags(int noteId, List<String> tags);
+
+  /// 删除标签（解除全部笔记关联）
+  Future<bool> deleteTag(int tagId);
 }

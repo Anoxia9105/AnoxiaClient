@@ -185,6 +185,52 @@ class NoteRepositoryImpl implements NoteRepository {
     return const [];
   }
 
+  @override
+  Future<List<NoteDocVersion>> getVersions(int noteId) async {
+    final response = await DioClient().get('${API.noteBase}/$noteId/versions');
+    final data = _extractData(response);
+    if (data is List) {
+      return data
+          .map((e) => NoteDocVersion.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return const [];
+  }
+
+  @override
+  Future<bool> restoreVersion(int noteId, int version) async {
+    return _isSuccess(
+      await DioClient().post('${API.noteBase}/$noteId/versions/$version/restore'),
+    );
+  }
+
+  @override
+  Future<List<NoteTag>> getTags() async {
+    final response = await DioClient().get(API.noteTags);
+    final data = _extractData(response);
+    if (data is List) {
+      return data
+          .map((e) => NoteTag.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return const [];
+  }
+
+  @override
+  Future<bool> replaceTags(int noteId, List<String> tags) async {
+    return _isSuccess(
+      await DioClient().put(
+        '${API.noteBase}/$noteId/tags',
+        data: {'tags': tags},
+      ),
+    );
+  }
+
+  @override
+  Future<bool> deleteTag(int tagId) async {
+    return _isSuccess(await DioClient().delete('$API.noteTags/$tagId'));
+  }
+
   /// 兼容多种后端响应格式：`{code, data}` 中提取 data
   dynamic _extractData(dynamic response) {
     final data = response.data;

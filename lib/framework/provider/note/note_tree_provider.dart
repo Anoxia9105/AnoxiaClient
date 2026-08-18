@@ -2,6 +2,7 @@ import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/domain/note_tree.dart';
 import 'package:anoxia/framework/provider/core/note_repository_provider.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
+import 'package:anoxia/framework/provider/note/note_tag_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'note_tree_provider.g.dart';
@@ -117,5 +118,23 @@ class NoteTreeService extends _$NoteTreeService {
   Future<void> deleteNote(int noteId) async {
     await ref.read(noteRepositoryProvider).deleteNote(noteId);
     await refresh(quiet: true);
+  }
+
+  /// 整体替换笔记标签（find-or-create）
+  Future<void> setTags(int noteId, List<String> tags) async {
+    await ref.read(noteRepositoryProvider).replaceTags(noteId, tags);
+    await refresh(quiet: true);
+    if (ref.mounted) {
+      await ref.read(noteTagServiceProvider.notifier).refresh();
+    }
+  }
+
+  /// 删除标签（解除全部笔记关联）
+  Future<void> deleteTag(int tagId) async {
+    await ref.read(noteRepositoryProvider).deleteTag(tagId);
+    await refresh(quiet: true);
+    if (ref.mounted) {
+      await ref.read(noteTagServiceProvider.notifier).refresh();
+    }
   }
 }

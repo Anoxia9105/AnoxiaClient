@@ -230,6 +230,9 @@ class API {
   /// 搜索笔记
   static const String noteSearch = '/note/search';
 
+  /// 标签列表
+  static const String noteTags = '/note/tags';
+
   /// 文件夹基础路径
   static const String noteFolderBase = '/note/folder';
 }

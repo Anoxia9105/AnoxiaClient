@@ -13,7 +13,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'note_quill_actions.dart';
 import 'note_quill_image_build.dart';
+import 'note_markdown_io.dart';
 import 'note_toolbar.dart';
+import 'note_versions_dialog.dart';
 
 /// 记事本编辑器
 ///
@@ -704,6 +706,40 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
       child: Row(
         children: [
           Expanded(child: saveLabel),
+          IconButton(
+            tooltip: 'note_markdown_import'.tr(),
+            visualDensity: VisualDensity.compact,
+            iconSize: 17,
+            onPressed: () => _importMarkdown(context),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedFileImport,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          IconButton(
+            tooltip: 'note_markdown_export'.tr(),
+            visualDensity: VisualDensity.compact,
+            iconSize: 17,
+            onPressed: () => _exportMarkdown(context),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedFileExport,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          IconButton(
+            tooltip: 'note_versions'.tr(),
+            visualDensity: VisualDensity.compact,
+            iconSize: 17,
+            onPressed: () => showNoteVersionsDialog(context, session.noteId),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedClock01,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 4),
           Text(
             'note_word_count'.tr(args: [_wordCount.toString()]),
             style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
@@ -719,6 +755,23 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     final mm = dt.minute.toString().padLeft(2, '0');
     final ss = dt.second.toString().padLeft(2, '0');
     return '$hh:$mm:$ss';
+  }
+
+  Future<void> _importMarkdown(BuildContext context) async {
+    final controller = _quillController;
+    if (controller == null) return;
+    if (!await confirmImportMarkdown(context)) return;
+    await importNoteMarkdown(ref, controller: controller);
+  }
+
+  Future<void> _exportMarkdown(BuildContext context) async {
+    final controller = _quillController;
+    if (controller == null) return;
+    await exportNoteMarkdown(
+      ref,
+      title: widget.session.title,
+      controller: controller,
+    );
   }
 }
 

@@ -31,6 +31,9 @@ class NoteBrief {
   /// 删除时间（回收站列表用，非回收站为 null）
   final DateTime? deletedAt;
 
+  /// 标签名列表
+  final List<String> tags;
+
   const NoteBrief({
     required this.id,
     required this.folderId,
@@ -40,9 +43,11 @@ class NoteBrief {
     this.pinned = false,
     this.pinTime,
     this.deletedAt,
+    this.tags = const [],
   });
 
   factory NoteBrief.fromJson(Map<String, dynamic> json) {
+    final rawTags = json['tags'];
     return NoteBrief(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       folderId: int.tryParse(json['folderId']?.toString() ?? json['folder_id']?.toString() ?? ''),
@@ -53,6 +58,9 @@ class NoteBrief {
           (json['pinned'] is bool && json['pinned'] == true),
       pinTime: _parseTime(json['pinTime'] ?? json['pin_time']),
       deletedAt: _parseTime(json['deletedAt'] ?? json['deleted_at']),
+      tags: rawTags is List
+          ? rawTags.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList()
+          : const [],
     );
   }
 
@@ -85,6 +93,9 @@ class NoteDoc {
 
   final DateTime? updatedAt;
 
+  /// 标签名列表
+  final List<String> tags;
+
   const NoteDoc({
     required this.id,
     required this.folderId,
@@ -93,9 +104,11 @@ class NoteDoc {
     required this.plainText,
     required this.createdAt,
     required this.updatedAt,
+    this.tags = const [],
   });
 
   factory NoteDoc.fromJson(Map<String, dynamic> json) {
+    final rawTags = json['tags'];
     return NoteDoc(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       folderId: int.tryParse(json['folderId']?.toString() ?? json['folder_id']?.toString() ?? ''),
@@ -104,6 +117,9 @@ class NoteDoc {
       plainText: json['plainText']?.toString() ?? json['plain_text']?.toString() ?? '',
       createdAt: _parseTime(json['createdAt'] ?? json['created_at']),
       updatedAt: _parseTime(json['updatedAt'] ?? json['updated_at']),
+      tags: rawTags is List
+          ? rawTags.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList()
+          : const [],
     );
   }
 
@@ -115,6 +131,7 @@ class NoteDoc {
     String? plainText,
     DateTime? Function()? createdAt,
     DateTime? Function()? updatedAt,
+    List<String>? tags,
   }) {
     return NoteDoc(
       id: id ?? this.id,
@@ -124,6 +141,7 @@ class NoteDoc {
       plainText: plainText ?? this.plainText,
       createdAt: createdAt != null ? createdAt() : this.createdAt,
       updatedAt: updatedAt != null ? updatedAt() : this.updatedAt,
+      tags: tags ?? this.tags,
     );
   }
 }
@@ -150,6 +168,64 @@ class NoteDeleteResult {
     return NoteDeleteResult(
       folderDeleted: int.tryParse(json['folderDeleted']?.toString() ?? json['folder_deleted']?.toString() ?? '0') ?? 0,
       noteDeleted: int.tryParse(json['noteDeleted']?.toString() ?? json['note_deleted']?.toString() ?? '0') ?? 0,
+    );
+  }
+}
+
+/// 笔记版本摘要（版本历史列表用）
+@immutable
+class NoteDocVersion {
+  final int id;
+
+  /// 版本号
+  final int version;
+
+  /// 标题
+  final String title;
+
+  /// 纯文本预览
+  final String preview;
+
+  /// 创建时间
+  final DateTime? createdAt;
+
+  const NoteDocVersion({
+    required this.id,
+    required this.version,
+    required this.title,
+    required this.preview,
+    required this.createdAt,
+  });
+
+  factory NoteDocVersion.fromJson(Map<String, dynamic> json) {
+    return NoteDocVersion(
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      version: int.tryParse(json['version']?.toString() ?? '0') ?? 0,
+      title: json['title']?.toString() ?? '',
+      preview: json['preview']?.toString() ?? '',
+      createdAt: _parseTime(json['createdAt'] ?? json['created_at']),
+    );
+  }
+}
+
+/// 标签（含关联笔记数）
+@immutable
+class NoteTag {
+  final int id;
+
+  /// 标签名
+  final String name;
+
+  /// 关联笔记数
+  final int count;
+
+  const NoteTag({required this.id, required this.name, required this.count});
+
+  factory NoteTag.fromJson(Map<String, dynamic> json) {
+    return NoteTag(
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      name: json['name']?.toString() ?? '',
+      count: int.tryParse(json['count']?.toString() ?? '0') ?? 0,
     );
   }
 }

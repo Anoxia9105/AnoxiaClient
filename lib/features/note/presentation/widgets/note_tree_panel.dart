@@ -4,6 +4,7 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/domain/note_tree.dart';
 import 'package:anoxia/framework/provider/core/note_repository_provider.dart';
+import 'package:anoxia/framework/provider/note/note_tag_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -12,11 +13,12 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../common/widgets/toast.dart';
 import 'note_dialogs.dart';
+import 'note_tags_dialog.dart';
 import 'note_tree_dnd.dart';
 import 'note_trash_dialog.dart';
 
 /// 树节点操作
-enum _NodeAction { newNote, newSubfolder, rename, move, pin, delete }
+enum _NodeAction { newNote, newSubfolder, rename, move, pin, tags, delete }
 
 /// 记事本树面板
 ///
@@ -46,6 +48,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   String _query = '';
   List<NoteBrief>? _searchResults;
   bool _searching = false;
+
+  /// 当前按标签过滤（null 表示不过滤）
+  String? _activeTag;
 
   @override
   void dispose() {
@@ -94,6 +99,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
         title: doc.title,
         preview: doc.plainText,
         updatedAt: doc.updatedAt,
+        tags: doc.tags,
       );
       if (folderId != null) {
         setState(() => _expanded.add(folderId));
@@ -245,6 +251,10 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           _buildActionRow(context, colorScheme),
         const SizedBox(height: 6),
         _buildSearchField(context, colorScheme),
+        if (_query.isEmpty) ...[
+          const SizedBox(height: 4),
+          _buildTagFilterBar(context, colorScheme),
+        ],
         const SizedBox(height: 6),
         Expanded(child: _buildBody(context, colorScheme, treeAsync)),
       ],
@@ -395,6 +405,109 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     );
   }
 
+  /// 标签过滤栏（点击标签按标签筛选笔记，可再次点击取消）
+  Widget _buildTagFilterBar(BuildContext context, ColorScheme colorScheme) {
+    final tagsAsync = ref.watch(noteTagServiceProvider);
+    final tags = tagsAsync.value ?? const <NoteTag>[];
+
+    if (tags.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 34,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        children: [
+          _TagChip(
+            label: 'note_tag_all'.tr(),
+            selected: _activeTag == null,
+            onTap: () => setState(() => _activeTag = null),
+          ),
+          for (final tag in tags) ...[
+            const SizedBox(width: 6),
+            _TagChip(
+              label: '${tag.name} ${tag.count}',
+              selected: _activeTag == tag.name,
+              onTap: () => setState(() {
+                _activeTag = _activeTag == tag.name ? null : tag.name;
+              }),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 按标签过滤的笔记列表（跨文件夹）
+  Widget _buildTagFiltered(
+    BuildContext context,
+    ColorScheme colorScheme,
+    NoteTree tree,
+  ) {
+    final tag = _activeTag;
+    final notes = <NoteBrief>[];
+    if (tag != null) {
+      void collect(NoteFolderNode node) {
+        for (final n in node.notes) {
+          if (n.tags.contains(tag)) notes.add(n);
+        }
+        for (final child in node.children) {
+          collect(child);
+        }
+      }
+
+      for (final folder in tree.folders) {
+        collect(folder);
+      }
+      for (final note in tree.rootNotes) {
+        if (note.tags.contains(tag)) notes.add(note);
+      }
+    }
+
+    if (notes.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedTag01,
+              size: 34,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'note_tag_no_note'.tr(),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 14),
+      children: [
+        for (final note in notes)
+          _NoteRow(
+            note: note,
+            selected: note.id == widget.selectedNoteId,
+            onTap: () => widget.onOpenNote(note),
+            onMenuPosition: (position) =>
+                _showNoteMenu(context, position, note),
+          ),
+      ],
+    );
+  }
+
+  /// 编辑笔记标签
+  Future<void> _editTags(NoteBrief note) async {
+    await showNoteTagsDialog(
+      context,
+      noteId: note.id,
+      initialTags: note.tags,
+    );
+  }
+
   Widget _buildBody(
     BuildContext context,
     ColorScheme colorScheme,
@@ -402,6 +515,15 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   ) {
     if (_query.isNotEmpty) {
       return _buildSearchResults(context, colorScheme);
+    }
+    if (_activeTag != null) {
+      return treeAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        error: (e, _) => Center(child: Text('chat_load_failed'.tr())),
+        data: (tree) => _buildTagFiltered(context, colorScheme, tree),
+      );
     }
 
     return treeAsync.when(
@@ -842,6 +964,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           note.pinned ? HugeIcons.strokeRoundedPinOff : HugeIcons.strokeRoundedPin02,
           note.pinned ? 'note_unpin'.tr() : 'note_pin'.tr(),
         ),
+        _menuEntry(_NodeAction.tags, HugeIcons.strokeRoundedTag01, 'note_tags'.tr()),
         _menuEntry(_NodeAction.move, HugeIcons.strokeRoundedMove01, 'note_move'.tr()),
         _menuEntry(_NodeAction.delete, HugeIcons.strokeRoundedDelete02, 'note_delete'.tr()),
       ],
@@ -850,6 +973,8 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       switch (action) {
         case _NodeAction.pin:
           _togglePinned(note);
+        case _NodeAction.tags:
+          _editTags(note);
         case _NodeAction.move:
           _moveNote(note);
         case _NodeAction.delete:
@@ -1107,6 +1232,10 @@ class _NoteRow extends StatelessWidget {
                           colorScheme.primary,
                         ),
                       ],
+                      if (note.tags.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        _buildTagChips(colorScheme),
+                      ],
                     ],
                   ),
                 ),
@@ -1115,6 +1244,43 @@ class _NoteRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// 标签小胶囊（最多展示 3 个，超出折叠为 +N）
+  Widget _buildTagChips(ColorScheme colorScheme) {
+    final tags = note.tags;
+    final shown = tags.length > 3 ? tags.sublist(0, 3) : tags;
+    final overflow = tags.length - shown.length;
+
+    return Wrap(
+      spacing: 4,
+      runSpacing: 2,
+      children: [
+        for (final name in shown)
+          _TagChip(
+            label: name,
+            selected: false,
+            dense: true,
+            onTap: null,
+          ),
+        if (overflow > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '+$overflow',
+              style: TextStyle(
+                fontSize: 10,
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1177,5 +1343,53 @@ class _NoteRow extends StatelessWidget {
       start = index + query.length;
     }
     return spans;
+  }
+}
+
+/// 标签胶囊（过滤栏 / 笔记行内标签）
+class _TagChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+
+  /// 紧凑模式（笔记行内标签，不可点击）
+  final bool dense;
+  final VoidCallback? onTap;
+
+  const _TagChip({
+    required this.label,
+    required this.selected,
+    this.dense = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer
+          : colorScheme.surfaceContainerHighest.withValues(alpha: .7),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          height: dense ? 18 : 24,
+          padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 10),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: dense ? 10 : 12,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
