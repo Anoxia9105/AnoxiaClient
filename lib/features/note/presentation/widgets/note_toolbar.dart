@@ -10,9 +10,9 @@ import 'note_quill_actions.dart';
 
 /// 记事本富文本工具栏
 ///
-/// 双行布局（窄窗口下可横向滚动）：
-/// - 第一行：撤销 / 重做 / 清除格式 / 标题级别 / 粗斜下划线删除线 / 行内代码 / 文字颜色 / 背景色
-/// - 第二行：无序列表 / 有序列表 / 任务列表 / 引用 / 链接 / 图片 / 对齐
+/// 单行流式布局（Wrap）：宽度足够时全部按钮一行显示，放不下时自动换行。
+/// 包含：撤销 / 重做 / 清除格式 / 标题级别 / 粗斜下划线删除线 / 行内代码 /
+/// 文字颜色 / 背景色 / 查找 / 列表 / 任务 / 引用 / 链接 / 图片 / 对齐。
 class NoteToolbar extends ConsumerWidget {
   final QuillController controller;
   final FocusNode focusNode;
@@ -37,138 +37,129 @@ class NoteToolbar extends ConsumerWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      width: double.infinity,
+      // 单行流式布局：宽度足够时一行显示，放不下时自动换行
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildCustomBtn(
-                  HugeIcons.strokeRoundedUndo,
-                  'note_undo'.tr(),
-                  iconColor,
-                  controller.undo,
-                ),
-                _buildCustomBtn(
-                  HugeIcons.strokeRoundedRedo,
-                  'note_redo'.tr(),
-                  iconColor,
-                  controller.redo,
-                ),
-                _buildCustomBtn(
-                  HugeIcons.strokeRoundedTextClear,
-                  'toolbar_clear_format'.tr(),
-                  iconColor,
-                  () => noteClearFormat(controller),
-                ),
-                _buildDivider(context),
-                _buildHeaderButton(context, iconColor),
-                _buildDivider(context),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedTextBold,
-                  Attribute.bold,
-                  'toolbar_bold'.tr(),
-                  iconColor,
-                ),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedTextItalic,
-                  Attribute.italic,
-                  'toolbar_italic'.tr(),
-                  iconColor,
-                ),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedTextUnderline,
-                  Attribute.underline,
-                  'toolbar_underline'.tr(),
-                  iconColor,
-                ),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedTextStrikethrough,
-                  Attribute.strikeThrough,
-                  'toolbar_strikethrough'.tr(),
-                  iconColor,
-                ),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedSourceCode,
-                  Attribute.inlineCode,
-                  'toolbar_inline_code'.tr(),
-                  iconColor,
-                ),
-                _buildDivider(context),
-                ChatQuillColorStyleButton(
-                  controller: controller,
-                  type: ChatQuillColorStyleType.foreground,
-                  tooltip: 'toolbar_text_color'.tr(),
-                  onPressed: () => notePickColor(
-                    context,
-                    controller,
-                    focusNode,
-                    background: false,
-                  ),
-                ),
-                ChatQuillColorStyleButton(
-                  controller: controller,
-                  type: ChatQuillColorStyleType.background,
-                  tooltip: 'toolbar_bg_color'.tr(),
-                  onPressed: () => notePickColor(
-                    context,
-                    controller,
-                    focusNode,
-                    background: true,
-                  ),
-                ),
-                _buildDivider(context),
-                _buildCustomBtn(
-                  HugeIcons.strokeRoundedSearch02,
-                  'note_search_in_doc'.tr(),
-                  iconColor,
-                  () => showDialog<void>(
-                    context: context,
-                    builder: (_) => QuillToolbarSearchDialog(
-                      controller: controller,
-                    ),
-                  ),
-                ),
-              ],
+          _buildCustomBtn(
+            HugeIcons.strokeRoundedUndo,
+            'note_undo'.tr(),
+            iconColor,
+            controller.undo,
+          ),
+          _buildCustomBtn(
+            HugeIcons.strokeRoundedRedo,
+            'note_redo'.tr(),
+            iconColor,
+            controller.redo,
+          ),
+          _buildCustomBtn(
+            HugeIcons.strokeRoundedTextClear,
+            'toolbar_clear_format'.tr(),
+            iconColor,
+            () => noteClearFormat(controller),
+          ),
+          _buildDivider(context),
+          _buildHeaderButton(context, iconColor),
+          _buildDivider(context),
+          _buildActionButton(
+            HugeIcons.strokeRoundedTextBold,
+            Attribute.bold,
+            'toolbar_bold'.tr(),
+            iconColor,
+          ),
+          _buildActionButton(
+            HugeIcons.strokeRoundedTextItalic,
+            Attribute.italic,
+            'toolbar_italic'.tr(),
+            iconColor,
+          ),
+          _buildActionButton(
+            HugeIcons.strokeRoundedTextUnderline,
+            Attribute.underline,
+            'toolbar_underline'.tr(),
+            iconColor,
+          ),
+          _buildActionButton(
+            HugeIcons.strokeRoundedTextStrikethrough,
+            Attribute.strikeThrough,
+            'toolbar_strikethrough'.tr(),
+            iconColor,
+          ),
+          _buildActionButton(
+            HugeIcons.strokeRoundedSourceCode,
+            Attribute.inlineCode,
+            'toolbar_inline_code'.tr(),
+            iconColor,
+          ),
+          _buildDivider(context),
+          ChatQuillColorStyleButton(
+            controller: controller,
+            type: ChatQuillColorStyleType.foreground,
+            tooltip: 'toolbar_text_color'.tr(),
+            onPressed: () => notePickColor(
+              context,
+              controller,
+              focusNode,
+              background: false,
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildActionButton(
-                  HugeIcons.strokeRoundedLeftToRightListBullet,
-                  Attribute.ul,
-                  'note_bullet_list'.tr(),
-                  iconColor,
-                ),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedLeftToRightListNumber,
-                  Attribute.ol,
-                  'note_ordered_list'.tr(),
-                  iconColor,
-                ),
-                _buildTaskListButton(context, iconColor),
-                _buildActionButton(
-                  HugeIcons.strokeRoundedQuoteDown,
-                  Attribute.blockQuote,
-                  'toolbar_quote'.tr(),
-                  iconColor,
-                ),
-                _buildDivider(context),
-                _buildLinkButton(context, iconColor),
-                _buildCustomBtn(
-                  HugeIcons.strokeRoundedImage01,
-                  'note_image'.tr(),
-                  iconColor,
-                  () => noteInsertImage(context, ref, controller, focusNode),
-                ),
-                _buildDivider(context),
-                _buildAlignButton(context, iconColor),
-              ],
+          ChatQuillColorStyleButton(
+            controller: controller,
+            type: ChatQuillColorStyleType.background,
+            tooltip: 'toolbar_bg_color'.tr(),
+            onPressed: () => notePickColor(
+              context,
+              controller,
+              focusNode,
+              background: true,
             ),
           ),
+          _buildDivider(context),
+          _buildCustomBtn(
+            HugeIcons.strokeRoundedSearch02,
+            'note_search_in_doc'.tr(),
+            iconColor,
+            () => showDialog<void>(
+              context: context,
+              builder: (_) => QuillToolbarSearchDialog(
+                controller: controller,
+              ),
+            ),
+          ),
+          _buildDivider(context),
+          _buildActionButton(
+            HugeIcons.strokeRoundedLeftToRightListBullet,
+            Attribute.ul,
+            'note_bullet_list'.tr(),
+            iconColor,
+          ),
+          _buildActionButton(
+            HugeIcons.strokeRoundedLeftToRightListNumber,
+            Attribute.ol,
+            'note_ordered_list'.tr(),
+            iconColor,
+          ),
+          _buildTaskListButton(context, iconColor),
+          _buildActionButton(
+            HugeIcons.strokeRoundedQuoteDown,
+            Attribute.blockQuote,
+            'toolbar_quote'.tr(),
+            iconColor,
+          ),
+          _buildDivider(context),
+          _buildLinkButton(context, iconColor),
+          _buildCustomBtn(
+            HugeIcons.strokeRoundedImage01,
+            'note_image'.tr(),
+            iconColor,
+            () => noteInsertImage(context, ref, controller, focusNode),
+          ),
+          _buildDivider(context),
+          _buildAlignButton(context, iconColor),
         ],
       ),
     );
