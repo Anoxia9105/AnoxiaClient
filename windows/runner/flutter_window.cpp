@@ -1,6 +1,7 @@
 #include "flutter_window.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -155,7 +156,13 @@ void FlutterWindow::ApplyTaskbarBadge() {
 }
 
 HICON FlutterWindow::CreateTaskbarBadgeIcon(int count) {
-    constexpr int kIconSize = 32;
+    // 高分辨率画布（64px，约为角标显示尺寸的 3~4 倍）：
+    // Windows 会把角标缩放到任务栏显示尺寸，高分辨率源图缩放后依然清晰。
+    // 文字按内存 DC 的实际 DPI 换算逻辑单位，避免高分屏下 GDI 字体被放大
+    // 溢出画布（旧实现固定 32px + 未补偿 DPI，150% 缩放下数字被裁剪发虚）。
+    constexpr int kIconSize = 64;
+    constexpr uint32_t kBadgeRed = 0x00E53935;  // RGB(229, 57, 53)
+
     BITMAPV5HEADER bitmap_info{};
     bitmap_info.bV5Size = sizeof(BITMAPV5HEADER);
     bitmap_info.bV5Width = kIconSize;
@@ -193,25 +200,53 @@ HICON FlutterWindow::CreateTaskbarBadgeIcon(int count) {
     Ellipse(memory_dc, 0, 0, kIconSize, kIconSize);
 
     const std::wstring label = count > 99 ? L"99+" : std::to_wstring(count);
-    const int font_height = label.length() >= 3 ? -15 :
-                            label.length() == 2 ? -19 : -23;
-    HFONT font = CreateFontW(font_height, 0, 0, 0, FW_BOLD, FALSE, FALSE,
+    const int font_px = label.length() >= 3 ? 30 :
+                        label.length() == 2 ? 38 : 46;
+    // GDI 字体高度是逻辑单位，按 DC DPI 换算成目标像素高度
+    int dc_dpi = GetDeviceCaps(memory_dc, LOGPIXELSY);
+    if (dc_dpi <= 0) dc_dpi = 96;
+    const int font_logical = -MulDiv(font_px, 96, dc_dpi);
+    HFONT font = CreateFontW(font_logical, 0, 0, 0, FW_BOLD, FALSE, FALSE,
                              FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                              CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
                              DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     HGDIOBJ old_font = SelectObject(memory_dc, font);
     SetBkMode(memory_dc, TRANSPARENT);
     SetTextColor(memory_dc, RGB(255, 255, 255));
-    RECT text_rect{0, label.length() >= 3 ? 1 : 0, kIconSize, kIconSize};
+    RECT text_rect{0, label.length() >= 3 ? 2 : 0, kIconSize, kIconSize};
     DrawTextW(memory_dc, label.c_str(), static_cast<int>(label.length()),
               &text_rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
-    // GDI leaves the alpha byte unset. Mark every painted pixel as opaque;
-    // untouched pixels stay transparent around the circular badge.
+    // 圆形边缘抗锯齿（按像素到圆心的距离做 1.5px 羽化）+ 补全透明通道。
+    // GDI 的圆是硬边，直接缩放会发虚；羽化后边缘平滑，且高分辨率下更清晰。
     auto *pixels = static_cast<uint32_t *>(raw_pixels);
-    for (int index = 0; index < kIconSize * kIconSize; ++index) {
-        if ((pixels[index] & 0x00FFFFFF) != 0) {
-            pixels[index] |= 0xFF000000;
+    constexpr double kFeather = 1.5;
+    const double radius = kIconSize / 2.0;
+    const double center = kIconSize / 2.0;
+    for (int y = 0; y < kIconSize; ++y) {
+        for (int x = 0; x < kIconSize; ++x) {
+            uint32_t &pixel = pixels[y * kIconSize + x];
+            const double dx = x + 0.5 - center;
+            const double dy = y + 0.5 - center;
+            const double dist = std::sqrt(dx * dx + dy * dy);
+            const double coverage = radius - dist;
+            if (coverage >= kFeather) {
+                // 完全在圆内：GDI 已绘制红色/文字，确保完全不透明
+                if ((pixel & 0x00FFFFFF) != 0) {
+                    pixel |= 0xFF000000;
+                }
+            } else if (coverage > 0.0) {
+                // 边缘过渡：圆外缘 GDI 未绘制的像素补红色，alpha 渐变
+                const uint32_t alpha = static_cast<uint32_t>(
+                        255.0 * (coverage / kFeather));
+                if ((pixel & 0x00FFFFFF) == 0) {
+                    pixel = kBadgeRed;
+                }
+                pixel = (pixel & 0x00FFFFFF) | (alpha << 24);
+            } else {
+                // 圆外：完全透明
+                pixel = 0;
+            }
         }
     }
 
