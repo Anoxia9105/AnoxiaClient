@@ -65,6 +65,15 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   Offset? _slashAnchorGlobal;
   double _slashLineHeight = 24;
 
+  /// 键盘上下键选中的命令下标（高亮项）
+  int _slashSelectedIndex = 0;
+
+  /// 指针是否悬停在菜单上（点击菜单项时编辑器会失焦，需要据此阻止菜单被关闭）
+  bool _slashPointerInside = false;
+
+  /// 菜单列表滚动控制器（键盘导航时把选中项滚进可视区）
+  final ScrollController _slashScrollController = ScrollController();
+
   /// 是否已排期待打开菜单（延迟到本帧结束后插入，避免与编辑区重建同帧竞争）
   bool _slashPending = false;
 
@@ -140,8 +149,10 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   }
 
   void _onFocusChanged() {
-    // 编辑器失焦时关闭斜杠命令菜单
-    if (!_focusNode.hasFocus && _slashOverlay != null) {
+    // 编辑器失焦时关闭斜杠命令菜单；
+    // 但点击菜单项导致的失焦（指针在菜单内）不能关——否则菜单会在点击
+    // 完成前被卸载，onTap 永远触发不了（桌面端点击菜单项"没反应"的根因）。
+    if (!_focusNode.hasFocus && _slashOverlay != null && !_slashPointerInside) {
       _dismissSlashMenu();
     }
   }
@@ -228,6 +239,11 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
         }
       }
       _slashQuery = text.substring(currentTrigger + 1, caret);
+      // 过滤结果变少时收敛选中项，避免高亮落到列表外
+      final filteredCount = _filteredSlashCommands().length;
+      if (_slashSelectedIndex >= filteredCount) {
+        _slashSelectedIndex = math.max(0, filteredCount - 1);
+      }
       overlay.markNeedsBuild();
       _refreshSlashAnchor();
     } catch (_) {
@@ -241,10 +257,74 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     if (_disposed || !_slashPending) return;
     _slashPending = false;
     if (_slashOverlay != null) return;
+    _slashSelectedIndex = 0;
     _computeSlashAnchor();
     final entry = OverlayEntry(builder: _buildSlashOverlay);
     _slashOverlay = entry;
     Overlay.maybeOf(context)?.insert(entry);
+    // 菜单打开期间接管 ↑/↓/回车/ESC 做键盘导航。
+    // HardwareKeyboard 处理器在焦点分发之前收到按键，可稳定拦截，
+    // 不会被编辑器内部的按键处理抢先消费。
+    HardwareKeyboard.instance.addHandler(_slashHardwareKeyHandler);
+  }
+
+  /// 键盘导航：↑/↓ 移动选中项，回车执行，ESC 关闭。
+  /// 返回 true 表示已消费该按键（编辑器不再移动光标/插入换行）。
+  bool _slashHardwareKeyHandler(KeyEvent event) {
+    if (_slashOverlay == null) return false;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
+    final key = event.logicalKey;
+    final commands = _filteredSlashCommands();
+    if (key == LogicalKeyboardKey.arrowDown) {
+      if (commands.isNotEmpty) {
+        _slashSelectedIndex = (_slashSelectedIndex + 1) % commands.length;
+        _syncSlashSelection();
+      }
+      return true;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      if (commands.isNotEmpty) {
+        _slashSelectedIndex =
+            (_slashSelectedIndex - 1 + commands.length) % commands.length;
+        _syncSlashSelection();
+      }
+      return true;
+    }
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      if (commands.isNotEmpty) {
+        final index = _slashSelectedIndex.clamp(0, commands.length - 1);
+        _applySlashCommand(commands[index]);
+      }
+      return true;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      _dismissSlashMenu();
+      return true;
+    }
+    return false;
+  }
+
+  /// 键盘移动选中项后：刷新菜单高亮 + 把选中项滚动到可视区。
+  void _syncSlashSelection() {
+    _slashOverlay?.markNeedsBuild();
+    if (_slashScrollController.hasClients) {
+      // 估算行高 43（42 内容 + 1 分隔线）
+      final target = _slashSelectedIndex * 43.0;
+      final max = _slashScrollController.position.maxScrollExtent;
+      _slashScrollController.animateTo(
+        target.clamp(0.0, max),
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  /// 当前过滤后的命令列表
+  List<_SlashCommand> _filteredSlashCommands() {
+    return _slashCommands()
+        .where((c) => _slashMatches(c, _slashQuery))
+        .toList();
   }
 
   void _refreshSlashAnchor() {
@@ -273,10 +353,13 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
 
   void _dismissSlashMenu() {
     _slashPending = false;
+    HardwareKeyboard.instance.removeHandler(_slashHardwareKeyHandler);
     _slashOverlay?.remove();
     _slashOverlay = null;
     _slashTriggerIndex = null;
     _slashQuery = '';
+    _slashSelectedIndex = 0;
+    _slashPointerInside = false;
   }
 
   Future<void> _applySlashCommand(_SlashCommand cmd) async {
@@ -513,9 +596,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     try {
       final theme = Theme.of(overlayContext);
       final colorScheme = theme.colorScheme;
-      final commands = _slashCommands()
-          .where((c) => _slashMatches(c, _slashQuery))
-          .toList();
+      final commands = _filteredSlashCommands();
 
       const popupWidth = 268.0;
       const maxPopupHeight = 300.0;
@@ -535,7 +616,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
 
       final contentHeight = commands.isEmpty
           ? 56.0
-          : math.min(maxPopupHeight, commands.length * 42.0 + 8);
+          : math.min(maxPopupHeight, commands.length * 43.0 + 8);
       var top = anchor.dy + lineHeight + 4;
       if (top + contentHeight > screenHeight - 8) {
         top = math.max(8.0, anchor.dy - contentHeight - 4);
@@ -546,56 +627,73 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
         left: left,
         top: top,
         width: popupWidth,
-        child: Material(
-          elevation: 10,
-          borderRadius: BorderRadius.circular(12),
-          color: colorScheme.surface,
-          child: ClipRRect(
+        child: MouseRegion(
+          // 记录指针是否在菜单内：桌面端点击菜单项会让编辑器失焦，
+          // 失焦监听据此跳过关闭菜单，保证 onTap 能正常触发
+          onEnter: (_) => _slashPointerInside = true,
+          onExit: (_) => _slashPointerInside = false,
+          child: Material(
+            elevation: 10,
             borderRadius: BorderRadius.circular(12),
-            child: commands.isEmpty
-                ? SizedBox(
-                    height: contentHeight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        HugeIcon(
-                          icon: HugeIcons.strokeRoundedSearchRemove,
-                          size: 16,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'note_slash_no_result'.tr(),
-                          style: TextStyle(
-                            fontSize: 12.5,
+            color: colorScheme.surface,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: commands.isEmpty
+                  ? SizedBox(
+                      height: contentHeight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedSearchRemove,
+                            size: 16,
                             color: colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                : SizedBox(
-                    height: contentHeight,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      itemCount: commands.length,
-                      separatorBuilder: (_, _) => Divider(
-                        height: 1,
-                        thickness: 0.5,
-                        indent: 40,
-                        endIndent: 8,
-                        color: colorScheme.outlineVariant.withValues(alpha: .4),
+                          const SizedBox(width: 8),
+                          Text(
+                            'note_slash_no_result'.tr(),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
-                      itemBuilder: (context, index) {
-                        final cmd = commands[index];
-                        return _SlashCommandItem(
-                          label: cmd.labelKey.tr(),
-                          icon: cmd.icon,
-                          onTap: () => _applySlashCommand(cmd),
-                        );
-                      },
+                    )
+                  : SizedBox(
+                      height: contentHeight,
+                      child: ListView.builder(
+                        controller: _slashScrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemExtent: 43.0,
+                        itemCount: commands.length,
+                        itemBuilder: (context, index) {
+                          final cmd = commands[index];
+                          return Column(
+                            children: [
+                              Expanded(
+                                child: _SlashCommandItem(
+                                  label: cmd.labelKey.tr(),
+                                  icon: cmd.icon,
+                                  selected: index == _slashSelectedIndex,
+                                  onTap: () => _applySlashCommand(cmd),
+                                ),
+                              ),
+                              if (index < commands.length - 1)
+                                Divider(
+                                  height: 1,
+                                  thickness: 0.5,
+                                  indent: 40,
+                                  endIndent: 8,
+                                  color: colorScheme.outlineVariant
+                                      .withValues(alpha: .4),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       );
@@ -608,12 +706,14 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   @override
   void dispose() {
     _disposed = true;
+    HardwareKeyboard.instance.removeHandler(_slashHardwareKeyHandler);
     _dismissSlashMenu();
     _debounce?.cancel();
     _focusNode.removeListener(_onFocusChanged);
     _quillController?.removeListener(_onQuillChanged);
     _quillController?.dispose();
     _titleController?.dispose();
+    _slashScrollController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -870,46 +970,63 @@ class _SlashCommand {
 class _SlashCommandItem extends StatelessWidget {
   final String label;
   final IconData icon;
+  final bool selected;
   final VoidCallback onTap;
 
   const _SlashCommandItem({
     required this.label,
     required this.icon,
+    required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: .5),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 15, color: colorScheme.primary),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer.withValues(alpha: .3)
+          : Colors.transparent,
+      child: InkWell(
+        // 点击菜单项时不抢编辑器焦点，否则失焦监听会在点击完成前关闭菜单
+        canRequestFocus: false,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? colorScheme.primary
+                      : colorScheme.primaryContainer.withValues(alpha: .5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  size: 15,
+                  color: selected ? colorScheme.onPrimary : colorScheme.primary,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
