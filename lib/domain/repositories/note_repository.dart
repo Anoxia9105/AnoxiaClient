@@ -38,8 +38,29 @@ abstract interface class NoteRepository {
   /// 移动笔记（[targetFolderId] 为 null 表示移至未分类根级）
   Future<bool> moveNote(int noteId, int? targetFolderId);
 
+  /// 置顶 / 取消置顶笔记
+  Future<bool> setPinned(int noteId, {required bool pinned});
+
+  /// 批量移动并重排笔记（[targetFolderId] 为 null 表示根级；[noteIds] 顺序即新 sort_order）
+  Future<bool> sortNotes(List<int> noteIds, int? targetFolderId);
+
+  /// 批量移动并重排文件夹（[targetParentId] 为 null 表示根级；[folderIds] 顺序即新 sort_order）
+  Future<bool> sortFolders(List<int> folderIds, int? targetParentId);
+
   /// 删除笔记
   Future<bool> deleteNote(int noteId);
+
+  /// 回收站列表（按删除时间倒序）
+  Future<List<NoteBrief>> getTrash();
+
+  /// 还原回收站笔记（所属文件夹已删除则恢复到根级）
+  Future<bool> restoreNote(int noteId);
+
+  /// 物理删除单篇回收站笔记
+  Future<bool> purgeNote(int noteId);
+
+  /// 清空回收站，返回删除数量
+  Future<int> purgeAllTrash();
 
   /// 搜索笔记（标题 / 纯文本）
   Future<List<NoteBrief>> search(String keyword);

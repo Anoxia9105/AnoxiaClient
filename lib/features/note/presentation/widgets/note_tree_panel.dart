@@ -1,5 +1,6 @@
 ﻿import 'dart:async';
 
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/domain/note_tree.dart';
 import 'package:anoxia/framework/provider/core/note_repository_provider.dart';
@@ -11,9 +12,11 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../common/widgets/toast.dart';
 import 'note_dialogs.dart';
+import 'note_tree_dnd.dart';
+import 'note_trash_dialog.dart';
 
 /// 树节点操作
-enum _NodeAction { newNote, newSubfolder, rename, move, delete }
+enum _NodeAction { newNote, newSubfolder, rename, move, pin, delete }
 
 /// 记事本树面板
 ///
@@ -211,6 +214,22 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     } catch (e) {
       if (!mounted) return;
       Toast.showToast('note_delete_failed'.tr(), type: ToastType.error);
+    }
+  }
+
+  Future<void> _togglePinned(NoteBrief note) async {
+    try {
+      await ref
+          .read(noteTreeServiceProvider.notifier)
+          .setPinned(note.id, pinned: !note.pinned);
+      if (!mounted) return;
+      Toast.showToast(
+        note.pinned ? 'note_unpin_success'.tr() : 'note_pin_success'.tr(),
+        type: ToastType.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Toast.showToast('note_pin_failed'.tr(), type: ToastType.error);
     }
   }
 
@@ -416,19 +435,20 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
         if (tree.isEmpty) {
           return _buildEmpty(context, colorScheme);
         }
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(10, 6, 10, 14),
+        return Column(
           children: [
-            for (final note in tree.rootNotes)
-              _NoteRow(
-                note: note,
-                selected: note.id == widget.selectedNoteId,
-                onTap: () => widget.onOpenNote(note),
-                onMenuPosition: (position) =>
-                    _showNoteMenu(context, position, note),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 4),
+                children: [
+                  for (final note in tree.rootNotes)
+                    _buildNoteRow(context, colorScheme, note, null),
+                  for (final folder in tree.folders)
+                    _buildFolder(context, colorScheme, folder, null),
+                ],
               ),
-            for (final folder in tree.folders)
-              _buildFolder(context, colorScheme, folder),
+            ),
+            _buildTrashEntry(context, colorScheme),
           ],
         );
       },
@@ -468,6 +488,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
         for (final note in results)
           _NoteRow(
             note: note,
+            highlight: _query,
             selected: note.id == widget.selectedNoteId,
             onTap: () => widget.onOpenNote(note),
             onMenuPosition: (position) =>
@@ -530,39 +551,230 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     BuildContext context,
     ColorScheme colorScheme,
     NoteFolderNode folder,
+    int? containerId,
   ) {
     final expanded = _expanded.contains(folder.id);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FolderRow(
-          folder: folder,
-          expanded: expanded,
-          onTap: () => setState(() {
-            if (expanded) {
-              _expanded.remove(folder.id);
-            } else {
-              _expanded.add(folder.id);
-            }
-          }),
-          onMenuPosition: (position) =>
-              _showFolderMenu(context, position, folder),
+        _wrapDnd(
+          context: context,
+          item: NoteDragItem(isFolder: true, id: folder.id, containerId: containerId),
+          feedbackLabel: folder.name,
+          targetContainerId: containerId,
+          targetId: folder.id,
+          targetIsFolder: true,
+          child: _FolderRow(
+            folder: folder,
+            expanded: expanded,
+            onTap: () => setState(() {
+              if (expanded) {
+                _expanded.remove(folder.id);
+              } else {
+                _expanded.add(folder.id);
+              }
+            }),
+            onMenuPosition: (position) =>
+                _showFolderMenu(context, position, folder),
+          ),
         ),
         if (expanded) ...[
           for (final note in folder.notes)
-            _NoteRow(
-              note: note,
-              indent: 1,
-              selected: note.id == widget.selectedNoteId,
-              onTap: () => widget.onOpenNote(note),
-              onMenuPosition: (position) =>
-                  _showNoteMenu(context, position, note),
-            ),
+            _buildNoteRow(context, colorScheme, note, folder.id, indent: 1),
           for (final child in folder.children)
-            _buildFolder(context, colorScheme, child),
+            _buildFolder(context, colorScheme, child, folder.id),
         ],
       ],
+    );
+  }
+
+  Widget _buildNoteRow(
+    BuildContext context,
+    ColorScheme colorScheme,
+    NoteBrief note,
+    int? containerId, {
+    int indent = 0,
+  }) {
+    return _wrapDnd(
+      context: context,
+      item: NoteDragItem(isFolder: false, id: note.id, containerId: containerId),
+      feedbackLabel: note.title.isEmpty ? 'note_untitled'.tr() : note.title,
+      targetContainerId: containerId,
+      targetId: note.id,
+      targetIsFolder: false,
+      child: _NoteRow(
+        note: note,
+        indent: indent,
+        selected: note.id == widget.selectedNoteId,
+        onTap: () => widget.onOpenNote(note),
+        onMenuPosition: (position) => _showNoteMenu(context, position, note),
+      ),
+    );
+  }
+
+  /// 桌面端包一层拖拽（排序 / 移入文件夹）；移动端原样返回
+  Widget _wrapDnd({
+    required BuildContext context,
+    required NoteDragItem item,
+    required String feedbackLabel,
+    required int? targetContainerId,
+    required int targetId,
+    required bool targetIsFolder,
+    required Widget child,
+  }) {
+    if (!DeviceUtil.isDesktop(context)) return child;
+    return NoteDraggableRow(
+      item: item,
+      feedbackLabel: feedbackLabel,
+      child: child,
+      canAccept: (dragged) => _canDropOnRow(
+        dragged,
+        containerId: targetContainerId,
+        targetId: targetId,
+        targetIsFolder: targetIsFolder,
+      ),
+      onDrop: (dragged) => _handleDrop(
+        dragged,
+        containerId: targetContainerId,
+        targetId: targetId,
+        targetIsFolder: targetIsFolder,
+      ),
+    );
+  }
+
+  /// 判断拖入目标行是否合法
+  bool _canDropOnRow(
+    NoteDragItem dragged, {
+    required int? containerId,
+    required int targetId,
+    required bool targetIsFolder,
+  }) {
+    if (dragged.id == targetId) return false;
+    final tree = ref.read(noteTreeServiceProvider).value;
+    if (tree == null) return false;
+    if (dragged.isFolder) {
+      if (!targetIsFolder) return false;
+      if (dragged.containerId == containerId) return true;
+      // 移入文件夹：不能移入自身子孙
+      return !_isDescendant(tree, dragged.id, targetId);
+    }
+    if (targetIsFolder) return true; // 笔记 → 移入文件夹
+    return dragged.containerId == containerId; // 笔记 → 同级重排
+  }
+
+  /// 处理拖放：同级重排或移入文件夹
+  Future<void> _handleDrop(
+    NoteDragItem dragged, {
+    required int? containerId,
+    required int targetId,
+    required bool targetIsFolder,
+  }) async {
+    final tree = ref.read(noteTreeServiceProvider).value;
+    if (tree == null) return;
+    final notifier = ref.read(noteTreeServiceProvider.notifier);
+    try {
+      if (dragged.isFolder) {
+        if (!targetIsFolder) return;
+        if (dragged.containerId == containerId) {
+          final ids = _reorderedIds(
+            _containerIds(tree, containerId, folders: true),
+            dragged.id,
+            targetId,
+          );
+          await notifier.sortFolders(ids, containerId);
+        } else {
+          final target = tree.findFolder(targetId);
+          if (target == null) return;
+          final ids = [...[for (final f in target.children) f.id], dragged.id];
+          await notifier.sortFolders(ids, targetId);
+        }
+      } else {
+        if (targetIsFolder) {
+          final target = tree.findFolder(targetId);
+          if (target == null) return;
+          final ids = [...[for (final n in target.notes) n.id], dragged.id];
+          await notifier.sortNotes(ids, targetId);
+        } else {
+          final ids = _reorderedIds(
+            _containerIds(tree, containerId, folders: false),
+            dragged.id,
+            targetId,
+          );
+          await notifier.sortNotes(ids, containerId);
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Toast.showToast('note_move_failed'.tr(), type: ToastType.error);
+    }
+  }
+
+  /// 容器内有序 ID 列表（笔记或文件夹，按展示顺序）
+  List<int> _containerIds(NoteTree tree, int? containerId, {required bool folders}) {
+    if (containerId == null) {
+      return folders
+          ? [for (final f in tree.folders) f.id]
+          : [for (final n in tree.rootNotes) n.id];
+    }
+    final folder = tree.findFolder(containerId);
+    if (folder == null) return const [];
+    return folders
+        ? [for (final f in folder.children) f.id]
+        : [for (final n in folder.notes) n.id];
+  }
+
+  /// 把 draggedId 移动到 targetId 的位置
+  List<int> _reorderedIds(List<int> ids, int draggedId, int targetId) {
+    final from = ids.indexOf(draggedId);
+    final to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return ids;
+    final result = List<int>.of(ids);
+    result.removeAt(from);
+    result.insert(to, draggedId);
+    return result;
+  }
+
+  /// descendantId 是否位于 ancestorId 的子树内
+  bool _isDescendant(NoteTree tree, int ancestorId, int descendantId) {
+    return tree.findFolder(ancestorId)?.findFolder(descendantId) != null;
+  }
+
+  Widget _buildTrashEntry(BuildContext context, ColorScheme colorScheme) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => showNoteTrashDialog(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: .5),
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedDelete02,
+                size: 15,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'note_trash'.tr(),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -602,6 +814,8 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           _moveFolder(folder);
         case _NodeAction.delete:
           _deleteFolder(folder);
+        default:
+          break;
       }
     });
   }
@@ -623,12 +837,19 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       context: context,
       position: relative,
       items: [
+        _menuEntry(
+          _NodeAction.pin,
+          note.pinned ? HugeIcons.strokeRoundedPinOff : HugeIcons.strokeRoundedPin02,
+          note.pinned ? 'note_unpin'.tr() : 'note_pin'.tr(),
+        ),
         _menuEntry(_NodeAction.move, HugeIcons.strokeRoundedMove01, 'note_move'.tr()),
         _menuEntry(_NodeAction.delete, HugeIcons.strokeRoundedDelete02, 'note_delete'.tr()),
       ],
     ).then((action) {
       if (!mounted || action == null) return;
       switch (action) {
+        case _NodeAction.pin:
+          _togglePinned(note);
         case _NodeAction.move:
           _moveNote(note);
         case _NodeAction.delete:
@@ -797,6 +1018,9 @@ class _NoteRow extends StatelessWidget {
   final NoteBrief note;
   final bool selected;
   final int indent;
+
+  /// 搜索高亮关键字（命中子串以高亮色渲染）
+  final String? highlight;
   final VoidCallback onTap;
 
   /// 右键 / 长按菜单回调，入参为全局坐标
@@ -808,11 +1032,13 @@ class _NoteRow extends StatelessWidget {
     required this.onTap,
     required this.onMenuPosition,
     this.indent = 0,
+    this.highlight,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final query = highlight?.trim() ?? '';
 
     return GestureDetector(
       onSecondaryTapDown: (details) => onMenuPosition(details.globalPosition),
@@ -841,28 +1067,44 @@ class _NoteRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        note.title.isEmpty
-                            ? 'note_untitled'.tr()
-                            : note.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                          color: colorScheme.onSurface,
-                        ),
+                      Row(
+                        children: [
+                          if (note.pinned) ...[
+                            HugeIcon(
+                              icon: HugeIcons.strokeRoundedPin02,
+                              size: 12,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Expanded(
+                            child: _buildHighlighted(
+                              note.title.isEmpty
+                                  ? 'note_untitled'.tr()
+                                  : note.title,
+                              query,
+                              TextStyle(
+                                fontSize: 13,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: colorScheme.onSurface,
+                              ),
+                              colorScheme.primary,
+                            ),
+                          ),
+                        ],
                       ),
                       if (note.preview.trim().isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Text(
+                        _buildHighlighted(
                           note.preview.trim(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          query,
+                          TextStyle(
                             fontSize: 11,
                             color: colorScheme.onSurfaceVariant,
                           ),
+                          colorScheme.primary,
                         ),
                       ],
                     ],
@@ -874,5 +1116,66 @@ class _NoteRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 命中关键字高亮渲染（大小写不敏感）
+  Widget _buildHighlighted(
+    String text,
+    String query,
+    TextStyle style,
+    Color highlightColor,
+  ) {
+    if (query.isEmpty) {
+      return Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: style,
+        children: _highlightSpans(text, query, style, highlightColor),
+      ),
+    );
+  }
+
+  List<TextSpan> _highlightSpans(
+    String text,
+    String query,
+    TextStyle style,
+    Color highlightColor,
+  ) {
+    final spans = <TextSpan>[];
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    var start = 0;
+    while (true) {
+      final index = lowerText.indexOf(lowerQuery, start);
+      if (index < 0) {
+        if (start < text.length) {
+          spans.add(TextSpan(text: text.substring(start), style: style));
+        }
+        break;
+      }
+      if (index > start) {
+        spans.add(TextSpan(text: text.substring(start, index), style: style));
+      }
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: style.copyWith(
+            color: highlightColor,
+            fontWeight: FontWeight.w700,
+            backgroundColor: highlightColor.withValues(alpha: .18),
+          ),
+        ),
+      );
+      start = index + query.length;
+    }
+    return spans;
   }
 }

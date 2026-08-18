@@ -54,7 +54,7 @@ final class NoteSessionServiceProvider
 }
 
 String _$noteSessionServiceHash() =>
-    r'728a467f6f043f2766c04479c70f26527e3647f7';
+    r'ff54644b13bc16bebd715186b22aebd6e42400a2';
 
 /// 当前编辑中的笔记会话
 ///

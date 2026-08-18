@@ -82,6 +82,30 @@ class NoteTreeService extends _$NoteTreeService {
     await refresh(quiet: true);
   }
 
+  /// 置顶 / 取消置顶笔记
+  Future<void> setPinned(int noteId, {required bool pinned}) async {
+    await ref
+        .read(noteRepositoryProvider)
+        .setPinned(noteId, pinned: pinned);
+    await refresh(quiet: true);
+  }
+
+  /// 批量移动并重排笔记
+  Future<void> sortNotes(List<int> noteIds, int? targetFolderId) async {
+    await ref
+        .read(noteRepositoryProvider)
+        .sortNotes(noteIds, targetFolderId);
+    await refresh(quiet: true);
+  }
+
+  /// 批量移动并重排文件夹
+  Future<void> sortFolders(List<int> folderIds, int? targetParentId) async {
+    await ref
+        .read(noteRepositoryProvider)
+        .sortFolders(folderIds, targetParentId);
+    await refresh(quiet: true);
+  }
+
   /// 打开笔记：拉取全文并启动编辑会话
   Future<NoteDoc> openNote(int noteId) async {
     final doc = await ref.read(noteRepositoryProvider).getNote(noteId);

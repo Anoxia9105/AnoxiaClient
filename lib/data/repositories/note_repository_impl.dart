@@ -105,8 +105,69 @@ class NoteRepositoryImpl implements NoteRepository {
   }
 
   @override
+  Future<bool> setPinned(int noteId, {required bool pinned}) async {
+    return _isSuccess(
+      await DioClient().put(
+        '${API.noteBase}/$noteId/pin',
+        data: {'pinned': pinned},
+      ),
+    );
+  }
+
+  @override
+  Future<bool> sortNotes(List<int> noteIds, int? targetFolderId) async {
+    return _isSuccess(
+      await DioClient().put(
+        '${API.noteBase}/sort',
+        data: {'type': 'note', 'parentId': targetFolderId, 'ids': noteIds},
+      ),
+    );
+  }
+
+  @override
+  Future<bool> sortFolders(List<int> folderIds, int? targetParentId) async {
+    return _isSuccess(
+      await DioClient().put(
+        '${API.noteBase}/sort',
+        data: {'type': 'folder', 'parentId': targetParentId, 'ids': folderIds},
+      ),
+    );
+  }
+
+  @override
   Future<bool> deleteNote(int noteId) async {
     return _isSuccess(await DioClient().delete('${API.noteBase}/$noteId'));
+  }
+
+  @override
+  Future<List<NoteBrief>> getTrash() async {
+    final response = await DioClient().get(API.noteTrash);
+    final data = _extractData(response);
+    if (data is List) {
+      return data
+          .map((e) => NoteBrief.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return const [];
+  }
+
+  @override
+  Future<bool> restoreNote(int noteId) async {
+    return _isSuccess(
+      await DioClient().post('${API.noteTrash}/$noteId/restore'),
+    );
+  }
+
+  @override
+  Future<bool> purgeNote(int noteId) async {
+    return _isSuccess(await DioClient().delete('${API.noteTrash}/$noteId'));
+  }
+
+  @override
+  Future<int> purgeAllTrash() async {
+    final response = await DioClient().delete(API.noteTrash);
+    final data = _extractData(response);
+    return int.tryParse(data?.toString() ?? '') ?? 0;
   }
 
   @override

@@ -22,12 +22,24 @@ class NoteBrief {
   /// 更新时间
   final DateTime? updatedAt;
 
+  /// 是否置顶
+  final bool pinned;
+
+  /// 置顶时间
+  final DateTime? pinTime;
+
+  /// 删除时间（回收站列表用，非回收站为 null）
+  final DateTime? deletedAt;
+
   const NoteBrief({
     required this.id,
     required this.folderId,
     required this.title,
     required this.preview,
     required this.updatedAt,
+    this.pinned = false,
+    this.pinTime,
+    this.deletedAt,
   });
 
   factory NoteBrief.fromJson(Map<String, dynamic> json) {
@@ -37,6 +49,10 @@ class NoteBrief {
       title: json['title']?.toString() ?? '',
       preview: json['preview']?.toString() ?? '',
       updatedAt: _parseTime(json['updatedAt'] ?? json['updated_at']),
+      pinned: (json['pinned']?.toString() ?? '0') == '1' ||
+          (json['pinned'] is bool && json['pinned'] == true),
+      pinTime: _parseTime(json['pinTime'] ?? json['pin_time']),
+      deletedAt: _parseTime(json['deletedAt'] ?? json['deleted_at']),
     );
   }
 

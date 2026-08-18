@@ -66,7 +66,7 @@ final class SystemMessageServiceProvider
 }
 
 String _$systemMessageServiceHash() =>
-    r'd4c24261d22f21c6575974b03d31f0dbd3339da6';
+    r'0f134dd2ed73a7cbbf8cf9ef56ccd1019feff6b0';
 
 /// 系统信令消息监听服务
 ///

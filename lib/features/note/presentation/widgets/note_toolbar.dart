@@ -118,6 +118,18 @@ class NoteToolbar extends ConsumerWidget {
                     background: true,
                   ),
                 ),
+                _buildDivider(context),
+                _buildCustomBtn(
+                  HugeIcons.strokeRoundedSearch02,
+                  'note_search_in_doc'.tr(),
+                  iconColor,
+                  () => showDialog<void>(
+                    context: context,
+                    builder: (_) => QuillToolbarSearchDialog(
+                      controller: controller,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

@@ -224,6 +224,9 @@ class API {
   /// 获取记事本完整树
   static const String noteTree = '/note/tree';
 
+  /// 回收站列表
+  static const String noteTrash = '/note/trash';
+
   /// 搜索笔记
   static const String noteSearch = '/note/search';
 
