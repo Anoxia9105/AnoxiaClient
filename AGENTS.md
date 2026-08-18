@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Flutter IM client (package `anoxia`), cross-platform: Android / iOS / Windows / macOS / Linux / Web (JS + Wasm). Active work is on branch `start_web` (web support). Repo docs and code comments are in Chinese; match that style.
+Flutter IM client (package `anoxia`), cross-platform: Android / iOS / Windows / macOS / Linux / Web (JS + Wasm). 分支策略：本地与远程只保留 `master`，Web/桌面/移动端全部在 master 上开发。Repo docs and code comments are in Chinese; match that style.
 
 ## Commands
 
