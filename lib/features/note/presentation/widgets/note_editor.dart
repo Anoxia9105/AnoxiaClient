@@ -65,6 +65,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   Offset? _slashAnchorGlobal;
   double _slashLineHeight = 24;
 
+  /// 是否已排期待打开菜单（延迟到本帧结束后插入，避免与编辑区重建同帧竞争）
+  bool _slashPending = false;
+
   @override
   void initState() {
     super.initState();
@@ -152,65 +155,96 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   /// 根据当前光标位置决定是否打开 / 更新 / 关闭斜杠命令菜单。
   void _updateSlashMenu(QuillController controller) {
     if (_disposed) return;
+    try {
+      final selection = controller.selection;
+      final text = controller.document.toPlainText();
+      final textLength = text.length;
+      // IME 组合输入等场景下 selection 可能短暂超前于文档长度，
+      // 统一收敛到文档末尾，避免 text 越界访问被 catch 静默吞掉导致菜单不弹。
+      final caret = math.min(selection.baseOffset, textLength);
+      final overlay = _slashOverlay;
 
-    final selection = controller.selection;
-    final text = controller.document.toPlainText();
-    final overlay = _slashOverlay;
+      if (overlay == null) {
+        // 菜单未打开但已排期：继续过滤查询字符
+        final trigger = _slashTriggerIndex;
+        if (_slashPending && trigger != null && selection.isCollapsed) {
+          if (caret <= trigger) {
+            _dismissSlashMenu();
+            return;
+          }
+          for (var i = trigger + 1; i < caret; i++) {
+            if (!_queryCharRegex.hasMatch(text[i])) {
+              _dismissSlashMenu();
+              return;
+            }
+          }
+          _slashQuery = text.substring(trigger + 1, caret);
+          return;
+        }
+        _slashPending = false;
 
-    if (overlay == null) {
-      // 菜单未打开：探测是否刚输入了行首的 /
-      if (!selection.isCollapsed) return;
-      final caret = selection.baseOffset;
-      final slashPos = caret - 1;
-      if (slashPos < 0 || slashPos >= text.length || text[slashPos] != '/') {
+        // 探测是否刚输入了行首的 /
+        if (!selection.isCollapsed) return;
+        final slashPos = caret - 1;
+        if (slashPos < 0 || slashPos >= textLength || text[slashPos] != '/') {
+          return;
+        }
+        final prev = slashPos == 0 ? '' : text[slashPos - 1];
+        final atLineStart =
+            prev.isEmpty || prev == '\n' || prev == ' ' || prev == '\t';
+        if (!atLineStart) return;
+        // 代码块内不触发斜杠命令
+        if (controller.getSelectionStyle().attributes.containsKey(
+          Attribute.codeBlock.key,
+        )) {
+          return;
+        }
+        _slashTriggerIndex = slashPos;
+        _slashQuery = '';
+        // 延迟到本帧结束（编辑区重建完成、布局就绪）后再插入菜单
+        _slashPending = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _openSlashMenu());
         return;
       }
-      final prev = slashPos == 0 ? '' : text[slashPos - 1];
-      final atLineStart = prev.isEmpty ||
-          prev == '\n' ||
-          prev == ' ' ||
-          prev == '\t';
-      if (!atLineStart) return;
-      // 代码块内不触发斜杠命令
-      if (controller
-          .getSelectionStyle()
-          .attributes
-          .containsKey(Attribute.codeBlock.key)) {
-        return;
-      }
-      _slashTriggerIndex = slashPos;
-      _slashQuery = '';
-      final entry = OverlayEntry(builder: _buildSlashOverlay);
-      _slashOverlay = entry;
-      Overlay.maybeOf(context)?.insert(entry);
-      _refreshSlashAnchor();
-      return;
-    }
 
-    // 菜单已打开：继续过滤 / 关闭
-    if (!selection.isCollapsed) {
-      _dismissSlashMenu();
-      return;
-    }
-    final trigger = _slashTriggerIndex;
-    if (trigger == null) {
-      _dismissSlashMenu();
-      return;
-    }
-    final caret = selection.baseOffset;
-    if (caret <= trigger) {
-      _dismissSlashMenu();
-      return;
-    }
-    for (var i = trigger + 1; i < caret; i++) {
-      if (!_queryCharRegex.hasMatch(text[i])) {
+      // 菜单已打开：继续过滤 / 关闭
+      if (!selection.isCollapsed) {
         _dismissSlashMenu();
         return;
       }
+      final currentTrigger = _slashTriggerIndex;
+      if (currentTrigger == null) {
+        _dismissSlashMenu();
+        return;
+      }
+      if (caret <= currentTrigger) {
+        _dismissSlashMenu();
+        return;
+      }
+      for (var i = currentTrigger + 1; i < caret; i++) {
+        if (!_queryCharRegex.hasMatch(text[i])) {
+          _dismissSlashMenu();
+          return;
+        }
+      }
+      _slashQuery = text.substring(currentTrigger + 1, caret);
+      overlay.markNeedsBuild();
+      _refreshSlashAnchor();
+    } catch (_) {
+      // 斜杠菜单的任何异常都不允许破坏编辑器
+      _dismissSlashMenu();
     }
-    _slashQuery = text.substring(trigger + 1, caret);
-    overlay.markNeedsBuild();
-    _refreshSlashAnchor();
+  }
+
+  /// 本帧结束后真正插入斜杠命令菜单
+  void _openSlashMenu() {
+    if (_disposed || !_slashPending) return;
+    _slashPending = false;
+    if (_slashOverlay != null) return;
+    _computeSlashAnchor();
+    final entry = OverlayEntry(builder: _buildSlashOverlay);
+    _slashOverlay = entry;
+    Overlay.maybeOf(context)?.insert(entry);
   }
 
   void _refreshSlashAnchor() {
@@ -222,11 +256,12 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   }
 
   void _computeSlashAnchor() {
-    final editor = _editorKey.currentState?.renderEditor;
     final controller = _quillController;
-    if (editor == null || controller == null) return;
-    final caret = controller.selection.baseOffset;
+    if (controller == null) return;
     try {
+      final editor = _editorKey.currentState?.renderEditor;
+      if (editor == null) return;
+      final caret = controller.selection.baseOffset;
       final position = TextPosition(offset: caret);
       final rect = editor.getLocalRectForCaret(position);
       _slashAnchorGlobal = editor.localToGlobal(rect.topLeft);
@@ -237,6 +272,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   }
 
   void _dismissSlashMenu() {
+    _slashPending = false;
     _slashOverlay?.remove();
     _slashOverlay = null;
     _slashTriggerIndex = null;
@@ -318,33 +354,33 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
           return Future.value();
         },
       ),
-      _SlashCommand(
-        'note_header_h1',
-        const ['h1', '标题1', '#'],
-        Icons.title,
-        (context, ref, controller, focusNode) {
-          controller.formatSelection(Attribute.h1);
-          return Future.value();
-        },
-      ),
-      _SlashCommand(
-        'note_header_h2',
-        const ['h2', '标题2', '##'],
-        Icons.title,
-        (context, ref, controller, focusNode) {
-          controller.formatSelection(Attribute.h2);
-          return Future.value();
-        },
-      ),
-      _SlashCommand(
-        'note_header_h3',
-        const ['h3', '标题3', '###'],
-        Icons.title,
-        (context, ref, controller, focusNode) {
-          controller.formatSelection(Attribute.h3);
-          return Future.value();
-        },
-      ),
+      _SlashCommand('note_header_h1', const ['h1', '标题1', '#'], Icons.title, (
+        context,
+        ref,
+        controller,
+        focusNode,
+      ) {
+        controller.formatSelection(Attribute.h1);
+        return Future.value();
+      }),
+      _SlashCommand('note_header_h2', const ['h2', '标题2', '##'], Icons.title, (
+        context,
+        ref,
+        controller,
+        focusNode,
+      ) {
+        controller.formatSelection(Attribute.h2);
+        return Future.value();
+      }),
+      _SlashCommand('note_header_h3', const ['h3', '标题3', '###'], Icons.title, (
+        context,
+        ref,
+        controller,
+        focusNode,
+      ) {
+        controller.formatSelection(Attribute.h3);
+        return Future.value();
+      }),
       _SlashCommand(
         'note_header_normal',
         const ['p', 'normal', '正文'],
@@ -453,23 +489,15 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
         'toolbar_text_color',
         const ['color', '颜色'],
         Icons.palette,
-        (context, ref, controller, focusNode) => notePickColor(
-          context,
-          controller,
-          focusNode,
-          background: false,
-        ),
+        (context, ref, controller, focusNode) =>
+            notePickColor(context, controller, focusNode, background: false),
       ),
       _SlashCommand(
         'toolbar_bg_color',
         const ['bg', 'background', '背景'],
         Icons.format_color_fill,
-        (context, ref, controller, focusNode) => notePickColor(
-          context,
-          controller,
-          focusNode,
-          background: true,
-        ),
+        (context, ref, controller, focusNode) =>
+            notePickColor(context, controller, focusNode, background: true),
       ),
     ];
   }
@@ -482,94 +510,99 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   }
 
   Widget _buildSlashOverlay(BuildContext overlayContext) {
-    final theme = Theme.of(overlayContext);
-    final colorScheme = theme.colorScheme;
-    final commands =
-        _slashCommands().where((c) => _slashMatches(c, _slashQuery)).toList();
+    try {
+      final theme = Theme.of(overlayContext);
+      final colorScheme = theme.colorScheme;
+      final commands = _slashCommands()
+          .where((c) => _slashMatches(c, _slashQuery))
+          .toList();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const popupWidth = 268.0;
-        const maxPopupHeight = 300.0;
-        final screenWidth = constraints.maxWidth;
-        final screenHeight = constraints.maxHeight;
-        final anchor = _slashAnchorGlobal ?? Offset.zero;
-        final lineHeight = _slashLineHeight <= 0 ? 24.0 : _slashLineHeight;
+      const popupWidth = 268.0;
+      const maxPopupHeight = 300.0;
+      final media = MediaQuery.of(overlayContext);
+      final screen = media.size;
+      final screenWidth = screen.width;
+      // 键盘弹起时可视高度要扣除输入法占用区域，否则菜单会被键盘挡住
+      final screenHeight = screen.height - media.viewInsets.bottom;
+      final anchor = _slashAnchorGlobal ?? Offset.zero;
+      final lineHeight = _slashLineHeight <= 0 ? 24.0 : _slashLineHeight;
 
-        var left = anchor.dx;
-        if (left + popupWidth > screenWidth - 8) {
-          left = math.max(8.0, screenWidth - popupWidth - 8);
-        }
-        if (left < 8) left = 8;
+      var left = anchor.dx;
+      if (left + popupWidth > screenWidth - 8) {
+        left = math.max(8.0, screenWidth - popupWidth - 8);
+      }
+      if (left < 8) left = 8;
 
-        final contentHeight = commands.isEmpty
-            ? 56.0
-            : math.min(maxPopupHeight, commands.length * 42.0 + 8);
-        var top = anchor.dy + lineHeight + 4;
-        if (top + contentHeight > screenHeight - 8) {
-          top = math.max(8.0, anchor.dy - contentHeight - 4);
-        }
-        if (top < 8) top = 8;
+      final contentHeight = commands.isEmpty
+          ? 56.0
+          : math.min(maxPopupHeight, commands.length * 42.0 + 8);
+      var top = anchor.dy + lineHeight + 4;
+      if (top + contentHeight > screenHeight - 8) {
+        top = math.max(8.0, anchor.dy - contentHeight - 4);
+      }
+      if (top < 8) top = 8;
 
-        return Positioned(
-          left: left,
-          top: top,
-          width: popupWidth,
-          child: Material(
-            elevation: 10,
+      return Positioned(
+        left: left,
+        top: top,
+        width: popupWidth,
+        child: Material(
+          elevation: 10,
+          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surface,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            color: colorScheme.surface,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: commands.isEmpty
-                  ? SizedBox(
-                      height: contentHeight,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          HugeIcon(
-                            icon: HugeIcons.strokeRoundedSearchRemove,
-                            size: 16,
+            child: commands.isEmpty
+                ? SizedBox(
+                    height: contentHeight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedSearchRemove,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'note_slash_no_result'.tr(),
+                          style: TextStyle(
+                            fontSize: 12.5,
                             color: colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'note_slash_no_result'.tr(),
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : SizedBox(
-                      height: contentHeight,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        itemCount: commands.length,
-                        separatorBuilder: (_, _) => Divider(
-                          height: 1,
-                          thickness: 0.5,
-                          indent: 40,
-                          endIndent: 8,
-                          color: colorScheme.outlineVariant.withValues(alpha: .4),
                         ),
-                        itemBuilder: (context, index) {
-                          final cmd = commands[index];
-                          return _SlashCommandItem(
-                            label: cmd.labelKey.tr(),
-                            icon: cmd.icon,
-                            onTap: () => _applySlashCommand(cmd),
-                          );
-                        },
-                      ),
+                      ],
                     ),
-            ),
+                  )
+                : SizedBox(
+                    height: contentHeight,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      itemCount: commands.length,
+                      separatorBuilder: (_, _) => Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        indent: 40,
+                        endIndent: 8,
+                        color: colorScheme.outlineVariant.withValues(alpha: .4),
+                      ),
+                      itemBuilder: (context, index) {
+                        final cmd = commands[index];
+                        return _SlashCommandItem(
+                          label: cmd.labelKey.tr(),
+                          icon: cmd.icon,
+                          onTap: () => _applySlashCommand(cmd),
+                        );
+                      },
+                    ),
+                  ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    } catch (_) {
+      // 菜单构建异常时退化为空白，绝不抛给 Overlay / 编辑区
+      return const SizedBox.shrink();
+    }
   }
 
   @override
@@ -614,7 +647,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
             child: TextField(
               controller: _titleControllerOf(session),
               onChanged: (value) {
-                ref.read(noteSessionServiceProvider.notifier).updateTitle(value);
+                ref
+                    .read(noteSessionServiceProvider.notifier)
+                    .updateTitle(value);
                 _scheduleSave();
               },
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
@@ -643,9 +678,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                 customStyles: QuillStyleConfig.get(context),
                 editorKey: _editorKey,
-                embedBuilders: [
-                  NoteQuillImageBuild(),
-                ],
+                embedBuilders: [NoteQuillImageBuild()],
               ),
             ),
           ),
@@ -668,30 +701,24 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   ) {
     final saveLabel = switch (session.saveState) {
       NoteSaveState.saving => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox.square(
-              dimension: 12,
-              child: CircularProgressIndicator(strokeWidth: 1.5),
-            ),
-            const SizedBox(width: 6),
-            Text('note_autosave_saving'.tr()),
-          ],
-        ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox.square(
+            dimension: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5),
+          ),
+          const SizedBox(width: 6),
+          Text('note_autosave_saving'.tr()),
+        ],
+      ),
       NoteSaveState.saved => Text(
-          'note_autosave_saved'.tr(
-            args: [_formatTime(session.lastSavedAt)],
-          ),
-        ),
+        'note_autosave_saved'.tr(args: [_formatTime(session.lastSavedAt)]),
+      ),
       NoteSaveState.failed => TextButton.icon(
-          onPressed: () =>
-              ref.read(noteSessionServiceProvider.notifier).save(),
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedRefresh01,
-            size: 14,
-          ),
-          label: Text('note_autosave_failed'.tr()),
-        ),
+        onPressed: () => ref.read(noteSessionServiceProvider.notifier).save(),
+        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 14),
+        label: Text('note_autosave_failed'.tr()),
+      ),
       NoteSaveState.idle => Text('note_autosave_idle'.tr()),
     };
 
@@ -833,14 +860,10 @@ class _SlashCommand {
     WidgetRef ref,
     QuillController controller,
     FocusNode focusNode,
-  ) action;
+  )
+  action;
 
-  const _SlashCommand(
-    this.labelKey,
-    this.keywords,
-    this.icon,
-    this.action,
-  );
+  const _SlashCommand(this.labelKey, this.keywords, this.icon, this.action);
 }
 
 /// 斜杠命令菜单中的单项
@@ -917,7 +940,9 @@ class _NoteEditorEmpty extends StatelessWidget {
                   colorScheme.primary.withValues(alpha: .05),
                 ],
               ),
-              border: Border.all(color: colorScheme.primary.withValues(alpha: .15)),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: .15),
+              ),
             ),
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedNote01,

@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
@@ -26,6 +26,9 @@ class NotesPage extends ConsumerStatefulWidget {
 
 class _NotesPageState extends ConsumerState<NotesPage> {
   int? _selectedNoteId;
+
+  /// 正在打开中的笔记 ID：同步置位，防止连点/双击同一笔记重复 push 编辑页
+  int? _openingNoteId;
 
   @override
   void initState() {
@@ -85,11 +88,14 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   }
 
   Future<void> _openNoteById(int noteId) async {
-    // 切换前先把上一个会话的未保存内容落库，避免切换丢失
-    await ref.read(noteSessionServiceProvider.notifier).save();
-    if (!mounted) return;
-
+    // 连点保护：上一次打开尚未完成（含编辑页未返回）时忽略后续点击
+    if (_openingNoteId != null) return;
+    _openingNoteId = noteId;
     try {
+      // 切换前先把上一个会话的未保存内容落库，避免切换丢失
+      await ref.read(noteSessionServiceProvider.notifier).save();
+      if (!mounted) return;
+
       final doc = await ref
           .read(noteTreeServiceProvider.notifier)
           .openNote(noteId);
@@ -106,6 +112,8 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     } catch (e) {
       if (!mounted) return;
       Toast.showToast('note_open_failed'.tr(), type: ToastType.error);
+    } finally {
+      _openingNoteId = null;
     }
   }
 }

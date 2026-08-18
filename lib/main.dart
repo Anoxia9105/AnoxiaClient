@@ -18,6 +18,7 @@ import 'package:anoxia/platform/shims/system_locale_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:anoxia/platform/shims/hotkey_manager_shim.dart';
@@ -493,7 +494,14 @@ Widget _buildAppWrapper(Widget home, {String? startLocale}) {
       splitScreenMode: true,
       rebuildFactor: RebuildFactors.none,
       builder: (context, child) => MaterialApp(
-        localizationsDelegates: context.localizationDelegates,
+        localizationsDelegates: [
+          ...context.localizationDelegates,
+          // 内层 MaterialApp.router 也有此 delegate；这里必须再挂一份——
+          // showDialog 默认 useRootNavigator=true，弹窗会落在外层 Navigator，
+          // 缺了它 QuillToolbarSearchDialog 等 quill 组件会抛
+          // MissingFlutterQuillLocalizationException。
+          FlutterQuillLocalizations.delegate,
+        ],
         supportedLocales: context.supportedLocales,
         locale: context.locale,
         home: home,
