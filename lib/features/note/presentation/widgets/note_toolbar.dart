@@ -97,7 +97,10 @@ class NoteToolbar extends ConsumerWidget {
           _buildActionButton(
             HugeIcons.strokeRoundedTextStrikethrough,
             Attribute.strikeThrough,
-            withShortcut('toolbar_strikethrough'.tr(), shortcut('S', shift: true)),
+            withShortcut(
+              'toolbar_strikethrough'.tr(),
+              shortcut('S', shift: true),
+            ),
             iconColor,
           ),
           _buildActionButton(
@@ -122,12 +125,8 @@ class NoteToolbar extends ConsumerWidget {
             controller: controller,
             type: ChatQuillColorStyleType.background,
             tooltip: 'toolbar_bg_color'.tr(),
-            onPressed: () => notePickColor(
-              context,
-              controller,
-              focusNode,
-              background: true,
-            ),
+            onPressed: () =>
+                notePickColor(context, controller, focusNode, background: true),
           ),
           _buildDivider(context),
           _buildSearchButton(context, iconColor),
@@ -161,6 +160,12 @@ class NoteToolbar extends ConsumerWidget {
           ),
           _buildDivider(context),
           _buildAlignButton(context, iconColor),
+          _buildCustomBtn(
+            HugeIcons.strokeRoundedSeparatorHorizontal,
+            'note_horizontal_rule'.tr(),
+            iconColor,
+            () => noteInsertHorizontalRule(controller, focusNode),
+          ),
         ],
       ),
     );
@@ -220,8 +225,10 @@ class NoteToolbar extends ConsumerWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
-        final listValue =
-            controller.getSelectionStyle().attributes[Attribute.list.key]?.value;
+        final listValue = controller
+            .getSelectionStyle()
+            .attributes[Attribute.list.key]
+            ?.value;
         final isChecked = listValue == Attribute.checked.value;
         final isUnchecked = listValue == Attribute.unchecked.value;
         final isSelected = isChecked || isUnchecked;
@@ -269,8 +276,9 @@ class NoteToolbar extends ConsumerWidget {
       builder: (context, child) {
         final style = controller.getSelectionStyle();
         final headerValue = style.attributes[Attribute.header.key]?.value;
-        final isCodeBlock =
-            style.attributes.containsKey(Attribute.codeBlock.key);
+        final isCodeBlock = style.attributes.containsKey(
+          Attribute.codeBlock.key,
+        );
 
         final List<List<dynamic>> icon;
         final bool active;
@@ -309,11 +317,36 @@ class NoteToolbar extends ConsumerWidget {
               ),
               color: colorScheme.surfaceContainerLow,
               items: [
-                _stringMenuItem('normal', 'note_header_normal', HugeIcons.strokeRoundedTextFont, context),
-                _stringMenuItem('h1', 'note_header_h1', HugeIcons.strokeRoundedHeading, context),
-                _stringMenuItem('h2', 'note_header_h2', HugeIcons.strokeRoundedHeading01, context),
-                _stringMenuItem('h3', 'note_header_h3', HugeIcons.strokeRoundedHeading02, context),
-                _stringMenuItem('code', 'note_header_code', HugeIcons.strokeRoundedCode, context),
+                _stringMenuItem(
+                  'normal',
+                  'note_header_normal',
+                  HugeIcons.strokeRoundedTextFont,
+                  context,
+                ),
+                _stringMenuItem(
+                  'h1',
+                  'note_header_h1',
+                  HugeIcons.strokeRoundedHeading,
+                  context,
+                ),
+                _stringMenuItem(
+                  'h2',
+                  'note_header_h2',
+                  HugeIcons.strokeRoundedHeading01,
+                  context,
+                ),
+                _stringMenuItem(
+                  'h3',
+                  'note_header_h3',
+                  HugeIcons.strokeRoundedHeading02,
+                  context,
+                ),
+                _stringMenuItem(
+                  'code',
+                  'note_header_code',
+                  HugeIcons.strokeRoundedCode,
+                  context,
+                ),
               ],
             ).then((value) {
               if (!context.mounted || value == null) return;
@@ -383,21 +416,39 @@ class NoteToolbar extends ConsumerWidget {
               ),
               color: colorScheme.surfaceContainerLow,
               items: [
-                _stringMenuItem('left', 'note_align_left', HugeIcons.strokeRoundedTextAlignLeft, context),
-                _stringMenuItem('center', 'note_align_center', HugeIcons.strokeRoundedTextAlignCenter, context),
-                _stringMenuItem('right', 'note_align_right', HugeIcons.strokeRoundedTextAlignRight, context),
-                _stringMenuItem('justify', 'note_align_justify', HugeIcons.strokeRoundedTextAlignJustifyCenter, context),
+                _stringMenuItem(
+                  'left',
+                  'note_align_left',
+                  HugeIcons.strokeRoundedTextAlignLeft,
+                  context,
+                ),
+                _stringMenuItem(
+                  'center',
+                  'note_align_center',
+                  HugeIcons.strokeRoundedTextAlignCenter,
+                  context,
+                ),
+                _stringMenuItem(
+                  'right',
+                  'note_align_right',
+                  HugeIcons.strokeRoundedTextAlignRight,
+                  context,
+                ),
+                _stringMenuItem(
+                  'justify',
+                  'note_align_justify',
+                  HugeIcons.strokeRoundedTextAlignJustifyCenter,
+                  context,
+                ),
               ],
             ).then((value) {
               if (!context.mounted || value == null) return;
-              controller.formatSelection(
-                switch (value) {
-                  'center' => Attribute.centerAlignment,
-                  'right' => Attribute.rightAlignment,
-                  'justify' => Attribute.justifyAlignment,
-                  _ => Attribute.leftAlignment,
-                },
-              );
+              controller.formatSelection(switch (value) {
+                'center' => Attribute.centerAlignment,
+                'right' => Attribute.rightAlignment,
+                'justify' => Attribute.justifyAlignment,
+                _ => Attribute.leftAlignment,
+              });
               focusNode.requestFocus();
             });
           },
@@ -418,10 +469,9 @@ class NoteToolbar extends ConsumerWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
-        final isLinked = controller
-            .getSelectionStyle()
-            .attributes
-            .containsKey(Attribute.link.key);
+        final isLinked = controller.getSelectionStyle().attributes.containsKey(
+          Attribute.link.key,
+        );
         return IconButton(
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_link'.tr(),
@@ -449,7 +499,11 @@ class NoteToolbar extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          HugeIcon(
+            icon: icon,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
           Text(labelKey.tr()),
         ],

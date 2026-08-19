@@ -26,10 +26,7 @@ void noteClearFormat(QuillController controller) {
 
 /// 切换行内格式（已存在则移除，否则应用）。
 void noteToggleInline(QuillController controller, Attribute attr) {
-  final has = controller
-      .getSelectionStyle()
-      .attributes
-      .containsKey(attr.key);
+  final has = controller.getSelectionStyle().attributes.containsKey(attr.key);
   controller.formatSelection(has ? Attribute.clone(attr, null) : attr);
 }
 
@@ -56,8 +53,7 @@ Future<void> noteSetLink(
           child: Text('cancel'.tr()),
         ),
         FilledButton(
-          onPressed: () =>
-              Navigator.of(dialogContext).pop(input.text.trim()),
+          onPressed: () => Navigator.of(dialogContext).pop(input.text.trim()),
           child: Text('note_link_apply'.tr()),
         ),
       ],
@@ -94,20 +90,40 @@ Future<void> notePickColor(
                     null,
                   )
                 : background
-                    ? BackgroundAttribute(hex)
-                    : ColorAttribute(hex),
+                ? BackgroundAttribute(hex)
+                : ColorAttribute(hex),
           );
           focusNode.requestFocus();
           Navigator.of(dialogContext).pop();
         },
         dialogContext,
         selectedColor: ColorsBox.parseColorFromValue(
-          controller.getSelectionStyle().attributes[
-              background ? Attribute.background.key : Attribute.color.key]?.value,
+          controller
+              .getSelectionStyle()
+              .attributes[background
+                  ? Attribute.background.key
+                  : Attribute.color.key]
+              ?.value,
         ),
       ),
     ),
   );
+}
+
+/// 在光标处插入水平分隔线（横向实线）。
+///
+/// 使用与 flutter_quill markdown 包内置 [horizontalRule] 相同的
+/// `divider` 类型，保证 Markdown 导出（`---`）往返兼容。
+void noteInsertHorizontalRule(QuillController controller, FocusNode focusNode) {
+  final offset = controller.selection.baseOffset;
+  if (offset < 0) return;
+  controller.replaceText(
+    offset,
+    0,
+    const BlockEmbed('divider', 'hr'),
+    TextSelection.collapsed(offset: offset + 1),
+  );
+  focusNode.requestFocus();
 }
 
 /// 选择并上传图片，成功后插入编辑器。
@@ -136,10 +152,9 @@ Future<void> noteInsertImage(
   }
 
   try {
-    final uploads = await ref.read(uploadRepositoryProvider).uploadFiles(
-          files,
-          clientFileIds: ids,
-        );
+    final uploads = await ref
+        .read(uploadRepositoryProvider)
+        .uploadFiles(files, clientFileIds: ids);
     if (!context.mounted) return;
 
     var inserted = 0;
@@ -176,9 +191,6 @@ Future<void> noteInsertImage(
   } catch (e, st) {
     debugLog('插入笔记图片失败: $e', st);
     if (!context.mounted) return;
-    Toast.showToast(
-      'note_image_upload_error'.tr(),
-      type: ToastType.error,
-    );
+    Toast.showToast('note_image_upload_error'.tr(), type: ToastType.error);
   }
 }

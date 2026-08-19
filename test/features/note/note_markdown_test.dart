@@ -11,56 +11,77 @@ void main() {
     });
 
     test('标题', () {
-      final doc = Document.fromDelta(Delta()
-        ..insert('Title')
-        ..insert('\n', {'header': 1})
-        ..insert('Sub')
-        ..insert('\n', {'header': 2}));
+      final doc = Document.fromDelta(
+        Delta()
+          ..insert('Title')
+          ..insert('\n', {'header': 1})
+          ..insert('Sub')
+          ..insert('\n', {'header': 2}),
+      );
       expect(deltaToMarkdown(doc), '# Title\n## Sub');
     });
 
     test('粗体/斜体/链接', () {
-      final doc = Document.fromDelta(Delta()
-        ..insert('bold', {'bold': true})
-        ..insert(' and ')
-        ..insert('link', {'link': 'https://example.com'})
-        ..insert('\n'));
-      expect(
-        deltaToMarkdown(doc),
-        '**bold** and [link](https://example.com)',
+      final doc = Document.fromDelta(
+        Delta()
+          ..insert('bold', {'bold': true})
+          ..insert(' and ')
+          ..insert('link', {'link': 'https://example.com'})
+          ..insert('\n'),
       );
+      expect(deltaToMarkdown(doc), '**bold** and [link](https://example.com)');
     });
 
     test('列表与任务项', () {
-      final doc = Document.fromDelta(Delta()
-        ..insert('a')
-        ..insert('\n', {'list': 'bullet'})
-        ..insert('b')
-        ..insert('\n', {'list': 'checked'}));
+      final doc = Document.fromDelta(
+        Delta()
+          ..insert('a')
+          ..insert('\n', {'list': 'bullet'})
+          ..insert('b')
+          ..insert('\n', {'list': 'checked'}),
+      );
       expect(deltaToMarkdown(doc), '- a\n- [x] b');
     });
 
     test('代码块', () {
-      final doc = Document.fromDelta(Delta()
-        ..insert('int x = 1;')
-        ..insert('\n', {'code-block': true}));
+      final doc = Document.fromDelta(
+        Delta()
+          ..insert('int x = 1;')
+          ..insert('\n', {'code-block': true}),
+      );
       expect(deltaToMarkdown(doc), '```\nint x = 1;\n```');
     });
 
     test('引用', () {
-      final doc = Document.fromDelta(Delta()
-        ..insert('quote')
-        ..insert('\n', {'blockquote': true}));
+      final doc = Document.fromDelta(
+        Delta()
+          ..insert('quote')
+          ..insert('\n', {'blockquote': true}),
+      );
       expect(deltaToMarkdown(doc), '> quote');
     });
 
     test('删除线/行内代码', () {
-      final doc = Document.fromDelta(Delta()
-        ..insert('gone', {'strike': true})
-        ..insert(' and ')
-        ..insert('code', {'code': true})
-        ..insert('\n'));
+      final doc = Document.fromDelta(
+        Delta()
+          ..insert('gone', {'strike': true})
+          ..insert(' and ')
+          ..insert('code', {'code': true})
+          ..insert('\n'),
+      );
       expect(deltaToMarkdown(doc), '~~gone~~ and `code`');
+    });
+
+    test('水平分隔线导出为 ---', () {
+      final doc = Document.fromJson([
+        {'insert': '标题\n'},
+        {
+          'insert': {'divider': 'hr'},
+        },
+        {'insert': '\n'},
+        {'insert': '正文\n'},
+      ]);
+      expect(deltaToMarkdown(doc), '标题\n---\n正文');
     });
   });
 

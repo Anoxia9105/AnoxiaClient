@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'note_quill_actions.dart';
+import 'note_quill_divider_build.dart';
 import 'note_quill_image_build.dart';
 import 'note_markdown_io.dart';
 import 'note_pdf_io.dart';
@@ -538,6 +539,15 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
             noteInsertImage(context, ref, controller, focusNode),
       ),
       _SlashCommand(
+        'note_horizontal_rule',
+        const ['hr', 'divider', '分割线'],
+        Icons.horizontal_rule,
+        (context, ref, controller, focusNode) {
+          noteInsertHorizontalRule(controller, focusNode);
+          return Future.value();
+        },
+      ),
+      _SlashCommand(
         'note_align_left',
         const ['left', '左'],
         Icons.format_align_left,
@@ -690,8 +700,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                                   thickness: 0.5,
                                   indent: 40,
                                   endIndent: 8,
-                                  color: colorScheme.outlineVariant
-                                      .withValues(alpha: .4),
+                                  color: colorScheme.outlineVariant.withValues(
+                                    alpha: .4,
+                                  ),
                                 ),
                             ],
                           );
@@ -783,7 +794,10 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                             padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                             customStyles: QuillStyleConfig.get(context),
                             editorKey: _editorKey,
-                            embedBuilders: [NoteQuillImageBuild()],
+                            embedBuilders: [
+                              NoteQuillImageBuild(),
+                              NoteQuillDividerBuild(),
+                            ],
                             customShortcuts: const {
                               // 关闭 flutter_quill 自带的查找弹窗（带遮罩），
                               // Ctrl+F 交由外层 Focus 切换右侧查找面板。
@@ -852,10 +866,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
           filled: true,
           fillColor: Colors.transparent,
           hintText: 'note_untitled'.tr(),
-          hintStyle: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
+          hintStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 14,

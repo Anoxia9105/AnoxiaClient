@@ -56,7 +56,10 @@ Future<Uint8List> buildNotePdf({
         if (blocks.isEmpty)
           pw.Text(
             emptyContent,
-            style: const pw.TextStyle(fontSize: 11, color: pw.PdfColors.grey500),
+            style: const pw.TextStyle(
+              fontSize: 11,
+              color: pw.PdfColors.grey500,
+            ),
           )
         else
           ..._buildContent(blocks, images),
@@ -88,6 +91,10 @@ class _PdfImage {
   const _PdfImage(this.url);
 }
 
+class _PdfDivider {
+  const _PdfDivider();
+}
+
 List<Object> _extractBlocks(String deltaJson) {
   Document doc;
   try {
@@ -116,6 +123,9 @@ List<Object> _extractBlocks(String deltaJson) {
     } else if (data is Map && data['image'] != null) {
       if (runs.isNotEmpty) flushLine(op.attributes);
       blocks.add(_PdfImage(data['image'].toString()));
+    } else if (data is Map && data['divider'] != null) {
+      if (runs.isNotEmpty) flushLine(op.attributes);
+      blocks.add(const _PdfDivider());
     }
   }
   if (runs.isNotEmpty) blocks.add(_PdfLine(List.of(runs), null));
@@ -163,8 +173,10 @@ List<pw.Widget> _buildContent(
           color: pw.PdfColors.grey100,
           borderRadius: pw.BorderRadius.circular(4),
         ),
-        child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: codeLines),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: codeLines,
+        ),
       ),
     );
     codeLines.clear();
@@ -176,6 +188,21 @@ List<pw.Widget> _buildContent(
       flushCodeBlock();
       orderedCounter = 0;
       widgets.add(_imageWidget(block.url, images));
+      continue;
+    }
+    if (block is _PdfDivider) {
+      flushCodeBlock();
+      orderedCounter = 0;
+      widgets.add(
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 6),
+          child: pw.Divider(
+            color: pw.PdfColors.grey500,
+            thickness: 1,
+            height: 1,
+          ),
+        ),
+      );
       continue;
     }
 
@@ -207,7 +234,10 @@ pw.Widget _lineWidget(_PdfLine line, int orderedCounter) {
   final align = attrs['align'];
 
   final spans = line.runs.map((r) => _runToSpan(r)).toList();
-  final baseStyle = const pw.TextStyle(fontSize: 11, color: pw.PdfColors.grey900);
+  final baseStyle = const pw.TextStyle(
+    fontSize: 11,
+    color: pw.PdfColors.grey900,
+  );
   final textAlign = switch (align) {
     'center' => pw.TextAlign.center,
     'right' => pw.TextAlign.right,
@@ -314,15 +344,14 @@ pw.Widget _imageWidget(String url, Map<String, Uint8List> images) {
   if (bytes == null) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 4),
-      child: pw.Text('[image]', style: const pw.TextStyle(fontSize: 10, color: pw.PdfColors.grey500)),
+      child: pw.Text(
+        '[image]',
+        style: const pw.TextStyle(fontSize: 10, color: pw.PdfColors.grey500),
+      ),
     );
   }
   return pw.Padding(
     padding: const pw.EdgeInsets.symmetric(vertical: 4),
-    child: pw.Image(
-      pw.MemoryImage(bytes),
-      fit: pw.BoxFit.contain,
-      width: 400,
-    ),
+    child: pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.contain, width: 400),
   );
 }

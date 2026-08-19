@@ -33,6 +33,8 @@ String deltaToMarkdown(Document document) {
       buffer.write('![image](${data['image']})');
     } else if (data is Map && data['video'] != null) {
       buffer.write('${data['video']}');
+    } else if (data is Map && data['divider'] != null) {
+      buffer.write('---');
     } else if (data is Map && data['custom'] != null) {
       final custom = data['custom'];
       if (custom is Map && custom['content'] != null) {
