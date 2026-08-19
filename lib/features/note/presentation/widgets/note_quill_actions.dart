@@ -101,6 +101,10 @@ Future<void> notePickColor(
           Navigator.of(dialogContext).pop();
         },
         dialogContext,
+        selectedColor: ColorsBox.parseColorFromValue(
+          controller.getSelectionStyle().attributes[
+              background ? Attribute.background.key : Attribute.color.key]?.value,
+        ),
       ),
     ),
   );

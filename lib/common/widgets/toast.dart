@@ -125,11 +125,9 @@ class Toast {
           ),
         ),
         backgroundColor: bg,
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         duration: duration,
-        width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 6,
       ),
     );

@@ -326,14 +326,35 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'call_window_retry'.tr(),
-            onPressed: () =>
-                ref.read(noteTreeServiceProvider.notifier).refresh(),
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedRefresh01,
-              size: 20,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                tooltip: 'note_trash'.tr(),
+                visualDensity: VisualDensity.compact,
+                constraints:
+                    const BoxConstraints.tightFor(width: 28, height: 28),
+                onPressed: () => showNoteTrashDialog(context),
+                icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  size: 15,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              IconButton(
+                tooltip: 'call_window_retry'.tr(),
+                visualDensity: VisualDensity.compact,
+                constraints:
+                    const BoxConstraints.tightFor(width: 28, height: 28),
+                onPressed: () =>
+                    ref.read(noteTreeServiceProvider.notifier).refresh(),
+                icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedRefresh01,
+                  size: 15,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -593,7 +614,6 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
                 ],
               ),
             ),
-            _buildTrashEntry(context, colorScheme),
           ],
         );
       },
@@ -903,44 +923,6 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   /// descendantId 是否位于 ancestorId 的子树内
   bool _isDescendant(NoteTree tree, int ancestorId, int descendantId) {
     return tree.findFolder(ancestorId)?.findFolder(descendantId) != null;
-  }
-
-  Widget _buildTrashEntry(BuildContext context, ColorScheme colorScheme) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => showNoteTrashDialog(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: .5),
-              ),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedDelete02,
-                size: 15,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'note_trash'.tr(),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   /// 右键 / 长按菜单（圆角卡片、图标底、危险项红色、分组分隔线）

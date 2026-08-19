@@ -8,11 +8,13 @@ import 'package:flutter/material.dart';
 /// - 8列颜色，每列由深到浅排列
 /// - 支持文本颜色和背景颜色选择
 /// - 提供颜色重置功能
+/// - 支持回显当前选中颜色（以 √ 标记）
 class ColorsBox {
   static Widget buildColorsWidget(
     Function(String?)? onTap,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    Color? selectedColor,
+  }) {
     final theme = Theme.of(context);
 
     // 💡 模拟 Google 文档色谱：8列，每列颜色由深到浅
@@ -154,7 +156,11 @@ class ColorsBox {
                         mainAxisSize: MainAxisSize.min,
                         children: column
                             .map(
-                              (color) => _ColorItem(color: color, onTap: onTap),
+                              (color) => _ColorItem(
+                                color: color,
+                                selected: color == selectedColor,
+                                onTap: onTap,
+                              ),
                             )
                             .toList(),
                       ),
@@ -168,6 +174,18 @@ class ColorsBox {
     );
   }
 
+  /// 把 Quill 文档里的颜色值（`#RRGGBB` / `#AARRGGBB`）解析成 [Color]。
+  ///
+  /// 解析失败（非颜色值或非法格式）返回 null。
+  static Color? parseColorFromValue(Object? value) {
+    if (value is! String || !value.startsWith('#')) return null;
+    var hex = value.substring(1);
+    if (hex.length == 6) hex = 'FF$hex';
+    if (hex.length != 8) return null;
+    final argb = int.tryParse(hex, radix: 16);
+    return argb == null ? null : Color(argb);
+  }
+
   static String colorToHex(Color color) {
     return color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
   }
@@ -175,12 +193,14 @@ class ColorsBox {
 
 class _ColorItem extends StatelessWidget {
   final Color color;
+  final bool selected;
   final Function(String?)? onTap;
 
-  const _ColorItem({required this.color, this.onTap});
+  const _ColorItem({required this.color, this.selected = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return MouseRegion(
       cursor: SystemMouseCursors.click, // ✅ 修复：鼠标滑动变小手
       child: GestureDetector(
@@ -199,6 +219,18 @@ class _ColorItem extends StatelessWidget {
               width: 0.5,
             ),
           ),
+          child: selected
+              ? Center(
+                  child: Icon(
+                    Icons.check,
+                    size: 14,
+                    // 深色底用白色对勾，浅色底用主题色对勾
+                    color: color.computeLuminance() > 0.5
+                        ? theme.colorScheme.primary
+                        : Colors.white,
+                  ),
+                )
+              : null,
         ),
       ),
     );

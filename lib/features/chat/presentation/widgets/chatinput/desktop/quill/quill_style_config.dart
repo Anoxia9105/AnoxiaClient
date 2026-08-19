@@ -124,7 +124,8 @@ class QuillStyleConfig {
         baseVerticalSpacing,
         VerticalSpacing.zero,
         null,
-        null,
+        // 任务列表复选框放大到 18px，点击区域更大、更易操作。
+        const _TaskCheckboxBuilder(),
         indentWidthBuilder: (block, context, count, numberPointWidth) =>
             const HorizontalSpacing(16, 16),
         numberPointWidthBuilder: (fontSize, count) => 24.0,
@@ -153,6 +154,48 @@ class QuillStyleConfig {
             left: BorderSide(width: 4, color: colorScheme.outlineVariant),
           ),
           borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+}
+
+/// 任务列表复选框：18px 圆角方框，选中态主题色填充 + 勾号，带点击反馈。
+class _TaskCheckboxBuilder implements QuillCheckboxBuilder {
+  const _TaskCheckboxBuilder();
+
+  static const double _size = 18;
+
+  @override
+  Widget build({
+    required BuildContext context,
+    required bool isChecked,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox.square(
+      dimension: _size,
+      child: Material(
+        color: isChecked ? colorScheme.primary : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: isChecked
+                ? colorScheme.primary
+                : colorScheme.onSurface.withValues(alpha: .4),
+            width: 1.4,
+          ),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: InkWell(
+          onTap: () => onChanged(!isChecked),
+          borderRadius: BorderRadius.circular(5),
+          child: isChecked
+              ? Icon(
+                  Icons.check,
+                  size: _size - 5,
+                  color: colorScheme.onPrimary,
+                )
+              : null,
         ),
       ),
     );

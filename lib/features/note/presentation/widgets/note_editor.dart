@@ -15,6 +15,7 @@ import 'note_quill_actions.dart';
 import 'note_quill_image_build.dart';
 import 'note_markdown_io.dart';
 import 'note_pdf_io.dart';
+import 'note_search_panel.dart';
 import 'note_share.dart';
 import 'note_toolbar.dart';
 import 'note_versions_dialog.dart';
@@ -55,6 +56,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   Timer? _debounce;
   bool _disposed = false;
   int _wordCount = 0;
+
+  /// 右侧「在文档中查找」面板是否展开
+  bool _showSearch = false;
 
   final GlobalKey<EditorState> _editorKey = GlobalKey<EditorState>();
 
@@ -116,6 +120,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
 
   void _teardownEditor() {
     _dismissSlashMenu();
+    _showSearch = false;
     _debounce?.cancel();
     _debounce = null;
     _quillController?.removeListener(_onQuillChanged);
@@ -733,6 +738,12 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             HardwareKeyboard.instance.isControlPressed &&
+            event.logicalKey == LogicalKeyboardKey.keyF) {
+          _toggleSearchPanel();
+          return KeyEventResult.handled;
+        }
+        if (event is KeyDownEvent &&
+            HardwareKeyboard.instance.isControlPressed &&
             event.logicalKey == LogicalKeyboardKey.keyS) {
           ref.read(noteSessionServiceProvider.notifier).save();
           return KeyEventResult.handled;
@@ -742,48 +753,126 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: TextField(
-              controller: _titleControllerOf(session),
-              onChanged: (value) {
-                ref
-                    .read(noteSessionServiceProvider.notifier)
-                    .updateTitle(value);
-                _scheduleSave();
-              },
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                hintText: 'note_untitled'.tr(),
-                hintStyle: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          NoteToolbar(controller: controller, focusNode: _focusNode),
           Expanded(
-            child: QuillEditor.basic(
-              focusNode: _focusNode,
-              controller: controller,
-              config: QuillEditorConfig(
-                enableSelectionToolbar: false,
-                placeholder: 'note_content_placeholder'.tr(),
-                autoFocus: false,
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                customStyles: QuillStyleConfig.get(context),
-                editorKey: _editorKey,
-                embedBuilders: [NoteQuillImageBuild()],
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                        child: _buildTitleField(context, session, colorScheme),
+                      ),
+                      const SizedBox(height: 4),
+                      NoteToolbar(
+                        controller: controller,
+                        focusNode: _focusNode,
+                        searchActive: _showSearch,
+                        onSearchToggle: _toggleSearchPanel,
+                      ),
+                      Expanded(
+                        child: QuillEditor.basic(
+                          focusNode: _focusNode,
+                          controller: controller,
+                          config: QuillEditorConfig(
+                            enableSelectionToolbar: false,
+                            placeholder: 'note_content_placeholder'.tr(),
+                            autoFocus: false,
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                            customStyles: QuillStyleConfig.get(context),
+                            editorKey: _editorKey,
+                            embedBuilders: [NoteQuillImageBuild()],
+                            customShortcuts: const {
+                              // 关闭 flutter_quill 自带的查找弹窗（带遮罩），
+                              // Ctrl+F 交由外层 Focus 切换右侧查找面板。
+                              SingleActivator(
+                                LogicalKeyboardKey.keyF,
+                                control: true,
+                              ): DoNothingIntent(),
+                              SingleActivator(
+                                LogicalKeyboardKey.keyF,
+                                meta: true,
+                              ): DoNothingIntent(),
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_showSearch)
+                  NoteSearchPanel(
+                    controller: controller,
+                    editorFocusNode: _focusNode,
+                    onClose: () => setState(() => _showSearch = false),
+                  ),
+              ],
             ),
           ),
           _buildStatusBar(context, session, colorScheme),
         ],
+      ),
+    );
+  }
+
+  /// 切换右侧查找面板；关闭时清除查找高亮选区。
+  void _toggleSearchPanel() {
+    setState(() => _showSearch = !_showSearch);
+    if (_showSearch) return;
+    final controller = _quillController;
+    if (controller != null) {
+      final base = controller.selection.baseOffset;
+      controller.updateSelection(
+        TextSelection.collapsed(offset: base),
+        ChangeSource.local,
+      );
+    }
+    _focusNode.requestFocus();
+  }
+
+  /// 标题输入框：默认无边框、高度更高，聚焦时显示圆角边框。
+  Widget _buildTitleField(
+    BuildContext context,
+    NoteEditSession session,
+    ColorScheme colorScheme,
+  ) {
+    return Focus(
+      onFocusChange: (_) => setState(() {}),
+      child: TextField(
+        controller: _titleControllerOf(session),
+        onChanged: (value) {
+          ref.read(noteSessionServiceProvider.notifier).updateTitle(value);
+          _scheduleSave();
+        },
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: Colors.transparent,
+          hintText: 'note_untitled'.tr(),
+          hintStyle: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 14,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.transparent),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
+          ),
+        ),
       ),
     );
   }

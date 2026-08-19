@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/shortcut_hint.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_color_style_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toggle_style_button.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -13,14 +14,24 @@ import 'note_quill_actions.dart';
 /// 单行流式布局（Wrap）：宽度足够时全部按钮一行显示，放不下时自动换行。
 /// 包含：撤销 / 重做 / 清除格式 / 标题级别 / 粗斜下划线删除线 / 行内代码 /
 /// 文字颜色 / 背景色 / 查找 / 列表 / 任务 / 引用 / 链接 / 图片 / 对齐。
+///
+/// 选中态统一：图标加粗（增大 strokeWidth）并以主题色高亮，不带背景色。
 class NoteToolbar extends ConsumerWidget {
   final QuillController controller;
   final FocusNode focusNode;
+
+  /// 查找面板是否展开
+  final bool searchActive;
+
+  /// 查找按钮点击回调（切换查找面板）
+  final VoidCallback onSearchToggle;
 
   const NoteToolbar({
     super.key,
     required this.controller,
     required this.focusNode,
+    required this.searchActive,
+    required this.onSearchToggle,
   });
 
   @override
@@ -46,13 +57,13 @@ class NoteToolbar extends ConsumerWidget {
         children: [
           _buildCustomBtn(
             HugeIcons.strokeRoundedUndo,
-            'note_undo'.tr(),
+            withShortcut('note_undo'.tr(), shortcut('Z')),
             iconColor,
             controller.undo,
           ),
           _buildCustomBtn(
             HugeIcons.strokeRoundedRedo,
-            'note_redo'.tr(),
+            withShortcut('note_redo'.tr(), shortcut('Y')),
             iconColor,
             controller.redo,
           ),
@@ -68,31 +79,31 @@ class NoteToolbar extends ConsumerWidget {
           _buildActionButton(
             HugeIcons.strokeRoundedTextBold,
             Attribute.bold,
-            'toolbar_bold'.tr(),
+            withShortcut('toolbar_bold'.tr(), shortcut('B')),
             iconColor,
           ),
           _buildActionButton(
             HugeIcons.strokeRoundedTextItalic,
             Attribute.italic,
-            'toolbar_italic'.tr(),
+            withShortcut('toolbar_italic'.tr(), shortcut('I')),
             iconColor,
           ),
           _buildActionButton(
             HugeIcons.strokeRoundedTextUnderline,
             Attribute.underline,
-            'toolbar_underline'.tr(),
+            withShortcut('toolbar_underline'.tr(), shortcut('U')),
             iconColor,
           ),
           _buildActionButton(
             HugeIcons.strokeRoundedTextStrikethrough,
             Attribute.strikeThrough,
-            'toolbar_strikethrough'.tr(),
+            withShortcut('toolbar_strikethrough'.tr(), shortcut('S', shift: true)),
             iconColor,
           ),
           _buildActionButton(
             HugeIcons.strokeRoundedSourceCode,
             Attribute.inlineCode,
-            'toolbar_inline_code'.tr(),
+            withShortcut('toolbar_inline_code'.tr(), shortcut('`')),
             iconColor,
           ),
           _buildDivider(context),
@@ -119,35 +130,25 @@ class NoteToolbar extends ConsumerWidget {
             ),
           ),
           _buildDivider(context),
-          _buildCustomBtn(
-            HugeIcons.strokeRoundedSearch02,
-            'note_search_in_doc'.tr(),
-            iconColor,
-            () => showDialog<void>(
-              context: context,
-              builder: (_) => QuillToolbarSearchDialog(
-                controller: controller,
-              ),
-            ),
-          ),
+          _buildSearchButton(context, iconColor),
           _buildDivider(context),
           _buildActionButton(
             HugeIcons.strokeRoundedLeftToRightListBullet,
             Attribute.ul,
-            'note_bullet_list'.tr(),
+            withShortcut('note_bullet_list'.tr(), shortcut('L', shift: true)),
             iconColor,
           ),
           _buildActionButton(
             HugeIcons.strokeRoundedLeftToRightListNumber,
             Attribute.ol,
-            'note_ordered_list'.tr(),
+            withShortcut('note_ordered_list'.tr(), shortcut('O', shift: true)),
             iconColor,
           ),
           _buildTaskListButton(context, iconColor),
           _buildActionButton(
             HugeIcons.strokeRoundedQuoteDown,
             Attribute.blockQuote,
-            'toolbar_quote'.tr(),
+            withShortcut('toolbar_quote'.tr(), shortcut('B', shift: true)),
             iconColor,
           ),
           _buildDivider(context),
@@ -196,8 +197,26 @@ class NoteToolbar extends ConsumerWidget {
     );
   }
 
+  /// 查找按钮：点击切换右侧查找面板
+  Widget _buildSearchButton(BuildContext context, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton(
+      mouseCursor: SystemMouseCursors.click,
+      tooltip: withShortcut('note_search_in_doc'.tr(), shortcut('F')),
+      visualDensity: VisualDensity.compact,
+      onPressed: onSearchToggle,
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedSearch02,
+        size: 16,
+        color: searchActive ? colorScheme.primary : color,
+        strokeWidth: searchActive ? 2.5 : 1.5,
+      ),
+    );
+  }
+
   /// 任务列表按钮：仅当当前列表为待办/完成态时高亮，点击在两种状态间切换。
   Widget _buildTaskListButton(BuildContext context, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
@@ -209,16 +228,11 @@ class NoteToolbar extends ConsumerWidget {
 
         return IconButton(
           mouseCursor: SystemMouseCursors.click,
-          tooltip: 'note_task_list'.tr(),
-          visualDensity: VisualDensity.compact,
-          isSelected: isSelected,
-          style: IconButton.styleFrom(
-            foregroundColor:
-                isSelected ? Theme.of(context).colorScheme.primary : color,
-            backgroundColor: isSelected
-                ? Theme.of(context).colorScheme.primaryContainer
-                : null,
+          tooltip: withShortcut(
+            'note_task_list'.tr(),
+            shortcut('C', shift: true),
           ),
+          visualDensity: VisualDensity.compact,
           onPressed: () {
             if (isChecked) {
               controller.formatSelection(Attribute.unchecked);
@@ -227,10 +241,11 @@ class NoteToolbar extends ConsumerWidget {
             }
             focusNode.requestFocus();
           },
-          icon: Icon(
-            Icons.checklist,
-            size: 18,
-            color: isSelected ? Theme.of(context).colorScheme.primary : color,
+          icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedCheckList,
+            size: 16,
+            color: isSelected ? colorScheme.primary : color,
+            strokeWidth: isSelected ? 2.5 : 1.5,
           ),
         );
       },
@@ -248,6 +263,7 @@ class NoteToolbar extends ConsumerWidget {
 
   /// 标题级别按钮（正文 / H1 / H2 / H3 / 代码块）
   Widget _buildHeaderButton(BuildContext context, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
@@ -256,17 +272,17 @@ class NoteToolbar extends ConsumerWidget {
         final isCodeBlock =
             style.attributes.containsKey(Attribute.codeBlock.key);
 
-        final IconData icon;
+        final List<List<dynamic>> icon;
         final bool active;
         if (isCodeBlock) {
-          icon = Icons.code;
+          icon = HugeIcons.strokeRoundedCode;
           active = true;
         } else {
           icon = switch (headerValue) {
-            1 => Icons.title,
-            2 => Icons.title,
-            3 => Icons.title,
-            _ => Icons.text_fields,
+            1 => HugeIcons.strokeRoundedHeading,
+            2 => HugeIcons.strokeRoundedHeading01,
+            3 => HugeIcons.strokeRoundedHeading02,
+            _ => HugeIcons.strokeRoundedTextFont,
           };
           active = headerValue != null;
         }
@@ -275,13 +291,6 @@ class NoteToolbar extends ConsumerWidget {
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_header'.tr(),
           visualDensity: VisualDensity.compact,
-          isSelected: active,
-          style: IconButton.styleFrom(
-            foregroundColor: active ? Theme.of(context).colorScheme.primary : color,
-            backgroundColor: active
-                ? Theme.of(context).colorScheme.primaryContainer
-                : null,
-          ),
           onPressed: () {
             final box = context.findRenderObject() as RenderBox?;
             if (box == null) return;
@@ -295,12 +304,16 @@ class NoteToolbar extends ConsumerWidget {
                 offset.dx + box.size.width,
                 offset.dy + box.size.height + 4 + 260,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: colorScheme.surfaceContainerLow,
               items: [
-                _stringMenuItem('normal', 'note_header_normal', Icons.text_fields),
-                _stringMenuItem('h1', 'note_header_h1', Icons.title),
-                _stringMenuItem('h2', 'note_header_h2', Icons.title),
-                _stringMenuItem('h3', 'note_header_h3', Icons.title),
-                _stringMenuItem('code', 'note_header_code', Icons.code),
+                _stringMenuItem('normal', 'note_header_normal', HugeIcons.strokeRoundedTextFont, context),
+                _stringMenuItem('h1', 'note_header_h1', HugeIcons.strokeRoundedHeading, context),
+                _stringMenuItem('h2', 'note_header_h2', HugeIcons.strokeRoundedHeading01, context),
+                _stringMenuItem('h3', 'note_header_h3', HugeIcons.strokeRoundedHeading02, context),
+                _stringMenuItem('code', 'note_header_code', HugeIcons.strokeRoundedCode, context),
               ],
             ).then((value) {
               if (!context.mounted || value == null) return;
@@ -321,7 +334,12 @@ class NoteToolbar extends ConsumerWidget {
               focusNode.requestFocus();
             });
           },
-          icon: Icon(icon, size: 16),
+          icon: HugeIcon(
+            icon: icon,
+            size: 16,
+            color: active ? colorScheme.primary : color,
+            strokeWidth: active ? 2.5 : 1.5,
+          ),
         );
       },
     );
@@ -329,6 +347,7 @@ class NoteToolbar extends ConsumerWidget {
 
   /// 对齐方式按钮
   Widget _buildAlignButton(BuildContext context, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
@@ -346,10 +365,6 @@ class NoteToolbar extends ConsumerWidget {
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_align'.tr(),
           visualDensity: VisualDensity.compact,
-          isSelected: active,
-          style: IconButton.styleFrom(
-            foregroundColor: active ? Theme.of(context).colorScheme.primary : color,
-          ),
           onPressed: () {
             final box = context.findRenderObject() as RenderBox?;
             if (box == null) return;
@@ -363,11 +378,15 @@ class NoteToolbar extends ConsumerWidget {
                 offset.dx + box.size.width,
                 offset.dy + box.size.height + 4 + 220,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: colorScheme.surfaceContainerLow,
               items: [
-                _stringMenuItem('left', 'note_align_left', Icons.format_align_left),
-                _stringMenuItem('center', 'note_align_center', Icons.format_align_center),
-                _stringMenuItem('right', 'note_align_right', Icons.format_align_right),
-                _stringMenuItem('justify', 'note_align_justify', Icons.format_align_justify),
+                _stringMenuItem('left', 'note_align_left', HugeIcons.strokeRoundedTextAlignLeft, context),
+                _stringMenuItem('center', 'note_align_center', HugeIcons.strokeRoundedTextAlignCenter, context),
+                _stringMenuItem('right', 'note_align_right', HugeIcons.strokeRoundedTextAlignRight, context),
+                _stringMenuItem('justify', 'note_align_justify', HugeIcons.strokeRoundedTextAlignJustifyCenter, context),
               ],
             ).then((value) {
               if (!context.mounted || value == null) return;
@@ -382,7 +401,12 @@ class NoteToolbar extends ConsumerWidget {
               focusNode.requestFocus();
             });
           },
-          icon: HugeIcon(icon: icon, size: 16),
+          icon: HugeIcon(
+            icon: icon,
+            size: 16,
+            color: active ? colorScheme.primary : color,
+            strokeWidth: active ? 2.5 : 1.5,
+          ),
         );
       },
     );
@@ -390,6 +414,7 @@ class NoteToolbar extends ConsumerWidget {
 
   /// 链接按钮：弹出输入框设置/移除链接
   Widget _buildLinkButton(BuildContext context, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
@@ -401,13 +426,13 @@ class NoteToolbar extends ConsumerWidget {
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_link'.tr(),
           visualDensity: VisualDensity.compact,
-          isSelected: isLinked,
-          style: IconButton.styleFrom(
-            foregroundColor:
-                isLinked ? Theme.of(context).colorScheme.primary : color,
-          ),
           onPressed: () => noteSetLink(context, controller, focusNode),
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedLink01, size: 16),
+          icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedLink01,
+            size: 16,
+            color: isLinked ? colorScheme.primary : color,
+            strokeWidth: isLinked ? 2.5 : 1.5,
+          ),
         );
       },
     );
@@ -416,14 +441,16 @@ class NoteToolbar extends ConsumerWidget {
   PopupMenuItem<String> _stringMenuItem(
     String value,
     String labelKey,
-    IconData icon,
+    List<List<dynamic>> icon,
+    BuildContext context,
   ) {
     return PopupMenuItem<String>(
       value: value,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 8),
+          HugeIcon(icon: icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: 6),
           Text(labelKey.tr()),
         ],
       ),

@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/utils/shortcut_hint.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
@@ -85,31 +86,34 @@ import 'colors_box.dart';
                     _buildActionButton(
                       HugeIcons.strokeRoundedTextBold,
                       Attribute.bold,
-                      'toolbar_bold'.tr(),
+                      withShortcut('toolbar_bold'.tr(), shortcut('B')),
                       iconColor,
                     ),
                     _buildActionButton(
                       HugeIcons.strokeRoundedTextItalic,
                       Attribute.italic,
-                      'toolbar_italic'.tr(),
+                      withShortcut('toolbar_italic'.tr(), shortcut('I')),
                       iconColor,
                     ),
                     _buildActionButton(
                       HugeIcons.strokeRoundedTextUnderline,
                       Attribute.underline,
-                      'toolbar_underline'.tr(),
+                      withShortcut('toolbar_underline'.tr(), shortcut('U')),
                       iconColor,
                     ),
                     _buildActionButton(
                       HugeIcons.strokeRoundedTextStrikethrough,
                       Attribute.strikeThrough,
-                      'toolbar_strikethrough'.tr(),
+                      withShortcut(
+                        'toolbar_strikethrough'.tr(),
+                        shortcut('S', shift: true),
+                      ),
                       iconColor,
                     ),
                     _buildActionButton(
                       HugeIcons.strokeRoundedSourceCode,
                       Attribute.inlineCode,
-                      'toolbar_inline_code'.tr(),
+                      withShortcut('toolbar_inline_code'.tr(), shortcut('`')),
                       iconColor,
                     ),
 
@@ -146,7 +150,7 @@ import 'colors_box.dart';
                     _buildActionButton(
                       HugeIcons.strokeRoundedQuoteDown,
                       Attribute.blockQuote,
-                      'toolbar_quote'.tr(),
+                      withShortcut('toolbar_quote'.tr(), shortcut('B', shift: true)),
                       iconColor,
                     ),
                     Builder(
@@ -187,11 +191,22 @@ import 'colors_box.dart';
                             Function? onCancel;
                             onCancel = Toast.showWidget(
                               context,
-                              child: ColorsBox.buildColorsWidget((hex) {
-                                controller.formatSelection(ColorAttribute(hex));
-                                onCancel?.call();
-                                focusNode.requestFocus();
-                              }, context),
+                              child: ColorsBox.buildColorsWidget(
+                                (hex) {
+                                  controller.formatSelection(
+                                    ColorAttribute(hex),
+                                  );
+                                  onCancel?.call();
+                                  focusNode.requestFocus();
+                                },
+                                context,
+                                selectedColor: ColorsBox.parseColorFromValue(
+                                  controller
+                                      .getSelectionStyle()
+                                      .attributes[Attribute.color.key]
+                                      ?.value,
+                                ),
+                              ),
                             );
                           },
                         );
@@ -207,13 +222,22 @@ import 'colors_box.dart';
                             Function? onCancel;
                             onCancel = Toast.showWidget(
                               context,
-                              child: ColorsBox.buildColorsWidget((hex) {
-                                controller.formatSelection(
-                                  BackgroundAttribute(hex),
-                                );
-                                onCancel?.call();
-                                focusNode.requestFocus();
-                              }, context),
+                              child: ColorsBox.buildColorsWidget(
+                                (hex) {
+                                  controller.formatSelection(
+                                    BackgroundAttribute(hex),
+                                  );
+                                  onCancel?.call();
+                                  focusNode.requestFocus();
+                                },
+                                context,
+                                selectedColor: ColorsBox.parseColorFromValue(
+                                  controller
+                                      .getSelectionStyle()
+                                      .attributes[Attribute.background.key]
+                                      ?.value,
+                                ),
+                              ),
                             );
                           },
                         );
