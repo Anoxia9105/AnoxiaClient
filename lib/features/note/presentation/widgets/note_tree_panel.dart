@@ -137,6 +137,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       } else {
         setState(() {});
       }
+    } on NoteFolderDepthException {
+      if (!mounted) return;
+      Toast.showToast('note_folder_depth_limit'.tr(), type: ToastType.error);
     } catch (e) {
       if (!mounted) return;
       Toast.showToast('note_folder_create_failed'.tr(), type: ToastType.error);
@@ -168,13 +171,16 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       context,
       folders: tree.folders,
       title: 'note_move_to'.tr(),
-      excludeId: folder.id,
+      excludeSubtreeId: folder.id,
     );
     if (target == null || !mounted) return;
     try {
       await ref
           .read(noteTreeServiceProvider.notifier)
           .moveFolder(folder.id, target.folderId);
+    } on NoteFolderDepthException {
+      if (!mounted) return;
+      Toast.showToast('note_folder_depth_limit'.tr(), type: ToastType.error);
     } catch (e) {
       if (!mounted) return;
       Toast.showToast('note_move_failed'.tr(), type: ToastType.error);
@@ -332,8 +338,10 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
               IconButton(
                 tooltip: 'note_trash'.tr(),
                 visualDensity: VisualDensity.compact,
-                constraints:
-                    const BoxConstraints.tightFor(width: 28, height: 28),
+                constraints: const BoxConstraints.tightFor(
+                  width: 28,
+                  height: 28,
+                ),
                 onPressed: () => showNoteTrashDialog(context),
                 icon: HugeIcon(
                   icon: HugeIcons.strokeRoundedDelete02,
@@ -344,8 +352,10 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
               IconButton(
                 tooltip: 'call_window_retry'.tr(),
                 visualDensity: VisualDensity.compact,
-                constraints:
-                    const BoxConstraints.tightFor(width: 28, height: 28),
+                constraints: const BoxConstraints.tightFor(
+                  width: 28,
+                  height: 28,
+                ),
                 onPressed: () =>
                     ref.read(noteTreeServiceProvider.notifier).refresh(),
                 icon: HugeIcon(
@@ -610,7 +620,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
                   for (final note in tree.rootNotes)
                     _buildNoteRow(context, colorScheme, note, null),
                   for (final folder in tree.folders)
-                    _buildFolder(context, colorScheme, folder, null),
+                    _buildFolder(context, colorScheme, folder, null, 0),
                 ],
               ),
             ),
@@ -719,8 +729,10 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     ColorScheme colorScheme,
     NoteFolderNode folder,
     int? containerId,
+    int depth,
   ) {
     final expanded = _expanded.contains(folder.id);
+    final noteIndent = depth + 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,6 +750,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           targetIsFolder: true,
           child: _FolderRow(
             folder: folder,
+            depth: depth,
             expanded: expanded,
             onTap: () => setState(() {
               if (expanded) {
@@ -747,14 +760,20 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
               }
             }),
             onMenuPosition: (position) =>
-                _showFolderMenu(context, position, folder),
+                _showFolderMenu(context, position, folder, depth),
           ),
         ),
         if (expanded) ...[
           for (final note in folder.notes)
-            _buildNoteRow(context, colorScheme, note, folder.id, indent: 1),
+            _buildNoteRow(
+              context,
+              colorScheme,
+              note,
+              folder.id,
+              indent: noteIndent,
+            ),
           for (final child in folder.children)
-            _buildFolder(context, colorScheme, child, folder.id),
+            _buildFolder(context, colorScheme, child, folder.id, depth + 1),
         ],
       ],
     );
@@ -831,8 +850,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     if (dragged.isFolder) {
       if (!targetIsFolder) return false;
       if (dragged.containerId == containerId) return true;
-      // 移入文件夹：不能移入自身子孙
-      return !_isDescendant(tree, dragged.id, targetId);
+      // 移入文件夹：不能移入自身子孙，且移动后不能超过最大深度
+      if (_isDescendant(tree, dragged.id, targetId)) return false;
+      return !tree.moveExceedsMaxDepth(dragged.id, targetId);
     }
     if (targetIsFolder) return true; // 笔记 → 移入文件夹
     return dragged.containerId == containerId; // 笔记 → 同级重排
@@ -885,6 +905,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           await notifier.sortNotes(ids, containerId);
         }
       }
+    } on NoteFolderDepthException {
+      if (!mounted) return;
+      Toast.showToast('note_folder_depth_limit'.tr(), type: ToastType.error);
     } catch (e) {
       if (!mounted) return;
       Toast.showToast('note_move_failed'.tr(), type: ToastType.error);
@@ -976,7 +999,10 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     BuildContext context,
     Offset position,
     NoteFolderNode folder,
+    int depth,
   ) {
+    // depth 0 基（根级=0），对应 folderDepth 根级=1；深度到上限时禁止再建子文件夹
+    final atMaxDepth = depth + 1 >= maxFolderDepth;
     _showContextMenu(
       context,
       position,
@@ -992,6 +1018,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           _NodeAction.newSubfolder,
           HugeIcons.strokeRoundedFolderAdd,
           'note_new_subfolder'.tr(),
+          enabled: !atMaxDepth,
         ),
         _ContextMenuEntry(
           _NodeAction.rename,
@@ -1099,6 +1126,7 @@ class _ContextMenuEntry {
     this.label, {
     this.danger = false,
     this.separatorBefore = false,
+    this.enabled = true,
   });
 
   final _NodeAction action;
@@ -1110,6 +1138,9 @@ class _ContextMenuEntry {
 
   /// 在条目上方插入分组分隔线
   final bool separatorBefore;
+
+  /// 是否可点击（false 时置灰且不可触发）
+  final bool enabled;
 }
 
 /// 右键菜单项：图标底 + 文字，带 hover 高亮
@@ -1132,12 +1163,19 @@ class _ContextMenuItemState extends State<_ContextMenuItem> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final accent = widget.entry.danger
+    final entry = widget.entry;
+    final enabled = entry.enabled;
+    final accent = entry.danger ? colorScheme.error : colorScheme.primary;
+    final labelColor = !enabled
+        ? colorScheme.onSurface.withValues(alpha: .35)
+        : entry.danger
         ? colorScheme.error
-        : colorScheme.primary;
+        : colorScheme.onSurface;
 
     return InkWell(
-      onTap: () => Navigator.of(context).pop(widget.entry.action),
+      onTap: enabled
+          ? () => Navigator.of(context).pop(widget.entry.action)
+          : null,
       borderRadius: BorderRadius.circular(10),
       hoverColor: colorScheme.primaryContainer.withValues(alpha: .35),
       highlightColor: accent.withValues(alpha: .1),
@@ -1150,15 +1188,17 @@ class _ContextMenuItemState extends State<_ContextMenuItem> {
               height: 30,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: accent.withValues(
-                  alpha: widget.entry.danger ? .10 : .08,
-                ),
+                color: enabled
+                    ? accent.withValues(alpha: entry.danger ? .10 : .08)
+                    : colorScheme.onSurface.withValues(alpha: .04),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: HugeIcon(
-                icon: widget.entry.icon,
+                icon: entry.icon,
                 size: 16,
-                color: widget.entry.danger
+                color: !enabled
+                    ? colorScheme.onSurface.withValues(alpha: .25)
+                    : entry.danger
                     ? colorScheme.error
                     : colorScheme.onSurfaceVariant,
               ),
@@ -1166,15 +1206,13 @@ class _ContextMenuItemState extends State<_ContextMenuItem> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                widget.entry.label,
+                entry.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w500,
-                  color: widget.entry.danger
-                      ? colorScheme.error
-                      : colorScheme.onSurface,
+                  color: labelColor,
                 ),
               ),
             ),
@@ -1295,6 +1333,9 @@ class _FolderRow extends StatelessWidget {
   final bool expanded;
   final VoidCallback onTap;
 
+  /// 所在层级深度（根级为 0），用于缩进
+  final int depth;
+
   /// 右键 / 长按菜单回调，入参为全局坐标
   final ValueChanged<Offset> onMenuPosition;
 
@@ -1303,6 +1344,7 @@ class _FolderRow extends StatelessWidget {
     required this.expanded,
     required this.onTap,
     required this.onMenuPosition,
+    this.depth = 0,
   });
 
   @override
@@ -1318,7 +1360,7 @@ class _FolderRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+            padding: EdgeInsets.fromLTRB(8 + depth * 18, 8, 8, 8),
             child: Row(
               children: [
                 AnimatedRotation(

@@ -22,8 +22,10 @@ class NoteTreeService extends _$NoteTreeService {
   }
 
   Future<NoteTree> _fetchTree() {
-    return _fetchInflight ??=
-        ref.read(noteRepositoryProvider).getTree().whenComplete(() => _fetchInflight = null);
+    return _fetchInflight ??= ref
+        .read(noteRepositoryProvider)
+        .getTree()
+        .whenComplete(() => _fetchInflight = null);
   }
 
   /// 手动刷新树
@@ -39,11 +41,15 @@ class NoteTreeService extends _$NoteTreeService {
   }
 
   /// 创建文件夹
+  ///
+  /// 超过 [maxFolderDepth] 层时抛出 [NoteFolderDepthException]。
   Future<int> createFolder({int? parentId, required String name}) async {
-    final id = await ref.read(noteRepositoryProvider).createFolder(
-          parentId: parentId,
-          name: name,
-        );
+    if (parentId != null && _isAtMaxDepth(parentId)) {
+      throw const NoteFolderDepthException();
+    }
+    final id = await ref
+        .read(noteRepositoryProvider)
+        .createFolder(parentId: parentId, name: name);
     await refresh(quiet: true);
     return id;
   }
@@ -55,24 +61,30 @@ class NoteTreeService extends _$NoteTreeService {
   }
 
   /// 移动文件夹
+  ///
+  /// 移动后超过 [maxFolderDepth] 层时抛出 [NoteFolderDepthException]。
   Future<void> moveFolder(int folderId, int? targetParentId) async {
+    if (_moveExceedsMaxDepth(folderId, targetParentId)) {
+      throw const NoteFolderDepthException();
+    }
     await ref.read(noteRepositoryProvider).moveFolder(folderId, targetParentId);
     await refresh(quiet: true);
   }
 
   /// 级联删除文件夹
   Future<NoteDeleteResult> deleteFolder(int folderId) async {
-    final result = await ref.read(noteRepositoryProvider).deleteFolder(folderId);
+    final result = await ref
+        .read(noteRepositoryProvider)
+        .deleteFolder(folderId);
     await refresh(quiet: true);
     return result;
   }
 
   /// 新建笔记，返回全文
   Future<NoteDoc> createNote({int? folderId, String? title}) async {
-    final doc = await ref.read(noteRepositoryProvider).createNote(
-          folderId: folderId,
-          title: title,
-        );
+    final doc = await ref
+        .read(noteRepositoryProvider)
+        .createNote(folderId: folderId, title: title);
     await refresh(quiet: true);
     return doc;
   }
@@ -85,22 +97,25 @@ class NoteTreeService extends _$NoteTreeService {
 
   /// 置顶 / 取消置顶笔记
   Future<void> setPinned(int noteId, {required bool pinned}) async {
-    await ref
-        .read(noteRepositoryProvider)
-        .setPinned(noteId, pinned: pinned);
+    await ref.read(noteRepositoryProvider).setPinned(noteId, pinned: pinned);
     await refresh(quiet: true);
   }
 
   /// 批量移动并重排笔记
   Future<void> sortNotes(List<int> noteIds, int? targetFolderId) async {
-    await ref
-        .read(noteRepositoryProvider)
-        .sortNotes(noteIds, targetFolderId);
+    await ref.read(noteRepositoryProvider).sortNotes(noteIds, targetFolderId);
     await refresh(quiet: true);
   }
 
   /// 批量移动并重排文件夹
+  ///
+  /// 任一文件夹移动后超过 [maxFolderDepth] 层时抛出 [NoteFolderDepthException]。
   Future<void> sortFolders(List<int> folderIds, int? targetParentId) async {
+    for (final id in folderIds) {
+      if (_moveExceedsMaxDepth(id, targetParentId)) {
+        throw const NoteFolderDepthException();
+      }
+    }
     await ref
         .read(noteRepositoryProvider)
         .sortFolders(folderIds, targetParentId);
@@ -137,4 +152,23 @@ class NoteTreeService extends _$NoteTreeService {
       await ref.read(noteTagServiceProvider.notifier).refresh();
     }
   }
+
+  /// 文件夹深度是否已达上限（无法再在其下新建/移入子文件夹）
+  bool _isAtMaxDepth(int folderId) {
+    final tree = state.value;
+    if (tree == null) return false;
+    return tree.isFolderAtMaxDepth(folderId);
+  }
+
+  /// 移动 [folderId] 到 [targetParentId] 后是否超出深度上限
+  bool _moveExceedsMaxDepth(int folderId, int? targetParentId) {
+    final tree = state.value;
+    if (tree == null) return true;
+    return tree.moveExceedsMaxDepth(folderId, targetParentId);
+  }
+}
+
+/// 文件夹层级超出上限（[maxFolderDepth] 层）时抛出
+class NoteFolderDepthException implements Exception {
+  const NoteFolderDepthException();
 }

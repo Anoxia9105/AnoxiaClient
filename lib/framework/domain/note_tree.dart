@@ -7,6 +7,9 @@ import 'package:flutter/foundation.dart';
 
 import 'note_doc.dart';
 
+/// 文件夹最大嵌套深度（根级文件夹计为第 1 层，最多 [maxFolderDepth] 层）
+const int maxFolderDepth = 8;
+
 /// 文件夹树节点
 @immutable
 class NoteFolderNode {
@@ -38,17 +41,24 @@ class NoteFolderNode {
     return NoteFolderNode(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       name: json['name']?.toString() ?? '',
-      sortOrder: int.tryParse(
-            json['sortOrder']?.toString() ?? json['sort_order']?.toString() ?? '',
+      sortOrder:
+          int.tryParse(
+            json['sortOrder']?.toString() ??
+                json['sort_order']?.toString() ??
+                '',
           ) ??
           0,
       children: rawChildren is List
           ? rawChildren
-              .map((e) => NoteFolderNode.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
+                .map(
+                  (e) => NoteFolderNode.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList()
           : const [],
       notes: rawNotes is List
-          ? rawNotes.map((e) => NoteBrief.fromJson(Map<String, dynamic>.from(e))).toList()
+          ? rawNotes
+                .map((e) => NoteBrief.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
           : const [],
     );
   }
@@ -60,6 +70,16 @@ class NoteFolderNode {
       count += child.totalNoteCount;
     }
     return count;
+  }
+
+  /// 自身为根的最大相对深度（自身=0，最深后代距自身的层数）
+  int get maxRelativeDepth {
+    var max = 0;
+    for (final child in children) {
+      final d = 1 + child.maxRelativeDepth;
+      if (d > max) max = d;
+    }
+    return max;
   }
 
   /// 递归查找指定文件夹节点
@@ -106,11 +126,15 @@ class NoteTree {
     return NoteTree(
       folders: rawFolders is List
           ? rawFolders
-              .map((e) => NoteFolderNode.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
+                .map(
+                  (e) => NoteFolderNode.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList()
           : const [],
       rootNotes: rawRootNotes is List
-          ? rawRootNotes.map((e) => NoteBrief.fromJson(Map<String, dynamic>.from(e))).toList()
+          ? rawRootNotes
+                .map((e) => NoteBrief.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
           : const [],
     );
   }
@@ -156,5 +180,45 @@ class NoteTree {
       if (result != null) return result;
     }
     return null;
+  }
+
+  /// 文件夹所在深度（根级为 1，子级依次 +1），找不到返回 0
+  int folderDepth(int id) {
+    int walk(NoteFolderNode node, int depth) {
+      if (node.id == id) return depth;
+      for (final child in node.children) {
+        final result = walk(child, depth + 1);
+        if (result > 0) return result;
+      }
+      return 0;
+    }
+
+    for (final folder in folders) {
+      final result = walk(folder, 1);
+      if (result > 0) return result;
+    }
+    return 0;
+  }
+
+  /// 文件夹深度是否已到上限（无法再在其下新建子文件夹）
+  bool isFolderAtMaxDepth(int id) => folderDepth(id) >= maxFolderDepth;
+
+  /// 把 [folderId] 移动到 [targetParentId]（null 表示根级）后，是否会超过最大深度
+  ///
+  /// 同时考虑被移动文件夹自身子树的相对深度；目标为自身或自身子孙
+  /// 时直接视为非法（避免循环嵌套）。
+  bool moveExceedsMaxDepth(int folderId, int? targetParentId) {
+    final moved = findFolder(folderId);
+    if (moved == null) return true;
+    if (targetParentId == null) return false;
+    // 目标不能是自身或其子孙
+    if (targetParentId == folderId) return true;
+    final target = findFolder(targetParentId);
+    if (target == null) return true;
+    if (target.findFolder(folderId) != null) return true;
+    // 目标父级所在深度：根级视为 0 层之上，即父级深度 + 1
+    final targetDepth = folderDepth(targetParentId);
+    final maxDepthAfterMove = targetDepth + 1 + moved.maxRelativeDepth;
+    return maxDepthAfterMove > maxFolderDepth;
   }
 }

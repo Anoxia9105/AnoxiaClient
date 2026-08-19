@@ -57,11 +57,14 @@ Future<String?> showNoteFolderNameDialog(
 /// 移动文件夹 / 笔记目标选择对话框
 ///
 /// 顶层提供「未分类」选项；文件夹按层级缩进展示。返回 null 表示取消。
+/// [excludeId] 排除单个文件夹；[excludeSubtreeId] 排除该文件夹及其整个子树
+/// （用于移动文件夹时避免移入自身或自身子孙形成循环）。
 Future<NoteMoveTarget?> showNoteMoveDialog(
   BuildContext context, {
   required List<NoteFolderNode> folders,
   required String title,
   int? excludeId,
+  int? excludeSubtreeId,
 }) {
   return showDialog<NoteMoveTarget>(
     context: context,
@@ -80,12 +83,17 @@ Future<NoteMoveTarget?> showNoteMoveDialog(
                   size: 18,
                 ),
                 title: Text('note_uncategorized'.tr()),
-                onTap: () => Navigator.of(dialogContext).pop(
-                  const NoteMoveTarget(null),
-                ),
+                onTap: () =>
+                    Navigator.of(dialogContext).pop(const NoteMoveTarget(null)),
               ),
               for (final folder in folders)
-                ..._buildFolderOptions(dialogContext, folder, 0, excludeId),
+                ..._buildFolderOptions(
+                  dialogContext,
+                  folder,
+                  0,
+                  excludeId,
+                  excludeSubtreeId,
+                ),
             ],
           ),
         ),
@@ -105,7 +113,10 @@ List<Widget> _buildFolderOptions(
   NoteFolderNode folder,
   int depth,
   int? excludeId,
+  int? excludeSubtreeId,
 ) {
+  // 命中排除子树：自身与所有子孙都不展示
+  if (folder.id == excludeSubtreeId) return const [];
   final widgets = <Widget>[];
   if (folder.id != excludeId) {
     widgets.add(
@@ -113,7 +124,10 @@ List<Widget> _buildFolderOptions(
         dense: true,
         leading: Padding(
           padding: EdgeInsets.only(left: (depth * 16).toDouble()),
-          child: const HugeIcon(icon: HugeIcons.strokeRoundedFolder01, size: 18),
+          child: const HugeIcon(
+            icon: HugeIcons.strokeRoundedFolder01,
+            size: 18,
+          ),
         ),
         title: Text(folder.name, maxLines: 1, overflow: TextOverflow.ellipsis),
         onTap: () => Navigator.of(context).pop(NoteMoveTarget(folder.id)),
@@ -122,7 +136,13 @@ List<Widget> _buildFolderOptions(
   }
   for (final child in folder.children) {
     widgets.addAll(
-      _buildFolderOptions(context, child, depth + 1, excludeId),
+      _buildFolderOptions(
+        context,
+        child,
+        depth + 1,
+        excludeId,
+        excludeSubtreeId,
+      ),
     );
   }
   return widgets;
