@@ -58,6 +58,9 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
 
   Future<void> _save() async {
     if (_saving) return;
+    // 把输入框中尚未回车/点击添加的标签一并带上，
+    // 避免只输入没确认就点保存时漏传参数（负载变成空数组）。
+    _addTag();
     setState(() => _saving = true);
     try {
       await ref
@@ -129,36 +132,66 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
                 ),
                 const SizedBox(height: 12),
               ],
-              TextField(
-                controller: _input,
-                onSubmitted: (_) => _addTag(),
-                style: const TextStyle(fontSize: 13),
-                decoration: InputDecoration(
-                  hintText: 'note_tag_add_hint'.tr(),
-                  hintStyle: TextStyle(
-                    fontSize: 12.5,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: .7),
-                  ),
-                  prefixIconConstraints: const BoxConstraints.tightFor(
-                    width: 36,
-                    height: 36,
-                  ),
-                  prefixIcon: Center(
-                    child: SizedBox.square(
-                      dimension: 15,
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedTag01,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _input,
+                      onSubmitted: (_) => _addTag(),
+                      style: const TextStyle(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'note_tag_add_hint'.tr(),
+                        hintStyle: TextStyle(
+                          fontSize: 12.5,
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: .7),
+                        ),
+                        prefixIconConstraints: const BoxConstraints.tightFor(
+                          width: 36,
+                          height: 36,
+                        ),
+                        prefixIcon: Center(
+                          child: SizedBox.square(
+                            dimension: 15,
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedTag01,
+                              size: 14,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 9,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                  const SizedBox(width: 8),
+                  // 显式「添加」按钮：回车不是唯一途径，
+                  // 中文输入法（IME）下回车可能被输入法吃掉导致标签加不进去
+                  SizedBox(
+                    height: 40,
+                    child: FilledButton.tonalIcon(
+                      onPressed: _addTag,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedAddSquare,
+                        size: 16,
+                      ),
+                      label: Text(
+                        'note_tag_add_btn'.tr(),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 14),
               Row(
