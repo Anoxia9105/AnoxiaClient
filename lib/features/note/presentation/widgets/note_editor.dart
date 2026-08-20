@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
+import 'package:anoxia/framework/provider/note/note_tag_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import 'note_markdown_io.dart';
 import 'note_pdf_io.dart';
 import 'note_search_panel.dart';
 import 'note_share.dart';
+import 'note_tags_dialog.dart';
 import 'note_toolbar.dart';
 import 'note_versions_dialog.dart';
 
@@ -799,7 +801,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-                        child: _buildTitleField(context, session, colorScheme),
+                        child: _buildTitleArea(context, session, colorScheme),
                       ),
                       const SizedBox(height: 4),
                       NoteToolbar(
@@ -871,6 +873,69 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     _focusNode.requestFocus();
   }
 
+  /// 标题区：标题输入框 + 标签编辑入口，下方展示当前笔记标签（可点击按标签检索）
+  Widget _buildTitleArea(
+    BuildContext context,
+    NoteEditSession session,
+    ColorScheme colorScheme,
+  ) {
+    final tags =
+        ref
+            .watch(noteTreeServiceProvider)
+            .value
+            ?.findNote(session.noteId)
+            ?.tags ??
+        const <String>[];
+    final activeTag = ref.watch(noteTagFilterProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: _buildTitleField(context, session, colorScheme)),
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: 'note_tags'.tr(),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+              onPressed: () => showNoteTagsDialog(
+                context,
+                noteId: session.noteId,
+                initialTags: tags,
+              ),
+              icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedTag01,
+                size: 17,
+                color: activeTag != null
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        if (tags.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              for (final name in tags)
+                _EditorTagChip(
+                  label: name,
+                  selected: activeTag == name,
+                  onTap: () =>
+                      ref.read(noteTagFilterProvider.notifier).state =
+                      activeTag == name ? null : name,
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
   /// 标题输入框：默认无边框、高度更高，聚焦时显示圆角边框。
   Widget _buildTitleField(
     BuildContext context,
@@ -938,18 +1003,32 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
             child: CircularProgressIndicator(strokeWidth: 1.5),
           ),
           const SizedBox(width: 6),
-          Text('note_autosave_saving'.tr()),
+          Text(
+            'note_autosave_saving'.tr(),
+            style: const TextStyle(fontSize: 12),
+          ),
         ],
       ),
       NoteSaveState.saved => Text(
         'note_autosave_saved'.tr(args: [_formatTime(session.lastSavedAt)]),
+        style: const TextStyle(fontSize: 12),
       ),
       NoteSaveState.failed => TextButton.icon(
         onPressed: () => _sessionService.save().catchError((Object _) => false),
-        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 14),
-        label: Text('note_autosave_failed'.tr()),
+        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 13),
+        label: Text(
+          'note_autosave_failed'.tr(),
+          style: const TextStyle(fontSize: 12),
+        ),
+        style: TextButton.styleFrom(
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+        ),
       ),
-      NoteSaveState.idle => Text('note_autosave_idle'.tr()),
+      NoteSaveState.idle => Text(
+        'note_autosave_idle'.tr(),
+        style: const TextStyle(fontSize: 12),
+      ),
     };
 
     return Container(
@@ -1175,8 +1254,8 @@ class _NoteEditorEmpty extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 76,
-            height: 76,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -1191,10 +1270,14 @@ class _NoteEditorEmpty extends StatelessWidget {
                 color: colorScheme.primary.withValues(alpha: .15),
               ),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedNote01,
-              size: 32,
-              color: colorScheme.primary,
+            // HugeIcon 需要外层 SizedBox 约束才会真正改变尺寸
+            child: SizedBox.square(
+              dimension: 26,
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedNote01,
+                size: 26,
+                color: colorScheme.primary,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -1213,6 +1296,65 @@ class _NoteEditorEmpty extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 编辑器内标签胶囊（可点击按标签检索，再次点击取消）
+class _EditorTagChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _EditorTagChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer
+          : colorScheme.surfaceContainerHighest.withValues(alpha: .7),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          height: 22,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedTag01,
+                size: 11,
+                color: selected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

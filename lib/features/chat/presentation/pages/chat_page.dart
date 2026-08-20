@@ -8,6 +8,7 @@ import 'package:anoxia/features/chat/presentation/pages/chat_room_list_page.dart
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/chat_room_detail_panel.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
+import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,6 +40,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final activeRoomId = ref.watch(activeRoomIdProvider);
     final focusModeEnabled = ref.watch(chatFocusModeProvider);
     final showRightPanel = ref.watch(chatRightPanelVisibleProvider);
+    // 与记事本/联系人页面保持一致：平铺模式去掉详情区卡片，
+    // 避免自定义（视频）背景下各页面右侧区域透明度不一致。
+    final supportsDesktopLayout = DeviceUtil.supportsDesktopLayoutPreference(
+      context,
+    );
+    final layoutStyle = supportsDesktopLayout
+        ? resolveDesktopLayoutStyle(
+            ref.watch(desktopLayoutProvider),
+            availableWidth: MediaQuery.sizeOf(context).width,
+          )
+        : DesktopLayoutStyle.card;
+    final isFlat = layoutStyle == DesktopLayoutStyle.flat;
     final room = activeRoomId != null
         ? ref.watch(currentRoomProvider(activeRoomId))
         : null;
@@ -64,29 +77,39 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               child: const ChatRoomList(),
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outlineVariant.withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: room == null
-                        ? const Welcome.chat()
-                        : ChatRoomDetail(
-                            key: ValueKey('chat-$activeRoomId'),
-                            roomId: activeRoomId!,
+              child: isFlat
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: room == null
+                          ? const Welcome.chat()
+                          : ChatRoomDetail(
+                              key: ValueKey('chat-$activeRoomId'),
+                              roomId: activeRoomId!,
+                            ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outlineVariant.withValues(alpha: 0.18),
                           ),
-                  ),
-                ),
-              ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: room == null
+                              ? const Welcome.chat()
+                              : ChatRoomDetail(
+                                  key: ValueKey('chat-$activeRoomId'),
+                                  roomId: activeRoomId!,
+                                ),
+                        ),
+                      ),
+                    ),
             ),
             AnimatedSize(
               duration: const Duration(milliseconds: 220),
@@ -97,11 +120,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
                   child: inlineRightPanel
-                      ? _buildRightPanel(
-                          context,
-                          activeRoomId,
-                          const EdgeInsets.fromLTRB(8, 10, 12, 12),
-                        )
+                      ? _buildRightPanel(context, activeRoomId, isFlat)
                       : const SizedBox.shrink(
                           key: ValueKey('right-panel-closed'),
                         ),
@@ -121,11 +140,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   onTap: () {},
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 320),
-                    child: _buildRightPanel(
-                      context,
-                      activeRoomId,
-                      const EdgeInsets.fromLTRB(8, 10, 12, 12),
-                    ),
+                    child: _buildRightPanel(context, activeRoomId, isFlat),
                   ),
                 ),
               ),
@@ -135,14 +150,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildRightPanel(
-    BuildContext context,
-    String roomId,
-    EdgeInsets margin,
-  ) {
+  Widget _buildRightPanel(BuildContext context, String roomId, bool isFlat) {
+    if (isFlat) {
+      // 平铺模式：与中间详情区一致，不套卡片，直接铺在页面表面
+      return Container(
+        key: ValueKey('right-panel-$roomId'),
+        child: ChatRoomDetailPanel(roomId: roomId, onClose: _closeRightPanel),
+      );
+    }
     return Container(
       key: ValueKey('right-panel-$roomId'),
-      margin: margin,
+      margin: const EdgeInsets.fromLTRB(8, 10, 12, 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(14),

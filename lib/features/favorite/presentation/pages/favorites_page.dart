@@ -448,70 +448,37 @@ class _FavoriteListPanel extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedBookmark01,
-                      color: cs.primary,
-                      size: 15,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'sidebar_favorites'.tr(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                        Flexible(
+                          child: Text(
+                            'sidebar_favorites'.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: cs.primaryContainer.withValues(
-                                  alpha: .55,
-                                ),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                'favorite_count'.tr(
-                                  args: [totalCount.toString()],
-                                ),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'sidebar_favorites_subtitle'.tr(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: cs.onSurfaceVariant,
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cs.primaryContainer.withValues(alpha: .55),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'favorite_count'.tr(args: [totalCount.toString()]),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

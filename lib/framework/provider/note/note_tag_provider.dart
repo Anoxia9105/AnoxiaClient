@@ -1,8 +1,14 @@
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/provider/core/note_repository_provider.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'note_tag_provider.g.dart';
+
+/// 当前按标签检索的筛选条件（null 表示全部笔记）。
+///
+/// 树面板过滤栏与编辑器内标签点击共用，实现跨区域按标签检索。
+final noteTagFilterProvider = StateProvider<String?>((ref) => null);
 
 /// 记事本标签服务
 ///

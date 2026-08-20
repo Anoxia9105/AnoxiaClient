@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'note_dialog_skeleton.dart';
+
 /// 打开回收站对话框
 Future<void> showNoteTrashDialog(BuildContext context) {
   return showDialog<void>(
@@ -147,10 +149,7 @@ icon: HugeIcons.strokeRoundedDelete02,
             const Divider(height: 1),
             Flexible(
               child: trashAsync.when(
-                loading: () => const SizedBox(
-                  height: 120,
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
+                loading: () => const NoteDialogListSkeleton(),
                 error: (e, _) => SizedBox(
                   height: 120,
                   child: Center(child: Text('chat_load_failed'.tr())),

@@ -5,6 +5,7 @@
 library;
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
@@ -24,10 +25,24 @@ Future<bool> exportNotePdf(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const Center(
-      child: SizedBox.square(
-        dimension: 36,
-        child: CircularProgressIndicator(strokeWidth: 3),
+    // 生成中的加载弹窗：用骨架占位替代转圈动画
+    builder: (_) => Dialog(
+      child: Container(
+        width: 240,
+        padding: const EdgeInsets.all(20),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SkeletonLine(width: 160, height: 14, radius: 6),
+            SizedBox(height: 14),
+            SkeletonLine(width: 220, height: 12, radius: 6),
+            SizedBox(height: 10),
+            SkeletonLine(width: 180, height: 12, radius: 6),
+            SizedBox(height: 10),
+            SkeletonLine(width: 120, height: 12, radius: 6),
+          ],
+        ),
       ),
     ),
   );

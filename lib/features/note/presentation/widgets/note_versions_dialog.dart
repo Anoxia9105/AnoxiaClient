@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'note_dialog_skeleton.dart';
+
 /// 打开版本历史对话框
 Future<void> showNoteVersionsDialog(BuildContext context, int noteId) {
   return showDialog<void>(
@@ -126,10 +128,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
             const Divider(height: 1),
             Flexible(
               child: versionsAsync.when(
-                loading: () => const SizedBox(
-                  height: 120,
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
+                loading: () => const NoteDialogListSkeleton(),
                 error: (e, _) => SizedBox(
                   height: 120,
                   child: Center(child: Text('chat_load_failed'.tr())),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/domain/note_tree.dart';
 import 'package:anoxia/framework/provider/core/note_repository_provider.dart';
@@ -58,9 +59,6 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   String _query = '';
   List<NoteBrief>? _searchResults;
   bool _searching = false;
-
-  /// 当前按标签过滤（null 表示不过滤）
-  String? _activeTag;
 
   @override
   void dispose() {
@@ -292,42 +290,45 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedNote01,
-              color: colorScheme.primary,
-              size: 15,
-            ),
-          ),
-          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'sidebar_note'.tr(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'note_total_count'.tr(args: [total.toString()]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'sidebar_note'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withValues(
+                          alpha: .55,
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'note_total_count'.tr(args: [total.toString()]),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -448,6 +449,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   Widget _buildTagFilterBar(BuildContext context, ColorScheme colorScheme) {
     final tagsAsync = ref.watch(noteTagServiceProvider);
     final tags = tagsAsync.value ?? const <NoteTag>[];
+    final activeTag = ref.watch(noteTagFilterProvider);
 
     if (tags.isEmpty) return const SizedBox.shrink();
 
@@ -459,17 +461,17 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
         children: [
           _TagChip(
             label: 'note_tag_all'.tr(),
-            selected: _activeTag == null,
-            onTap: () => setState(() => _activeTag = null),
+            selected: activeTag == null,
+            onTap: () =>
+                ref.read(noteTagFilterProvider.notifier).state = null,
           ),
           for (final tag in tags) ...[
             const SizedBox(width: 6),
             _TagChip(
               label: '${tag.name} ${tag.count}',
-              selected: _activeTag == tag.name,
-              onTap: () => setState(() {
-                _activeTag = _activeTag == tag.name ? null : tag.name;
-              }),
+              selected: activeTag == tag.name,
+              onTap: () => ref.read(noteTagFilterProvider.notifier).state =
+                  activeTag == tag.name ? null : tag.name,
             ),
           ],
         ],
@@ -483,7 +485,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     ColorScheme colorScheme,
     NoteTree tree,
   ) {
-    final tag = _activeTag;
+    final tag = ref.watch(noteTagFilterProvider);
     final notes = <NoteBrief>[];
     if (tag != null) {
       void collect(NoteFolderNode node) {
@@ -571,22 +573,16 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
     if (_query.isNotEmpty) {
       return _buildSearchResults(context, colorScheme);
     }
-    if (_activeTag != null) {
+    if (ref.watch(noteTagFilterProvider) != null) {
       return treeAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        loading: () => const _TreeListSkeleton(),
         error: (e, _) => Center(child: Text('chat_load_failed'.tr())),
         data: (tree) => _buildTagFiltered(context, colorScheme, tree),
       );
     }
 
     return treeAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
+      loading: () => const _TreeListSkeleton(),
       error: (e, _) => Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -632,7 +628,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
 
   Widget _buildSearchResults(BuildContext context, ColorScheme colorScheme) {
     if (_searching) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      return const _TreeListSkeleton();
     }
     final results = _searchResults;
     if (results == null) {
@@ -679,8 +675,8 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -695,10 +691,14 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
                 color: colorScheme.primary.withValues(alpha: .15),
               ),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedNote01,
-              size: 30,
-              color: colorScheme.primary,
+            // HugeIcon 需要外层 SizedBox 约束才会真正改变尺寸
+            child: SizedBox.square(
+              dimension: 26,
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedNote01,
+                size: 26,
+                color: colorScheme.primary,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -1621,6 +1621,46 @@ class _NoteRow extends StatelessWidget {
       start = index + query.length;
     }
     return spans;
+  }
+}
+
+/// 树列表加载骨架屏（替代转圈动画）
+class _TreeListSkeleton extends StatelessWidget {
+  const _TreeListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      itemCount: 7,
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
+      itemBuilder: (_, index) {
+        // 偶数行模拟文件夹，奇数行模拟笔记，贴近真实树结构
+        final folder = index.isEven;
+        return Row(
+          children: [
+            SkeletonBox(width: folder ? 16 : 15, height: 15, radius: 5),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonLine(
+                    width: folder ? 110 : 150,
+                    height: 11,
+                    radius: 6,
+                  ),
+                  if (!folder) ...[
+                    const SizedBox(height: 6),
+                    const SkeletonLine(width: 90, height: 9, radius: 5),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
