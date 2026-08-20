@@ -110,23 +110,32 @@ class NoteToolbar extends ConsumerWidget {
             iconColor,
           ),
           _buildDivider(context),
-          ChatQuillColorStyleButton(
-            controller: controller,
-            type: ChatQuillColorStyleType.foreground,
-            tooltip: 'toolbar_text_color'.tr(),
-            onPressed: () => notePickColor(
-              context,
-              controller,
-              focusNode,
-              background: false,
+          // 颜色面板以气泡方式弹出，锚定按钮下方（仿聊天输入框）
+          Builder(
+            builder: (buttonContext) => ChatQuillColorStyleButton(
+              controller: controller,
+              type: ChatQuillColorStyleType.foreground,
+              tooltip: 'toolbar_text_color'.tr(),
+              onPressed: () => notePickColorBubble(
+                buttonContext,
+                controller,
+                focusNode,
+                background: false,
+              ),
             ),
           ),
-          ChatQuillColorStyleButton(
-            controller: controller,
-            type: ChatQuillColorStyleType.background,
-            tooltip: 'toolbar_bg_color'.tr(),
-            onPressed: () =>
-                notePickColor(context, controller, focusNode, background: true),
+          Builder(
+            builder: (buttonContext) => ChatQuillColorStyleButton(
+              controller: controller,
+              type: ChatQuillColorStyleType.background,
+              tooltip: 'toolbar_bg_color'.tr(),
+              onPressed: () => notePickColorBubble(
+                buttonContext,
+                controller,
+                focusNode,
+                background: true,
+              ),
+            ),
           ),
           _buildDivider(context),
           _buildSearchButton(context, iconColor),
@@ -300,72 +309,76 @@ class NoteToolbar extends ConsumerWidget {
           tooltip: 'note_header'.tr(),
           visualDensity: VisualDensity.compact,
           onPressed: () {
-            final box = context.findRenderObject() as RenderBox?;
-            if (box == null) return;
-            final offset = box.localToGlobal(Offset.zero);
-
-            showMenu<String>(
-              context: context,
-              position: RelativeRect.fromLTRB(
-                offset.dx,
-                offset.dy + box.size.height + 4,
-                offset.dx + box.size.width,
-                offset.dy + box.size.height + 4 + 260,
+            // 气泡菜单：锚定按钮下方，点击外部自动关闭
+            Function? close;
+            close = showNoteBubble(
+              context,
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedTextFont,
+                      label: 'note_header_normal'.tr(),
+                      selected: !isCodeBlock && headerValue == null,
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(
+                          Attribute.clone(Attribute.header, null),
+                        );
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedHeading,
+                      label: 'note_header_h1'.tr(),
+                      selected: !isCodeBlock && headerValue == 1,
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.h1);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedHeading01,
+                      label: 'note_header_h2'.tr(),
+                      selected: !isCodeBlock && headerValue == 2,
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.h2);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedHeading02,
+                      label: 'note_header_h3'.tr(),
+                      selected: !isCodeBlock && headerValue == 3,
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.h3);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedCode,
+                      label: 'note_header_code'.tr(),
+                      selected: isCodeBlock,
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.codeBlock);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                  ],
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              color: colorScheme.surfaceContainerLow,
-              items: [
-                _stringMenuItem(
-                  'normal',
-                  'note_header_normal',
-                  HugeIcons.strokeRoundedTextFont,
-                  context,
-                ),
-                _stringMenuItem(
-                  'h1',
-                  'note_header_h1',
-                  HugeIcons.strokeRoundedHeading,
-                  context,
-                ),
-                _stringMenuItem(
-                  'h2',
-                  'note_header_h2',
-                  HugeIcons.strokeRoundedHeading01,
-                  context,
-                ),
-                _stringMenuItem(
-                  'h3',
-                  'note_header_h3',
-                  HugeIcons.strokeRoundedHeading02,
-                  context,
-                ),
-                _stringMenuItem(
-                  'code',
-                  'note_header_code',
-                  HugeIcons.strokeRoundedCode,
-                  context,
-                ),
-              ],
-            ).then((value) {
-              if (!context.mounted || value == null) return;
-              switch (value) {
-                case 'normal':
-                  controller.formatSelection(
-                    Attribute.clone(Attribute.header, null),
-                  );
-                case 'h1':
-                  controller.formatSelection(Attribute.h1);
-                case 'h2':
-                  controller.formatSelection(Attribute.h2);
-                case 'h3':
-                  controller.formatSelection(Attribute.h3);
-                case 'code':
-                  controller.formatSelection(Attribute.codeBlock);
-              }
-              focusNode.requestFocus();
-            });
+            );
           },
           icon: HugeIcon(
             icon: icon,
@@ -399,58 +412,65 @@ class NoteToolbar extends ConsumerWidget {
           tooltip: 'note_align'.tr(),
           visualDensity: VisualDensity.compact,
           onPressed: () {
-            final box = context.findRenderObject() as RenderBox?;
-            if (box == null) return;
-            final offset = box.localToGlobal(Offset.zero);
-
-            showMenu<String>(
-              context: context,
-              position: RelativeRect.fromLTRB(
-                offset.dx,
-                offset.dy + box.size.height + 4,
-                offset.dx + box.size.width,
-                offset.dy + box.size.height + 4 + 220,
+            // 气泡菜单：锚定按钮下方，点击外部自动关闭
+            Function? close;
+            close = showNoteBubble(
+              context,
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedTextAlignLeft,
+                      label: 'note_align_left'.tr(),
+                      selected: alignValue == null || alignValue == 'left',
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.leftAlignment);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedTextAlignCenter,
+                      label: 'note_align_center'.tr(),
+                      selected: alignValue == 'center',
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.centerAlignment);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedTextAlignRight,
+                      label: 'note_align_right'.tr(),
+                      selected: alignValue == 'right',
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(Attribute.rightAlignment);
+                        focusNode.requestFocus();
+                      },
+                    ),
+                    _bubbleMenuTile(
+                      context,
+                      icon: HugeIcons.strokeRoundedTextAlignJustifyCenter,
+                      label: 'note_align_justify'.tr(),
+                      selected: alignValue == 'justify',
+                      onTap: () {
+                        close?.call();
+                        controller.formatSelection(
+                          Attribute.justifyAlignment,
+                        );
+                        focusNode.requestFocus();
+                      },
+                    ),
+                  ],
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              color: colorScheme.surfaceContainerLow,
-              items: [
-                _stringMenuItem(
-                  'left',
-                  'note_align_left',
-                  HugeIcons.strokeRoundedTextAlignLeft,
-                  context,
-                ),
-                _stringMenuItem(
-                  'center',
-                  'note_align_center',
-                  HugeIcons.strokeRoundedTextAlignCenter,
-                  context,
-                ),
-                _stringMenuItem(
-                  'right',
-                  'note_align_right',
-                  HugeIcons.strokeRoundedTextAlignRight,
-                  context,
-                ),
-                _stringMenuItem(
-                  'justify',
-                  'note_align_justify',
-                  HugeIcons.strokeRoundedTextAlignJustifyCenter,
-                  context,
-                ),
-              ],
-            ).then((value) {
-              if (!context.mounted || value == null) return;
-              controller.formatSelection(switch (value) {
-                'center' => Attribute.centerAlignment,
-                'right' => Attribute.rightAlignment,
-                'justify' => Attribute.justifyAlignment,
-                _ => Attribute.leftAlignment,
-              });
-              focusNode.requestFocus();
-            });
+            );
           },
           icon: HugeIcon(
             icon: icon,
@@ -476,7 +496,8 @@ class NoteToolbar extends ConsumerWidget {
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_link'.tr(),
           visualDensity: VisualDensity.compact,
-          onPressed: () => noteSetLink(context, controller, focusNode),
+          onPressed: () =>
+              noteSetLinkBubble(context, controller, focusNode),
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedLink01,
             size: 16,
@@ -488,25 +509,48 @@ class NoteToolbar extends ConsumerWidget {
     );
   }
 
-  PopupMenuItem<String> _stringMenuItem(
-    String value,
-    String labelKey,
-    List<List<dynamic>> icon,
-    BuildContext context,
-  ) {
-    return PopupMenuItem<String>(
-      value: value,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Row(
-        children: [
-          HugeIcon(
-            icon: icon,
-            size: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 6),
-          Text(labelKey.tr()),
-        ],
+  /// 气泡菜单项：图标 + 文案 + 选中勾选标记
+  Widget _bubbleMenuTile(
+    BuildContext context, {
+    required List<List<dynamic>> icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      hoverColor: colorScheme.primary.withValues(alpha: .08),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Row(
+          children: [
+            HugeIcon(
+              icon: icon,
+              size: 15,
+              color: selected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: selected ? colorScheme.primary : colorScheme.onSurface,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+            const Spacer(),
+            if (selected)
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                size: 14,
+                color: colorScheme.primary,
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
+import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,6 +58,17 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   Timer? _debounce;
   bool _disposed = false;
   int _wordCount = 0;
+
+  /// 会话服务实例（懒加载缓存一次，后续复用）
+  NoteSessionService? _cachedSessionService;
+
+  NoteSessionService get _sessionService {
+    final cached = _cachedSessionService;
+    if (cached != null) return cached;
+    final created = ref.read(noteSessionServiceProvider.notifier);
+    _cachedSessionService = created;
+    return created;
+  }
 
   /// 右侧「在文档中查找」面板是否展开
   bool _showSearch = false;
@@ -135,7 +147,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
 
     final delta = jsonEncode(controller.document.toDelta().toJson());
     final plain = controller.document.toPlainText();
-    final notifier = ref.read(noteSessionServiceProvider.notifier);
+    final notifier = _sessionService;
     notifier.updateContent(content: delta, plainText: plain);
 
     final count = plain.length;
@@ -150,8 +162,21 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 1500), () {
       if (_disposed || !mounted) return;
-      ref.read(noteSessionServiceProvider.notifier).save();
+      _saveNow();
     });
+  }
+
+  /// 立即保存当前改动（取消待执行的防抖）。
+  ///
+  /// 保存成功后静默刷新树列表，让左侧列表的标题 / 预览及时更新，
+  /// 避免「改了标题列表里还是旧标题」的观感。
+  Future<void> _saveNow() async {
+    _debounce?.cancel();
+    _debounce = null;
+    // 网络异常时 save 会抛错，这里兜底为失败，避免影响编辑流程
+    final ok = await _sessionService.save().catchError((Object _) => false);
+    if (!ok || _disposed || !mounted) return;
+    ref.read(noteTreeServiceProvider.notifier).refresh(quiet: true);
   }
 
   void _onFocusChanged() {
@@ -756,7 +781,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
         if (event is KeyDownEvent &&
             HardwareKeyboard.instance.isControlPressed &&
             event.logicalKey == LogicalKeyboardKey.keyS) {
-          ref.read(noteSessionServiceProvider.notifier).save();
+          _sessionService.save().catchError((Object _) => false);
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -853,13 +878,18 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     ColorScheme colorScheme,
   ) {
     return Focus(
-      onFocusChange: (_) => setState(() {}),
+      onFocusChange: (hasFocus) {
+        setState(() {});
+        // 标题失焦时立即保存，不用等 1.5s 防抖
+        if (!hasFocus) _saveNow();
+      },
       child: TextField(
         controller: _titleControllerOf(session),
         onChanged: (value) {
-          ref.read(noteSessionServiceProvider.notifier).updateTitle(value);
+          _sessionService.updateTitle(value);
           _scheduleSave();
         },
+        onSubmitted: (_) => _saveNow(),
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         decoration: InputDecoration(
           isDense: true,
@@ -915,7 +945,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
         'note_autosave_saved'.tr(args: [_formatTime(session.lastSavedAt)]),
       ),
       NoteSaveState.failed => TextButton.icon(
-        onPressed: () => ref.read(noteSessionServiceProvider.notifier).save(),
+        onPressed: () => _sessionService.save().catchError((Object _) => false),
         icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 14),
         label: Text('note_autosave_failed'.tr()),
       ),

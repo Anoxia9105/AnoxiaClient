@@ -970,22 +970,22 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
       context: context,
       position: relative,
       color: colorScheme.surfaceContainerLow,
-      elevation: 14,
-      shadowColor: Colors.black.withValues(alpha: .3),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: .25),
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         side: BorderSide(
           color: colorScheme.outlineVariant.withValues(alpha: .4),
         ),
       ),
-      constraints: const BoxConstraints(minWidth: 224, maxWidth: 300),
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
       clipBehavior: Clip.antiAlias,
       items: [
         _ContextMenuHeaderEntry(icon: headerIcon, title: headerTitle),
-        const PopupMenuDivider(height: 10),
+        const PopupMenuDivider(height: 6),
         for (var i = 0; i < entries.length; i++) ...[
-          if (entries[i].separatorBefore) const PopupMenuDivider(height: 10),
+          if (entries[i].separatorBefore) const PopupMenuDivider(height: 6),
           _ContextMenuItem(entry: entries[i]),
         ],
       ],
@@ -1150,7 +1150,7 @@ class _ContextMenuItem extends PopupMenuEntry<_NodeAction> {
   final _ContextMenuEntry entry;
 
   @override
-  double get height => 42;
+  double get height => 34;
 
   @override
   bool represents(_NodeAction? value) => value == entry.action;
@@ -1176,26 +1176,26 @@ class _ContextMenuItemState extends State<_ContextMenuItem> {
       onTap: enabled
           ? () => Navigator.of(context).pop(widget.entry.action)
           : null,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
       hoverColor: colorScheme.primaryContainer.withValues(alpha: .35),
       highlightColor: accent.withValues(alpha: .1),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         child: Row(
           children: [
             Container(
-              width: 30,
-              height: 30,
+              width: 26,
+              height: 26,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: enabled
                     ? accent.withValues(alpha: entry.danger ? .10 : .08)
                     : colorScheme.onSurface.withValues(alpha: .04),
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: HugeIcon(
                 icon: entry.icon,
-                size: 16,
+                size: 14,
                 color: !enabled
                     ? colorScheme.onSurface.withValues(alpha: .25)
                     : entry.danger
@@ -1203,14 +1203,14 @@ class _ContextMenuItemState extends State<_ContextMenuItem> {
                     : colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 entry.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: labelColor,
                 ),
@@ -1231,7 +1231,7 @@ class _ContextMenuHeaderEntry extends PopupMenuEntry<_NodeAction> {
   final String title;
 
   @override
-  double get height => 44;
+  double get height => 34;
 
   @override
   bool represents(_NodeAction? value) => false;
@@ -1246,32 +1246,32 @@ class _ContextMenuHeaderEntryState extends State<_ContextMenuHeaderEntry> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 5),
       color: colorScheme.primary.withValues(alpha: .05),
       child: Row(
         children: [
           Container(
-            width: 26,
-            height: 26,
+            width: 22,
+            height: 22,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: .1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(7),
             ),
             child: HugeIcon(
               icon: widget.icon,
-              size: 14,
+              size: 12,
               color: colorScheme.primary,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               widget.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),

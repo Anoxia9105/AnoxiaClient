@@ -126,8 +126,16 @@ class QuillStyleConfig {
         null,
         // 任务列表复选框放大到 18px，点击区域更大、更易操作。
         const _TaskCheckboxBuilder(),
-        indentWidthBuilder: (block, context, count, numberPointWidth) =>
-            const HorizontalSpacing(16, 16),
+        // 任务列表的引导槽加宽：18px 复选框按真实尺寸渲染，
+        // 与正文之间留出约 10px 间距，避免复选框紧贴文字。
+        indentWidthBuilder: (block, context, count, numberPointWidth) {
+          final listAttr = block.style.attributes[Attribute.list.key];
+          final isCheck =
+              listAttr == Attribute.checked || listAttr == Attribute.unchecked;
+          return isCheck
+              ? const HorizontalSpacing(28, 16)
+              : const HorizontalSpacing(16, 16);
+        },
         numberPointWidthBuilder: (fontSize, count) => 24.0,
       ),
       // 代码块样式
