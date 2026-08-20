@@ -139,6 +139,8 @@ void notePickColorBubble(
         focusNode.requestFocus();
       },
       buttonContext,
+      // 气泡自带边框，关闭面板内层边框，避免双重描边
+      showBorder: false,
       selectedColor: ColorsBox.parseColorFromValue(
         controller
             .getSelectionStyle()

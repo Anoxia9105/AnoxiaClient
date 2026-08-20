@@ -57,11 +57,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
         return _buildLoaded(context, items, filtered);
       },
     );
+    // 标题由左栏列表面板的 AppBar 提供（与聊天/人员页一致）：
+    // 桌面端靠左显示在面板栏内，移动端整页居中显示。
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: DeviceUtil.isMobile(context),
-        title: Text('sidebar_favorites'.tr()),
-      ),
+      backgroundColor: Colors.transparent,
       body: body,
     );
   }
@@ -165,47 +164,59 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   Widget _buildLoading(BuildContext context) {
     final mobile = DeviceUtil.isMobile(context);
     if (mobile) {
-      return const _FavoriteListSkeleton();
+      return _favoritesTitleScaffold(
+        context,
+        child: const _FavoriteListSkeleton(),
+      );
     }
 
-    return const Row(
+    return Row(
       children: [
-        SizedBox(width: 340, child: _FavoriteListSkeleton()),
-        SizedBox(width: 12),
-        Expanded(child: _FavoriteDetailSkeleton()),
+        SizedBox(
+          width: 340,
+          child: _favoritesTitleScaffold(
+            context,
+            child: const _FavoriteListSkeleton(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(child: _FavoriteDetailSkeleton()),
       ],
     );
   }
 
   /// 构建错误状态界面
   Widget _buildError(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            color: Theme.of(context).colorScheme.error,
-            size: 28,
-          ),
-          const SizedBox(height: 8),
-          Text('chat_load_failed'.tr()),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
+    return _favoritesTitleScaffold(
+      context,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedAlertCircle,
+              color: Theme.of(context).colorScheme.error,
+              size: 28,
             ),
-          ),
-          const SizedBox(height: 10),
-          FilledButton.tonal(
-            onPressed: () => ref.invalidate(chatFavoriteListProvider),
-            child: Text('call_window_retry'.tr()),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text('chat_load_failed'.tr()),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FilledButton.tonal(
+              onPressed: () => ref.invalidate(chatFavoriteListProvider),
+              child: Text('call_window_retry'.tr()),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -221,10 +232,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     if (mobile) {
       if (filtered.isEmpty) {
         return items.isEmpty
-            ? _EmptyFavorites(
-                onRefresh: () => ref.invalidate(chatFavoriteListProvider),
+            ? _favoritesTitleScaffold(
+                context,
+                child: _EmptyFavorites(
+                  onRefresh: () => ref.invalidate(chatFavoriteListProvider),
+                ),
               )
-            : _NoMatchFavorites(onClearFilters: _clearFilters);
+            : _favoritesTitleScaffold(
+                context,
+                child: _NoMatchFavorites(onClearFilters: _clearFilters),
+              );
       }
       return _FavoriteListPanel(
         items: filtered,
@@ -299,6 +316,21 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
       onDelete: () => _confirmRemove(selected),
     );
   }
+}
+
+/// 收藏页标题 Scaffold（列表面板 AppBar 之外的加载 / 空态 / 错误态共用）
+///
+/// 与聊天 / 人员页保持一致：桌面端标题靠左，移动端居中。
+Widget _favoritesTitleScaffold(BuildContext context, {required Widget child}) {
+  return Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(
+      centerTitle: DeviceUtil.isMobile(context),
+      titleSpacing: 16,
+      title: Text('sidebar_favorites'.tr()),
+    ),
+    body: child,
+  );
 }
 
 /// 收藏详情移动端页面
@@ -432,155 +464,156 @@ class _FavoriteListPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(14, 14, 8, 12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: cs.outlineVariant.withValues(alpha: .6),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isMobile(context),
+        titleSpacing: 16,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                'sidebar_favorites'.tr(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 3,
+              ),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: .55),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'favorite_count'.tr(args: [totalCount.toString()]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'call_window_retry'.tr(),
+            onPressed: onRefresh,
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedRefresh01,
+              size: 20,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        ],
+      ),
+      body: Column(
+        children: [
+          // 类型筛选（标签）统一放在标题下面，搜索框随后
+          if (totalCount > 0)
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: cs.outlineVariant.withValues(alpha: .6),
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'sidebar_favorites'.tr(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.primaryContainer.withValues(alpha: .55),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            'favorite_count'.tr(args: [totalCount.toString()]),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cs.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                  SizedBox(
+                    height: 30,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: availableTypes.length + 1,
+                      separatorBuilder: (_, _) => const SizedBox(width: 6),
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return _TypeFilterChip(
+                            label: 'favorite_all_types'.tr(),
+                            icon: HugeIcons.strokeRoundedGrid,
+                            selected: typeFilter == null,
+                            onTap: () => onTypeChanged(null),
+                          );
+                        }
+                        final type = availableTypes[index - 1];
+                        return _TypeFilterChip(
+                          label: _typeLabel(type),
+                          icon: _typeStyle(type).icon,
+                          selected: typeFilter == type,
+                          onTap: () => onTypeChanged(type),
+                        );
+                      },
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'call_window_retry'.tr(),
-                    onPressed: onRefresh,
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedRefresh01,
-                      size: 20,
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: searchController,
+                    onChanged: onQueryChanged,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'favorite_search_hint'.tr(),
+                      hintStyle: TextStyle(
+                        fontSize: 12.5,
+                        color: cs.onSurfaceVariant.withValues(alpha: .7),
+                      ),
+                      prefixIconConstraints: const BoxConstraints.tightFor(
+                        width: 34,
+                        height: 34,
+                      ),
+                      prefixIcon: Center(
+                        child: SizedBox.square(
+                          dimension: 15,
+                          child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedSearch02,
+                            size: 14,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      suffixIcon: query.isNotEmpty
+                          ? IconButton(
+                              tooltip: 'cancel'.tr(),
+                              iconSize: 16,
+                              onPressed: () {
+                                searchController.clear();
+                                onQueryChanged('');
+                              },
+                              icon: HugeIcon(
+                                icon: HugeIcons.strokeRoundedCancel01,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 9,
+                      ),
                     ),
                   ),
                 ],
               ),
-              if (totalCount > 0) ...[
-                const SizedBox(height: 10),
-                TextField(
-                  controller: searchController,
-                  onChanged: onQueryChanged,
-                  style: const TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: 'favorite_search_hint'.tr(),
-                    hintStyle: TextStyle(
-                      fontSize: 12.5,
-                      color: cs.onSurfaceVariant.withValues(alpha: .7),
-                    ),
-                    prefixIconConstraints: const BoxConstraints.tightFor(
-                      width: 34,
-                      height: 34,
-                    ),
-                    prefixIcon: Center(
-                      child: SizedBox.square(
-                        dimension: 15,
-                        child: HugeIcon(
-                          icon: HugeIcons.strokeRoundedSearch02,
-                          size: 14,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    suffixIcon: query.isNotEmpty
-                        ? IconButton(
-                            tooltip: 'cancel'.tr(),
-                            iconSize: 16,
-                            onPressed: () {
-                              searchController.clear();
-                              onQueryChanged('');
-                            },
-                            icon: HugeIcon(
-                              icon: HugeIcons.strokeRoundedCancel01,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          )
-                        : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 9),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 30,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: availableTypes.length + 1,
-                    separatorBuilder: (_, _) => const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return _TypeFilterChip(
-                          label: 'favorite_all_types'.tr(),
-                          icon: HugeIcons.strokeRoundedGrid,
-                          selected: typeFilter == null,
-                          onTap: () => onTypeChanged(null),
-                        );
-                      }
-                      final type = availableTypes[index - 1];
-                      return _TypeFilterChip(
-                        label: _typeLabel(type),
-                        icon: _typeStyle(type).icon,
-                        selected: typeFilter == type,
-                        onTap: () => onTypeChanged(type),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) => _FavoriteListItem(
-              item: items[index],
-              selected: items[index].id == selectedId,
-              onTap: () => onSelect(items[index].id),
+            ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) => _FavoriteListItem(
+                item: items[index],
+                selected: items[index].id == selectedId,
+                onTap: () => onSelect(items[index].id),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

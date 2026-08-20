@@ -254,119 +254,88 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final treeAsync = ref.watch(noteTreeServiceProvider);
+    final total = treeAsync.value?.totalNoteCount ?? 0;
 
-    return Column(
-      children: [
-        _buildHeader(context, colorScheme, treeAsync),
-        if (_query.isEmpty) _buildActionRow(context, colorScheme),
-        const SizedBox(height: 6),
-        _buildSearchField(context, colorScheme),
-        if (_query.isEmpty) ...[
-          const SizedBox(height: 4),
-          _buildTagFilterBar(context, colorScheme),
-        ],
-        const SizedBox(height: 6),
-        Expanded(child: _buildBody(context, colorScheme, treeAsync)),
-      ],
-    );
-  }
-
-  Widget _buildHeader(
-    BuildContext context,
-    ColorScheme colorScheme,
-    AsyncValue<NoteTree> treeAsync,
-  ) {
-    final tree = treeAsync.value;
-    final total = tree?.totalNoteCount ?? 0;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 8, 10),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: .6),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'sidebar_note'.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withValues(
-                          alpha: .55,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        'note_total_count'.tr(args: [total.toString()]),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        centerTitle: DeviceUtil.isMobile(context),
+        titleSpacing: 16,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                'sidebar_note'.tr(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 3,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: .55),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'note_total_count'.tr(args: [total.toString()]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'note_trash'.tr(),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(
+              width: 34,
+              height: 34,
+            ),
+            onPressed: () => showNoteTrashDialog(context),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedDelete02,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'note_trash'.tr(),
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints.tightFor(
-                  width: 28,
-                  height: 28,
-                ),
-                onPressed: () => showNoteTrashDialog(context),
-                icon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedDelete02,
-                  size: 15,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              IconButton(
-                tooltip: 'call_window_retry'.tr(),
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints.tightFor(
-                  width: 28,
-                  height: 28,
-                ),
-                onPressed: () =>
-                    ref.read(noteTreeServiceProvider.notifier).refresh(),
-                icon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedRefresh01,
-                  size: 15,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+          IconButton(
+            tooltip: 'call_window_retry'.tr(),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(
+              width: 34,
+              height: 34,
+            ),
+            onPressed: () =>
+                ref.read(noteTreeServiceProvider.notifier).refresh(),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedRefresh01,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // 标签过滤（标签）统一放在标题下面，随后是操作行与搜索框
+          if (_query.isEmpty) ...[
+            _buildTagFilterBar(context, colorScheme),
+            const SizedBox(height: 6),
+          ],
+          if (_query.isEmpty) _buildActionRow(context, colorScheme),
+          const SizedBox(height: 8),
+          _buildSearchField(context, colorScheme),
+          const SizedBox(height: 8),
+          Expanded(child: _buildBody(context, colorScheme, treeAsync)),
         ],
       ),
     );

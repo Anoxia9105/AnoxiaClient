@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
+import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_open_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
@@ -36,6 +37,12 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   @override
   void initState() {
     super.initState();
+    // 进入记事本页即静默刷新树：移动端每次 push 都会重新走 initState；
+    // 桌面端常驻 IndexedStack 只走一次，由下方布局监听负责切页签时刷新。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(noteTreeServiceProvider.notifier).refresh(quiet: true);
+    });
     final initial = widget.initialNoteId;
     if (initial != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,13 +76,23 @@ class _NotesPageState extends ConsumerState<NotesPage> {
       });
     });
 
+    // 桌面端常驻 IndexedStack：切到记事本页签时静默刷新树，
+    // 保证换账号 / 他端修改后进入即见最新数据。
+    ref.listen(layoutControllerProvider, (previous, next) {
+      final noteIndex = next.items.indexWhere(
+        (item) => item.name == 'sidebar_note',
+      );
+      if (noteIndex != -1 && next.currentIndex == noteIndex) {
+        ref.read(noteTreeServiceProvider.notifier).refresh(quiet: true);
+      }
+    });
+
     final mobile = DeviceUtil.isMobile(context);
 
+    // 标题由树面板的 AppBar 提供（与聊天/人员/收藏页一致）：
+    // 桌面端靠左显示在树面板栏内，移动端整页居中显示。
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: mobile
-          ? AppBar(centerTitle: true, title: Text('sidebar_note'.tr()))
-          : null,
       body: mobile
           ? NoteTreePanel(
               selectedNoteId: null,

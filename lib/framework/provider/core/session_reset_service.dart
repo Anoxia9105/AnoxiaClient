@@ -8,6 +8,12 @@ import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.da
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/note/note_content_provider.dart';
+import 'package:anoxia/framework/provider/note/note_open_provider.dart';
+import 'package:anoxia/framework/provider/note/note_tag_provider.dart';
+import 'package:anoxia/framework/provider/note/note_trash_provider.dart';
+import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
+import 'package:anoxia/framework/provider/note/note_version_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SessionResetReason { logout, tokenExpired, accountSwitch }
@@ -37,6 +43,13 @@ class SessionResetService {
     'chatFileUploadControllerProvider',
     'roomSearchQueryProvider',
     'chatFavoriteListProvider',
+    'noteTreeServiceProvider',
+    'noteTagServiceProvider',
+    'noteSessionServiceProvider',
+    'noteTrashServiceProvider',
+    'noteVersionServiceProvider',
+    'noteTagFilterProvider(*)',
+    'noteOpenRequestProvider(*)',
   ];
 
   void reset(Ref ref, {required SessionResetReason reason}) {
@@ -64,6 +77,18 @@ class SessionResetService {
     container.invalidate(chatFileUploadControllerProvider);
     container.invalidate(roomSearchQueryProvider);
     container.invalidate(chatFavoriteListProvider);
+
+    // 记事本：树 / 标签 / 回收站 / 版本历史 / 编辑会话均与账号强相关，
+    // 登出或切账号后必须失效，否则新账号进入记事本会看到上一个账号的
+    // 笔记树、标签、回收站与正在编辑的内容。
+    container.invalidate(noteTreeServiceProvider);
+    container.invalidate(noteTagServiceProvider);
+    container.invalidate(noteSessionServiceProvider);
+    container.invalidate(noteTrashServiceProvider);
+    container.invalidate(noteVersionServiceProvider);
+    // 标签筛选与深链打开请求为纯内存状态，一并复位。
+    container.read(noteTagFilterProvider.notifier).state = null;
+    container.read(noteOpenRequestProvider.notifier).state = null;
 
     debugLog(
       '[SessionReset] 会话状态重置完成, reason=$reasonLabel, scopes=${managedScopes.length}',

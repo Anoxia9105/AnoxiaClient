@@ -228,7 +228,9 @@ class NoteToolbar extends ConsumerWidget {
     );
   }
 
-  /// 任务列表按钮：仅当当前列表为待办/完成态时高亮，点击在两种状态间切换。
+  /// 任务列表按钮：当前处于任务列表时高亮。
+  /// 点击为完整开关——未处于任务列表时插入复选框，
+  /// 已处于任务列表时移除复选框（还原为普通段落），方便删掉误加的条目。
   Widget _buildTaskListButton(BuildContext context, Color color) {
     final colorScheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
@@ -250,8 +252,11 @@ class NoteToolbar extends ConsumerWidget {
           ),
           visualDensity: VisualDensity.compact,
           onPressed: () {
-            if (isChecked) {
-              controller.formatSelection(Attribute.unchecked);
+            if (isSelected) {
+              // 再次点击移除复选框，还原为普通段落
+              controller.formatSelection(
+                Attribute.clone(Attribute.list, null),
+              );
             } else {
               controller.formatSelection(Attribute.checked);
             }

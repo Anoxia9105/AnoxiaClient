@@ -14,6 +14,7 @@ class ColorsBox {
     Function(String?)? onTap,
     BuildContext context, {
     Color? selectedColor,
+    bool showBorder = true,
   }) {
     final theme = Theme.of(context);
 
@@ -104,10 +105,14 @@ class ColorsBox {
     return Material(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        side: BorderSide(
-          width: 1,
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-        ),
+        // 气泡内展示时关闭自带边框（showBorder=false），
+        // 由外层气泡提供边框，避免重置按钮区域出现双重描边。
+        side: showBorder
+            ? BorderSide(
+                width: 1,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+              )
+            : BorderSide.none,
         borderRadius: BorderRadius.circular(12),
       ),
       color: theme.colorScheme.surfaceBright,

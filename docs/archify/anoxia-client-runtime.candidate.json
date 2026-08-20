@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AnoxiaClient 运行时架构",
+    "output": "anoxia-client-runtime.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "main-path",
+        "label": "主路径 · 消息收发",
+        "focus": ["ui", "state", "domain", "data", "server", "ws", "codec", "cache"],
+        "note": "上行发送与下行推送构成闭环：UI → 状态 → 用例 → 仓储 → REST；WS → 编解码 → 落库 → 状态 → UI。"
+      },
+      {
+        "id": "startup-auth",
+        "label": "启动与认证",
+        "focus": ["bootstrap", "secure", "state", "data", "ws", "codec"],
+        "note": "入口预取 Token、挂载根组件；登录后状态层驱动 WS 连接、REST 同步与本地落库。"
+      },
+      {
+        "id": "trust-boundary",
+        "label": "信任边界",
+        "focus": ["ws", "codec", "secure", "cache", "server", "push"],
+        "note": "不可信网络数据仅在编解码层解析校验；Token 与离线数据隔离存储。"
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [40, 40],
+    "cols": 6,
+    "cellW": 190,
+    "cellH": 84,
+    "gapX": 56,
+    "gapY": 56
+  },
+  "components": [
+    { "id": "bootstrap", "type": "frontend", "label": "应用入口", "sublabel": "main.dart · 窗口管理", "row": 0, "col": 0 },
+    { "id": "ui", "type": "frontend", "label": "功能界面层", "sublabel": "features/*/presentation", "row": 0, "col": 1 },
+    { "id": "state", "type": "backend", "label": "Riverpod 状态层", "sublabel": "framework/provider", "row": 0, "col": 2 },
+    { "id": "domain", "type": "backend", "label": "领域层", "sublabel": "用例 · 仓储接口", "row": 0, "col": 3 },
+    { "id": "data", "type": "backend", "label": "数据仓储层", "sublabel": "DioClient · RemoteDataSource", "row": 0, "col": 4 },
+    { "id": "server", "type": "external", "label": "AnoxiaServer", "sublabel": "REST · WS · 文件服务", "row": 0, "col": 5, "tag": "不可信 · 网络对端" },
+    { "id": "core", "type": "backend", "label": "核心服务", "sublabel": "通知/推送/日志", "row": 1, "col": 0 },
+    { "id": "cache", "type": "database", "label": "本地数据库", "sublabel": "drift · SQLite/Wasm", "row": 1, "col": 2, "tag": "水位 + 离线队列" },
+    { "id": "secure", "type": "security", "label": "令牌与安全存储", "sublabel": "TokenManager", "row": 1, "col": 3, "tag": "flutter_secure_storage" },
+    { "id": "codec", "type": "backend", "label": "协议与编解码", "sublabel": "PacketRegistry · protobuf", "row": 1, "col": 4 },
+    { "id": "ws", "type": "messagebus", "label": "WebSocket 长连接", "sublabel": "心跳 · 重连 · 分发", "row": 1, "col": 5 },
+    { "id": "push", "type": "external", "label": "推送服务", "sublabel": "极光 JPush / FCM", "row": 2, "col": 0, "tag": "不可信 · 外部服务" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "AnoxiaClient 运行时（Flutter 客户端进程）", "wraps": ["bootstrap", "ui", "state", "domain", "data", "core", "cache", "secure", "codec", "ws"], "pad": 40 },
+    { "kind": "security-group", "label": "入站解析边界 · 不可信数据仅在此解码校验", "wraps": ["codec", "ws"] },
+    { "kind": "security-group", "label": "本地会话信任区 · Token 与离线数据", "wraps": ["cache", "secure"] }
+  ],
+  "connections": [
+    { "id": "ui-state", "from": "ui", "to": "state", "label": "操作上行 / 刷新下行", "variant": "emphasis" },
+    { "id": "state-domain", "from": "state", "to": "domain", "label": "执行用例", "variant": "emphasis" },
+    { "id": "domain-data", "from": "domain", "to": "data", "label": "仓储调用", "variant": "emphasis" },
+    { "id": "data-server", "from": "data", "to": "server", "label": "REST 同步 · 鉴权", "variant": "emphasis" },
+    { "id": "server-ws", "from": "server", "to": "ws", "label": "WS 推送 · 长连接", "variant": "emphasis", "labelAt": [1330, 114] },
+    { "id": "ws-codec", "from": "ws", "to": "codec", "label": "解码校验", "variant": "emphasis" },
+    { "id": "codec-cache", "from": "codec", "to": "cache", "label": "消息落库", "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "cache-state", "from": "cache", "to": "state", "label": "数据变更", "variant": "emphasis" },
+    { "id": "bootstrap-ui", "from": "bootstrap", "to": "ui", "label": "挂载根组件" },
+    { "id": "secure-data", "from": "secure", "to": "data", "label": "注入 Token", "variant": "security", "fromSide": "top", "toSide": "bottom" },
+    { "id": "push-core", "from": "push", "to": "core", "label": "远程推送事件", "variant": "dashed" },
+    { "id": "core-ui", "from": "core", "to": "ui", "label": "本地通知 · 角标", "variant": "dashed", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "主路径 · 消息收发", "items": [ "上行：UI → 状态层 → 领域用例 → 仓储 → REST", "下行：WS 推送 → 编解码校验 → drift 落库 → 状态层 → UI", "增量同步按 max seq 收敛回写水位，离线重试走 SQLite 队列" ] },
+    { "dot": "rose", "title": "信任边界", "items": [ "入站数据仅在 ws/codec 解析校验后进入可信域", "Token 经 TokenManager/安全存储，仅对服务器暴露", "桌面子窗口使用独立 ProviderContainer，只同步 Token", "Web 端跨标签登录变更 → 清会话缓存并整页重载" ] },
+    { "dot": "amber", "title": "外部依赖", "items": [ "AnoxiaServer：REST + WS + 文件上传下载", "移动推送：极光 JPush / Firebase FCM", "音视频通话：LiveKit + WebRTC（独立通话窗口）", "平台插件经 shims 条件导出：窗口/托盘/热键/多窗口" ] }
+  ]
+}

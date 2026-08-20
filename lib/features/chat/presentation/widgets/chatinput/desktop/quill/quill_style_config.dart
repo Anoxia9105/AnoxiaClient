@@ -181,29 +181,34 @@ class _TaskCheckboxBuilder implements QuillCheckboxBuilder {
     required ValueChanged<bool> onChanged,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    return SizedBox.square(
-      dimension: _size,
-      child: Material(
-        color: isChecked ? colorScheme.primary : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: isChecked
-                ? colorScheme.primary
-                : colorScheme.onSurface.withValues(alpha: .4),
-            width: 1.4,
+    // 复选框与正文之间留 8px 空隙（默认实现自带 end: size/2 间距，
+    // 自定义样式丢失了它，导致复选框紧贴文字）。
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: SizedBox.square(
+        dimension: _size,
+        child: Material(
+          color: isChecked ? colorScheme.primary : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: isChecked
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withValues(alpha: .4),
+              width: 1.4,
+            ),
+            borderRadius: BorderRadius.circular(5),
           ),
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: InkWell(
-          onTap: () => onChanged(!isChecked),
-          borderRadius: BorderRadius.circular(5),
-          child: isChecked
-              ? Icon(
-                  Icons.check,
-                  size: _size - 5,
-                  color: colorScheme.onPrimary,
-                )
-              : null,
+          child: InkWell(
+            onTap: () => onChanged(!isChecked),
+            borderRadius: BorderRadius.circular(5),
+            child: isChecked
+                ? Icon(
+                    Icons.check,
+                    size: _size - 5,
+                    color: colorScheme.onPrimary,
+                  )
+                : null,
+          ),
         ),
       ),
     );
