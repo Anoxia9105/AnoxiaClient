@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/presentation/call/component/call_loading_state.dart';
 import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/audio_call_background.dart';
@@ -143,11 +144,7 @@ class MobileVideoLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (participants.isEmpty) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      );
+      return const CallLoadingState();
     }
 
     if (participants.length <= 2) {

@@ -21,6 +21,12 @@ class StorageKeys {
   /// 若不一致则先清空本地缓存，避免展示上一个账号的残留数据。
   static const String lastLoginUserId = 'LAST_LOGIN_USER_ID';
 
+  /// 已登录账号列表（JSON 数组，见 [SavedAccount]）
+  ///
+  /// 「切换账号」功能的数据源：保存登录成功过的账号摘要与各自 token，
+  /// 上限 [SavedAccountsService.maxAccounts] 个，超出淘汰最久未用的。
+  static const String savedAccounts = 'SAVED_ACCOUNTS';
+
   /// 是否隐藏官方虚拟房间（布尔值，true=隐藏）
   static const String officialRoomHidden = 'OFFICIAL_ROOM_HIDDEN';
 }

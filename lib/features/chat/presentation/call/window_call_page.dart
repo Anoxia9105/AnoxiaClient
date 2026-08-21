@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_loading_state.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
@@ -190,7 +191,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     }
 
     if (!_callSettingsInitialized) {
-      return const Center(child: CircularProgressIndicator());
+      return const CallLoadingState();
     }
 
     final tokenAsync = _prefetchedToken.isNotEmpty
@@ -207,7 +208,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         errorText: 'call_window_room_creation_failed'.tr(),
         detail: err.toString(),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CallLoadingState(),
     );
   }
 }

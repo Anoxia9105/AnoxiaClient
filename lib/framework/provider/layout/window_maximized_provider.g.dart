@@ -80,7 +80,7 @@ final class WindowMaximizedProvider
   }
 }
 
-String _$windowMaximizedHash() => r'8f91980cee9caf1c879eaec889915a8e80a44558';
+String _$windowMaximizedHash() => r'246220ee0a2afda5bbef270c46bf0e5a6d2b7f76';
 
 /// 窗口最大化状态（每个窗口进程各一份，keepAlive 常驻）
 ///

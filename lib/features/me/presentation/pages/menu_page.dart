@@ -1,7 +1,9 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/features/note/presentation/pages/note_page.dart';
+import 'package:anoxia/features/settings/presentation/pages/account_switch_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/theme/theme_controller.dart';
@@ -33,10 +35,7 @@ class MenuPage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 32, 16, 16),
               child: authAsync.when(
-                loading: () => const SizedBox(
-                  height: 64,
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
+                loading: () => const _MenuHeaderSkeleton(),
                 error: (_, _) => const SizedBox(),
                 data: (user) {
                   if (user == null) return const SizedBox();
@@ -181,12 +180,22 @@ class MenuPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // 第二组：设置
+                  // 第二组：切换账号 / 设置
                   Material(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
                     child: Column(
                       children: [
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedUserArrowLeftRight,
+                          title: 'account_switch_title'.tr(), // 切换账号
+                          onTap: () => _pushPage(
+                            context,
+                            const AccountSwitchPage(),
+                          ),
+                        ),
+                        _buildTileDivider(),
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedSettings01,
@@ -387,5 +396,31 @@ class MenuPage extends ConsumerWidget {
             accentIndex: accentIndex,
           ),
         );
+  }
+}
+
+/// 菜单头部用户信息骨架（头像 + 昵称/账号名两行）
+class _MenuHeaderSkeleton extends StatelessWidget {
+  const _MenuHeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        SkeletonBox(width: 60, height: 60, circle: true),
+        SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SkeletonLine(width: 110, height: 15),
+              SizedBox(height: 6),
+              SkeletonLine(width: 78, height: 11),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

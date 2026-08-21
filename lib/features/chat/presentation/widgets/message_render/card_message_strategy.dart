@@ -3,13 +3,13 @@
 // 实现卡片类型消息的渲染逻辑，将 CardPayload 数据渲染为可点击的卡片组件。
 // 支持联系人卡片和群组卡片的识别与跳转。
 import 'package:anoxia/framework/domain/chat_message.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/note_card_preview_page.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'base/message_render_strategy.dart';
 
@@ -60,15 +60,27 @@ class _CardMessage extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: isContactCard || isGroupCard || isNoteCard
-            ? () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => isGroupCard
-                      ? GroupCardPreviewPage(roomId: card.entityId!)
-                      : isNoteCard
-                          ? NoteCardPreviewPage(card: card)
-                          : RecommendedContactDetailPage(card: card),
-                ),
-              )
+            ? () {
+                if (isGroupCard) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          GroupCardPreviewPage(roomId: card.entityId!),
+                    ),
+                  );
+                  return;
+                }
+                if (isNoteCard) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => NoteCardPreviewPage(card: card),
+                    ),
+                  );
+                  return;
+                }
+                // 联系人名片：桌面端/Web PC 弹窗，移动端/Web SP 跳转页面
+                showRecommendedContactDetail(context, card);
+              }
             : null,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 320, minWidth: 220),

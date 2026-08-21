@@ -9,6 +9,7 @@ import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/scan_login_controller.dart';
+import 'package:anoxia/framework/provider/auth/saved_accounts_provider.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -52,6 +53,20 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   /// 是否展示扫码登录入口（手机端扫码确认入口在 App 内）
   bool get _showScanMode => !DeviceUtil.isRealMobile();
+
+  @override
+  void initState() {
+    super.initState();
+    // 切换账号遇 token 过期降级到登录页时，预填目标账号名（消费后立即清空）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final prefill = ref.read(loginPrefillAccountProvider);
+      if (prefill != null && prefill.isNotEmpty) {
+        _usernameCtrl.text = prefill;
+        ref.read(loginPrefillAccountProvider.notifier).set(null);
+      }
+    });
+  }
 
   @override
   void dispose() {

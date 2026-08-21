@@ -1,5 +1,6 @@
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_loading_state.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/common/utils/device_util.dart';
@@ -137,13 +138,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
         );
       },
 
-      loading: () {
-        return Center(
-          child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      },
+      loading: () => const CallLoadingState(),
     );
   }
 }

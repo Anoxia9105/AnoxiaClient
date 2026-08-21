@@ -1,4 +1,5 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -24,7 +25,7 @@ class ContactRecommendDialog extends ConsumerWidget {
         width: dialogWidth,
         height: dialogHeight,
         child: roomsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const _RoomPickListSkeleton(),
           error: (_, _) => Center(
             child: TextButton.icon(
               onPressed: () => ref
@@ -83,6 +84,29 @@ class ContactRecommendDialog extends ConsumerWidget {
           child: Text('dialog_cancel'.tr()),
         ),
       ],
+    );
+  }
+}
+
+/// 会话选择列表骨架屏
+///
+/// 模拟真实布局：头像 + 会话名 + 类型副标题。
+class _RoomPickListSkeleton extends StatelessWidget {
+  const _RoomPickListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: 6,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (_, i) => ListTile(
+        leading: const SkeletonBox(width: 42, height: 42, circle: true),
+        title: SkeletonLine(width: 110 - (i % 3) * 18, height: 13),
+        subtitle: const Padding(
+          padding: EdgeInsets.only(top: 5),
+          child: SkeletonLine(width: 64, height: 10),
+        ),
+      ),
     );
   }
 }

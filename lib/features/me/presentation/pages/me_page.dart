@@ -2,6 +2,7 @@ import 'package:anoxia/common/constants/api.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
@@ -81,7 +82,7 @@ class _MyPageState extends ConsumerState<MyPage> {
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: authAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _MePageSkeleton(),
         error: (_, _) => Center(child: Text('chat_load_failed'.tr())),
         data: (user) {
           if (user == null) {
@@ -571,5 +572,112 @@ class _MyPageState extends ConsumerState<MyPage> {
     } finally {
       if (mounted) setState(() => _savingProfile = false);
     }
+  }
+}
+
+/// 「我的」页骨架屏
+///
+/// 模拟真实布局：顶部资料卡 + 分组标题 + 设置行卡片。
+class _MePageSkeleton extends StatelessWidget {
+  const _MePageSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+      children: [
+        _ProfileCardSkeleton(),
+        const SizedBox(height: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2),
+          child: SkeletonLine(width: 96, height: 13),
+        ),
+        const SizedBox(height: 8),
+        const _TileSectionSkeleton(rows: 4),
+        const SizedBox(height: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2),
+          child: SkeletonLine(width: 72, height: 13),
+        ),
+        const SizedBox(height: 8),
+        const _TileSectionSkeleton(rows: 1),
+      ],
+    );
+  }
+}
+
+/// 顶部资料卡骨架（头像 + 昵称/用户名 + 二维码入口）
+class _ProfileCardSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          SkeletonBox(width: 48, height: 48, circle: true),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SkeletonLine(width: 120, height: 15),
+                SizedBox(height: 6),
+                SkeletonLine(width: 90, height: 11),
+              ],
+            ),
+          ),
+          SkeletonBox(width: 24, height: 24, radius: 6, margin: EdgeInsets.only(left: 8)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 设置行卡片骨架（图标 + 标题 + 值 + 箭头）
+class _TileSectionSkeleton extends StatelessWidget {
+  final int rows;
+
+  const _TileSectionSkeleton({required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainer,
+      borderRadius: BorderRadius.circular(14),
+      child: Column(
+        children: [
+          for (var i = 0; i < rows; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                indent: 50,
+                endIndent: 14,
+                color: cs.outlineVariant.withValues(alpha: 0.5),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              child: Row(
+                children: [
+                  const SkeletonBox(width: 20, height: 20, radius: 5),
+                  const SizedBox(width: 16),
+                  const SkeletonLine(width: 64, height: 13),
+                  const Spacer(),
+                  SkeletonBox(width: 88 - (i % 3) * 18, height: 12, radius: 4),
+                  const SizedBox(width: 8),
+                  const SkeletonBox(width: 18, height: 18, radius: 5),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

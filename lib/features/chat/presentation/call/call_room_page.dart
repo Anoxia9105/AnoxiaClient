@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/call/component/call_error_state.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_loading_state.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/call_window_room_body.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/call_mobile_room_body.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
@@ -32,7 +33,7 @@ class CallRoomPage extends ConsumerWidget {
     final roomAsync = ref.watch(roomControllerProvider(token));
 
     return roomAsync.when(
-      loading: () => _buildLoadingState(context),
+      loading: () => const CallLoadingState(),
       error: (err, _) => CallErrorState(
         roomId: roomId,
         title: ref.read(mobileCallSessionControllerProvider)?.title,
@@ -57,33 +58,6 @@ class CallRoomPage extends ConsumerWidget {
           return CallWindowRoomBody(roomState: roomState, token: token);
         }
       },
-    );
-  }
-
-  /// 构建加载中状态
-  Widget _buildLoadingState(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 3),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'call_loading'.tr(),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 

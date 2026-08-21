@@ -3,6 +3,7 @@ import 'package:anoxia/features/settings/application/settings_page_controller.da
 import 'package:anoxia/features/me/presentation/pages/change_password_page.dart';
 import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/personal_qr_page.dart';
+import 'package:anoxia/features/settings/presentation/pages/account_switch_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_account_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
@@ -227,6 +228,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ).push(MaterialPageRoute<void>(builder: (_) => const ChangePasswordPage()));
   }
 
+  void _openSwitchAccount() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AccountSwitchPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -262,6 +269,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onOpenProfile: _openProfile,
               onOpenQrCode: _openPersonalQrCode,
               onChangePassword: _openChangePassword,
+              onSwitchAccount: _openSwitchAccount,
             ),
           ),
           SettingsDestination(

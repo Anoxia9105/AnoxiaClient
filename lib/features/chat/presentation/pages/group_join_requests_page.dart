@@ -2,6 +2,7 @@
 //
 // 展示所有待处理、已批准和已拒绝的入群申请，管理员可以批准或拒绝申请。
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -54,7 +55,7 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
           );
         }
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const _JoinRequestsSkeleton();
         }
         final rows = snapshot.data!;
         if (rows.isEmpty) {
@@ -129,5 +130,48 @@ class _GroupJoinRequestsPageState extends ConsumerState<GroupJoinRequestsPage> {
         );
       }
     }
+  }
+}
+
+/// 入群申请列表骨架屏
+///
+/// 模拟真实布局：头像 + 昵称/验证消息 + 尾部操作按钮。
+class _JoinRequestsSkeleton extends StatelessWidget {
+  const _JoinRequestsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: 6,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (_, i) => _JoinRequestTileSkeleton(variant: i % 3),
+    );
+  }
+}
+
+/// 单条入群申请骨架
+class _JoinRequestTileSkeleton extends StatelessWidget {
+  /// 行内文案宽度变体，避免每行完全一致
+  final int variant;
+
+  const _JoinRequestTileSkeleton({required this.variant});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const SkeletonBox(width: 42, height: 42, circle: true),
+      title: SkeletonLine(width: 96 + variant * 14, height: 13),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 5),
+        child: SkeletonLine(width: 150 - variant * 22, height: 11),
+      ),
+      trailing: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SkeletonBox(width: 22, height: 22, radius: 6, margin: EdgeInsets.only(right: 10)),
+          SkeletonBox(width: 22, height: 22, radius: 6),
+        ],
+      ),
+    );
   }
 }

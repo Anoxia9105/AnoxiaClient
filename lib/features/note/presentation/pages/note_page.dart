@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/note_editor.dart';
+import '../widgets/note_editor_skeleton.dart';
 import '../widgets/note_tree_panel.dart';
 
 /// 记事本页面
@@ -33,6 +34,10 @@ class _NotesPageState extends ConsumerState<NotesPage> {
 
   /// 正在打开中的笔记 ID：同步置位，防止连点/双击同一笔记重复 push 编辑页
   int? _openingNoteId;
+
+  /// 正在加载全文的笔记 ID：右侧编辑区据此显示骨架屏，
+  /// 避免切换笔记请求期间毫无反馈、观感像卡顿
+  int? _loadingNoteId;
 
   @override
   void initState() {
@@ -117,9 +122,14 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     final isFlat = style == DesktopLayoutStyle.flat;
     final colorScheme = Theme.of(context).colorScheme;
 
+    // 切换笔记请求期间用骨架屏替代编辑器，给出加载反馈
+    final editorChild = _loadingNoteId != null
+        ? const NoteEditorSkeleton()
+        : const NoteEditor();
+
     final editor = Expanded(
       child: isFlat
-          ? const NoteEditor()
+          ? editorChild
           : Padding(
               padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
               child: DecoratedBox(
@@ -132,7 +142,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                  child: const NoteEditor(),
+                  child: editorChild,
                 ),
               ),
             ),
@@ -161,6 +171,10 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     // 连点保护：上一次打开尚未完成（含编辑页未返回）时忽略后续点击
     if (_openingNoteId != null) return;
     _openingNoteId = noteId;
+    // 桌面端立即进入骨架屏加载态，右侧区域给出即时反馈
+    if (mounted && !DeviceUtil.isMobile(context)) {
+      setState(() => _loadingNoteId = noteId);
+    }
     try {
       // 切换前先把上一个会话的未保存内容落库，避免切换丢失
       await ref.read(noteSessionServiceProvider.notifier).save();
@@ -184,6 +198,9 @@ class _NotesPageState extends ConsumerState<NotesPage> {
       Toast.showToast('note_open_failed'.tr(), type: ToastType.error);
     } finally {
       _openingNoteId = null;
+      if (mounted) {
+        setState(() => _loadingNoteId = null);
+      }
     }
   }
 }

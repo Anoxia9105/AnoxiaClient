@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/core/auth_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
+import 'package:anoxia/framework/domain/saved_account.dart';
 import 'package:dio/dio.dart' show DioException;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -21,6 +22,7 @@ import '../chat/room/room_list_service.dart';
 import '../contact/contact_list_controller.dart';
 import '../core/app_initializer.dart';
 import '../core/session_reset_service.dart';
+import 'saved_accounts_provider.dart';
 import 'token_provider.dart';
 
 part 'auth_controller.g.dart';
@@ -49,6 +51,10 @@ class AuthController extends _$AuthController {
         await _ensureSessionCacheMatches(user.userId);
         _registerPushTokenRefreshBinding(user);
         unawaited(_bindPushDevice(user));
+        // 同步刷新「切换账号」列表中该账号的资料与时间戳
+        await ref
+            .read(savedAccountsServiceProvider.notifier)
+            .upsert(user: user, token: token);
       }
       return user;
     } catch (e, st) {
@@ -151,6 +157,10 @@ class AuthController extends _$AuthController {
         key: StorageKeys.lastLoginUserId,
         value: '${user.userId}',
       );
+      // 登录成功即写入「切换账号」列表（去重置顶，超限 LRU 淘汰）
+      await ref
+          .read(savedAccountsServiceProvider.notifier)
+          .upsert(user: user, token: token);
     }
     state = AsyncData(user);
   }
@@ -298,6 +308,126 @@ class AuthController extends _$AuthController {
   /// 获取用户信息
   Future<UserInfo?> _fetchUserInfo() {
     return ref.read(authRepositoryProvider).fetchUserInfo();
+  }
+
+  /// 是否正在切换账号（防连点/并发切换）
+  bool _isSwitching = false;
+
+  /// 一键切换到已保存的账号
+  ///
+  /// 切换不吊销旧账号 token（服务端同一账号多 token 并存、无互踢），
+  /// 仅本地替换当前会话；目标账号 token 已过期（服务端 7 天滑动 TTL）
+  /// 时移除该条目并回登录页（预填账号名）。
+  ///
+  /// 返回是否切换成功；失败且原账号仍可用时自动回退到原账号。
+  Future<bool> switchAccount(SavedAccount target) async {
+    if (_isLoggingOut || _isSwitching) return false;
+    final current = state.value;
+    if (current != null && current.userId == target.userId) return true;
+    _isSwitching = true;
+
+    final previousUser = state.value;
+    final previousToken = ref.read(tokenCacheProvider);
+    state = const AsyncLoading();
+
+    try {
+      await TokenManager.instance.setToken(target.token);
+      ref.read(tokenCacheProvider.notifier).setToken(target.token);
+
+      // 先确认目标账号 token 可用，再清理本地缓存——
+      // 避免网络抖动等失败场景误清当前账号的会话数据
+      final user = await _fetchUserInfo();
+      if (user == null || user.userId != target.userId) {
+        throw Exception('account_switch_user_mismatch');
+      }
+
+      unawaited(_unbindPushDevice(previousToken));
+      await SSUtil.instance.write(
+        key: StorageKeys.lastLoginUserId,
+        value: '${user.userId}',
+      );
+      await _clearLocalSessionCache();
+      state = AsyncData(user);
+
+      // 统一清理上个账号的会话级缓存（复用登出/切账号统一入口）
+      SessionResetService.instance.reset(
+        ref,
+        reason: SessionResetReason.accountSwitch,
+      );
+      _finishLoginSuccess();
+      await ref
+          .read(savedAccountsServiceProvider.notifier)
+          .upsert(user: user, token: target.token);
+      debugLog('[AuthController] 切换账号成功 -> ${user.userId}');
+      return true;
+    } catch (e, st) {
+      debugLog('[AuthController] 切换账号失败', e, st);
+      if (_isAuthExpiredError(e)) {
+        // 目标 token 已过期：从列表移除该条目，清登录态回登录页，
+        // 并预填账号名方便重新登录
+        await TokenManager.instance.clearToken();
+        ref.read(tokenCacheProvider.notifier).clearToken();
+        await _clearLocalSessionCache();
+        await ref.read(savedAccountsServiceProvider.notifier).remove(
+              target.userId,
+            );
+        ref.read(loginPrefillAccountProvider.notifier).set(target.userName);
+        state = const AsyncData(null);
+        SessionResetService.instance.reset(
+          ref,
+          reason: SessionResetReason.accountSwitch,
+        );
+        ref.read(toastServiceProvider).showToast(
+              'api_login_expired'.tr(),
+              type: ToastType.error,
+            );
+        return false;
+      }
+
+      // 网络/服务端异常：尝试回退到原账号会话，避免误伤当前登录态
+      var restored = false;
+      if (previousUser != null &&
+          previousToken != null &&
+          previousToken.isNotEmpty) {
+        try {
+          await TokenManager.instance.setToken(previousToken);
+          ref.read(tokenCacheProvider.notifier).setToken(previousToken);
+          final user = await _fetchUserInfo();
+          if (user?.userId == previousUser.userId) {
+            state = AsyncData(user);
+            restored = true;
+          }
+        } catch (_) {
+          restored = false;
+        }
+      }
+      if (!restored) {
+        await TokenManager.instance.clearToken();
+        ref.read(tokenCacheProvider.notifier).clearToken();
+        state = const AsyncData(null);
+      }
+      SessionResetService.instance.reset(
+        ref,
+        reason: SessionResetReason.accountSwitch,
+      );
+      ref.read(toastServiceProvider).showToast(
+            'account_switch_failed'.tr(),
+            type: ToastType.error,
+          );
+      return false;
+    } finally {
+      _isSwitching = false;
+    }
+  }
+
+  /// 判断异常是否为鉴权失效（业务码 401）
+  bool _isAuthExpiredError(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      final code = data is Map ? data['code'] : null;
+      return code == 401;
+    }
+    return false;
   }
 
   Future<void> _clearLocalSessionCache() async {

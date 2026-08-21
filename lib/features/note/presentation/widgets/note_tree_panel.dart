@@ -646,6 +646,9 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
           Container(
             width: 64,
             height: 64,
+            // 必须给 alignment：无 alignment 时 Container 会把 64×64 的
+            // tight 约束直接传给子级，内层 SizedBox.square 不生效，图标尺寸漂移
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(

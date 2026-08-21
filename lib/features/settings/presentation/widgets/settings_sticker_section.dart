@@ -159,12 +159,21 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
           ),
         ),
         const SizedBox(height: 12),
-        if (stickerState.uploading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (customPacks.isEmpty)
+        // 上传中：与聊天背景上传一致的细进度条样式（无字节级进度，用不确定态）
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          child: stickerState.uploading
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: const LinearProgressIndicator(minHeight: 6),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        if (!stickerState.uploading && customPacks.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Center(

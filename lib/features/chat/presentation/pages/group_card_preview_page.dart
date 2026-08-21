@@ -3,6 +3,7 @@
 // 展示群组名称、头像、简介、管理员列表，并根据群组的加入策略和当前状态
 // 提供加入、申请加入或直接进入群组的操作入口。
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/group_preview.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
@@ -41,7 +42,7 @@ class _GroupCardPreviewPageState extends ConsumerState<GroupCardPreviewPage> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const _GroupCardSkeleton();
         }
         if (snapshot.hasError) {
           return _Unavailable(
@@ -211,4 +212,58 @@ class _Unavailable extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// 群名片预览骨架屏
+///
+/// 模拟真实布局：居中群头像 + 群名/成员数 + 简介/管理员行 + 底部按钮。
+class _GroupCardSkeleton extends StatelessWidget {
+  const _GroupCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: const [
+        Center(child: SkeletonBox(width: 96, height: 96, radius: 16)),
+        SizedBox(height: 16),
+        Center(child: SkeletonLine(width: 140, height: 20, radius: 6)),
+        SizedBox(height: 8),
+        Center(child: SkeletonLine(width: 88, height: 13, radius: 5)),
+        SizedBox(height: 24),
+        _PreviewLineSkeleton(titleWidth: 72, valueWidth: 180),
+        _PreviewLineSkeleton(titleWidth: 72, valueWidth: 140),
+        SizedBox(height: 24),
+        Center(child: SkeletonBox(height: 44, radius: 22)),
+      ],
+    );
+  }
+}
+
+/// 简介行骨架（标题 + 两行内容）
+class _PreviewLineSkeleton extends StatelessWidget {
+  final double titleWidth;
+  final double valueWidth;
+
+  const _PreviewLineSkeleton({
+    required this.titleWidth,
+    required this.valueWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonLine(width: titleWidth, height: 14, radius: 5),
+          const SizedBox(height: 6),
+          SkeletonLine(width: valueWidth, height: 12, radius: 5),
+          const SizedBox(height: 4),
+          SkeletonLine(width: valueWidth * 0.6, height: 12, radius: 5),
+        ],
+      ),
+    );
+  }
 }

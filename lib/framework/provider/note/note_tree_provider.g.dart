@@ -45,7 +45,7 @@ final class NoteTreeServiceProvider
   NoteTreeService create() => NoteTreeService();
 }
 
-String _$noteTreeServiceHash() => r'22287947e6db47d11d18a8721025dbca94b032a2';
+String _$noteTreeServiceHash() => r'418d276031e4c2a55b6eff466815ca7dd3745ae9';
 
 /// 记事本完整树服务
 ///

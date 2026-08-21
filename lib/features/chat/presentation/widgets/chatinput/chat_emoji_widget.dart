@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -187,7 +188,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         ),
         Expanded(
           child: packsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const _StickerGridSkeleton(),
             // error: (error, stackTrace) => _buildLoadError(),
             error: (error, stackTrace) {
               debugLog('加载表情包失败: $error', error, stackTrace);
@@ -659,6 +660,27 @@ class MyCustomSearchViewState extends SearchViewState<MyCustomSearchView> {
           ],
         );
       },
+    );
+  }
+}
+
+/// 表情包贴图网格骨架屏
+///
+/// 模拟真实布局：与 [_ChatEmojiWidgetState._buildStickerGrid] 同款网格参数的方块阵列。
+class _StickerGridSkeleton extends StatelessWidget {
+  const _StickerGridSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 80,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemCount: 28,
+      itemBuilder: (_, i) => const SkeletonBox(width: 64, height: 64, radius: 10),
     );
   }
 }

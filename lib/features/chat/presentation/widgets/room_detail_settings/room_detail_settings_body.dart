@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_list_section.dart';
@@ -51,7 +52,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentRoom = ref.watch(currentRoomProvider(roomId));
     if (currentRoom == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const _SettingsBodySkeleton();
     }
 
     // 官方虚拟房间：展示选项式帮助，不渲染成员 / 资料 / 危险操作
@@ -627,5 +628,93 @@ class _JoinRequestsBadgeState extends ConsumerState<_JoinRequestsBadge> {
       pendingGroupJoinRequestCountProvider(widget.roomId),
     );
     return VibratingBadge(count: pendingCount.value ?? 0, size: 16);
+  }
+}
+
+/// 房间设置面板骨架屏
+///
+/// 模拟真实布局：成员卡片 + 若干设置行卡片（图标 + 标题 + 尾部箭头）。
+class _SettingsBodySkeleton extends StatelessWidget {
+  const _SettingsBodySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        // 区块 0：成员行
+        const _SkeletonCard(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                SkeletonBox(width: 40, height: 40, circle: true),
+                SizedBox(width: 12),
+                Expanded(child: SkeletonBox(height: 14, radius: 5)),
+                SkeletonBox(width: 18, height: 18, radius: 5),
+              ],
+            ),
+          ),
+        ),
+        // 区块 1：资料/通知等设置行
+        _SkeletonCard(
+          child: Column(
+            children: [
+              for (var i = 0; i < 4; i++) ...[
+                if (i > 0) const Divider(height: 1, indent: 56, endIndent: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 15,
+                  ),
+                  child: Row(
+                    children: [
+                      const SkeletonBox(width: 22, height: 22, radius: 6),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: SkeletonLine(width: 96 - (i % 3) * 16, height: 13),
+                      ),
+                      const SkeletonBox(width: 14, height: 14, radius: 4),
+                    ],
+                  ),),
+              ],
+            ],
+          ),
+        ),
+        // 区块 2：危险操作
+        const _SkeletonCard(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            child: Row(
+              children: [
+                SkeletonBox(width: 22, height: 22, radius: 6),
+                SizedBox(width: 14),
+                Expanded(child: SkeletonLine(width: 72, height: 13)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 骨架卡片：与 [RoomCard] 同款圆角容器
+class _SkeletonCard extends StatelessWidget {
+  final Widget child;
+
+  const _SkeletonCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: child,
+      ),
+    );
   }
 }

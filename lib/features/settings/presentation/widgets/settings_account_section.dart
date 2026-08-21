@@ -9,11 +9,15 @@ class SettingsAccountSection extends StatelessWidget {
     required this.onOpenProfile,
     required this.onOpenQrCode,
     required this.onChangePassword,
+    required this.onSwitchAccount,
   });
 
   final VoidCallback onOpenProfile;
   final VoidCallback onOpenQrCode;
   final VoidCallback onChangePassword;
+
+  /// 打开切换账号页面
+  final VoidCallback onSwitchAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +42,13 @@ class SettingsAccountSection extends StatelessWidget {
           title: 'me_password_title'.tr(),
           subtitle: 'settings_account_password_subtitle'.tr(),
           onTap: onChangePassword,
+        ),
+        _divider(context),
+        _AccountTile(
+          icon: HugeIcons.strokeRoundedUserArrowLeftRight,
+          title: 'account_switch_title'.tr(),
+          subtitle: 'settings_account_switch_subtitle'.tr(),
+          onTap: onSwitchAccount,
         ),
       ],
     );
