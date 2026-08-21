@@ -14,7 +14,6 @@ import '../../../../common/utils/device_util.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../../../framework/network/dio_client.dart';
 import '../../../../framework/domain/app_update_info.dart';
-import '../../../../framework/provider/layout/layout_controller.dart';
 import '../../../../common/widgets/app/app_scaffold.dart';
 import '../widgets/update_sections.dart';
 
@@ -31,7 +30,7 @@ class UpdatePage extends ConsumerStatefulWidget {
   ConsumerState<UpdatePage> createState() => _UpdatePageState();
 }
 
-class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
+class _UpdatePageState extends ConsumerState<UpdatePage> {
   /// 下载进度（0-1）
   double _progress = 0;
   /// 是否正在下载
@@ -43,32 +42,6 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
 
   /// 是否为强制更新
   bool get _isForceUpdate => widget.updateInfo.forceUpdate;
-
-  @override
-  void initState() {
-    super.initState();
-    if (DeviceUtil.isRealDesktop()) {
-      windowManager.addListener(this);
-    }
-  }
-
-  @override
-  void onWindowMaximize() {
-    ref.read(layoutControllerProvider.notifier).toggleExtended();
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    ref.read(layoutControllerProvider.notifier).toggleExtended();
-  }
-
-  @override
-  void dispose() {
-    if (DeviceUtil.isRealDesktop()) {
-      windowManager.removeListener(this);
-    }
-    super.dispose();
-  }
 
   Future<void> _startDownload() async {
     setState(() {
@@ -132,7 +105,6 @@ class _UpdatePageState extends ConsumerState<UpdatePage> with WindowListener {
 
         if (DeviceUtil.isRealDesktop()) {
           await windowManager.hide();
-          windowManager.removeListener(this);
         }
 
         await Future.delayed(const Duration(milliseconds: 500));

@@ -1,8 +1,8 @@
-﻿import 'package:anoxia/common/widgets/desktop/connection_status_tag.dart';
+import 'package:anoxia/common/widgets/desktop/connection_status_tag.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/common/widgets/desktop/header_search_entry.dart';
-import 'package:anoxia/framework/provider/layout/layout_controller.dart';
+import 'package:anoxia/framework/provider/layout/window_maximized_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,9 +36,8 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final extended = ref.watch(
-      layoutControllerProvider.select((r) => r.extendedValue),
-    );
+    // 最大化/还原图标以窗口真实状态为准（幂等同步），与侧边栏等 UI 状态解耦
+    final maximized = ref.watch(windowMaximizedProvider);
 
     final canGoBack = context.canPop();
     return AppBar(
@@ -92,7 +91,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
         ),
         //正常/最大化
-        changeScreenMode(extended),
+        changeScreenMode(ref, maximized),
         IconButton(
           tooltip: 'header_closure'.tr(),
           padding: EdgeInsets.zero,
@@ -124,12 +123,16 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 
   /// 切换窗口最大化/还原
-  Widget changeScreenMode(bool mode) {
-    if (mode) {
+  ///
+  /// 图标状态由 windowMaximizedProvider 以真实窗口状态驱动（事件 set +
+  /// 初始 isMaximized 同步），不会因事件丢失/重复而与实际脱节。
+  Widget changeScreenMode(WidgetRef ref, bool maximized) {
+    void toggle() => ref.read(windowMaximizedProvider.notifier).toggle();
+    if (maximized) {
       return IconButton(
         tooltip: 'header_reduction'.tr(),
         padding: EdgeInsets.zero,
-        onPressed: () => windowManager.unmaximize(),
+        onPressed: toggle,
         icon: const HugeIcon(
           icon: HugeIcons.strokeRoundedChangeScreenMode,
           size: 18,
@@ -144,7 +147,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return IconButton(
       tooltip: 'header_maximize'.tr(),
       padding: EdgeInsets.zero,
-      onPressed: () => windowManager.maximize(),
+      onPressed: toggle,
       icon: const HugeIcon(icon: HugeIcons.strokeRoundedSquare, size: 16),
       style: ButtonStyle(
         shape: WidgetStateProperty.all(

@@ -8,6 +8,10 @@ import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.da
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/chat/room/create_new_group_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_open_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tag_provider.dart';
@@ -50,6 +54,10 @@ class SessionResetService {
     'noteVersionServiceProvider',
     'noteTagFilterProvider(*)',
     'noteOpenRequestProvider(*)',
+    'layoutControllerProvider',
+    'contactSelectionProvider',
+    'contactDetailDataProvider(*)',
+    'selectedContactIdsProvider',
   ];
 
   void reset(Ref ref, {required SessionResetReason reason}) {
@@ -89,6 +97,18 @@ class SessionResetService {
     // 标签筛选与深链打开请求为纯内存状态，一并复位。
     container.read(noteTagFilterProvider.notifier).state = null;
     container.read(noteOpenRequestProvider.notifier).state = null;
+
+    // 侧边栏选中位置复位到「聊天」：登出/切账号后不保留上个账号的
+    // 浏览位置（IndexedStack 常驻，MainLayoutPage 未卸载时该状态会跨会话存活）。
+    container.read(layoutControllerProvider.notifier).setIndex(0);
+
+    // 联系人详情：清空选中视图（联系人详细/新的朋友/群聊列表）与
+    // 按用户缓存的详情数据，避免新账号看到上个账号查看过的联系人详情。
+    container.invalidate(contactSelectionProvider);
+    container.invalidate(contactDetailDataProvider);
+
+    // 建群弹窗已选联系人集合为纯内存状态，一并清空。
+    container.invalidate(selectedContactIdsProvider);
 
     debugLog(
       '[SessionReset] 会话状态重置完成, reason=$reasonLabel, scopes=${managedScopes.length}',

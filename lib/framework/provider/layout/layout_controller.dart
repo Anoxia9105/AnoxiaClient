@@ -33,7 +33,6 @@ class LayoutController extends _$LayoutController {
   LayoutState build() {
     return LayoutState(
       currentIndex: 0,
-      extendedValue: false,
       items: _menuItems,
     );
   }
@@ -67,11 +66,6 @@ class LayoutController extends _$LayoutController {
       setIndex(noteIndex);
     }
   }
-
-  /// 切换侧边栏展开/收起状态
-  void toggleExtended() {
-    state = state.copyWith(extendedValue: !state.extendedValue);
-  }
 }
 
 /// 布局状态数据类
@@ -79,22 +73,17 @@ class LayoutState {
   /// 当前选中的页面索引
   final int currentIndex;
 
-  /// 侧边栏是否展开
-  final bool extendedValue;
-
   /// 菜单项列表
   final List<SidebarItem> items;
 
   LayoutState({
     required this.currentIndex,
-    required this.extendedValue,
     required this.items,
   });
 
-  LayoutState copyWith({int? currentIndex, bool? extendedValue}) {
+  LayoutState copyWith({int? currentIndex}) {
     return LayoutState(
       currentIndex: currentIndex ?? this.currentIndex,
-      extendedValue: extendedValue ?? this.extendedValue,
       items: items,
     );
   }

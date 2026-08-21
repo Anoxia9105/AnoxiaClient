@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -27,13 +27,35 @@ class CallDesktopAppbar extends StatefulWidget implements PreferredSizeWidget {
 class _CallDesktopAppbarState extends State<CallDesktopAppbar>
     with WindowListener {
   /// 窗口是否处于最大化状态
-  bool extended = false;
+  bool _maximized = false;
 
   @override
-  void onWindowMaximize() => setState(() => extended = !extended);
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+    // 异步同步一次真实状态：监听注册前窗口可能已经处于最大化
+    Future<void>.microtask(() async {
+      final maximized = await windowManager.isMaximized();
+      if (mounted) setState(() => _maximized = maximized);
+    });
+  }
 
   @override
-  void onWindowUnmaximize() => setState(() => extended = !extended);
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  /// 以真实状态为准做幂等 set（重复/成对事件不会翻转错位）
+  @override
+  void onWindowMaximize() {
+    if (mounted) setState(() => _maximized = true);
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    if (mounted) setState(() => _maximized = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +86,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
             size: 18,
           ),
         ),
-        changeScreenMode(extended),
+        changeScreenMode(_maximized),
         IconButton(
           tooltip: 'header_closure'.tr(),
           padding: EdgeInsets.zero,
@@ -96,17 +118,17 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
 
   /// 构建窗口模式切换按钮
   ///
-  /// 根据当前窗口状态显示最大化或还原图标
-  Widget changeScreenMode(bool mode) {
-    if (mode) {
+  /// 根据当前窗口状态显示最大化或还原图标。
+  /// 按钮按下时按目标方向幂等 set（不翻转），事件到达后再校正，
+  /// 双击标题栏 / Win+Up / 系统贴靠等旁路操作也能保持图标正确。
+  Widget changeScreenMode(bool maximized) {
+    if (maximized) {
       return IconButton(
         tooltip: 'header_reduction'.tr(),
         padding: EdgeInsets.zero,
         onPressed: () {
-          setState(() {
-            extended = !extended;
-            windowManager.unmaximize();
-          });
+          setState(() => _maximized = false);
+          windowManager.unmaximize();
         },
         icon: const HugeIcon(
           icon: HugeIcons.strokeRoundedChangeScreenMode,
@@ -118,10 +140,8 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
       tooltip: 'header_maximize'.tr(),
       padding: EdgeInsets.zero,
       onPressed: () {
-        setState(() {
-          extended = !extended;
-          windowManager.maximize();
-        });
+        setState(() => _maximized = true);
+        windowManager.maximize();
       },
       icon: const HugeIcon(
         icon: HugeIcons.strokeRoundedSquare,

@@ -79,6 +79,7 @@ class WindowManager {
   Future<bool> isVisible() async => true;
   Future<bool> isFocused() async => true;
   Future<bool> isMinimized() async => false;
+  Future<bool> isMaximized() async => false;
   Future<void> setBounds(dynamic bounds) async {}
   Future<void> getBounds() async {}
   Future<void> setMinimumSize(Size size) async {}

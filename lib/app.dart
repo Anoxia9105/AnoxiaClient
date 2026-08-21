@@ -17,7 +17,6 @@ import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'common/utils/device_util.dart';
 import 'common/widgets/toast.dart';
-import 'framework/provider/layout/layout_controller.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
@@ -160,16 +159,6 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       trayManager.removeListener(this);
     }
     super.dispose();
-  }
-
-  @override
-  void onWindowMaximize() {
-    ref.read(layoutControllerProvider.notifier).toggleExtended();
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    ref.read(layoutControllerProvider.notifier).toggleExtended();
   }
 
   @override
