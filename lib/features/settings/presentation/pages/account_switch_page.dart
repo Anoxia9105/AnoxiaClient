@@ -145,11 +145,18 @@ class AccountSwitchPage extends ConsumerWidget {
     }
   }
 
-  /// 添加新账号：退出当前登录回到登录页（当前账号保留在切换列表中）
+  /// 添加新账号：本地退出当前登录回到登录页（当前账号保留在切换列表中）
+  ///
+  /// 注意必须 `notifyBackend: false`：不调后端 /logout 吊销当前 token，
+  /// 否则该账号虽留在列表里，token 已被服务端删除，之后免密切回必然
+  /// 401 降级到登录页重新输密码。服务端同账号多 token 并存、7 天滑动 TTL，
+  /// 保留 token 即可随时一键切回。
   Future<void> _addAccount(BuildContext context, WidgetRef ref) async {
     final confirmed = await showLogoutConfirmDialog(context);
     if (!confirmed) return;
-    await ref.read(authControllerProvider.notifier).logout();
+    await ref.read(authControllerProvider.notifier).logout(
+          notifyBackend: false,
+        );
   }
 }
 

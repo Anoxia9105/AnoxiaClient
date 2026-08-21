@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
@@ -190,9 +191,10 @@ class MenuPage extends ConsumerWidget {
                           context,
                           icon: HugeIcons.strokeRoundedUserArrowLeftRight,
                           title: 'account_switch_title'.tr(), // 切换账号
-                          onTap: () => _pushPage(
+                          // 桌面/Web PC 宽屏：统一式样弹窗；移动端/Web SP：页面跳转
+                          onTap: () => presentAdaptivePage<void>(
                             context,
-                            const AccountSwitchPage(),
+                            builder: (_) => const AccountSwitchPage(),
                           ),
                         ),
                         _buildTileDivider(),

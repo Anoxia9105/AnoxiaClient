@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/colors_box.dart';
@@ -381,7 +382,7 @@ Future<void> notePickColor(
   FocusNode focusNode, {
   required bool background,
 }) async {
-  await showDialog<void>(
+  await showEscClosableDialog<void>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       contentPadding: EdgeInsets.zero,

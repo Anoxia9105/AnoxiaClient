@@ -146,7 +146,7 @@ class ContactDetailActions extends ConsumerWidget {
     final userId = detail.userId;
     if (userId == null) return;
 
-    final room = await showDialog<ChatRoomVO>(
+    final room = await showEscClosableDialog<ChatRoomVO>(
       context: context,
       builder: (_) => const ContactRecommendDialog(),
     );

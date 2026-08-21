@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/note_doc.dart';
 import 'package:anoxia/framework/provider/note/note_version_provider.dart';
@@ -10,7 +11,7 @@ import 'note_dialog_skeleton.dart';
 
 /// 打开版本历史对话框
 Future<void> showNoteVersionsDialog(BuildContext context, int noteId) {
-  return showDialog<void>(
+  return showEscClosableDialog<void>(
     context: context,
     builder: (_) => NoteVersionsDialog(noteId: noteId),
   );

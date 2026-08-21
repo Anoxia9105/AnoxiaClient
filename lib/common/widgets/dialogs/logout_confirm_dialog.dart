@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +7,7 @@ import 'package:flutter/material.dart';
 ///
 /// 返回 [true] 表示用户确认退出，调用方负责执行登出逻辑。
 Future<bool> showLogoutConfirmDialog(BuildContext context) {
-  return showDialog<bool>(
+  return showEscClosableDialog<bool>(
     context: context,
     builder: (_) => const LogoutConfirmDialog(),
   ).then((result) => result ?? false);

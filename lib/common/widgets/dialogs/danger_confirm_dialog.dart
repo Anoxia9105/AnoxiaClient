@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ Future<bool> showDangerConfirmDialog(
   required String content,
   required String confirmLabel,
 }) {
-  return showDialog<bool>(
+  return showEscClosableDialog<bool>(
     context: context,
     builder: (_) => DangerConfirmDialog(
       icon: icon,

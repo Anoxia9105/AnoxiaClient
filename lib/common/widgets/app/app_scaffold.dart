@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
 import 'package:anoxia/common/widgets/app/app_background_layer.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
@@ -86,9 +87,10 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
 
     /// 上锁状态，直到弹窗关闭时才允许再次打开
     _isSearchDialogOpen = true;
-    showDialog(context: context, builder: (_) => GlobalSearchDialog()).then((
-      _,
-    ) {
+    showEscClosableDialog(
+      context: context,
+      builder: (_) => GlobalSearchDialog(),
+    ).then((_) {
       /// 无论弹窗是正常关闭还是通过其他方式关闭，都重置状态，允许下次再次打开
       _isSearchDialogOpen = false;
     });

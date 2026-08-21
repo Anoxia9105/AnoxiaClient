@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/features/me/presentation/pages/change_password_page.dart';
@@ -217,7 +218,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   void _openChangePassword() {
     if (DeviceUtil.isDesktop(context)) {
-      showDialog<void>(
+      showEscClosableDialog<void>(
         context: context,
         builder: (_) => const ChangePasswordDialog(),
       );
@@ -229,8 +230,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _openSwitchAccount() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const AccountSwitchPage()),
+    // 桌面/Web PC 宽屏：统一式样弹窗；移动端/Web SP：页面跳转
+    presentAdaptivePage<void>(
+      context,
+      builder: (_) => const AccountSwitchPage(),
     );
   }
 

@@ -1,6 +1,7 @@
 // 通话中邀请成员按钮组件，用于群组通话中邀请其他群成员加入。
 //
 // 点击按钮弹出成员选择对话框，允许从群成员中选择未加入当前通话的成员进行邀请。
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -79,7 +80,7 @@ class CallInviteMembersButton extends ConsumerWidget {
         .toList();
     final selected = <int>{};
 
-    await showDialog<void>(
+    await showEscClosableDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(

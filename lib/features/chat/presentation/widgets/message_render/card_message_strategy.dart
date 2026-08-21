@@ -2,6 +2,7 @@
 //
 // 实现卡片类型消息的渲染逻辑，将 CardPayload 数据渲染为可点击的卡片组件。
 // 支持联系人卡片和群组卡片的识别与跳转。
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/features/contact/presentation/pages/recommended_contact_detail_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/group_card_preview_page.dart';
@@ -71,10 +72,10 @@ class _CardMessage extends StatelessWidget {
                   return;
                 }
                 if (isNoteCard) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => NoteCardPreviewPage(card: card),
-                    ),
+                  // 记事本卡片：桌面端/Web PC 弹窗，移动端/Web SP 跳转页面
+                  presentAdaptivePage<void>(
+                    context,
+                    builder: (_) => NoteCardPreviewPage(card: card),
                   );
                   return;
                 }

@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -11,7 +12,7 @@ Future<void> showNoteTagsDialog(
   required int noteId,
   required List<String> initialTags,
 }) {
-  return showDialog<void>(
+  return showEscClosableDialog<void>(
     context: context,
     builder: (_) => NoteTagsDialog(noteId: noteId, initialTags: initialTags),
   );

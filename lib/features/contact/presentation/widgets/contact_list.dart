@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
@@ -50,50 +50,55 @@ class ContactList extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(contactListServiceProvider.notifier).refresh();
         },
-        child: Column(
-          children: [
-            ListTile(
-              leading: const HugeIcon(icon: HugeIcons.strokeRoundedAddTeam),
-              title: Text('contact_new_friends'.tr()),
-              onTap: () {
-                ref.read(contactSelectionProvider.notifier).selectNewFriends();
-                if (DeviceUtil.isMobile(context)) {
-                  _openMobileDetail(context, const NewFriendsPage());
-                }
-              },
-              trailing: pendingRequests > 0
-                  ? VibratingBadge(count: pendingRequests)
-                  : const HugeIcon(
-                      icon: HugeIcons.strokeRoundedArrowRight01,
-                      size: 18,
-                    ),
-            ),
-            ListTile(
-              leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup03),
-              title: Text('contact_joined_groups'.tr()),
-              onTap: () {
-                ref.read(contactSelectionProvider.notifier).selectGroups();
-                if (DeviceUtil.isMobile(context)) {
-                  _openMobileDetail(context, const GroupRoomListPage());
-                }
-              },
-              trailing: const HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
-                size: 18,
-              ),
-            ),
-
-            ListTile(title: Text('sidebar_contact'.tr())),
-            Expanded(
-              child: SortedContactGroupsWidget(
-                onContactTap: () {
+        // 与聊天列表的水平节奏对齐（列表外 12 + 列表项内 16 = 28），
+        // 保证「新朋友」未读徽标与聊天会话未读徽标距右缘距离一致。
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const HugeIcon(icon: HugeIcons.strokeRoundedAddTeam),
+                title: Text('contact_new_friends'.tr()),
+                onTap: () {
+                  ref.read(contactSelectionProvider.notifier).selectNewFriends();
                   if (DeviceUtil.isMobile(context)) {
-                    _openMobileDetail(context, const ContactDetail());
+                    _openMobileDetail(context, const NewFriendsPage());
                   }
                 },
+                trailing: pendingRequests > 0
+                    ? VibratingBadge(count: pendingRequests)
+                    : const HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        size: 18,
+                      ),
               ),
-            ),
-          ],
+              ListTile(
+                leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup03),
+                title: Text('contact_joined_groups'.tr()),
+                onTap: () {
+                  ref.read(contactSelectionProvider.notifier).selectGroups();
+                  if (DeviceUtil.isMobile(context)) {
+                    _openMobileDetail(context, const GroupRoomListPage());
+                  }
+                },
+                trailing: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 18,
+                ),
+              ),
+
+              ListTile(title: Text('sidebar_contact'.tr())),
+              Expanded(
+                child: SortedContactGroupsWidget(
+                  onContactTap: () {
+                    if (DeviceUtil.isMobile(context)) {
+                      _openMobileDetail(context, const ContactDetail());
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       persistentFooterAlignment: AlignmentDirectional.centerStart,

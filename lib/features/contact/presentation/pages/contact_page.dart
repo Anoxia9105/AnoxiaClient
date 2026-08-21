@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/app/presentation/widgets/welcome.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
 import 'package:anoxia/features/contact/presentation/pages/group_room_list_page.dart';
@@ -32,8 +32,10 @@ class ContactPage extends ConsumerWidget {
       children: [
         SizedBox(
           width: 100.w,
+          // 水平内边距由 ContactList 内部统一提供（12px），
+          // 保证列表项与聊天列表的左右节奏一致（未读徽标距右缘 28px）
           child: const Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: EdgeInsets.symmetric(vertical: 8.0),
             child: ContactList(),
           ),
         ),

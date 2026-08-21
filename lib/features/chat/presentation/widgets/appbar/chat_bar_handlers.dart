@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
@@ -167,7 +168,7 @@ class ChatBarHandlers {
         ? 'chat_mute_confirm'.tr()
         : 'chat_unmute_confirm'.tr();
 
-    showDialog(
+    showEscClosableDialog(
       context: context,
       builder: (dialogContext) {
         bool submitting = false;
@@ -338,7 +339,7 @@ class ChatBarHandlers {
     String roomId,
     ChatRoomMemberVO member,
   ) {
-    showDialog(
+    showEscClosableDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text('chat_confirm_kick'.tr()),

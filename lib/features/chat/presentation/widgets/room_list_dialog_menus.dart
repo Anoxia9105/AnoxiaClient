@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
@@ -96,7 +96,7 @@ class RoomListDialogMenus {
                         );
                         return;
                       }
-                      showDialog(
+                      showEscClosableDialog(
                         context: context,
                         barrierDismissible: false,
                         builder: (_) => const CreateChatDialogWidget(),
