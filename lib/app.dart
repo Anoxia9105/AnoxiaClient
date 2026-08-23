@@ -17,6 +17,9 @@ import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'common/utils/device_util.dart';
 import 'common/widgets/toast.dart';
+import 'framework/core/app_globals.dart';
+import 'framework/domain/user_info.dart';
+import 'framework/provider/auth/auth_controller.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/router/router.dart';
 import 'framework/provider/chat/message/system_event_service.dart';
@@ -45,6 +48,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   ProviderSubscription<int>? _callThemeSubscription;
   ProviderSubscription<ThemeData>? _systemUiSubscription;
   ProviderSubscription<CallInvitationState?>? _callInvitationSubscription;
+  ProviderSubscription<AsyncValue<UserInfo?>>? _authLogoutSubscription;
   final TransitionBuilder _botToastBuilder = BotToastInit();
 
   @override
@@ -145,6 +149,25 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         );
       },
     );
+
+    // 登出时清理残留弹窗：切换账号等以 showDialog/push 形式展示的页面
+    // 不随 go_router 重定向自动回收，会遮挡登录页。
+    _authLogoutSubscription =
+        ref.listenManual<AsyncValue<UserInfo?>>(
+      authControllerProvider,
+      (previous, next) {
+        final wasLoggedIn = previous?.value != null;
+        final isLoggedOut = next is AsyncData<UserInfo?> && next.value == null;
+        if (!wasLoggedIn || !isLoggedOut) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final nav = appNavigatorKey.currentState;
+          if (nav == null) return;
+          if (nav.canPop()) {
+            nav.popUntil((route) => route.isFirst);
+          }
+        });
+      },
+    );
   }
 
   @override
@@ -153,6 +176,7 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     _callThemeSubscription?.close();
     _systemUiSubscription?.close();
     _callInvitationSubscription?.close();
+    _authLogoutSubscription?.close();
 
     if (DeviceUtil.isRealDesktop()) {
       windowManager.removeListener(this);

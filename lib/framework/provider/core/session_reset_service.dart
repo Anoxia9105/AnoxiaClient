@@ -1,16 +1,25 @@
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
+import 'package:anoxia/framework/provider/ai/ai_chat_controller.dart';
+import 'package:anoxia/framework/provider/desktop/desktop_search_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
+import 'package:anoxia/framework/provider/chat/message/high_message_service.dart';
+import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
+import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:anoxia/framework/provider/chat/room/create_new_group_controller.dart';
+import 'package:anoxia/framework/provider/chat/sticker/sticker_packs_provider.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
+import 'package:anoxia/framework/provider/contact/contact_requests_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
+import 'package:anoxia/framework/provider/contact/user_search_service.dart';
+import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_open_provider.dart';
@@ -58,6 +67,16 @@ class SessionResetService {
     'contactSelectionProvider',
     'contactDetailDataProvider(*)',
     'selectedContactIdsProvider',
+    'contactRequestsServiceProvider',
+    'userSearchServiceProvider',
+    'searchMessageServiceProvider',
+    'highMessageServiceProvider',
+    'groupJoinRequestsServiceProvider(*)',
+    'callStatusControllerProvider',
+    'stickerPacksProvider',
+    'aiChatControllerProvider',
+    'desktopSearchControllerProvider',
+    'createGroupControllerProvider',
   ];
 
   void reset(Ref ref, {required SessionResetReason reason}) {
@@ -109,6 +128,38 @@ class SessionResetService {
 
     // 建群弹窗已选联系人集合为纯内存状态，一并清空。
     container.invalidate(selectedContactIdsProvider);
+
+    // 好友申请列表（「新的朋友」）：keepAlive 且直接从远端拉取，
+    // 不失效的话切账号后侧边栏红点与新账号的申请页都会显示上一个
+    // 账号的好友申请。pendingRequestCountProvider watch 本源，级联重建。
+    container.invalidate(contactRequestsServiceProvider);
+
+    // 用户搜索结果：上个账号搜到的用户列表对新账号无意义，一并清空。
+    container.invalidate(userSearchServiceProvider);
+
+    // 消息搜索状态：持有旧账号房间内的搜索命中消息，必须复位。
+    container.invalidate(searchMessageServiceProvider);
+
+    // 高优消息状态（正在输入/通话信令等，按 roomId 缓存）：
+    // 房间 ID 跨账号可能复用，残留会让新账号看到幽灵「正在输入」。
+    container.invalidate(highMessageServiceProvider);
+
+    // 入群申请列表与红点（按 roomId 的 family 缓存）：
+    // 不带参数 invalidate 会失效该 family 的所有实例。
+    container.invalidate(groupJoinRequestsServiceProvider);
+
+    // 各房间通话状态缓存（含已加载房间集合），随会话一并重置。
+    container.invalidate(callStatusControllerProvider);
+
+    // 表情包列表为当前账号的服务端数据，切账号后需重新拉取。
+    container.invalidate(stickerPacksProvider);
+
+    // AI 对话历史 / 桌面聚合搜索关键词与结果：上个账号的会话痕迹。
+    container.invalidate(aiChatControllerProvider);
+    container.invalidate(desktopSearchControllerProvider);
+
+    // 建群结果 AsyncNotifier：上个账号创建中的群聊状态不应带入新会话。
+    container.invalidate(createGroupControllerProvider);
 
     debugLog(
       '[SessionReset] 会话状态重置完成, reason=$reasonLabel, scopes=${managedScopes.length}',

@@ -1,7 +1,6 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
-import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/saved_account.dart';
@@ -21,6 +20,25 @@ class AccountSwitchPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 监听登出：任意路径触发登出（添加账号的本地退出、侧边栏/抽屉退出、
+    // token 过期等）都会使 auth 变为 AsyncData(null)，此时 go_router
+    // 已重定向到登录页，但本页面若以弹窗/ push 路由形式展示则不会
+    // 随重定向自动回收，需手动关闭避免登录页上方残留弹窗。
+    ref.listen(authControllerProvider, (previous, next) {
+      final wasLoggedIn = previous?.value != null;
+      final isLoggedOut = next is AsyncData && next.value == null;
+      if (wasLoggedIn && isLoggedOut && context.mounted) {
+        // 延迟到下一帧再 pop，确保 go_router 的 redirect 已完成，
+        // 且避免与 _addAccount / _switchTo 中的显式 pop 冲突时
+        // 在同一帧内重复 pop。
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        });
+      }
+    });
+
     final colorScheme = Theme.of(context).colorScheme;
     final accountsAsync = ref.watch(savedAccountsServiceProvider);
     final currentUser = ref.watch(authControllerProvider).value;
@@ -152,11 +170,16 @@ class AccountSwitchPage extends ConsumerWidget {
   /// 401 降级到登录页重新输密码。服务端同账号多 token 并存、7 天滑动 TTL，
   /// 保留 token 即可随时一键切回。
   Future<void> _addAccount(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showLogoutConfirmDialog(context);
-    if (!confirmed) return;
+    // 仅是「添加」而非登出，无需二次确认，直接本地退出（保留 token）。
     await ref.read(authControllerProvider.notifier).logout(
           notifyBackend: false,
         );
+    // 登出后路由守卫已把页面切到登录页；本页面在桌面端以弹窗展示
+    // （showDialog 的独立路由不随 go_router 重定向回收），需手动关闭，
+    // 避免登录页上方残留「切换账号」弹窗。移动端此 pop 关闭推入的页面。
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 }
 

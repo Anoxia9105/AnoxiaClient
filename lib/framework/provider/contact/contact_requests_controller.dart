@@ -1,5 +1,7 @@
 ﻿import 'package:anoxia/framework/domain/chat_contact_request_vo.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
+import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'contact_list_controller.dart';
@@ -18,6 +20,15 @@ class ContactRequestsService extends _$ContactRequestsService {
 
   @override
   FutureOr<List<ChatContactRequestVO>> build() {
+    // 监听内存 Token：登录/切账号/登出都会触发本服务重建，
+    // 从根源上保证「新的朋友」数据与当前账号一致（用户隔离）。
+    // 未登录（登出过渡期）时不发请求，与 ContactListService 的守卫
+    // 一致，避免无鉴权请求触发 401 链路。
+    final token = ref.watch(tokenCacheProvider);
+    if (token == null || token.isEmpty) {
+      debugLog('[Contact] ContactRequestsService: no token, skip fetch');
+      return const [];
+    }
     return _fetchRequests();
   }
 
