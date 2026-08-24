@@ -92,8 +92,6 @@ class ChatInputController extends _$ChatInputController {
           enableExternalRichPaste: false, // 禁止外部富文本粘贴，仅保留纯文本
           // --- 图片粘贴处理 ---
           onImagePaste: (Uint8List imageBytes) async {
-            debugLog('pasted image bytes: ${imageBytes.lengthInBytes}');
-
             // 将粘贴的图片交给 ChatImageUploadController 上传，
             // 上传完成后会自动插入到编辑器（通过 Delta 插入图片标记）
             await ref
@@ -280,7 +278,6 @@ class ChatInputController extends _$ChatInputController {
 
     // 成员未同步则跳过
     if (roomMembers.isEmpty) {
-      debugLog('room ${room.roomId} members not synced, skip typing');
       return;
     }
 
@@ -294,7 +291,6 @@ class ChatInputController extends _$ChatInputController {
 
     // 对方不在线则不发送
     if (peerMember.onlineStatus != true) {
-      debugLog('${peerMember.nickName} offline, skip typing: $isTyping');
       return;
     }
 
@@ -792,7 +788,6 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    debugLog('发送语音消息: $clientMsgId');
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: MessageType.audio,
       attachments: attachments,
@@ -936,7 +931,6 @@ class ChatInputController extends _$ChatInputController {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    debugLog('发送消息[$type]: clientMsgId=$clientMsgId');
     final timeoutSeconds = _resolveSendTimeoutSeconds(
       type: type,
       attachments: derivedAttachments,

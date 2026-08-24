@@ -197,11 +197,6 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     for (int attempt = 1; attempt <= _maxUploadRetries; attempt++) {
       final bool isLastAttempt = attempt == _maxUploadRetries;
       try {
-        debugLog(
-          '[ImageUpload] 第$attempt次上传尝试, '
-          '文件: ${pendingFiles.map((f) => f.name).join(', ')}',
-        );
-
         final results = await ref
             .read(uploadRepositoryProvider)
             .uploadFiles(

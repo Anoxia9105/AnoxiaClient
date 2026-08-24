@@ -157,7 +157,6 @@ class NotificationHelper {
       final byteData = await rootBundle.load(Assets.images.appIconPng.path);
       await file.writeAsBytes(byteData.buffer.asUint8List());
     }
-    debugLog('获取图标成功: ${file.path}');
     return file.path;
   }
 
@@ -301,8 +300,6 @@ class NotificationHelper {
     }
 
     if (roomId != null) {
-      debugLog('用户点击通知，准备跳转房间: $roomId');
-
       _onOpenRoom?.call(roomId);
 
       // 仅桌面端需要主动唤醒窗口；移动端调用会触发 MissingPluginException。

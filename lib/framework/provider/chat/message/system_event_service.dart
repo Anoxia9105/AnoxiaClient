@@ -41,7 +41,6 @@ class SystemEventService extends _$SystemEventService {
       final isNowConnected = next.status == WsStatus.connected;
 
       if (wasDisconnected && isNowConnected) {
-        debugLog('🔄 WS 重连成功，刷新业务数据补偿断线期间丢失的事件...');
         _onReconnected();
       }
     });
@@ -81,16 +80,12 @@ class SystemEventService extends _$SystemEventService {
     // 刷新通讯录和好友申请
     ref.read(contactListServiceProvider.notifier).refresh();
     ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
-
-    debugLog('✅ 重连数据补偿完成');
   }
 
   /// 核心分发逻辑
   ///
   /// 根据 [EventMessage.eventType] 分发到对应的处理函数
   void _onEventReceived(EventMessage event) {
-    debugLog('收到系统事件: ${event.eventType} 从用户: ${event.operatorId}');
-
     switch (event.eventType) {
       case SystemEventType.userOnline:
       case SystemEventType.userOffline:
@@ -144,7 +139,6 @@ class SystemEventService extends _$SystemEventService {
         ref.read(contactRequestsServiceProvider.notifier).refresh(quiet: true);
         break;
       case SystemEventType.groupJoinRequest:
-        debugLog('收到新的入群申请');
         // 刷新该群待处理申请红点
         final requestRoomId = event.extra?['roomId'];
         if (requestRoomId is String && requestRoomId.isNotEmpty) {
@@ -185,8 +179,6 @@ class SystemEventService extends _$SystemEventService {
     ref
         .read(contactListServiceProvider.notifier)
         .updateOnlineStatus(event.operatorId, isOnline);
-
-    debugLog("用户 ${event.operatorId} ${isOnline ? '上线' : '下线'}");
   }
 
   /// 处理被踢出房间事件
@@ -206,8 +198,6 @@ class SystemEventService extends _$SystemEventService {
 
     // 判断是否是自己被踢
     if (targetId == currentUser?.userId) {
-      debugLog('你已被踢出房间 $roomId');
-
       // 1. 本地移除该房间
       ref.read(roomListServiceProvider.notifier).removeRoomLocally(roomId);
 
@@ -227,7 +217,6 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      debugLog('用户 $targetId 被踢出房间 $roomId，刷新成员列表');
     }
   }
 
@@ -241,11 +230,9 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomListServiceProvider.notifier)
           .updateRoomStatus(roomId, nextStatus);
-      debugLog("房间 $roomId 已${nextStatus == 2 ? '封禁' : '解散'}，保留历史消息并更新状态");
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    debugLog('房间状态已更新，兜底刷新房间列表');
   }
 
   /// 处理用户加入房间
@@ -256,7 +243,6 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      debugLog('用户 ${event.operatorId} 加入房间 $roomId，刷新成员列表');
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
@@ -269,7 +255,6 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      debugLog('用户 ${event.operatorId} 离开房间 $roomId，强制刷新成员列表');
     } else {
       debugLog('无法从 userLeft 事件中获取 roomId');
     }
@@ -283,11 +268,9 @@ class SystemEventService extends _$SystemEventService {
     // 解封：恢复房间状态为正常
     if (createdType == 'unban' && roomId != null) {
       ref.read(roomListServiceProvider.notifier).updateRoomStatus(roomId, 0);
-      debugLog('房间 $roomId 已解封，恢复正常状态');
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    debugLog('房间创建/解封，刷新房间列表');
   }
 
   /// 处理房间信息更新
@@ -304,7 +287,6 @@ class SystemEventService extends _$SystemEventService {
     }
 
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
-    debugLog('房间信息更新，刷新房间列表');
   }
 
   /// 处理通话开始
@@ -316,7 +298,6 @@ class SystemEventService extends _$SystemEventService {
     ref
         .read(callStatusControllerProvider.notifier)
         .markStarted(roomId, startTime: startTime);
-    debugLog('房间 $roomId 通话开始');
   }
 
   /// 处理通话结束
@@ -325,7 +306,6 @@ class SystemEventService extends _$SystemEventService {
     if (roomId == null || roomId.isEmpty) return;
 
     ref.read(callStatusControllerProvider.notifier).markEnded(roomId);
-    debugLog('房间 $roomId 通话结束');
   }
 
   /// 处理全体禁言/解除禁言
@@ -347,7 +327,6 @@ class SystemEventService extends _$SystemEventService {
     ref
         .read(roomListServiceProvider.notifier)
         .updateRoomStatus(roomId, newStatus);
-    debugLog("房间 $roomId ${isMute ? '已禁言' : '已解除禁言'}，本地更新状态");
 
     // 兜底：静默刷新确保与服务端同步
     ref.read(roomListServiceProvider.notifier).refresh(silent: true);
@@ -360,7 +339,6 @@ class SystemEventService extends _$SystemEventService {
       ref
           .read(roomMemberServiceProvider.notifier)
           .syncMembers(roomId, force: true);
-      debugLog('用户 ${event.operatorId} 角色变更，强制刷新成员列表');
     } else {
       debugLog('无法从 userRoleChanged 事件中获取 roomId');
     }

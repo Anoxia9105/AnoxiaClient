@@ -51,7 +51,6 @@ class MessageResender {
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    debugLog('重发消息: $clientMsgId');
     wsNotifier.sendMessage(
       ImPacketV5.encodeRoomMessageFrame(protoMsg),
       clientMsgId: clientMsgId,

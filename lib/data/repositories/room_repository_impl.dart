@@ -34,11 +34,10 @@ class RoomRepositoryImpl implements RoomRepository {
 
   @override
   Future<void> disbandRoom(String roomId) async {
-    final res = await DioClient().get(
+    await DioClient().get(
       API.chatRoomDisband,
       queryParameters: {'roomId': roomId},
     );
-    debugLog('[Room] disbandRoom response: $res');
   }
 
   @override

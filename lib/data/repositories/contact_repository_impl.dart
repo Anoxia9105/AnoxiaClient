@@ -26,7 +26,6 @@ class ContactRepositoryImpl implements ContactRepository {
   @override
   Future<List<ChatContactVO>> getLocalContacts() async {
     final contacts = await local.getContacts();
-    debugLog('[Cache] ContactRepository: local hit count=${contacts.length}');
     return contacts;
   }
 
@@ -37,7 +36,6 @@ class ContactRepositoryImpl implements ContactRepository {
       final list = (response.data['data'] as List)
           .map((e) => ChatContactVO.fromJson(e as Map<String, dynamic>))
           .toList();
-      debugLog('[Cache] ContactRepository: synced ${list.length} contacts');
       return list;
     } catch (e) {
       debugLog('[Cache] ContactRepository: sync failed: $e');
@@ -67,9 +65,6 @@ class ContactRepositoryImpl implements ContactRepository {
         API.contactUserDetail,
         queryParameters: {'userId': userId},
       );
-      debugLog(
-        '[Contact] ContactRepositoryImpl: fetched detail for userId=$userId',
-      );
       return ChatContactDetailVO.fromJson(response.data['data']);
     } catch (e) {
       debugLog('[Contact] ContactRepositoryImpl: getContactDetail failed: $e');
@@ -92,9 +87,6 @@ class ContactRepositoryImpl implements ContactRepository {
           'pageSize': pageSize,
         },
       );
-      debugLog(
-        '[Contact] ContactRepositoryImpl: searched users for name=$name',
-      );
       return UserSearchResponse.fromJson(response.data);
     } catch (e) {
       debugLog('[Contact] ContactRepositoryImpl: searchUsers failed: $e');
@@ -109,9 +101,6 @@ class ContactRepositoryImpl implements ContactRepository {
       final list = (response.data['data'] as List)
           .map((e) => ChatContactRequestVO.fromJson(e as Map<String, dynamic>))
           .toList();
-      debugLog(
-        '[Contact] ContactRepositoryImpl: fetched ${list.length} contact requests',
-      );
       return list;
     } catch (e) {
       debugLog(
@@ -132,9 +121,6 @@ class ContactRepositoryImpl implements ContactRepository {
           'source': 0,
         },
       );
-      debugLog(
-        '[Contact] ContactRepositoryImpl: handleContactRequest requestId=$requestId accepted=$isAccepted',
-      );
     } catch (e) {
       debugLog(
         '[Contact] ContactRepositoryImpl: handleContactRequest failed: $e',
@@ -152,9 +138,6 @@ class ContactRepositoryImpl implements ContactRepository {
         data: request.toJson(),
       );
       final success = response.data['code'] == 200;
-      debugLog(
-        '[Contact] ContactRepositoryImpl: sendContactRequest toUserId=$toUserId success=$success',
-      );
       return success;
     } catch (e) {
       debugLog('[Contact] ContactRepositoryImpl: sendContactRequest failed: $e');

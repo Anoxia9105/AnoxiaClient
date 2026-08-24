@@ -47,7 +47,6 @@ import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 
 /// 应用入口
 Future<void> main(List<String> args) async {
-  debugLog('程序启动参数：$args');
   try {
     //  优先初始化 Flutter 核心绑定
     WidgetsFlutterBinding.ensureInitialized();
@@ -146,7 +145,6 @@ void _backgroundAsyncInit() {
       try {
         // 读包信息即使失败，也不影响用户进 App
         PackageInfo packageInfo = await PackageInfo.fromPlatform();
-        debugLog('App Version: ${packageInfo.version}');
 
         if (!DeviceUtil.isWeb) {
           // 查更新设置硬超时，防止启动阶段等待过久
@@ -158,7 +156,6 @@ void _backgroundAsyncInit() {
               .read(appUpdateCheckerProvider.notifier)
               .syncResult(updateInfo, currentVersion: packageInfo.version);
           if (updateInfo != null && updateInfo.forceUpdate) {
-            debugLog('检测到强制更新，切换至更新页面');
             await runUpdateApp(updateInfo);
           }
         }
@@ -236,10 +233,6 @@ void _installCrossTabSessionSync() {
     if (!shouldReload || reloadPending) return;
     reloadPending = true;
 
-    debugLog(
-      '[CrossTabSync] 检测到其它标签页${event.action.name}'
-      '（userId=${event.userId}），清空共享缓存并重载页面',
-    );
     // 重载前清空共享 IndexedDB 会话缓存，避免把上一个账号的残留数据带进
     // 新会话；失败不阻塞重载（登录流程自身也会兜底清理）。
     try {
@@ -255,8 +248,7 @@ void _installCrossTabSessionSync() {
 Future<void> runMainApp() async {
   try {
     // 预加载全局 Token（主窗口核心逻辑）
-    final token = await TokenManager.instance.getToken();
-    debugLog('主窗口启动，Token available: ${token?.isNotEmpty == true}');
+    await TokenManager.instance.getToken();
     NotificationHelper().configure(
       onOpenRoom: (roomId) {
         globalContainer.read(activeRoomIdProvider.notifier).setActive(roomId);
@@ -313,17 +305,6 @@ Future<void> runMainApp() async {
     final startLocale = _resolveStartLocale();
     DioClient().setLocale(startLocale);
 
-    debugLog('''
- _______
-< 主窗口启动 >
- -------
-        \\   ^__^
-         \\  (oo)\\_______
-            (__)\\       )\\/\\
-                ||----w |
-                ||     ||
-    ''');
-
     // 桌面端主窗口配置（标题栏隐藏 + 更大尺寸）
     if (DeviceUtil.isRealDesktop()) {
       await setupDesktopWindow(
@@ -350,18 +331,6 @@ Future<void> runMainApp() async {
 /// 启动子窗口（继承全局容器 + 适配子窗口配置）
 Future<void> runSubApp(WindowController controller) async {
   try {
-    debugLog('子窗口启动，参数：${controller.arguments}');
-    debugLog('''
- _______
-< 子窗口启动 >
- -------
-        \\   ^__^
-         \\  (oo)\\_______
-            (__)\\       )\\/\\
-                ||----w |
-                ||     ||
-    ''');
-
     // 子窗口配置（保留标题栏 + 较小尺寸）
     if (DeviceUtil.isRealDesktop()) {
       await setupDesktopWindow(
@@ -400,16 +369,6 @@ Future<ProviderContainer> _createIsolatedWindowContainer() async {
 /// 启动更新窗口
 Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
   try {
-    debugLog('''
- _______
-< 更新启动 >
- -------
-        \\   ^__^
-         \\  (oo)\\_______
-            (__)\\       )\\/\\
-                ||----w |
-                ||     ||
-    ''');
     if (DeviceUtil.isRealDesktop()) {
       await setupDesktopWindow(
         size: const Size(800, 600),

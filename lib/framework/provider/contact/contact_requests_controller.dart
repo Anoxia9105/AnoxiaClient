@@ -1,5 +1,4 @@
 ﻿import 'package:anoxia/framework/domain/chat_contact_request_vo.dart';
-import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/core/contact_repository_provider.dart';
 import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -26,7 +25,6 @@ class ContactRequestsService extends _$ContactRequestsService {
     // 一致，避免无鉴权请求触发 401 链路。
     final token = ref.watch(tokenCacheProvider);
     if (token == null || token.isEmpty) {
-      debugLog('[Contact] ContactRequestsService: no token, skip fetch');
       return const [];
     }
     return _fetchRequests();

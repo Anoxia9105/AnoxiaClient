@@ -50,23 +50,16 @@ class WsController extends _$WsController {
 
   @override
   WsState build() {
-    debugLog('🌐 WsController 构建中...');
-
     _messageController = StreamController<PacketFrame<IPacket>>.broadcast();
 
     // 监听认证状态变化：登录时连接，登出时断开
     ref.listen(authControllerProvider, (previous, next) {
-      debugLog(
-        '[WsController] auth 状态变更: prev=${previous?.value != null}, next=${next.value != null}, nextLoading=${next.isLoading}, nextHasError=${next.hasError}',
-      );
       next.when(
         data: (user) {
           if (user != null) {
-            debugLog('[WsController] 检测到用户登录，准备连接...');
             _reconnectEnabled = true;
             _initConnection();
           } else {
-            debugLog('[WsController] 检测到用户退出，断开连接...');
             _reconnectEnabled = false;
             unawaited(_disposeAll(closeStream: false, manual: true));
           }
@@ -88,7 +81,6 @@ class WsController extends _$WsController {
       _lastNetworkAvailable = available;
 
       if (recovered) {
-        debugLog('[WsController] 网络已恢复，主动触发连接恢复');
         _reconnectAttempts = 0;
         _initConnection();
       }
@@ -145,7 +137,6 @@ class WsController extends _$WsController {
       final url =
           '${API.wsBaseUrl}${Uri.encodeQueryComponent(token)}'
           '&deviceId=${Uri.encodeQueryComponent(deviceId)}';
-      debugLog('[WsController] 正在尝试建立 WebSocket 连接');
 
       if (kIsWeb) {
         _channel = WebSocketChannel.connect(Uri.parse(url));
@@ -168,7 +159,6 @@ class WsController extends _$WsController {
 
       _reconnectAttempts = 0;
       state = WsState(status: WsStatus.connected);
-      debugLog('✅ WebSocket 连接成功');
 
       _startHeartbeat();
     } catch (e, st) {
@@ -279,7 +269,6 @@ class WsController extends _$WsController {
       return;
     }
     final bytes = message is Uint8List ? message : Uint8List.fromList(message);
-    debugLog('[SERVER FRAME]: ${bytes.length} bytes');
 
     try {
       final decoded = ImPacketV5.decodeFrame(bytes);
@@ -304,8 +293,6 @@ class WsController extends _$WsController {
       if (decoded.isAck) {
         final ack = ImPacketV5.decodeAck(payload);
         if (ack != null) {
-          // 打印 ACK 详情
-          debugLog('[SERVER ACK] topic=$topic code=${ack.code}');
           try {
             _handleAckV5(ack);
           } catch (ackError, ackStack) {
@@ -318,9 +305,6 @@ class WsController extends _$WsController {
       }
 
       final packetData = PacketRegistry.parse(topic, payload, decoded.codecId);
-      debugLog(
-        '[SERVER DATA] dispatch -> Topic: $topic, CodecId: ${decoded.codecId}, EffectiveTopic: $effectiveTopic, PayloadSize: ${payload.length}',
-      );
       if (packetData != null) {
         final frame = PacketFrame(topic: effectiveTopic, data: packetData);
         try {
@@ -419,9 +403,6 @@ class WsController extends _$WsController {
 
       try {
         _channel?.sink.add(pending.bytes);
-        debugLog(
-          '[WsController] 已触发自动重试: seq=$seq, attempt=${pending.attempts}',
-        );
       } catch (e) {
         debugLog('[WsController] 自动重试发送失败: seq=$seq', e);
       }
@@ -487,7 +468,6 @@ class WsController extends _$WsController {
     if (user == null) return;
 
     final delaySeconds = _calculateReconnectDelay();
-    debugLog('将在 $delaySeconds 秒后进行第 ${_reconnectAttempts + 1} 次重连...');
 
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       _reconnectAttempts++;
@@ -515,9 +495,6 @@ class WsController extends _$WsController {
     bool closeStream = false,
     bool manual = false,
   }) async {
-    debugLog(
-      '[WsController] 执行断开: closeStream=$closeStream, manual=$manual, state=${state.status}',
-    );
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     final channel = _channel;

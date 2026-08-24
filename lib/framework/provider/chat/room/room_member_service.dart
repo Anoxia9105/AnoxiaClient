@@ -121,8 +121,6 @@ class RoomMemberService extends _$RoomMemberService {
             }
           });
 
-    debugLog('🚀 拉取房间 $roomId 成员列表');
-
     try {
       final membersList = await ref
           .read(groupRepositoryProvider)
@@ -136,8 +134,6 @@ class RoomMemberService extends _$RoomMemberService {
 
       state = {...state, roomId: members};
       _syncedRoomIds.add(roomId);
-
-      debugLog('✅ 房间 $roomId 成员同步完成，共 ${members.length} 人');
     } on DioException catch (e, st) {
       if (CancelToken.isCancel(e)) {
         debugLog('[RoomMember] 房间 $roomId 成员同步已超时取消');
@@ -203,8 +199,6 @@ class RoomMemberService extends _$RoomMemberService {
   /// 返回 'ADDED'（已直接加入）、'PENDING'（已邀请，等待管理员审核）或 null（失败）。
   Future<String?> addMembers(String roomId, List<int> userIds) async {
     try {
-      debugLog('🚀 添加成员 $userIds 到房间 $roomId');
-
       final result = await ref
           .read(groupRepositoryProvider)
           .addRoomMembers(roomId, userIds);
@@ -226,8 +220,6 @@ class RoomMemberService extends _$RoomMemberService {
   /// [targetUserId] 被踢出的用户 ID
   Future<bool> kickMember(String roomId, int targetUserId) async {
     try {
-      debugLog('🚀 从房间 $roomId 踢出用户 $targetUserId');
-
       final ok = await ref
           .read(groupRepositoryProvider)
           .kickRoomMember(roomId, targetUserId);

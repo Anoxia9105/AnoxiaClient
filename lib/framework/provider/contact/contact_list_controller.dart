@@ -35,7 +35,6 @@ class ContactListService extends _$ContactListService {
     // ─── Step 1: 优先读本地缓存，立即渲染 ────────────────────────────────
     final localContacts = await local.getContacts();
     if (localContacts.isNotEmpty) {
-      debugLog('[Cache] ContactListService: local hit count=${localContacts.length}');
       // 后台增量同步，不阻塞 UI
       unawaited(_syncFromRemote());
       return {for (final c in localContacts) c.contactId!: c};
@@ -45,10 +44,8 @@ class ContactListService extends _$ContactListService {
     // 检查是否已登录，防止登出过程中因 DB 已清空而再次发起请求导致 401 死循环
     final token = ref.read(tokenCacheProvider);
     if (token == null || token.isEmpty) {
-      debugLog('[Cache] ContactListService: no token, skip remote fetch');
       return {};
     }
-    debugLog('[Cache] ContactListService: local empty, fetch from remote');
     final result = await _syncFromRemote();
     return {for (final c in (result ?? [])) c.contactId!: c};
   }
@@ -63,7 +60,6 @@ class ContactListService extends _$ContactListService {
     try {
       final contacts = await ref.read(syncContactsUseCaseProvider)();
       await ref.read(localDataSourceProvider).upsertContacts(contacts);
-      debugLog('[Cache] ContactListService: synced ${contacts.length} contacts');
       return contacts;
     } catch (e) {
       debugLog('[Cache] ContactListService: sync failed: $e');
@@ -83,7 +79,6 @@ class ContactListService extends _$ContactListService {
           onlineStatus: isOnline,
         );
         state = AsyncData({...contactMap, userId: updatedContact});
-        debugLog("👤 联系人 $userId 状态同步: ${isOnline ? '在线' : '离线'}");
       }
     }
     // 同步写入本地 DB（不 await，非关键路径）

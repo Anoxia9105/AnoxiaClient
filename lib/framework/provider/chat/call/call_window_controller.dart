@@ -31,7 +31,6 @@ class CallWindowController extends _$CallWindowController {
   WindowController? build() {
     Channel.callChannel.setMethodCallHandler((call) async {
       if (call.method == 'on_call_window_close') {
-        debugLog('收到窗口关闭');
         final roomId = _activeRoomId;
         _activeRoomId = null;
         if (roomId != null && roomId.isNotEmpty) {
@@ -141,7 +140,6 @@ class CallWindowController extends _$CallWindowController {
     if (state == null) return;
 
     try {
-      debugLog('调用Call窗口设置: $payload');
       await Channel.callChannel.invokeMethod(
         Channel.callChannelMethod,
         payload,

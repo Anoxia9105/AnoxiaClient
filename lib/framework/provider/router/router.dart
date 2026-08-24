@@ -17,7 +17,6 @@ import 'package:go_router/go_router.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:anoxia/framework/logs/debug_log.dart';
 import '../core/app_initializer.dart';
 
 part 'router.g.dart';
@@ -106,7 +105,6 @@ GoRouter router(Ref ref) {
   );
 
   ref.onDispose(() {
-    debugLog('[Router] 路由服务销毁');
     router.dispose();
   });
 

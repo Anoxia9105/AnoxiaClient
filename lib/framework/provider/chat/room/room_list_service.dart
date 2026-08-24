@@ -109,7 +109,6 @@ class RoomListService extends _$RoomListService {
     // keepAlive 被登出时的会话重置重新 invalidate，形成
     // 「401 → 登出 → 重建 → 再 401」的无限循环，导致刚登录进首页又被登出。
     if (ref.read(authControllerProvider).value == null) {
-      debugLog('[RoomListService] 用户未登录，跳过会话列表预加载');
       return state.value ?? const <ChatRoomVO>[];
     }
 
@@ -137,7 +136,6 @@ class RoomListService extends _$RoomListService {
   Future<List<ChatRoomVO>> fetchRoomList() async {
     final currentUser = ref.read(authControllerProvider).value;
     if (currentUser == null) {
-      debugLog('用户未登录，跳过聊天室列表请求');
       return [];
     }
 
@@ -350,7 +348,6 @@ class RoomListService extends _$RoomListService {
   /// 上报已读 seq 到服务器，同时更新本地 DB（last_read_seq / unread_count）
   Future<void> _reportReadSeq(String roomId, int seq) async {
     try {
-      debugLog('🚀 上报已读状态: 房间 $roomId, Seq $seq');
       await ref.read(markAsReadUseCaseProvider)(roomId, seq: seq);
     } catch (e) {
       debugLog('上报已读失败: $e');
@@ -371,12 +368,10 @@ class RoomListService extends _$RoomListService {
     );
 
     if (existingRoom != null && existingRoom.roomId != null) {
-      debugLog('✅ 找到现有房间: ${existingRoom.roomId}');
       return existingRoom.roomId;
     }
 
     try {
-      debugLog('🚀 正在请求后端创建私聊房间，目标用户: $targetUserId');
       final newRoom = await ref
           .read(roomRepositoryProvider)
           .createPrivateRoom(targetUserId);
@@ -398,10 +393,8 @@ class RoomListService extends _$RoomListService {
   /// 退出聊天室
   Future<void> leaveRoom(String roomId) async {
     try {
-      debugLog('🚀 正在请求后端删除会话，房间 ID: $roomId');
       await ref.read(roomRepositoryProvider).leaveRoom(roomId);
 
-      debugLog('删除会话成功');
       await ref.read(localDataSourceProvider).deleteConversationCache(roomId);
 
       // 删除对应房间缓存的消息
@@ -412,8 +405,6 @@ class RoomListService extends _$RoomListService {
       await ref.read(doNotDisturbRoomsProvider.notifier).remove(roomId);
 
       await refresh(silent: true);
-
-      debugLog('✅ 已删除房间 $roomId 的本地消息缓存和状态');
     } catch (e) {
       debugLog('❌ 删除会话失败', e);
       rethrow;
@@ -437,14 +428,11 @@ class RoomListService extends _$RoomListService {
   /// [isMute] true=禁言，false=解除禁言
   Future<bool> muteRoom(String roomId, bool isMute) async {
     try {
-      debugLog("🚀 正在${isMute ? '禁言' : '解除禁言'}房间 $roomId");
-
       final ok = await ref
           .read(roomRepositoryProvider)
           .muteRoom(roomId, isMute);
 
       if (ok) {
-        debugLog("✅ ${isMute ? '禁言' : '解除禁言'}房间成功");
         await refresh(silent: true);
       }
       return ok;

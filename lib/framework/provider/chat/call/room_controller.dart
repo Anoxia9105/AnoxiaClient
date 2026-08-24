@@ -101,7 +101,6 @@ class RoomController extends _$RoomController {
       try {
         room.dispose();
       } catch (_) {}
-      debugLog('房间控制器已销毁');
     });
 
     try {
@@ -118,7 +117,6 @@ class RoomController extends _$RoomController {
         /// 房间连接成功
         /// 通常在 build 中 connect 之后就会触发，这里主要用于清除之前的错误状态
         ..on<RoomConnectedEvent>((event) {
-          debugLog('✓ 房间已连接: ${event.room.name}');
           final current = state.value;
           if (current != null && current.connectionError != null) {
             state = AsyncData(current.copyWith(connectionError: null));
@@ -131,12 +129,10 @@ class RoomController extends _$RoomController {
           if (event.reason == DisconnectReason.participantRemoved) {
             unawaited(_handleRemovedFromCall('主持人'));
           }
-          debugLog('✗ 房间已断开');
         })
         /// 房间正在重连中（网络抖动时触发）
         /// 更新 isReconnecting 状态，UI 层展示重连遮罩
         ..on<RoomReconnectingEvent>((event) {
-          debugLog('🔄 房间正在重新连接...');
           final current = state.value;
           if (current != null) {
             state = AsyncData(current.copyWith(isReconnecting: true));
@@ -145,7 +141,6 @@ class RoomController extends _$RoomController {
         /// 房间重连成功
         /// 清除重连状态和错误信息
         ..on<RoomReconnectedEvent>((event) {
-          debugLog('✅ 房间已重新连接');
           final current = state.value;
           if (current != null) {
             state = AsyncData(
@@ -155,7 +150,6 @@ class RoomController extends _$RoomController {
         })
         /// 房间元数据变化（服务端通过 Server API 更新的房间信息）
         ..on<RoomMetadataChangedEvent>((event) {
-          debugLog('📝 房间元数据变化: ${event.metadata}');
           final current = state.value;
           if (current != null) {
             state = AsyncData(current.copyWith(roomMetadata: event.metadata));
@@ -163,7 +157,6 @@ class RoomController extends _$RoomController {
         })
         /// 录制状态变化（服务端开启/停止录制时触发）
         ..on<RoomRecordingStatusChanged>((event) {
-          debugLog('📹 录制状态变化: ${event.activeRecording}');
           final current = state.value;
           if (current != null) {
             state = AsyncData(
@@ -174,7 +167,6 @@ class RoomController extends _$RoomController {
         // ============ 参与者事件 ============
         /// 新参与者加入房间
         ..on<ParticipantConnectedEvent>((e) {
-          debugLog('➕ 参与者加入: ${e.participant.identity}');
           // 远端参与者出现过：兜底检测可生效；有人加入时取消待触发的结束检测
           _peerGoneTimer?.cancel();
           _everHadRemote = true;
@@ -182,14 +174,12 @@ class RoomController extends _$RoomController {
         })
         /// 参与者离开房间
         ..on<ParticipantDisconnectedEvent>((e) {
-          debugLog('➖ 参与者离开: ${e.participant.identity}');
           _updateParticipants();
           _schedulePeerGoneCheck();
         })
         /// 活跃发言者变化（SDK 根据音量实时检测）
         /// 将第一个发言者设为焦点，UI 层可以据此高亮或置顶
         ..on<ActiveSpeakersChangedEvent>((e) {
-          debugLog('🔊 活跃发言者变化 (${e.speakers.length} 人)');
           final current = state.value;
           if (current != null && e.speakers.isNotEmpty) {
             state = AsyncData(
@@ -201,9 +191,6 @@ class RoomController extends _$RoomController {
         /// 对应官方 participant_context.dart 中的 ParticipantConnectionQualityUpdatedEvent
         /// quality 枚举值：excellent / good / poor / lost
         ..on<ParticipantConnectionQualityUpdatedEvent>((e) {
-          debugLog(
-            '📶 连接质量变化: ${e.participant.identity} → ${e.connectionQuality}',
-          );
           final current = state.value;
           if (current != null) {
             final qmap = Map<String, ConnectionQuality>.from(
@@ -218,40 +205,26 @@ class RoomController extends _$RoomController {
         // 不监听这些事件的话，别人开关摄像头/静音你这边 UI 不会更新
         /// 远端参与者发布了新轨道（如开启摄像头）
         ..on<TrackPublishedEvent>((e) {
-          debugLog(
-            '📡 远端轨道发布: ${e.participant.identity} - ${e.publication.sid}',
-          );
           _updateParticipants();
         })
         /// 远端参与者撤销了轨道（如关闭摄像头）
         ..on<TrackUnpublishedEvent>((e) {
-          debugLog(
-            '📡 远端轨道撤销: ${e.participant.identity} - ${e.publication.sid}',
-          );
           _updateParticipants();
         })
         /// 本地轨道发布成功（自己开启摄像头/麦克风后触发）
         ..on<LocalTrackPublishedEvent>((e) {
-          debugLog('📡 本地轨道发布: ${e.publication.sid}');
           _updateParticipants();
         })
         /// 本地轨道撤销（自己关闭摄像头/麦克风后触发）
         ..on<LocalTrackUnpublishedEvent>((e) {
-          debugLog('📡 本地轨道撤销: ${e.publication.sid}');
           _updateParticipants();
         })
         /// 轨道被静音（任意参与者）
         ..on<TrackMutedEvent>((e) {
-          debugLog(
-            '🔇 轨道已静音: ${e.participant.identity} - ${e.publication.sid}',
-          );
           _updateParticipants();
         })
         /// 轨道取消静音（任意参与者）
         ..on<TrackUnmutedEvent>((e) {
-          debugLog(
-            '🔈 轨道已取消静音: ${e.participant.identity} - ${e.publication.sid}',
-          );
           _updateParticipants();
         })
         // ============ 自定义数据通道 ============
@@ -327,7 +300,6 @@ class RoomController extends _$RoomController {
           const Duration(seconds: 10),
           onTimeout: () => throw TimeoutException('连接房间超时'),
         );
-    debugLog('房间连接成功: ${room.name}');
   }
 
   /// 枚举系统可用媒体设备
@@ -386,10 +358,6 @@ class RoomController extends _$RoomController {
 
       await localParticipant.setCameraEnabled(enableCamera);
       await localParticipant.setMicrophoneEnabled(enableMicrophone);
-      debugLog(
-        '本地轨道初始化 → mic: ${localParticipant.isMicrophoneEnabled()}, '
-        'video: ${localParticipant.isCameraEnabled()}',
-      );
     } catch (e) {
       debugLog('初始化本地硬件失败，可能设备被占用或无权限: $e');
     }
@@ -453,7 +421,6 @@ class RoomController extends _$RoomController {
       final json = jsonDecode(utf8.decode(e.data)) as Map<String, dynamic>;
       // payload 是业务数据，timestamp 是发送时间戳（可用于排序或去重）
       final payload = json['payload'] as Map<String, dynamic>? ?? {};
-      debugLog('📨 收到数据事件: topic=${e.topic} 来自: ${e.participant?.identity}');
 
       switch (e.topic) {
         case 'app-hand-raise':
@@ -493,7 +460,6 @@ class RoomController extends _$RoomController {
       map.remove(uid);
     }
     state = AsyncData(current.copyWith(handRaiseMap: map));
-    debugLog("✋ $uid ${raised ? '举手' : '放手'}");
 
     // Toast 提示
     ref
@@ -529,8 +495,6 @@ class RoomController extends _$RoomController {
 
     // 3 秒后自动移除远端 ReactionItem
     _scheduleReactionRemoval(item.id);
-
-    debugLog('💬 收到消息: $message 来自: $uid');
   }
 
   /// 处理主持人静音指令
@@ -548,7 +512,6 @@ class RoomController extends _$RoomController {
 
     current.room.localParticipant?.setMicrophoneEnabled(!muted);
     state = AsyncData(current.copyWith(micEnabled: !muted));
-    debugLog("📢 收到主持人指令: ${muted ? '静音' : '取消静音'}");
 
     // Toast 提示
     ref
@@ -646,7 +609,6 @@ class RoomController extends _$RoomController {
     _listener = null;
     _deviceSub?.cancel();
     _deviceSub = null;
-    debugLog('资源已清理');
   }
 
   // ================= 公开功能 API =================
@@ -676,7 +638,6 @@ class RoomController extends _$RoomController {
       }
       await currentState.room.localParticipant?.setMicrophoneEnabled(next);
       state = AsyncData(currentState.copyWith(micEnabled: next));
-      debugLog("麦克风${next ? "开启" : "关闭"}");
     } catch (e) {
       debugLog('切换麦克风失败: $e');
     } finally {
@@ -709,7 +670,6 @@ class RoomController extends _$RoomController {
       }
       await currentState.room.localParticipant?.setCameraEnabled(next);
       state = AsyncData(currentState.copyWith(cameraEnabled: next));
-      debugLog("摄像头${next ? "开启" : "关闭"}");
     } catch (e) {
       debugLog('切换摄像头失败: $e');
     } finally {
@@ -734,7 +694,6 @@ class RoomController extends _$RoomController {
       if (options is! CameraCaptureOptions) return;
       await track.setCameraPosition(options.cameraPosition.switched());
       state = AsyncData(currentState.copyWith());
-      debugLog('已切换至${options.cameraPosition.switched().name}摄像头');
     } catch (e) {
       debugLog('切换前后摄像头失败: $e');
     }
@@ -778,7 +737,6 @@ class RoomController extends _$RoomController {
             screenShareTrack: screenTrack,
           ),
         );
-        debugLog('屏幕共享已开启');
       } else {
         // 找到屏幕共享轨道并撤销发布
         final screenPub = localParticipant.videoTrackPublications
@@ -802,7 +760,6 @@ class RoomController extends _$RoomController {
         state = AsyncData(
           currentState.copyWith(screenSharing: false, screenShareTrack: null),
         );
-        debugLog('屏幕共享已关闭');
       }
     } catch (e) {
       debugLog('切换屏幕共享失败: $e');
@@ -876,7 +833,6 @@ class RoomController extends _$RoomController {
       final next = !currentState.speakerOn;
       await Hardware.instance.setSpeakerphoneOn(next);
       state = AsyncData(currentState.copyWith(speakerOn: next));
-      debugLog("扬声器${next ? "开启" : "关闭"}");
     } catch (e) {
       debugLog('切换扬声器失败: $e');
     }
@@ -903,7 +859,6 @@ class RoomController extends _$RoomController {
         }
       }
       state = AsyncData(currentState.copyWith(currentAudioInput: device));
-      debugLog('切换麦克风至: ${device.label}');
     } catch (e) {
       debugLog('切换麦克风失败: $e');
     }
@@ -916,7 +871,6 @@ class RoomController extends _$RoomController {
     try {
       await currentState.room.setVideoInputDevice(device);
       state = AsyncData(currentState.copyWith(currentVideoInput: device));
-      debugLog('切换摄像头至: ${device.label}');
     } catch (e) {
       debugLog('切换摄像头失败: $e');
     }
@@ -929,7 +883,6 @@ class RoomController extends _$RoomController {
     try {
       await Hardware.instance.selectAudioOutput(device);
       state = AsyncData(currentState.copyWith(currentAudioOutput: device));
-      debugLog('切换扬声器至: ${device.label}');
     } catch (e) {
       debugLog('切换扬声器失败: $e');
     }
@@ -962,7 +915,6 @@ class RoomController extends _$RoomController {
         await currentState.room.disconnect().timeout(
           const Duration(seconds: 2),
         );
-        debugLog('已离开房间');
       } on TimeoutException {
         debugLog('离开房间超时，转为后台清理');
       } catch (e) {
@@ -1047,8 +999,6 @@ class RoomController extends _$RoomController {
       topic: 'app-hand-raise',
       payload: {'raised': raised, 'uid': uid, 'name': meta.name},
     );
-
-    debugLog("✋ 本地${raised ? '举手' : '放手'}");
   }
 
   /// 发送表情 / 弹幕
@@ -1168,8 +1118,7 @@ class RoomController extends _$RoomController {
               'call_user_removed'.tr(),
               type: ToastType.success,
             );
-        debugLog('✅ 踢出参与者 $identity 成功');
-        return true;
+            return true;
       } else {
         final msg = '未知错误';
         ref
@@ -1213,9 +1162,7 @@ class RoomController extends _$RoomController {
 @riverpod
 Future<String> roomToken(Ref ref, String roomId) async {
   try {
-    debugLog('请求房间 Token');
     final token = await ref.read(callRepositoryProvider).fetchCallToken(roomId);
-    debugLog('获取房间 Token 成功');
     return token;
   } catch (e) {
     debugLog('获取房间 Token 失败: $e');

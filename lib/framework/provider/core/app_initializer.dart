@@ -37,7 +37,6 @@ class AppInitializer extends _$AppInitializer {
       final user = await ref.read(authControllerProvider.future);
 
       if (user == null) {
-        debugLog('👤 用户未登录');
         return false;
       }
 
@@ -55,14 +54,12 @@ class AppInitializer extends _$AppInitializer {
   /// 初始化基础服务
   Future<void> _initializeServices() async {
     if (_coreServicesInitialized) {
-      debugLog('🛠️ 基础服务已初始化，跳过重复挂载');
       return;
     }
 
     if (DeviceUtil.isRealMobile()) {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp();
-        debugLog('🔥 Firebase 初始化完成');
       }
 
       unawaited(

@@ -1,4 +1,3 @@
-import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/ai/ai_chat_controller.dart';
 import 'package:anoxia/framework/provider/desktop/desktop_search_controller.dart';
@@ -80,9 +79,6 @@ class SessionResetService {
   ];
 
   void reset(Ref ref, {required SessionResetReason reason}) {
-    final reasonLabel = reason.name;
-    debugLog('[SessionReset] 开始重置会话状态, reason=$reasonLabel');
-
     // 使用全局容器执行失效，避免在 AuthController 的 provider 上下文内
     // invalidate 依赖到间接依赖 auth 的 provider 时触发环依赖断言。
     final container = globalContainer;
@@ -160,9 +156,5 @@ class SessionResetService {
 
     // 建群结果 AsyncNotifier：上个账号创建中的群聊状态不应带入新会话。
     container.invalidate(createGroupControllerProvider);
-
-    debugLog(
-      '[SessionReset] 会话状态重置完成, reason=$reasonLabel, scopes=${managedScopes.length}',
-    );
   }
 }

@@ -18,7 +18,6 @@ class LocalDataSource {
 
   Future<List<ChatRoomVO>> getConversations() async {
     final rows = await db.conversationDao.getConversations();
-    debugLog('[DB] getConversations → ${rows.length} rows');
     return rows.map(_conversationFromRow).toList();
   }
 
@@ -39,9 +38,6 @@ class LocalDataSource {
       limit: limit,
       offset: offset,
       beforeSeq: beforeSeq,
-    );
-    debugLog(
-      '[DB] getMessages convId=$convId offset=$offset → ${rows.length} rows',
     );
     return rows.reversed.map(_messageFromRow).toList();
   }
@@ -189,9 +185,6 @@ class LocalDataSource {
   }
 
   Future<void> upsertConversation(ChatRoomVO room) async {
-    debugLog(
-      '[DB] upsertConversation roomId=${room.roomId} peerId=${room.peerId}',
-    );
     await _ensurePeerUsersExist([room]);
     return db.conversationDao.insertOrUpdateConversation(
       _conversationToCompanion(room),
@@ -200,9 +193,6 @@ class LocalDataSource {
 
   Future<void> upsertConversations(Iterable<ChatRoomVO> rooms) async {
     final roomList = rooms.toList();
-    debugLog(
-      '[DB] upsertConversations count=${roomList.length} ids=${roomList.map((r) => r.roomId).toList()}',
-    );
     await _ensurePeerUsersExist(roomList);
     return db.conversationDao.insertOrUpdateConversations(
       roomList.map(_conversationToCompanion),
@@ -225,18 +215,12 @@ class LocalDataSource {
         )
         .toList();
     if (missing.isNotEmpty) {
-      debugLog(
-        '[DB] _ensurePeerUsersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}',
-      );
       await db.userDao.insertOrUpdateUsers(missing);
     }
   }
 
   Future<void> upsertMessage(ChatMessage message) async {
     final row = _messageToRow(message);
-    debugLog(
-      '[DB] upsertMessage id=${message.messageId} room=${message.roomId} seq=${message.seq} status=${message.deliveryStatus}',
-    );
     await db.transaction(() async {
       await _ensureConversationExists(row.conversationId);
       await _ensureMessageSendersExist([row]);
@@ -261,7 +245,6 @@ class LocalDataSource {
     final rows = messages.map(_messageToRow).toList();
     if (rows.isEmpty) return;
 
-    debugLog('[DB] upsertMessages count=${rows.length}');
     for (final conversationId
         in rows.map((row) => row.conversationId).toSet()) {
       await _ensureConversationExists(conversationId);
@@ -286,15 +269,11 @@ class LocalDataSource {
         )
         .toList();
     if (missing.isNotEmpty) {
-      debugLog(
-        '[DB] _ensureMessageSendersExist: insert ${missing.length} stub users, ids=${missing.map((u) => u.userId.value).toList()}',
-      );
       await db.userDao.insertOrUpdateUsers(missing);
     }
   }
 
   Future<void> upsertUser(UserInfo user) {
-    debugLog('[DB] upsertUser userId=${user.userId} name=${user.nickName}');
     final now = DateTime.now();
     return db.userDao.insertOrUpdateUser(
       CachedUsersCompanion(
@@ -312,13 +291,11 @@ class LocalDataSource {
   }
 
   Future<void> markConversationAsRead(String conversationId, {int? seq}) {
-    debugLog('[DB] markConversationAsRead convId=$conversationId seq=$seq');
     return db.conversationDao.markAsRead(conversationId, lastReadSeq: seq);
   }
 
   Future<List<ChatMessage>> pendingOutgoingMessages() async {
     final rows = await db.messageDao.getPendingOutgoingMessages();
-    debugLog('[DB] pendingOutgoingMessages → ${rows.length} pending');
     return rows.map(_messageFromRow).toList();
   }
 
@@ -339,9 +316,6 @@ class LocalDataSource {
     int? seq,
     DateTime? sentAt,
   }) {
-    debugLog(
-      '[DB] updateDeliveryStatus id=$messageId → $status serverMsgId=$serverMessageId seq=$seq',
-    );
     return db.messageDao.updateDeliveryStatus(
       messageId,
       status.toJson(),
@@ -382,7 +356,6 @@ class LocalDataSource {
   }
 
   Future<void> deleteConversationCache(String conversationId) async {
-    debugLog('[DB] deleteConversationCache convId=$conversationId');
     await db.transaction(() async {
       await (db.delete(
         db.messages,
@@ -406,7 +379,6 @@ class LocalDataSource {
   /// 一律连同其消息与同步水位一起清除，避免聊天列表出现「别人的房间」。
   Future<void> deleteConversationsNotIn(Iterable<String> keepIds) async {
     final keep = keepIds.toSet();
-    debugLog('[DB] deleteConversationsNotIn keep=${keep.length} ids');
     await db.transaction(() async {
       if (keep.isEmpty) {
         await db.delete(db.messages).go();
@@ -517,9 +489,6 @@ class LocalDataSource {
   Future<void> _ensureConversationExists(String conversationId) async {
     final existing = await db.conversationDao.getConversation(conversationId);
     if (existing != null) return;
-    debugLog(
-      '[DB] _ensureConversationExists: create stub convId=$conversationId',
-    );
     final now = DateTime.now();
     await db.conversationDao.insertOrUpdateConversation(
       ConversationsCompanion(
@@ -640,7 +609,6 @@ class LocalDataSource {
   /// 获取本地所有联系人
   Future<List<ChatContactVO>> getContacts() async {
     final rows = await db.contactDao.getAllContacts();
-    debugLog('[DB] getContacts → ${rows.length} rows');
     return rows.map(_contactFromRow).toList();
   }
 
@@ -655,20 +623,17 @@ class LocalDataSource {
   Future<void> upsertContacts(Iterable<ChatContactVO> contacts) async {
     final valid = contacts.where((c) => c.contactId != null).toList();
     if (valid.isEmpty) return;
-    debugLog('[DB] upsertContacts count=${valid.length}');
     await db.contactDao.insertOrUpdateContacts(valid.map(_contactToCompanion));
   }
 
   /// 插入或更新单个联系人
   Future<void> upsertContact(ChatContactVO contact) async {
     if (contact.contactId == null) return;
-    debugLog('[DB] upsertContact contactId=${contact.contactId}');
     await db.contactDao.insertOrUpdateContact(_contactToCompanion(contact));
   }
 
   /// 删除联系人（解除好友时调用）
   Future<void> deleteContact(int contactId) async {
-    debugLog('[DB] deleteContact contactId=$contactId');
     await db.contactDao.deleteContact(contactId);
   }
 
@@ -685,7 +650,6 @@ class LocalDataSource {
   // ── 私有转换 ──────────────────────────────────────────────────────────────
 
   Future<void> clearSessionCache() async {
-    debugLog('[DB] clearSessionCache: remove chat/contact local data');
     await db.clearSessionCache();
   }
 

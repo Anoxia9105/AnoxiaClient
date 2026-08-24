@@ -35,10 +35,7 @@ part 'auth_controller.g.dart';
 class AuthController extends _$AuthController {
   @override
   Future<UserInfo?> build() async {
-    debugLog('🔧 AuthController 初始化完成，尝试自动恢复登录...');
-
     final token = await TokenManager.instance.getToken();
-    debugLog("[AuthController] 自动恢复: token ${token != null ? '存在' : '不存在'}");
     if (token == null || token.isEmpty) return null;
 
     try {
@@ -138,7 +135,6 @@ class AuthController extends _$AuthController {
     unawaited(_bindPushDevice(user));
     // 清掉未登录阶段可能遗留的空房间列表缓存，避免登录后先闪空态。
     ref.invalidate(roomListServiceProvider);
-    debugLog('[AuthController] 登录成功，重新触发 App 初始化序列...');
     ref.invalidate(appInitializerProvider);
     // 通知其它标签页已切换账号（Web 端生效，原生端为空实现）。
     CrossTabSessionSync.instance.broadcastLogin(user.userId);
@@ -294,8 +290,6 @@ class AuthController extends _$AuthController {
 
       // 4. 统一清理会话级缓存，避免切账号后复用旧会话数据
       SessionResetService.instance.reset(ref, reason: reason);
-
-      debugLog('[AuthController] 登出成功，全部业务缓存已清理');
     } catch (e, st) {
       debugLog('[AuthController] 登出清理异常', e, st);
       // 即使出错也强制设为 null，确保用户能回到登录页
@@ -358,7 +352,6 @@ class AuthController extends _$AuthController {
       await ref
           .read(savedAccountsServiceProvider.notifier)
           .upsert(user: user, token: target.token);
-      debugLog('[AuthController] 切换账号成功 -> ${user.userId}');
       return true;
     } catch (e, st) {
       debugLog('[AuthController] 切换账号失败', e, st);
@@ -483,7 +476,6 @@ class AuthController extends _$AuthController {
         userId: user.userId,
       );
       await ref.read(authRepositoryProvider).bindPushDevice(payload);
-      debugLog('[AuthController] 推送设备绑定上报成功');
     } catch (e, st) {
       debugLog('[AuthController] 推送设备绑定上报失败: $e');
       debugLog('[AuthController] 推送设备绑定上报异常', e, st);
@@ -494,7 +486,6 @@ class AuthController extends _$AuthController {
     if (!_shouldReportPushDevice()) return;
 
     PushManager.instance.setOnFcmTokenChanged((token) async {
-      debugLog('[AuthController] 检测到 FCM token 变更，触发设备绑定刷新');
       await _bindPushDevice(user);
     });
   }
@@ -508,7 +499,6 @@ class AuthController extends _$AuthController {
             deviceUid,
             token: token,
           );
-      debugLog('[AuthController] 推送设备解绑上报成功');
     } catch (e) {
       debugLog('[AuthController] 推送设备解绑上报失败（忽略）: $e');
     }

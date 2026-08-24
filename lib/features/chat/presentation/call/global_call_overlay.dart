@@ -120,7 +120,6 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    debugPrint('AppLifecycleState changed: $state');
     if (state != AppLifecycleState.hidden) return;
 
     final session = ref.read(mobileCallSessionControllerProvider);

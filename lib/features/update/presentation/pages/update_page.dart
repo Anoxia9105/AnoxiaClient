@@ -77,8 +77,6 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
       final fileName = widget.updateInfo.downloadUrl.split('/').last;
       final savePath = '${tempDir.path}/$fileName';
 
-      debugLog('🚀 准备下载更新文件至: $savePath');
-
       final response = await DioClient().download(
         widget.updateInfo.downloadUrl,
         savePath,
@@ -96,13 +94,9 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         throw Exception('服务器响应异常: ${response.statusCode}');
       }
 
-      debugLog('📦 下载完成，正在唤起安装程序...');
-
       final result = await OpenFilex.open(savePath);
 
       if (result.type == ResultType.done) {
-        debugLog('✅ 安装程序已启动，执行安全退出序列...');
-
         if (DeviceUtil.isRealDesktop()) {
           await windowManager.hide();
         }

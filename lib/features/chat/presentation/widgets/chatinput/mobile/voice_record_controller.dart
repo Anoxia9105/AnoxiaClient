@@ -229,7 +229,6 @@ class VoiceRecordController extends ChangeNotifier {
       _maxDurationTimer = Timer(
         const Duration(seconds: _maxDurationSeconds),
         () {
-          debugLog('录音达到最长 $_maxDurationSeconds 秒，自动发送');
           onMaxDurationReached?.call();
         },
       );
@@ -306,7 +305,6 @@ class VoiceRecordController extends ChangeNotifier {
 
     // 处理取消或失败情况
     if (cancelled || path == null) {
-      debugLog('语音录制已取消');
       // 清理临时文件
       if (path != null) {
         try {
@@ -319,7 +317,6 @@ class VoiceRecordController extends ChangeNotifier {
     // 检查录音时长
     final duration = DateTime.now().difference(_startTime!).inSeconds;
     if (duration < 1) {
-      debugLog('录音时间太短，丢弃');
       try {
         File(path).deleteSync();
       } catch (_) {}
@@ -327,7 +324,6 @@ class VoiceRecordController extends ChangeNotifier {
     }
 
     // 返回录制结果
-    debugLog('语音录制完成: $path, 时长: ${duration}s');
     return VoiceResult(filePath: path, duration: duration);
   }
 
@@ -361,7 +357,6 @@ class VoiceRecordController extends ChangeNotifier {
 
     // 计算时长
     final duration = DateTime.now().difference(_startTime!).inSeconds;
-    debugLog('语音强制结束: $path, 时长: ${duration}s');
     return VoiceResult(filePath: path, duration: duration);
   }
 
@@ -397,7 +392,6 @@ class VoiceRecordController extends ChangeNotifier {
           File(path).deleteSync();
         } catch (_) {}
       }
-      debugLog('语音录制已取消并重置');
     } catch (e, stack) {
       debugLog('取消录音失败', e, stack);
     }

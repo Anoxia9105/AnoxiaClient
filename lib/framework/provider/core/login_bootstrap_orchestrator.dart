@@ -35,7 +35,6 @@ class LoginBootstrapOrchestrator {
   Future<void> run({required String reason}) async {
     final existing = _inflight;
     if (existing != null) {
-      debugLog('[Bootstrap] 复用正在执行的初始化链路, reason=$reason');
       return existing;
     }
 
@@ -53,11 +52,8 @@ class LoginBootstrapOrchestrator {
   Future<void> _runInternal({required String reason}) async {
     final user = _ref.read(authControllerProvider).value;
     if (user == null) {
-      debugLog('[Bootstrap] 当前未登录，跳过初始化链路, reason=$reason');
       return;
     }
-
-    debugLog('[Bootstrap] 开始执行初始化链路, reason=$reason');
 
     // Step 1: 先拉房间列表，作为后续房间预热的前置依赖。
     final rooms = await _safeReadRoomList();
@@ -70,8 +66,6 @@ class LoginBootstrapOrchestrator {
 
     // Step 3: 后台预热当前房间。预热是体验优化，不能阻塞 App 进入主界面。
     unawaited(_warmUpActiveRoomContext(rooms));
-
-    debugLog('[Bootstrap] 初始化链路完成, reason=$reason');
   }
 
   Future<List<ChatRoomVO>> _safeReadRoomList() async {

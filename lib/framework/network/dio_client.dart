@@ -20,7 +20,6 @@ class DioClient {
       InterceptorsWrapper(
         /// 请求拦截器：注入鉴权 Token
         onRequest: (options, handler) async {
-          debugLog('Dio request -> ${options.method} ${options.uri}');
           if (options.data is FormData) {
             options.contentType = 'multipart/form-data';
             options.headers.remove('Content-Type');
@@ -30,8 +29,6 @@ class DioClient {
             options.headers['Content-Type'] = 'application/json';
           }
           options.headers['Accept-Language'] = _acceptLanguage;
-          debugLog('Dio request headers -> ${options.headers}');
-          debugLog('Dio request data -> ${options.data}');
           // 默认需要鉴权，除非显式指定 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
@@ -47,7 +44,6 @@ class DioClient {
 
         /// 响应拦截器：处理业务状态码
         onResponse: (response, handler) async {
-          // debugLog(response.data);
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
             final needAuth =

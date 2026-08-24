@@ -35,7 +35,6 @@ class HighMessageService extends _$HighMessageService {
         .listen((msg) => _handleMessage(msg));
 
     ref.onDispose(() {
-      debugLog('高优消息服务销毁，清理定时器和订阅');
       for (var t in _typingTimers.values) {
         t.cancel();
       }
@@ -101,14 +100,11 @@ class HighMessageService extends _$HighMessageService {
     _typingTimers.remove(timerKey);
 
     if (msg.content == 'true') {
-      debugLog('用户 ${msg.senderId} 正在输入...');
       // 2. 只有是 true 时，才开启 3 秒自灭（防止对方程序崩溃没发 false）
       _typingTimers[timerKey] = Timer(const Duration(seconds: 5), () {
-        debugLog('输入状态超时自动清理');
         _clearSingleStatus(roomId, HighMessageType.TYPING_STATUS);
       });
     } else {
-      debugLog('用户 ${msg.senderId} 停止输入，立即清理');
       // 3. 如果收到 "false"，立刻清理状态
       _clearSingleStatus(roomId, HighMessageType.TYPING_STATUS);
     }
@@ -121,14 +117,12 @@ class HighMessageService extends _$HighMessageService {
       if (targetMsgId != null) {
         // 假设你之前实现的聊天记录 Provider 叫 chatMessagesProvider
         // ref.read(chatMessagesProvider.notifier).removeMessage(msg.roomId!, targetMsgId);
-        debugLog('执行消息撤回副作用，ID: $targetMsgId');
       }
     }
   }
 
   void _handleCallInvite(HighMessage msg) {
     // 这里可以触发震动、铃声等
-    debugLog('收到来自 ${msg.senderId} 的通话邀请');
   }
 
   void _handleSystemKick(HighMessage msg) {

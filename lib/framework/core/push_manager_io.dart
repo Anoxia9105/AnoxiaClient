@@ -75,16 +75,13 @@ class PushManager {
 
       await Future.delayed(const Duration(milliseconds: 400));
 
-      final rid = await getRegistrationId().timeout(
+      await getRegistrationId().timeout(
         _jpushQueryTimeout,
         onTimeout: () => '',
       );
 
-      debugLog('JPush RID => $rid');
-
       // FCM 在部分国内机型/网络环境下可能长时间阻塞，这里不阻塞主初始化链路。
       unawaited(_bindFcmTokenToJPush());
-      unawaited(_logPushHealth());
     } catch (e, stack) {
       _initialized = false;
       debugLog('PushManager init 失败', e, stack);
@@ -95,23 +92,17 @@ class PushManager {
     _jpush.requestRequiredPermission();
   }
 
-  Future<dynamic> _onConnected(Map<String, dynamic> event) async {
-    debugLog('极光连接成功 => $event');
-  }
+  Future<dynamic> _onConnected(Map<String, dynamic> event) async {}
 
   Future<dynamic> _onReceiveNotification(Map<String, dynamic> event) async {
-    debugLog('收到通知 => $event');
     _dispatchNotification(event);
   }
 
   Future<dynamic> _onOpenNotification(Map<String, dynamic> event) async {
-    debugLog('点击通知 => $event');
     _dispatchNotification(event);
   }
 
-  Future<dynamic> _onReceiveMessage(Map<String, dynamic> event) async {
-    debugLog('收到透传消息 => $event');
-  }
+  Future<dynamic> _onReceiveMessage(Map<String, dynamic> event) async {}
 
   /// 获取 JPush 注册 ID
   Future<String> getRegistrationId() async {
@@ -150,7 +141,6 @@ class PushManager {
 
       _latestFcmToken = fcmToken;
       _jpush.setThirdToken(token: fcmToken);
-      debugLog('FCM token 已绑定到极光 third token');
       _notifyFcmTokenChanged(fcmToken);
 
       _fcmTokenRefreshSub ??= FirebaseMessaging.instance.onTokenRefresh.listen(
@@ -158,36 +148,12 @@ class PushManager {
           if (token.isNotEmpty) {
             _latestFcmToken = token;
             _jpush.setThirdToken(token: token);
-            debugLog('FCM token 刷新，已重新绑定到极光 third token');
             _notifyFcmTokenChanged(token);
           }
         },
       );
     } catch (e, stack) {
       debugLog('绑定 FCM token 到极光失败', e, stack);
-    }
-  }
-
-  Future<void> _logPushHealth() async {
-    try {
-      final notificationEnabled = await isNotificationEnabled().timeout(
-        _jpushQueryTimeout,
-        onTimeout: () => false,
-      );
-      final pushStatus = await _jpush.getPushStatus().timeout(
-        _jpushQueryTimeout,
-        onTimeout: () => <dynamic, dynamic>{'timeout': true},
-      );
-      final isPushStopped = await _jpush.isPushStoppedAndroid().timeout(
-        _jpushQueryTimeout,
-        onTimeout: () => false,
-      );
-
-      debugLog(
-        'Push health => notificationEnabled: $notificationEnabled, isPushStopped: $isPushStopped, status: $pushStatus',
-      );
-    } catch (e, stack) {
-      debugLog('读取推送健康状态失败', e, stack);
     }
   }
 

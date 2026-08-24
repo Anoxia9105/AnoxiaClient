@@ -123,7 +123,6 @@ class CrossTabSessionSync {
       return;
     }
     if (key.endsWith(_tokenKeySuffix)) {
-      debugLog('[CrossTabSync] 检测到 Token 存储键变化: $key');
       _handlePayload(
         jsonEncode({
           'action': event.newValue == null ? 'logout' : 'login',
@@ -183,10 +182,6 @@ class CrossTabSessionSync {
     if (signature == _lastHandled) return;
     _lastHandled = signature;
 
-    debugLog(
-      '[CrossTabSync] 收到其它标签页事件: $action, userId=$userId, '
-      'ts=$issuedAt, source=$source',
-    );
     _controller.add(
       CrossTabAuthEvent(action: action, userId: userId, issuedAt: issuedAt),
     );

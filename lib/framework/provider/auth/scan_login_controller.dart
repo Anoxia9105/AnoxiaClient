@@ -52,7 +52,6 @@ class ScanLoginController extends _$ScanLoginController {
       final ticket = await ref.read(authRepositoryProvider).createScanLogin();
       _ticket = ticket;
       state = AsyncData(ScanLoginSession(ticket: ticket));
-      debugLog('[ScanLogin] 会话已创建: ${ticket.ticket}');
       _timer = Timer.periodic(_pollInterval, (_) => _poll());
     } catch (e, st) {
       debugLog('[ScanLogin] 创建会话失败', e, st);
@@ -73,7 +72,6 @@ class ScanLoginController extends _$ScanLoginController {
         state = AsyncData(ScanLoginSession(ticket: ticket, status: status));
         final token = status.token;
         if (token != null && token.isNotEmpty) {
-          debugLog('[ScanLogin] 手机已确认，开始登录...');
           try {
             await ref
                 .read(authControllerProvider.notifier)
@@ -84,7 +82,6 @@ class ScanLoginController extends _$ScanLoginController {
           }
         }
       } else if (status.isExpired) {
-        debugLog('[ScanLogin] 会话已过期，自动刷新二维码');
         await start();
       } else {
         state = AsyncData(ScanLoginSession(ticket: ticket, status: status));

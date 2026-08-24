@@ -67,7 +67,6 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     super.initState();
     windowManager.setPreventClose(true);
     windowManager.addListener(this);
-    debugLog('初始化通话页面,接收到参数>>>>>>${widget.controller.arguments}');
 
     final args = jsonDecode(widget.controller.arguments);
     _themeIndex = args['themeIndex'] ?? 0;
@@ -98,7 +97,6 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     }
 
     Channel.callChannel.setMethodCallHandler((call) async {
-      debugLog('CAll|>>> 收到数据$call');
       if (call.method == 'on_call_accepted') {
         // 主窗口收到对方 CALL_ACCEPT 后下发：振铃 → 连接
         final token =
@@ -199,7 +197,6 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         : ref.watch(roomTokenProvider(_roomId));
     return tokenAsync.when(
       data: (token) {
-        debugLog('Token 获取成功（开始启动通话）: $token');
         return CallRoomPage(token: token, roomId: _roomId);
       },
       error: (err, stack) => CallErrorState(
