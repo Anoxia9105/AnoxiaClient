@@ -35,6 +35,20 @@ class WsController extends _$WsController {
   static const int _maxPendingOutbounds = 500;
 
   WebSocketChannel? _channel;
+
+  /// 当前连接（含正在建立的连接）所使用的认证 token。
+  ///
+  /// 用于识别「切换账号」场景：切账号时认证态从 Data(A) 直接变为
+  /// Data(B)，不会经过 null，若仅按连接状态判断会一直复用旧账号
+  /// 的连接，导致消息被服务端记到上一个账号名下（服务端以握手
+  /// token 绑定的身份为准），且新账号独有的房间会报「用户不在房间内」。
+  String? _connectedToken;
+
+  /// 连接代际计数：每次发起连接/主动断开时自增。
+  ///
+  /// 用于丢弃过期的连接尝试（如连续切换账号时，旧 token 的握手
+  /// 在新连接建立后才完成，不允许其覆盖当前连接或污染状态）。
+  int _connectGeneration = 0;
   Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
@@ -104,19 +118,29 @@ class WsController extends _$WsController {
   Stream<PacketFrame<IPacket>> get messageStream => _messageController.stream;
 
   /// 初始化连接
+  ///
+  /// 已有连接时：token 未变化则跳过；token 变化（切换账号）则先断开
+  /// 旧账号连接，再以新 token 重建。
   Future<void> _initConnection() async {
-    // 保护：如果已经在连接或已连接，跳过
-    if (state.status == WsStatus.connecting ||
-        state.status == WsStatus.connected) {
+    final token = await TokenManager.instance.getToken();
+    if (token == null || token.isEmpty) {
+      debugLog('[WsController] 初始化失败：未找到 Token');
       return;
     }
 
-    final token = await TokenManager.instance.getToken();
-    if (token != null && token.isNotEmpty) {
-      await connect(token);
-    } else {
-      debugLog('[WsController] 初始化失败：未找到 Token');
+    if (state.status == WsStatus.connecting ||
+        state.status == WsStatus.connected) {
+      // 身份未变化，无需重连
+      if (_connectedToken == token) {
+        return;
+      }
+      // 切换账号：旧连接仍是上一个账号的会话，必须先断开再重建，
+      // 否则服务端仍按旧身份收发消息。
+      debugLog('[WsController] 检测到 token 变化，断开旧连接并以新身份重连');
+      await _disposeAll(closeStream: false, manual: true);
     }
+
+    await connect(token);
   }
 
   /// 建立 WebSocket 连接
@@ -131,6 +155,10 @@ class WsController extends _$WsController {
     }
 
     state = WsState(status: WsStatus.connecting);
+    // 先同步记录本次连接使用的身份与代际，供 _initConnection 的
+    // 切账号判断使用；代际用于识别本尝试是否已被更新的操作取代。
+    _connectedToken = token;
+    final generation = ++_connectGeneration;
 
     try {
       final deviceId = await DeviceIdentity.instance.getPlatformQualifiedId();
@@ -138,19 +166,34 @@ class WsController extends _$WsController {
           '${API.wsBaseUrl}${Uri.encodeQueryComponent(token)}'
           '&deviceId=${Uri.encodeQueryComponent(deviceId)}';
 
+      final WebSocketChannel channel;
       if (kIsWeb) {
-        _channel = WebSocketChannel.connect(Uri.parse(url));
+        channel = WebSocketChannel.connect(Uri.parse(url));
       } else {
         // 桌面端关闭压缩扩展协商，避免部分代理链路下触发 1002(PROTOCOL_ERROR)
         final socket = await io.WebSocket.connect(
           url,
           compression: io.CompressionOptions.compressionOff,
         );
-        _channel = IOWebSocketChannel(socket);
+        channel = IOWebSocketChannel(socket);
       }
-      await _channel!.ready;
+      await channel.ready;
 
-      _channel!.stream.listen(
+      // 握手期间发生了切账号/主动断开：本次连接已过期，直接丢弃，
+      // 不登记为当前连接、不触发重连逻辑。
+      if (generation != _connectGeneration || !_reconnectEnabled) {
+        try {
+          await channel.sink.close();
+        } catch (_) {}
+        debugLog('[WsController] 丢弃过期的连接尝试 (generation=$generation)');
+        return;
+      }
+
+      // 握手成功后才登记为当前连接，避免半途被 _disposeAll 的旧
+      // channel 覆盖新的 _channel。
+      _channel = channel;
+
+      channel.stream.listen(
         (message) => _handleIncomingMessage(message),
         onError: (err) => _handleError(err),
         onDone: () => _handleDone(),
@@ -163,7 +206,11 @@ class WsController extends _$WsController {
       _startHeartbeat();
     } catch (e, st) {
       debugLog('❌ WebSocket 连接失败', e, st);
-      _handleError(e);
+      // 过期尝试的失败不影响更新的连接状态（如连续切账号时旧
+      // token 握手超时，不应打断新 token 已建立的连接）。
+      if (generation == _connectGeneration) {
+        _handleError(e);
+      }
     }
   }
 
@@ -497,8 +544,11 @@ class WsController extends _$WsController {
   }) async {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+    // 代际自增：使仍在握手的连接尝试失效，防止其登记为当前连接
+    _connectGeneration++;
     final channel = _channel;
     _channel = null;
+    _connectedToken = null;
     for (final pending in _pendingOutbounds.values) {
       pending.timeoutTimer?.cancel();
     }
