@@ -1114,5 +1114,6 @@
   "note_ai.use_as_title": "设为标题",
   "note_ai.copy": "复制结果",
   "note_ai.copied": "已复制到剪贴板",
-  "note_ai.failed": "AI 请求失败，请稍后再试"
+  "note_ai.failed": "AI 请求失败，请稍后再试",
+  "note_ai.empty_content": "笔记内容为空，请输入内容或选中文字后再试"
 }

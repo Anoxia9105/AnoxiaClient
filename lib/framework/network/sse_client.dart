@@ -58,11 +58,31 @@ class SseClient {
     );
 
     if (resp.statusCode != 200 || resp.data == null) {
+      // 尝试读取错误体中的 message（如参数校验失败的 JSON），便于调用方展示具体原因
+      String? errMsg;
+      try {
+        final bytes = await resp.data?.stream
+                .fold<List<int>>(<int>[], (a, b) => a..addAll(b))
+                .timeout(const Duration(seconds: 2)) ??
+            [];
+        if (bytes.isNotEmpty) {
+          final bodyStr = utf8.decode(bytes, allowMalformed: true);
+          try {
+            final j = jsonDecode(bodyStr);
+            if (j is Map) {
+              errMsg = (j['message'] ?? j['msg'] ?? j['error'])?.toString();
+            }
+            errMsg ??= bodyStr;
+          } catch (_) {
+            errMsg = bodyStr;
+          }
+        }
+      } catch (_) {}
       throw DioException(
         requestOptions: RequestOptions(path: path),
         response: resp,
         type: DioExceptionType.badResponse,
-        error: 'SSE HTTP ${resp.statusCode}',
+        error: errMsg ?? 'SSE HTTP ${resp.statusCode}',
       );
     }
 

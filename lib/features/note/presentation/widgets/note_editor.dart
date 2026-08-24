@@ -13,7 +13,6 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'note_ai_sheet.dart';
 import 'note_quill_actions.dart';
 import 'note_quill_divider_build.dart';
 import 'note_quill_image_build.dart';
@@ -810,11 +809,8 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                         focusNode: _focusNode,
                         searchActive: _showSearch,
                         onSearchToggle: _toggleSearchPanel,
-                        onAiTap: () => showNoteAiSheet(
-                          context,
-                          controller: controller,
-                          onTitle: (t) => _titleControllerOf(session).text = t,
-                        ),
+                        noteId: session.noteId,
+                        onTitleSelected: (t) => _titleControllerOf(session).text = t,
                       ),
                       Expanded(
                         child: QuillEditor.basic(

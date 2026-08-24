@@ -13,6 +13,7 @@ import 'dart:convert';
 
 import 'package:anoxia/framework/network/sse_client.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -60,25 +61,43 @@ extension _NoteAiActionX on _NoteAiAction {
 /// 打开记事本 AI 面板。
 ///
 /// [onTitle] 用于 TITLE 动作把生成标题回填编辑器标题栏。
+/// [noteId] 当前笔记ID，后端可在 content 为空时按 noteId 读取并校验归属，避免
+/// 空内容触发 `noteId 与 content 至少提供一个` 错误；有选中文字或正文时会优先使用 content。
+/// [initialAction] 预选动作（API 字符串：SUMMARIZE/POLISH/EXPAND/TITLE/TRANSLATE/CONTINUE/CUSTOM），
+/// 用于工具栏气泡快捷入口直接选中对应动作。
 Future<void> showNoteAiSheet(
   BuildContext context, {
   required QuillController controller,
   ValueChanged<String>? onTitle,
+  int? noteId,
+  String? initialAction,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     useSafeArea: true,
-    builder: (_) => _NoteAiSheet(controller: controller, onTitle: onTitle),
+    builder: (_) => _NoteAiSheet(
+      controller: controller,
+      onTitle: onTitle,
+      noteId: noteId,
+      initialAction: initialAction,
+    ),
   );
 }
 
 class _NoteAiSheet extends ConsumerStatefulWidget {
-  const _NoteAiSheet({required this.controller, this.onTitle});
+  const _NoteAiSheet({
+    required this.controller,
+    this.onTitle,
+    this.noteId,
+    this.initialAction,
+  });
 
   final QuillController controller;
   final ValueChanged<String>? onTitle;
+  final int? noteId;
+  final String? initialAction;
 
   @override
   ConsumerState<_NoteAiSheet> createState() => _NoteAiSheetState();
@@ -89,6 +108,20 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
   final _instructionCtrl = TextEditingController();
   final _langCtrl = TextEditingController(text: 'English');
   Timer? _uiThrottle;
+
+  @override
+  void initState() {
+    super.initState();
+    final init = widget.initialAction;
+    if (init != null) {
+      for (final a in _NoteAiAction.values) {
+        if (a.api == init) {
+          _action = a;
+          break;
+        }
+      }
+    }
+  }
 
   /// 流式预览文本
   String _preview = '';
@@ -128,20 +161,42 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
     return plain.substring(start, end);
   }
 
+  /// 组装请求体：优先使用选中文字，其次全文 Markdown；若均为空则改用 noteId 让后端读取
   Map<String, dynamic> buildRequest() {
     final action = _action!;
-    final selected = _selectedPlainText();
+    final selected = _selectedPlainText()?.trim();
+    String? effective;
+    if (selected != null && selected.isNotEmpty) {
+      effective = selected;
+    } else {
+      final whole = _wholeMarkdown.trim();
+      if (whole.isNotEmpty) effective = whole;
+    }
     return {
       'action': action.api,
-      if (selected != null)
-        'content': selected
+      if (effective != null && effective.isNotEmpty)
+        'content': effective
+      else if (widget.noteId != null)
+        'noteId': widget.noteId
       else
-        'content': _wholeMarkdown,
+        // 兜底：两者皆空时仍发送空 content，让后端返回明确错误（前端已提前拦截，此分支仅防御）
+        'content': '',
+      // 额外携带 noteId 作归属校验与日志关联（有 effective 时也一并带上，不影响后端优先使用 content）
+      if (effective != null && effective.isNotEmpty && widget.noteId != null)
+        'noteId': widget.noteId,
       if (action == _NoteAiAction.translate && _langCtrl.text.trim().isNotEmpty)
         'targetLang': _langCtrl.text.trim(),
       if (action == _NoteAiAction.custom && _instructionCtrl.text.trim().isNotEmpty)
         'instruction': _instructionCtrl.text.trim(),
     };
+  }
+
+  /// 当前是否有效可发送（至少 content 或 noteId 有一可用）
+  bool get _hasValidInput {
+    final sel = _selectedPlainText()?.trim();
+    if (sel != null && sel.isNotEmpty) return true;
+    if (_wholeMarkdown.trim().isNotEmpty) return true;
+    return widget.noteId != null;
   }
 
   // ---------------- 流式调用 ----------------
@@ -150,6 +205,10 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
     if (_action == null || _streaming) return;
     if (_action == _NoteAiAction.custom && _instructionCtrl.text.trim().isEmpty) {
       ref.read(toastServiceProvider).showToast('note_ai.instruction_required'.tr());
+      return;
+    }
+    if (!_hasValidInput) {
+      ref.read(toastServiceProvider).showToast('note_ai.empty_content'.tr());
       return;
     }
 
@@ -206,7 +265,33 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
           _streaming = false;
           _failed = true;
         });
-        ref.read(toastServiceProvider).showToast('note_ai.failed'.tr());
+        String msg = 'note_ai.failed'.tr();
+        if (e is DioException) {
+          final err = e.error?.toString();
+          if (err != null && err.isNotEmpty && !err.startsWith('SSE HTTP')) {
+            msg = err;
+          } else if (e.response?.data != null) {
+            try {
+              // Dio 可能已将错误体解析为字符串
+              final data = e.response?.data;
+              if (data is String && data.isNotEmpty) {
+                final j = jsonDecode(data);
+                if (j is Map && j['message'] is String) msg = j['message'] as String;
+              }
+            } catch (_) {}
+          }
+          // 若仍为 generic，尝试从 error 中提取 JSON message
+          if (msg == 'note_ai.failed'.tr() && e.error is String) {
+            try {
+              final j = jsonDecode(e.error as String);
+              if (j is Map && j['message'] is String) msg = j['message'] as String;
+            } catch (_) {
+              final raw = e.error as String;
+              if (raw.trim().isNotEmpty) msg = raw;
+            }
+          }
+        }
+        ref.read(toastServiceProvider).showToast(msg);
       },
       onDone: () {
         if (mounted && !gotDone && _streaming) {

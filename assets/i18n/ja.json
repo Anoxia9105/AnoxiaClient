@@ -1114,5 +1114,6 @@
   "note_ai.use_as_title": "タイトルに使用",
   "note_ai.copy": "結果をコピー",
   "note_ai.copied": "クリップボードにコピーしました",
-  "note_ai.failed": "AI リクエストに失敗しました。再試行してください"
+  "note_ai.failed": "AI リクエストに失敗しました。再試行してください",
+  "note_ai.empty_content": "内容が空です。テキストを入力または選択してください"
 }

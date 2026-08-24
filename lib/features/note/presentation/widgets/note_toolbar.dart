@@ -7,6 +7,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'note_ai_sheet.dart';
 import 'note_quill_actions.dart';
 
 /// 记事本富文本工具栏
@@ -29,6 +30,12 @@ class NoteToolbar extends ConsumerWidget {
   /// AI 助手按钮点击回调（为空则不显示按钮）
   final VoidCallback? onAiTap;
 
+  /// 当前笔记ID（用于 AI 请求在 content 为空时按 noteId 读取）
+  final int? noteId;
+
+  /// 标题回填回调（TITLE 动作生成标题时使用）
+  final ValueChanged<String>? onTitleSelected;
+
   const NoteToolbar({
     super.key,
     required this.controller,
@@ -36,6 +43,8 @@ class NoteToolbar extends ConsumerWidget {
     required this.searchActive,
     required this.onSearchToggle,
     this.onAiTap,
+    this.noteId,
+    this.onTitleSelected,
   });
 
   @override
@@ -142,7 +151,7 @@ class NoteToolbar extends ConsumerWidget {
             ),
           ),
           _buildDivider(context),
-          if (onAiTap != null) _buildAiButton(context, iconColor),
+          if (onAiTap != null || noteId != null) _buildAiButton(context, iconColor),
           _buildSearchButton(context, iconColor),
           _buildDivider(context),
           _buildActionButton(
@@ -216,19 +225,153 @@ class NoteToolbar extends ConsumerWidget {
     );
   }
 
-  /// AI 助手按钮：打开记事本 AI 面板
+  /// AI 助手按钮：气泡式快捷入口（参考标题/对齐气泡）
+  /// 点击后在按钮下方弹出操作列表，选中后关闭气泡并打开 AI 面板（预选对应动作）
   Widget _buildAiButton(BuildContext context, Color color) {
     final colorScheme = Theme.of(context).colorScheme;
-    return IconButton(
-      mouseCursor: SystemMouseCursors.click,
-      tooltip: 'note_ai.title'.tr(),
-      visualDensity: VisualDensity.compact,
-      onPressed: onAiTap,
-      icon: HugeIcon(
-        icon: HugeIcons.strokeRoundedSparkles,
-        size: 16,
-        color: colorScheme.primary,
-        strokeWidth: 1.8,
+    return Builder(
+      builder: (buttonContext) => IconButton(
+        mouseCursor: SystemMouseCursors.click,
+        tooltip: 'note_ai.title'.tr(),
+        visualDensity: VisualDensity.compact,
+        onPressed: () {
+          // 若外部仍提供 onAiTap（旧调用），优先走自定义回调以兼容
+          // 否则走内置气泡快捷入口 + 预选动作打开面板
+          if (onAiTap != null && noteId == null && onTitleSelected == null) {
+            onAiTap!.call();
+            return;
+          }
+          Function? close;
+          close = showNoteBubble(
+            buttonContext,
+            maxWidth: 280,
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedFileSearch,
+                    label: 'note_ai.action_summarize'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'SUMMARIZE');
+                    },
+                  ),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedBrush,
+                    label: 'note_ai.action_polish'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'POLISH');
+                    },
+                  ),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedExpand,
+                    label: 'note_ai.action_expand'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'EXPAND');
+                    },
+                  ),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedText,
+                    label: 'note_ai.action_title'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'TITLE');
+                    },
+                  ),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedTranslate,
+                    label: 'note_ai.action_translate'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'TRANSLATE');
+                    },
+                  ),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedPen01,
+                    label: 'note_ai.action_continue'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'CONTINUE');
+                    },
+                  ),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedMagicWand01,
+                    label: 'note_ai.action_custom'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, 'CUSTOM');
+                    },
+                  ),
+                  const Divider(height: 1, thickness: .5),
+                  _aiBubbleTile(
+                    buttonContext,
+                    icon: HugeIcons.strokeRoundedSparkles,
+                    label: 'note_ai.title'.tr(),
+                    onTap: () {
+                      close?.call();
+                      _openAiSheet(buttonContext, null);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedSparkles,
+          size: 16,
+          color: colorScheme.primary,
+          strokeWidth: 1.8,
+        ),
+      ),
+    );
+  }
+
+  void _openAiSheet(BuildContext ctx, String? api) {
+    final c = controller;
+    // noteId 优先使用显式传入，其次尝试从 onAiTap 闭包外的上下文解析（兼容旧调用）
+    showNoteAiSheet(
+      ctx,
+      controller: c,
+      noteId: noteId,
+      initialAction: api,
+      onTitle: onTitleSelected,
+    );
+  }
+
+  Widget _aiBubbleTile(
+    BuildContext context, {
+    required List<List<dynamic>> icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      hoverColor: cs.primary.withValues(alpha: .08),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Row(
+          children: [
+            HugeIcon(icon: icon, size: 15, color: cs.primary),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(fontSize: 13, color: cs.onSurface)),
+            const Spacer(),
+            HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 13, color: cs.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }

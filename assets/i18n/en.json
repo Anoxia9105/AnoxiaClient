@@ -1114,5 +1114,6 @@
   "note_ai.use_as_title": "Use as title",
   "note_ai.copy": "Copy result",
   "note_ai.copied": "Copied to clipboard",
-  "note_ai.failed": "AI request failed, please try again"
+  "note_ai.failed": "AI request failed, please try again",
+  "note_ai.empty_content": "Content is empty, please enter or select text"
 }
