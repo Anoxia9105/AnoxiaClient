@@ -26,12 +26,16 @@ class NoteToolbar extends ConsumerWidget {
   /// 查找按钮点击回调（切换查找面板）
   final VoidCallback onSearchToggle;
 
+  /// AI 助手按钮点击回调（为空则不显示按钮）
+  final VoidCallback? onAiTap;
+
   const NoteToolbar({
     super.key,
     required this.controller,
     required this.focusNode,
     required this.searchActive,
     required this.onSearchToggle,
+    this.onAiTap,
   });
 
   @override
@@ -138,6 +142,7 @@ class NoteToolbar extends ConsumerWidget {
             ),
           ),
           _buildDivider(context),
+          if (onAiTap != null) _buildAiButton(context, iconColor),
           _buildSearchButton(context, iconColor),
           _buildDivider(context),
           _buildActionButton(
@@ -208,6 +213,23 @@ class NoteToolbar extends ConsumerWidget {
       visualDensity: VisualDensity.compact,
       onPressed: action,
       icon: HugeIcon(icon: icon, size: 16, color: color),
+    );
+  }
+
+  /// AI 助手按钮：打开记事本 AI 面板
+  Widget _buildAiButton(BuildContext context, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton(
+      mouseCursor: SystemMouseCursors.click,
+      tooltip: 'note_ai.title'.tr(),
+      visualDensity: VisualDensity.compact,
+      onPressed: onAiTap,
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedSparkles,
+        size: 16,
+        color: colorScheme.primary,
+        strokeWidth: 1.8,
+      ),
     );
   }
 
