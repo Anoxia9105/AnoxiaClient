@@ -8,6 +8,7 @@ library;
 import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:html/dom.dart' as html_dom;
 import 'package:markdown/markdown.dart' as md;
 
 /// Delta → Markdown 文本
@@ -75,12 +76,33 @@ String deltaToMarkdown(Document document) {
 Document markdownToDocument(String markdown) {
   try {
     final html = md.markdownToHtml(markdown);
-    final delta = HtmlToDelta().convert(html);
+    // flutter_quill_delta_from_html 不识别 <hr>，默认会静默丢弃分割线，
+    // 这里注册自定义转换：`---` → divider 嵌入（与编辑器插入的水平线一致）
+    final delta =
+        HtmlToDelta(customBlocks: const [_HorizontalRulePart()]).convert(html);
     return Document.fromDelta(delta);
   } catch (_) {
     // 转换失败回退为纯文本
     return Document.fromDelta(Delta()..insert(markdown));
   }
+}
+
+/// `<hr>` → 水平分割线嵌入（divider 类型与 flutter_quill markdown 包内置一致）
+class _HorizontalRulePart implements CustomHtmlPart {
+  const _HorizontalRulePart();
+
+  @override
+  bool matches(html_dom.Element element) => element.localName == 'hr';
+
+  @override
+  List<Operation> convert(
+    html_dom.Element element, {
+    Map<String, dynamic>? currentAttributes,
+  }) =>
+      [
+        Operation.insert({'divider': 'hr'}),
+        Operation.insert('\n'),
+      ];
 }
 
 /// 行内样式 → Markdown 包装

@@ -21,12 +21,14 @@ import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart'
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/ai/smart_reply_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/mobile_chat_ai_panel.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'chat_more_panel.dart';
 
-enum _MobileBottomPanelType { emoji, more }
+enum _MobileBottomPanelType { emoji, more, ai }
 
 enum _ImageSelectionAction { sendOriginal, crop }
 
@@ -595,6 +597,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               },
             ),
           ),
+        // 智能回复建议条（手动触发，点击 chip 填入输入框）
+        SmartReplyBar(
+          roomId: widget.roomId,
+          onPick: _inputController.insertTextAtCursor,
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Row(
@@ -668,6 +675,17 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                         )
                       : _buildTextCapsule(),
                 ),
+              ),
+              // AI 助手按钮：输入内容润色/扩写/翻译等
+              _buildCompactButton(
+                tooltipMessage: 'chat_ai.assist_title'.tr(),
+                onTap: () => _toggleOtherPanel(_MobileBottomPanelType.ai),
+                icon:
+                    _currentPanelType == ChatBottomPanelType.other &&
+                        _currentOtherPanelType == _MobileBottomPanelType.ai
+                    ? HugeIcons.strokeRoundedCancel01
+                    : HugeIcons.strokeRoundedSparkles,
+                color: Theme.of(context).colorScheme.primary,
               ),
               // 表情按钮
               _buildCompactButton(
@@ -768,6 +786,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       _hidePanel();
                       _showMentionSheet();
                     },
+                  ),
+                  _MobileBottomPanelType.ai => MobileChatAiPanel(
+                    inputController: _inputController,
+                    onClose: _hidePanel,
                   ),
                   _MobileBottomPanelType.emoji => Padding(
                     padding: const EdgeInsets.all(8),

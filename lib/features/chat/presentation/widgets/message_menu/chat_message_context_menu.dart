@@ -18,6 +18,8 @@ import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart'
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
+import 'ai_ask_bubble.dart';
+
 /// 聊天消息上下文菜单组件
 ///
 /// 为消息提供右键菜单（桌面端）和长按菜单（移动端/Web）功能，支持：
@@ -46,6 +48,9 @@ class ChatMessageContextMenu extends ConsumerStatefulWidget {
 
 class _ChatMessageContextMenuState
     extends ConsumerState<ChatMessageContextMenu> {
+  /// 最近一次菜单弹出的全局坐标（「问AI」气泡锚定用）
+  Offset? _lastMenuPosition;
+
   @override
   Widget build(BuildContext context) {
     // 失败状态下不显示上下文菜单
@@ -84,6 +89,7 @@ class _ChatMessageContextMenuState
     BuildContext context,
     Offset globalPosition,
   ) async {
+    _lastMenuPosition = globalPosition;
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       globalPosition & const Size(40, 40),
@@ -112,6 +118,15 @@ class _ChatMessageContextMenuState
         widget.message.messageType == MessageType.richText) {
       items.add(
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
+      );
+      // 问AI：把该条消息作为上下文发起气泡对话
+      items.add(
+        _buildItem(
+          'aiAsk',
+          HugeIcons.strokeRoundedSparkles,
+          'chat_ai.ask'.tr(),
+          color: Theme.of(context).colorScheme.primary,
+        ),
       );
     }
 
@@ -184,6 +199,9 @@ class _ChatMessageContextMenuState
       case 'copy':
         _handleCopy(context);
         break;
+      case 'aiAsk':
+        _handleAiAsk();
+        break;
       case 'favorite':
         unawaited(_handleFavorite(context));
         break;
@@ -194,6 +212,21 @@ class _ChatMessageContextMenuState
         unawaited(_handleRevoke(context));
         break;
     }
+  }
+
+  /// 问AI：以消息纯文本为上下文弹出 AI 气泡
+  void _handleAiAsk() {
+    final text = _getPlainContent().trim();
+    if (text.isEmpty) {
+      Toast.showToast('chat_ai.empty_content'.tr(), type: ToastType.warning);
+      return;
+    }
+    final anchor = _lastMenuPosition;
+    if (anchor == null) return;
+    // 菜单关闭后再弹气泡：延迟一帧避免与 showMenu 的移除动画同帧竞争浮层
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showAiAskBubble(anchor: anchor, quotedText: text);
+    });
   }
 
   void _handleCopy(BuildContext context) {

@@ -9,6 +9,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
@@ -19,6 +20,7 @@ import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart'
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_preview_bar.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/ai/smart_reply_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toolbar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_file_build.dart';
@@ -292,6 +294,17 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               },
             ),
           ),
+
+        /// 智能回复建议条（手动触发，点击 chip 填入输入框）
+        SmartReplyBar(
+          roomId: widget.roomId,
+          onPick: (text) {
+            QuillEmbedUtil.insertTextAtCursor(
+              text: text,
+              controller: controller,
+            );
+          },
+        ),
 
         /// 聊天工具栏
         ChatQuillToolbar(

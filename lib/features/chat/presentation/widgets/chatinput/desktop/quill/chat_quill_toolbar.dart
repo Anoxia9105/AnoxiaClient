@@ -3,6 +3,7 @@ import 'package:anoxia/common/utils/shortcut_hint.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_emoji_widget.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_ai_assist_popup.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_color_style_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/dialogs/code_input_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toggle_style_button.dart';
@@ -300,6 +301,27 @@ import 'colors_box.dart';
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // AI 助手：输入内容润色/扩写/续写/翻译等（有输入内容时可用）
+              Builder(
+                builder: (context) {
+                  final hasContent =
+                      controller.document.toPlainText().trim().isNotEmpty;
+                  return ListenableBuilder(
+                    listenable: controller,
+                    builder: (context, _) => _buildCustomBtn(
+                      HugeIcons.strokeRoundedSparkles,
+                      'chat_ai.assist_title'.tr(),
+                      () => showChatAiAssistBubble(
+                        context,
+                        controller: controller,
+                        editorFocusNode: focusNode,
+                      ),
+                      colorScheme.primary,
+                      enabled: !isUploading && hasContent,
+                    ),
+                  );
+                },
+              ),
               Builder(
                 builder: (context) {
                   return _buildCustomBtn(
