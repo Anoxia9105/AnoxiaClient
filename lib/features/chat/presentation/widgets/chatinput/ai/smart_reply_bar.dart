@@ -14,6 +14,7 @@ import 'dart:convert';
 
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
@@ -191,6 +192,8 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
 
   @override
   Widget build(BuildContext context) {
+    final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatEnabled ?? true;
+    if (!chatEnabled) return const SizedBox.shrink();
     if (!_expanded) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),

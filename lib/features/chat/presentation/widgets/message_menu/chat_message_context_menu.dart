@@ -11,6 +11,7 @@ import 'package:flutter_quill/quill_delta.dart';
 
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
@@ -119,15 +120,18 @@ class _ChatMessageContextMenuState
       items.add(
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
-      // 问AI：把该条消息作为上下文发起气泡对话
-      items.add(
-        _buildItem(
-          'aiAsk',
-          HugeIcons.strokeRoundedSparkles,
-          'chat_ai.ask'.tr(),
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      );
+      // 问AI：受服务端 chatEnabled 开关控制，关闭时不展示入口
+      final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatEnabled ?? true;
+      if (chatEnabled) {
+        items.add(
+          _buildItem(
+            'aiAsk',
+            HugeIcons.strokeRoundedSparkles,
+            'chat_ai.ask'.tr(),
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
     }
 
     final canReply =

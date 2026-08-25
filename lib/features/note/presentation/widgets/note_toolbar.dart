@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 
 import 'note_ai_sheet.dart';
 import 'note_quill_actions.dart';
@@ -159,8 +160,17 @@ class NoteToolbar extends ConsumerWidget {
             ),
           ),
           _buildDivider(context),
-          // AI 与搜索互斥：任一 toggle 存在即展示对应按钮；AI 优先使用 onAiToggle（右侧面板），兼容旧气泡入口 onAiTap
-          if (onAiToggle != null || onAiTap != null || noteId != null) _buildAiButton(context, iconColor),
+          // AI 与搜索互斥：受服务端 noteEnabled 控制，关闭时隐藏
+          Builder(
+            builder: (context) {
+              final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ?? true;
+              if (!noteEnabled) return const SizedBox.shrink();
+              if (onAiToggle != null || onAiTap != null || noteId != null) {
+                return _buildAiButton(context, iconColor);
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           _buildSearchButton(context, iconColor),
           _buildDivider(context),
           _buildActionButton(

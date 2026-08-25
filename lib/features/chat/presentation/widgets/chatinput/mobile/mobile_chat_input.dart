@@ -15,6 +15,7 @@ import 'package:anoxia/platform/shims/image_cropper_shim.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
@@ -676,16 +677,21 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       : _buildTextCapsule(),
                 ),
               ),
-              // AI 助手按钮：输入内容润色/扩写/翻译等
-              _buildCompactButton(
-                tooltipMessage: 'chat_ai.assist_title'.tr(),
-                onTap: () => _toggleOtherPanel(_MobileBottomPanelType.ai),
-                icon:
-                    _currentPanelType == ChatBottomPanelType.other &&
-                        _currentOtherPanelType == _MobileBottomPanelType.ai
-                    ? HugeIcons.strokeRoundedCancel01
-                    : HugeIcons.strokeRoundedSparkles,
-                color: Theme.of(context).colorScheme.primary,
+              // AI 助手按钮：受服务端 noteEnabled 控制，关闭时隐藏
+              Builder(
+                builder: (_) {
+                  final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ?? true;
+                  if (!noteEnabled) return const SizedBox.shrink();
+                  return _buildCompactButton(
+                    tooltipMessage: 'chat_ai.assist_title'.tr(),
+                    onTap: () => _toggleOtherPanel(_MobileBottomPanelType.ai),
+                    icon: _currentPanelType == ChatBottomPanelType.other &&
+                            _currentOtherPanelType == _MobileBottomPanelType.ai
+                        ? HugeIcons.strokeRoundedCancel01
+                        : HugeIcons.strokeRoundedSparkles,
+                    color: Theme.of(context).colorScheme.primary,
+                  );
+                },
               ),
               // 表情按钮
               _buildCompactButton(

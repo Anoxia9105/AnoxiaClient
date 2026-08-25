@@ -8,6 +8,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/dialogs/code_input_dialog.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/chat_quill_toggle_style_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/location_box.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
@@ -301,24 +302,31 @@ import 'colors_box.dart';
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // AI 助手：输入内容润色/扩写/续写/翻译等（有输入内容时可用）
-              // 修复：hasContent 必须在 ListenableBuilder 内实时计算，否则
-              // 输入内容变化时按钮启用状态不会更新，导致“无法激活”
-              ListenableBuilder(
-                listenable: controller,
-                builder: (context, _) {
-                  final hasContent =
-                      controller.document.toPlainText().trim().isNotEmpty;
-                  return _buildCustomBtn(
-                    HugeIcons.strokeRoundedSparkles,
-                    'chat_ai.assist_title'.tr(),
-                    () => showChatAiAssistBubble(
-                      context,
-                      controller: controller,
-                      editorFocusNode: focusNode,
-                    ),
-                    colorScheme.primary,
-                    enabled: !isUploading && hasContent,
+              // AI 助手：受服务端 noteEnabled 控制，关闭时隐藏入口
+              Builder(
+                builder: (context) {
+                  return Consumer(
+                    builder: (context, ref, _) {
+                      final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ?? true;
+                      if (!noteEnabled) return const SizedBox.shrink();
+                      return ListenableBuilder(
+                        listenable: controller,
+                        builder: (context, _) {
+                          final hasContent = controller.document.toPlainText().trim().isNotEmpty;
+                          return _buildCustomBtn(
+                            HugeIcons.strokeRoundedSparkles,
+                            'chat_ai.assist_title'.tr(),
+                            () => showChatAiAssistBubble(
+                              context,
+                              controller: controller,
+                              editorFocusNode: focusNode,
+                            ),
+                            colorScheme.primary,
+                            enabled: !isUploading && hasContent,
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
