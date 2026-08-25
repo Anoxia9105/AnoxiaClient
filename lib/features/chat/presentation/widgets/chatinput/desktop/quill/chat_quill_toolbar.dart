@@ -302,23 +302,23 @@ import 'colors_box.dart';
             mainAxisSize: MainAxisSize.min,
             children: [
               // AI 助手：输入内容润色/扩写/续写/翻译等（有输入内容时可用）
-              Builder(
-                builder: (context) {
+              // 修复：hasContent 必须在 ListenableBuilder 内实时计算，否则
+              // 输入内容变化时按钮启用状态不会更新，导致“无法激活”
+              ListenableBuilder(
+                listenable: controller,
+                builder: (context, _) {
                   final hasContent =
                       controller.document.toPlainText().trim().isNotEmpty;
-                  return ListenableBuilder(
-                    listenable: controller,
-                    builder: (context, _) => _buildCustomBtn(
-                      HugeIcons.strokeRoundedSparkles,
-                      'chat_ai.assist_title'.tr(),
-                      () => showChatAiAssistBubble(
-                        context,
-                        controller: controller,
-                        editorFocusNode: focusNode,
-                      ),
-                      colorScheme.primary,
-                      enabled: !isUploading && hasContent,
+                  return _buildCustomBtn(
+                    HugeIcons.strokeRoundedSparkles,
+                    'chat_ai.assist_title'.tr(),
+                    () => showChatAiAssistBubble(
+                      context,
+                      controller: controller,
+                      editorFocusNode: focusNode,
                     ),
+                    colorScheme.primary,
+                    enabled: !isUploading && hasContent,
                   );
                 },
               ),

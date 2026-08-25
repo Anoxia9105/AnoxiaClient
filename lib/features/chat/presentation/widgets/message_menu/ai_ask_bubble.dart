@@ -6,6 +6,7 @@
 /// - 复制结果；关闭时中止上游流
 library;
 
+import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -22,6 +23,8 @@ const _translateLangs = <String>['中文', 'English', '日本語', '한국어', 
 /// 弹出「问AI」气泡。
 ///
 /// [anchor] 为菜单触发点的全局坐标；[quotedText] 为消息纯文本。
+/// 会根据锚点在屏幕中的位置自适应箭头方向：锚点靠近底部（下方空间
+/// 不足）时气泡显示在锚点上方、箭头朝下，避免气泡与输入框重叠或被截断。
 void showAiAskBubble({
   required Offset anchor,
   required String quotedText,
@@ -29,23 +32,35 @@ void showAiAskBubble({
   final clean = quotedText.trim();
   if (clean.isEmpty) return;
 
+  // 自适应：估算气泡高度约 380（含头部与最大 280 的回答区）
+  final view = WidgetsBinding.instance.platformDispatcher.views.first;
+  final screenH = view.physicalSize.height / view.devicePixelRatio;
+  const estimatedHeight = 380.0;
+  final spaceBelow = screenH - anchor.dy;
+  final spaceAbove = anchor.dy;
+  final showBelow =
+      spaceBelow >= estimatedHeight + 24 || spaceBelow >= spaceAbove;
+  final arrowDir = showBelow ? AxisDirection.up : AxisDirection.down;
+  final preferDir =
+      showBelow ? PreferDirection.bottomLeft : PreferDirection.topLeft;
+
   CancelFunc closeFn = () {};
   closeFn = BotToast.showAttachedWidget(
     target: anchor,
-    preferDirection: PreferDirection.bottomLeft,
+    preferDirection: preferDir,
     onlyOne: true,
     ignoreContentClick: false,
     attachedBuilder: (_) {
       // attachedBuilder 不提供 BuildContext，从平台视图取逻辑宽度
-      final view = WidgetsBinding.instance.platformDispatcher.views.first;
-      final screenWidth =
-          view.physicalSize.width / view.devicePixelRatio;
+      final v = WidgetsBinding.instance.platformDispatcher.views.first;
+      final screenWidth = v.physicalSize.width / v.devicePixelRatio;
       final isNarrow = screenWidth < 520;
       return Material(
         color: Colors.transparent,
         child: _AiAskBubbleCard(
           quotedText: clean,
           maxWidth: isNarrow ? screenWidth - 24 : 420.0,
+          arrowDirection: arrowDir,
           onClose: () => closeFn(),
         ),
       );
@@ -58,11 +73,13 @@ class _AiAskBubbleCard extends StatefulWidget {
     required this.quotedText,
     required this.maxWidth,
     required this.onClose,
+    this.arrowDirection = AxisDirection.up,
   });
 
   final String quotedText;
   final double maxWidth;
   final VoidCallback onClose;
+  final AxisDirection arrowDirection;
 
   @override
   State<_AiAskBubbleCard> createState() => _AiAskBubbleCardState();
@@ -74,6 +91,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   final _scrollCtrl = ScrollController();
 
   String _answer = '';
+  String? _thinking;
   bool _streaming = false;
   bool _failed = false;
   String? _errorText;
@@ -118,6 +136,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   void _startChat(String message) {
     setState(() {
       _answer = '';
+      _thinking = null;
       _failed = false;
       _errorText = null;
       _streaming = true;
@@ -126,12 +145,22 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       message: message,
       conversationId: _conversationId,
       handlers: ChatAiStreamHandlers(
-        onDelta: (_) => mountedSetState(),
+        onDelta: (fullText) {
+          if (!mounted) return;
+          setState(() => _answer = fullText);
+          _scrollToBottom();
+        },
+        onThinking: (thinking) {
+          if (!mounted) return;
+          setState(() => _thinking = thinking);
+          _scrollToBottom();
+        },
         onDone: (conversationId, fullText) {
           if (!mounted) return;
           if (conversationId.isNotEmpty) _conversationId = conversationId;
           setState(() {
             _answer = fullText;
+            _thinking = null;
             _streaming = false;
           });
           _scrollToBottom();
@@ -139,6 +168,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
         onError: (msg) {
           if (!mounted) return;
           setState(() {
+            _thinking = null;
             _streaming = false;
             _failed = true;
             _errorText = msg;
@@ -172,7 +202,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   @override
   Widget build(BuildContext context) {
     return BubbleWidget(
-      arrowDirection: AxisDirection.up,
+      arrowDirection: widget.arrowDirection,
       arrowOffset: 24,
       backgroundColor: _cs.surface,
       border: BorderSide(color: _cs.outlineVariant.withValues(alpha: .8), width: .5),
@@ -219,33 +249,49 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 15, color: _cs.primary),
-        const SizedBox(width: 6),
-        Text('chat_ai.ask'.tr(),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            widget.quotedText,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: _cs.primaryContainer.withValues(alpha: .18),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _cs.primary.withValues(alpha: .12)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: _cs.primary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 13, color: _cs.primary),
           ),
-        ),
-        const SizedBox(width: 4),
-        _iconBtn(
-          tooltip: 'chat_ai.copy'.tr(),
-          icon: HugeIcons.strokeRoundedCopy01,
-          onTap: _answer.isEmpty ? null : _copyAnswer,
-        ),
-        _iconBtn(
-          tooltip: 'close'.tr(),
-          icon: HugeIcons.strokeRoundedCancel01,
-          onTap: widget.onClose,
-        ),
-      ],
+          const SizedBox(width: 6),
+          Text('chat_ai.ask'.tr(),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              widget.quotedText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 4),
+          _iconBtn(
+            tooltip: 'chat_ai.copy'.tr(),
+            icon: HugeIcons.strokeRoundedCopy01,
+            onTap: _answer.isEmpty ? null : _copyAnswer,
+          ),
+          _iconBtn(
+            tooltip: 'close'.tr(),
+            icon: HugeIcons.strokeRoundedCancel01,
+            onTap: widget.onClose,
+          ),
+        ],
+      ),
     );
   }
 
@@ -302,6 +348,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
 
   Widget _buildAnswerArea() {
     final empty = _answer.isEmpty && !_streaming;
+    final showThinking = _streaming && _answer.isEmpty && _thinking != null && _thinking!.isNotEmpty;
     return Container(
       constraints: const BoxConstraints(minHeight: 52, maxHeight: 280),
       width: double.infinity,
@@ -316,13 +363,36 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
               child: Text('chat_ai.empty_tip'.tr(),
                   style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
             )
-          : SingleChildScrollView(
-              controller: _scrollCtrl,
-              child: SelectableText(
-                _answer,
-                style: TextStyle(fontSize: 12.5, height: 1.55, color: _cs.onSurface),
-              ),
-            ),
+          : _streaming && _answer.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox.square(
+                              dimension: 13, child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(width: 8),
+                          Text(_thinking ?? 'note_ai.generating'.tr(),
+                              style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
+                        ],
+                      ),
+                      if (showThinking) ...[
+                        const SizedBox(height: 6),
+                        Text(_thinking!,
+                            style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .7)),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center),
+                      ],
+                    ],
+                  ),
+                )
+              : SingleChildScrollView(
+                  controller: _scrollCtrl,
+                  child: AiMarkdownPreview(data: _answer),
+                ),
     );
   }
 
@@ -372,10 +442,15 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
                     color: _cs.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedSent,
-                    size: 15,
-                    color: _cs.onPrimary,
+                  child: Center(
+                    child: SizedBox.square(
+                      dimension: 16,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedSent,
+                        size: 13,
+                        color: _cs.onPrimary,
+                      ),
+                    ),
                   ),
                 ),
               ),

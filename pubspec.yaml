@@ -150,6 +150,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.40
   flutter_quill_delta_from_html: 1.5.3
   markdown: 7.3.1
+  flutter_markdown: ^0.7.7+1
   dart_quill_delta: ^10.8.3
   pdf: ^3.12.0
 

@@ -6,6 +6,7 @@
 /// - 结果应用：替换选区 / 插入光标处 / 替换全文 + 重试 / 复制
 library;
 
+import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/utils/quill_embed_util.dart';
@@ -21,20 +22,42 @@ import '../../ai/chat_ai_assist_core.dart';
 const _translateLangs = <String>['中文', 'English', '日本語', '한국어', 'Français'];
 
 /// 弹出输入框 AI 助手气泡（锚定按钮 context）
+///
+/// 会根据锚点按钮在屏幕中的位置自适应箭头方向：按钮靠近屏幕底部
+/// （如桌面端输入栏）时气泡自动显示在按钮上方、箭头朝下，避免被
+/// 屏幕底部或键盘遮挡。
 void showChatAiAssistBubble(
   BuildContext anchorContext, {
   required QuillController controller,
   required FocusNode editorFocusNode,
 }) {
   final colorScheme = Theme.of(anchorContext).colorScheme;
+  // 自适应方向：估算气泡高约 380，判断上下空间
+  AxisDirection arrowDir = AxisDirection.up;
+  PreferDirection preferDir = PreferDirection.bottomLeft;
+  try {
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      final global = box.localToGlobal(Offset.zero);
+      final anchorBottom = global.dy + box.size.height;
+      final view = WidgetsBinding.instance.platformDispatcher.views.first;
+      final screenH = view.physicalSize.height / view.devicePixelRatio;
+      const estH = 380.0;
+      final spaceBelow = screenH - anchorBottom;
+      final spaceAbove = global.dy;
+      final showBelow = spaceBelow >= estH + 16 || spaceBelow >= spaceAbove;
+      arrowDir = showBelow ? AxisDirection.up : AxisDirection.down;
+      preferDir = showBelow ? PreferDirection.bottomLeft : PreferDirection.topLeft;
+    }
+  } catch (_) {}
   Function? close;
   close = Toast.showWidget(
     anchorContext,
-    direction: PreferDirection.bottomLeft,
+    direction: preferDir,
     child: Material(
       color: Colors.transparent,
       child: BubbleWidget(
-        arrowDirection: AxisDirection.up,
+        arrowDirection: arrowDir,
         arrowOffset: 20,
         backgroundColor: colorScheme.surface,
         border: BorderSide(
@@ -92,6 +115,7 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   int? _selEnd;
 
   String _preview = '';
+  String? _thinking;
   bool _streaming = false;
   bool _failed = false;
   String? _errorText;
@@ -148,6 +172,7 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
       _selStart = src.selStart;
       _selEnd = src.selEnd;
       _preview = '';
+      _thinking = null;
       _failed = false;
       _errorText = null;
       _streaming = true;
@@ -162,6 +187,7 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
     if (action == null || _streaming) return;
     setState(() {
       _preview = '';
+      _thinking = null;
       _failed = false;
       _errorText = null;
       _streaming = true;
@@ -176,17 +202,26 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
       targetLang: _targetLang,
       customInstruction: _customCtrl.text.trim(),
       handlers: ChatAiStreamHandlers(
-        onDelta: (_) => mountedSetState(),
+        onDelta: (fullText) {
+          if (!mounted) return;
+          setState(() => _preview = fullText);
+        },
+        onThinking: (thinking) {
+          if (!mounted) return;
+          setState(() => _thinking = thinking);
+        },
         onDone: (_, fullText) {
           if (!mounted) return;
           setState(() {
             _preview = fullText;
+            _thinking = null;
             _streaming = false;
           });
         },
         onError: (msg) {
           if (!mounted) return;
           setState(() {
+            _thinking = null;
             _streaming = false;
             _failed = true;
             _errorText = msg;
@@ -305,19 +340,42 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
     final scope = _hasSelectionRange && _sourceText.isNotEmpty
         ? 'chat_ai.scope_selection'.tr()
         : 'chat_ai.scope_all'.tr();
-    return Row(
-      children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 15, color: _cs.primary),
-        const SizedBox(width: 6),
-        Text('chat_ai.assist_title'.tr(),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(scope,
-              style: TextStyle(fontSize: 10.5, color: _cs.primary)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_cs.primaryContainer.withValues(alpha: .18), _cs.surfaceContainerLow.withValues(alpha: 0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        _iconBtn(HugeIcons.strokeRoundedCancel01, 'close'.tr(), widget.onClose),
-      ],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _cs.outlineVariant.withValues(alpha: .35)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: _cs.primary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 14, color: _cs.primary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('chat_ai.assist_title'.tr(),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+                Text(scope, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: _cs.primary)),
+              ],
+            ),
+          ),
+          _iconBtn(HugeIcons.strokeRoundedCancel01, 'close'.tr(), widget.onClose),
+        ],
+      ),
     );
   }
 
@@ -387,29 +445,111 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
 
   Widget _buildPreviewArea() {
     final empty = _preview.isEmpty && !_streaming;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 56, maxHeight: 240),
-      width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: _cs.surfaceContainerHighest.withValues(alpha: .45),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _cs.outlineVariant.withValues(alpha: .5)),
-      ),
-      child: empty
-          ? Center(
-              child: Text(
-                'chat_ai.preview_empty'.tr(),
-                style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
-                textAlign: TextAlign.center,
+    final isStreaming = _streaming;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: _cs.primaryContainer.withValues(alpha: .6),
+                borderRadius: BorderRadius.circular(999),
               ),
-            )
-          : SingleChildScrollView(
-              child: SelectableText(
-                _preview,
-                style: TextStyle(fontSize: 12.5, height: 1.55, color: _cs.onSurface),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 11, color: _cs.primary),
+                  const SizedBox(width: 4),
+                  Text('预览', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _cs.primary)),
+                ],
               ),
             ),
+            const SizedBox(width: 8),
+            if (isStreaming) ...[
+              SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.8, color: _cs.primary)),
+              if (_thinking != null && _thinking!.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(_thinking!,
+                      style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .7)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ],
+            const Spacer(),
+            if (!empty)
+              InkWell(
+                onTap: _copyPreview,
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 14, color: _cs.onSurfaceVariant),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 56, maxHeight: 240),
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _cs.surfaceContainerHighest.withValues(alpha: .45),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: empty ? _cs.outlineVariant.withValues(alpha: .5) : _cs.primary.withValues(alpha: .18)),
+            boxShadow: empty ? null : [BoxShadow(color: _cs.primary.withValues(alpha: .06), blurRadius: 10, offset: const Offset(0, 3))],
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: empty
+                ? Center(
+                    key: const ValueKey('empty_chat'),
+                    child: Text('chat_ai.preview_empty'.tr(),
+                        style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant), textAlign: TextAlign.center),
+                  )
+                : isStreaming && _preview.isEmpty
+                    ? Center(
+                        key: const ValueKey('streaming'),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.8, color: _cs.primary)),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(_thinking ?? 'note_ai.generating'.tr(),
+                                      style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center),
+                                ),
+                              ],
+                            ),
+                            if (_thinking != null && _thinking!.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(_thinking!,
+                                  style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center),
+                            ],
+                          ],
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        key: ValueKey('content_${_preview.hashCode}'),
+                        child: AiMarkdownPreview(data: _preview),
+                      ),
+          ),
+        ),
+      ],
     );
   }
 

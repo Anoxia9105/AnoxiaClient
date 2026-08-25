@@ -6,6 +6,7 @@
 /// - 结果应用：替换选区 / 插入光标 / 替换全文 + 重试 / 复制
 library;
 
+import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -44,6 +45,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   int? _selEnd;
 
   String _preview = '';
+  String? _thinking;
   bool _streaming = false;
   bool _failed = false;
   String? _errorText;
@@ -94,6 +96,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
       _selStart = src.selStart;
       _selEnd = src.selEnd;
       _preview = '';
+      _thinking = null;
       _failed = false;
       _errorText = null;
       _streaming = true;
@@ -108,6 +111,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
     if (action == null || _streaming) return;
     setState(() {
       _preview = '';
+      _thinking = null;
       _failed = false;
       _errorText = null;
       _streaming = true;
@@ -122,17 +126,26 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
       targetLang: _targetLang,
       customInstruction: _customCtrl.text.trim(),
       handlers: ChatAiStreamHandlers(
-        onDelta: (_) => mountedSetState(),
+        onDelta: (fullText) {
+          if (!mounted) return;
+          setState(() => _preview = fullText);
+        },
+        onThinking: (thinking) {
+          if (!mounted) return;
+          setState(() => _thinking = thinking);
+        },
         onDone: (_, fullText) {
           if (!mounted) return;
           setState(() {
             _preview = fullText;
+            _thinking = null;
             _streaming = false;
           });
         },
         onError: (msg) {
           if (!mounted) return;
           setState(() {
+            _thinking = null;
             _streaming = false;
             _failed = true;
             _errorText = msg;
@@ -257,23 +270,51 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
     final scope = _hasSelectionRange && _sourceText.isNotEmpty
         ? 'chat_ai.scope_selection'.tr()
         : 'chat_ai.scope_all'.tr();
-    return Row(
-      children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 15, color: _cs.primary),
-        const SizedBox(width: 6),
-        Text('chat_ai.assist_title'.tr(),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(scope, style: TextStyle(fontSize: 10.5, color: _cs.primary)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_cs.primaryContainer.withValues(alpha: .18), _cs.surfaceContainerLow.withValues(alpha: 0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        IconButton(
-          tooltip: 'close'.tr(),
-          visualDensity: VisualDensity.compact,
-          onPressed: widget.onClose,
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 15, color: _cs.onSurfaceVariant),
-        ),
-      ],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _cs.outlineVariant.withValues(alpha: .35)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: _cs.primary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 14, color: _cs.primary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('chat_ai.assist_title'.tr(),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+                Text(scope, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: _cs.primary)),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'close'.tr(),
+            visualDensity: VisualDensity.compact,
+            onPressed: widget.onClose,
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16, color: _cs.onSurfaceVariant),
+            style: IconButton.styleFrom(
+              backgroundColor: _cs.surfaceContainerHighest.withValues(alpha: .6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -342,8 +383,9 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
 
   Widget _buildPreviewArea() {
     final empty = _preview.isEmpty && !_streaming;
+    final showThinking = _thinking != null && _thinking!.isNotEmpty;
     return Container(
-      constraints: const BoxConstraints(minHeight: 56),
+      constraints: const BoxConstraints(minHeight: 56, maxHeight: 260),
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -356,20 +398,35 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
               child: Text('chat_ai.preview_empty'.tr(),
                   style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
                   textAlign: TextAlign.center))
-          : _streaming
-              ? Row(
+          : _streaming && _preview.isEmpty
+              ? Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox.square(
-                        dimension: 13, child: CircularProgressIndicator(strokeWidth: 2)),
-                    const SizedBox(width: 8),
-                    Text('note_ai.generating'.tr(),
-                        style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox.square(
+                            dimension: 13, child: CircularProgressIndicator(strokeWidth: 2)),
+                        const SizedBox(width: 8),
+                        Text(_thinking ?? 'note_ai.generating'.tr(),
+                            style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
+                      ],
+                    ),
+                    if (showThinking) ...[
+                      const SizedBox(height: 6),
+                      Text(_thinking!,
+                          style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .7)),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center),
+                    ],
                   ],
                 )
-              : SelectableText(_preview,
-                  style: TextStyle(fontSize: 12.5, height: 1.55, color: _cs.onSurface)),
+              : SingleChildScrollView(
+                  child: AiMarkdownPreview(data: _preview),
+                ),
     );
   }
 

@@ -193,7 +193,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
   Widget build(BuildContext context) {
     if (!_expanded) {
       return Padding(
-        padding: const EdgeInsets.only(left: 8, bottom: 2),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
         child: Align(
           alignment: Alignment.centerLeft,
           child: _pill(
@@ -214,7 +214,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
       child: Row(
         children: [
           Expanded(

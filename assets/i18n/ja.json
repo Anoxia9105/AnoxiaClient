@@ -457,6 +457,8 @@
   "chat_ai.input_empty": "先に何か入力してください",
   "chat_ai.instruction_required": "カスタム指示を入力してください",
   "chat_ai.empty_content": "処理できるテキストがありません",
+  "chat_ai.truncated": "長さ制限で切り詰められました",
+  "chat_ai.thinking": "考え中…",
   "chat_ai.no_incoming": "返信できる受信メッセージがありません",
   "search_context_title": "検索コンテキスト",
   "search_context_matches": "一致数",

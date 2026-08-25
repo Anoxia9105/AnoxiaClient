@@ -457,6 +457,8 @@
   "chat_ai.input_empty": "请先输入一些内容",
   "chat_ai.instruction_required": "请先输入自定义指令",
   "chat_ai.empty_content": "该消息没有可处理的文字内容",
+  "chat_ai.truncated": "回复过长已截断",
+  "chat_ai.thinking": "思考中…",
   "chat_ai.no_incoming": "暂无收到的消息可生成回复",
   "search_context_title": "搜索上下文",
   "search_context_matches": "匹配数量",

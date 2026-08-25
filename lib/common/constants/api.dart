@@ -207,7 +207,15 @@ class API {
   static const String callRemoveParticipant = '/call/participant/remove';
 
   // ======================== AI 聊天接口 ========================
-  /// AI 对话接口
+  /// AI 对话流式接口（SSE，支持 thinking / 多轮 conversationId）
+  static const String chatAiStream = '/chat/ai/stream';
+
+  /// 记事本 AI 流式接口（与 chatAiStream 协议一致，action 区分能力）
+  static const String noteAiStream = '/note/ai/stream';
+
+  /// @Deprecated 遗留 Gemini 直连接口，已废弃（服务端 GEMINI_API_KEY 未配置，恒失败）
+  /// 仅保留兼容旧 ask() 调用，业务请迁移至 [chatAiStream]
+  @Deprecated('请使用 chatAiStream 流式接口')
   static const String chatGemini = '/chat/gemini';
 
   // ======================== 推送设备绑定接口 ========================

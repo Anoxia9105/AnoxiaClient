@@ -10,6 +10,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/sse_client.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -58,23 +59,30 @@ class ChatAiStreamHandlers {
     required this.onDelta,
     this.onDone,
     this.onError,
+    this.onThinking,
   });
 
   /// 增量文本（core 内部 80ms 节流后回调全量累计文本）
   final void Function(String fullText) onDelta;
 
   /// 完成：conversationId（持久模式）/ 权威全文
+  /// 新增 [truncated] 命名参数保持向后兼容，调用方可按需处理“回复过长已截断”提示
   final void Function(String conversationId, String fullText)? onDone;
 
   /// 失败（已提取服务端 message）
   final void Function(String message)? onError;
+
+  /// 推理期增量（多次），[thinking] 为 null 表示思考结束 `[done]` 哨兵
+  final void Function(String? thinking)? onThinking;
 }
 
 /// 共享流式控制器：一个实例对应一次弹窗生命周期
 class ChatAiAssistCore {
   StreamSubscription<SseFrame>? _sub;
   final StringBuffer _buffer = StringBuffer();
+  final StringBuffer _thinkingBuf = StringBuffer();
   Timer? _throttle;
+  Timer? _thinkingThrottle;
   bool _streaming = false;
 
   bool get isStreaming => _streaming;
@@ -132,32 +140,57 @@ class ChatAiAssistCore {
   }) {
     cancel();
     _buffer.clear();
+    _thinkingBuf.clear();
     _streaming = true;
     var gotTerminal = false;
 
     _sub = SseClient.post(path, body: body).listen(
       (frame) {
         if (!frame.isNamed) {
+          // 首个正文增量到来时，若仍有思考态则通知清空
+          if (_thinkingBuf.isNotEmpty) {
+            _thinkingBuf.clear();
+            handlers.onThinking?.call(null);
+          }
           _buffer.write(frame.data);
           _throttled(handlers);
           return;
         }
         switch (frame.event) {
+          case 'thinking':
+            if (frame.data == '[done]') {
+              _thinkingBuf.clear();
+              handlers.onThinking?.call(null);
+            } else {
+              _thinkingBuf.write(frame.data);
+              _throttledThinking(handlers);
+            }
           case 'done':
             gotTerminal = true;
             var full = _buffer.toString();
             var convId = '';
+            var truncated = false;
             try {
               final json = jsonDecode(frame.data) as Map<String, dynamic>;
               final text = json['text'];
               if (text is String && text.isNotEmpty) full = text;
               if (persistent) convId = json['conversationId']?.toString() ?? '';
+              truncated = json['truncated'] as bool? ?? false;
             } catch (_) {}
             _streaming = false;
+            _thinkingBuf.clear();
+            handlers.onThinking?.call(null);
             handlers.onDone?.call(convId, full);
+            if (truncated) {
+              try {
+                Toast.showToast('chat_ai.truncated'.tr(), type: ToastType.warning);
+              } catch (_) {}
+            }
           case 'error':
             gotTerminal = true;
             _streaming = false;
+            _thinkingBuf.clear();
+            handlers.onThinking?.call(null);
             var msg = '';
             try {
               final json = jsonDecode(frame.data) as Map<String, dynamic>;
@@ -199,10 +232,20 @@ class ChatAiAssistCore {
     });
   }
 
+  void _throttledThinking(ChatAiStreamHandlers handlers) {
+    _thinkingThrottle?.cancel();
+    _thinkingThrottle = Timer(const Duration(milliseconds: 80), () {
+      handlers.onThinking?.call(_thinkingBuf.toString());
+    });
+  }
+
   /// 取消当前流（弹窗关闭/重新发起时调用）
   void cancel() {
     _throttle?.cancel();
     _throttle = null;
+    _thinkingThrottle?.cancel();
+    _thinkingThrottle = null;
+    _thinkingBuf.clear();
     _sub?.cancel();
     _sub = null;
     _streaming = false;

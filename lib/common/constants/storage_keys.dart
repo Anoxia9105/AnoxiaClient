@@ -29,4 +29,14 @@ class StorageKeys {
 
   /// 是否隐藏官方虚拟房间（布尔值，true=隐藏）
   static const String officialRoomHidden = 'OFFICIAL_ROOM_HIDDEN';
+
+  /// AI 会话 ID（按用户隔离，key 前缀 + userId）
+  ///
+  /// 用于持久化 `/chat/ai/stream` 返回的 `conversationId`，实现多轮记忆。
+  /// 客户端在 done 事件中保存，下次请求时回传。
+  static const String aiConversationIdPrefix = 'AI_CONVERSATION_ID_';
+
+  /// 获取当前用户的 AI 会话持久化 key
+  static String aiConversationIdKey(String userId) =>
+      '$aiConversationIdPrefix$userId';
 }

@@ -22,6 +22,8 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
+
 import 'note_ai_langs.dart';
 import 'note_markdown.dart';
 
@@ -131,6 +133,7 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
   String _preview = '';
   bool _streaming = false;
   bool _failed = false;
+  String? _thinking;
   StreamSubscription<SseFrame>? _sub;
 
   /// 打开面板时捕获的选区（非折叠则仅处理选中文字）
@@ -226,6 +229,7 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
 
     setState(() {
       _preview = '';
+      _thinking = null;
       _failed = false;
       _streaming = true;
     });
@@ -236,12 +240,17 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
       (frame) {
         if (!mounted) return;
         if (!frame.isNamed) {
-          // 匿名事件 = 增量文本；节流刷新 UI
+          // 匿名事件 = 增量文本；节流刷新 UI（同时清掉思考态）
+          if (_thinking != null) {
+            setState(() => _thinking = null);
+          }
           _preview += frame.data;
           _throttleUi();
           return;
         }
         switch (frame.event) {
+          case 'thinking':
+            setState(() => _thinking = frame.data == '[done]' ? null : (_thinking ?? '') + frame.data);
           case 'done':
             gotDone = true;
             try {
@@ -249,10 +258,14 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
               final text = json['text'];
               if (text is String && text.isNotEmpty) _preview = text;
             } catch (_) {}
-            setState(() => _streaming = false);
+            setState(() {
+              _thinking = null;
+              _streaming = false;
+            });
           case 'error':
             gotDone = true; // 结束流（按失败处理）
             setState(() {
+              _thinking = null;
               _streaming = false;
               _failed = true;
             });
@@ -303,6 +316,7 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
       onDone: () {
         if (mounted && !gotDone && _streaming) {
           setState(() {
+            _thinking = null;
             _streaming = false;
             _failed = _preview.isEmpty;
           });
@@ -327,9 +341,25 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
   }
 
   void _applyAppendToEnd() {
-    // 全文 markdown + 结果整体重建，保留原格式
-    final combined = '${_wholeMarkdown.trimRight()}\n\n${_preview.trim()}';
-    widget.controller.document = markdownToDocument(combined);
+    final text = _preview.trim();
+    if (text.isEmpty) return;
+    final doc = widget.controller.document;
+    if (doc.toPlainText().trim().isEmpty) {
+      widget.controller.document = markdownToDocument(text);
+      Navigator.of(context).pop();
+      return;
+    }
+    final previewDelta = markdownToDocument(text).toDelta();
+    final curDelta = doc.toDelta();
+    final combined = Delta();
+    for (final op in curDelta.toList()) {
+      combined.push(op);
+    }
+    combined.insert('\n');
+    for (final op in previewDelta.toList()) {
+      combined.push(op);
+    }
+    widget.controller.document = Document.fromDelta(combined);
     Navigator.of(context).pop();
   }
 
@@ -419,65 +449,96 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
               ],
             ),
             const SizedBox(height: 12),
+            Text('AI 能力',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: .4, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 for (final a in _NoteAiAction.values)
                   ChoiceChip(
-                    label: Text(a.label),
+                    label: Text(a.label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500)),
                     avatar: HugeIcon(
                         icon: a.icon,
-                        size: 15,
-                        color: _action == a
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurfaceVariant),
+                        size: 14,
+                        color: _action == a ? cs.onPrimaryContainer : cs.onSurfaceVariant),
                     selected: _action == a,
-                    onSelected: _streaming
-                        ? null
-                        : (_) => setState(() => _action = a),
+                    selectedColor: cs.primaryContainer,
+                    backgroundColor: cs.surfaceContainerHighest.withValues(alpha: .6),
+                    side: BorderSide(
+                        color: _action == a ? cs.primary.withValues(alpha: .4) : cs.outlineVariant.withValues(alpha: .6)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                    showCheckmark: false,
+                    onSelected: _streaming ? null : (_) => setState(() => _action = a),
                   ),
               ],
             ),
-            if (_action == _NoteAiAction.custom) ...[
-              const SizedBox(height: 10),
-              TextField(
-                controller: _instructionCtrl,
-                enabled: !_streaming,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'note_ai.instruction_hint'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-            ],
-            if (_action == _NoteAiAction.translate) ...[
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                initialValue: _targetLang,
-                isDense: true,
-                decoration: InputDecoration(
-                  isDense: true,
-                  labelText: 'note_ai.target_lang'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
-                items: [
-                  for (final lang in noteTranslateLangs)
-                    DropdownMenuItem(value: lang, child: Text(lang)),
-                ],
-                // onChanged 为 null 时下拉框自动置灰
-                onChanged: _streaming
-                    ? null
-                    : (value) {
-                        if (value == null) return;
-                        setState(() => _targetLang = value);
-                      },
-              ),
-            ],
-            const SizedBox(height: 12),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: _action == _NoteAiAction.custom
+                  ? Padding(
+                      key: const ValueKey('custom_sheet'),
+                      padding: const EdgeInsets.only(top: 12),
+                      child: TextField(
+                        controller: _instructionCtrl,
+                        enabled: !_streaming,
+                        maxLines: 3,
+                        minLines: 2,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: 'note_ai.instruction_hint'.tr(),
+                          hintStyle: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant.withValues(alpha: .7)),
+                          filled: true,
+                          fillColor: cs.surfaceContainerHighest.withValues(alpha: .5),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: .6))),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(color: cs.primary, width: 1.4)),
+                        ),
+                      ),
+                    )
+                  : _action == _NoteAiAction.translate
+                      ? Padding(
+                          key: const ValueKey('lang_sheet'),
+                          padding: const EdgeInsets.only(top: 12),
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _targetLang,
+                            isDense: true,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              labelText: 'note_ai.target_lang'.tr(),
+                              filled: true,
+                              fillColor: cs.surfaceContainerHighest.withValues(alpha: .5),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: .6))),
+                              focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(color: cs.primary, width: 1.4)),
+                            ),
+                            items: [
+                              for (final lang in noteTranslateLangs)
+                                DropdownMenuItem(value: lang, child: Text(lang, style: const TextStyle(fontSize: 13))),
+                            ],
+                            onChanged: _streaming
+                                ? null
+                                : (value) {
+                                    if (value == null) return;
+                                    setState(() => _targetLang = value);
+                                  },
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('empty_sheet')),
+            ),
+            const SizedBox(height: 16),
             _buildPreviewArea(cs),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildActionsRow(cs),
           ],
         ),
@@ -487,110 +548,245 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
 
   Widget _buildPreviewArea(ColorScheme cs) {
     final empty = _preview.isEmpty;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 120, maxHeight: 320),
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: .45),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
-      ),
-      child: empty && _streaming
-          ? Center(
+    final isStreaming = _streaming;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: .6),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: cs.primary.withValues(alpha: .15)),
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 10),
-                  Text('note_ai.generating'.tr(),
-                      style: Theme.of(context).textTheme.bodySmall),
+                  HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 12, color: cs.primary),
+                  const SizedBox(width: 4),
+                  Text('预览', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.primary)),
                 ],
               ),
-            )
-          : empty
-              ? Center(
-                  child: Text('note_ai.preview_empty'.tr(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: cs.onSurfaceVariant)),
-                )
-              : SingleChildScrollView(
-                  child: SelectableText(
-                    _preview,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+            ),
+            const SizedBox(width: 8),
+            if (isStreaming)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                  const SizedBox(width: 6),
+                  Text('note_ai.generating'.tr(), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                ],
+              )
+            else if (!empty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.tertiaryContainer.withValues(alpha: .5),
+                  borderRadius: BorderRadius.circular(6),
                 ),
+                child: Text('${_preview.length} 字', style: TextStyle(fontSize: 10.5, color: cs.onTertiaryContainer)),
+              ),
+            const Spacer(),
+            if (!empty)
+              IconButton(
+                tooltip: 'note_ai.copy'.tr(),
+                visualDensity: VisualDensity.compact,
+                onPressed: _copyResult,
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 16, color: cs.onSurfaceVariant),
+                style: IconButton.styleFrom(
+                  backgroundColor: cs.surfaceContainerHighest.withValues(alpha: .7),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 140, maxHeight: 300),
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: .45),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+                color: empty ? cs.outlineVariant.withValues(alpha: .35) : cs.primary.withValues(alpha: isStreaming ? .25 : .0)),
+            boxShadow: empty
+                ? null
+                : [BoxShadow(color: cs.primary.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 4))],
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: empty && isStreaming
+                ? Center(
+                    key: const ValueKey('gen_sheet'),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2.5, color: cs.primary)),
+                        const SizedBox(height: 10),
+                        Text(_thinking ?? 'note_ai.generating'.tr(),
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center),
+                      ],
+                    ),
+                  )
+                : empty
+                    ? Center(
+                        key: const ValueKey('empty_sheet'),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: cs.surfaceContainerHigh,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: cs.outlineVariant.withValues(alpha: .4)),
+                              ),
+                              child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 22, color: cs.onSurfaceVariant.withValues(alpha: .6)),
+                            ),
+                            const SizedBox(height: 10),
+                            Text('note_ai.preview_empty'.tr(), style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant)),
+                          ],
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        key: ValueKey('content_${_preview.hashCode}'),
+                        child: AiMarkdownPreview(data: _preview),
+                      ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildActionsRow(ColorScheme cs) {
     final hasResult = _preview.isNotEmpty && !_streaming;
     final action = _action;
-    return Row(
-      children: [
-        FilledButton.icon(
-          onPressed: (_action == null || _streaming) ? null : _start,
-          icon: HugeIcon(
-            icon: _streaming
-                ? HugeIcons.strokeRoundedLoading01
-                : HugeIcons.strokeRoundedPlay,
-            size: 16,
-            color: (_action == null || _streaming)
-                ? cs.onSurface.withValues(alpha: .4)
-                : cs.onPrimary,
+    if (_streaming) {
+      return SizedBox(
+        height: 44,
+        child: FilledButton.icon(
+          onPressed: null,
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            disabledBackgroundColor: cs.surfaceContainerHighest,
           ),
-          label: Text(_streaming
-              ? 'note_ai.generating'.tr()
-              : 'note_ai.run'.tr()),
+          icon: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+          label: Text('note_ai.generating'.tr()),
         ),
-        const Spacer(),
-        if (hasResult && action != null) ...[
-          if (action == _NoteAiAction.title)
-            FilledButton.tonal(
-              onPressed: _applyAsTitle,
-              child: Text('note_ai.use_as_title'.tr()),
-            )
-          else ...[
-            if ((action == _NoteAiAction.continueWrite ||
-                    action == _NoteAiAction.expand) &&
-                _selStart == null)
-              OutlinedButton(
-                onPressed: _applyAppendToEnd,
-                child: Text('note_ai.append'.tr()),
-              ),
-            const SizedBox(width: 8),
-            if (_selStart != null &&
-                (action == _NoteAiAction.polish ||
-                    action == _NoteAiAction.translate ||
-                    action == _NoteAiAction.custom))
-              FilledButton(
-                onPressed: _applyReplaceSelection,
-                child: Text('note_ai.replace_selection'.tr()),
-              )
-            else if (_selStart == null)
-              FilledButton(
-                onPressed: _applyReplaceAll,
-                child: Text('note_ai.replace_all'.tr()),
-              ),
-          ],
-          IconButton(
-            tooltip: 'note_ai.copy'.tr(),
-            onPressed: _copyResult,
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCopy01,
-              size: 18,
-              color: cs.onSurfaceVariant,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 44,
+          child: FilledButton.icon(
+            onPressed: (_action == null) ? null : _start,
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: _action == null ? 0 : 2,
+              shadowColor: cs.primary.withValues(alpha: .35),
             ),
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedSparkles,
+                size: 16,
+                color: (_action == null) ? cs.onSurface.withValues(alpha: .4) : cs.onPrimary),
+            label: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
           ),
-        ] else if (_failed)
-          Text('note_ai.failed'.tr(),
-              style: TextStyle(color: cs.error, fontSize: 12)),
+        ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: hasResult && action != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(height: 1, color: cs.outlineVariant.withValues(alpha: .4)),
+                      const SizedBox(height: 12),
+                      if (action == _NoteAiAction.title)
+                        SizedBox(
+                          height: 40,
+                          child: FilledButton.tonalIcon(
+                            onPressed: _applyAsTitle,
+                            icon: HugeIcon(icon: HugeIcons.strokeRoundedText, size: 16, color: cs.primary),
+                            label: Text('note_ai.use_as_title'.tr()),
+                          ),
+                        )
+                      else ...[
+                        if ((action == _NoteAiAction.continueWrite || action == _NoteAiAction.expand) && _selStart == null)
+                          SizedBox(
+                            height: 40,
+                            child: OutlinedButton.icon(
+                              onPressed: _applyAppendToEnd,
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedNoteAdd, size: 16, color: cs.primary),
+                              label: Text('note_ai.append'.tr()),
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                side: BorderSide(color: cs.outlineVariant.withValues(alpha: .7)),
+                              ),
+                            ),
+                          ),
+                        if ((action == _NoteAiAction.continueWrite || action == _NoteAiAction.expand) && _selStart == null)
+                          const SizedBox(height: 8),
+                        if (_selStart != null &&
+                            (action == _NoteAiAction.polish ||
+                                action == _NoteAiAction.translate ||
+                                action == _NoteAiAction.custom))
+                          SizedBox(
+                            height: 40,
+                            child: FilledButton.icon(
+                              onPressed: _applyReplaceSelection,
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 16, color: cs.onPrimary),
+                              label: Text('note_ai.replace_selection'.tr()),
+                              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                            ),
+                          )
+                        else if (_selStart == null)
+                          SizedBox(
+                            height: 40,
+                            child: FilledButton.icon(
+                              onPressed: _applyReplaceAll,
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedFileEdit, size: 16, color: cs.onPrimary),
+                              label: Text('note_ai.replace_all'.tr()),
+                              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                            ),
+                          ),
+                      ],
+                    ],
+                  ),
+                )
+              : _failed
+                  ? Padding(
+                      key: const ValueKey('failed_sheet'),
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: cs.errorContainer.withValues(alpha: .6),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: cs.error.withValues(alpha: .3)),
+                        ),
+                        child: Row(
+                          children: [
+                            HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, size: 16, color: cs.error),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text('note_ai.failed'.tr(), style: TextStyle(color: cs.error, fontSize: 12))),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('idle_sheet')),
+        ),
       ],
     );
   }

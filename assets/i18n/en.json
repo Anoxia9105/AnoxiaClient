@@ -457,6 +457,8 @@
   "chat_ai.input_empty": "Type something first",
   "chat_ai.instruction_required": "Please enter your instruction first",
   "chat_ai.empty_content": "No processable text in this message",
+  "chat_ai.truncated": "Response truncated due to length",
+  "chat_ai.thinking": "Thinking...",
   "chat_ai.no_incoming": "No incoming message to reply to",
   "search_context_title": "Search Context",
   "search_context_matches": "Matches",

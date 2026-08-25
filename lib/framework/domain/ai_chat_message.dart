@@ -13,21 +13,30 @@ class AiChatMessage {
   /// 是否处于流式传输状态，仅 [isAi] 为 true 时有效
   final bool streaming;
 
+  /// 推理期思考文本（仅流式 AI 消息有效，思考结束时置空）
+  ///
+  /// 用于在正文尚未到来时展示“思考中…”。
+  final String? thinking;
+
   AiChatMessage({
     required this.content,
     required this.isAi,
     this.streaming = false,
+    this.thinking,
   });
 
   /// 创建当前消息的副本，支持局部更新
   AiChatMessage copyWith({
     String? content,
     bool? streaming,
+    String? thinking,
+    bool clearThinking = false,
   }) {
     return AiChatMessage(
       content: content ?? this.content,
       isAi: isAi,
       streaming: streaming ?? this.streaming,
+      thinking: clearThinking ? null : (thinking ?? this.thinking),
     );
   }
 }
