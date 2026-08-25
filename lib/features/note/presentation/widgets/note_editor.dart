@@ -13,6 +13,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'note_ai_panel.dart';
 import 'note_quill_actions.dart';
 import 'note_quill_divider_build.dart';
 import 'note_quill_image_build.dart';
@@ -75,6 +76,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   /// 右侧「在文档中查找」面板是否展开
   bool _showSearch = false;
 
+  /// 右侧 AI 面板是否展开（与搜索面板互斥）
+  bool _showAi = false;
+
   final GlobalKey<EditorState> _editorKey = GlobalKey<EditorState>();
 
   // ---- 斜杠命令状态 ----
@@ -136,6 +140,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
   void _teardownEditor() {
     _dismissSlashMenu();
     _showSearch = false;
+    _showAi = false;
     _debounce?.cancel();
     _debounce = null;
     _quillController?.removeListener(_onQuillChanged);
@@ -809,8 +814,8 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                         focusNode: _focusNode,
                         searchActive: _showSearch,
                         onSearchToggle: _toggleSearchPanel,
-                        noteId: session.noteId,
-                        onTitleSelected: (t) => _titleControllerOf(session).text = t,
+                        aiActive: _showAi,
+                        onAiToggle: _toggleAiPanel,
                       ),
                       Expanded(
                         child: QuillEditor.basic(
@@ -850,6 +855,13 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
                     controller: controller,
                     editorFocusNode: _focusNode,
                     onClose: () => setState(() => _showSearch = false),
+                  )
+                else if (_showAi)
+                  NoteAiPanel(
+                    controller: controller,
+                    noteId: session.noteId,
+                    onTitle: (t) => _titleControllerOf(session).text = t,
+                    onClose: () => setState(() => _showAi = false),
                   ),
               ],
             ),
@@ -860,9 +872,13 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     );
   }
 
-  /// 切换右侧查找面板；关闭时清除查找高亮选区。
+  /// 切换右侧查找面板；与 AI 面板互斥，关闭时清除查找高亮选区。
   void _toggleSearchPanel() {
-    setState(() => _showSearch = !_showSearch);
+    final willShow = !_showSearch;
+    setState(() {
+      _showSearch = willShow;
+      if (willShow) _showAi = false;
+    });
     if (_showSearch) return;
     final controller = _quillController;
     if (controller != null) {
@@ -873,6 +889,16 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
       );
     }
     _focusNode.requestFocus();
+  }
+
+  /// 切换右侧 AI 面板；与搜索面板互斥
+  void _toggleAiPanel() {
+    setState(() {
+      final willShow = !_showAi;
+      _showAi = willShow;
+      if (willShow) _showSearch = false;
+    });
+    if (!_showAi) _focusNode.requestFocus();
   }
 
   /// 标题区：标题输入框 + 标签编辑入口，下方展示当前笔记标签（可点击按标签检索）

@@ -27,14 +27,20 @@ class NoteToolbar extends ConsumerWidget {
   /// 查找按钮点击回调（切换查找面板）
   final VoidCallback onSearchToggle;
 
-  /// AI 助手按钮点击回调（为空则不显示按钮）
+  /// AI 助手按钮点击回调（为空则不显示按钮，兼容旧版气泡入口）
   final VoidCallback? onAiTap;
 
-  /// 当前笔记ID（用于 AI 请求在 content 为空时按 noteId 读取）
+  /// 当前笔记ID（用于 AI 请求在 content 为空时按 noteId 读取，气泡模式下使用）
   final int? noteId;
 
-  /// 标题回填回调（TITLE 动作生成标题时使用）
+  /// 标题回填回调（TITLE 动作生成标题时使用，气泡模式）
   final ValueChanged<String>? onTitleSelected;
+
+  /// AI 面板是否展开（高亮用）
+  final bool aiActive;
+
+  /// AI 面板切换回调（新的右侧面板互斥模式）
+  final VoidCallback? onAiToggle;
 
   const NoteToolbar({
     super.key,
@@ -45,6 +51,8 @@ class NoteToolbar extends ConsumerWidget {
     this.onAiTap,
     this.noteId,
     this.onTitleSelected,
+    this.aiActive = false,
+    this.onAiToggle,
   });
 
   @override
@@ -151,7 +159,8 @@ class NoteToolbar extends ConsumerWidget {
             ),
           ),
           _buildDivider(context),
-          if (onAiTap != null || noteId != null) _buildAiButton(context, iconColor),
+          // AI 与搜索互斥：任一 toggle 存在即展示对应按钮；AI 优先使用 onAiToggle（右侧面板），兼容旧气泡入口 onAiTap
+          if (onAiToggle != null || onAiTap != null || noteId != null) _buildAiButton(context, iconColor),
           _buildSearchButton(context, iconColor),
           _buildDivider(context),
           _buildActionButton(
@@ -225,18 +234,32 @@ class NoteToolbar extends ConsumerWidget {
     );
   }
 
-  /// AI 助手按钮：气泡式快捷入口（参考标题/对齐气泡）
-  /// 点击后在按钮下方弹出操作列表，选中后关闭气泡并打开 AI 面板（预选对应动作）
+  /// AI 助手按钮：优先走右侧面板互斥模式（与搜索面板互斥），
+  /// 若未提供 onAiToggle 则回退到气泡快捷入口（兼容旧版）
   Widget _buildAiButton(BuildContext context, Color color) {
     final colorScheme = Theme.of(context).colorScheme;
+    // 新模式：右侧面板互斥（与搜索一致）
+    if (onAiToggle != null) {
+      return IconButton(
+        mouseCursor: SystemMouseCursors.click,
+        tooltip: 'note_ai.title'.tr(),
+        visualDensity: VisualDensity.compact,
+        onPressed: onAiToggle,
+        icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedSparkles,
+          size: 16,
+          color: aiActive ? colorScheme.primary : colorScheme.primary,
+          strokeWidth: aiActive ? 2.5 : 1.8,
+        ),
+      );
+    }
+    // 兼容旧版：气泡快捷入口
     return Builder(
       builder: (buttonContext) => IconButton(
         mouseCursor: SystemMouseCursors.click,
         tooltip: 'note_ai.title'.tr(),
         visualDensity: VisualDensity.compact,
         onPressed: () {
-          // 若外部仍提供 onAiTap（旧调用），优先走自定义回调以兼容
-          // 否则走内置气泡快捷入口 + 预选动作打开面板
           if (onAiTap != null && noteId == null && onTitleSelected == null) {
             onAiTap!.call();
             return;
