@@ -18,9 +18,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'note_ai_langs.dart';
 import 'note_markdown.dart';
 
 enum _NoteAiAction { summarize, polish, expand, title, translate, continueWrite, custom }
@@ -106,7 +108,9 @@ class _NoteAiSheet extends ConsumerStatefulWidget {
 class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
   _NoteAiAction? _action;
   final _instructionCtrl = TextEditingController();
-  final _langCtrl = TextEditingController(text: 'English');
+
+  /// 翻译目标语言（下拉选择，默认 English）
+  String _targetLang = 'English';
   Timer? _uiThrottle;
 
   @override
@@ -137,7 +141,6 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
   void dispose() {
     _unsub();
     _instructionCtrl.dispose();
-    _langCtrl.dispose();
     super.dispose();
   }
 
@@ -158,7 +161,12 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
     final start = sel.start.clamp(0, plain.length);
     final end = sel.end.clamp(0, plain.length);
     if (end <= start) return null;
-    return plain.substring(start, end);
+    // 索引必须基于原始 toPlainText（嵌入占位符占位）计算，
+    // 截取后再剔除 U+FFFC，避免把对象占位符发给 AI
+    return plain.substring(start, end).replaceAll(
+          Embed.kObjectReplacementCharacter,
+          '',
+        );
   }
 
   /// 组装请求体：优先使用选中文字，其次全文 Markdown；若均为空则改用 noteId 让后端读取
@@ -184,8 +192,7 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
       // 额外携带 noteId 作归属校验与日志关联（有 effective 时也一并带上，不影响后端优先使用 content）
       if (effective != null && effective.isNotEmpty && widget.noteId != null)
         'noteId': widget.noteId,
-      if (action == _NoteAiAction.translate && _langCtrl.text.trim().isNotEmpty)
-        'targetLang': _langCtrl.text.trim(),
+      if (action == _NoteAiAction.translate) 'targetLang': _targetLang,
       if (action == _NoteAiAction.custom && _instructionCtrl.text.trim().isNotEmpty)
         'instruction': _instructionCtrl.text.trim(),
     };
@@ -333,17 +340,34 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
       _applyReplaceAll();
       return;
     }
-    final plain = _stripHeavyMarkdown(_preview);
+    // 结果经 Markdown→Delta 转换后整体插入，保留分割线等结构；
+    // 之前直接插纯文本，会把 AI 输出里的 `---` 分割线原样留在正文里
     widget.controller.replaceText(
-        start, end - start, plain, const TextSelection.collapsed(offset: 0));
+      start,
+      end - start,
+      _previewInsertionDelta(),
+      const TextSelection.collapsed(offset: 0),
+    );
     Navigator.of(context).pop();
   }
 
-  /// 选区替换走纯文本，剥离常见 Markdown 包装符号
-  static String _stripHeavyMarkdown(String s) {
-    return s
-        .replaceAll(RegExp(r'^#{1,6}\s*', multiLine: true), '')
-        .replaceAll(RegExp(r'\*\*|__|`'), '');
+  /// 预览 Markdown 转为选区插入用的 Delta
+  ///
+  /// 去掉文档型 Delta 末尾的纯换行，避免替换选区后在下方多出一个空行；
+  /// 带块级属性的换行（如标题结尾）保留，避免丢失格式。
+  Delta _previewInsertionDelta() {
+    final ops = markdownToDocument(_preview).toDelta().toList();
+    if (ops.length > 1) {
+      final last = ops.last;
+      if (last.isInsert && last.data == '\n' && last.attributes == null) {
+        ops.removeLast();
+      }
+    }
+    final delta = Delta();
+    for (final op in ops) {
+      delta.push(op);
+    }
+    return delta;
   }
 
   void _applyAsTitle() {
@@ -430,14 +454,25 @@ class _NoteAiSheetState extends ConsumerState<_NoteAiSheet> {
             ],
             if (_action == _NoteAiAction.translate) ...[
               const SizedBox(height: 10),
-              TextField(
-                controller: _langCtrl,
-                enabled: !_streaming,
+              DropdownButtonFormField<String>(
+                initialValue: _targetLang,
+                isDense: true,
                 decoration: InputDecoration(
                   isDense: true,
                   labelText: 'note_ai.target_lang'.tr(),
                   border: const OutlineInputBorder(),
                 ),
+                items: [
+                  for (final lang in noteTranslateLangs)
+                    DropdownMenuItem(value: lang, child: Text(lang)),
+                ],
+                // onChanged 为 null 时下拉框自动置灰
+                onChanged: _streaming
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() => _targetLang = value);
+                      },
               ),
             ],
             const SizedBox(height: 12),

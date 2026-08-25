@@ -153,7 +153,12 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody> {
     if (controller == null || _disposed) return;
 
     final delta = jsonEncode(controller.document.toDelta().toJson());
-    final plain = controller.document.toPlainText();
+    // toPlainText 会把嵌入（分割线/图片）输出为 U+FFFC 对象占位符，
+    // 直接入库会让左侧列表预览显示成乱码方块（看起来像"obj"），这里剔除
+    final plain = controller.document.toPlainText().replaceAll(
+          Embed.kObjectReplacementCharacter,
+          '',
+        );
     final notifier = _sessionService;
     notifier.updateContent(content: delta, plainText: plain);
 

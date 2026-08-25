@@ -72,7 +72,7 @@ void main() {
       expect(deltaToMarkdown(doc), '~~gone~~ and `code`');
     });
 
-    test('水平分隔线导出为 ---', () {
+    test('水平分隔线导出为 - - -（避免被解析为 setext 标题）', () {
       final doc = Document.fromJson([
         {'insert': '标题\n'},
         {
@@ -81,7 +81,7 @@ void main() {
         {'insert': '\n'},
         {'insert': '正文\n'},
       ]);
-      expect(deltaToMarkdown(doc), '标题\n---\n正文');
+      expect(deltaToMarkdown(doc), '标题\n- - -\n正文');
     });
   });
 
@@ -98,6 +98,72 @@ void main() {
     test('纯文本正常往返', () {
       final doc = markdownToDocument('plain only');
       expect(doc.toPlainText().trim(), 'plain only');
+    });
+
+    test('水平分隔线（---）导入为 divider 嵌入', () {
+      // 回归：flutter_quill_delta_from_html 不识别 <hr>，此前分割线会被静默丢弃
+      final doc = markdownToDocument('标题\n\n---\n\n正文');
+      final ops = doc.toDelta().toList();
+      expect(
+        ops.any(
+          (op) =>
+              op.isInsert &&
+              op.data is Map &&
+              (op.data as Map)['divider'] != null,
+        ),
+        isTrue,
+        reason: '`---` 应转换为 divider 嵌入而不是被丢弃',
+      );
+    });
+
+    test('AI 输出含多条分割线时全部保留', () {
+      final doc = markdownToDocument('第一段\n\n----------\n\n第二段\n\n---\n\n结尾');
+      final ops = doc.toDelta().toList();
+      final dividers = ops
+          .where(
+            (op) =>
+                op.isInsert &&
+                op.data is Map &&
+                (op.data as Map)['divider'] != null,
+          )
+          .length;
+      expect(dividers, 2);
+      final plain = doc.toPlainText();
+      expect(plain, contains('第一段'));
+      expect(plain, contains('第二段'));
+      expect(plain, contains('结尾'));
+    });
+
+    test('分割线导出后再导入保持往返一致', () {
+      const md = '前文\n\n---\n\n后文';
+      final exported = deltaToMarkdown(markdownToDocument(md));
+      expect(exported, contains('- - -'));
+      expect(deltaToMarkdown(markdownToDocument(exported)), exported);
+    });
+
+    test('连续分割线与首行分割线', () {
+      // 分割线在文档开头
+      var ops = markdownToDocument('---\n\n正文').toDelta().toList();
+      expect(
+        ops.any(
+          (op) =>
+              op.isInsert &&
+              op.data is Map &&
+              (op.data as Map)['divider'] != null,
+        ),
+        isTrue,
+      );
+      // 连续两条分割线
+      ops = markdownToDocument('---\n\n---\n\n正文').toDelta().toList();
+      final dividers = ops
+          .where(
+            (op) =>
+                op.isInsert &&
+                op.data is Map &&
+                (op.data as Map)['divider'] != null,
+          )
+          .length;
+      expect(dividers, 2);
     });
   });
 }

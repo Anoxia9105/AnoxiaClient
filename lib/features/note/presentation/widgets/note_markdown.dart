@@ -8,7 +8,6 @@ library;
 import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:html/dom.dart' as html_dom;
 import 'package:markdown/markdown.dart' as md;
 
 /// Delta → Markdown 文本
@@ -35,7 +34,10 @@ String deltaToMarkdown(Document document) {
     } else if (data is Map && data['video'] != null) {
       buffer.write('${data['video']}');
     } else if (data is Map && data['divider'] != null) {
-      buffer.write('---');
+      // 写成 `- - -` 而非 `---`：分割线紧贴上一行文字时 `---` 会被
+      // Markdown 重新解析为 setext 二级标题（与 flutter_quill 内置
+      // markdown 导出策略一致），`- - -` 可保证往返无损
+      buffer.write('- - -');
     } else if (data is Map && data['custom'] != null) {
       final custom = data['custom'];
       if (custom is Map && custom['content'] != null) {
@@ -75,34 +77,63 @@ String deltaToMarkdown(Document document) {
 /// Markdown → Document（Quill Delta）
 Document markdownToDocument(String markdown) {
   try {
-    final html = md.markdownToHtml(markdown);
-    // flutter_quill_delta_from_html 不识别 <hr>，默认会静默丢弃分割线，
-    // 这里注册自定义转换：`---` → divider 嵌入（与编辑器插入的水平线一致）
-    final delta =
-        HtmlToDelta(customBlocks: const [_HorizontalRulePart()]).convert(html);
-    return Document.fromDelta(delta);
+    // flutter_quill_delta_from_html 不识别 <hr>，分割线会被静默丢弃；
+    // 且其不会在相邻块级元素间补换行。这里先把 <hr> 替换成哨兵文本，
+    // 转换完成后再还原为 divider 嵌入，并保证分割线独占一行。
+    final html = md
+        .markdownToHtml(markdown)
+        .replaceAllMapped(_hrTagPattern, (_) => _hrSentinel);
+    return Document.fromDelta(
+      _restoreHorizontalRules(HtmlToDelta().convert(html)),
+    );
   } catch (_) {
     // 转换失败回退为纯文本
     return Document.fromDelta(Delta()..insert(markdown));
   }
 }
 
-/// `<hr>` → 水平分割线嵌入（divider 类型与 flutter_quill markdown 包内置一致）
-class _HorizontalRulePart implements CustomHtmlPart {
-  const _HorizontalRulePart();
+final RegExp _hrTagPattern = RegExp(r'<hr\s*/?>', caseSensitive: false);
 
-  @override
-  bool matches(html_dom.Element element) => element.localName == 'hr';
+/// `<hr>` 哨兵字符（私用区字符，正常内容不会出现）
+const String _hrSentinel = '\uE000\uE001';
 
-  @override
-  List<Operation> convert(
-    html_dom.Element element, {
-    Map<String, dynamic>? currentAttributes,
-  }) =>
-      [
-        Operation.insert({'divider': 'hr'}),
-        Operation.insert('\n'),
-      ];
+/// 把哨兵文本还原为水平分割线嵌入。
+Delta _restoreHorizontalRules(Delta input) {
+  final out = Delta();
+
+  // 分割线必须独占一行：上一行未以换行结尾时补一个换行，
+  // 否则嵌入会与前面的文字挤在同一行，导出时还会被拼成一段
+  void ensureLineBreak() {
+    if (out.isEmpty) return;
+    final last = out.last;
+    if (last.isInsert &&
+        last.data is String &&
+        (last.data as String).endsWith('\n')) {
+      return;
+    }
+    out.insert('\n');
+  }
+
+  for (final op in input.toList()) {
+    if (!op.isInsert ||
+        op.data is! String ||
+        !(op.data as String).contains(_hrSentinel)) {
+      out.push(op);
+      continue;
+    }
+    final segments = (op.data as String).split(_hrSentinel);
+    for (var i = 0; i < segments.length; i++) {
+      if (segments[i].isNotEmpty) {
+        out.insert(segments[i], op.attributes);
+      }
+      if (i < segments.length - 1) {
+        ensureLineBreak();
+        out.insert(const {'divider': 'hr'});
+        out.insert('\n');
+      }
+    }
+  }
+  return out;
 }
 
 /// 行内样式 → Markdown 包装
