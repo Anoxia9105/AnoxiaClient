@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 
 import 'note_ai_langs.dart';
 import 'note_markdown.dart';
@@ -539,25 +540,7 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
               ),
             ),
             const SizedBox(width: 8),
-            if (isStreaming)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(_thinking ?? 'note_ai.generating'.tr(),
-                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                ],
-              )
-            else if (!empty)
+            if (!isStreaming && !empty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -605,29 +588,7 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
             child: empty && isStreaming
-                ? Center(
-                    key: const ValueKey('generating'),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: cs.primary),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(_thinking ?? 'note_ai.generating'.tr(),
-                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant),
-                            maxLines: 4,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center),
-                        if (_thinking == null) ...[
-                          const SizedBox(height: 4),
-                          Text('AI 正在思考…', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: .7))),
-                        ],
-                      ],
-                    ),
-                  )
+                ? _buildSkeleton(cs, key: const ValueKey('generating'))
                 : empty
                     ? Center(
                         key: const ValueKey('empty'),
@@ -791,6 +752,31 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
                     )
                   : const SizedBox.shrink(key: ValueKey('idle')),
         ),
+      ],
+    );
+  }
+
+  Widget _buildSkeleton(ColorScheme cs, {Key? key}) {
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SkeletonLine(width: double.infinity, height: 12),
+        const SizedBox(height: 10),
+        const SkeletonLine(width: 220, height: 12),
+        const SizedBox(height: 10),
+        const SkeletonLine(width: 160, height: 12),
+        const SizedBox(height: 16),
+        const SkeletonLine(width: double.infinity, height: 12),
+        const SizedBox(height: 10),
+        const SkeletonLine(width: 190, height: 12),
+        if (_thinking != null && _thinking!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(_thinking!,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: .6)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ],
       ],
     );
   }
