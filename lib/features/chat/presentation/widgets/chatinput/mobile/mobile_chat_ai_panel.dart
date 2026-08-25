@@ -7,6 +7,7 @@
 library;
 
 import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -231,18 +232,39 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                   ],
                   if (_action == ChatAiAction.custom) ...[
                     const SizedBox(height: 8),
-                    TextField(
-                      controller: _customCtrl,
-                      enabled: !_streaming,
-                      maxLines: 2,
-                      style: const TextStyle(fontSize: 12.5),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: 'chat_ai.custom_hint'.tr(),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _customCtrl,
+                            enabled: !_streaming,
+                            maxLines: 2,
+                            minLines: 1,
+                            style: const TextStyle(fontSize: 12.5),
+                            onSubmitted: (_) => _start(ChatAiAction.custom),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: 'chat_ai.custom_hint'.tr(),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 36,
+                          child: FilledButton(
+                            onPressed: _streaming ? null : () => _start(ChatAiAction.custom),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 8),
@@ -333,8 +355,18 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
             selected: _action == ChatAiAction.translate),
         _chip('chat_ai.simplify'.tr(), _streaming ? null : () => _start(ChatAiAction.simplify),
             selected: _action == ChatAiAction.simplify),
-        _chip('chat_ai.custom'.tr(), _streaming ? null : () => _start(ChatAiAction.custom),
-            selected: _action == ChatAiAction.custom),
+        _chip(
+          'chat_ai.custom'.tr(),
+          _streaming
+              ? null
+              : () {
+                  setState(() {
+                    _action = ChatAiAction.custom;
+                    _showLangs = false;
+                  });
+                },
+          selected: _action == ChatAiAction.custom,
+        ),
       ],
     );
   }
@@ -383,7 +415,6 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
 
   Widget _buildPreviewArea() {
     final empty = _preview.isEmpty && !_streaming;
-    final showThinking = _thinking != null && _thinking!.isNotEmpty;
     return Container(
       constraints: const BoxConstraints(minHeight: 56, maxHeight: 260),
       width: double.infinity,
@@ -399,34 +430,34 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                   style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
                   textAlign: TextAlign.center))
           : _streaming && _preview.isEmpty
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox.square(
-                            dimension: 13, child: CircularProgressIndicator(strokeWidth: 2)),
-                        const SizedBox(width: 8),
-                        Text(_thinking ?? 'note_ai.generating'.tr(),
-                            style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
-                      ],
-                    ),
-                    if (showThinking) ...[
-                      const SizedBox(height: 6),
-                      Text(_thinking!,
-                          style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .7)),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center),
-                    ],
-                  ],
-                )
+              ? _buildSkeleton()
               : SingleChildScrollView(
                   child: AiMarkdownPreview(data: _preview),
                 ),
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SkeletonLine(width: double.infinity, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 200, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 160, height: 11),
+        const SizedBox(height: 12),
+        const SkeletonLine(width: double.infinity, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 180, height: 11),
+        if (_thinking != null && _thinking!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(_thinking!,
+              style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ],
+      ],
     );
   }
 

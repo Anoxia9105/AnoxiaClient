@@ -8,6 +8,7 @@ library;
 
 import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -40,7 +41,7 @@ void showAiAskBubble({
   final spaceAbove = anchor.dy;
   final showBelow =
       spaceBelow >= estimatedHeight + 24 || spaceBelow >= spaceAbove;
-  final arrowDir = showBelow ? AxisDirection.up : AxisDirection.down;
+  final arrowDir = showBelow ? AxisDirection.down : AxisDirection.up;
   final preferDir =
       showBelow ? PreferDirection.bottomLeft : PreferDirection.topLeft;
 
@@ -348,7 +349,6 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
 
   Widget _buildAnswerArea() {
     final empty = _answer.isEmpty && !_streaming;
-    final showThinking = _streaming && _answer.isEmpty && _thinking != null && _thinking!.isNotEmpty;
     return Container(
       constraints: const BoxConstraints(minHeight: 52, maxHeight: 280),
       width: double.infinity,
@@ -364,35 +364,35 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
                   style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
             )
           : _streaming && _answer.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox.square(
-                              dimension: 13, child: CircularProgressIndicator(strokeWidth: 2)),
-                          const SizedBox(width: 8),
-                          Text(_thinking ?? 'note_ai.generating'.tr(),
-                              style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
-                        ],
-                      ),
-                      if (showThinking) ...[
-                        const SizedBox(height: 6),
-                        Text(_thinking!,
-                            style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .7)),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center),
-                      ],
-                    ],
-                  ),
-                )
+              ? _buildSkeleton()
               : SingleChildScrollView(
                   controller: _scrollCtrl,
                   child: AiMarkdownPreview(data: _answer),
                 ),
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SkeletonLine(width: double.infinity, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 200, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 160, height: 11),
+        const SizedBox(height: 12),
+        const SkeletonLine(width: double.infinity, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 180, height: 11),
+        if (_thinking != null && _thinking!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(_thinking!,
+              style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ],
+      ],
     );
   }
 

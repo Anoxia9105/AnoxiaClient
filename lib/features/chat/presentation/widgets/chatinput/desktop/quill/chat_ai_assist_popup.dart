@@ -8,6 +8,7 @@ library;
 
 import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -46,7 +47,7 @@ void showChatAiAssistBubble(
       final spaceBelow = screenH - anchorBottom;
       final spaceAbove = global.dy;
       final showBelow = spaceBelow >= estH + 16 || spaceBelow >= spaceAbove;
-      arrowDir = showBelow ? AxisDirection.up : AxisDirection.down;
+      arrowDir = showBelow ? AxisDirection.down : AxisDirection.up;
       preferDir = showBelow ? PreferDirection.bottomLeft : PreferDirection.topLeft;
     }
   } catch (_) {}
@@ -305,16 +306,37 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
           ],
           if (_action == ChatAiAction.custom) ...[
             const SizedBox(height: 8),
-            TextField(
-              controller: _customCtrl,
-              enabled: !_streaming,
-              maxLines: 2,
-              style: const TextStyle(fontSize: 12.5),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: 'chat_ai.custom_hint'.tr(),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _customCtrl,
+                    enabled: !_streaming,
+                    maxLines: 2,
+                    minLines: 1,
+                    style: const TextStyle(fontSize: 12.5),
+                    onSubmitted: (_) => _start(ChatAiAction.custom),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: 'chat_ai.custom_hint'.tr(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 36,
+                  child: FilledButton(
+                    onPressed: _streaming ? null : () => _start(ChatAiAction.custom),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: 8),
@@ -394,8 +416,18 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
             selected: _action == ChatAiAction.translate),
         _chip('chat_ai.simplify'.tr(), _streaming ? null : () => _start(ChatAiAction.simplify),
             selected: _action == ChatAiAction.simplify),
-        _chip('chat_ai.custom'.tr(), _streaming ? null : () => _start(ChatAiAction.custom),
-            selected: _action == ChatAiAction.custom),
+        _chip(
+          'chat_ai.custom'.tr(),
+          _streaming
+              ? null
+              : () {
+                  setState(() {
+                    _action = ChatAiAction.custom;
+                    _showLangs = false;
+                  });
+                },
+          selected: _action == ChatAiAction.custom,
+        ),
       ],
     );
   }
@@ -466,19 +498,6 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            if (isStreaming) ...[
-              SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.8, color: _cs.primary)),
-              if (_thinking != null && _thinking!.isNotEmpty) ...[
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(_thinking!,
-                      style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .7)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ],
             const Spacer(),
             if (!empty)
               InkWell(
@@ -513,42 +532,38 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
                         style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant), textAlign: TextAlign.center),
                   )
                 : isStreaming && _preview.isEmpty
-                    ? Center(
-                        key: const ValueKey('streaming'),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.8, color: _cs.primary)),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(_thinking ?? 'note_ai.generating'.tr(),
-                                      style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center),
-                                ),
-                              ],
-                            ),
-                            if (_thinking != null && _thinking!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(_thinking!,
-                                  style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center),
-                            ],
-                          ],
-                        ),
-                      )
+                    ? _buildSkeleton(key: const ValueKey('streaming'))
                     : SingleChildScrollView(
                         key: ValueKey('content_${_preview.hashCode}'),
                         child: AiMarkdownPreview(data: _preview),
                       ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildSkeleton({Key? key}) {
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SkeletonLine(width: double.infinity, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 200, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 160, height: 11),
+        const SizedBox(height: 12),
+        const SkeletonLine(width: double.infinity, height: 11),
+        const SizedBox(height: 8),
+        const SkeletonLine(width: 180, height: 11),
+        if (_thinking != null && _thinking!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(_thinking!,
+              style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ],
       ],
     );
   }
