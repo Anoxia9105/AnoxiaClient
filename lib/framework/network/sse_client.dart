@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// 单条 SSE 帧
 class SseFrame {
@@ -89,16 +90,20 @@ class SseClient {
     yield* _parse(resp.data!.stream);
   }
 
+  @visibleForTesting
+  static Stream<SseFrame> parseStream(Stream<List<int>> byteStream) => _parse(byteStream);
+
   /// 字节流 → 行 → SSE 帧。
   ///
   /// 状态机：`event:` 暂存事件名；`data:` 追加载荷；空行派发一帧。
+  /// 兼容：尾帧缺少空行时刷出、UTF-8 多字节跨 chunk、`:keepalive` 注释、多 data 行按规范以 \n 拼接。
   static Stream<SseFrame> _parse(Stream<List<int>> byteStream) async* {
     String? eventName;
-    StringBuffer dataBuf = StringBuffer();
+    final dataBuf = StringBuffer();
     String pending = '';
 
-    await for (final chunk in byteStream) {
-      pending += utf8.decode(chunk, allowMalformed: true);
+    await for (final chunk in byteStream.transform(utf8.decoder)) {
+      pending += chunk;
       while (true) {
         final idx = pending.indexOf('\n');
         if (idx < 0) break;
@@ -110,7 +115,7 @@ class SseClient {
           if (dataBuf.isEmpty) continue; // 心跳/空行
           final frame = SseFrame(event: eventName, data: dataBuf.toString());
           eventName = null;
-          dataBuf = StringBuffer();
+          dataBuf.clear();
           yield frame;
           continue;
         }
@@ -119,9 +124,27 @@ class SseClient {
         } else if (line.startsWith('data:')) {
           var payload = line.substring(5);
           if (payload.startsWith(' ')) payload = payload.substring(1);
+          if (dataBuf.isNotEmpty) dataBuf.write('\n');
           dataBuf.write(payload);
+        } else if (line.startsWith(':')) {
+          continue;
         }
       }
+    }
+    if (pending.isNotEmpty) {
+      var line = pending;
+      if (line.endsWith('\r')) line = line.substring(0, line.length - 1);
+      if (line.startsWith('event:')) {
+        eventName = line.substring(6).trim();
+      } else if (line.startsWith('data:')) {
+        var payload = line.substring(5);
+        if (payload.startsWith(' ')) payload = payload.substring(1);
+        if (dataBuf.isNotEmpty) dataBuf.write('\n');
+        dataBuf.write(payload);
+      }
+    }
+    if (dataBuf.isNotEmpty) {
+      yield SseFrame(event: eventName, data: dataBuf.toString());
     }
   }
 }
