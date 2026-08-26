@@ -21,12 +21,31 @@ import '../chatinput/ai/chat_ai_assist_core.dart';
 /// 支持的翻译目标语言（专有名词不做 i18n）
 const _translateLangs = <String>['中文', 'English', '日本語', '한국어', 'Français'];
 
+AnchoredBubblePlacement resolveAiAskBubblePlacement({
+  required Offset anchor,
+  required Size screenSize,
+  required double bubbleWidth,
+  required double estimatedHeight,
+  double safeTop = 0,
+}) {
+  return resolveAnchoredBubblePlacement(
+    targetRect: Rect.fromLTWH(anchor.dx, anchor.dy, 0, 0),
+    screenSize: screenSize,
+    bubbleWidth: bubbleWidth,
+    estimatedHeight: estimatedHeight,
+    preferRightArrow: anchor.dx >= screenSize.width / 2,
+    arrowInset: 24,
+    safeTop: safeTop,
+  );
+}
+
 /// 弹出「问AI」气泡。
 ///
 /// [anchor] 为菜单触发点的全局坐标；[quotedText] 为消息纯文本。
 /// 会根据锚点在屏幕中的位置自适应箭头方向：锚点靠近底部（下方空间
 /// 不足）时气泡显示在锚点上方、箭头朝下，避免气泡与输入框重叠或被截断。
 void showAiAskBubble({
+  required BuildContext context,
   required Offset anchor,
   required String quotedText,
 }) {
@@ -34,53 +53,65 @@ void showAiAskBubble({
   if (clean.isEmpty) return;
 
   // 自适应：估算气泡高度约 380（含头部与最大 280 的回答区）
-  final view = WidgetsBinding.instance.platformDispatcher.views.first;
-  final screenH = view.physicalSize.height / view.devicePixelRatio;
+  final screenSize = MediaQuery.sizeOf(context);
+  final bubbleWidth = (screenSize.width - 24).clamp(0.0, 420.0);
   const estimatedHeight = 380.0;
-  final spaceBelow = screenH - anchor.dy;
-  final spaceAbove = anchor.dy;
-  final showBelow =
-      spaceBelow >= estimatedHeight + 24 || spaceBelow >= spaceAbove;
-  final arrowDir = showBelow ? AxisDirection.down : AxisDirection.up;
-  final preferDir =
-      showBelow ? PreferDirection.bottomLeft : PreferDirection.topLeft;
+  final placement = resolveAiAskBubblePlacement(
+    anchor: anchor,
+    screenSize: screenSize,
+    bubbleWidth: bubbleWidth,
+    estimatedHeight: estimatedHeight,
+    safeTop: MediaQuery.paddingOf(context).top,
+  );
 
-  CancelFunc closeFn = () {};
-  closeFn = BotToast.showAttachedWidget(
-    target: anchor,
-    preferDirection: preferDir,
+  BotToast.showEnhancedWidget(
     onlyOne: true,
+    clickClose: true,
     ignoreContentClick: false,
-    attachedBuilder: (_) {
-      // attachedBuilder 不提供 BuildContext，从平台视图取逻辑宽度
-      final v = WidgetsBinding.instance.platformDispatcher.views.first;
-      final screenWidth = v.physicalSize.width / v.devicePixelRatio;
-      final isNarrow = screenWidth < 520;
-      return Material(
-        color: Colors.transparent,
-        child: _AiAskBubbleCard(
-          quotedText: clean,
-          maxWidth: isNarrow ? screenWidth - 24 : 420.0,
-          arrowDirection: arrowDir,
-          onClose: () => closeFn(),
+    enableKeyboardSafeArea: false,
+    backgroundColor: Colors.transparent,
+    toastBuilder: (close) => Stack(
+      children: [
+        Positioned(
+          left: placement.left,
+          top: placement.showBelow ? placement.anchorY : null,
+          bottom: placement.showBelow
+              ? null
+              : screenSize.height - placement.anchorY,
+          width: bubbleWidth,
+          child: Material(
+            color: Colors.transparent,
+            child: _AiAskBubbleCard(
+              quotedText: clean,
+              width: bubbleWidth,
+              maxHeight: placement.maxHeight,
+              arrowDirection: placement.arrowDirection,
+              arrowOffset: placement.arrowOffset,
+              onClose: close,
+            ),
+          ),
         ),
-      );
-    },
+      ],
+    ),
   );
 }
 
 class _AiAskBubbleCard extends StatefulWidget {
   const _AiAskBubbleCard({
     required this.quotedText,
-    required this.maxWidth,
+    required this.width,
+    required this.maxHeight,
     required this.onClose,
+    required this.arrowOffset,
     this.arrowDirection = AxisDirection.up,
   });
 
   final String quotedText;
-  final double maxWidth;
+  final double width;
+  final double maxHeight;
   final VoidCallback onClose;
   final AxisDirection arrowDirection;
+  final double arrowOffset;
 
   @override
   State<_AiAskBubbleCard> createState() => _AiAskBubbleCardState();
@@ -204,7 +235,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   Widget build(BuildContext context) {
     return BubbleWidget(
       arrowDirection: widget.arrowDirection,
-      arrowOffset: 24,
+      arrowOffset: widget.arrowOffset,
       backgroundColor: _cs.surface,
       border: BorderSide(color: _cs.outlineVariant.withValues(alpha: .8), width: .5),
       borderRadius: BorderRadius.circular(12),
@@ -216,33 +247,38 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
         ),
       ],
       contentBuilder: (_) => ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: widget.maxWidth),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 8),
-              _buildActionChips(),
-              if (_showLangs) ...[
-                const SizedBox(height: 6),
-                _buildLangChips(),
-              ],
-              const SizedBox(height: 8),
-              _buildAnswerArea(),
-              if (_failed && _errorText != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    _errorText!,
-                    style: TextStyle(fontSize: 11.5, color: _cs.error),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              _buildFollowUpRow(),
-            ],
+        constraints: BoxConstraints(maxHeight: widget.maxHeight - 10),
+        child: SingleChildScrollView(
+          child: SizedBox(
+            width: widget.width,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 8),
+                  _buildActionChips(),
+                  if (_showLangs) ...[
+                    const SizedBox(height: 6),
+                    _buildLangChips(),
+                  ],
+                  const SizedBox(height: 8),
+                  _buildAnswerArea(),
+                  if (_failed && _errorText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        _errorText!,
+                        style: TextStyle(fontSize: 11.5, color: _cs.error),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  _buildFollowUpRow(),
+                ],
+              ),
+            ),
           ),
         ),
       ),

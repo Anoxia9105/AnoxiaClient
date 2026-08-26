@@ -2,6 +2,51 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+typedef AnchoredBubblePlacement = ({
+  AxisDirection arrowDirection,
+  bool showBelow,
+  double left,
+  double arrowOffset,
+  double anchorY,
+  double maxHeight,
+});
+
+/// 计算垂直锚定气泡的最终位置，调用方应直接使用该位置，避免浮层库二次翻转。
+AnchoredBubblePlacement resolveAnchoredBubblePlacement({
+  required Rect targetRect,
+  required Size screenSize,
+  required double bubbleWidth,
+  required double estimatedHeight,
+  required bool preferRightArrow,
+  double edgePadding = 12,
+  double arrowInset = 20,
+  double safeTop = 0,
+}) {
+  final spaceAbove = targetRect.top - safeTop;
+  final spaceBelow = screenSize.height - targetRect.bottom;
+  final showBelow =
+      spaceBelow >= estimatedHeight + edgePadding || spaceBelow >= spaceAbove;
+  final desiredArrowOffset =
+      preferRightArrow ? bubbleWidth - arrowInset : arrowInset;
+  final maxLeft = screenSize.width - edgePadding - bubbleWidth;
+  final left = (targetRect.center.dx - desiredArrowOffset)
+      .clamp(edgePadding, maxLeft)
+      .toDouble();
+  final arrowOffset = (targetRect.center.dx - left)
+      .clamp(arrowInset, bubbleWidth - arrowInset)
+      .toDouble();
+  final availableHeight = showBelow ? spaceBelow : spaceAbove;
+
+  return (
+    arrowDirection: showBelow ? AxisDirection.up : AxisDirection.down,
+    showBelow: showBelow,
+    left: left,
+    arrowOffset: arrowOffset,
+    anchorY: showBelow ? targetRect.bottom : targetRect.top,
+    maxHeight: max(0, availableHeight - edgePadding),
+  );
+}
+
 /// 气泡边框箭头属性计算结果
 ///
 /// 用于 [BubbleShapeBorder] 中箭头路径的几何计算

@@ -204,7 +204,7 @@ class _ChatMessageContextMenuState
         _handleCopy(context);
         break;
       case 'aiAsk':
-        _handleAiAsk();
+        _handleAiAsk(context);
         break;
       case 'favorite':
         unawaited(_handleFavorite(context));
@@ -219,7 +219,7 @@ class _ChatMessageContextMenuState
   }
 
   /// 问AI：以消息纯文本为上下文弹出 AI 气泡
-  void _handleAiAsk() {
+  void _handleAiAsk(BuildContext context) {
     final text = _getPlainContent().trim();
     if (text.isEmpty) {
       Toast.showToast('chat_ai.empty_content'.tr(), type: ToastType.warning);
@@ -229,7 +229,8 @@ class _ChatMessageContextMenuState
     if (anchor == null) return;
     // 菜单关闭后再弹气泡：延迟一帧避免与 showMenu 的移除动画同帧竞争浮层
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showAiAskBubble(anchor: anchor, quotedText: text);
+      if (!context.mounted) return;
+      showAiAskBubble(context: context, anchor: anchor, quotedText: text);
     });
   }
 

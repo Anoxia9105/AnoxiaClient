@@ -33,55 +33,80 @@ void showChatAiAssistBubble(
   required FocusNode editorFocusNode,
 }) {
   final colorScheme = Theme.of(anchorContext).colorScheme;
-  // 自适应方向：估算气泡高约 380，判断上下空间
-  AxisDirection arrowDir = AxisDirection.up;
-  PreferDirection preferDir = PreferDirection.bottomLeft;
+  final bubbleWidth = (MediaQuery.sizeOf(anchorContext).width - 24).clamp(
+    280.0,
+    420.0,
+  );
+  final screenSize = MediaQuery.sizeOf(anchorContext);
+  Rect targetRect = Rect.fromLTWH(
+    screenSize.width - 48,
+    screenSize.height - 48,
+    48,
+    48,
+  );
   try {
     final box = anchorContext.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize) {
       final global = box.localToGlobal(Offset.zero);
-      final anchorBottom = global.dy + box.size.height;
-      final view = WidgetsBinding.instance.platformDispatcher.views.first;
-      final screenH = view.physicalSize.height / view.devicePixelRatio;
-      const estH = 380.0;
-      final spaceBelow = screenH - anchorBottom;
-      final spaceAbove = global.dy;
-      final showBelow = spaceBelow >= estH + 16 || spaceBelow >= spaceAbove;
-      arrowDir = showBelow ? AxisDirection.down : AxisDirection.up;
-      preferDir = showBelow ? PreferDirection.bottomLeft : PreferDirection.topLeft;
+      targetRect = global & box.size;
     }
   } catch (_) {}
-  Function? close;
-  close = Toast.showWidget(
-    anchorContext,
-    direction: preferDir,
-    child: Material(
-      color: Colors.transparent,
-      child: BubbleWidget(
-        arrowDirection: arrowDir,
-        arrowOffset: 20,
-        backgroundColor: colorScheme.surface,
-        border: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: .8),
-          width: .5,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        shadows: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .16),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+  final placement = resolveAnchoredBubblePlacement(
+    targetRect: targetRect,
+    screenSize: screenSize,
+    bubbleWidth: bubbleWidth,
+    estimatedHeight: 380,
+    preferRightArrow: true,
+    arrowInset: 24,
+    safeTop: MediaQuery.paddingOf(anchorContext).top,
+  );
+  BotToast.showEnhancedWidget(
+    onlyOne: true,
+    clickClose: true,
+    ignoreContentClick: false,
+    enableKeyboardSafeArea: false,
+    backgroundColor: Colors.transparent,
+    toastBuilder: (close) => Stack(
+      children: [
+        Positioned(
+          left: placement.left,
+          top: placement.showBelow ? placement.anchorY : null,
+          bottom: placement.showBelow
+              ? null
+              : screenSize.height - placement.anchorY,
+          width: bubbleWidth,
+          child: Material(
+            color: Colors.transparent,
+            child: BubbleWidget(
+              arrowDirection: placement.arrowDirection,
+              arrowOffset: placement.arrowOffset,
+              backgroundColor: colorScheme.surface,
+              border: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: .8),
+                width: .5,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .16),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              contentBuilder: (_) => ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: placement.maxHeight - 10),
+                child: SingleChildScrollView(
+                  child: ChatAiAssistCard(
+                    controller: controller,
+                    editorFocusNode: editorFocusNode,
+                    onClose: close,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ],
-        contentBuilder: (_) => ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: ChatAiAssistCard(
-            controller: controller,
-            editorFocusNode: editorFocusNode,
-            onClose: () => close?.call(),
-          ),
         ),
-      ),
+      ],
     ),
   );
 }
