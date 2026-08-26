@@ -10,7 +10,6 @@ import 'package:anoxia/features/settings/presentation/widgets/settings_account_s
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_chat_density_section.dart';
-import 'package:anoxia/features/settings/presentation/widgets/settings_chat_focus_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_general_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
@@ -21,7 +20,6 @@ import 'package:anoxia/features/settings/presentation/widgets/settings_theme_sec
 import 'package:anoxia/features/settings/presentation/widgets/settings_web_notification_section.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/chat_content_density_controller.dart';
-import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
@@ -333,15 +331,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       .read(chatContentDensityProvider.notifier)
                       .setDensity(density),
                 ),
-                if (supportsDesktopLayout) ...[
-                  const SizedBox(height: 24),
-                  SettingsChatFocusSection(
-                    enabled: ref.watch(chatFocusModeProvider),
-                    onChanged: ref
-                        .read(chatFocusModeProvider.notifier)
-                        .setEnabled,
-                  ),
-                ],
                 if (DeviceUtil.supportsCustomBackground(context))
                   const SettingsBackgroundSection(),
               ],

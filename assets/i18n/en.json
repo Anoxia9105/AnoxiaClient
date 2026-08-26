@@ -1175,5 +1175,9 @@
   "settings_clear_cache_action": "Clear",
   "settings_clear_cache_confirm_title": "Clear cache?",
   "settings_clear_cache_confirm_desc": "Temporary cache will be cleared without affecting chat history or saved files.",
-  "settings_clear_cache_success": "Cache cleared"
+  "settings_clear_cache_success": "Cache cleared",
+  "settings_clear_cache_empty": "No cache",
+  "video": "Video",
+  "video_load_failed": "Failed to load video",
+  "retry": "Retry"
 }

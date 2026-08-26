@@ -234,15 +234,18 @@ class DioClient {
       final mediaType = effectiveContentType == null
           ? null
           : DioMediaType.parse(effectiveContentType);
+      // 兜底文件名：cross_file 在旧版本 IO 端 XFile.fromData 会丢弃 name，此处保证服务端收到的
+      // originalFilename 非空，避免 ChatUploadPolicy 误判为 INVALID_FILE。
+      final safeFileName = file.name.trim().isNotEmpty ? file.name.trim() : 'file';
       final multipartFile = !kIsWeb && file.path.isNotEmpty
           ? await MultipartFile.fromFile(
               file.path,
-              filename: file.name,
+              filename: safeFileName,
               contentType: mediaType,
             )
           : MultipartFile.fromBytes(
               await file.readAsBytes(),
-              filename: file.name,
+              filename: safeFileName,
               contentType: mediaType,
             );
       final formData = FormData.fromMap({fileField: multipartFile, ...?data});
@@ -283,10 +286,11 @@ class DioClient {
       final multipartFiles = <MultipartFile>[];
 
       for (final file in files) {
+        final safeName = file.name.trim().isNotEmpty ? file.name.trim() : 'file';
         multipartFiles.add(
           MultipartFile.fromBytes(
             await file.readAsBytes(),
-            filename: file.name,
+            filename: safeName,
           ),
         );
       }

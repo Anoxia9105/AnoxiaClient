@@ -84,9 +84,10 @@ void main() {
       ),
     );
 
-    final switcher = tester.widget<AnimatedSwitcher>(
-      find.byType(AnimatedSwitcher),
-    );
-    expect(switcher.duration, Duration.zero);
+    // 使用 IndexedStack 实现即时切换，无残留与额外动效
+    expect(find.byType(IndexedStack), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings-navigation-item-1')));
+    await tester.pump();
+    expect(find.text('语言详情内容'), findsOneWidget);
   });
 }

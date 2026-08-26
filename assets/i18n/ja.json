@@ -1175,5 +1175,9 @@
   "settings_clear_cache_action": "クリア",
   "settings_clear_cache_confirm_title": "キャッシュをクリアしますか？",
   "settings_clear_cache_confirm_desc": "履歴や保存ファイルには影響しません。",
-  "settings_clear_cache_success": "キャッシュをクリアしました"
+  "settings_clear_cache_success": "キャッシュをクリアしました",
+  "settings_clear_cache_empty": "キャッシュなし",
+  "video": "動画",
+  "video_load_failed": "動画の読み込みに失敗しました",
+  "retry": "再試行"
 }

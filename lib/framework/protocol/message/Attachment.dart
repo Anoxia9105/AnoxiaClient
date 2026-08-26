@@ -112,6 +112,20 @@ class Attachment {
     return type?.toLowerCase().startsWith('image/') == true;
   }
 
+  bool get isVideo {
+    const exts = {'mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', 'flv'};
+    if (kind?.toUpperCase() == 'VIDEO') return true;
+    if (exts.contains(type?.toLowerCase())) return true;
+    final mime = type?.toLowerCase() ?? '';
+    if (mime.startsWith('video/')) return true;
+    // 通过文件名后缀兜底
+    final nameExt = name?.split('.').last.toLowerCase();
+    if (nameExt != null && exts.contains(nameExt)) return true;
+    final urlExt = url?.split('?').first.split('.').last.toLowerCase();
+    if (urlExt != null && exts.contains(urlExt)) return true;
+    return false;
+  }
+
   static int? _readInt(dynamic value) =>
       value == null ? null : int.tryParse(value.toString());
 

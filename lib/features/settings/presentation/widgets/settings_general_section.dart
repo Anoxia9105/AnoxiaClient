@@ -23,7 +23,6 @@ class SettingsGeneralSection extends ConsumerWidget {
     final sendShortcut = ref.watch(chatSendShortcutProvider);
     final messagePreview = ref.watch(messagePreviewProvider);
     final autoPlay = ref.watch(autoPlayMediaProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,16 +97,6 @@ class SettingsGeneralSection extends ConsumerWidget {
               onChanged: (value) => _setVisible(ref, value),
               onTapOverride: () => _setVisible(ref, !visible),
             ),
-            _Divider(),
-            ListTile(
-              leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 22, color: colorScheme.onSurface),
-              title: Text('settings_clear_cache'.tr()),
-              subtitle: Text('settings_clear_cache_desc'.tr()),
-              trailing: OutlinedButton(
-                onPressed: () => _clearCache(context),
-                child: Text('settings_clear_cache_action'.tr()),
-              ),
-            ),
           ],
         ),
       ],
@@ -120,27 +109,6 @@ class SettingsGeneralSection extends ConsumerWidget {
       ref.read(chatRightPanelVisibleProvider.notifier).state = false;
     }
     ref.read(hideOfficialRoomProvider.notifier).setHidden(!visible);
-  }
-
-  Future<void> _clearCache(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('settings_clear_cache_confirm_title'.tr()),
-        content: Text('settings_clear_cache_confirm_desc'.tr()),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('dialog_cancel'.tr())),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text('confirm'.tr())),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    // 轻量实现：仅提示成功，后续可接入 path_provider 清理
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('settings_clear_cache_success'.tr())),
-      );
-    }
   }
 }
 

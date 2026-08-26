@@ -53,10 +53,7 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
           );
         }
 
-        final destination = widget.destinations[_selectedIndex];
         final compactDesktop = constraints.maxWidth < 1000;
-        final reduceMotion =
-            MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
         return Row(
           children: [
@@ -71,15 +68,24 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-                child: AnimatedSwitcher(
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 180),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  child: _SettingsDetailPanel(
-                    key: ValueKey(_selectedIndex),
-                    destination: destination,
+                child: RepaintBoundary(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: [
+                        for (var i = 0; i < widget.destinations.length; i++)
+                          TickerMode(
+                            enabled: i == _selectedIndex,
+                            child: RepaintBoundary(
+                              child: _SettingsDetailPanel(
+                                key: ValueKey(i),
+                                destination: widget.destinations[i],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -22,6 +22,7 @@ abstract final class MessagePreviewFormatter {
     return switch (message.messageType) {
       MessageType.image => 'quill_image_plain'.tr(),
       MessageType.audio => 'quill_audio_plain'.tr(),
+      MessageType.video => '[${'video'.tr()}]',
       MessageType.file => 'quill_file_plain'.tr(),
       _ => message.content,
     };

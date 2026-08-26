@@ -1175,5 +1175,9 @@
   "settings_clear_cache_action": "清理",
   "settings_clear_cache_confirm_title": "确认清理缓存？",
   "settings_clear_cache_confirm_desc": "将清理本地临时缓存，不影响聊天记录与已保存文件。",
-  "settings_clear_cache_success": "缓存已清理"
+  "settings_clear_cache_success": "缓存已清理",
+  "settings_clear_cache_empty": "暂无缓存",
+  "video": "视频",
+  "video_load_failed": "视频加载失败",
+  "retry": "重试"
 }
