@@ -80,11 +80,36 @@ Document markdownToDocument(String markdown) {
     // flutter_quill_delta_from_html 不识别 <hr>，分割线会被静默丢弃；
     // 且其不会在相邻块级元素间补换行。这里先把 <hr> 替换成哨兵文本，
     // 转换完成后再还原为 divider 嵌入，并保证分割线独占一行。
+    //
+    // 另：上游库把 <p> 归为 inline（isBlock=false），导致连续段落
+    // 的 <p><p> 不会在块间补换行，`第一行\n\n第二行` 会被合并为
+    // `第一行第二行\n`（换行丢失、全部挤成一行）。这里通过 isBlockValidator
+    // 将 <p> 视为块级，确保段落间保留换行。
     final html = md
         .markdownToHtml(markdown)
         .replaceAllMapped(_hrTagPattern, (_) => _hrSentinel);
+    final delta = HtmlToDelta(
+      isBlockValidator: (name) =>
+          const {
+            'p',
+            'h1',
+            'h2',
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+            'ul',
+            'ol',
+            'li',
+            'blockquote',
+            'pre',
+            'div',
+            'hr',
+            'table',
+          }.contains(name),
+    ).convert(html);
     return Document.fromDelta(
-      _restoreHorizontalRules(HtmlToDelta().convert(html)),
+      _restoreHorizontalRules(delta),
     );
   } catch (_) {
     // 转换失败回退为纯文本

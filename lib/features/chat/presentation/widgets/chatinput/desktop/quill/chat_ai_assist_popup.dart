@@ -10,12 +10,13 @@ import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
-import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/features/note/presentation/widgets/note_markdown.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../ai/chat_ai_assist_core.dart';
@@ -264,34 +265,81 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
 
   // ---------------- 应用结果 ----------------
 
+  /// 预览 Markdown 转为插入用的 Delta（去掉末尾纯换行，避免多出空行）
+  Delta _previewInsertionDelta() {
+    final ops = markdownToDocument(_preview).toDelta().toList();
+    if (ops.length > 1) {
+      final last = ops.last;
+      if (last.isInsert && last.data == '\n' && last.attributes == null) {
+        ops.removeLast();
+      }
+    }
+    final delta = Delta();
+    for (final op in ops) {
+      delta.push(op);
+    }
+    return delta;
+  }
+
+  int _deltaLength(Delta delta) {
+    var len = 0;
+    for (final op in delta.toList()) {
+      final data = op.data;
+      if (data is String) {
+        len += data.length;
+      } else {
+        len += 1;
+      }
+    }
+    return len;
+  }
+
   void _applyToSelection() {
     final s = _selStart;
     final e = _selEnd;
-    if (s == null || e == null || e <= s || _preview.isEmpty) return;
+    if (s == null || e == null || e <= s || _preview.isEmpty) {
+      return;
+    }
+    final delta = _previewInsertionDelta();
+    if (delta.isEmpty) {
+      return;
+    }
     widget.controller.replaceText(
       s,
       e - s,
-      _preview,
-      TextSelection.collapsed(offset: s + _preview.length),
+      delta,
+      TextSelection.collapsed(offset: s + _deltaLength(delta)),
     );
     _finishApply();
   }
 
   void _insertAtCursor() {
-    if (_preview.isEmpty) return;
-    QuillEmbedUtil.insertTextAtCursor(text: _preview, controller: widget.controller);
+    if (_preview.isEmpty) {
+      return;
+    }
+    final delta = _previewInsertionDelta();
+    if (delta.isEmpty) {
+      return;
+    }
+    final base = widget.controller.selection.baseOffset;
+    final docLen = widget.controller.document.length;
+    final offset = (base < 0 || base > docLen) ? docLen - 1 : base;
+    // 若原文为空文档长度为1（仅含末尾换行），插入到0更符合追加到文末的预期
+    final insertAt = docLen <= 1 ? 0 : offset;
+    widget.controller.replaceText(
+      insertAt,
+      0,
+      delta,
+      TextSelection.collapsed(offset: insertAt + _deltaLength(delta)),
+    );
     _finishApply();
   }
 
   void _replaceAll() {
-    if (_preview.isEmpty) return;
-    final docLen = widget.controller.document.length;
-    widget.controller.replaceText(
-      0,
-      docLen,
-      _preview,
-      const TextSelection.collapsed(offset: 0),
-    );
+    if (_preview.isEmpty) {
+      return;
+    }
+    widget.controller.document = markdownToDocument(_preview);
     _finishApply();
   }
 
