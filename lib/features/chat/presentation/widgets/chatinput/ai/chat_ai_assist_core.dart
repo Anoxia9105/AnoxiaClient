@@ -180,6 +180,11 @@ class ChatAiAssistCore {
             _streaming = false;
             _thinkingBuf.clear();
             handlers.onThinking?.call(null);
+            // 思考不算成功：空正文视为失败
+            if (full.isEmpty) {
+              handlers.onError?.call('chat_ai.failed'.tr());
+              return;
+            }
             handlers.onDone?.call(convId, full);
             if (truncated) {
               try {

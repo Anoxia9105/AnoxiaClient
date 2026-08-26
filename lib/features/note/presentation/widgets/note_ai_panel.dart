@@ -203,7 +203,12 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
             setState(() {
               _thinking = null;
               _streaming = false;
+              // 思考不算成功：无正文即失败
+              _failed = _preview.isEmpty;
             });
+            if (_preview.isEmpty) {
+              ref.read(toastServiceProvider).showToast('note_ai.failed'.tr());
+            }
           case 'error':
             gotDone = true;
             setState(() {

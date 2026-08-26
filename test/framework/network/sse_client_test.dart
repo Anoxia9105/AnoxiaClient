@@ -105,5 +105,21 @@ void main() {
       expect(frames.length, 1);
       expect(frames[0].data, 'hi');
     });
+
+    test('尾帧多行 pending 缺换行时应完整解析', () async {
+      // 模拟网络在 event:done 与 data 行之间切包，且尾帧完全缺末尾换行
+      const payload = 'event:done\n'
+          'data:{"text":"hi"}\n'
+          'data:extra\n';
+      // 去掉最后的 \n，制造 pending 含多行的场景
+      final truncated = payload.substring(0, payload.length - 1); // 去掉末尾 \n
+      final frames = await SseClient.parseStream(chunks([
+        truncated.substring(0, 12),
+        truncated.substring(12),
+      ])).toList();
+      expect(frames.length, 1);
+      expect(frames[0].event, 'done');
+      expect(frames[0].data, '{"text":"hi"}\nextra');
+    });
   });
 }

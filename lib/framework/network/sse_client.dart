@@ -5,6 +5,7 @@
 /// - 命名事件：`event:done` + `data:{json}`、`event:error` + `data:{json}`
 ///
 /// EventSource 不支持 POST，因此基于 Dio 的 ResponseType.stream 手工解析。
+/// Web 端使用 fetch + ReadableStream 真流式（Dio 在 Web 下缓冲导致增量丢失与超时误判）。
 library;
 
 import 'dart:convert';
@@ -13,6 +14,7 @@ import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 /// 单条 SSE 帧
 class SseFrame {
@@ -45,6 +47,10 @@ class SseClient {
   /// 连接失败/5xx 抛 [DioException]；HTTP 层成功但业务失败（如未登录）时
   /// 后端直接返回 JSON，此时没有合法 SSE 帧，由调用方按「无 done 即失败」兜底处理。
   static Stream<SseFrame> post(String path, {Object? body}) async* {
+    if (kIsWeb) {
+      yield* _postWeb(path, body);
+      return;
+    }
     final token = await TokenManager.instance.getToken();
     final Response<ResponseBody> resp = await _dio.post<ResponseBody>(
       path,
@@ -90,6 +96,60 @@ class SseClient {
     yield* _parse(resp.data!.stream);
   }
 
+  /// Web 端真流式实现：基于 http.Client（底层 fetch + ReadableStream）
+  ///
+  /// Dio 在 Web 下对 ResponseType.stream 为缓冲实现，推理期长空窗会超时误判为失败。
+  /// 此处改用 http 的 BrowserClient，其内部直接消费 fetch 的 ReadableStream，增量实时到达。
+  static Stream<SseFrame> _postWeb(String path, Object? body) async* {
+    final token = await TokenManager.instance.getToken();
+    final url = Uri.parse('${API.httpBaseUrl}$path');
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url);
+      request.headers['Content-Type'] = 'application/json';
+      request.headers['Accept'] = 'text/event-stream';
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      if (body != null) {
+        request.body = jsonEncode(body);
+      }
+      final streamed = await client.send(request);
+      if (streamed.statusCode != 200) {
+        String? errMsg;
+        try {
+          final bytes = await streamed.stream
+              .fold<List<int>>(<int>[], (a, b) => a..addAll(b))
+              .timeout(const Duration(seconds: 2));
+          if (bytes.isNotEmpty) {
+            final bodyStr = utf8.decode(bytes, allowMalformed: true);
+            try {
+              final j = jsonDecode(bodyStr);
+              if (j is Map) {
+                errMsg = (j['message'] ?? j['msg'] ?? j['error'])?.toString();
+              }
+              errMsg ??= bodyStr;
+            } catch (_) {
+              errMsg = bodyStr;
+            }
+          }
+        } catch (_) {}
+        throw DioException(
+          requestOptions: RequestOptions(path: path),
+          response: Response(
+            requestOptions: RequestOptions(path: path),
+            statusCode: streamed.statusCode,
+          ),
+          type: DioExceptionType.badResponse,
+          error: errMsg ?? 'SSE HTTP ${streamed.statusCode}',
+        );
+      }
+      yield* _parse(streamed.stream);
+    } finally {
+      client.close();
+    }
+  }
+
   @visibleForTesting
   static Stream<SseFrame> parseStream(Stream<List<int>> byteStream) => _parse(byteStream);
 
@@ -132,15 +192,32 @@ class SseClient {
       }
     }
     if (pending.isNotEmpty) {
-      var line = pending;
-      if (line.endsWith('\r')) line = line.substring(0, line.length - 1);
-      if (line.startsWith('event:')) {
-        eventName = line.substring(6).trim();
-      } else if (line.startsWith('data:')) {
-        var payload = line.substring(5);
-        if (payload.startsWith(' ')) payload = payload.substring(1);
-        if (dataBuf.isNotEmpty) dataBuf.write('\n');
-        dataBuf.write(payload);
+      // pending 可能含多行（如尾帧 event:done\ndata:json 缺末尾 \n），需逐行解析
+      pending += '\n';
+      while (true) {
+        final idx = pending.indexOf('\n');
+        if (idx < 0) break;
+        var line = pending.substring(0, idx);
+        pending = pending.substring(idx + 1);
+        if (line.endsWith('\r')) line = line.substring(0, line.length - 1);
+        if (line.isEmpty) {
+          if (dataBuf.isEmpty) continue;
+          final frame = SseFrame(event: eventName, data: dataBuf.toString());
+          eventName = null;
+          dataBuf.clear();
+          yield frame;
+          continue;
+        }
+        if (line.startsWith('event:')) {
+          eventName = line.substring(6).trim();
+        } else if (line.startsWith('data:')) {
+          var payload = line.substring(5);
+          if (payload.startsWith(' ')) payload = payload.substring(1);
+          if (dataBuf.isNotEmpty) dataBuf.write('\n');
+          dataBuf.write(payload);
+        } else if (line.startsWith(':')) {
+          continue;
+        }
       }
     }
     if (dataBuf.isNotEmpty) {
