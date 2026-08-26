@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' as legacy;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../common/constants/storage_keys.dart';
 import '../../../common/utils/sp_util.dart';
 import '../../domain/app_background.dart';
 import '../auth/token_provider.dart';
@@ -63,6 +64,40 @@ final themeAccentProvider =
       (ref) => ThemeAccentController(),
     );
 
+/// 自定义强调色控制器
+///
+/// null 表示使用预设强调色；非 null 时覆盖预设。
+class CustomAccentColorController extends legacy.StateNotifier<Color?> {
+  CustomAccentColorController() : super(_load());
+
+  static Color? _load() {
+    final enabled = SPUtil.instance.getBool(StorageKeys.customAccentEnabled, defValue: false) ?? false;
+    if (!enabled) return null;
+    final value = SPUtil.instance.getInt(StorageKeys.customAccentColor);
+    if (value == null) return null;
+    return Color(value);
+  }
+
+  void setCustomColor(Color? color) {
+    if (color == null) {
+      state = null;
+      SPUtil.instance.setBool(StorageKeys.customAccentEnabled, false);
+      SPUtil.instance.delete(StorageKeys.customAccentColor);
+      return;
+    }
+    state = color;
+    SPUtil.instance.setBool(StorageKeys.customAccentEnabled, true);
+    SPUtil.instance.setInt(StorageKeys.customAccentColor, color.toARGB32());
+  }
+
+  void clear() => setCustomColor(null);
+}
+
+final customAccentColorProvider =
+    legacy.StateNotifierProvider<CustomAccentColorController, Color?>(
+      (ref) => CustomAccentColorController(),
+    );
+
 /// 主题索引 Provider
 ///
 /// 持久化存储用户选择的主题索引（0=浅色，1=深色等）。
@@ -86,9 +121,17 @@ class ThemeIndex extends _$ThemeIndex {
 /// 应用主题 Provider
 ///
 /// 固定字体：JetBrainsMono（拉丁/等宽）+ NotoSansSC（CJK 回退），全平台（含 Web）强制使用
+/// 若存在自定义强调色则优先使用。
 @riverpod
 ThemeData appTheme(Ref ref) {
   final brightness = ref.watch(themeModeProvider);
+  final customColor = ref.watch(customAccentColorProvider);
+  if (customColor != null) {
+    return AppTheme.getThemeForCustomColor(
+      brightness: brightness,
+      color: customColor,
+    );
+  }
   final accentIndex = ref.watch(themeAccentProvider);
   return AppTheme.getThemeByModeAndAccent(
     brightness: brightness,

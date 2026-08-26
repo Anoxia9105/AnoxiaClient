@@ -30,6 +30,30 @@ class StorageKeys {
   /// 是否隐藏官方虚拟房间（布尔值，true=隐藏）
   static const String officialRoomHidden = 'OFFICIAL_ROOM_HIDDEN';
 
+  /// 自定义强调色（int color value，null 表示跟随预设）
+  static const String customAccentColor = 'CUSTOM_ACCENT_COLOR';
+
+  /// 自定义强调色是否启用
+  static const String customAccentEnabled = 'CUSTOM_ACCENT_ENABLED';
+
+  /// 窗口关闭行为：true=最小化到托盘，false=直接退出
+  static const String windowMinimizeToTray = 'WINDOW_MINIMIZE_TO_TRAY';
+
+  /// 是否减少动效
+  static const String reduceMotion = 'REDUCE_MOTION';
+
+  /// 界面字号缩放（double）
+  static const String textScaleFactor = 'TEXT_SCALE_FACTOR';
+
+  /// 发送快捷键：'enter' / 'ctrlEnter'
+  static const String chatSendShortcut = 'CHAT_SEND_SHORTCUT';
+
+  /// 通知中是否显示消息预览（true=显示内容，false=仅提示有新消息）
+  static const String messagePreviewEnabled = 'MESSAGE_PREVIEW_ENABLED';
+
+  /// 是否自动播放视频/媒体
+  static const String autoPlayMediaEnabled = 'AUTO_PLAY_MEDIA_ENABLED';
+
   /// AI 会话 ID（按用户隔离，key 前缀 + userId）
   ///
   /// 用于持久化 `/chat/ai/stream` 返回的 `conversationId`，实现多轮记忆。

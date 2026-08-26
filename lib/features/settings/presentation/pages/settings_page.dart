@@ -242,6 +242,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final pageState = ref.watch(settingsPageControllerProvider);
     final themeMode = ref.watch(themeModeProvider);
     final themeAccentIndex = ref.watch(themeAccentProvider);
+    final customAccentColor = ref.watch(customAccentColorProvider);
     final desktopLayoutPreference = ref.watch(desktopLayoutProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
     final hasUpdateBadge = ref.watch(hasAppUpdateProvider);
@@ -282,25 +283,38 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 SettingsThemeSection(
                   selectedBrightness: themeMode,
                   selectedAccentIndex: themeAccentIndex,
+                  customColor: customAccentColor,
                   onBrightnessChanged: (brightness) {
                     ref.read(themeModeProvider.notifier).setMode(brightness);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
                       brightness: brightness,
                       accentIndex: themeAccentIndex,
                     );
-                    ref
-                        .read(themeIndexProvider.notifier)
-                        .setTheme(compatibilityIndex);
+                    ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                    if (customAccentColor != null) {
+                      // 保持自定义色时同步更新兼容索引（避免切回预设时跳色）
+                      ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                    }
                   },
                   onAccentChanged: (index) {
+                    ref.read(customAccentColorProvider.notifier).setCustomColor(null);
                     ref.read(themeAccentProvider.notifier).setAccent(index);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
                       brightness: themeMode,
                       accentIndex: index,
                     );
-                    ref
-                        .read(themeIndexProvider.notifier)
-                        .setTheme(compatibilityIndex);
+                    ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                  },
+                  onCustomColorChanged: (color) {
+                    ref.read(customAccentColorProvider.notifier).setCustomColor(color);
+                    if (color != null) {
+                      // 自定义色不依赖 accentIndex，兼容索引仍以当前预设为准
+                      final compatibilityIndex = AppTheme.compatibilityThemeIndex(
+                        brightness: themeMode,
+                        accentIndex: themeAccentIndex,
+                      );
+                      ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
+                    }
                   },
                 ),
                 if (supportsDesktopLayout) ...[

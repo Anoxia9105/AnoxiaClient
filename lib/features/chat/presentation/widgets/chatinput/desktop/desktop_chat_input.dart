@@ -10,6 +10,8 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/constants/storage_keys.dart';
+import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
@@ -191,11 +193,16 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
       }
     }
 
-    if (event.logicalKey == LogicalKeyboardKey.enter &&
-        !HardwareKeyboard.instance.isShiftPressed) {
-      ref
-          .read(chatInputControllerProvider(widget.roomId).notifier)
-          .sendMessage();
+    final sendShortcut = SPUtil.instance.get(StorageKeys.chatSendShortcut, defValue: 'enter');
+    final isCtrlEnterMode = sendShortcut == 'ctrlEnter';
+    final isEnter = event.logicalKey == LogicalKeyboardKey.enter;
+    final isCtrlPressed = HardwareKeyboard.instance.isControlPressed || HardwareKeyboard.instance.isMetaPressed;
+    final shouldSend = isEnter && (isCtrlEnterMode ? isCtrlPressed : !HardwareKeyboard.instance.isShiftPressed && !isCtrlPressed);
+    // Ctrl+Enter 模式下，单独 Enter 换行；Enter 模式下 Ctrl+Enter 也允许换行
+    final isNewLine = isEnter && !shouldSend;
+    if (isNewLine) return KeyEventResult.ignored;
+    if (shouldSend) {
+      ref.read(chatInputControllerProvider(widget.roomId).notifier).sendMessage();
       widget.bottomSheet();
       return KeyEventResult.handled;
     }

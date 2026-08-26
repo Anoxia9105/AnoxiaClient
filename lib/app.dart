@@ -15,8 +15,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/tray_manager_shim.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
+import 'common/constants/storage_keys.dart';
 import 'common/utils/device_util.dart';
+import 'common/utils/sp_util.dart';
 import 'common/widgets/toast.dart';
+import 'framework/provider/setting/general_settings_provider.dart';
 import 'framework/core/app_globals.dart';
 import 'framework/domain/user_info.dart';
 import 'framework/provider/auth/auth_controller.dart';
@@ -63,7 +66,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     // 桌面端：初始化托盘和窗口事件监听
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
-      windowManager.setPreventClose(true);
+      final minimizeToTray = SPUtil.instance.getBool(StorageKeys.windowMinimizeToTray, defValue: true) ?? true;
+      windowManager.setPreventClose(minimizeToTray);
       windowManager.addListener(this);
       trayManager.addListener(this);
       _callThemeSubscription = ref.listenManual<int>(themeIndexProvider, (
@@ -75,6 +79,9 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         ref
             .read(callWindowControllerProvider.notifier)
             .updateSettings(themeIndex: next);
+      });
+      ref.listenManual<bool>(windowMinimizeToTrayProvider, (previous, next) {
+        windowManager.setPreventClose(next);
       });
     }
 
@@ -255,6 +262,8 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
   Widget build(BuildContext context) {
     final locale = context.locale;
     final appTheme = ref.watch(appThemeProvider);
+    final textScale = ref.watch(textScaleProvider);
+    final reduceMotion = ref.watch(reduceMotionProvider);
 
     return MaterialApp.router(
       title: 'Anoxia',
@@ -262,9 +271,22 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
       routerConfig: ref.watch(routerProvider),
       theme: appTheme,
       builder: (context, child) {
+        // 响应式字号与动效：外层已做 clamp(1.3)，此处叠加用户设置
+        final mq = MediaQuery.of(context);
+        // ignore: deprecated_member_use
+        final scale = (mq.textScaleFactor * textScale).clamp(0.85, 1.45);
+        final adjustedMq = mq.copyWith(
+          // ignore: deprecated_member_use
+          textScaleFactor: scale,
+          disableAnimations: reduceMotion || mq.disableAnimations,
+        );
+        final mediaChild = MediaQuery(
+          data: adjustedMq,
+          child: child ?? const SizedBox.shrink(),
+        );
         // 让 BotToast 包裹路由子节点与全局悬浮层（通话层等），
         // 保证 Toast 气泡（表情/设备菜单等）始终显示在最上层
-        final overlays = _AppOverlays(child: child ?? const SizedBox.shrink());
+        final overlays = _AppOverlays(child: mediaChild);
         return _botToastBuilder(context, overlays);
       },
       debugShowCheckedModeBanner: false,
