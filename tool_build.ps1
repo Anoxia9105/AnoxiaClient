@@ -8,45 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 $PKG_ROOT = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $FLUTTER_BIN = if ($env:FLUTTER_BIN) { $env:FLUTTER_BIN } else { 'flutter' }
-$PUBSPEC = Join-Path $PKG_ROOT 'pubspec.yaml'
 $Mode = if ($Debug) { '--debug' } else { '--release' }
-
-function Strip-Fonts {
-    param([string]$Path)
-    $lines = Get-Content -Path $Path -Encoding UTF8
-    $out = @()
-    $inFonts = $false
-    foreach ($line in $lines) {
-        if ($inFonts) {
-            $twoSpace = $line.Length -ge 2 -and $line.Substring(0, 2) -eq '  '
-            $threeSpace = $line.StartsWith('   ')
-            if ($twoSpace -and -not $threeSpace -and $line.Trim().Length -gt 0) {
-                $inFonts = $false
-            } else {
-                continue
-            }
-        }
-        if ($line.TrimEnd() -eq '  fonts:') {
-            $inFonts = $true
-            continue
-        }
-        $out += $line
-    }
-    [System.IO.File]::WriteAllText($Path, ($out -join "`r`n"), [System.Text.Encoding]::UTF8)
-}
-
-$backup = $null
-if ($Target -eq 'web') {
-    $backup = [System.IO.File]::ReadAllBytes($PUBSPEC)
-    $backupText = [System.Text.Encoding]::UTF8.GetString($backup)
-    Strip-Fonts -Path $PUBSPEC
-    $newText = Get-Content -Path $PUBSPEC -Raw
-    if ($newText -eq $backupText) {
-        $backup = $null
-    } else {
-        Write-Host '>>> pubspec.yaml fonts section temporarily removed (web build)'
-    }
-}
 
 $rc = 1
 try {
@@ -70,11 +32,6 @@ try {
         $rc = $LASTEXITCODE
         Write-Host "flutter build $Target $Mode rc=$rc"
     }
-} finally {
-    if ($null -ne $backup) {
-        [System.IO.File]::WriteAllBytes($PUBSPEC, $backup)
-        Write-Host '>>> pubspec.yaml restored (fonts section)'
-    }
-}
+} finally {}
 
 exit $rc

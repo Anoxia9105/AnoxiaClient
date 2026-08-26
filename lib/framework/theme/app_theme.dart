@@ -46,10 +46,14 @@ class AppTheme with ThemeMixin {
       ),
   ];
 
+  /// 固定字体：JetBrainsMono + NotoSansSC 回退
+  static const String kFontFamily = 'JetBrainsMono';
+  static const List<String> kFontFamilyFallback = ['NotoSansSC'];
+
   /// 根据主题索引获取 [ThemeData]
   ///
   /// [index] 主题索引，对应 [themes] 列表中的位置
-  /// [overrideFontFamily] 可选的字体覆盖
+  /// [overrideFontFamily] 可选的字体覆盖（默认 JetBrainsMono）
   ///
   /// 索引越界时默认使用第 0 个主题。
   static ThemeData getTheme({int? index, String? overrideFontFamily}) {
@@ -61,7 +65,8 @@ class AppTheme with ThemeMixin {
       brightness: t.brightness,
       primaryColor: t.color,
       gradient: t.gradient,
-      fontFamily: overrideFontFamily ?? t.fontFamily,
+      fontFamily: overrideFontFamily ?? t.fontFamily ?? kFontFamily,
+      fontFamilyFallback: kFontFamilyFallback,
     );
   }
 
@@ -80,7 +85,8 @@ class AppTheme with ThemeMixin {
       brightness: brightness,
       primaryColor: accent.color,
       gradient: _gradientFor(brightness, accent.color),
-      fontFamily: overrideFontFamily,
+      fontFamily: overrideFontFamily ?? kFontFamily,
+      fontFamilyFallback: kFontFamilyFallback,
     );
   }
 

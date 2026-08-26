@@ -12,7 +12,6 @@ import 'package:anoxia/features/settings/presentation/widgets/settings_backgroun
 import 'package:anoxia/features/settings/presentation/widgets/settings_chat_density_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_chat_focus_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
-import 'package:anoxia/features/settings/presentation/widgets/settings_font_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_general_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_language_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_layout_section.dart';
@@ -243,7 +242,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final pageState = ref.watch(settingsPageControllerProvider);
     final themeMode = ref.watch(themeModeProvider);
     final themeAccentIndex = ref.watch(themeAccentProvider);
-    final fontKey = ref.watch(appFontProvider);
     final desktopLayoutPreference = ref.watch(desktopLayoutProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
     final hasUpdateBadge = ref.watch(hasAppUpdateProvider);
@@ -339,32 +337,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'settings_page_language_title'.tr(),
             subtitle: 'settings_page_language_subtitle'.tr(),
             icon: HugeIcons.strokeRoundedLanguageSquare,
-            builder: (_) => Column(
-              children: [
-                SettingsLanguageSection(
-                  selectedLanguageCode: context.locale.languageCode,
-                  isDesktop: DeviceUtil.isDesktop(context),
-                  onLanguageChanged: (localeCode) {
-                    context.setLocale(Locale(localeCode));
-                    DioClient().setLocale(localeCode);
-                    if (ref.read(callWindowControllerProvider) != null) {
-                      ref
-                          .read(callWindowControllerProvider.notifier)
-                          .updateSettings(localeCode: localeCode);
-                    }
-                  },
-                ),
-                if (!DeviceUtil.isWeb) ...[
-                  const SizedBox(height: 24),
-                  SettingsFontSection(
-                    selectedFontKey: fontKey,
-                    isDesktop: DeviceUtil.isDesktop(context),
-                    onFontChanged: (selectedFont) {
-                      ref.read(appFontProvider.notifier).setFont(selectedFont);
-                    },
-                  ),
-                ],
-              ],
+            builder: (_) => SettingsLanguageSection(
+              selectedLanguageCode: context.locale.languageCode,
+              isDesktop: DeviceUtil.isDesktop(context),
+              onLanguageChanged: (localeCode) {
+                context.setLocale(Locale(localeCode));
+                DioClient().setLocale(localeCode);
+                if (ref.read(callWindowControllerProvider) != null) {
+                  ref
+                      .read(callWindowControllerProvider.notifier)
+                      .updateSettings(localeCode: localeCode);
+                }
+              },
             ),
           ),
           SettingsDestination(

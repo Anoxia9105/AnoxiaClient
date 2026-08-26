@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
@@ -15,7 +14,8 @@ class QuillStyleConfig {
     const lineHeight = 1.5;
     final theme = Theme.of(context);
     return TextStyle(
-      fontFamily: kIsWeb ? null : 'HarmonyOS',
+      fontFamily: 'JetBrainsMono',
+      fontFamilyFallback: const ['NotoSansSC'],
       fontSize: fontSize,
       height: lineHeight,
       color: theme.colorScheme.onSurface,

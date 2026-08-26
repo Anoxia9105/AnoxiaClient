@@ -13,11 +13,13 @@ mixin ThemeMixin {
   }
 
   /// 构建 ThemeData：所有组件样式都基于此 colorScheme。
+  /// [fontFamily] 主字体（JetBrainsMono），[fontFamilyFallback] CJK 回退（NotoSansSC）
   static ThemeData buildTheme({
     required Brightness brightness,
     required Color? primaryColor,
     required LinearGradient gradient,
     String? fontFamily,
+    List<String>? fontFamilyFallback,
   }) {
     final seed = primaryColor ?? Colors.indigo;
     final colorScheme = ColorScheme.fromSeed(
@@ -391,6 +393,7 @@ mixin ThemeMixin {
     return ThemeData(
       useMaterial3: true,
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       brightness: brightness,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,

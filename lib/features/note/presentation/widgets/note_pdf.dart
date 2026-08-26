@@ -3,7 +3,7 @@
 /// 使用纯 Dart `pdf` 包渲染：解析 Quill Delta 为行块，按标题/列表/任务/
 /// 引用/代码块/对齐输出布局，行内支持粗/斜/下划线/删除线/行内代码/链接；
 /// 图片 embed 预拉取字节后嵌入（失败降级为 [图片] 占位）。
-/// 嵌入 CJK 字体 assets/fonts/HarmonyOS.ttf，web/wasm 均可运行。
+/// 嵌入 CJK 字体 assets/fonts/NotoSansSC-Regular.otf，web/wasm 均可运行。
 library;
 
 // ignore_for_file: prefer_const_constructors
@@ -25,7 +25,7 @@ Future<Uint8List> buildNotePdf({
   String untitled = '',
   String emptyContent = '',
 }) async {
-  final font = pw.Font.ttf(await rootBundle.load('assets/fonts/HarmonyOS.ttf'));
+  final font = pw.Font.ttf(await rootBundle.load('assets/fonts/NotoSansSC[wght].ttf'));
   final blocks = _extractBlocks(deltaJson);
   final images = await _fetchImages(blocks);
 

@@ -125,8 +125,6 @@ dependencies:
   # fcm google firebase cloud messaging
   firebase_core: ^4.10.0
   firebase_messaging: ^16.0.2
-  # 字体
-  google_fonts: ^8.1.0
   # 聊天输入容器
   # 底部输入栏
   chat_bottom_container: ^0.5.0
@@ -199,9 +197,14 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
-  # 应用默认字体（桌面/移动端注册；Web 构建由 tool_build.ps1 自动剔除，
-  # Web 端强制使用浏览器系统字体）
+  # 应用默认字体：JetBrains Mono（拉丁/等宽）+ NotoSansSC（CJK 回退）
+  # 全平台强制使用（含 Web，不再回退系统字体）
   fonts:
-    - family: HarmonyOS
+    - family: JetBrainsMono
       fonts:
-        - asset: assets/fonts/HarmonyOS.ttf
+        - asset: assets/fonts/JetBrainsMono[wght].ttf
+        - asset: assets/fonts/JetBrainsMono-Italic[wght].ttf
+          style: italic
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC[wght].ttf
