@@ -1,3 +1,4 @@
+import 'package:anoxia/common/utils/media_viewer_helper.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,12 @@ class VideoMessageStrategy extends MessageRenderStrategy {
     }
 
     final cover = message.payload?.cover;
+    final heroTag = buildVideoHeroTag(
+      message.messageId ?? message.clientMsgId,
+      video,
+    );
     return VideoMessagePlayer(
+      heroTag: heroTag,
       videoUrl: video.url!,
       coverUrl: cover?.url ?? video.thumbnailUrl,
       videoWidth: video.width,

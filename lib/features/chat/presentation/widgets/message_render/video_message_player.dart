@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/file_util.dart';
+import 'package:anoxia/common/utils/media_viewer_helper.dart';
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/provider/setting/general_settings_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +11,7 @@ import 'package:video_player/video_player.dart';
 import 'video_message_controls.dart';
 
 class VideoMessagePlayer extends ConsumerStatefulWidget {
+  final String heroTag;
   final String videoUrl;
   final String? coverUrl;
   final int? videoWidth;
@@ -20,6 +22,7 @@ class VideoMessagePlayer extends ConsumerStatefulWidget {
 
   const VideoMessagePlayer({
     super.key,
+    required this.heroTag,
     required this.videoUrl,
     this.coverUrl,
     this.videoWidth,
@@ -147,14 +150,27 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
   }
 
   void _openFullscreen() {
-    if (!_initialized || _controller == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => VideoMessageFullscreenPage(
-          controller: _controller!,
-          title: widget.fileName ?? 'video',
-        ),
-      ),
+    // 恢复真实桌面的视频详情弹窗：统一走 media_viewer_helper 分发
+    // - 真实桌面 / Web-PC -> VideoViewerDialog（对话框，独立 controller）
+    // - 移动端 / Web-SP -> VideoViewerPage（Hero 路由）
+    // 旧的 VideoMessageFullscreenPage 复用气泡内 controller，弹窗后易出现
+    // controller 归属/生命周期错乱，已由 VideoViewerDialog/Page 替代
+    if (widget.videoUrl.isEmpty) return;
+    // 先暂停气泡内播放，避免弹窗后双路音频
+    if (_initialized) {
+      _controller?.pause();
+      if (_isPlaying && mounted) setState(() => _isPlaying = false);
+    }
+    openVideoDetail(
+      context,
+      videoUrl: widget.videoUrl,
+      coverUrl: widget.coverUrl,
+      videoWidth: widget.videoWidth,
+      videoHeight: widget.videoHeight,
+      fileName: widget.fileName,
+      fileSize: widget.fileSize,
+      durationMs: widget.durationMs,
+      heroTag: widget.heroTag,
     );
   }
 
@@ -187,6 +203,25 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
     final sizeText = widget.fileSize != null && widget.fileSize! > 0
         ? FileUtil.formatFileSize(widget.fileSize!)
         : '';
+    // 与图片详情保持一致：仅在非对话框链路（手机 / Web-SP）启用 Hero，
+    // 这样移动端点击展开后可丝滑越界到 VideoViewerPage
+    final useHero = !shouldUseDialogForMedia(context);
+
+    Widget buildHeroWrapper(Widget child) {
+      if (!useHero) return child;
+      return Hero(
+        tag: widget.heroTag,
+        createRectTween: (begin, end) =>
+            MaterialRectArcTween(begin: begin, end: end),
+        placeholderBuilder: (ctx, size, c) => c,
+        flightShuttleBuilder: (ctx, anim, dir, from, to) {
+          final w = dir == HeroFlightDirection.push ? to.widget : from.widget;
+          return Material(color: Colors.transparent, child: w);
+        },
+        transitionOnUserGestures: true,
+        child: child,
+      );
+    }
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -197,49 +232,55 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: displaySize.width,
-              height: displaySize.height,
-              child: ColoredBox(
-                color: colorScheme.surfaceContainerHighest,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (_initialized && _controller != null)
-                      GestureDetector(
-                        onTap: () =>
-                            setState(() => _showControls = !_showControls),
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          clipBehavior: Clip.hardEdge,
-                          child: SizedBox(
-                            width: _controller!.value.size.width,
-                            height: _controller!.value.size.height,
-                            child: VideoPlayer(_controller!),
+          RepaintBoundary(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: displaySize.width,
+                height: displaySize.height,
+                child: ColoredBox(
+                  color: colorScheme.surfaceContainerHighest,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (_initialized && _controller != null)
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _showControls = !_showControls),
+                          child: buildHeroWrapper(
+                            FittedBox(
+                              fit: BoxFit.contain,
+                              clipBehavior: Clip.hardEdge,
+                              child: SizedBox(
+                                width: _controller!.value.size.width,
+                                height: _controller!.value.size.height,
+                                child: VideoPlayer(_controller!),
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                    else if (hasCover)
-                      GestureDetector(
-                        onTap: _togglePlay,
-                        child: CachedNetworkImageView(
-                          imageUrl: coverUrl,
-                          width: displaySize.width,
-                          height: displaySize.height,
-                          fit: BoxFit.cover,
-                          placeholder: (_, _) => ColoredBox(
-                            color: colorScheme.surfaceContainerHighest,
+                        )
+                      else if (hasCover)
+                        GestureDetector(
+                          onTap: _togglePlay,
+                          child: buildHeroWrapper(
+                            CachedNetworkImageView(
+                              imageUrl: coverUrl,
+                              width: displaySize.width,
+                              height: displaySize.height,
+                              fit: BoxFit.cover,
+                              placeholder: (_, _) => ColoredBox(
+                                color: colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (_, _, _) =>
+                                  _placeholder(colorScheme),
+                            ),
                           ),
-                          errorWidget: (_, _, _) => _placeholder(colorScheme),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: _togglePlay,
+                          child: buildHeroWrapper(_placeholder(colorScheme)),
                         ),
-                      )
-                    else
-                      GestureDetector(
-                        onTap: _togglePlay,
-                        child: _placeholder(colorScheme),
-                      ),
                     _bottomGradient(),
                     if (!_initializing) _playButton(),
                     if (_initializing)
@@ -249,7 +290,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
                           color: Colors.white,
                         ),
                       ),
-                    if (_initialized && _showControls) _topControls(),
+                    if (_showControls) _topControls(),
                     _mediaInfo(durationText, sizeText),
                     if (_initialized && _controller != null)
                       Positioned(
@@ -274,6 +315,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
                 ),
               ),
             ),
+          ),
           ),
           if (widget.fileName != null &&
               widget.fileName!.trim().isNotEmpty) ...[
@@ -379,13 +421,14 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        VideoMessageControlPill(
-          icon: _isMuted
-              ? HugeIcons.strokeRoundedVolumeMute01
-              : HugeIcons.strokeRoundedVolumeHigh,
-          onTap: _toggleMute,
-        ),
-        const SizedBox(width: 8),
+        if (_initialized)
+          VideoMessageControlPill(
+            icon: _isMuted
+                ? HugeIcons.strokeRoundedVolumeMute01
+                : HugeIcons.strokeRoundedVolumeHigh,
+            onTap: _toggleMute,
+          ),
+        if (_initialized) const SizedBox(width: 8),
         VideoMessageControlPill(
           icon: HugeIcons.strokeRoundedArrowExpand01,
           onTap: _openFullscreen,

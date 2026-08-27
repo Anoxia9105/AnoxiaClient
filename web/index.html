@@ -51,6 +51,7 @@
         radial-gradient(circle at 50% 38%, rgba(79, 70, 229, 0.12), transparent 34%),
         #f5f7fb;
       color: #202334;
+      --anoxia-accent: #4f46e5;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       transition: opacity 220ms ease, visibility 220ms ease;
     }
@@ -67,11 +68,46 @@
       border-radius: 22px;
     }
 
+    .anoxia-loading-hint {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 28px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 300ms ease, transform 300ms ease, visibility 300ms ease;
+    }
+
+    #anoxia-loading.is-slow .anoxia-loading-hint {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .anoxia-loading-spinner {
+      width: 18px;
+      height: 18px;
+      flex: none;
+      border-radius: 50%;
+      border: 2px solid var(--anoxia-accent);
+      border-top-color: transparent;
+      opacity: 0.9;
+      animation: anoxia-spin 0.9s linear infinite;
+    }
+
+    .anoxia-loading-hint-text {
+      font-size: 14px;
+      line-height: 1.5;
+      opacity: 0.85;
+    }
+
     @media (prefers-color-scheme: dark) {
       html, body { background: #11131a; }
 
       #anoxia-loading {
         color: #f3f4f6;
+        --anoxia-accent: #818cf8;
         background:
           radial-gradient(circle at 50% 38%, rgba(129, 140, 248, 0.16), transparent 34%),
           #11131a;
@@ -85,7 +121,13 @@
 </head>
 <body>
   <div id="anoxia-loading" role="status" aria-live="polite">
-    <img class="anoxia-loading-logo" src="icons/Icon-192.png" alt="Anoxia">
+    <div class="anoxia-loading-inner">
+      <img class="anoxia-loading-logo" src="icons/Icon-192.png" alt="Anoxia">
+      <div class="anoxia-loading-hint" aria-hidden="true">
+        <span class="anoxia-loading-spinner"></span>
+        <span class="anoxia-loading-hint-text">首次加载会耗费点时间，请耐心等待…</span>
+      </div>
+    </div>
   </div>
   <script>
     window.addEventListener('flutter-first-frame', function () {
@@ -94,6 +136,13 @@
       loading.classList.add('is-hidden');
       window.setTimeout(() => loading.remove(), 240);
     }, { once: true });
+
+    // 超过 5 秒仍未见首帧（首次加载需下载 Flutter/Wasm 资源），显示加载提示
+    window.setTimeout(function () {
+      const loading = document.getElementById('anoxia-loading');
+      if (!loading) return;
+      loading.classList.add('is-slow');
+    }, 5000);
 
     // 禁用浏览器默认右键菜单，右键交互全部交由 Flutter 处理（消息/会话等）
     window.addEventListener('contextmenu', function (event) {
