@@ -17,6 +17,14 @@ void main() {
     name: 'document.pdf',
     type: 'application/pdf',
   );
+  const video = Attachment(
+    id: 'video-1',
+    kind: 'VIDEO',
+    url: 'https://example.com/video.mp4',
+    name: 'video.mp4',
+    type: 'video/mp4',
+    thumbnailUrl: 'https://example.com/video-cover.jpg',
+  );
 
   test('flat image payload survives JSON round trip', () {
     const payload = MessagePayload(content: '[image]', image: image);
@@ -72,5 +80,42 @@ void main() {
     expect(decoded.audio?.kind, 'AUDIO');
     expect(decoded.audioDuration, 42000);
     expect(decoded.mediaAttachments, hasLength(1));
+  });
+
+  test('flat video payload survives JSON round trip', () {
+    const payload = MessagePayload(
+      content: 'clip',
+      video: video,
+      audioDuration: 42000,
+      replyTo: 'message-1',
+      mentions: [7],
+      mentionAll: true,
+    );
+
+    final decoded = MessagePayload.fromJson(payload.toJson());
+
+    expect(decoded.video?.id, video.id);
+    expect(decoded.video?.url, video.url);
+    expect(decoded.video?.thumbnailUrl, video.thumbnailUrl);
+    expect(decoded.audioDuration, 42000);
+    expect(decoded.content, 'clip');
+    expect(decoded.replyTo, 'message-1');
+    expect(decoded.mentions, [7]);
+    expect(decoded.mentionAll, isTrue);
+    expect(decoded.mediaAttachments, hasLength(1));
+  });
+
+  test('typed nested video payload remains supported', () {
+    final decoded = MessagePayload.fromJson({
+      'video': {
+        'video': video.toJson(),
+        'durationMs': 42000,
+        'caption': 'clip',
+      },
+    });
+
+    expect(decoded.video?.url, video.url);
+    expect(decoded.audioDuration, 42000);
+    expect(decoded.content, 'clip');
   });
 }

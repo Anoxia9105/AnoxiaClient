@@ -58,10 +58,8 @@ class DeltaProcessor {
   }
 
   /// 获取文档中所有附件 ID（用于清理已从编辑器中删除的上传记录）
-  Set<String> get attachmentIds => _allAttachments
-      .map((a) => a.id)
-      .whereType<String>()
-      .toSet();
+  Set<String> get attachmentIds =>
+      _allAttachments.map((a) => a.id).whereType<String>().toSet();
 
   /// 检查是否所有附件都已上传成功
   ///
@@ -165,6 +163,7 @@ class DeltaProcessor {
   bool get isSingleEmoji {
     // 条件1：无图片、无文件、无@提及
     if (images.isNotEmpty ||
+        videos.isNotEmpty ||
         files.isNotEmpty ||
         mentionedUserIds.isNotEmpty ||
         mentionAll) {
@@ -223,13 +222,17 @@ class DeltaProcessor {
         (code >= 0x1F018 && code <= 0x1F02F); // 数字符号（🅾️🆑）
   }
 
-  /// 获取所有图片附件
+  /// 获取所有图片附件（排除 GIF 视频？ GIF 仍视为图片）
   List<Attachment> get images =>
-      _allAttachments.where((a) => a.isImage).toList();
+      _allAttachments.where((a) => a.isImage && !a.isVideo).toList();
 
-  /// 获取所有非图片文件附件
+  /// 获取所有视频附件
+  List<Attachment> get videos =>
+      _allAttachments.where((a) => a.isVideo).toList();
+
+  /// 获取所有非图片非视频文件附件
   List<Attachment> get files =>
-      _allAttachments.where((a) => !a.isImage).toList();
+      _allAttachments.where((a) => !a.isImage && !a.isVideo).toList();
 
   /// 提取纯文本内容（去除所有嵌入对象）
   String get plainText => delta

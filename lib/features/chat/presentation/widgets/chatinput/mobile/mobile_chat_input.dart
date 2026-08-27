@@ -28,10 +28,7 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/reply_previe
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'chat_more_panel.dart';
-
-enum _MobileBottomPanelType { emoji, more, ai }
-
-enum _ImageSelectionAction { sendOriginal, crop }
+import 'mobile_chat_input_widgets.dart';
 
 /// 移动端聊天输入组件
 ///
@@ -62,11 +59,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   bool _isVoiceMode = false;
   bool _isVoicePressing = false;
   ChatBottomPanelType _currentPanelType = ChatBottomPanelType.none;
-  _MobileBottomPanelType? _currentOtherPanelType;
+  MobileBottomPanelType? _currentOtherPanelType;
 
-  final ChatBottomPanelContainerController<_MobileBottomPanelType>
+  final ChatBottomPanelContainerController<MobileBottomPanelType>
   _panelController =
-      ChatBottomPanelContainerController<_MobileBottomPanelType>();
+      ChatBottomPanelContainerController<MobileBottomPanelType>();
 
   late final FocusNode _focusNode;
   late final MobileTextInputController _inputController;
@@ -197,7 +194,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final action = await _pickImageSelectionAction();
     if (action == null || !mounted) return;
 
-    if (action == _ImageSelectionAction.sendOriginal) {
+    if (action == ImageSelectionAction.sendOriginal) {
       final originalFiles = <PlatformFile>[];
       for (final xFile in picked) {
         originalFiles.add(
@@ -264,8 +261,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _closeAllPanels();
   }
 
-  Future<_ImageSelectionAction?> _pickImageSelectionAction() {
-    return showModalBottomSheet<_ImageSelectionAction>(
+  Future<ImageSelectionAction?> _pickImageSelectionAction() {
+    return showModalBottomSheet<ImageSelectionAction>(
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
@@ -276,7 +273,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () =>
-                      Navigator.of(ctx).pop(_ImageSelectionAction.crop),
+                      Navigator.of(ctx).pop(ImageSelectionAction.crop),
                   icon: const HugeIcon(
                     icon: HugeIcons.strokeRoundedCrop,
                     size: 19,
@@ -288,7 +285,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: () =>
-                      Navigator.of(ctx).pop(_ImageSelectionAction.sendOriginal),
+                      Navigator.of(ctx).pop(ImageSelectionAction.sendOriginal),
                   icon: const HugeIcon(
                     icon: HugeIcons.strokeRoundedSent,
                     size: 19,
@@ -356,7 +353,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     _panelController.updatePanelType(ChatBottomPanelType.none);
   }
 
-  void _toggleOtherPanel(_MobileBottomPanelType type) {
+  void _toggleOtherPanel(MobileBottomPanelType type) {
     final isSameOpen =
         _currentPanelType == ChatBottomPanelType.other &&
         _currentOtherPanelType == type;
@@ -393,26 +390,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     required dynamic icon,
     Color? color,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final borderRadius = BorderRadius.circular(8);
-    return Tooltip(
-      message: tooltipMessage,
-      child: Material(
-        type: MaterialType.transparency,
-        borderRadius: borderRadius,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: borderRadius,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: HugeIcon(
-              icon: icon,
-              size: 24,
-              color: color ?? colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
+    return MobileCompactButton(
+      tooltipMessage: tooltipMessage,
+      onTap: onTap,
+      icon: icon,
+      color: color,
     );
   }
 
@@ -421,31 +403,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   /// 与更多按钮同为 40×40 触控区，切换时无尺寸差导致的位移；
   /// 圆角 12 与输入胶囊一致。
   Widget _buildSendButton({required VoidCallback onTap}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final borderRadius = BorderRadius.circular(12);
-    return Tooltip(
-      message: 'toolbar_send'.tr(),
-      child: Material(
-        color: colorScheme.primary,
-        borderRadius: borderRadius,
-        elevation: 2,
-        shadowColor: colorScheme.primary.withValues(alpha: 0.4),
-        child: InkWell(
-          borderRadius: borderRadius,
-          onTap: onTap,
-          child: SizedBox.square(
-            dimension: 40,
-            child: Center(
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedSent,
-                size: 20,
-                color: colorScheme.onPrimary,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return MobileSendButton(onTap: onTap);
   }
 
   /// 胶囊输入容器（文本 / 语音共用）
@@ -453,44 +411,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
   /// 圆角胶囊视觉：常态浅色悬浮，聚焦 / 录音时主题色高亮描边，
   /// 阴影随状态增强，自动适配亮暗主题。
   Widget _buildInputCapsule({required Widget child}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isRecording = _voiceController.isRecording;
     final isActive = _focusNode.hasFocus || _isVoicePressing || isRecording;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-      constraints: const BoxConstraints(minHeight: 42),
-      decoration: BoxDecoration(
-        color: isRecording
-            ? colorScheme.primary
-            : isActive
-            ? colorScheme.surfaceContainerHigh
-            : colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isRecording
-              ? Colors.transparent
-              : _focusNode.hasFocus
-              ? colorScheme.primary
-              : colorScheme.outlineVariant.withValues(
-                  alpha: isDark ? 0.25 : 0.45,
-                ),
-          width: _focusNode.hasFocus ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: isDark
-                  ? (isActive ? 0.32 : 0.18)
-                  : (isActive ? 0.10 : 0.05),
-            ),
-            blurRadius: isActive ? 14 : 8,
-            offset: Offset(0, isActive ? 4 : 2),
-          ),
-        ],
-      ),
+    return MobileInputCapsule(
+      isActive: isActive,
+      isRecording: isRecording,
+      hasFocus: _focusNode.hasFocus,
       child: child,
     );
   }
@@ -537,33 +463,14 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
 
   /// 语音输入胶囊（按住说话模式）
   Widget _buildVoiceCapsule() {
-    final colorScheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: _voiceController,
       builder: (_, _) {
         final isRecording = _voiceController.isRecording;
         return _buildInputCapsule(
-          child: Container(
-            alignment: Alignment.center,
-            constraints: const BoxConstraints(minHeight: 42),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            child: AnimatedScale(
-              scale: _isVoicePressing ? 0.98 : 1.0,
-              duration: const Duration(milliseconds: 80),
-              curve: Curves.easeOut,
-              child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isRecording ? FontWeight.w600 : FontWeight.normal,
-                  color: isRecording
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                ),
-                child: Text('hold_to_talk'.tr()),
-              ),
-            ),
+          child: MobileVoiceCapsuleContent(
+            isPressing: _isVoicePressing,
+            isRecording: isRecording,
           ),
         );
       },
@@ -684,9 +591,9 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                   if (!noteEnabled) return const SizedBox.shrink();
                   return _buildCompactButton(
                     tooltipMessage: 'chat_ai.assist_title'.tr(),
-                    onTap: () => _toggleOtherPanel(_MobileBottomPanelType.ai),
+                    onTap: () => _toggleOtherPanel(MobileBottomPanelType.ai),
                     icon: _currentPanelType == ChatBottomPanelType.other &&
-                            _currentOtherPanelType == _MobileBottomPanelType.ai
+                            _currentOtherPanelType == MobileBottomPanelType.ai
                         ? HugeIcons.strokeRoundedCancel01
                         : HugeIcons.strokeRoundedSparkles,
                     color: Theme.of(context).colorScheme.primary,
@@ -696,10 +603,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               // 表情按钮
               _buildCompactButton(
                 tooltipMessage: 'toolbar_emoji'.tr(),
-                onTap: () => _toggleOtherPanel(_MobileBottomPanelType.emoji),
+                onTap: () => _toggleOtherPanel(MobileBottomPanelType.emoji),
                 icon:
                     _currentPanelType == ChatBottomPanelType.other &&
-                        _currentOtherPanelType == _MobileBottomPanelType.emoji
+                        _currentOtherPanelType == MobileBottomPanelType.emoji
                     ? HugeIcons.strokeRoundedKeyboard
                     : HugeIcons.strokeRoundedRelieved02,
               ),
@@ -720,7 +627,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                             _buildCompactButton(
                               tooltipMessage: 'toolbar_more'.tr(),
                               onTap: () => _toggleOtherPanel(
-                                _MobileBottomPanelType.more,
+                                MobileBottomPanelType.more,
                               ),
                               icon: HugeIcons.strokeRoundedAddSquare,
                             ),
@@ -765,7 +672,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         ),
         if (_currentPanelType == ChatBottomPanelType.other)
           Divider(height: 1, thickness: 0.5, color: colorScheme.outlineVariant),
-        ChatBottomPanelContainer<_MobileBottomPanelType>(
+        ChatBottomPanelContainer<MobileBottomPanelType>(
           controller: _panelController,
           inputFocusNode: focusNode,
           panelBgColor: colorScheme.surfaceContainerLow,
@@ -785,7 +692,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               child: SafeArea(
                 top: false,
                 child: switch (type) {
-                  _MobileBottomPanelType.more => ChatMorePanel(
+                  MobileBottomPanelType.more => ChatMorePanel(
                     roomId: widget.roomId,
                     onPickFile: _pickAndSend,
                     onMentionTap: () {
@@ -793,11 +700,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       _showMentionSheet();
                     },
                   ),
-                  _MobileBottomPanelType.ai => MobileChatAiPanel(
+                  MobileBottomPanelType.ai => MobileChatAiPanel(
                     inputController: _inputController,
                     onClose: _hidePanel,
                   ),
-                  _MobileBottomPanelType.emoji => Padding(
+                  MobileBottomPanelType.emoji => Padding(
                     padding: const EdgeInsets.all(8),
                     child: ChatEmojiWidget(
                       closeSelected: _closeAllPanels,

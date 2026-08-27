@@ -3,13 +3,13 @@
 // 第一步验证邮箱并获取验证码，第二步填写用户名和密码完成注册。
 import 'dart:async';
 import 'package:hugeicons/hugeicons.dart';
-import 'dart:convert';
 
 import 'package:anoxia/common/utils/validators.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'register_captcha.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show
@@ -486,7 +486,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         ),
       ),
       SizedBox(width: isMobile ? 8 : 10),
-      _RegisterCaptchaImage(
+      RegisterCaptchaImage(
         width: isMobile ? 104 : 120,
         onTap: _refreshCaptcha,
       ),
@@ -642,98 +642,5 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       type: isError ? ToastType.error : ToastType.success,
       singleton: true,
     );
-  }
-}
-
-/// 注册页验证码图片
-class _RegisterCaptchaImage extends ConsumerStatefulWidget {
-  const _RegisterCaptchaImage({required this.width, required this.onTap});
-
-  final double width;
-  final VoidCallback onTap;
-
-  @override
-  ConsumerState<_RegisterCaptchaImage> createState() =>
-      _RegisterCaptchaImageState();
-}
-
-class _RegisterCaptchaImageState extends ConsumerState<_RegisterCaptchaImage> {
-  bool _isHovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ref
-        .watch(getCaptchaProvider)
-        .when(
-          data: (captcha) => MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _isHovering = true),
-            onExit: (_) => setState(() => _isHovering = false),
-            child: Material(
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              color: scheme.surfaceContainerHigh,
-              child: InkWell(
-                onTap: widget.onTap,
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: widget.width,
-                  height: 44,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.memory(
-                        base64Decode(captcha.imgBase64),
-                        fit: BoxFit.cover,
-                      ),
-                      if (_isHovering)
-                        Container(
-                          color: scheme.primary.withValues(alpha: 0.12),
-                          alignment: Alignment.center,
-                          child: HugeIcon(
-                            icon: HugeIcons.strokeRoundedRefresh01,
-                            color: scheme.primary,
-                            size: 20,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          loading: () => SizedBox(
-            width: widget.width,
-            height: 44,
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-          error: (_, _) => SizedBox(
-            width: widget.width,
-            height: 44,
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: scheme.errorContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                onPressed: widget.onTap,
-                icon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedRefresh01,
-                  color: scheme.onErrorContainer,
-                ),
-              ),
-            ),
-          ),
-        );
   }
 }

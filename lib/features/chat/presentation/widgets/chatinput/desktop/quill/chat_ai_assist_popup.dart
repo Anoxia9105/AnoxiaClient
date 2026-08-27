@@ -6,9 +6,7 @@
 /// - 结果应用：替换选区 / 插入光标处 / 替换全文 + 重试 / 复制
 library;
 
-import 'package:anoxia/common/widgets/ai_markdown_preview.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
-import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/note/presentation/widgets/note_markdown.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -17,11 +15,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../../ai/chat_ai_assist_core.dart';
-
-const _translateLangs = <String>['中文', 'English', '日本語', '한국어', 'Français'];
+import 'chat_ai_assist_widgets.dart';
 
 /// 弹出输入框 AI 助手气泡（锚定按钮 context）
 ///
@@ -370,50 +366,54 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(),
+          ChatAiAssistHeader(
+            scopeText: _hasSelectionRange && _sourceText.isNotEmpty
+                ? 'chat_ai.scope_selection'.tr()
+                : 'chat_ai.scope_all'.tr(),
+            colorScheme: _cs,
+            onClose: widget.onClose,
+          ),
           const SizedBox(height: 8),
-          _buildActionChips(),
+          ChatAiAssistActionChips(
+            selectedAction: _action?.name,
+            streaming: _streaming,
+            colorScheme: _cs,
+            onSelectPolish: () => _start(ChatAiAction.polish),
+            onSelectExpand: () => _start(ChatAiAction.expand),
+            onSelectContinue: () => _start(ChatAiAction.continueWrite),
+            onSelectTranslate: () => _start(ChatAiAction.translate),
+            onSelectSimplify: () => _start(ChatAiAction.simplify),
+            onSelectCustom: () {
+              setState(() {
+                _action = ChatAiAction.custom;
+                _showLangs = false;
+              });
+            },
+          ),
           if (_showLangs) ...[
             const SizedBox(height: 6),
-            _buildLangChips(),
+            ChatAiAssistLangChips(
+              selectedLang: _targetLang,
+              colorScheme: _cs,
+              onSelectLang: (lang) => setState(() => _targetLang = lang),
+            ),
           ],
           if (_action == ChatAiAction.custom) ...[
             const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _customCtrl,
-                    enabled: !_streaming,
-                    maxLines: 2,
-                    minLines: 1,
-                    style: const TextStyle(fontSize: 12.5),
-                    onSubmitted: (_) => _start(ChatAiAction.custom),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: 'chat_ai.custom_hint'.tr(),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: 36,
-                  child: FilledButton(
-                    onPressed: _streaming ? null : () => _start(ChatAiAction.custom),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  ),
-                ),
-              ],
+            ChatAiAssistCustomInput(
+              controller: _customCtrl,
+              enabled: !_streaming,
+              onSubmit: () => _start(ChatAiAction.custom),
             ),
           ],
           const SizedBox(height: 8),
-          _buildPreviewArea(),
+          ChatAiAssistPreviewArea(
+            preview: _preview,
+            streaming: _streaming,
+            thinking: _thinking,
+            colorScheme: _cs,
+            onCopy: _copyPreview,
+          ),
           if (_failed && _errorText != null)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -422,7 +422,16 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
             ),
           if (_hasResult) ...[
             const SizedBox(height: 8),
-            _buildApplyRow(),
+            ChatAiAssistApplyRow(
+              hasSelectionRange: _hasSelectionRange,
+              copiedTick: _copiedTick,
+              colorScheme: _cs,
+              onApplyToSelection: _applyToSelection,
+              onInsertAtCursor: _insertAtCursor,
+              onReplaceAll: _replaceAll,
+              onRetry: _retry,
+              onCopy: _copyPreview,
+            ),
           ],
         ],
       ),
@@ -430,286 +439,4 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
   }
 
   bool get _hasResult => _preview.isNotEmpty && !_streaming;
-
-  Widget _buildHeader() {
-    final scope = _hasSelectionRange && _sourceText.isNotEmpty
-        ? 'chat_ai.scope_selection'.tr()
-        : 'chat_ai.scope_all'.tr();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_cs.primaryContainer.withValues(alpha: .18), _cs.surfaceContainerLow.withValues(alpha: 0)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _cs.outlineVariant.withValues(alpha: .35)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              color: _cs.primary.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 14, color: _cs.primary),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('chat_ai.assist_title'.tr(),
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                Text(scope, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: _cs.primary)),
-              ],
-            ),
-          ),
-          _iconBtn(HugeIcons.strokeRoundedCancel01, 'close'.tr(), widget.onClose),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionChips() {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: [
-        _chip('chat_ai.polish'.tr(), _streaming ? null : () => _start(ChatAiAction.polish),
-            selected: _action == ChatAiAction.polish),
-        _chip('chat_ai.expand'.tr(), _streaming ? null : () => _start(ChatAiAction.expand),
-            selected: _action == ChatAiAction.expand),
-        _chip('chat_ai.continue'.tr(), _streaming ? null : () => _start(ChatAiAction.continueWrite),
-            selected: _action == ChatAiAction.continueWrite),
-        _chip('chat_ai.translate'.tr(), _streaming ? null : () => _start(ChatAiAction.translate),
-            selected: _action == ChatAiAction.translate),
-        _chip('chat_ai.simplify'.tr(), _streaming ? null : () => _start(ChatAiAction.simplify),
-            selected: _action == ChatAiAction.simplify),
-        _chip(
-          'chat_ai.custom'.tr(),
-          _streaming
-              ? null
-              : () {
-                  setState(() {
-                    _action = ChatAiAction.custom;
-                    _showLangs = false;
-                  });
-                },
-          selected: _action == ChatAiAction.custom,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLangChips() {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: [
-        for (final lang in _translateLangs)
-          _chip(
-            lang,
-            () => setState(() => _targetLang = lang),
-            selected: _targetLang == lang,
-          ),
-      ],
-    );
-  }
-
-  Widget _chip(String label, VoidCallback? onTap, {bool selected = false}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      hoverColor: _cs.primary.withValues(alpha: .08),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          color: selected ? _cs.primaryContainer.withValues(alpha: .6) : null,
-          border: Border.all(
-            color: selected
-                ? _cs.primary.withValues(alpha: .5)
-                : _cs.outlineVariant.withValues(alpha: .7),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? _cs.primary : _cs.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPreviewArea() {
-    final empty = _preview.isEmpty && !_streaming;
-    final isStreaming = _streaming;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: _cs.primaryContainer.withValues(alpha: .6),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 11, color: _cs.primary),
-                  const SizedBox(width: 4),
-                  Text('预览', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _cs.primary)),
-                ],
-              ),
-            ),
-            const Spacer(),
-            if (!empty)
-              InkWell(
-                onTap: _copyPreview,
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 14, color: _cs.onSurfaceVariant),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          constraints: const BoxConstraints(minHeight: 56, maxHeight: 240),
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: _cs.surfaceContainerHighest.withValues(alpha: .45),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-                color: empty ? _cs.outlineVariant.withValues(alpha: .5) : _cs.primary.withValues(alpha: .18)),
-            boxShadow: empty ? null : [BoxShadow(color: _cs.primary.withValues(alpha: .06), blurRadius: 10, offset: const Offset(0, 3))],
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: empty
-                ? Center(
-                    key: const ValueKey('empty_chat'),
-                    child: Text('chat_ai.preview_empty'.tr(),
-                        style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant), textAlign: TextAlign.center),
-                  )
-                : isStreaming && _preview.isEmpty
-                    ? _buildSkeleton(key: const ValueKey('streaming'))
-                    : SingleChildScrollView(
-                        key: ValueKey('content_${_preview.hashCode}'),
-                        child: AiMarkdownPreview(data: _preview),
-                      ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkeleton({Key? key}) {
-    return Column(
-      key: key,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SkeletonLine(width: double.infinity, height: 11),
-        const SizedBox(height: 8),
-        const SkeletonLine(width: 200, height: 11),
-        const SizedBox(height: 8),
-        const SkeletonLine(width: 160, height: 11),
-        const SizedBox(height: 12),
-        const SkeletonLine(width: double.infinity, height: 11),
-        const SizedBox(height: 8),
-        const SkeletonLine(width: 180, height: 11),
-        if (_thinking != null && _thinking!.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(_thinking!,
-              style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildApplyRow() {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        if (_hasSelectionRange)
-          _applyBtn('chat_ai.replace_selection'.tr(), _applyToSelection, filled: true)
-        else ...[
-          _applyBtn('chat_ai.insert_cursor'.tr(), _insertAtCursor, filled: true),
-          _applyBtn('chat_ai.replace_all'.tr(), _replaceAll),
-        ],
-        _applyBtn('chat_ai.retry'.tr(), _retry),
-        _miniIconBtn(
-          _copiedTick ? HugeIcons.strokeRoundedTick02 : HugeIcons.strokeRoundedCopy01,
-          'chat_ai.copy'.tr(),
-          _copyPreview,
-        ),
-      ],
-    );
-  }
-
-  Widget _applyBtn(String label, VoidCallback onTap, {bool filled = false}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: filled ? _cs.primary : _cs.surfaceContainerHighest.withValues(alpha: .7),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w500,
-            color: filled ? _cs.onPrimary : _cs.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _miniIconBtn(List<List<dynamic>> icon, String tooltip, VoidCallback onTap) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: HugeIcon(icon: icon, size: 14, color: _cs.onSurfaceVariant),
-        ),
-      ),
-    );
-  }
-
-  Widget _iconBtn(List<List<dynamic>> icon, String tooltip, VoidCallback onTap) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.all(3),
-          child: HugeIcon(icon: icon, size: 14, color: _cs.onSurfaceVariant),
-        ),
-      ),
-    );
-  }
 }

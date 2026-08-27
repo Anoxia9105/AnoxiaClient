@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:anoxia/framework/provider/chat/input/delta_processor.dart';
+import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:flutter_quill/quill_delta.dart';
@@ -91,7 +92,9 @@ void main() {
               },
             },
           ]),
-          'interaction': {'mentionUserIds': [1]},
+          'interaction': {
+            'mentionUserIds': [1],
+          },
         },
       });
       expect(payload.mentionAll, isTrue);
@@ -158,6 +161,51 @@ void main() {
         ),
         isTrue,
       );
+    });
+  });
+
+  group('DeltaProcessor 视频附件', () {
+    test('file embed 中的视频仅归类到 videos', () {
+      const attachment = Attachment(
+        id: 'video-1',
+        kind: 'VIDEO',
+        url: 'C:/video.mp4',
+        name: 'video.mp4',
+        type: 'video/mp4',
+      );
+      final delta = Delta()
+        ..insert({'file': jsonEncode(attachment.toJson())})
+        ..insert('\n');
+
+      final processor = DeltaProcessor(delta, const {
+        'video-1': 'https://example.com/video.mp4',
+      });
+
+      expect(processor.videos, hasLength(1));
+      expect(processor.videos.single.url, 'https://example.com/video.mp4');
+      expect(processor.images, isEmpty);
+      expect(processor.files, isEmpty);
+      expect(processor.isAllUploaded, isTrue);
+    });
+
+    test('视频加单个 Emoji 不会被判定为纯 Emoji 消息', () {
+      const attachment = Attachment(
+        id: 'video-1',
+        kind: 'VIDEO',
+        url: 'C:/video.mp4',
+        name: 'video.mp4',
+        type: 'video/mp4',
+      );
+      final delta = Delta()
+        ..insert({'file': jsonEncode(attachment.toJson())})
+        ..insert('😀')
+        ..insert('\n');
+
+      final processor = DeltaProcessor(delta, const {
+        'video-1': 'https://example.com/video.mp4',
+      });
+
+      expect(processor.isSingleEmoji, isFalse);
     });
   });
 }

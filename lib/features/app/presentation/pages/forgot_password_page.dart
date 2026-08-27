@@ -2,18 +2,18 @@
 //
 // 第一步输入邮箱并通过图形验证码发送邮箱验证码，验证通过后进入第二步设置新密码。
 import 'dart:async';
-import 'package:hugeicons/hugeicons.dart';
-import 'dart:convert';
 
 import 'package:anoxia/common/utils/validators.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/features/app/presentation/pages/forgot_password_widgets.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 /// 忘记密码页面
 ///
@@ -43,13 +43,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   bool _isSendingCode = false;
   bool _isVerifyingEmail = false;
   bool _isSubmitting = false;
-  bool _isCaptchaHovering = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _countdown = 0;
   Timer? _countdownTimer;
   String? _resetToken;
-  _SimpleCaptchaData? _captcha;
+  SimpleCaptchaData? _captcha;
 
   bool get _emailVerified => _resetToken != null;
 
@@ -292,7 +291,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               ),
             ),
             const SizedBox(width: 10),
-            _buildCaptcha(colorScheme),
+            ForgotPasswordCaptchaImage(
+              captcha: _captcha,
+              onTap: _loadCaptcha,
+              width: 120,
+              height: _captchaHeight,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -443,66 +447,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     inputFormatters: [LengthLimitingTextInputFormatter(20)],
   );
 
-  /// 图形验证码，固定高度与输入框一致
-  Widget _buildCaptcha(ColorScheme colorScheme) {
-    if (_captcha == null) {
-      return SizedBox(
-        width: 120,
-        height: _captchaHeight,
-        child: Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Center(
-            child: SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isCaptchaHovering = true),
-      onExit: (_) => setState(() => _isCaptchaHovering = false),
-      child: Material(
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        color: colorScheme.surfaceContainerHigh,
-        child: InkWell(
-          onTap: _loadCaptcha,
-          borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            width: 120,
-            height: _captchaHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.memory(
-                  base64Decode(_captcha!.imgBase64),
-                  fit: BoxFit.cover,
-                ),
-                if (_isCaptchaHovering)
-                  Container(
-                    color: colorScheme.primary.withValues(alpha: 0.12),
-                    alignment: Alignment.center,
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedRefresh01,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _loadCaptcha() async {
     try {
       // getCaptchaProvider 是缓存型 provider，点击刷新前必须先失效，
@@ -511,7 +455,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       final res = await ref.read(getCaptchaProvider.future);
       if (!mounted) return;
       setState(() {
-        _captcha = _SimpleCaptchaData(uuid: res.uuid, imgBase64: res.imgBase64);
+        _captcha = SimpleCaptchaData(uuid: res.uuid, imgBase64: res.imgBase64);
       });
     } catch (_) {
       if (!mounted) return;
@@ -658,17 +602,4 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       singleton: true,
     );
   }
-}
-
-/// 图形验证码数据
-///
-/// 保存验证码的唯一标识符和 Base64 编码的图片数据。
-class _SimpleCaptchaData {
-  const _SimpleCaptchaData({required this.uuid, required this.imgBase64});
-
-  /// 验证码唯一标识
-  final String uuid;
-
-  /// Base64 编码的验证码图片
-  final String imgBase64;
 }

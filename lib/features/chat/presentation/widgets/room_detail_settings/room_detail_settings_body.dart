@@ -1,11 +1,10 @@
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
-import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
-import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/member_list_section.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_card.dart';
+import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/room_detail_settings_widgets.dart';
 import 'package:anoxia/features/chat/presentation/widgets/search_context_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_room_picker_dialog.dart';
 import 'package:anoxia/features/chat/presentation/pages/add_member_page.dart';
@@ -22,7 +21,6 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
-import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
@@ -52,7 +50,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentRoom = ref.watch(currentRoomProvider(roomId));
     if (currentRoom == null) {
-      return const _SettingsBodySkeleton();
+      return const SettingsBodySkeleton();
     }
 
     // 官方虚拟房间：展示选项式帮助，不渲染成员 / 资料 / 危险操作
@@ -303,7 +301,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _JoinRequestsBadge(roomId: roomId),
+                      JoinRequestsBadge(roomId: roomId),
                       const SizedBox(width: 6),
                       const HugeIcon(
                         icon: HugeIcons.strokeRoundedArrowRight01,
@@ -348,7 +346,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         // 区块 3：通知与会话常规开关设置
         RoomCard(
           children: [
-            _RoomSwitchTile(
+            RoomSwitchTile(
               leading: const HugeIcon(
                 icon: HugeIcons.strokeRoundedPin,
                 size: 22,
@@ -359,7 +357,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
               },
             ),
-            _RoomSwitchTile(
+            RoomSwitchTile(
               leading: const HugeIcon(
                 icon: HugeIcons.strokeRoundedNotificationOff02,
                 size: 22,
@@ -374,7 +372,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               },
             ),
             if (isGroup && isAdmin)
-              _RoomSwitchTile(
+              RoomSwitchTile(
                 leading: const HugeIcon(
                   icon: HugeIcons.strokeRoundedVolumeHigh,
                   size: 22,
@@ -556,165 +554,5 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     // 清空活跃房间，回到会话列表（不再导航到不存在的 /chat 路由）
     ref.read(activeRoomIdProvider.notifier).setActive(null);
     Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-}
-
-/// 紧凑型开关行：缩小开关控件与行高，适配会话详情侧栏。
-class _RoomSwitchTile extends StatelessWidget {
-  final Widget leading;
-  final Widget title;
-  final Widget? subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _RoomSwitchTile({
-    required this.leading,
-    required this.title,
-    required this.value,
-    required this.onChanged,
-    this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -2),
-      minVerticalPadding: 8,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      leading: leading,
-      title: title,
-      subtitle: subtitle,
-      trailing: Transform.scale(
-        scale: 0.78,
-        child: Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-      ),
-      onTap: () => onChanged(!value),
-    );
-  }
-}
-
-/// 「入群申请」入口的待处理数量徽标
-///
-/// 进入设置页时静默刷新一次，数量变化时展示红点徽章。
-class _JoinRequestsBadge extends ConsumerStatefulWidget {
-  final String roomId;
-
-  const _JoinRequestsBadge({required this.roomId});
-
-  @override
-  ConsumerState<_JoinRequestsBadge> createState() => _JoinRequestsBadgeState();
-}
-
-class _JoinRequestsBadgeState extends ConsumerState<_JoinRequestsBadge> {
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      if (!mounted) return;
-      ref
-          .read(groupJoinRequestsServiceProvider(widget.roomId).notifier)
-          .refresh(widget.roomId);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pendingCount = ref.watch(
-      pendingGroupJoinRequestCountProvider(widget.roomId),
-    );
-    return VibratingBadge(count: pendingCount.value ?? 0, size: 16);
-  }
-}
-
-/// 房间设置面板骨架屏
-///
-/// 模拟真实布局：成员卡片 + 若干设置行卡片（图标 + 标题 + 尾部箭头）。
-class _SettingsBodySkeleton extends StatelessWidget {
-  const _SettingsBodySkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: [
-        // 区块 0：成员行
-        const _SkeletonCard(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                SkeletonBox(width: 40, height: 40, circle: true),
-                SizedBox(width: 12),
-                Expanded(child: SkeletonBox(height: 14, radius: 5)),
-                SkeletonBox(width: 18, height: 18, radius: 5),
-              ],
-            ),
-          ),
-        ),
-        // 区块 1：资料/通知等设置行
-        _SkeletonCard(
-          child: Column(
-            children: [
-              for (var i = 0; i < 4; i++) ...[
-                if (i > 0) const Divider(height: 1, indent: 56, endIndent: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 15,
-                  ),
-                  child: Row(
-                    children: [
-                      const SkeletonBox(width: 22, height: 22, radius: 6),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: SkeletonLine(width: 96 - (i % 3) * 16, height: 13),
-                      ),
-                      const SkeletonBox(width: 14, height: 14, radius: 4),
-                    ],
-                  ),),
-              ],
-            ],
-          ),
-        ),
-        // 区块 2：危险操作
-        const _SkeletonCard(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-            child: Row(
-              children: [
-                SkeletonBox(width: 22, height: 22, radius: 6),
-                SizedBox(width: 14),
-                Expanded(child: SkeletonLine(width: 72, height: 13)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// 骨架卡片：与 [RoomCard] 同款圆角容器
-class _SkeletonCard extends StatelessWidget {
-  final Widget child;
-
-  const _SkeletonCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: child,
-      ),
-    );
   }
 }

@@ -22,6 +22,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:path/path.dart' as path;
 
 import '../image_render_metrics.dart';
+import 'image_viewer_widgets.dart';
 
 /// 图片查看器组件
 ///
@@ -375,30 +376,32 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                     child: Listener(
                       // 监听鼠标滚轮事件（桌面端）
                       onPointerSignal: _onPointerSignal,
-                      child: PhotoView(
-                        key: ValueKey(attachment.url),
-                        controller: _controller,
-                        scaleStateController: _scaleStateCtrl,
-                        onTapUp: (context, details, value) =>
-                            Navigator.pop(context),
-                        imageProvider: appCachedNetworkImageProvider(
-                          attachment.url!,
+                      child: RepaintBoundary(
+                        child: PhotoView(
+                          key: ValueKey(attachment.url),
+                          controller: _controller,
+                          scaleStateController: _scaleStateCtrl,
+                          onTapUp: (context, details, value) =>
+                              Navigator.pop(context),
+                          imageProvider: appCachedNetworkImageProvider(
+                            attachment.url!,
+                          ),
+                          filterQuality: FilterQuality.high,
+                          backgroundDecoration: const BoxDecoration(
+                            color: Colors.black,
+                          ),
+                          initialScale: scales.initialScale,
+                          minScale: scales.minScale,
+                          maxScale: scales.maxScale,
+                          enableRotation: false,
+                          basePosition: Alignment.center,
+                          // 仅在当前附件与初始一致时启用 Hero 动画
+                          heroAttributes: _heroAttributesFor(attachment),
+                          loadingBuilder: (context, event) =>
+                              ImageViewerLoading(event: event),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const ImageViewerError(),
                         ),
-                        filterQuality: FilterQuality.high,
-                        backgroundDecoration: const BoxDecoration(
-                          color: Colors.black,
-                        ),
-                        initialScale: scales.initialScale,
-                        minScale: scales.minScale,
-                        maxScale: scales.maxScale,
-                        enableRotation: false,
-                        basePosition: Alignment.center,
-                        // 仅在当前附件与初始一致时启用 Hero 动画
-                        heroAttributes: _heroAttributesFor(attachment),
-                        loadingBuilder: (context, event) =>
-                            _buildLoading(event),
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildError(),
                       ),
                     ),
                   );
@@ -412,7 +415,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                 top: 0,
                 bottom: 0,
                 child: Center(
-                  child: _buildSwitchButton(
+                  child: ImageViewerSwitchButton(
                     icon: HugeIcons.strokeRoundedArrowLeft02,
                     enabled: canGoPrevious,
                     onPressed: () => _switchTo(currentIndex - 1, attachments),
@@ -424,7 +427,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                 top: 0,
                 bottom: 0,
                 child: Center(
-                  child: _buildSwitchButton(
+                  child: ImageViewerSwitchButton(
                     icon: HugeIcons.strokeRoundedArrowRight02,
                     enabled: canGoNext,
                     onPressed: () => _switchTo(currentIndex + 1, attachments),
@@ -439,23 +442,8 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
               left: 0,
               right: 0,
               child: IgnorePointer(
-                child: Center(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Text(
-                      attachment.name ?? 'image'.tr(),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                child: ImageViewerCaption(
+                  text: attachment.name ?? 'image'.tr(),
                 ),
               ),
             ),
@@ -534,7 +522,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   ///
   /// 规则：图片以原图 1:1 显示；若原图超过屏幕，则等比缩小至完整显示。
   /// 在此基础上仍支持放大/缩小查看。
-  _PhotoViewScales _computeScales(
+  PhotoViewScales _computeScales(
     Attachment attachment,
     BoxConstraints constraints,
   ) {
@@ -543,7 +531,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     if (constraints.maxWidth <= 0 ||
         constraints.maxHeight <= 0 ||
         imageSize == null) {
-      return _PhotoViewScales(
+      return PhotoViewScales(
         initialScale: PhotoViewComputedScale.contained,
         minScale: PhotoViewComputedScale.contained * 0.8,
         maxScale: PhotoViewComputedScale.covered * 2.5,
@@ -566,7 +554,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     // 放大上限：至少可放大 2 倍
     final double max = math.max(2.0, cover * 2.5);
 
-    return _PhotoViewScales(
+    return PhotoViewScales(
       initialScale: initial,
       minScale: min,
       maxScale: max,
@@ -618,7 +606,7 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
     return name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   }
 
-  void _rememberScaleBounds(_PhotoViewScales scales) {
+  void _rememberScaleBounds(PhotoViewScales scales) {
     if (scales.initialScale is! num ||
         scales.minScale is! num ||
         scales.maxScale is! num) {
@@ -642,85 +630,24 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   }
 
   /// 生成 Hero 属性（仅在当前附件与初始附件一致时返回，保证过渡正确）
+  ///
+  /// 优化要点：
+  /// - `MaterialRectArcTween` 使位移轨迹更自然，避免线性拉伸
+  /// - `flightShuttleBuilder` 复用目标 widget，避免飞行期间重建导致闪烁
+  /// - `placeholderBuilder` 直接返回 child，避免飞行占位半透明导致的穿帮
+  /// - `transitionOnUserGestures: true` 支持手势返回时平滑跟手
   PhotoViewHeroAttributes? _heroAttributesFor(Attachment attachment) {
     final initialUrl = widget.currentUrl ?? widget.attachment.url;
     if (attachment.url != initialUrl) return null;
-    return PhotoViewHeroAttributes(tag: widget.heroTag);
-  }
-
-  /// 构建切换按钮（带透明度动画）
-  Widget _buildSwitchButton({
-    required List<List<dynamic>> icon,
-    required bool enabled,
-    required VoidCallback onPressed,
-  }) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 160),
-      opacity: enabled ? 1 : 0.25,
-      child: Material(
-        color: Colors.black45,
-        shape: const CircleBorder(),
-        child: IconButton(
-          onPressed: enabled ? onPressed : null,
-          icon: HugeIcon(icon: icon, color: Colors.white, size: 22),
-        ),
-      ),
+    return PhotoViewHeroAttributes(
+      tag: widget.heroTag,
+      transitionOnUserGestures: true,
+      createRectTween: (begin, end) => MaterialRectArcTween(begin: begin, end: end),
+      flightShuttleBuilder: (ctx, animation, direction, fromContext, toContext) {
+        final child = direction == HeroFlightDirection.push ? toContext.widget : fromContext.widget;
+        return Material(color: Colors.transparent, child: child);
+      },
+      placeholderBuilder: (ctx, size, child) => child,
     );
   }
-
-  /// 加载中占位
-  Widget _buildLoading(ImageChunkEvent? event) {
-    return Center(
-      child: SizedBox(
-        width: 30,
-        height: 30,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          value: event == null
-              ? null
-              : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  /// 加载失败占位
-  Widget _buildError() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedImageNotFound01,
-            color: Colors.white54,
-            size: 50,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'image_failed_to_load'.tr(),
-            style: const TextStyle(color: Colors.white54),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'tap_to_close'.tr(),
-            style: const TextStyle(color: Colors.white30, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// PhotoView 缩放参数集合
-class _PhotoViewScales {
-  final dynamic initialScale;
-  final dynamic minScale;
-  final dynamic maxScale;
-
-  const _PhotoViewScales({
-    required this.initialScale,
-    required this.minScale,
-    required this.maxScale,
-  });
 }

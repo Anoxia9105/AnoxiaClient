@@ -1,14 +1,25 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:anoxia/common/utils/media_viewer_helper.dart';
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
-import 'package:anoxia/framework/provider/router/router.dart';
+import 'package:anoxia/framework/provider/setting/general_settings_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
+import '../../../../../framework/protocol/message/attachment.dart';
 import 'base/message_render_strategy.dart';
 import 'image_render_metrics.dart';
 
 /// Renders image messages using the dimensions carried by the message protocol.
+///
+/// - 支持 GIF 的受控播放：`autoPlayMediaProvider` 关闭时显示首帧 + 播放按钮，点击播放一次
+/// - Hero 优化：唯一 tag + MaterialRectArcTween + flightShuttleBuilder + placeholderBuilder
+/// - 响应式详情：Web/桌面 使用对话框，Web/SP 使用 Hero 路由
 class ImageMessageStrategy extends MessageRenderStrategy {
   @override
   Widget buildContent(
@@ -23,46 +34,17 @@ class ImageMessageStrategy extends MessageRenderStrategy {
         const [];
     if (imageList.isEmpty) return const SizedBox.shrink();
 
-    final dpr = MediaQuery.devicePixelRatioOf(context);
     if (imageList.length == 1) {
       final attachment = imageList.single;
       final displaySize = resolveImageMessageDisplaySize(attachment);
-      final heroTag = 'image-${attachment.url}';
-      return GestureDetector(
-        onTap: () => context.push(
-          ImageMessageDetailRoute(
-            heroTag: heroTag,
-            roomId: message.roomId,
-            currentUrl: attachment.url,
-          ).location,
-          extra: attachment,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Hero(
-              tag: heroTag,
-              child: CachedNetworkImageView(
-                imageUrl: attachment.url!,
-                width: displaySize.width,
-                height: displaySize.height,
-                fit: BoxFit.contain,
-                memCacheWidth: (displaySize.width * dpr).round(),
-                memCacheHeight: (displaySize.height * dpr).round(),
-                placeholder: (_, _) => _buildPlaceholder(displaySize),
-                errorWidget: (_, _, _) => const HugeIcon(
-                  icon: HugeIcons.strokeRoundedImageNotFound01,
-                  size: 50,
-                ),
-                filterQuality: FilterQuality.medium,
-              ),
-            ),
-          ),
-        ),
+      final heroTag = buildImageHeroTag(message.messageId ?? message.clientMsgId, attachment);
+      return _SingleImageItem(
+        attachment: attachment,
+        messageId: message.messageId ?? message.clientMsgId,
+        roomId: message.roomId,
+        displaySize: displaySize,
+        heroTag: heroTag,
+        isGrid: false,
       );
     }
 
@@ -71,45 +53,302 @@ class ImageMessageStrategy extends MessageRenderStrategy {
       runSpacing: 4,
       children: imageList.map((attachment) {
         const gridSize = 100.0;
-        final heroTag = 'image-${attachment.url}-${message.messageId}';
-        return GestureDetector(
-          onTap: () => context.push(
-            ImageMessageDetailRoute(
-              heroTag: heroTag,
-              roomId: message.roomId,
-              currentUrl: attachment.url,
-            ).location,
-            extra: attachment,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(4),
+        final heroTag = buildImageHeroTag(message.messageId ?? message.clientMsgId, attachment);
+        return _SingleImageItem(
+          attachment: attachment,
+          messageId: message.messageId ?? message.clientMsgId,
+          roomId: message.roomId,
+          displaySize: const Size.square(gridSize),
+          heroTag: heroTag,
+          isGrid: true,
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _SingleImageItem extends ConsumerStatefulWidget {
+  final Attachment attachment;
+  final String? messageId;
+  final String? roomId;
+  final Size displaySize;
+  final String heroTag;
+  final bool isGrid;
+  const _SingleImageItem({
+    required this.attachment,
+    required this.messageId,
+    required this.roomId,
+    required this.displaySize,
+    required this.heroTag,
+    required this.isGrid,
+  });
+  @override
+  ConsumerState<_SingleImageItem> createState() => _SingleImageItemState();
+}
+
+class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
+  ui.Image? _firstFrame;
+  ImageStream? _frameStream;
+  ImageStreamListener? _frameListener;
+  bool _isPlayingOnce = false;
+  Timer? _stopTimer;
+  bool _loadingFirstFrame = false;
+
+  bool get _isGif => widget.attachment.isGif;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLoadFirstFrame());
+  }
+
+  @override
+  void didUpdateWidget(covariant _SingleImageItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.attachment.url != widget.attachment.url) {
+      _disposeFirstFrame();
+      _isPlayingOnce = false;
+      _stopTimer?.cancel();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLoadFirstFrame());
+    }
+  }
+
+  void _maybeLoadFirstFrame() {
+    if (!_isGif) return;
+    final autoPlay = ref.read(autoPlayMediaProvider);
+    final reduce = ref.read(reduceMotionProvider);
+    final shouldShowStatic = !autoPlay || reduce;
+    if (!shouldShowStatic) return;
+    if (_firstFrame != null || _loadingFirstFrame) return;
+    _loadFirstFrame();
+  }
+
+  Future<void> _loadFirstFrame() async {
+    final url = widget.attachment.url;
+    if (url == null || url.isEmpty) return;
+    setState(() => _loadingFirstFrame = true);
+    final provider = appCachedNetworkImageProvider(url);
+    final stream = provider.resolve(const ImageConfiguration());
+    _frameStream = stream;
+    final listener = ImageStreamListener((ImageInfo info, bool sync) {
+      if (!mounted) return;
+      if (_firstFrame != null) return;
+      // 捕获首帧后立即移除监听，避免后续帧更新
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _firstFrame = info.image.clone();
+          _loadingFirstFrame = false;
+        });
+      });
+      _removeListener();
+    }, onError: (_, _) {
+      if (!mounted) return;
+      setState(() => _loadingFirstFrame = false);
+      _removeListener();
+    });
+    _frameListener = listener;
+    stream.addListener(listener);
+    // 降级：如果 2s 内未获得首帧，取消 loading
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _loadingFirstFrame && _firstFrame == null) {
+        setState(() => _loadingFirstFrame = false);
+      }
+    });
+  }
+
+  void _removeListener() {
+    final l = _frameListener;
+    if (l != null) _frameStream?.removeListener(l);
+    _frameStream = null;
+    _frameListener = null;
+  }
+
+  void _disposeFirstFrame() {
+    _removeListener();
+    _firstFrame?.dispose();
+    _firstFrame = null;
+    _stopTimer?.cancel();
+    _stopTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _disposeFirstFrame();
+    super.dispose();
+  }
+
+  Future<int> _computeGifLoopMs(String url) async {
+    try {
+      Uint8List bytes;
+      try {
+        bytes = await appImageCrossCache.get(url);
+      } catch (_) {
+        final resp = await Dio().get<List<int>>(url, options: Options(responseType: ResponseType.bytes));
+        final data = resp.data;
+        if (data == null || data.isEmpty) return 3000;
+        bytes = Uint8List.fromList(data);
+      }
+      final codec = await ui.instantiateImageCodec(bytes);
+      int total = 0;
+      for (int i = 0; i < codec.frameCount; i++) {
+        final info = await codec.getNextFrame();
+        total += info.duration.inMilliseconds;
+        info.image.dispose();
+      }
+      codec.dispose();
+      if (total <= 0) return 3000;
+      // 一次循环时长，夹在 800ms ~ 8000ms 之间避免极端
+      return total.clamp(800, 8000);
+    } catch (_) {
+      return 3000;
+    }
+  }
+
+  Future<void> _playOnce() async {
+    if (_isPlayingOnce) return;
+    setState(() => _isPlayingOnce = true);
+    final url = widget.attachment.url!;
+    final loopMs = await _computeGifLoopMs(url);
+    _stopTimer?.cancel();
+    _stopTimer = Timer(Duration(milliseconds: loopMs), () {
+      if (!mounted) return;
+      setState(() => _isPlayingOnce = false);
+    });
+  }
+
+  void _openDetail() {
+    openImageDetail(
+      context,
+      attachment: widget.attachment,
+      heroTag: widget.heroTag,
+      roomId: widget.roomId,
+      currentUrl: widget.attachment.url,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final autoPlay = ref.watch(autoPlayMediaProvider);
+    final reduce = ref.watch(reduceMotionProvider);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final isGif = _isGif;
+    final shouldAutoPlay = autoPlay && !reduce;
+    final showStaticGif = isGif && !shouldAutoPlay && !_isPlayingOnce;
+
+    // 监听设置变化：从关闭 -> 开启 时，停止单次播放状态并尝试释放首帧
+    ref.listen(autoPlayMediaProvider, (prev, next) {
+      if (next && !reduce) {
+        _stopTimer?.cancel();
+        if (_isPlayingOnce) setState(() => _isPlayingOnce = false);
+      } else {
+        _maybeLoadFirstFrame();
+      }
+    });
+    ref.listen(reduceMotionProvider, (prev, next) {
+      if (next) {
+        _maybeLoadFirstFrame();
+      }
+    });
+
+    Widget imageChild;
+    if (showStaticGif) {
+      // 静态首帧
+      if (_firstFrame != null) {
+        imageChild = RawImage(
+          image: _firstFrame,
+          width: widget.displaySize.width,
+          height: widget.displaySize.height,
+          fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+        );
+      } else {
+        imageChild = _buildPlaceholder(widget.displaySize);
+      }
+    } else {
+      // 正常动画或普通图片
+      imageChild = CachedNetworkImageView(
+        imageUrl: widget.attachment.url!,
+        width: widget.displaySize.width,
+        height: widget.displaySize.height,
+        fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
+        memCacheWidth: (widget.displaySize.width * dpr).round().clamp(0, 2048),
+        memCacheHeight: (widget.displaySize.height * dpr).round().clamp(0, 2048),
+        placeholder: (_, _) => _buildPlaceholder(widget.displaySize),
+        errorWidget: (_, _, _) => const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 30),
+        filterQuality: FilterQuality.medium,
+      );
+    }
+
+    final borderRadius = BorderRadius.circular(widget.isGrid ? 4 : 8);
+    // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致
+    final useHero = !showStaticGif;
+    Widget heroWrapped = RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: borderRadius,
+        ),
+        child: ClipRRect(
+          borderRadius: borderRadius,
+          child: useHero
+              ? Hero(
+                  tag: widget.heroTag,
+                  createRectTween: (begin, end) => MaterialRectArcTween(begin: begin, end: end),
+                  placeholderBuilder: (ctx, size, child) => child,
+                  flightShuttleBuilder: (ctx, anim, dir, from, to) {
+                    final w = dir == HeroFlightDirection.push ? to.widget : from.widget;
+                    return Material(color: Colors.transparent, child: w);
+                  },
+                  transitionOnUserGestures: true,
+                  child: imageChild,
+                )
+              : imageChild,
+        ),
+      ),
+    );
+
+    // 点击整图打开详情；GIF 静态时中间播放按钮仅触发单次播放
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        GestureDetector(onTap: _openDetail, child: heroWrapped),
+        if (showStaticGif)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _openDetail,
+              behavior: HitTestBehavior.translucent,
+              child: const SizedBox.expand(),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Hero(
-                tag: heroTag,
-                child: CachedNetworkImageView(
-                  imageUrl: attachment.url!,
-                  width: gridSize,
-                  height: gridSize,
-                  fit: BoxFit.cover,
-                  memCacheWidth: (gridSize * dpr).round(),
-                  memCacheHeight: (gridSize * dpr).round(),
-                  placeholder: (_, _) =>
-                      _buildPlaceholder(const Size.square(gridSize)),
-                  errorWidget: (_, _, _) => const HugeIcon(
-                    icon: HugeIcons.strokeRoundedImageNotFound01,
-                    size: 30,
-                  ),
-                  filterQuality: FilterQuality.medium,
+          ),
+        if (showStaticGif)
+          Material(
+            color: Colors.black.withValues(alpha: 0.38),
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _playOnce,
+              child: Padding(
+                padding: EdgeInsets.all(widget.isGrid ? 6 : 10),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedPlay,
+                  size: widget.isGrid ? 18 : 22,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
-        );
-      }).toList(),
+        if (isGif && !showStaticGif && !shouldAutoPlay && _isPlayingOnce)
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999)),
+              child: const Text('gif', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+            ),
+          ),
+      ],
     );
   }
 

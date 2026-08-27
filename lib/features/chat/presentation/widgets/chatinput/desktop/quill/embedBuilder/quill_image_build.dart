@@ -28,56 +28,138 @@ class QuillImageBuild implements EmbedBuilder {
     return Consumer(
       builder: (context, ref, _) {
         final uploadState = ref.watch(chatImageUploadControllerProvider);
-        // 直接读 per-item 状态，无需依赖全局 isUploadingProvider
         final entry = uploadState[attachment.id] ?? UploadEntry.uploading;
+        final scheme = Theme.of(context).colorScheme;
+        final isFailed = entry.isFailed;
+        final isUploading = entry.isUploading;
+        final progress = entry.progress;
 
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              constraints: const BoxConstraints(maxWidth: 200, maxHeight: 300),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: entry.isFailed
-                      ? Colors.red
-                      : Colors.grey.withValues(alpha: 0.2),
-                  width: entry.isFailed ? 2 : 1,
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          constraints: const BoxConstraints(maxWidth: 220, maxHeight: 320),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isFailed
+                  ? Colors.redAccent
+                  : isUploading
+                      ? scheme.primary.withValues(alpha: 0.35)
+                      : Colors.grey.withValues(alpha: 0.18),
+              width: isFailed ? 2 : 1.2,
+            ),
+            boxShadow: [
+              if (!isFailed)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Opacity(
-                  opacity: entry.isFailed ? 0.5 : 1.0,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: isFailed ? 0.45 : 1.0,
                   child: _buildEmbeddedImage(
                     attachment.url,
-                    ref
-                        .read(chatImageUploadControllerProvider.notifier)
-                        .bytesOf(attachment.id),
+                    ref.read(chatImageUploadControllerProvider.notifier).bytesOf(attachment.id),
                   ),
                 ),
-              ),
-            ),
-
-            if (entry.isFailed)
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const HugeIcon(icon: HugeIcons.strokeRoundedCloudOff, color: Colors.red, size: 32),
-                  Text(
-                    'upload_failed'.tr(),
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                // 上传中半透明遮罩 + 确定性进度环
+                if (isUploading)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      child: Center(
+                        child: Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.42),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                width: 42,
+                                height: 42,
+                                child: CircularProgressIndicator(
+                                  value: progress > 0 ? progress : null,
+                                  strokeWidth: 3,
+                                  color: Colors.white,
+                                  backgroundColor: Colors.white.withValues(alpha: 0.22),
+                                ),
+                              ),
+                              Text(
+                                progress > 0 ? '${(progress * 100).round()}%' : '',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
-
-            if (entry.isUploading)
-              const CircularProgressIndicator(strokeWidth: 2),
-          ],
+                // 失败态
+                if (isFailed)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                            child: const HugeIcon(icon: HugeIcons.strokeRoundedCloudOff, color: Colors.white, size: 22),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'upload_failed'.tr(),
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, shadows: [Shadow(color: Colors.black54, blurRadius: 4)]),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'upload_failed_retry'.tr(),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // 成功角标
+                if (!isUploading && !isFailed)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), shape: BoxShape.circle),
+                      child: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 14, color: Color(0xFF4CAF50)),
+                    ),
+                  ),
+                // 底部确定性进度条
+                if (isUploading)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: LinearProgressIndicator(
+                      value: progress > 0 ? progress : null,
+                      minHeight: 4,
+                      backgroundColor: Colors.white.withValues(alpha: 0.22),
+                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                    ),
+                  ),
+                if (isFailed)
+                  Positioned(left: 0, right: 0, bottom: 0, child: Container(height: 4, color: Colors.redAccent)),
+              ],
+            ),
+          ),
         );
       },
     );

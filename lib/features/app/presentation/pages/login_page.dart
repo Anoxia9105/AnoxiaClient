@@ -1,14 +1,11 @@
 import 'dart:async';
-import 'package:hugeicons/hugeicons.dart';
-import 'dart:convert';
+
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
-import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/auth/scan_login_controller.dart';
 import 'package:anoxia/framework/provider/auth/saved_accounts_provider.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -18,7 +15,10 @@ import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import 'login_captcha.dart';
+import 'login_scan_panel.dart';
 
 /// 登录页面
 ///
@@ -175,7 +175,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       key: const ValueKey(_LoginMode.scan),
       mainAxisSize: MainAxisSize.min,
       children: [
-        const _ScanLoginPanel(),
+        const ScanLoginPanel(),
         if (_showScanMode) _buildSwitchToPassword(colorScheme),
       ],
     );
@@ -391,7 +391,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
         const SizedBox(width: 12),
         // 将验证码图片提取为单独的 widget，避免焦点变化导致重新渲染
-        const _CaptchaImage(),
+        const CaptchaImage(),
       ],
     );
   }
@@ -551,374 +551,5 @@ class _LoginPageState extends ConsumerState<LoginPage>
 /// 验证码图片 Widget
 ///
 /// 使用 Consumer 监听 provider，避免父级重建导致验证码重新渲染
-class _CaptchaImage extends ConsumerStatefulWidget {
-  const _CaptchaImage();
-
-  @override
-  ConsumerState<_CaptchaImage> createState() => _CaptchaImageState();
-}
-
-class _CaptchaImageState extends ConsumerState<_CaptchaImage> {
-  bool _isHovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ref
-        .watch(getCaptchaProvider)
-        .when(
-          data: (captcha) {
-            return Tooltip(
-              message: 'login_page_captcha'.tr(),
-              child: MouseRegion(
-                onEnter: (_) => setState(() => _isHovering = true),
-                onExit: (_) => setState(() => _isHovering = false),
-                cursor: SystemMouseCursors.click,
-                child: Material(
-                  borderRadius: BorderRadius.circular(12),
-                  clipBehavior: Clip.antiAlias,
-                  color: colorScheme.surfaceContainerHigh,
-                  child: InkWell(
-                    onTap: () => ref.invalidate(getCaptchaProvider),
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: 120,
-                      height: 44,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.memory(
-                            base64Decode(captcha.imgBase64),
-                            fit: BoxFit.cover,
-                          ),
-                          if (_isHovering)
-                            Container(
-                              color: colorScheme.primary.withValues(
-                                alpha: 0.12,
-                              ),
-                              alignment: Alignment.center,
-                              child: HugeIcon(
-                                icon: HugeIcons.strokeRoundedRefresh01,
-                                color: colorScheme.primary,
-                                size: 20,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-          loading: () => Container(
-            width: 120,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: SizedBox.square(
-                dimension: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
-          error: (e, st) => Container(
-            width: 120,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: HugeIcon(
-                icon: HugeIcons.strokeRoundedRefresh01,
-                color: colorScheme.onErrorContainer,
-              ),
-              onPressed: () => ref.invalidate(getCaptchaProvider),
-            ),
-          ),
-        );
-  }
-}
-
 /// 登录方式枚举
 enum _LoginMode { password, scan }
-
-/// 扫码登录面板（桌面/Web）
-///
-/// 展示二维码并自动轮询登录状态；手机 App 扫码确认后自动完成登录。
-class _ScanLoginPanel extends ConsumerStatefulWidget {
-  const _ScanLoginPanel();
-
-  @override
-  ConsumerState<_ScanLoginPanel> createState() => _ScanLoginPanelState();
-}
-
-class _ScanLoginPanelState extends ConsumerState<_ScanLoginPanel> {
-  /// 倒计时定时器（每秒递减）
-  Timer? _ticker;
-
-  /// 当前倒计时所属的 ticket，ticket 变化时重置倒计时
-  String? _countdownFor;
-
-  /// 剩余有效秒数
-  int _remaining = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startSession());
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
-
-  /// 创建新的扫码登录会话
-  Future<void> _startSession() async {
-    try {
-      await ref.read(scanLoginControllerProvider.notifier).start();
-    } catch (_) {
-      // 错误状态由下方 UI 展示，此处仅静默
-    }
-  }
-
-  /// 启动倒计时
-  void _beginCountdown(String ticket, int expiresIn) {
-    _ticker?.cancel();
-    setState(() {
-      _countdownFor = ticket;
-      _remaining = expiresIn;
-    });
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_remaining > 0) {
-        setState(() => _remaining -= 1);
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final session = ref.watch(scanLoginControllerProvider);
-
-    return session.when(
-      loading: () => _buildLoading(),
-      error: (e, st) => _buildError(colorScheme),
-      data: (session) {
-        if (session == null) return _buildLoading();
-
-        final ticket = session.ticket;
-        if (_countdownFor != ticket.ticket) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => _beginCountdown(ticket.ticket, ticket.expiresIn),
-          );
-        }
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildQrCard(colorScheme, session),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'login_scan_countdown'.tr(
-                    namedArgs: {'seconds': '$_remaining'},
-                  ),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: _remaining <= 10
-                        ? colorScheme.error
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                TextButton.icon(
-                  onPressed: _startSession,
-                  icon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedRefresh01,
-                    size: 18,
-                  ),
-                  label: Text('login_scan_refresh'.tr()),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'login_scan_hint'.tr(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildQrCard(ColorScheme colorScheme, ScanLoginSession session) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: QrImageView(
-          data: session.ticket.qrContent,
-          size: 200,
-          padding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          eyeStyle: const QrEyeStyle(
-            eyeShape: QrEyeShape.square,
-            color: Colors.black,
-          ),
-          dataModuleStyle: const QrDataModuleStyle(
-            dataModuleShape: QrDataModuleShape.square,
-            color: Colors.black,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 加载中骨架屏（布局与二维码卡片一致）
-  Widget _buildLoading() {
-    return const Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _QrSkeleton(),
-        SizedBox(height: 18),
-        SkeletonLine(width: 120, height: 12),
-        SizedBox(height: 14),
-        SkeletonLine(width: 170, height: 10),
-      ],
-    );
-  }
-
-  Widget _buildError(ColorScheme colorScheme) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        HugeIcon(
-          icon: HugeIcons.strokeRoundedAlertCircle,
-          size: 48,
-          color: colorScheme.error,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'login_scan_error'.tr(),
-          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: _startSession,
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedRefresh01,
-            size: 18,
-          ),
-          label: Text('login_scan_retry'.tr()),
-        ),
-      ],
-    );
-  }
-}
-
-/// 扫码登录骨架屏
-///
-/// 布局与真实二维码卡片一致：三个角落的寻像图形 + 中部数据模块占位。
-class _QrSkeleton extends StatelessWidget {
-  const _QrSkeleton();
-
-  /// 模拟数据模块的位置（相对卡片内边距区域）
-  static const List<Offset> _dots = [
-    Offset(60, 60),
-    Offset(88, 60),
-    Offset(116, 60),
-    Offset(60, 88),
-    Offset(116, 88),
-    Offset(60, 116),
-    Offset(88, 116),
-    Offset(116, 116),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 224,
-      height: 224,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(left: 0, top: 0, child: _QrFinderPattern()),
-          const Positioned(right: 0, top: 0, child: _QrFinderPattern()),
-          const Positioned(left: 0, bottom: 0, child: _QrFinderPattern()),
-          for (final offset in _dots)
-            Positioned(
-              left: offset.dx,
-              top: offset.dy,
-              child: const SkeletonBox(width: 12, height: 12, radius: 3),
-            ),
-          const Positioned(right: 0, bottom: 0, child: _QrAlignmentPattern()),
-        ],
-      ),
-    );
-  }
-}
-
-/// 二维码寻像图形（三个角落的“回”字占位）
-class _QrFinderPattern extends StatelessWidget {
-  const _QrFinderPattern();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 44,
-      height: 44,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SkeletonBox(width: 44, height: 44, radius: 8),
-          SkeletonBox(width: 22, height: 22, radius: 4),
-        ],
-      ),
-    );
-  }
-}
-
-/// 二维码对齐图形（右下角小“回”字占位）
-class _QrAlignmentPattern extends StatelessWidget {
-  const _QrAlignmentPattern();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 27,
-      height: 27,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SkeletonBox(width: 27, height: 27, radius: 6),
-          SkeletonBox(width: 11, height: 11, radius: 3),
-        ],
-      ),
-    );
-  }
-}

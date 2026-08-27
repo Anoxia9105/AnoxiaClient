@@ -1,17 +1,14 @@
-import 'package:anoxia/common/widgets/avatar_widget.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/framework/domain/chat_message.dart';
-import 'package:anoxia/framework/protocol/message/message_enum.dart';
-import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/search_message_service.dart';
-import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
-import 'package:flutter/material.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+import 'search_context_message_item.dart';
+import 'search_context_skeleton.dart';
 
 /// 聊天上下文深度搜索页面
 /// 功能：显示搜索结果列表，自动定位到匹配消息，高亮显示匹配范围
@@ -145,314 +142,6 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
     await ref
         .read(searchMessageServiceProvider.notifier)
         .loadMoreAfter(widget.roomId, keyword);
-  }
-
-  /// 构建消息项
-  Widget _buildMessageItem(ChatMessage chatMessage, int index) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final bool isDesktop = DeviceUtil.isRealDesktop();
-    final currentUser = ref.watch(authControllerProvider).value;
-    final members = ref.watch(roomMembersProvider(widget.roomId));
-    final senderMember = members
-        .where((member) => member.userId == chatMessage.senderId)
-        .firstOrNull;
-    final bool isCurrentUser = chatMessage.senderId == currentUser?.userId;
-    final String displayName = isCurrentUser
-        ? (currentUser?.nickName.trim().isNotEmpty == true
-              ? currentUser!.nickName.trim()
-              : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr()))
-        : ((senderMember?.nickName?.trim().isNotEmpty == true)
-              ? senderMember!.nickName!.trim()
-              : (chatMessage.senderId?.toString() ?? 'search_unknown'.tr()));
-    final String? avatarUrl = isCurrentUser
-        ? currentUser?.avatar
-        : senderMember?.avatar;
-    final String? senderMeta = chatMessage.senderId != null
-        ? 'ID: ${chatMessage.senderId}'
-        : null;
-
-    // 判断是否在高亮范围内
-    final searchState = ref.read(searchMessageServiceProvider);
-    bool isHighlighted =
-        index >= searchState.firstMatchIndex &&
-        index <= searchState.lastMatchIndex;
-
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 16 : 12,
-        vertical: isDesktop ? 8 : 6,
-      ),
-      decoration: BoxDecoration(
-        color: isHighlighted
-            ? colorScheme.primary.withValues(alpha: 0.08)
-            : colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isHighlighted
-              ? colorScheme.primary.withValues(alpha: 0.3)
-              : colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: isHighlighted ? 1.5 : 0.8,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 用户头像
-            AvatarWidget(
-              size: isDesktop ? 44 : 40,
-              url: avatarUrl,
-              name: displayName,
-              borderRadius: isDesktop ? 22 : 20,
-            ),
-            const SizedBox(width: 12),
-            // 消息内容区域
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 消息发送者和时间
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          displayName,
-                          style: textTheme.labelMedium?.copyWith(
-                            color: colorScheme.outline,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatTime(chatMessage.timestamp),
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.outline.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (senderMeta != null) ...[
-                    Text(
-                      senderMeta,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.outline.withValues(alpha: 0.75),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                  // 消息内容（根据消息类型显示）
-                  _buildMessageContent(
-                    chatMessage,
-                    colorScheme,
-                    textTheme,
-                    ref.read(searchMessageServiceProvider).keyword,
-                  ),
-                ],
-              ),
-            ),
-            // 高亮指示器
-            if (isHighlighted) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedCheckmarkBadge01,
-                  size: 16,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建消息内容（根据消息类型显示）
-  Widget _buildMessageContent(
-    ChatMessage chatMessage,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-    String keyword,
-  ) {
-    // 检查消息类型（image: 1）
-    final imageAttachment = chatMessage.payload?.image;
-    if (chatMessage.messageType == MessageType.image) {
-      // 图片消息：显示附件缩略图
-      if (imageAttachment?.url?.isNotEmpty == true) {
-        final attachment = imageAttachment!;
-        // 缩略图显示尺寸（桌面 160，其余 120），用于限制解码尺寸
-        final double imageSize = DeviceUtil.isRealDesktop() ? 160 : 120;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 显示图片缩略图
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                attachment.url ?? '',
-                width: imageSize,
-                height: imageSize,
-                // 按显示尺寸×DPR 解码，避免整图（可能上 MB）全量解入内存
-                cacheWidth: (imageSize * MediaQuery.devicePixelRatioOf(context))
-                    .round(),
-                cacheHeight:
-                    (imageSize * MediaQuery.devicePixelRatioOf(context))
-                        .round(),
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.medium,
-                errorBuilder: (context, error, stackTrace) {
-                  final size = DeviceUtil.isRealDesktop() ? 160.0 : 120.0;
-                  return Container(
-                    width: size,
-                    height: size,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedImageNotFound01,
-                        color: colorScheme.outline,
-                        size: 32,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            if (chatMessage.content.isNotEmpty == true) ...[
-              const SizedBox(height: 8),
-              _buildHighlightedText(
-                chatMessage.content,
-                keyword,
-                colorScheme,
-                textTheme,
-                maxLines: 2,
-              ),
-            ],
-          ],
-        );
-      } else {
-        return Text(
-          'search_image_placeholder'.tr(),
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
-            fontStyle: FontStyle.italic,
-          ),
-        );
-      }
-    }
-
-    // 其他消息类型：显示文本内容（带高亮）
-    return _buildHighlightedText(
-      chatMessage.content,
-      keyword,
-      colorScheme,
-      textTheme,
-      maxLines: 3,
-    );
-  }
-
-  /// 构建高亮文本
-  Widget _buildHighlightedText(
-    String text,
-    String keyword,
-    ColorScheme colorScheme,
-    TextTheme textTheme, {
-    int maxLines = 3,
-  }) {
-    if (keyword.isEmpty || !text.contains(keyword)) {
-      return Text(
-        text,
-        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    // 使用手动查找替换而不是 RegExp.split
-    final spans = <TextSpan>[];
-    int lastIndex = 0;
-
-    // 查找所有匹配的关键词位置
-    while (true) {
-      // 不区分大小写的查找（对于中文实际上没区别）
-      int index = text.indexOf(keyword, lastIndex);
-
-      if (index == -1) {
-        // 没有找到，添加剩余的文本
-        if (lastIndex < text.length) {
-          spans.add(
-            TextSpan(
-              text: text.substring(lastIndex),
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
-              ),
-            ),
-          );
-        }
-        break;
-      }
-
-      // 添加关键词之前的文本
-      if (index > lastIndex) {
-        spans.add(
-          TextSpan(
-            text: text.substring(lastIndex, index),
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
-          ),
-        );
-      }
-
-      // 添加高亮的关键词
-      spans.add(
-        TextSpan(
-          text: keyword,
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onPrimary,
-            backgroundColor: colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
-
-      // 更新位置
-      lastIndex = index + keyword.length;
-    }
-
-    return RichText(
-      text: TextSpan(children: spans),
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  /// 格式化时间
-  String _formatTime(int? timestamp) {
-    if (timestamp == null) return '';
-    final DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return DateFormat('HH:mm').format(dateTime);
   }
 
   /// 执行搜索
@@ -617,7 +306,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
           child: Stack(
             children: [
               if (searchState.isLoading && searchState.messages.isEmpty)
-                const _SearchContextSkeleton(),
+                const SearchContextSkeleton(),
               if (searchState.messages.isNotEmpty)
                 ScrollablePositionedList.builder(
                   itemScrollController: _itemScrollController,
@@ -632,7 +321,11 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                       child: SlideAnimation(
                         verticalOffset: 18,
                         child: FadeInAnimation(
-                          child: _buildMessageItem(message, index),
+                          child: SearchContextMessageItem(
+                            message: message,
+                            index: index,
+                            roomId: widget.roomId,
+                          ),
                         ),
                       ),
                     );
@@ -718,52 +411,6 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
               )
             : content,
       ),
-    );
-  }
-}
-
-class _SearchContextSkeleton extends StatelessWidget {
-  const _SearchContextSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: 8,
-      separatorBuilder: (context, index) => const SizedBox(height: 4),
-      itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outlineVariant.withValues(alpha: 0.25),
-            ),
-          ),
-          child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SkeletonBox(width: 40, height: 40, circle: true),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SkeletonBox(width: 120, height: 10),
-                    SizedBox(height: 8),
-                    SkeletonBox(height: 12),
-                    SizedBox(height: 6),
-                    SkeletonBox(width: 180, height: 12),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

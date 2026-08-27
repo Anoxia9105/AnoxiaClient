@@ -52,6 +52,7 @@ part 'chat_input_controller.g.dart';
 class ChatInputController extends _$ChatInputController {
   bool _isTyping = false;
   bool _isEnforcingInputLimit = false;
+  bool _isSending = false;
   DateTime? _lastLimitNoticeAt;
   Timer? _typingTimer;
 
@@ -313,10 +314,23 @@ class ChatInputController extends _$ChatInputController {
   /// 3. 通过 DeltaProcessor 处理 Delta，提取图片、文件、纯文本、@提及、表情等
   /// 4. 分别发送图片、文件、表情或文本/富文本消息
   /// 5. 清空输入框并恢复焦点（桌面端）
-  void sendMessage() {
+  Future<void> sendMessage() async {
+    if (_isSending) return;
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null || room.isOfficial || state.document.isEmpty()) return;
+    _isSending = true;
+    try {
+      await _sendMessageInternal();
+    } finally {
+      _isSending = false;
+    }
+  }
 
+  /// 发送消息的内部实现（由 [sendMessage] 加防重入锁后调用）
+  ///
+  /// 处理流程：见 [sendMessage]。
+  Future<void> _sendMessageInternal() async {
+    final room = ref.read(currentRoomProvider(roomId));
     final uploadState = {
       ...ref.read(chatImageUploadControllerProvider.notifier).urlMap,
       ...ref.read(chatFileUploadControllerProvider.notifier).urlMap,
@@ -345,6 +359,31 @@ class ChatInputController extends _$ChatInputController {
           type: MessageType.image,
           payload: const MessagePayload(content: '[image]'),
           attachments: [image],
+          clearReplyAfterSend: false,
+        );
+      }
+    }
+
+    // --- 发送视频（从文件嵌入中自动识别的视频） ---
+    // VIDEO 守卫要求 durationMs 非空，优先用上传时提取的真实时长，
+    // 未知时回退 1s 占位并补充宽高，避免 CRITICAL 与气泡宽高缺失。
+    if (processor.videos.isNotEmpty) {
+      final fileUploader = ref.read(chatFileUploadControllerProvider.notifier);
+      // 发送前置提取真实元数据（避免与上传完成提取的竞态导致回退占位时长）
+      await fileUploader.ensureVideoMetadata(processor.videos);
+      for (final video in processor.videos) {
+        final meta = fileUploader.videoMetadataOf(video.id);
+        final duration = meta?.durationMs ?? 1000;
+        final enhanced = meta == null
+            ? video
+            : video.copyWith(width: meta.width, height: meta.height);
+        _doSend(
+          type: MessageType.video,
+          payload: MessagePayload(
+            content: '[video]',
+            audioDuration: duration,
+          ),
+          attachments: [enhanced],
           clearReplyAfterSend: false,
         );
       }
@@ -405,7 +444,7 @@ class ChatInputController extends _$ChatInputController {
     // 4. 清空输入框
     clearInput();
     if (DeviceUtil.isRealDesktop()) {
-      ref.read(chatFocusNodeProvider(room.roomId!)).requestFocus();
+      ref.read(chatFocusNodeProvider(room?.roomId ?? '')).requestFocus();
     }
   }
 
@@ -568,9 +607,9 @@ class ChatInputController extends _$ChatInputController {
     }
   }
 
-  /// 发送选中的文件（从文件选择器）
+  /// 发送选中的文件（从文件选择器），自动识别视频文件并按视频类型发送
   ///
-  /// 先批量上传文件，再逐个发送 File 消息。
+  /// 先批量上传文件，再逐个发送 File / Video 消息。
   Future<void> sendPickedFiles(List<PlatformFile> files) async {
     if (files.isEmpty) return;
 
@@ -585,14 +624,18 @@ class ChatInputController extends _$ChatInputController {
       }
       final id = const Uuid().v4();
       if (file.bytes != null) filesById[id] = file;
+      final ext = file.extension?.toLowerCase();
+      final isVideo = _isVideoExtension(ext, file.name);
+      final mime = isVideo ? _mimeForVideo(ext) : (file.extension ?? 'bin');
+      final kind = isVideo ? 'VIDEO' : 'FILE';
       uploadList.add(
         Attachment(
           id: id,
-          kind: 'FILE',
+          kind: kind,
           url: file.path,
           name: file.name,
           size: file.size,
-          type: file.extension ?? 'bin',
+          type: mime,
         ),
       );
     }
@@ -609,15 +652,76 @@ class ChatInputController extends _$ChatInputController {
 
     if (uploaded.isEmpty) return;
 
-    // The V5 file payload contains one `file` field. Sending the whole list in
-    // one payload silently kept only the first attachment.
-    for (var i = 0; i < uploaded.length; i++) {
+    // 按类型分组发送：视频走 video，普通文件走 file
+    final videoList = uploaded.where((a) => a.isVideo).toList();
+    final fileList = uploaded.where((a) => !a.isVideo).toList();
+
+    // 发送前置提取视频真实元数据，避免占位时长与宽高缺失
+    if (videoList.isNotEmpty) {
+      await uploader.ensureVideoMetadata(videoList);
+    }
+
+    for (var i = 0; i < videoList.length; i++) {
+      final isLastOverall = i == videoList.length - 1 && fileList.isEmpty;
+      final meta = uploader.videoMetadataOf(videoList[i].id);
+      final duration = meta?.durationMs ?? 1000;
+      final enhanced = meta == null
+          ? videoList[i]
+          : videoList[i].copyWith(width: meta.width, height: meta.height);
+      _doSend(
+        type: MessageType.video,
+        // 占位时长 1s 满足服务端 VIDEO 守卫 durationMs 必填，避免 CRITICAL
+        payload: MessagePayload(
+          content: '[video]',
+          audioDuration: duration,
+        ),
+        attachments: [enhanced],
+        clearReplyAfterSend: isLastOverall,
+      );
+    }
+    for (var i = 0; i < fileList.length; i++) {
       _doSend(
         type: MessageType.file,
         payload: const MessagePayload(content: '[file]'),
-        attachments: [uploaded[i]],
-        clearReplyAfterSend: i == uploaded.length - 1,
+        attachments: [fileList[i]],
+        clearReplyAfterSend: i == fileList.length - 1,
       );
+    }
+  }
+
+  bool _isVideoExtension(String? ext, String fileName) {
+    const videoExts = {'mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', 'flv', '3gp', 'wmv', 'mpeg', 'mpg'};
+    final lowerExt = ext?.toLowerCase();
+    if (lowerExt != null && videoExts.contains(lowerExt)) return true;
+    final lowerName = fileName.toLowerCase();
+    for (final v in videoExts) {
+      if (lowerName.endsWith('.$v')) return true;
+    }
+    return false;
+  }
+
+  String _mimeForVideo(String? ext) {
+    switch (ext?.toLowerCase()) {
+      case 'mp4':
+        return 'video/mp4';
+      case 'mov':
+        return 'video/quicktime';
+      case 'webm':
+        return 'video/webm';
+      case 'mkv':
+        return 'video/x-matroska';
+      case 'avi':
+        return 'video/x-msvideo';
+      case 'm4v':
+        return 'video/x-m4v';
+      case 'flv':
+        return 'video/x-flv';
+      case '3gp':
+        return 'video/3gpp';
+      case 'wmv':
+        return 'video/x-ms-wmv';
+      default:
+        return 'video/${ext ?? 'mp4'}';
     }
   }
 

@@ -104,6 +104,18 @@ class Attachment {
     properties: properties ?? this.properties,
   );
 
+  bool get isGif {
+    final t = type?.toLowerCase();
+    if (t == 'gif' || t == 'image/gif') return true;
+    if (t?.contains('gif') == true) return true;
+    if (kind?.toUpperCase() == 'GIF') return true;
+    final lowerUrl = url?.toLowerCase() ?? '';
+    if (lowerUrl.contains('.gif')) return true;
+    final lowerName = name?.toLowerCase() ?? '';
+    if (lowerName.endsWith('.gif')) return true;
+    return false;
+  }
+
   bool get isImage {
     const exts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'};
     if (kind?.toUpperCase() == 'IMAGE') return true;

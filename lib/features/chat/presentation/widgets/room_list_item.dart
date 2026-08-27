@@ -40,20 +40,25 @@ class RoomListItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final room = ref.watch(currentRoomProvider(id));
+    // 只订阅本房间的展示相关字段，避免其它房间收到新消息（drift 重新发整份
+    // 会话列表）时所有行都 rebuild。`_RoomView` 实现值相等，字段未变时不触发。
+    final view = ref.watch(currentRoomProvider(id).select(_roomViewSelector));
 
     // 如果房间数据不存在，直接渲染占位结构
-    if (room == null) return const SizedBox.shrink();
+    if (view == null) return const SizedBox.shrink();
+    final room = view.room;
 
     final activeId = ref.watch(activeRoomIdProvider);
     final isSelected = activeId == room.roomId;
     final isSingle = room.roomType == 0;
     final isOfficial = room.isOfficial;
 
-    // 监听联系人状态，用于显示备注名
-    final contactMap = ref.watch(contactListServiceProvider).value;
-    final peerContact = (isSingle && room.peerId != null && contactMap != null)
-        ? contactMap[room.peerId]
+    // 监听联系人状态，用于显示备注名；仅订阅本房间对端，
+    // 其它联系人上线/改名不再触发本行 rebuild。
+    final peerContact = (isSingle && room.peerId != null)
+        ? ref.watch(
+            contactListServiceProvider.select((a) => a.value?[room.peerId]),
+          )
         : null;
 
     // 计算展示的名字：备注名 > 联系人昵称 > 房间名
@@ -424,3 +429,61 @@ class RoomListItem extends ConsumerWidget {
     );
   }
 }
+
+/// 房间列表项订阅视图：按展示相关字段做值相等，防止无关字段变化触发整行 rebuild。
+///
+/// 聊天列表由 drift 流驱动（watchConversations）：任意一条新消息落库都会重发整份
+/// 会话列表。若直接 watch(currentRoomProvider)，所有行都会因列表对象变化而重建。
+/// 这里只对「本行真实渲染用到的字段」做 ==，字段未变的行跳过 rebuild。
+class _RoomView {
+  const _RoomView(this.room);
+
+  /// 底层房间对象（供 build 内其余逻辑直接读取）
+  final ChatRoomVO room;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _RoomView) return false;
+    final a = room;
+    final b = other.room;
+    return a.roomId == b.roomId &&
+        a.roomType == b.roomType &&
+        a.isOfficial == b.isOfficial &&
+        a.roomName == b.roomName &&
+        a.roomAvatar == b.roomAvatar &&
+        a.peerId == b.peerId &&
+        a.unreadCount == b.unreadCount &&
+        _sameMessage(a.lastMessage, b.lastMessage);
+  }
+
+  static bool _sameMessage(ChatMessage? x, ChatMessage? y) {
+    if (identical(x, y)) return true;
+    if (x == null || y == null) return false;
+    return x.messageId == y.messageId &&
+        x.content == y.content &&
+        x.timestamp == y.timestamp &&
+        x.messageType == y.messageType &&
+        x.deliveryStatus == y.deliveryStatus;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    room.roomId,
+    room.roomType,
+    room.isOfficial,
+    room.roomName,
+    room.roomAvatar,
+    room.peerId,
+    room.unreadCount,
+    room.lastMessage?.messageId,
+    room.lastMessage?.content,
+    room.lastMessage?.timestamp,
+    room.lastMessage?.messageType,
+    room.lastMessage?.deliveryStatus,
+  );
+}
+
+/// [currentRoomProvider] 的 select 回调：null 房间直接返回 null，避免因列表
+/// 对象变化（新增/删除会话）误判为空而闪占位。
+_RoomView? _roomViewSelector(ChatRoomVO? room) =>
+    room == null ? null : _RoomView(room);
