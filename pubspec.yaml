@@ -98,6 +98,11 @@ dependencies:
   web: ^1.0.0
   # 图片处理
   image: ^4.7.2
+  # V6 协议真源
+  protobuf: ^6.0.0
+  fixnum: ^1.1.1
+  anoxia_protocol:
+    path: ../AnoxiaProtocol/gen/dart
   # emoji 选择器
   emoji_picker_flutter: ^4.4.0
   # 本地通知
