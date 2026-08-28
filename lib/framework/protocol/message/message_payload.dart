@@ -82,6 +82,9 @@ class MessagePayload {
   /// 代码信息
   final CodePayload? code;
 
+  /// 服务端生成的系统消息信息
+  final SystemPayload? system;
+
   // ==================== 构造函数 ====================
 
   const MessagePayload({
@@ -103,6 +106,7 @@ class MessagePayload {
     this.location,
     this.card,
     this.code,
+    this.system,
   });
 
   // ==================== 辅助方法 ====================
@@ -156,6 +160,7 @@ class MessagePayload {
     LocationPayload? location,
     CardPayload? card,
     CodePayload? code,
+    SystemPayload? system,
   }) => MessagePayload(
     content: content ?? this.content,
     quillDelta: quillDelta ?? this.quillDelta,
@@ -175,6 +180,7 @@ class MessagePayload {
     location: location ?? this.location,
     card: card ?? this.card,
     code: code ?? this.code,
+    system: system ?? this.system,
   );
 
   // ==================== JSON 序列化 / 反序列化 ====================
@@ -280,7 +286,9 @@ class MessagePayload {
         audio: _readAttachment(
           audioPayload['audio'] ?? audioPayload,
         )?.copyWith(kind: 'AUDIO'),
-        waveform: _readString(audioPayload, ['waveform']),
+        waveform: _readString(audioPayload, ['waveform']).isNotEmpty
+            ? _readString(audioPayload, ['waveform'])
+            : _readString(json, ['waveform']),
       );
     }
 
@@ -356,21 +364,30 @@ class MessagePayload {
     final codeMap = _asMap(json['code']);
     if (codeMap != null) {
       final code = CodePayload.fromJson(codeMap);
+      final interaction = _asMap(codeMap['interaction']);
       return MessagePayload(
-        content: code.hasTitle ? code.title : code.displayLanguage,
+        content: _readString(json, ['content']).isNotEmpty
+            ? _readString(json, ['content'])
+            : code.hasTitle
+            ? code.title
+            : code.displayLanguage,
         code: code,
+        replyTo: _readReplyTo(interaction).isNotEmpty
+            ? _readReplyTo(interaction)
+            : _readString(json, ['replyTo', 'reply_to']),
+        mentions: _readMentions(interaction) ?? _readIntList(json['mentions']),
+        mentionAll:
+            _readMentionAll(interaction) ?? _readBool(json['mentionAll']),
       );
     }
 
-    final system = _asMap(json['system']);
-    if (system != null) {
+    final systemMap = _asMap(json['system']);
+    if (systemMap != null) {
+      final system = SystemPayload.fromJson(systemMap);
       return MessagePayload(
-        content: _readString(system, [
-          'text',
-          'eventCode',
-          'event_code',
-          'content',
-        ]),
+        content:
+            system.text ?? system.eventCode ?? _readString(json, ['content']),
+        system: system,
       );
     }
 
@@ -437,6 +454,7 @@ class MessagePayload {
     'location': location?.toJson(),
     'card': card?.toJson(),
     'code': code?.toJson(),
+    'system': system?.toJson(),
   };
 
   /// 根据消息类型生成服务端要求的嵌套 JSON 结构。
@@ -503,10 +521,13 @@ class MessagePayload {
         'card': (card ?? CardPayload(title: content ?? '[card]')).toJson(),
       },
       MessageType.codeSnippet => {
-        'code': (code ?? CodePayload(code: content ?? '')).toJson(),
+        'code': {
+          ...(code ?? CodePayload(code: content ?? '')).toJson(),
+          'interaction': ?interaction,
+        },
       },
       MessageType.system => {
-        'system': {'text': content, 'eventCode': content},
+        'system': (system ?? SystemPayload(text: content)).toJson(),
       },
     };
   }

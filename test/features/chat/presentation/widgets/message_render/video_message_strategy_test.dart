@@ -49,6 +49,6 @@ void main() {
     expect(find.text('video.mp4'), findsOneWidget);
     expect(find.byType(InkWell), findsWidgets);
     expect(find.byType(VideoFirstFrameView), findsNothing);
-    expect(find.byType(Hero), findsNothing);
+    expect(find.byType(Hero), findsOneWidget);
   });
 }

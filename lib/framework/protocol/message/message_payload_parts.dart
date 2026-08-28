@@ -271,6 +271,29 @@ class LocationPayload {
   }
 }
 
+/// 系统消息载荷（V5 协议）。
+///
+/// 系统事件码用于客户端本地化，文本用于未知事件兜底，properties 提供模板参数。
+class SystemPayload {
+  final String? eventCode;
+  final String? text;
+  final Map<String, String> properties;
+
+  const SystemPayload({this.eventCode, this.text, this.properties = const {}});
+
+  factory SystemPayload.fromJson(Map<String, dynamic> json) => SystemPayload(
+    eventCode: payloadReadStringNullable(json, ['eventCode', 'event_code']),
+    text: payloadReadStringNullable(json, ['text', 'content']),
+    properties: payloadReadStringMap(json['properties']),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'eventCode': eventCode,
+    'text': text,
+    'properties': properties,
+  };
+}
+
 // ==================== 共享解析工具（供 MessagePayload 复用） ====================
 
 /// 将任意值安全转为 `Map<String, dynamic>`。

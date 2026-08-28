@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/utils/video_metadata_util.dart';
+import 'package:anoxia/domain/models/upload_file_result.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -37,6 +38,9 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   /// 视频附件的真实元数据（时长/宽高），上传完成后异步提取。
   /// 发送视频消息时同步读取，避免服务端 VIDEO 守卫的 durationMs 占位。
   final Map<String, VideoMetadata> _videoMetadata = {};
+
+  /// 服务端返回的可信媒体元数据，以附件 ID 关联到发送链路。
+  final Map<String, UploadFileResult> _uploadResults = {};
 
   @override
   Map<String, UploadEntry> build() => {};
@@ -154,6 +158,11 @@ class ChatFileUploadController extends _$ChatFileUploadController {
                 state.containsKey(result.clientFileId))
               result.clientFileId: UploadEntry.success(result.url!),
         };
+        for (final result in results) {
+          if (result.isSuccess && result.url != null) {
+            _uploadResults[result.clientFileId] = result;
+          }
+        }
 
         // 上传成功的视频：异步提取真实时长/宽高，供发送时同步读取
         for (final a in pendingAttachments) {
@@ -231,6 +240,8 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     for (final id in removed) {
       ref.read(uploadRepositoryProvider).cancelUpload(id);
       _filesById.remove(id);
+      _videoMetadata.remove(id);
+      _uploadResults.remove(id);
     }
     state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));
   }
@@ -242,21 +253,34 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   };
 
   /// 消息发送后调用，清理状态
-  void clear() => state = {};
+  void clear() {
+    state = {};
+    _filesById.clear();
+    _videoMetadata.clear();
+    _uploadResults.clear();
+  }
 
   /// 获取附件对应的内存字节（Web 端本地预览用），无则返回 null
   Uint8List? bytesOf(String? id) => _filesById[id]?.bytes;
 
   /// 获取视频附件的真实元数据（发送时同步读取），无则返回 null
-  VideoMetadata? videoMetadataOf(String? id) => id == null ? null : _videoMetadata[id];
+  VideoMetadata? videoMetadataOf(String? id) =>
+      id == null ? null : _videoMetadata[id];
+
+  /// 获取服务端确认的上传结果及媒体元数据。
+  UploadFileResult? uploadResultOf(String? id) =>
+      id == null ? null : _uploadResults[id];
 
   /// 确保给定视频附件的元数据已提取完成（发送前置调用，可 await）
   Future<void> ensureVideoMetadata(List<Attachment> videos) async {
     for (final v in videos) {
       if (_videoMetadata.containsKey(v.id)) continue;
       final local = _filesById[v.id];
-      final uploadUrl = state[v.id]?.isSuccess == true ? state[v.id]!.serverUrl : v.url;
-      final isHttp = v.url != null &&
+      final uploadUrl = state[v.id]?.isSuccess == true
+          ? state[v.id]!.serverUrl
+          : v.url;
+      final isHttp =
+          v.url != null &&
           (v.url!.startsWith('http://') || v.url!.startsWith('https://'));
       // 优先用磁盘本地文件规避远程加载失败：本地 path（或非 http 的 url）
       // 仅当确实是本地文件时使用；服务器 URL 交给 remoteUrl。
@@ -275,8 +299,11 @@ class ChatFileUploadController extends _$ChatFileUploadController {
 
   Future<void> _extractVideoMetadata(Attachment a) async {
     final local = _filesById[a.id];
-    final uploadUrl = state[a.id]?.isSuccess == true ? state[a.id]!.serverUrl : a.url;
-    final isHttp = a.url != null &&
+    final uploadUrl = state[a.id]?.isSuccess == true
+        ? state[a.id]!.serverUrl
+        : a.url;
+    final isHttp =
+        a.url != null &&
         (a.url!.startsWith('http://') || a.url!.startsWith('https://'));
     final meta = await VideoMetadataUtil.extract(
       bytes: local?.bytes,
@@ -289,7 +316,19 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   }
 
   bool _isVideoExtension(String? ext, String fileName) {
-    const videoExts = {'mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', 'flv', '3gp', 'wmv', 'mpeg', 'mpg'};
+    const videoExts = {
+      'mp4',
+      'mov',
+      'avi',
+      'mkv',
+      'webm',
+      'm4v',
+      'flv',
+      '3gp',
+      'wmv',
+      'mpeg',
+      'mpg',
+    };
     final lowerExt = ext?.toLowerCase();
     if (lowerExt != null && videoExts.contains(lowerExt)) return true;
     final lowerName = fileName.toLowerCase();

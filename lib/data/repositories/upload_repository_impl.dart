@@ -77,6 +77,11 @@ class UploadRepositoryImpl implements UploadRepository {
             clientFileId: clientFileId,
             isSuccess: true,
             url: url,
+            coverUrl: data['coverUrl']?.toString(),
+            durationMs: _readInt(data['durationMs']),
+            width: _readInt(data['width']),
+            height: _readInt(data['height']),
+            bitrate: _readInt(data['bitrate']),
           );
         }
       }
@@ -105,4 +110,7 @@ class UploadRepositoryImpl implements UploadRepository {
   void cancelUpload(String clientFileId) {
     _activeCancels.remove(clientFileId)?.cancel('cancelled by user');
   }
+
+  static int? _readInt(dynamic value) =>
+      value == null ? null : int.tryParse(value.toString());
 }

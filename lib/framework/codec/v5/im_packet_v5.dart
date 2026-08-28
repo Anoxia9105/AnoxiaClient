@@ -109,7 +109,7 @@ class ImPacketV5 {
 
       // 绯荤粺娑堟伅锛氬皢 system payload 鐨?eventCode 娉ㄥ叆 properties['action']
       if (messageType == MessageType.system) {
-        final ec = payload?.content;
+        final ec = payload?.system?.eventCode;
         if (ec != null && ec.isNotEmpty) {
           properties.putIfAbsent('action', () => ec.toUpperCase());
         }
@@ -276,7 +276,13 @@ class ImPacketV5 {
         final tw = ProtoWriter()
           ..writeString(1, payload?.content)
           ..writeString(2, payload?.markdown);
-        _writeInteraction(tw, 3, payload?.replyTo, payload?.mentions);
+        _writeInteraction(
+          tw,
+          3,
+          payload?.replyTo,
+          payload?.mentions,
+          payload?.mentionAll,
+        );
         w.writeMessage(1, tw); // oneof text = 1
 
       case MessageType.richText:
@@ -284,7 +290,13 @@ class ImPacketV5 {
         final rw = ProtoWriter()
           ..writeString(1, payload?.quillDelta)
           ..writeString(2, payload?.content);
-        _writeInteraction(rw, 3, payload?.replyTo, payload?.mentions);
+        _writeInteraction(
+          rw,
+          3,
+          payload?.replyTo,
+          payload?.mentions,
+          payload?.mentionAll,
+        );
         w.writeMessage(2, rw); // oneof rich_text = 2
 
       case MessageType.image:
@@ -294,7 +306,13 @@ class ImPacketV5 {
           iw.writeMessage(1, _buildMediaAttachment(payload!.image!));
         }
         iw.writeString(2, payload?.content);
-        _writeInteraction(iw, 3, payload?.replyTo, payload?.mentions);
+        _writeInteraction(
+          iw,
+          3,
+          payload?.replyTo,
+          payload?.mentions,
+          payload?.mentionAll,
+        );
         w.writeMessage(3, iw); // oneof image = 3
 
       case MessageType.audio:
@@ -322,6 +340,13 @@ class ImPacketV5 {
           vw.writeInt32(3, payload!.audioDuration!);
         }
         vw.writeString(4, payload?.content);
+        _writeInteraction(
+          vw,
+          5,
+          payload?.replyTo,
+          payload?.mentions,
+          payload?.mentionAll,
+        );
         w.writeMessage(5, vw); // oneof video = 5
 
       case MessageType.file:
@@ -331,13 +356,20 @@ class ImPacketV5 {
           fw.writeMessage(1, _buildMediaAttachment(payload!.file!));
         }
         fw.writeString(2, payload?.content);
-        _writeInteraction(fw, 3, payload?.replyTo, payload?.mentions);
+        _writeInteraction(
+          fw,
+          3,
+          payload?.replyTo,
+          payload?.mentions,
+          payload?.mentionAll,
+        );
         w.writeMessage(6, fw); // oneof file = 6
 
       case MessageType.emoji:
         // EmojiPayloadProtoV5: emoji_code=1, asset=2
         final ew = ProtoWriter()
-          ..writeString(1, payload?.emojiCode ?? payload?.content);
+          ..writeString(1, payload?.emojiCode ?? payload?.content)
+          ..writeString(3, payload?.content);
         if (payload?.asset != null) {
           ew.writeMessage(2, _buildMediaAttachment(payload!.asset!));
         }
@@ -380,15 +412,24 @@ class ImPacketV5 {
           ..writeString(1, code?.code)
           ..writeString(2, code?.language)
           ..writeString(3, code?.title);
-        _writeInteraction(codeW, 4, payload?.replyTo, payload?.mentions);
+        _writeInteraction(
+          codeW,
+          4,
+          payload?.replyTo,
+          payload?.mentions,
+          payload?.mentionAll,
+        );
         w.writeMessage(11, codeW); // oneof code = 11
 
       case MessageType.system:
         // SystemPayloadProtoV5: event_code=1, text=2, properties=3
+        final system = payload?.system;
         final sw = ProtoWriter()
-          ..writeString(1, payload?.content ?? '')
-          ..writeString(2, payload?.content ?? '');
-        for (final entry in msg.properties.entries) {
+          ..writeString(1, system?.eventCode)
+          ..writeString(2, system?.text ?? payload?.content);
+        for (final entry
+            in system?.properties.entries ??
+                const <MapEntry<String, String>>[]) {
           final propWriter = ProtoWriter()
             ..writeString(1, entry.key)
             ..writeString(2, entry.value);
@@ -419,6 +460,7 @@ class ImPacketV5 {
             markdown: _emptyToNull(tf.getString(2)),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            mentionAll: inter?.mentionAll,
           );
         }
 
@@ -432,6 +474,7 @@ class ImPacketV5 {
             quillDelta: _emptyToNull(rf.getString(1)),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            mentionAll: inter?.mentionAll,
           );
         }
 
@@ -446,6 +489,7 @@ class ImPacketV5 {
             image: att?.copyWith(kind: 'IMAGE'),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            mentionAll: inter?.mentionAll,
           );
         }
 
@@ -473,6 +517,7 @@ class ImPacketV5 {
             content: _emptyToNull(video.getString(4)) ?? '[video]',
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            mentionAll: inter?.mentionAll,
             audioDuration: _zeroToNull(video.getInt32(3)),
             video: videoAtt?.copyWith(kind: 'VIDEO'),
             cover: coverAtt?.copyWith(kind: 'IMAGE'),
@@ -490,6 +535,7 @@ class ImPacketV5 {
             file: att?.copyWith(kind: 'FILE'),
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            mentionAll: inter?.mentionAll,
           );
         }
 
@@ -498,9 +544,10 @@ class ImPacketV5 {
         if (eb.isNotEmpty) {
           final emoji = ProtoReader(eb).readAll();
           final code = _emptyToNull(emoji.getString(1));
+          final fallback = _emptyToNull(emoji.getString(3));
           final asset = _decodeMediaAttachment(emoji.getBytes(2));
           payload = MessagePayload(
-            content: code ?? '',
+            content: fallback ?? code ?? '',
             emojiCode: code,
             asset: asset?.copyWith(kind: 'FILE'),
           );
@@ -559,6 +606,7 @@ class ImPacketV5 {
             code: code,
             replyTo: inter?.replyTo,
             mentions: inter?.mentions,
+            mentionAll: inter?.mentionAll,
           );
         }
 
@@ -566,9 +614,14 @@ class ImPacketV5 {
         final sb = f.getBytes(10);
         if (sb.isNotEmpty) {
           final sf = ProtoReader(sb).readAll();
+          final system = SystemPayload(
+            eventCode: _emptyToNull(sf.getString(1)),
+            text: _emptyToNull(sf.getString(2)),
+            properties: _decodeStringProperties(sf.getRepeatedBytes(3)),
+          );
           payload = MessagePayload(
-            content:
-                _emptyToNull(sf.getString(1)) ?? _emptyToNull(sf.getString(2)),
+            content: system.text ?? system.eventCode,
+            system: system,
           );
         }
     }
@@ -628,14 +681,17 @@ class ImPacketV5 {
     int fieldNum,
     String? replyTo,
     List<int>? mentions,
+    bool? mentionAll,
   ) {
     if ((replyTo == null || replyTo.isEmpty) &&
-        (mentions == null || mentions.isEmpty)) {
+        (mentions == null || mentions.isEmpty) &&
+        mentionAll != true) {
       return;
     }
     final iw = ProtoWriter()
       ..writeString(1, replyTo)
-      ..writeRepeatedInt64(2, mentions ?? const []);
+      ..writeRepeatedInt64(2, mentions ?? const [])
+      ..writeBool(3, mentionAll ?? false);
     w.writeMessage(fieldNum, iw);
   }
 
@@ -644,8 +700,13 @@ class ImPacketV5 {
     final f = ProtoReader(bytes).readAll();
     final replyTo = _emptyToNull(f.getString(1));
     final mentions = f.getRepeatedInt64(2);
-    if (replyTo == null && mentions.isEmpty) return null;
-    return _Interaction(replyTo, mentions.isEmpty ? null : mentions);
+    final mentionAll = f.getBool(3);
+    if (replyTo == null && mentions.isEmpty && !mentionAll) return null;
+    return _Interaction(
+      replyTo,
+      mentions.isEmpty ? null : mentions,
+      mentionAll,
+    );
   }
 
   // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
@@ -805,6 +866,7 @@ class AckMeta {
 class _Interaction {
   final String? replyTo;
   final List<int>? mentions;
+  final bool mentionAll;
 
-  const _Interaction(this.replyTo, this.mentions);
+  const _Interaction(this.replyTo, this.mentions, this.mentionAll);
 }

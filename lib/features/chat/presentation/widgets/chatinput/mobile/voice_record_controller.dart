@@ -15,11 +15,11 @@ class VoiceResult {
   /// 录制文件的本地路径
   final String filePath;
 
-  /// 录制时长（秒）
-  final int duration;
+  /// 录制时长（毫秒）
+  final int durationMs;
 
   /// 创建语音录制结果
-  const VoiceResult({required this.filePath, required this.duration});
+  const VoiceResult({required this.filePath, required this.durationMs});
 }
 
 /// 语音录制控制器
@@ -315,8 +315,8 @@ class VoiceRecordController extends ChangeNotifier {
     }
 
     // 检查录音时长
-    final duration = DateTime.now().difference(_startTime!).inSeconds;
-    if (duration < 1) {
+    final durationMs = DateTime.now().difference(_startTime!).inMilliseconds;
+    if (durationMs < 1000) {
       try {
         File(path).deleteSync();
       } catch (_) {}
@@ -324,7 +324,7 @@ class VoiceRecordController extends ChangeNotifier {
     }
 
     // 返回录制结果
-    return VoiceResult(filePath: path, duration: duration);
+    return VoiceResult(filePath: path, durationMs: durationMs);
   }
 
   /// 强制结束录音（用于超时自动发送）
@@ -356,8 +356,8 @@ class VoiceRecordController extends ChangeNotifier {
     if (path == null) return null;
 
     // 计算时长
-    final duration = DateTime.now().difference(_startTime!).inSeconds;
-    return VoiceResult(filePath: path, duration: duration);
+    final durationMs = DateTime.now().difference(_startTime!).inMilliseconds;
+    return VoiceResult(filePath: path, durationMs: durationMs);
   }
 
   /// 取消当前录音并清理临时文件（用于手势被系统打断或 onLongPressCancel）。

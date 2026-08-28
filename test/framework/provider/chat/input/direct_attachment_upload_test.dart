@@ -23,6 +23,11 @@ class _SuccessfulUploadRepository implements UploadRepository {
         clientFileId: clientFileIds[index],
         isSuccess: true,
         url: 'https://example.test/upload-$index',
+        coverUrl: 'https://example.test/cover-$index.jpg',
+        durationMs: 42000,
+        width: 1920,
+        height: 1080,
+        bitrate: 2000000,
       ),
   ];
 
@@ -95,4 +100,31 @@ void main() {
       });
     },
   );
+
+  test('video upload preserves server media metadata', () async {
+    final picked = PlatformFile(
+      name: 'clip.mp4',
+      size: 3,
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    const attachment = Attachment(
+      id: 'video-id',
+      kind: 'VIDEO',
+      name: 'clip.mp4',
+      type: 'video/mp4',
+    );
+
+    await container
+        .read(chatFileUploadControllerProvider.notifier)
+        .uploadFiles([attachment], pickedFiles: {'video-id': picked});
+
+    final result = container
+        .read(chatFileUploadControllerProvider.notifier)
+        .uploadResultOf('video-id');
+    expect(result?.coverUrl, 'https://example.test/cover-0.jpg');
+    expect(result?.durationMs, 42000);
+    expect(result?.width, 1920);
+    expect(result?.height, 1080);
+    expect(result?.bitrate, 2000000);
+  });
 }

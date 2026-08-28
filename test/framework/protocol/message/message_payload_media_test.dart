@@ -72,6 +72,7 @@ void main() {
       content: '[audio]',
       audio: audio,
       audioDuration: 42000,
+      waveform: 'AQIDBA==',
     );
 
     final decoded = MessagePayload.fromJson(payload.toJson());
@@ -79,6 +80,7 @@ void main() {
     expect(decoded.audio?.id, audio.id);
     expect(decoded.audio?.kind, 'AUDIO');
     expect(decoded.audioDuration, 42000);
+    expect(decoded.waveform, 'AQIDBA==');
     expect(decoded.mediaAttachments, hasLength(1));
   });
 

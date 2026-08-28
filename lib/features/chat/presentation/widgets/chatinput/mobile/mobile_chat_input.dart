@@ -99,7 +99,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
             .read(chatInputControllerProvider(widget.roomId).notifier)
             .sendVoiceMessage(
               filePath: result.filePath,
-              duration: result.duration,
+              durationMs: result.durationMs,
             );
       }
     });
@@ -575,7 +575,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                                   )
                                   .sendVoiceMessage(
                                     filePath: result.filePath,
-                                    duration: result.duration,
+                                    durationMs: result.durationMs,
                                   );
                             }
                           },
@@ -587,12 +587,15 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
               // AI 助手按钮：受服务端 noteEnabled 控制，关闭时隐藏
               Builder(
                 builder: (_) {
-                  final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ?? true;
+                  final noteEnabled =
+                      ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ??
+                      true;
                   if (!noteEnabled) return const SizedBox.shrink();
                   return _buildCompactButton(
                     tooltipMessage: 'chat_ai.assist_title'.tr(),
                     onTap: () => _toggleOtherPanel(MobileBottomPanelType.ai),
-                    icon: _currentPanelType == ChatBottomPanelType.other &&
+                    icon:
+                        _currentPanelType == ChatBottomPanelType.other &&
                             _currentOtherPanelType == MobileBottomPanelType.ai
                         ? HugeIcons.strokeRoundedCancel01
                         : HugeIcons.strokeRoundedSparkles,
@@ -626,9 +629,8 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                           children: [
                             _buildCompactButton(
                               tooltipMessage: 'toolbar_more'.tr(),
-                              onTap: () => _toggleOtherPanel(
-                                MobileBottomPanelType.more,
-                              ),
+                              onTap: () =>
+                                  _toggleOtherPanel(MobileBottomPanelType.more),
                               icon: HugeIcons.strokeRoundedAddSquare,
                             ),
                           ],

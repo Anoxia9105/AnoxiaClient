@@ -26,12 +26,12 @@ class AudioMessageStrategy extends MessageRenderStrategy {
     }
 
     final url = message.payload?.audio?.url ?? '';
-    final duration = message.payload?.audioDuration ?? 0;
+    final durationMs = message.payload?.audioDuration ?? 0;
 
     return _AudioBubble(
       messageId: message.messageId ?? '',
       url: url,
-      duration: duration,
+      durationMs: durationMs,
       textColor: textColor,
     );
   }
@@ -40,13 +40,13 @@ class AudioMessageStrategy extends MessageRenderStrategy {
 class _AudioBubble extends StatefulWidget {
   final String messageId;
   final String url;
-  final int duration;
+  final int durationMs;
   final Color textColor;
 
   const _AudioBubble({
     required this.messageId,
     required this.url,
-    required this.duration,
+    required this.durationMs,
     required this.textColor,
   });
 
@@ -111,10 +111,11 @@ class _AudioBubbleState extends State<_AudioBubble> {
     final isPlaying = isCurrent && manager.isPlaying;
 
     /// 当前显示秒数
-    final displaySeconds = isPlaying ? _currentSeconds : widget.duration;
+    final totalSeconds = (widget.durationMs / 1000).ceil();
+    final displaySeconds = isPlaying ? _currentSeconds : totalSeconds;
 
     /// 动态宽度
-    final bubbleWidth = (40.0 + widget.duration * 8.0).clamp(40.0, 200.0);
+    final bubbleWidth = (40.0 + totalSeconds * 8.0).clamp(40.0, 200.0);
 
     return GestureDetector(
       onTap: _togglePlay,

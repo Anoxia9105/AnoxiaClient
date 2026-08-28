@@ -4,11 +4,21 @@ class UploadFileResult {
     required this.clientFileId,
     required this.isSuccess,
     this.url,
+    this.coverUrl,
+    this.durationMs,
+    this.width,
+    this.height,
+    this.bitrate,
     this.errorCode,
   });
 
   final String clientFileId;
   final bool isSuccess;
   final String? url;
+  final String? coverUrl;
+  final int? durationMs;
+  final int? width;
+  final int? height;
+  final int? bitrate;
   final String? errorCode;
 }

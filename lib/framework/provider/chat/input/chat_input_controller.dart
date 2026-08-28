@@ -372,18 +372,25 @@ class ChatInputController extends _$ChatInputController {
       // 发送前置提取真实元数据（避免与上传完成提取的竞态导致回退占位时长）
       await fileUploader.ensureVideoMetadata(processor.videos);
       for (final video in processor.videos) {
+        final uploaded = fileUploader.uploadResultOf(video.id);
         final meta = fileUploader.videoMetadataOf(video.id);
-        final duration = meta?.durationMs ?? 1000;
-        final enhanced = meta == null
-            ? video
-            : video.copyWith(width: meta.width, height: meta.height);
+        final duration = uploaded?.durationMs ?? meta?.durationMs ?? 1000;
+        final enhanced = video.copyWith(
+          url: uploaded?.url,
+          width: uploaded?.width ?? meta?.width,
+          height: uploaded?.height ?? meta?.height,
+          bitrate: uploaded?.bitrate,
+          thumbnailUrl: uploaded?.coverUrl,
+        );
+        final coverUrl = uploaded?.coverUrl;
         _doSend(
           type: MessageType.video,
-          payload: MessagePayload(
-            content: '[video]',
-            audioDuration: duration,
-          ),
-          attachments: [enhanced],
+          payload: MessagePayload(content: '[video]', audioDuration: duration),
+          attachments: [
+            enhanced,
+            if (coverUrl != null && coverUrl.isNotEmpty)
+              Attachment(kind: 'IMAGE', url: coverUrl),
+          ],
           clearReplyAfterSend: false,
         );
       }
@@ -663,19 +670,26 @@ class ChatInputController extends _$ChatInputController {
 
     for (var i = 0; i < videoList.length; i++) {
       final isLastOverall = i == videoList.length - 1 && fileList.isEmpty;
+      final uploaded = uploader.uploadResultOf(videoList[i].id);
       final meta = uploader.videoMetadataOf(videoList[i].id);
-      final duration = meta?.durationMs ?? 1000;
-      final enhanced = meta == null
-          ? videoList[i]
-          : videoList[i].copyWith(width: meta.width, height: meta.height);
+      final duration = uploaded?.durationMs ?? meta?.durationMs ?? 1000;
+      final enhanced = videoList[i].copyWith(
+        url: uploaded?.url,
+        width: uploaded?.width ?? meta?.width,
+        height: uploaded?.height ?? meta?.height,
+        bitrate: uploaded?.bitrate,
+        thumbnailUrl: uploaded?.coverUrl,
+      );
+      final coverUrl = uploaded?.coverUrl;
       _doSend(
         type: MessageType.video,
         // 占位时长 1s 满足服务端 VIDEO 守卫 durationMs 必填，避免 CRITICAL
-        payload: MessagePayload(
-          content: '[video]',
-          audioDuration: duration,
-        ),
-        attachments: [enhanced],
+        payload: MessagePayload(content: '[video]', audioDuration: duration),
+        attachments: [
+          enhanced,
+          if (coverUrl != null && coverUrl.isNotEmpty)
+            Attachment(kind: 'IMAGE', url: coverUrl),
+        ],
         clearReplyAfterSend: isLastOverall,
       );
     }
@@ -690,7 +704,19 @@ class ChatInputController extends _$ChatInputController {
   }
 
   bool _isVideoExtension(String? ext, String fileName) {
-    const videoExts = {'mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', 'flv', '3gp', 'wmv', 'mpeg', 'mpg'};
+    const videoExts = {
+      'mp4',
+      'mov',
+      'avi',
+      'mkv',
+      'webm',
+      'm4v',
+      'flv',
+      '3gp',
+      'wmv',
+      'mpeg',
+      'mpg',
+    };
     final lowerExt = ext?.toLowerCase();
     if (lowerExt != null && videoExts.contains(lowerExt)) return true;
     final lowerName = fileName.toLowerCase();
@@ -758,7 +784,7 @@ class ChatInputController extends _$ChatInputController {
   /// 若上传失败则标记为 failed。
   Future<void> sendVoiceMessage({
     required String filePath,
-    required int duration,
+    required int durationMs,
   }) async {
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null) return;
@@ -777,7 +803,7 @@ class ChatInputController extends _$ChatInputController {
     ];
     final localPayload = MessagePayload(
       content: '[audio]',
-      audioDuration: duration,
+      audioDuration: durationMs,
     ).withMedia(MessageType.audio, localAudioAttachments);
 
     // 1. 先插入本地发送中的消息
@@ -821,7 +847,7 @@ class ChatInputController extends _$ChatInputController {
       _doSendVoice(
         clientMsgId: clientMsgId,
         url: url,
-        duration: duration,
+        durationMs: durationMs,
         fileSize: file.lengthSync(),
       );
 
@@ -845,7 +871,7 @@ class ChatInputController extends _$ChatInputController {
   void _doSendVoice({
     required String clientMsgId,
     required String url,
-    required int duration,
+    required int durationMs,
     required int fileSize,
   }) {
     final room = ref.read(currentRoomProvider(roomId));
@@ -864,7 +890,7 @@ class ChatInputController extends _$ChatInputController {
     ];
     final payload = MessagePayload(
       content: '[audio]',
-      audioDuration: duration,
+      audioDuration: durationMs,
     ).withMedia(MessageType.audio, attachments);
 
     // 更新本地消息，包含真实 url
