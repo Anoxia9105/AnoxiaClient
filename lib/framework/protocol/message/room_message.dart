@@ -3,11 +3,10 @@ import 'message_enum.dart';
 import 'message_payload.dart';
 import 'package:flutter/foundation.dart';
 
-/// 聊天室消息（V5 协议对齐）
+/// 聊天室消息（V6 协议）
 ///
-/// 该类表示一条完整的聊天室消息，与服务端 `RoomMessageProtoV5` 协议结构保持一致。
-/// V5 协议移除了 `senderName`、`senderAvatar`、`targetId`、`state`、`status` 等字段，
-/// 因为这些属于业务展示层数据，不在协议层传输，由上层自行管理。
+/// 该类表示一条完整的聊天室消息，与服务端 `RoomMessage` 协议结构保持一致。
+/// 协议层不传输业务展示层数据（如 senderName、senderAvatar），由上层自行管理。
 ///
 /// 所有字段均为不可变（immutable），保证线程安全和状态可预测性。
 @immutable

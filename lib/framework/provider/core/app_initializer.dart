@@ -2,9 +2,6 @@ import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
-import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
-import 'package:anoxia/framework/protocol/packet_type.dart';
-import 'package:anoxia/framework/protocol/packet_registry.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -24,7 +21,6 @@ part 'app_initializer.g.dart';
 @Riverpod(keepAlive: true)
 class AppInitializer extends _$AppInitializer {
   static bool _coreServicesInitialized = false;
-  static bool _packetParsersRegistered = false;
 
   @override
   Future<bool> build() async {
@@ -69,46 +65,7 @@ class AppInitializer extends _$AppInitializer {
       );
     }
 
-    _registerPacketParsersOnce();
-
     _coreServicesInitialized = true;
-  }
-
-  void _registerPacketParsersOnce() {
-    if (_packetParsersRegistered) {
-      return;
-    }
-
-    // V5 协议：二进制解析器（payload=Uint8List, codecId=int）
-    PacketRegistry.register(
-      PacketType.message,
-      (payload, codecId) => ImPacketV5.decodeRoomMessage(payload),
-    );
-    PacketRegistry.registerCodec(
-      ImPacketV5.codecRoomMessage,
-      PacketType.message,
-      (payload, codecId) => ImPacketV5.decodeRoomMessage(payload),
-    );
-    PacketRegistry.register(
-      PacketType.event,
-      (payload, codecId) => ImPacketV5.decodeEventMessage(payload),
-    );
-    PacketRegistry.registerCodec(
-      ImPacketV5.codecEventMessage,
-      PacketType.event,
-      (payload, codecId) => ImPacketV5.decodeEventMessage(payload),
-    );
-    PacketRegistry.register(
-      PacketType.highFrequency,
-      (payload, codecId) => ImPacketV5.decodeHighMessage(payload),
-    );
-    PacketRegistry.registerCodec(
-      ImPacketV5.codecHighMessage,
-      PacketType.highFrequency,
-      (payload, codecId) => ImPacketV5.decodeHighMessage(payload),
-    );
-
-    _packetParsersRegistered = true;
   }
 
   /// 预加载核心业务数据

@@ -6,8 +6,8 @@ import 'dart:convert';
 
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
-import 'package:anoxia/framework/protocol/message/high_message.dart';
+import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
+import 'package:anoxia_protocol/anoxia_protocol.dart' as v6;
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
@@ -36,9 +36,7 @@ class CallWindowController extends _$CallWindowController {
         if (roomId != null && roomId.isNotEmpty) {
           // 桌面端 CALL_END 统一在窗口关闭回调发出（挂断/X 关闭共用此路径），
           // _endedRooms 去重防止对端已结束/已拒绝时重复发送。
-          ref
-              .read(callInvitationControllerProvider.notifier)
-              .endRoom(roomId);
+          ref.read(callInvitationControllerProvider.notifier).endRoom(roomId);
         }
         state = null;
       } else if (call.method == 'invite_call_members') {
@@ -68,16 +66,16 @@ class CallWindowController extends _$CallWindowController {
       'callerAvatar': user?.avatar ?? '',
     });
     for (final userId in userIds) {
-      final message = HighMessage(
-        type: HighMessageType.CALL_INVITE,
-        roomId: roomId,
-        targetId: userId,
-        content: content,
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-      );
       ref
           .read(wsControllerProvider.notifier)
-          .sendMessage(ImPacketV5.encodeHighMessageFrame(message));
+          .sendMessage(
+            ImPacketV6.encodeCallSignalFrame(
+              roomId: roomId,
+              targetUserId: userId,
+              type: v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE.value,
+              content: content,
+            ),
+          );
     }
   }
 

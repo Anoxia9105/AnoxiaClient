@@ -14,7 +14,7 @@ class EmptyFavorites extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final mobile = DeviceUtil.isMobile(context);
     final iconContainerSize = mobile ? 72.0 : 96.0;
-    final iconSize = mobile ? 30.0 : 40.0;
+    final iconSize = mobile ? 20.0 : 28.0;
 
     return Center(
       child: Column(
@@ -35,10 +35,15 @@ class EmptyFavorites extends StatelessWidget {
               ),
               border: Border.all(color: cs.primary.withValues(alpha: .15)),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedBookmark03,
-              size: iconSize,
-              color: cs.primary,
+            child: Center(
+              child: SizedBox.square(
+                dimension: iconSize,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedBookmark03,
+                  size: iconSize,
+                  color: cs.primary,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),

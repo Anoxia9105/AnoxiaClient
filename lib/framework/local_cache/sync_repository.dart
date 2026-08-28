@@ -108,15 +108,13 @@ class SyncRepository implements ChatRepository {
   @override
   Future<void> syncMessages(String convId, {DateTime? since}) {
     // 同一会话已在同步中，直接复用，避免并发重复请求
-    return _syncMessagesInflight[convId] ??= _doSyncMessages(
-      convId,
-      since: since,
-    ).whenComplete(() {
-      // 注意：不能写成 `return _syncMessagesInflight.remove(convId)`。
-      // remove 返回被移除的 future 自身，而 whenComplete 会等待回调返回的
-      // Future 完成，等于「未来等待自己」，导致该 future 永不完成。
-      _syncMessagesInflight.remove(convId);
-    });
+    return _syncMessagesInflight[convId] ??=
+        _doSyncMessages(convId, since: since).whenComplete(() {
+          // 注意：不能写成 `return _syncMessagesInflight.remove(convId)`。
+          // remove 返回被移除的 future 自身，而 whenComplete 会等待回调返回的
+          // Future 完成，等于「未来等待自己」，导致该 future 永不完成。
+          _syncMessagesInflight.remove(convId);
+        });
   }
 
   Future<void> _doSyncMessages(String convId, {DateTime? since}) async {
@@ -137,11 +135,12 @@ class SyncRepository implements ChatRepository {
         );
         if (remoteMessages.isEmpty) break;
         await _local.upsertMessages(remoteMessages);
-        final orderedSeqs = remoteMessages
-            .map((message) => message.seq ?? 0)
-            .where((seq) => seq > lastSeq)
-            .toList()
-          ..sort();
+        final orderedSeqs =
+            remoteMessages
+                .map((message) => message.seq ?? 0)
+                .where((seq) => seq > lastSeq)
+                .toList()
+              ..sort();
         if (orderedSeqs.isEmpty) break;
         // 响应是服务端单条 SQL 的连续区间，区间内所有 seq 均已落库；
         // 即便窗口内存在空洞（被撤回/硬删除的消息行，服务端永久缺失），
@@ -263,7 +262,8 @@ class SyncRepository implements ChatRepository {
   @override
   Future<void> onNetworkRecovered() async {
     await syncConversations();
-    await retryPendingOutgoing();
+    // 待发送消息由 WebSocket 建连成功后统一重编码为 V6 ClientFrame 并重放。
+    // 这里不能再通过 REST 发送，否则会绕过 V6 request_id/ACK 幂等链路。
   }
 
   Future<void> _mergeConversations(List<ChatRoomVO> remoteRooms) async {

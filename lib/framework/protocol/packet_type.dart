@@ -1,10 +1,10 @@
-/// WebSocket 消息主题枚举（V5 协议对齐）
+/// WebSocket 消息主题枚举（V6 协议）
 ///
-/// 数字码与服务端 CodecConstants.TOPIC_* 保持一致：
-/// - [message]：普通聊天消息（TOPIC_MESSAGE = 1）
-/// - [highFrequency]：高频信令（TOPIC_HIGH_FREQUENCY = 2）
-/// - [event]：系统事件（TOPIC_EVENT = 3）
-/// - [ack]：发送结果 ACK（TOPIC_ACK = 4）
+/// 数字码与 V6 内部 PacketFrame 主题保持一致：
+/// - [message]：普通聊天消息（1）
+/// - [highFrequency]：高频信令（2）
+/// - [event]：系统事件（3）
+/// - [ack]：发送结果 ACK（4）
 /// - [unknown]：未知类型
 enum PacketType {
   unknown(0),
@@ -16,7 +16,7 @@ enum PacketType {
   final int code;
   const PacketType(this.code);
 
-  /// 从 V5 topic 数字码解析枚举
+  /// 从主题数字码解析枚举
   static PacketType fromCode(int code) {
     return PacketType.values.firstWhere(
       (e) => e.code == code,

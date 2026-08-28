@@ -1,17 +1,16 @@
 import 'dart:convert';
 
-/// 协议层媒体附件模型（V6 MediaAttachment 对齐，兼容 V5 读取）
-/// V6 字段：attachment_id, kind(enum), url, original_name, mime_type, size_bytes, sha256?, width?, height?, bitrate?
-/// V5 兼容：name/fileName, thumbnailUrl, properties 仍可读但不再写入
+/// 协议层媒体附件模型（V6 MediaAttachment 对齐）
+/// V6 字段：attachment_id, kind(enum), url, original_name, mime_type, size_bytes, sha256?, width?, height?, bitrate?, thumbnail_url?
 class Attachment {
   final String? id; // attachment_id
   final String? kind;
   final String? url;
-  final String? name; // V6 original_name，兼容 V5 name
+  final String? name; // V6 original_name
   final String? type; // mime_type
   final int? size; // size_bytes
   final String? sha256;
-  final String? thumbnailUrl; // V5 only, V6 使用 VideoPayload.cover
+  final String? thumbnailUrl; // V6 MediaAttachment.thumbnail_url
   final int? width;
   final int? height;
   final int? bitrate;
@@ -37,11 +36,11 @@ class Attachment {
         ?.toString(),
     kind: (json['kind'] ?? json['mediaKind'] ?? json['media_kind'])?.toString(),
     url: json['url']?.toString(),
-    name: (json['name'] ?? json['originalName'] ?? json['original_name'] ?? json['fileName'] ?? json['file_name'])?.toString(),
+    name: (json['name'] ?? json['originalName'] ?? json['original_name'])?.toString(),
     type: (json['type'] ?? json['mimeType'] ?? json['mime_type'])?.toString(),
     size: _readInt(json['size'] ?? json['sizeBytes'] ?? json['size_bytes']),
     sha256: json['sha256']?.toString(),
-    thumbnailUrl: (json['thumbnailUrl'] ?? json['thumbnail_url'])?.toString(),
+    thumbnailUrl: json['thumbnailUrl']?.toString(),
     width: _readInt(json['width']),
     height: _readInt(json['height']),
     bitrate: _readInt(json['bitrate']),
@@ -60,7 +59,6 @@ class Attachment {
     'size': size,
     'size_bytes': size,
     'sha256': sha256,
-    // V6 不再写入 thumbnailUrl/properties，保留仅为 V5 兼容读取；新消息封面走 VideoPayload.cover
     'width': width,
     'height': height,
     'bitrate': bitrate,

@@ -1,11 +1,10 @@
 // ignore_for_file: constant_identifier_names
-// 旧协议常量名（TYPING_STATUS/CALL_* 等）保留为兼容别名，见下方「旧名称别名」块。
 
 import '../i_packet.dart';
 
-/// 高优先级消息类型枚举（V5 协议对齐）
+/// 高优先级消息类型枚举（V6 协议）
 ///
-/// 数字码与服务端 HighMessageType.getCode() 保持一致。
+/// 数字码与 V6 CallSignalType 保持一致。
 enum HighMessageType {
   typingStatus(1),
   callInvite(7),
@@ -31,6 +30,7 @@ enum HighMessageType {
 
   // ─── 旧名称别名（保持 high_message_service.dart switch 语句编译通过）───
   static const HighMessageType TYPING_STATUS = typingStatus;
+  // 注：以上别名仅用于兼容 high_message_service.dart 的既有 switch 写法。
   static const HighMessageType CALL_INVITE = callInvite;
   static const HighMessageType CALL_CANCEL = callCancel;
   static const HighMessageType CALL_ACCEPT = callAccept;
@@ -43,7 +43,7 @@ enum HighMessageType {
   static const HighMessageType MSG_REVOKE = msgRevoke;
 }
 
-/// 高优先级消息（V5）
+/// 高优先级消息（V6）
 class HighMessage implements IPacket {
   final String? messageId;
   final String? roomId;

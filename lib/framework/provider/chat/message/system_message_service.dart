@@ -143,7 +143,7 @@ class SystemMessageService extends _$SystemMessageService {
       title: roomName,
       body: body,
       payload: roomId,
-      avatarUrl: null, // V5 协议不在消息体中携带 senderAvatar
+      avatarUrl: null, // V6 协议不在消息体中携带 senderAvatar
       force: true,
     );
   }

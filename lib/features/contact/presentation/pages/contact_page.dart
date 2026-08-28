@@ -8,7 +8,6 @@ import 'package:anoxia/features/contact/presentation/widgets/contact_list.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 联系人页面
 ///
@@ -28,10 +27,13 @@ class ContactPage extends ConsumerWidget {
     final selection = ref.watch(
       contactSelectionProvider.select((select) => select.viewType),
     );
+    // 与聊天页面左侧宽度保持一致：窄屏 240，宽屏 320
+    final isCompactWidth = MediaQuery.of(context).size.width < 1000;
+    final leftWidth = isCompactWidth ? 240.0 : 320.0;
     return Row(
       children: [
         SizedBox(
-          width: 100.w,
+          width: leftWidth,
           // 水平内边距由 ContactList 内部统一提供（12px），
           // 保证列表项与聊天列表的左右节奏一致（未读徽标距右缘 28px）
           child: const Padding(

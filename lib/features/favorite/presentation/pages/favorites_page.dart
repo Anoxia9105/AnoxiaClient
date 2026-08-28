@@ -36,6 +36,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   /// 类型筛选（null 表示全部）
   MessageType? _typeFilter;
 
+  /// 手动刷新时强制显示骨架屏
+  bool _isManualRefreshing = false;
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -44,19 +47,34 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     super.dispose();
   }
 
+  Future<void> _handleRefresh() async {
+    if (_isManualRefreshing) return;
+    setState(() => _isManualRefreshing = true);
+    try {
+      ref.invalidate(chatFavoriteListProvider);
+      await ref.read(chatFavoriteListProvider.future);
+    } catch (_) {
+      // 错误由 provider 的 error 状态展示
+    } finally {
+      if (mounted) setState(() => _isManualRefreshing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final favoritesAsync = ref.watch(chatFavoriteListProvider);
 
-    final body = favoritesAsync.when(
-      loading: () => _buildLoading(context),
-      error: (e, _) => _buildError(context, e.toString()),
-      data: (items) {
-        final filtered = _applyFilters(items);
-        _syncSelection(filtered);
-        return _buildLoaded(context, items, filtered);
-      },
-    );
+    final body = _isManualRefreshing
+        ? _buildLoading(context)
+        : favoritesAsync.when(
+            loading: () => _buildLoading(context),
+            error: (e, _) => _buildError(context, e.toString()),
+            data: (items) {
+              final filtered = _applyFilters(items);
+              _syncSelection(filtered);
+              return _buildLoaded(context, items, filtered);
+            },
+          );
     // 标题由左栏列表面板的 AppBar 提供（与聊天/人员页一致）：
     // 桌面端靠左显示在面板栏内，移动端整页居中显示。
     return Scaffold(
@@ -212,7 +230,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             ),
             const SizedBox(height: 10),
             FilledButton.tonal(
-              onPressed: () => ref.invalidate(chatFavoriteListProvider),
+              onPressed: _handleRefresh,
               child: Text('call_window_retry'.tr()),
             ),
           ],
@@ -235,7 +253,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             ? favoritesTitleScaffold(
                 context,
                 child: EmptyFavorites(
-                  onRefresh: () => ref.invalidate(chatFavoriteListProvider),
+                  onRefresh: _handleRefresh,
                 ),
               )
             : favoritesTitleScaffold(
@@ -262,7 +280,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             ),
           );
         },
-        onRefresh: () => ref.invalidate(chatFavoriteListProvider),
+        onRefresh: _handleRefresh,
+      );
+    }
+
+    // PC：没有任何收藏时不显示左侧列表，居中展示空态
+    if (items.isEmpty) {
+      return Center(
+        child: EmptyFavorites(
+          onRefresh: _handleRefresh,
+        ),
       );
     }
 
@@ -283,7 +310,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             onQueryChanged: (value) => setState(() => _query = value),
             onTypeChanged: (type) => setState(() => _typeFilter = type),
             onSelect: (id) => setState(() => _selectedId = id),
-            onRefresh: () => ref.invalidate(chatFavoriteListProvider),
+            onRefresh: _handleRefresh,
           ),
         ),
         const SizedBox(width: 12),
@@ -302,7 +329,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     if (selected == null) {
       if (allItems.isEmpty) {
         return EmptyFavorites(
-          onRefresh: () => ref.invalidate(chatFavoriteListProvider),
+          onRefresh: _handleRefresh,
         );
       }
       if (filtered.isEmpty) {

@@ -5,6 +5,7 @@ import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/provider/core/network_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -13,13 +14,16 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../../common/constants/api.dart';
-import '../../codec/frame_codec.dart';
-import '../../codec/v5/im_packet_v5.dart';
+import '../../codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
+import '../../protocol/message/event_message.dart';
+import '../../protocol/message/high_message.dart';
+import '../../protocol/message/room_message.dart';
+import '../../protocol/message/message_enum.dart';
+import '../../protocol/packet_type.dart';
 import '../../network/token_manager.dart';
 import '../../protocol/i_packet.dart';
 import '../../protocol/packet_frame.dart';
-import '../../protocol/packet_registry.dart';
 import 'ws_state.dart';
 
 part 'ws_controller.g.dart';
@@ -49,7 +53,6 @@ class WsController extends _$WsController {
   /// 用于丢弃过期的连接尝试（如连续切换账号时，旧 token 的握手
   /// 在新连接建立后才完成，不允许其覆盖当前连接或污染状态）。
   int _connectGeneration = 0;
-  Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   bool _reconnectEnabled = true;
@@ -59,6 +62,7 @@ class WsController extends _$WsController {
   bool _lastNetworkAvailable = true;
 
   final Map<String, _PendingOutbound> _pendingOutbounds = {};
+  final Map<String, _PendingCommand> _pendingCommands = {};
 
   late final StreamController<PacketFrame<IPacket>> _messageController;
 
@@ -202,8 +206,7 @@ class WsController extends _$WsController {
 
       _reconnectAttempts = 0;
       state = WsState(status: WsStatus.connected);
-
-      _startHeartbeat();
+      unawaited(_resendCachedOutbounds());
     } catch (e, st) {
       debugLog('❌ WebSocket 连接失败', e, st);
       // 过期尝试的失败不影响更新的连接状态（如连续切账号时旧
@@ -214,7 +217,7 @@ class WsController extends _$WsController {
     }
   }
 
-  /// 发送二进制消息（V5 协议帧）
+  /// 发送 V6 ClientFrame 原始二进制负载。
   void sendMessage(
     dynamic msg, {
     String? clientMsgId,
@@ -230,11 +233,13 @@ class WsController extends _$WsController {
     }
 
     try {
-      _cachePendingOutbound(
-        bytes,
-        clientMsgId: clientMsgId,
-        ackTimeout: ackTimeout,
-      );
+      if (clientMsgId != null && clientMsgId.isNotEmpty) {
+        _cachePendingOutbound(
+          bytes,
+          clientMsgId: clientMsgId,
+          ackTimeout: ackTimeout,
+        );
+      }
       _channel?.sink.add(bytes);
     } catch (e) {
       if (clientMsgId != null) {
@@ -249,20 +254,47 @@ class WsController extends _$WsController {
     }
   }
 
+  /// 发送需要业务 ACK 的 V6 命令（例如撤回）。
+  Future<AckV6> sendCommand(
+    Uint8List bytes, {
+    required String requestId,
+    Duration timeout = _defaultAckTimeout,
+  }) {
+    if (state.status != WsStatus.connected) {
+      return Future.error(StateError('WebSocket is not connected'));
+    }
+    final existing = _pendingCommands.remove(requestId);
+    existing?.timeoutTimer.cancel();
+    existing?.completer.completeError(StateError('Command replaced'));
+
+    final completer = Completer<AckV6>();
+    final timer = Timer(timeout, () {
+      final pending = _pendingCommands.remove(requestId);
+      pending?.completer.completeError(TimeoutException('V6 command ACK timeout'));
+    });
+    _pendingCommands[requestId] = _PendingCommand(completer, timer);
+    try {
+      _channel!.sink.add(bytes);
+    } catch (error, stackTrace) {
+      _pendingCommands.remove(requestId);
+      timer.cancel();
+      completer.completeError(error, stackTrace);
+    }
+    return completer.future;
+  }
+
   static Uint8List? _toBytes(dynamic msg) {
     if (msg is Uint8List) return msg;
     if (msg is List<int>) return Uint8List.fromList(msg);
-    // 旧调用兼容（'ping' 等文本）——忽略，心跳已改为二进制帧
     return null;
   }
 
   void _cachePendingOutbound(
     Uint8List bytes, {
-    String? clientMsgId,
+    required String clientMsgId,
     required Duration ackTimeout,
   }) {
-    final seq = clientMsgId ?? _extractSeqFromBytes(bytes);
-    if (seq == null || seq.isEmpty) return;
+    final seq = clientMsgId;
     if (_pendingOutbounds.length >= _maxPendingOutbounds) {
       final oldestKey = _pendingOutbounds.keys.first;
       _removePendingOutbound(oldestKey);
@@ -289,90 +321,101 @@ class WsController extends _$WsController {
     _pendingOutbounds.remove(clientMsgId)?.timeoutTimer?.cancel();
   }
 
-  /// 从二进制帧中提取 clientMsgId（用作 ACK 等待队列 key）
-  String? _extractSeqFromBytes(Uint8List bytes) {
-    try {
-      final frame = FrameCodec.parse(bytes);
-      if (!frame.isProtobuf) return null;
-      final decoded = ImPacketV5.decodeEnvelope(frame.body);
-      if (decoded == null || !decoded.isData) return null;
-      final payload = decoded.payload!;
-      // 只有 RoomMessage 类型才有 clientMsgId
-      if (decoded.codecId == ImPacketV5.codecRoomMessage) {
-        final msg = ImPacketV5.decodeRoomMessage(payload);
-        return msg?.clientMsgId ?? msg?.messageId;
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// 处理接收到的消息（V5 二进制帧）
+  /// 处理 V6 ServerFrame 原始二进制负载。
   void _handleIncomingMessage(dynamic message) {
-    // 只处理二进制帧
     if (message is! List<int>) {
       debugLog('[WsController] 收到非二进制消息，忽略');
       return;
     }
     final bytes = message is Uint8List ? message : Uint8List.fromList(message);
 
+    final v6Decoded = ImPacketV6.decodeServerFrame(bytes);
+    if (v6Decoded != null) {
+      _dispatchV6(v6Decoded);
+      return;
+    }
+    debugLog('[WsController] 无法解析 V6 ServerFrame，忽略');
+  }
+
+  void _dispatchV6(DecodedV6 decoded) {
     try {
-      final decoded = ImPacketV5.decodeFrame(bytes);
-      if (decoded == null) return;
-
-      if (decoded.isPing) {
-        // 服务端 Ping → 回 Pong
-        _channel?.sink.add(FrameCodec.buildPong());
-        return;
-      }
-      if (decoded.isPong) return; // 忽略 Pong
-
-      if (!decoded.isData) return;
-      final payload = decoded.payload!;
-      final topic = decoded.topic!;
-      final effectiveTopic = PacketRegistry.topicForCodecId(
-        decoded.codecId,
-        topic,
-      );
-
-      // ACK 帧：特殊处理
-      if (decoded.isAck) {
-        final ack = ImPacketV5.decodeAck(payload);
-        if (ack != null) {
-          try {
-            _handleAckV5(ack);
-          } catch (ackError, ackStack) {
-            // ACK 处理是业务副作用（刷新 Riverpod 状态等），失败不应中断后续帧的解析。
-            // 例如 Web 热重载后 ref 可能持有旧模块对象，触发 NoSuchMethodError。
-            debugLog('WS ACK 处理异常', ackError, ackStack);
+      switch (decoded.type) {
+        case 'message':
+          final rm = decoded.data as RoomMessage;
+          final frame = PacketFrame(topic: PacketType.message, data: rm);
+          if (!_messageController.isClosed) _messageController.add(frame);
+          break;
+        case 'ack':
+          final ack = decoded.data as AckV6;
+          _handleAckV6(ack, decoded.requestId);
+          break;
+        case 'error':
+          final msg = decoded.errorMessage ?? 'unknown error';
+          debugLog(
+            '[WsController] V6 ProtocolError: code=${decoded.errorCode} msg=$msg',
+          );
+          ref
+              .read(toastServiceProvider)
+              .showToast(
+                msg.isNotEmpty ? msg : 'chat_send_failed_generic'.tr(),
+                type: ToastType.error,
+              );
+          // 若关联 pending，则标记失败
+          final rid = decoded.requestId;
+          if (rid != null && rid.isNotEmpty) {
+            _removePendingOutbound(rid);
+            ref
+                .read(chatMessagesProvider.notifier)
+                .markFailedByClientMsgId(rid);
           }
-        }
-        return;
-      }
-
-      final packetData = PacketRegistry.parse(topic, payload, decoded.codecId);
-      if (packetData != null) {
-        final frame = PacketFrame(topic: effectiveTopic, data: packetData);
-        try {
-          if (!_messageController.isClosed) {
-            _messageController.add(frame);
+          break;
+        case 'callSignal':
+        case 'typing':
+        case 'systemKick':
+          final hm = decoded.data as HighMessage;
+          final callFrame = PacketFrame(
+            topic: PacketType.highFrequency,
+            data: hm,
+          );
+          if (!_messageController.isClosed) _messageController.add(callFrame);
+          break;
+        case 'event':
+          final eventMsg = decoded.data as EventMessage;
+          final evFrame = PacketFrame(topic: PacketType.event, data: eventMsg);
+          if (!_messageController.isClosed) _messageController.add(evFrame);
+          break;
+        case 'operation':
+          final op = decoded.data as Map<String, dynamic>;
+          final opType = op['type'] as int? ?? 0;
+          final roomId = op['roomId'] as String? ?? '';
+          final messageId = op['messageId'] as String? ?? '';
+          // 1=RECALLED, 2=EDITED, 3=DELETED_FOR_ALL, 4=DELETED_FOR_SELF
+          if (opType == 1 || opType == 3) {
+            // 消息撤回/删除，本地删除
+            if (messageId.isNotEmpty && roomId.isNotEmpty) {
+              ref
+                  .read(chatMessagesProvider.notifier)
+                  .removeMessage(messageId, roomId);
+            }
           }
-        } catch (dispatchError, dispatchStack) {
-          // 派发到业务订阅者时失败（如监听者持有热重载前的旧类型）不应中断消息解析。
-          debugLog('WS 消息派发异常', dispatchError, dispatchStack);
-        }
-      } else {
-        debugLog('[SERVER DATA] 解析失败（未知的 Topic 或解析器缺失）-> Topic: $topic');
+          debugLog('[WsController] V6 operation: $op');
+          break;
       }
     } catch (e, st) {
-      debugLog('WS 消息解析异常', e, st);
+      debugLog('WS V6 分发异常', e, st);
     }
   }
 
-  /// 处理 V5 ACK
-  void _handleAckV5(AckV5 ack) {
-    final seq = ack.clientMessageId;
+  void _handleAckV6(AckV6 ack, String? requestId) {
+    if (requestId != null) {
+      final command = _pendingCommands.remove(requestId);
+      if (command != null) {
+        command.timeoutTimer.cancel();
+        command.completer.complete(ack);
+        return;
+      }
+    }
+    final seq = requestId ?? ack.clientMessageId;
     if (ack.isSuccess) {
       if (seq != null && seq.isNotEmpty) {
         _removePendingOutbound(seq);
@@ -388,8 +431,6 @@ class WsController extends _$WsController {
       }
       return;
     }
-
-    // 业务错误
     if (seq != null && seq.isNotEmpty) {
       if (ack.retryable) {
         _retryPendingOutbound(seq);
@@ -398,26 +439,28 @@ class WsController extends _$WsController {
         ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq);
       }
     }
-
     final code = ack.code;
     final rawMessage = ack.message ?? '';
     final now = DateTime.now();
-    final bool duplicated =
+    final duplicated =
         _lastAckErrorCode == code &&
         _lastAckErrorMessage == rawMessage &&
         _lastAckErrorAt != null &&
         now.difference(_lastAckErrorAt!) < const Duration(seconds: 2);
-
     if (!duplicated) {
       _lastAckErrorCode = code;
       _lastAckErrorMessage = rawMessage;
       _lastAckErrorAt = now;
-      ref.read(toastServiceProvider).showToast(
-        _resolveAckErrorMessage(code, rawMessage),
-        type: ToastType.error,
-      );
+      ref
+          .read(toastServiceProvider)
+          .showToast(
+            rawMessage.isNotEmpty
+                ? rawMessage
+                : 'chat_send_failed_generic'.tr(),
+            type: ToastType.error,
+          );
     }
-    debugLog('[WsController] ACK业务失败: code=$code, message=$rawMessage');
+    debugLog('[WsController] V6 ACK业务失败: code=$code, message=$rawMessage');
   }
 
   void _retryPendingOutbound(String seq) {
@@ -456,35 +499,49 @@ class WsController extends _$WsController {
     });
   }
 
-  /// 解析错误码对应的用户提示
-  String _resolveAckErrorMessage(int code, String serverMessage) {
-    switch (code) {
-      case 2001:
-        return 'chat_send_failed_not_friend'.tr();
-      case 2002:
-        return 'chat_send_failed_blocked'.tr();
-      case 2003:
-        return 'chat_send_failed_deleted'.tr();
-      default:
-        if (serverMessage.isNotEmpty) {
-          return 'chat_send_failed_with_reason'.tr(args: [serverMessage]);
-        }
-        return 'chat_send_failed_generic'.tr();
-    }
-  }
-
-  /// 启动心跳定时器
+  /// 连接恢复后把 Drift 中的待发送消息重新编码为当前 V6 ClientFrame。
   ///
-  /// 每 30 秒发送一次 ping，保持连接活跃
-  void _startHeartbeat() {
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (state.status == WsStatus.connected) {
-        _channel?.sink.add(FrameCodec.buildPing());
-      } else {
-        timer.cancel();
+  /// 缓存只保存协议无关的领域消息，不保存旧 wire bytes，因此重连后不会
+  /// 重放过期协议帧；同一个 clientMsgId 继续承担 V6 幂等与 ACK 关联键。
+  Future<void> _resendCachedOutbounds() async {
+    try {
+      final pending = await ref
+          .read(localDataSourceProvider)
+          .pendingOutgoingMessages();
+      for (final message in pending) {
+        if (state.status != WsStatus.connected) return;
+        final roomId = message.roomId;
+        final clientMsgId = message.clientMsgId ?? message.messageId;
+        if (roomId == null ||
+            roomId.isEmpty ||
+            clientMsgId == null ||
+            clientMsgId.isEmpty) {
+          continue;
+        }
+
+        final sending = message.copyWith(
+          clientMsgId: clientMsgId,
+          deliveryStatus: DeliveryStatus.sending,
+        );
+        ref.read(chatMessagesProvider.notifier).upsertMessage(sending);
+        final packet = RoomMessage(
+          messageId: '',
+          clientMsgId: clientMsgId,
+          roomId: roomId,
+          senderId: message.senderId ?? 0,
+          messageType: message.messageType ?? MessageType.text,
+          payload: message.payload,
+          clientTimestamp:
+              message.timestamp ?? DateTime.now().millisecondsSinceEpoch,
+        );
+        sendMessage(
+          ImPacketV6.encodeRoomMessageFrame(packet),
+          clientMsgId: clientMsgId,
+        );
       }
-    });
+    } catch (error, stackTrace) {
+      debugLog('[WsController] V6 本地待发送队列恢复失败', error, stackTrace);
+    }
   }
 
   /// 处理连接错误
@@ -506,7 +563,6 @@ class WsController extends _$WsController {
   ///
   /// 重连间隔：2s, 4s, 8s... 最大 30s
   void _retryConnection() {
-    _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
 
     if (!_reconnectEnabled) return;
@@ -542,7 +598,6 @@ class WsController extends _$WsController {
     bool closeStream = false,
     bool manual = false,
   }) async {
-    _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
     // 代际自增：使仍在握手的连接尝试失效，防止其登记为当前连接
     _connectGeneration++;
@@ -553,6 +608,13 @@ class WsController extends _$WsController {
       pending.timeoutTimer?.cancel();
     }
     _pendingOutbounds.clear();
+    for (final pending in _pendingCommands.values) {
+      pending.timeoutTimer.cancel();
+      if (!pending.completer.isCompleted) {
+        pending.completer.completeError(StateError('WebSocket disconnected'));
+      }
+    }
+    _pendingCommands.clear();
     _reconnectAttempts = 0;
     if (closeStream) {
       _messageController.close();
@@ -573,6 +635,13 @@ class _PendingOutbound {
   int attempts = 0;
   bool retryScheduled = false;
   Timer? timeoutTimer;
+}
+
+class _PendingCommand {
+  const _PendingCommand(this.completer, this.timeoutTimer);
+
+  final Completer<AckV6> completer;
+  final Timer timeoutTimer;
 }
 
 /// WebSocket 消息流 Provider

@@ -36,13 +36,11 @@ class ImageMessageStrategy extends MessageRenderStrategy {
 
     if (imageList.length == 1) {
       final attachment = imageList.single;
-      final displaySize = resolveImageMessageDisplaySize(attachment);
       final heroTag = buildImageHeroTag(message.messageId ?? message.clientMsgId, attachment);
       return _SingleImageItem(
         attachment: attachment,
         messageId: message.messageId ?? message.clientMsgId,
         roomId: message.roomId,
-        displaySize: displaySize,
         heroTag: heroTag,
         isGrid: false,
       );
@@ -52,13 +50,11 @@ class ImageMessageStrategy extends MessageRenderStrategy {
       spacing: 4,
       runSpacing: 4,
       children: imageList.map((attachment) {
-        const gridSize = 100.0;
         final heroTag = buildImageHeroTag(message.messageId ?? message.clientMsgId, attachment);
         return _SingleImageItem(
           attachment: attachment,
           messageId: message.messageId ?? message.clientMsgId,
           roomId: message.roomId,
-          displaySize: const Size.square(gridSize),
           heroTag: heroTag,
           isGrid: true,
         );
@@ -71,14 +67,12 @@ class _SingleImageItem extends ConsumerStatefulWidget {
   final Attachment attachment;
   final String? messageId;
   final String? roomId;
-  final Size displaySize;
   final String heroTag;
   final bool isGrid;
   const _SingleImageItem({
     required this.attachment,
     required this.messageId,
     required this.roomId,
-    required this.displaySize,
     required this.heroTag,
     required this.isGrid,
   });
@@ -227,6 +221,22 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
     );
   }
 
+  Size _resolveDisplaySize(BoxConstraints? constraints) {
+    if (widget.isGrid) return const Size.square(100);
+    final maxAllowed = constraints?.maxWidth.isFinite == true
+        ? constraints!.maxWidth
+        : imageMessageMaxWidth;
+    // Bubble padding (12*2) + avatar gap 已由 Flexible 约束，额外预留 24
+    final effectiveMaxWidth = maxAllowed < imageMessageMaxWidth
+        ? maxAllowed
+        : imageMessageMaxWidth;
+    return resolveImageMessageDisplaySize(
+      widget.attachment,
+      maxWidth: effectiveMaxWidth,
+      maxHeight: imageMessageMaxHeight,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final autoPlay = ref.watch(autoPlayMediaProvider);
@@ -251,104 +261,110 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
       }
     });
 
-    Widget imageChild;
-    if (showStaticGif) {
-      // 静态首帧
-      if (_firstFrame != null) {
-        imageChild = RawImage(
-          image: _firstFrame,
-          width: widget.displaySize.width,
-          height: widget.displaySize.height,
-          fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
-          filterQuality: FilterQuality.medium,
-        );
-      } else {
-        imageChild = _buildPlaceholder(widget.displaySize);
-      }
-    } else {
-      // 正常动画或普通图片
-      imageChild = CachedNetworkImageView(
-        imageUrl: widget.attachment.url!,
-        width: widget.displaySize.width,
-        height: widget.displaySize.height,
-        fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
-        memCacheWidth: (widget.displaySize.width * dpr).round().clamp(0, 2048),
-        memCacheHeight: (widget.displaySize.height * dpr).round().clamp(0, 2048),
-        placeholder: (_, _) => _buildPlaceholder(widget.displaySize),
-        errorWidget: (_, _, _) => const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 30),
-        filterQuality: FilterQuality.medium,
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final displaySize = _resolveDisplaySize(constraints);
 
-    final borderRadius = BorderRadius.circular(widget.isGrid ? 4 : 8);
-    // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致
-    final useHero = !showStaticGif;
-    Widget heroWrapped = RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: borderRadius,
-        ),
-        child: ClipRRect(
-          borderRadius: borderRadius,
-          child: useHero
-              ? Hero(
-                  tag: widget.heroTag,
-                  createRectTween: (begin, end) => MaterialRectArcTween(begin: begin, end: end),
-                  placeholderBuilder: (ctx, size, child) => child,
-                  flightShuttleBuilder: (ctx, anim, dir, from, to) {
-                    final w = dir == HeroFlightDirection.push ? to.widget : from.widget;
-                    return Material(color: Colors.transparent, child: w);
-                  },
-                  transitionOnUserGestures: true,
-                  child: imageChild,
-                )
-              : imageChild,
-        ),
-      ),
-    );
+        Widget imageChild;
+        if (showStaticGif) {
+          // 静态首帧
+          if (_firstFrame != null) {
+            imageChild = RawImage(
+              image: _firstFrame,
+              width: displaySize.width,
+              height: displaySize.height,
+              fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
+              filterQuality: FilterQuality.medium,
+            );
+          } else {
+            imageChild = _buildPlaceholder(displaySize);
+          }
+        } else {
+          // 正常动画或普通图片：等比缩放，BoxFit.contain 保证不拉伸
+          imageChild = CachedNetworkImageView(
+            imageUrl: widget.attachment.url!,
+            width: displaySize.width,
+            height: displaySize.height,
+            fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
+            memCacheWidth: (displaySize.width * dpr).round().clamp(0, 2048),
+            memCacheHeight: (displaySize.height * dpr).round().clamp(0, 2048),
+            placeholder: (_, _) => _buildPlaceholder(displaySize),
+            errorWidget: (_, _, _) => const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 30),
+            filterQuality: FilterQuality.medium,
+          );
+        }
 
-    // 点击整图打开详情；GIF 静态时中间播放按钮仅触发单次播放
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        GestureDetector(onTap: _openDetail, child: heroWrapped),
-        if (showStaticGif)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _openDetail,
-              behavior: HitTestBehavior.translucent,
-              child: const SizedBox.expand(),
+        final borderRadius = BorderRadius.circular(widget.isGrid ? 4 : 8);
+        // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致
+        final useHero = !showStaticGif;
+        Widget heroWrapped = RepaintBoundary(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: borderRadius,
+            ),
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: useHero
+                  ? Hero(
+                      tag: widget.heroTag,
+                      createRectTween: (begin, end) => MaterialRectArcTween(begin: begin, end: end),
+                      placeholderBuilder: (ctx, size, child) => child,
+                      flightShuttleBuilder: (ctx, anim, dir, from, to) {
+                        final w = dir == HeroFlightDirection.push ? to.widget : from.widget;
+                        return Material(color: Colors.transparent, child: w);
+                      },
+                      transitionOnUserGestures: true,
+                      child: imageChild,
+                    )
+                  : imageChild,
             ),
           ),
-        if (showStaticGif)
-          Material(
-            color: Colors.black.withValues(alpha: 0.38),
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: _playOnce,
-              child: Padding(
-                padding: EdgeInsets.all(widget.isGrid ? 6 : 10),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedPlay,
-                  size: widget.isGrid ? 18 : 22,
-                  color: Colors.white,
+        );
+
+        // 点击整图打开详情；GIF 静态时中间播放按钮仅触发单次播放
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(onTap: _openDetail, child: heroWrapped),
+            if (showStaticGif)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: _openDetail,
+                  behavior: HitTestBehavior.translucent,
+                  child: const SizedBox.expand(),
                 ),
               ),
-            ),
-          ),
-        if (isGif && !showStaticGif && !shouldAutoPlay && _isPlayingOnce)
-          Positioned(
-            right: 6,
-            bottom: 6,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999)),
-              child: const Text('gif', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
-            ),
-          ),
-      ],
+            if (showStaticGif)
+              Material(
+                color: Colors.black.withValues(alpha: 0.38),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: _playOnce,
+                  child: Padding(
+                    padding: EdgeInsets.all(widget.isGrid ? 6 : 10),
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedPlay,
+                      size: widget.isGrid ? 18 : 22,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            if (isGif && !showStaticGif && !shouldAutoPlay && _isPlayingOnce)
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999)),
+                  child: const Text('gif', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

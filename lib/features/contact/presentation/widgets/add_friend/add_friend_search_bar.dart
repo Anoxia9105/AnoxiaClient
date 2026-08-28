@@ -48,10 +48,15 @@ class AddFriendSearchBar extends StatelessWidget {
                     color: colorScheme.outline,
                     fontSize: 14,
                   ),
-                  prefixIcon: HugeIcon(
-                    icon: HugeIcons.strokeRoundedSearch02,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 14,
+                  prefixIcon: Center(
+                    child: SizedBox.square(
+                      dimension: 14,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedSearch02,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 14,
+                      ),
+                    ),
                   ),
                   prefixIconConstraints: const BoxConstraints.tightFor(
                     width: 32,

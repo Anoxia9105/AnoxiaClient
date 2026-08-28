@@ -4,7 +4,8 @@ import 'dart:math';
 import 'dart:ui' show Offset;
 
 import 'package:anoxia/common/constants/call_window_sizes.dart';
-import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
+import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
+import 'package:anoxia_protocol/anoxia_protocol.dart' as v6;
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/core/push_manager.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
@@ -31,6 +32,7 @@ enum CallInvitationPhase {
   outgoing,
   acceptedElsewhere,
   rejectedElsewhere,
+
   /// 对方已拒绝（本端为呼出方，收到对方的 CALL_REJECT）
   rejected,
   canceled,
@@ -384,7 +386,8 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
       phase: CallInvitationPhase.ended,
       targetId: current?.targetId,
     );
-    final wasOutgoing = current?.roomId == roomId &&
+    final wasOutgoing =
+        current?.roomId == roomId &&
         current?.phase == CallInvitationPhase.outgoing;
     if (wasOutgoing) {
       _send(HighMessageType.CALL_CANCEL, invite, targetId: invite.targetId);
@@ -461,7 +464,9 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
         _clearIncomingNotifications();
         // 通话进行中（非振铃期）对方挂断：提示后再结束会话，避免界面
         // 直接消失而用户不知道原因。
-        unawaited(_endActiveCall(invite.roomId, showPeerEndedNotice: !fromSelf));
+        unawaited(
+          _endActiveCall(invite.roomId, showPeerEndedNotice: !fromSelf),
+        );
         break;
       case HighMessageType.CALL_BUSY:
         if (!fromSelf && _isSameInvite(state, invite)) {
@@ -654,7 +659,10 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
   ///
   /// 多端收敛依赖 inviteId：一端接听/拒绝后，同一邀请的其它设备
   /// 才会收到终端信号并停止振铃；同房间的第二次呼叫互不干扰。
-  bool _isSameInvite(CallInvitationState? current, CallInvitationState incoming) {
+  bool _isSameInvite(
+    CallInvitationState? current,
+    CallInvitationState incoming,
+  ) {
     if (current == null) return false;
     if (current.roomId != incoming.roomId) return false;
     return current.inviteId == incoming.inviteId;
@@ -665,25 +673,46 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     CallInvitationState invite, {
     int? targetId,
   }) {
-    final msg = HighMessage(
-      type: type,
-      roomId: invite.roomId,
-      targetId: targetId,
-      content: jsonEncode({
-        'inviteId': invite.inviteId,
-        'roomId': invite.roomId,
-        'title': invite.title,
-        'createdAt': invite.createdAt,
-        'initialMedia': invite.initialMedia.value,
-        'isGroup': invite.isGroup,
-        'callerName': invite.callerName,
-        'callerAvatar': invite.callerAvatar,
-        'roomAvatar': invite.roomAvatar,
-      }),
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-    );
-    final bytes = ImPacketV5.encodeHighMessageFrame(msg);
-    ref.read(wsControllerProvider.notifier).sendMessage(bytes);
+    final callType = switch (type) {
+      HighMessageType.CALL_INVITE =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE.value,
+      HighMessageType.CALL_CANCEL =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_CANCEL.value,
+      HighMessageType.CALL_ACCEPT =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_ACCEPT.value,
+      HighMessageType.CALL_REJECT =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_REJECT.value,
+      HighMessageType.CALL_END =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_HANGUP.value,
+      HighMessageType.CALL_BUSY =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_BUSY.value,
+      HighMessageType.CALL_CANDIDATE =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_ICE.value,
+      HighMessageType.CALL_MEDIA_CHANGE =>
+        v6.CallSignalType.CALL_SIGNAL_TYPE_MEDIA_CHANGE.value,
+      _ => v6.CallSignalType.CALL_SIGNAL_TYPE_UNSPECIFIED.value,
+    };
+    final content = jsonEncode({
+      'inviteId': invite.inviteId,
+      'roomId': invite.roomId,
+      'title': invite.title,
+      'createdAt': invite.createdAt,
+      'initialMedia': invite.initialMedia.value,
+      'isGroup': invite.isGroup,
+      'callerName': invite.callerName,
+      'callerAvatar': invite.callerAvatar,
+      'roomAvatar': invite.roomAvatar,
+    });
+    ref
+        .read(wsControllerProvider.notifier)
+        .sendMessage(
+          ImPacketV6.encodeCallSignalFrame(
+            roomId: invite.roomId,
+            targetUserId: targetId,
+            type: callType,
+            content: content,
+          ),
+        );
   }
 
   CallInvitationState _stateFromMessage(

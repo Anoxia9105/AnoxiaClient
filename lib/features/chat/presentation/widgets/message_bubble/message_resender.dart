@@ -6,7 +6,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
+import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
@@ -52,7 +52,7 @@ class MessageResender {
     );
 
     wsNotifier.sendMessage(
-      ImPacketV5.encodeRoomMessageFrame(protoMsg),
+      ImPacketV6.encodeRoomMessageFrame(protoMsg),
       clientMsgId: clientMsgId,
       ackTimeout: Duration(seconds: _resendTimeoutSeconds(message)),
     );

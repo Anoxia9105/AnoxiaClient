@@ -14,7 +14,7 @@ export 'message_payload_parts.dart';
 /// 通过 [MessagePayload.mentionAll] 标记（写入 interaction.mentionAll）。
 const int kMentionAllUserId = -1;
 
-/// 消息载荷（V5 协议）
+/// 消息载荷（V6 协议）
 ///
 /// 这是各种类型消息的通用载荷容器，包含了文本、富文本、媒体、位置、卡片等多种内容。
 /// 根据 [MessageType] 的不同，使用 [toTypedJson] 生成对应结构供服务端使用，
@@ -204,7 +204,7 @@ class MessagePayload {
       );
     }
 
-    final richText = _asMap(json['richText'] ?? json['rich_text']);
+    final richText = _asMap(json['richText']);
     if (richText != null) {
       final interaction = _asMap(richText['interaction']);
       final quillDelta = _readString(richText, [

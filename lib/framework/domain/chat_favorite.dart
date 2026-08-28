@@ -146,7 +146,7 @@ class ChatFavorite {
 
   /// 从 Payload 内容推断消息类型
   ///
-  /// 优先识别 V5 协议 typed 结构（text/richText/image/audio/video/file/emoji/
+  /// 优先识别 V6 协议 typed 结构（text/richText/image/audio/video/file/emoji/
   /// location/card/system），其次回退到 Quill Delta 与附件推断。
   MessageType? _inferPayloadType() {
     final payloadRaw = payload.trim();
@@ -172,12 +172,11 @@ class ChatFavorite {
     return null;
   }
 
-  /// 匹配 V5 协议 typed payload 顶层键，返回对应消息类型
+  /// 匹配 V6 协议 typed payload 顶层键，返回对应消息类型
   MessageType? _matchTypedPayloadKey(Map<String, dynamic> decoded) {
     const mapping = <String, MessageType>{
       'text': MessageType.text,
       'richText': MessageType.richText,
-      'rich_text': MessageType.richText,
       'image': MessageType.image,
       'audio': MessageType.audio,
       'video': MessageType.video,
@@ -197,8 +196,7 @@ class ChatFavorite {
 
   /// 检查解码后的数据是否包含 Quill Delta 格式
   ///
-  /// 兼容 V5 协议（`richText.deltaJson` / `richText.delta`）与平铺格式
-  /// （`quillDelta` / `delta` / `ops` / 顶层 Delta List）。
+  /// 识别 `quillDelta` / 平铺格式与 `richText.deltaJson`。
   bool _containsQuillDelta(dynamic decoded) {
     if (decoded is List) {
       return decoded.any((e) => e is Map && e.containsKey('insert'));
@@ -206,18 +204,14 @@ class ChatFavorite {
 
     if (decoded is Map<String, dynamic>) {
       final quillDelta = decoded['quillDelta'];
-      final delta = decoded['delta'];
-      final ops = decoded['ops'];
-      if (quillDelta != null || delta != null || ops != null) {
+      if (quillDelta != null) {
         return true;
       }
 
       final richText = decoded['richText'];
       if (richText is Map<String, dynamic>) {
         final deltaJson = richText['deltaJson'];
-        final richDelta = richText['delta'];
-        final richOps = richText['ops'];
-        if (deltaJson != null || richDelta != null || richOps != null) {
+        if (deltaJson != null) {
           return true;
         }
       }

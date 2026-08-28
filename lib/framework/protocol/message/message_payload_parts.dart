@@ -9,9 +9,9 @@ library;
 // 原文件通过 `export`/`import` 重新暴露这些类型，外部仍可直接
 // `import 'message_payload.dart'` 使用。
 
-/// 卡片消息载荷（V5 协议）
-///
-/// 用于表示富媒体卡片类型消息，如联系人卡片、群组卡片、链接预览等。
+  /// 卡片消息载荷（V6 协议）
+  ///
+  /// 用于表示富媒体卡片类型消息，如联系人卡片、群组卡片、链接预览等。
 /// 支持灵活的字段映射，兼容服务端多种命名风格（如 `card_type` / `cardType`）。
 class CardPayload {
   // ==================== 字段 ====================
@@ -114,24 +114,10 @@ class CardPayload {
 
   /// 将任意值转换为 `Map<String, String>`。
   ///
-  /// 兼容两种服务端格式：
-  /// - `Map`：`{"content": "..."}`（本地缓存 / V5 本地序列化）
-  /// - `List`：`[{"key": "content", "value": "..."}]`
-  ///   （REST 历史接口按 V5 `StringProperty` 模型返回的键值对列表）
+  /// 仅接受 `Map` 形式的键值对（V6 协议本地序列化格式）。
   static Map<String, String> _readStringMap(dynamic value) {
     if (value is Map) {
       return value.map((key, val) => MapEntry(key.toString(), val.toString()));
-    }
-    if (value is List) {
-      final result = <String, String>{};
-      for (final item in value) {
-        if (item is! Map) continue;
-        final key = item['key'] ?? item['k'];
-        if (key == null) continue;
-        final text = item['value'] ?? item['v'];
-        result[key.toString()] = text?.toString() ?? '';
-      }
-      return result;
     }
     return const {};
   }
@@ -160,7 +146,7 @@ class CardPayload {
   }
 }
 
-/// 位置消息载荷（V5 协议）
+/// 位置消息载荷（V6 协议）
 ///
 /// 用于表示地理位置消息，包含经纬度坐标及地点名称、地址信息。
 class LocationPayload {
@@ -271,7 +257,7 @@ class LocationPayload {
   }
 }
 
-/// 系统消息载荷（V5 协议）。
+/// 系统消息载荷（V6 协议）。
 ///
 /// 系统事件码用于客户端本地化，文本用于未知事件兜底，properties 提供模板参数。
 class SystemPayload {
@@ -367,21 +353,10 @@ List<int>? payloadReadIntList(dynamic value) {
   return result.isEmpty ? null : result;
 }
 
-/// 将任意值转换为 `Map<String, String>`（兼容 List 键值对）。
+/// 将任意值转换为 `Map<String, String>`（V6 协议本地序列化格式）。
 Map<String, String> payloadReadStringMap(dynamic value) {
   if (value is Map) {
     return value.map((key, val) => MapEntry(key.toString(), val.toString()));
-  }
-  if (value is List) {
-    final result = <String, String>{};
-    for (final item in value) {
-      if (item is! Map) continue;
-      final key = item['key'] ?? item['k'];
-      if (key == null) continue;
-      final text = item['value'] ?? item['v'];
-      result[key.toString()] = text?.toString() ?? '';
-    }
-    return result;
   }
   return const {};
 }

@@ -8,14 +8,14 @@ const double imageMessageMaxWidth = 320;
 const double imageMessageMaxHeight = 320;
 
 /// Resolves the logical size of a single image message from its protocol
-/// pixel dimensions while preserving its aspect ratio.
+/// pixel dimensions while preserving its aspect ratio (等比缩放).
 Size resolveImageMessageDisplaySize(
   Attachment attachment, {
   double maxWidth = imageMessageMaxWidth,
   double maxHeight = imageMessageMaxHeight,
 }) {
-  final rawWidth = attachment.width;
-  final rawHeight = attachment.height;
+  final rawWidth = attachment.width?.toDouble();
+  final rawHeight = attachment.height?.toDouble();
   if (rawWidth == null ||
       rawHeight == null ||
       rawWidth <= 0 ||
@@ -23,10 +23,11 @@ Size resolveImageMessageDisplaySize(
     return Size(maxWidth, maxHeight * 0.75);
   }
 
-  final scale = math.min(
-    1.0,
-    math.min(maxWidth / rawWidth, maxHeight / rawHeight),
-  );
+  // 等比缩放：取宽、高两个维度中更小的缩放比，且仅缩小不放大
+  final widthRatio = maxWidth / rawWidth;
+  final heightRatio = maxHeight / rawHeight;
+  final scale = math.min(1.0, math.min(widthRatio, heightRatio));
+  // 保持原始宽高比，避免拉伸
   return Size(rawWidth * scale, rawHeight * scale);
 }
 

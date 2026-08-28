@@ -9,14 +9,13 @@ import 'dart:ui' as ui;
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
-import 'package:anoxia/framework/codec/v5/im_packet_v5.dart';
+import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/sticker_pack.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
-import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/protocol/message/room_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/delta_processor.dart';
@@ -295,15 +294,9 @@ class ChatInputController extends _$ChatInputController {
       return;
     }
 
-    final highMsg = HighMessage(
-      type: HighMessageType.TYPING_STATUS,
-      roomId: room.roomId,
-      targetId: room.peerId,
-      content: isTyping.toString(),
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-    );
-    final bytes = ImPacketV5.encodeHighMessageFrame(highMsg);
-    ref.read(wsControllerProvider.notifier).sendMessage(bytes);
+    ref
+        .read(wsControllerProvider.notifier)
+        .sendMessage(ImPacketV6.encodeTypingFrame(room.roomId!, isTyping));
   }
 
   /// 发送消息（从编辑器内容构建）
@@ -925,7 +918,7 @@ class ChatInputController extends _$ChatInputController {
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(
-          ImPacketV5.encodeRoomMessageFrame(protoMsg),
+          ImPacketV6.encodeRoomMessageFrame(protoMsg),
           clientMsgId: clientMsgId,
           ackTimeout: Duration(seconds: timeoutSeconds),
         );
@@ -1068,7 +1061,7 @@ class ChatInputController extends _$ChatInputController {
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(
-          ImPacketV5.encodeRoomMessageFrame(protoMsg),
+          ImPacketV6.encodeRoomMessageFrame(protoMsg),
           clientMsgId: clientMsgId,
           ackTimeout: Duration(seconds: timeoutSeconds),
         );

@@ -123,6 +123,7 @@ class SystemEventService extends _$SystemEventService {
         _handleCallStarted(event);
         break;
       case SystemEventType.callEnded:
+      case SystemEventType.callRejected:
         _handleCallEnded(event);
         break;
       case SystemEventType.contactUpdated:
@@ -163,6 +164,9 @@ class SystemEventService extends _$SystemEventService {
                   : 'group_join_request_rejected_notification'.tr(),
               type: isApproved ? ToastType.success : ToastType.warning,
             );
+        break;
+      case SystemEventType.sessionKicked:
+        // V6 网络层会转换为 SYSTEM_KICK 高优先级事件统一处理。
         break;
     }
   }
