@@ -92,10 +92,14 @@ class _CreateChatDialogWidgetState
                 horizontal: 14,
                 vertical: 13,
               ),
-              prefixIcon: HugeIcon(
-                icon: HugeIcons.strokeRoundedEdit02,
-                color: colorScheme.primary,
-                size: 16,
+              prefixIcon: SizedBox(
+                width: 20,
+                height: 20,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedEdit02,
+                  color: colorScheme.primary,
+                  size: 13,
+                ),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),

@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/date_util.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/contact/presentation/widgets/new_friends/new_friends_request_tile.dart';
 import 'package:anoxia/features/contact/presentation/widgets/new_friends/new_friends_skeleton.dart';
@@ -22,9 +23,10 @@ class NewFriendsPage extends ConsumerStatefulWidget {
 
 class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
   void _openAddFriend() {
-    Navigator.of(
+    presentAdaptivePage(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const AddFriendPage()));
+      builder: (_) => const AddFriendPage(),
+    );
   }
 
   /// 将请求时间格式化为微信风格相对时间

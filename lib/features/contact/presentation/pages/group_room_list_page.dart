@@ -1,8 +1,10 @@
 ﻿import 'package:anoxia/common/utils/date_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.dart';
+import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_widget.dart';
 import 'package:anoxia/features/contact/presentation/widgets/group_room/group_room_tile.dart';
 import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -31,7 +33,12 @@ class GroupRoomListPage extends ConsumerWidget {
         ),
       ),
       body: groups.isEmpty
-          ? const _EmptyState()
+          ? _EmptyState(
+              onCreate: () => presentAdaptivePage(
+                context,
+                builder: (_) => const CreateChatDialogWidget(),
+              ),
+            )
           : AnimationLimiter(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -107,9 +114,11 @@ class GroupRoomListPage extends ConsumerWidget {
   }
 }
 
-/// 空状态：暂无群聊
+/// 空状态：暂无群聊时展示引导
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  final VoidCallback onCreate;
+
+  const _EmptyState({required this.onCreate});
 
   @override
   Widget build(BuildContext context) {
@@ -117,39 +126,50 @@ class _EmptyState extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  cs.primary.withValues(alpha: 0.14),
-                  cs.primary.withValues(alpha: 0.05),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(26),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.primary.withValues(alpha: 0.12),
+                    blurRadius: 26,
+                    offset: const Offset(0, 10),
+                  ),
                 ],
               ),
-              shape: BoxShape.circle,
-              border: Border.all(color: cs.primary.withValues(alpha: 0.18)),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedUserGroup02,
+                size: 58,
+                color: cs.primary.withValues(alpha: 0.6),
+              ),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedUserGroup02,
-              size: 42,
-              color: cs.primary.withValues(alpha: 0.85),
+            const SizedBox(height: 20),
+            Text(
+              'group_no_groups'.tr(),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'group_no_groups'.tr(),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface,
+            const SizedBox(height: 24),
+            FilledButton.tonalIcon(
+              onPressed: onCreate,
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedChatting01,
+                size: 18,
+              ),
+              label: Text('chat_create_group'.tr()),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
