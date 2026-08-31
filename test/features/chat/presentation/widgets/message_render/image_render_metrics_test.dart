@@ -26,11 +26,24 @@ void main() {
     test('does not enlarge images smaller than the message bounds', () {
       const attachment = Attachment(width: 120, height: 80);
 
-      expect(
-        resolveImageMessageDisplaySize(attachment),
-        const Size(120, 80),
-      );
+      expect(resolveImageMessageDisplaySize(attachment), const Size(120, 80));
     });
+
+    test(
+      'uses decoded image dimensions when protocol dimensions are absent',
+      () {
+        const attachment = Attachment();
+
+        final size = resolveImageMessageDisplaySize(
+          attachment,
+          intrinsicWidth: 1600,
+          intrinsicHeight: 900,
+        );
+
+        expect(size.width / size.height, closeTo(16 / 9, 0.001));
+        expect(size.width, 320);
+      },
+    );
   });
 
   group('imageViewerScaleForScroll', () {

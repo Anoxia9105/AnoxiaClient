@@ -5,6 +5,7 @@ class UploadFileResult {
     required this.isSuccess,
     this.url,
     this.coverUrl,
+    this.coverSizeBytes,
     this.durationMs,
     this.width,
     this.height,
@@ -16,6 +17,7 @@ class UploadFileResult {
   final bool isSuccess;
   final String? url;
   final String? coverUrl;
+  final int? coverSizeBytes;
   final int? durationMs;
   final int? width;
   final int? height;

@@ -84,6 +84,9 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
   ui.Image? _firstFrame;
   ImageStream? _frameStream;
   ImageStreamListener? _frameListener;
+  ImageStream? _dimensionStream;
+  ImageStreamListener? _dimensionListener;
+  Size? _intrinsicSize;
   bool _isPlayingOnce = false;
   Timer? _stopTimer;
   bool _loadingFirstFrame = false;
@@ -93,7 +96,10 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLoadFirstFrame());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeLoadFirstFrame();
+      _maybeResolveIntrinsicSize();
+    });
   }
 
   @override
@@ -101,10 +107,50 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.attachment.url != widget.attachment.url) {
       _disposeFirstFrame();
+      _removeDimensionListener();
+      _intrinsicSize = null;
       _isPlayingOnce = false;
       _stopTimer?.cancel();
-      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLoadFirstFrame());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _maybeLoadFirstFrame();
+        _maybeResolveIntrinsicSize();
+      });
     }
+  }
+
+  void _maybeResolveIntrinsicSize() {
+    if ((widget.attachment.width ?? 0) > 0 &&
+        (widget.attachment.height ?? 0) > 0) {
+      return;
+    }
+    if (_intrinsicSize != null || _dimensionListener != null) return;
+    final url = widget.attachment.url;
+    if (url == null || url.isEmpty) return;
+    final stream = appCachedNetworkImageProvider(
+      url,
+    ).resolve(const ImageConfiguration());
+    _dimensionStream = stream;
+    final listener = ImageStreamListener((ImageInfo info, bool _) {
+      if (!mounted) return;
+      final decoded = Size(
+        info.image.width.toDouble(),
+        info.image.height.toDouble(),
+      );
+      _removeDimensionListener();
+      if (decoded.width <= 0 || decoded.height <= 0) return;
+      setState(() => _intrinsicSize = decoded);
+    }, onError: (_, _) => _removeDimensionListener());
+    _dimensionListener = listener;
+    stream.addListener(listener);
+  }
+
+  void _removeDimensionListener() {
+    final listener = _dimensionListener;
+    if (listener != null) {
+      _dimensionStream?.removeListener(listener);
+    }
+    _dimensionStream = null;
+    _dimensionListener = null;
   }
 
   void _maybeLoadFirstFrame() {
@@ -169,6 +215,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
   @override
   void dispose() {
     _disposeFirstFrame();
+    _removeDimensionListener();
     super.dispose();
   }
 
@@ -234,6 +281,8 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
       widget.attachment,
       maxWidth: effectiveMaxWidth,
       maxHeight: imageMessageMaxHeight,
+      intrinsicWidth: _intrinsicSize?.width,
+      intrinsicHeight: _intrinsicSize?.height,
     );
   }
 

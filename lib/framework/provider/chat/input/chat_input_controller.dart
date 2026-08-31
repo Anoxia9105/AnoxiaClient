@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/media_mime_type.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
@@ -347,11 +348,20 @@ class ChatInputController extends _$ChatInputController {
 
     // --- 发送图片 ---
     if (processor.images.isNotEmpty) {
+      final imageUploader = ref.read(
+        chatImageUploadControllerProvider.notifier,
+      );
       for (final image in processor.images) {
+        final uploaded = imageUploader.uploadResultOf(image.id);
+        final enhanced = image.copyWith(
+          url: uploaded?.url,
+          width: uploaded?.width,
+          height: uploaded?.height,
+        );
         _doSend(
           type: MessageType.image,
           payload: const MessagePayload(content: '[image]'),
-          attachments: [image],
+          attachments: [enhanced],
           clearReplyAfterSend: false,
         );
       }
@@ -382,7 +392,13 @@ class ChatInputController extends _$ChatInputController {
           attachments: [
             enhanced,
             if (coverUrl != null && coverUrl.isNotEmpty)
-              Attachment(kind: 'IMAGE', url: coverUrl),
+              Attachment(
+                kind: 'IMAGE',
+                url: coverUrl,
+                name: 'cover.jpg',
+                type: 'image/jpeg',
+                size: uploaded?.coverSizeBytes,
+              ),
           ],
           clearReplyAfterSend: false,
         );
@@ -576,7 +592,7 @@ class ChatInputController extends _$ChatInputController {
           id: id,
           kind: 'IMAGE',
           url: file.path,
-          name: _basenameWithoutExtension(file.name),
+          name: file.name,
           size: file.size,
           type: _imageMimeType(file.extension),
           width: imageSize.$1,
@@ -590,10 +606,16 @@ class ChatInputController extends _$ChatInputController {
     await uploader.uploadImages(uploadList, pickedFiles: filesById);
 
     final urlMap = uploader.urlMap;
-    final uploaded = uploadList
-        .where((item) => urlMap[item.id] != null)
-        .map((item) => item.copyWith(url: urlMap[item.id]))
-        .toList();
+    final uploaded = uploadList.where((item) => urlMap[item.id] != null).map((
+      item,
+    ) {
+      final result = uploader.uploadResultOf(item.id);
+      return item.copyWith(
+        url: result?.url ?? urlMap[item.id],
+        width: result?.width,
+        height: result?.height,
+      );
+    }).toList();
 
     if (uploaded.isEmpty) return;
 
@@ -626,7 +648,9 @@ class ChatInputController extends _$ChatInputController {
       if (file.bytes != null) filesById[id] = file;
       final ext = file.extension?.toLowerCase();
       final isVideo = _isVideoExtension(ext, file.name);
-      final mime = isVideo ? _mimeForVideo(ext) : (file.extension ?? 'bin');
+      final mime = isVideo
+          ? _mimeForVideo(ext)
+          : mediaMimeTypeForName(file.name);
       final kind = isVideo ? 'VIDEO' : 'FILE';
       uploadList.add(
         Attachment(
@@ -681,7 +705,13 @@ class ChatInputController extends _$ChatInputController {
         attachments: [
           enhanced,
           if (coverUrl != null && coverUrl.isNotEmpty)
-            Attachment(kind: 'IMAGE', url: coverUrl),
+            Attachment(
+              kind: 'IMAGE',
+              url: coverUrl,
+              name: 'cover.jpg',
+              type: 'image/jpeg',
+              size: uploaded?.coverSizeBytes,
+            ),
         ],
         clearReplyAfterSend: isLastOverall,
       );
@@ -930,13 +960,6 @@ class ChatInputController extends _$ChatInputController {
     final codePoint = char.runes.first;
     return (codePoint >= 0x1F300 && codePoint <= 0x1FAFF) ||
         (codePoint >= 0x2600 && codePoint <= 0x27BF);
-  }
-
-  /// 获取文件名（不含扩展名）
-  String _basenameWithoutExtension(String fileName) {
-    final dot = fileName.lastIndexOf('.');
-    if (dot <= 0) return fileName;
-    return fileName.substring(0, dot);
   }
 
   /// 读取图片宽高

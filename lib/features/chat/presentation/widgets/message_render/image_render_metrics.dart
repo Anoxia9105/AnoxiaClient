@@ -13,9 +13,11 @@ Size resolveImageMessageDisplaySize(
   Attachment attachment, {
   double maxWidth = imageMessageMaxWidth,
   double maxHeight = imageMessageMaxHeight,
+  double? intrinsicWidth,
+  double? intrinsicHeight,
 }) {
-  final rawWidth = attachment.width?.toDouble();
-  final rawHeight = attachment.height?.toDouble();
+  final rawWidth = attachment.width?.toDouble() ?? intrinsicWidth;
+  final rawHeight = attachment.height?.toDouble() ?? intrinsicHeight;
   if (rawWidth == null ||
       rawHeight == null ||
       rawWidth <= 0 ||

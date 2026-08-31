@@ -78,6 +78,7 @@ class UploadRepositoryImpl implements UploadRepository {
             isSuccess: true,
             url: url,
             coverUrl: data['coverUrl']?.toString(),
+            coverSizeBytes: _readInt(data['coverSizeBytes']),
             durationMs: _readInt(data['durationMs']),
             width: _readInt(data['width']),
             height: _readInt(data['height']),

@@ -12,24 +12,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _SuccessfulUploadRepository implements UploadRepository {
+  final uploadedFiles = <XFile>[];
+
   @override
   Future<List<UploadFileResult>> uploadFiles(
     List<XFile> files, {
     required List<String> clientFileIds,
     UploadProgressCallback? onProgress,
-  }) async => [
-    for (var index = 0; index < files.length; index++)
-      UploadFileResult(
-        clientFileId: clientFileIds[index],
-        isSuccess: true,
-        url: 'https://example.test/upload-$index',
-        coverUrl: 'https://example.test/cover-$index.jpg',
-        durationMs: 42000,
-        width: 1920,
-        height: 1080,
-        bitrate: 2000000,
-      ),
-  ];
+  }) async {
+    uploadedFiles.addAll(files);
+    return [
+      for (var index = 0; index < files.length; index++)
+        UploadFileResult(
+          clientFileId: clientFileIds[index],
+          isSuccess: true,
+          url: 'https://example.test/upload-$index',
+          coverUrl: 'https://example.test/cover-$index.jpg',
+          coverSizeBytes: 12345,
+          durationMs: 42000,
+          width: 1920,
+          height: 1080,
+          bitrate: 2000000,
+        ),
+    ];
+  }
 
   @override
   void cancelUpload(String clientFileId) {}
@@ -37,14 +43,12 @@ class _SuccessfulUploadRepository implements UploadRepository {
 
 void main() {
   late ProviderContainer container;
+  late _SuccessfulUploadRepository repository;
 
   setUp(() {
+    repository = _SuccessfulUploadRepository();
     container = ProviderContainer(
-      overrides: [
-        uploadRepositoryProvider.overrideWithValue(
-          _SuccessfulUploadRepository(),
-        ),
-      ],
+      overrides: [uploadRepositoryProvider.overrideWithValue(repository)],
     );
   });
 
@@ -73,6 +77,13 @@ void main() {
         container.read(chatImageUploadControllerProvider.notifier).urlMap,
         {'image-id': 'https://example.test/upload-0'},
       );
+      final result = container
+          .read(chatImageUploadControllerProvider.notifier)
+          .uploadResultOf('image-id');
+      expect(result?.width, 1920);
+      expect(result?.height, 1080);
+      expect(repository.uploadedFiles.single.name, 'photo.png');
+      expect(repository.uploadedFiles.single.mimeType, 'image/png');
     },
   );
 
@@ -98,6 +109,8 @@ void main() {
       expect(container.read(chatFileUploadControllerProvider.notifier).urlMap, {
         'file-id': 'https://example.test/upload-0',
       });
+      expect(repository.uploadedFiles.single.name, 'notes.txt');
+      expect(repository.uploadedFiles.single.mimeType, 'text/plain');
     },
   );
 
@@ -126,5 +139,6 @@ void main() {
     expect(result?.width, 1920);
     expect(result?.height, 1080);
     expect(result?.bitrate, 2000000);
+    expect(result?.coverSizeBytes, 12345);
   });
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/utils/media_mime_type.dart';
 import 'package:anoxia/common/utils/video_metadata_util.dart';
 import 'package:anoxia/domain/models/upload_file_result.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
@@ -79,7 +80,9 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       }
       final ext = file.extension?.toLowerCase();
       final isVideo = _isVideoExtension(ext, file.name);
-      final mime = isVideo ? _mimeForVideo(ext) : (file.extension ?? 'bin');
+      final mime = isVideo
+          ? _mimeForVideo(ext)
+          : mediaMimeTypeForName(file.name);
       final kind = isVideo ? 'VIDEO' : 'FILE';
       uploadList.add(
         Attachment(
@@ -127,11 +130,27 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       final local = _filesById[a.id];
       if (local?.bytes != null) {
         pendingFiles.add(
-          XFile.fromData(local!.bytes!, name: a.name ?? local.name),
+          XFile.fromData(
+            local!.bytes!,
+            name: a.name ?? local.name,
+            mimeType: mediaMimeTypeForName(
+              a.name ?? local.name,
+              declaredType: a.type,
+            ),
+          ),
         );
         pendingAttachments.add(a);
       } else if (a.url != null && a.url!.isNotEmpty) {
-        pendingFiles.add(XFile(a.url!));
+        pendingFiles.add(
+          XFile(
+            a.url!,
+            name: a.name,
+            mimeType: mediaMimeTypeForName(
+              a.name ?? a.url!,
+              declaredType: a.type,
+            ),
+          ),
+        );
         pendingAttachments.add(a);
       }
     }

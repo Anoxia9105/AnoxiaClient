@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:anoxia/common/utils/quill_embed_util.dart';
+import 'package:anoxia/common/utils/media_mime_type.dart';
+import 'package:anoxia/domain/models/upload_file_result.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
@@ -35,6 +37,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   /// Web 端 PlatformFile.path 为 null，文件内容在 bytes 中，
   /// 按附件 ID 暂存，供上传时构建 XFile 使用
   final Map<String, PlatformFile> _filesById = {};
+  final Map<String, UploadFileResult> _uploadResults = {};
 
   @override
   Map<String, UploadEntry> build() => {};
@@ -181,11 +184,27 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       final local = _filesById[i.id];
       if (local?.bytes != null) {
         pendingFiles.add(
-          XFile.fromData(local!.bytes!, name: i.name ?? local.name),
+          XFile.fromData(
+            local!.bytes!,
+            name: i.name ?? local.name,
+            mimeType: mediaMimeTypeForName(
+              i.name ?? local.name,
+              declaredType: i.type,
+            ),
+          ),
         );
         pendingImages.add(i);
       } else if (i.url != null && i.url!.isNotEmpty) {
-        pendingFiles.add(XFile(i.url!));
+        pendingFiles.add(
+          XFile(
+            i.url!,
+            name: i.name,
+            mimeType: mediaMimeTypeForName(
+              i.name ?? i.url!,
+              declaredType: i.type,
+            ),
+          ),
+        );
         pendingImages.add(i);
       }
     }
@@ -212,6 +231,11 @@ class ChatImageUploadController extends _$ChatImageUploadController {
                 state.containsKey(result.clientFileId))
               result.clientFileId: UploadEntry.success(result.url!),
         };
+        for (final result in results) {
+          if (result.isSuccess && result.url != null) {
+            _uploadResults[result.clientFileId] = result;
+          }
+        }
 
         final failedIds = results
             .where(
@@ -279,6 +303,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     for (final id in removed) {
       ref.read(uploadRepositoryProvider).cancelUpload(id);
       _filesById.remove(id);
+      _uploadResults.remove(id);
     }
     state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));
   }
@@ -292,8 +317,15 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   /// 获取附件对应的内存字节（Web 端本地预览用），无则返回 null
   Uint8List? bytesOf(String? id) => _filesById[id]?.bytes;
 
+  UploadFileResult? uploadResultOf(String? id) =>
+      id == null ? null : _uploadResults[id];
+
   /// 消息发送后调用，清理 state
-  void clear() => state = {};
+  void clear() {
+    state = {};
+    _filesById.clear();
+    _uploadResults.clear();
+  }
 
   Future<(int?, int?)> _readImageSizeFromBytes(Uint8List bytes) async {
     try {
