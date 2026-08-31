@@ -279,8 +279,8 @@ class ChatFavorite {
 
   /// 从 Payload 中提取可读的文本内容
   ///
-  /// 优先通过 [MessagePayload.fromJson] 解析（兼容 V5 协议 typed 结构），
-  /// 再回退到旧版平铺格式的手动提取。
+  /// 优先通过 [MessagePayload.fromJson] 解析当前强类型载荷，
+  /// 再从收藏记录的展示字段中提取可读文本。
   String _extractPayloadText() {
     if (payload.trim().isEmpty) return '';
 
@@ -554,7 +554,8 @@ class ChatFavorite {
         if (nested.isNotEmpty) return nested;
       }
 
-      // V5 typed 结构：附件嵌在媒体包装内（image.image / video.video+cover / audio.audio / file.file / emoji.asset）
+      // 当前强类型载荷：附件嵌在媒体包装内
+      //（image.image / video.video+cover / audio.audio / file.file / emoji.asset）。
       for (final entry in const {
         'image': ['image'],
         'video': ['video', 'cover'],

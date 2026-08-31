@@ -2,7 +2,6 @@ import 'package:anoxia/common/constants/api.dart';
 import 'package:anoxia/domain/repositories/message_repository.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/message_search_result.dart';
-import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 
 /// 消息仓库实现
@@ -31,22 +30,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return data
         .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
         .toList();
-  }
-
-  @override
-  Future<bool> recallMessage(String messageId) async {
-    try {
-      final res = await DioClient().get(
-        API.chatRecall,
-        queryParameters: {'messageId': messageId},
-      );
-      if (res.data['code'] == 200) return true;
-      debugLog("撤回消息失败: ${res.data['msg']}");
-      return false;
-    } catch (e) {
-      debugLog('撤回消息请求失败: $e');
-      return false;
-    }
   }
 
   @override

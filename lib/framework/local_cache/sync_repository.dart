@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:anoxia/domain/repositories/chat_repository.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:uuid/uuid.dart';
 
 import '../domain/chat_message.dart';
 import '../domain/chat_room_vo.dart';
@@ -168,86 +167,6 @@ class SyncRepository implements ChatRepository {
   }
 
   @override
-  Future<ChatMessage> sendMessage(ChatMessage message) async {
-    final localMessage = _ensureLocalSendingMessage(message);
-    await _local.upsertMessage(localMessage);
-
-    if (!await _hasNetwork()) {
-      return localMessage;
-    }
-
-    try {
-      final result = await _remote.sendMessage(localMessage);
-      if (result.message != null) {
-        await _local.upsertMessage(
-          result.message!.copyWith(deliveryStatus: DeliveryStatus.sent),
-        );
-      } else {
-        await _local.updateDeliveryStatus(
-          localMessage.messageId!,
-          DeliveryStatus.sent,
-          serverMessageId: result.messageId,
-          seq: result.seq,
-          sentAt: result.sentAt,
-        );
-      }
-      return localMessage.copyWith(
-        messageId: result.messageId,
-        seq: result.seq,
-        timestamp: result.sentAt?.millisecondsSinceEpoch,
-        deliveryStatus: DeliveryStatus.sent,
-      );
-    } catch (e, st) {
-      debugLog('sendMessage failed', e, st);
-      await _local.updateDeliveryStatus(
-        localMessage.messageId!,
-        DeliveryStatus.failed,
-      );
-      await _local.logSyncFailure(
-        scope: 'messages',
-        scopeId: localMessage.roomId,
-        action: 'sendMessage',
-        error: e,
-      );
-      return localMessage.copyWith(deliveryStatus: DeliveryStatus.failed);
-    }
-  }
-
-  @override
-  Future<void> retryPendingOutgoing() async {
-    if (!await _hasNetwork()) return;
-
-    final pending = await _local.pendingOutgoingMessages();
-    for (final message in pending) {
-      await sendMessage(
-        message.copyWith(deliveryStatus: DeliveryStatus.sending),
-      );
-    }
-  }
-
-  @override
-  Future<void> markAsRead(
-    String conversationId, {
-    String? messageId,
-    int? seq,
-  }) async {
-    await _local.markConversationAsRead(conversationId, seq: seq);
-    if (!await _hasNetwork()) return;
-
-    try {
-      await _remote.markAsRead(conversationId, seq: seq);
-    } catch (e, st) {
-      debugLog('markAsRead failed', e, st);
-      await _local.logSyncFailure(
-        scope: 'conversations',
-        scopeId: conversationId,
-        action: 'markAsRead',
-        error: e,
-      );
-    }
-  }
-
-  @override
   Future<void> cacheIncomingMessage(ChatMessage message) async {
     await _local.upsertMessage(
       message.copyWith(deliveryStatus: DeliveryStatus.sent),
@@ -308,23 +227,6 @@ class SyncRepository implements ChatRepository {
         .whereType<String>()
         .toList();
     await _local.deleteConversationsNotIn(remoteIds);
-  }
-
-  ChatMessage _ensureLocalSendingMessage(ChatMessage message) {
-    final id = message.messageId ?? message.clientMsgId ?? const Uuid().v4();
-    return ChatMessage(
-      messageId: id,
-      clientMsgId: message.clientMsgId ?? id,
-      roomId: message.roomId,
-      senderId: message.senderId,
-      messageType: message.messageType,
-      content: message.content,
-      payload: message.payload,
-      properties: message.properties,
-      deliveryStatus: DeliveryStatus.sending,
-      timestamp: message.timestamp ?? DateTime.now().millisecondsSinceEpoch,
-      seq: message.seq ?? 0,
-    );
   }
 
   DateTime? _roomVersion(ChatRoomVO room) {

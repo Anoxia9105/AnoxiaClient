@@ -1,7 +1,7 @@
 /// 消息类型和投递状态枚举定义。
 ///
-/// 定义 V5 协议中的消息类型编码和本地 UI 投递状态。
-/// Message type enum aligned with V5 protocol numeric codes.
+/// 定义 V6 协议中的消息类型编码和本地 UI 投递状态。
+/// Message type enum aligned with V6 protocol numeric codes.
 enum MessageType {
   /// 文本消息。
   text(1),
@@ -79,7 +79,7 @@ enum MessageType {
   }
 }
 
-/// Local UI delivery state. This is not part of RoomMessage V5 protocol.
+/// Local UI delivery state. This is not part of the V6 RoomMessage wire model.
 enum DeliveryStatus {
   /// 发送中。
   sending,

@@ -203,7 +203,7 @@ class ImPacketV6 {
       return inter;
     }
 
-    v6.MediaAttachment _toMedia(Attachment att) {
+    v6.MediaAttachment toMedia(Attachment att) {
       final m = v6.MediaAttachment();
       if (att.id != null && att.id!.isNotEmpty) m.attachmentId = att.id!;
       m.kind = _toAttachmentKind(att.kind);
@@ -237,18 +237,19 @@ class ImPacketV6 {
         return v6.UserMessagePayload()..richText = rp;
       case MessageType.image:
         final ip = v6.ImagePayload();
-        if (p?.image != null) ip.image = _toMedia(p!.image!);
-        if (p?.content != null &&
-            p!.content!.isNotEmpty &&
-            p!.content != '[image]') {
-          ip.caption = p!.content!;
+        if (p?.image != null) ip.image = toMedia(p!.image!);
+        final imageCaption = p?.content;
+        if (imageCaption != null &&
+            imageCaption.isNotEmpty &&
+            imageCaption != '[image]') {
+          ip.caption = imageCaption;
         }
         final inter = buildInteraction();
         if (inter != null) ip.interaction = inter;
         return v6.UserMessagePayload()..image = ip;
       case MessageType.audio:
         final ap = v6.AudioPayload();
-        if (p?.audio != null) ap.audio = _toMedia(p!.audio!);
+        if (p?.audio != null) ap.audio = toMedia(p!.audio!);
         ap.durationMs = p?.audioDuration ?? 0;
         if (p?.waveform != null) {
           try {
@@ -258,24 +259,26 @@ class ImPacketV6 {
         return v6.UserMessagePayload()..audio = ap;
       case MessageType.video:
         final vp = v6.VideoPayload();
-        if (p?.video != null) vp.video = _toMedia(p!.video!);
+        if (p?.video != null) vp.video = toMedia(p!.video!);
         vp.durationMs = p?.audioDuration ?? 1000;
-        if (p?.cover != null) vp.cover = _toMedia(p!.cover!);
-        if (p?.content != null &&
-            p!.content!.isNotEmpty &&
-            p!.content != '[video]') {
-          vp.caption = p!.content!;
+        if (p?.cover != null) vp.cover = toMedia(p!.cover!);
+        final videoCaption = p?.content;
+        if (videoCaption != null &&
+            videoCaption.isNotEmpty &&
+            videoCaption != '[video]') {
+          vp.caption = videoCaption;
         }
         final inter = buildInteraction();
         if (inter != null) vp.interaction = inter;
         return v6.UserMessagePayload()..video = vp;
       case MessageType.file:
         final fp = v6.FilePayload();
-        if (p?.file != null) fp.file = _toMedia(p!.file!);
-        if (p?.content != null &&
-            p!.content!.isNotEmpty &&
-            p!.content != '[file]') {
-          fp.caption = p!.content!;
+        if (p?.file != null) fp.file = toMedia(p!.file!);
+        final fileCaption = p?.content;
+        if (fileCaption != null &&
+            fileCaption.isNotEmpty &&
+            fileCaption != '[file]') {
+          fp.caption = fileCaption;
         }
         final inter = buildInteraction();
         if (inter != null) fp.interaction = inter;
@@ -284,7 +287,7 @@ class ImPacketV6 {
         final ep = v6.EmojiPayload()
           ..emojiId = p?.emojiCode ?? p?.content ?? ''
           ..textFallback = p?.content ?? '';
-        if (p?.asset != null) ep.asset = _toMedia(p!.asset!);
+        if (p?.asset != null) ep.asset = toMedia(p!.asset!);
         return v6.UserMessagePayload()..emoji = ep;
       case MessageType.location:
         final lp = v6.LocationPayload();
@@ -411,7 +414,7 @@ class ImPacketV6 {
   }
 
   static MessagePayload? _fromV6MessagePayload(v6.MessagePayload p) {
-    Attachment _fromMedia(v6.MediaAttachment m) => Attachment(
+    Attachment fromMedia(v6.MediaAttachment m) => Attachment(
       id: m.hasAttachmentId() ? m.attachmentId : null,
       kind: _fromAttachmentKind(m.kind),
       url: m.hasUrl() ? m.url : null,
@@ -424,15 +427,15 @@ class ImPacketV6 {
       bitrate: m.hasBitrate() ? m.bitrate : null,
     );
 
-    String? _replyOf(v6.Interaction? inter) =>
+    String? replyOf(v6.Interaction? inter) =>
         inter != null && inter.hasReplyToMessageId()
         ? inter.replyToMessageId
         : null;
-    List<int>? _mentionsOf(v6.Interaction? inter) =>
+    List<int>? mentionsOf(v6.Interaction? inter) =>
         inter != null && inter.mentionedUserIds.isNotEmpty
         ? inter.mentionedUserIds.map((e) => e.toInt()).toList()
         : null;
-    bool? _mentionAllOf(v6.Interaction? inter) =>
+    bool? mentionAllOf(v6.Interaction? inter) =>
         inter != null && inter.hasMentionAll() ? inter.mentionAll : null;
 
     switch (p.whichBody()) {
@@ -443,35 +446,33 @@ class ImPacketV6 {
           markdown: t.format == v6.TextFormat.TEXT_FORMAT_MARKDOWN
               ? t.content
               : null,
-          replyTo: t.hasInteraction() ? _replyOf(t.interaction) : null,
-          mentions: t.hasInteraction() ? _mentionsOf(t.interaction) : null,
-          mentionAll: t.hasInteraction() ? _mentionAllOf(t.interaction) : null,
+          replyTo: t.hasInteraction() ? replyOf(t.interaction) : null,
+          mentions: t.hasInteraction() ? mentionsOf(t.interaction) : null,
+          mentionAll: t.hasInteraction() ? mentionAllOf(t.interaction) : null,
         );
       case v6.MessagePayload_Body.richText:
         final r = p.richText;
         return MessagePayload(
           content: r.hasPlainText() ? r.plainText : '',
           quillDelta: r.hasDeltaJson() ? r.deltaJson : null,
-          replyTo: r.hasInteraction() ? _replyOf(r.interaction) : null,
-          mentions: r.hasInteraction() ? _mentionsOf(r.interaction) : null,
-          mentionAll: r.hasInteraction() ? _mentionAllOf(r.interaction) : null,
+          replyTo: r.hasInteraction() ? replyOf(r.interaction) : null,
+          mentions: r.hasInteraction() ? mentionsOf(r.interaction) : null,
+          mentionAll: r.hasInteraction() ? mentionAllOf(r.interaction) : null,
         );
       case v6.MessagePayload_Body.image:
         final im = p.image;
         return MessagePayload(
           content: im.hasCaption() ? im.caption : '[image]',
-          image: im.hasImage() ? _fromMedia(im.image) : null,
-          replyTo: im.hasInteraction() ? _replyOf(im.interaction) : null,
-          mentions: im.hasInteraction() ? _mentionsOf(im.interaction) : null,
-          mentionAll: im.hasInteraction()
-              ? _mentionAllOf(im.interaction)
-              : null,
+          image: im.hasImage() ? fromMedia(im.image) : null,
+          replyTo: im.hasInteraction() ? replyOf(im.interaction) : null,
+          mentions: im.hasInteraction() ? mentionsOf(im.interaction) : null,
+          mentionAll: im.hasInteraction() ? mentionAllOf(im.interaction) : null,
         );
       case v6.MessagePayload_Body.audio:
         final a = p.audio;
         return MessagePayload(
           content: '[audio]',
-          audio: a.hasAudio() ? _fromMedia(a.audio) : null,
+          audio: a.hasAudio() ? fromMedia(a.audio) : null,
           audioDuration: a.hasDurationMs() ? a.durationMs : null,
           waveform: a.waveform.isNotEmpty
               ? String.fromCharCodes(a.waveform)
@@ -481,28 +482,28 @@ class ImPacketV6 {
         final v = p.video;
         return MessagePayload(
           content: v.hasCaption() ? v.caption : '[video]',
-          video: v.hasVideo() ? _fromMedia(v.video) : null,
-          cover: v.hasCover() ? _fromMedia(v.cover) : null,
+          video: v.hasVideo() ? fromMedia(v.video) : null,
+          cover: v.hasCover() ? fromMedia(v.cover) : null,
           audioDuration: v.hasDurationMs() ? v.durationMs : null,
-          replyTo: v.hasInteraction() ? _replyOf(v.interaction) : null,
-          mentions: v.hasInteraction() ? _mentionsOf(v.interaction) : null,
-          mentionAll: v.hasInteraction() ? _mentionAllOf(v.interaction) : null,
+          replyTo: v.hasInteraction() ? replyOf(v.interaction) : null,
+          mentions: v.hasInteraction() ? mentionsOf(v.interaction) : null,
+          mentionAll: v.hasInteraction() ? mentionAllOf(v.interaction) : null,
         );
       case v6.MessagePayload_Body.file:
         final f = p.file;
         return MessagePayload(
           content: f.hasCaption() ? f.caption : '[file]',
-          file: f.hasFile() ? _fromMedia(f.file) : null,
-          replyTo: f.hasInteraction() ? _replyOf(f.interaction) : null,
-          mentions: f.hasInteraction() ? _mentionsOf(f.interaction) : null,
-          mentionAll: f.hasInteraction() ? _mentionAllOf(f.interaction) : null,
+          file: f.hasFile() ? fromMedia(f.file) : null,
+          replyTo: f.hasInteraction() ? replyOf(f.interaction) : null,
+          mentions: f.hasInteraction() ? mentionsOf(f.interaction) : null,
+          mentionAll: f.hasInteraction() ? mentionAllOf(f.interaction) : null,
         );
       case v6.MessagePayload_Body.emoji:
         final e = p.emoji;
         return MessagePayload(
           content: e.hasTextFallback() ? e.textFallback : e.emojiId,
           emojiCode: e.hasEmojiId() ? e.emojiId : null,
-          asset: e.hasAsset() ? _fromMedia(e.asset) : null,
+          asset: e.hasAsset() ? fromMedia(e.asset) : null,
         );
       case v6.MessagePayload_Body.location:
         final l = p.location;
@@ -539,11 +540,9 @@ class ImPacketV6 {
             language: co.hasLanguage() ? co.language : null,
             title: co.hasTitle() ? co.title : null,
           ),
-          replyTo: co.hasInteraction() ? _replyOf(co.interaction) : null,
-          mentions: co.hasInteraction() ? _mentionsOf(co.interaction) : null,
-          mentionAll: co.hasInteraction()
-              ? _mentionAllOf(co.interaction)
-              : null,
+          replyTo: co.hasInteraction() ? replyOf(co.interaction) : null,
+          mentions: co.hasInteraction() ? mentionsOf(co.interaction) : null,
+          mentionAll: co.hasInteraction() ? mentionAllOf(co.interaction) : null,
         );
       case v6.MessagePayload_Body.system:
         final s = p.system;

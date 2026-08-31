@@ -51,7 +51,8 @@ class Attachment {
     'id': id,
     'kind': kind,
     'url': url,
-    // V6 写入 original_name，同时兼容 V5 name
+    // 本地 JSON 同时保留易读字段和 V6 snake_case 字段；WebSocket 只编码为
+    // MediaAttachment.original_name，不参与协议版本探测或回退。
     'name': name,
     'original_name': name,
     'type': type,

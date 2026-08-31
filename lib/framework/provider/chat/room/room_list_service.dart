@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
+import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/sync_conversations_usecase_provider.dart';
-import 'package:anoxia/framework/provider/core/mark_as_read_usecase_provider.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
 import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -15,6 +15,7 @@ import 'package:anoxia/framework/provider/chat/room/message_notification_policy.
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_lookup_helper.dart';
+import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -84,7 +85,7 @@ class RoomListService extends _$RoomListService {
     ref.onDispose(() {
       // 销毁时：将所有待上报的 seq 立即上报，然后取消定时器
       for (final entry in _pendingReadSeqs.entries) {
-        _reportReadSeq(entry.key, entry.value);
+        _sendReadCursor(entry.key, entry.value);
       }
       for (final timer in _readDebounceTimers.values) {
         timer.cancel();
@@ -205,7 +206,8 @@ class RoomListService extends _$RoomListService {
     final isSelfMessage = newMessage.senderId == currentUser?.userId;
 
     final action = newMessage.properties['action']?.toString().toUpperCase();
-    final isCallSystemMessage = action == 'CALL_STARTED' ||
+    final isCallSystemMessage =
+        action == 'CALL_STARTED' ||
         action == 'CALL_ENDED' ||
         action == 'CALL_REJECTED' ||
         action == 'CALL_CANCELED';
@@ -284,7 +286,7 @@ class RoomListService extends _$RoomListService {
           final int? lastSeq = rooms[index].lastMessage?.seq;
           final int? seqToReport = hasPendingReadSeq ? pendingSeq : lastSeq;
           if (seqToReport != null && seqToReport > 0) {
-            _reportReadSeq(roomId, seqToReport);
+            _sendReadCursor(roomId, seqToReport);
           }
         }
 
@@ -340,15 +342,20 @@ class RoomListService extends _$RoomListService {
       final pendingSeq = _pendingReadSeqs.remove(roomId);
       _readDebounceTimers.remove(roomId);
       if (pendingSeq != null && pendingSeq > 0) {
-        _reportReadSeq(roomId, pendingSeq);
+        _sendReadCursor(roomId, pendingSeq);
       }
     });
   }
 
   /// 上报已读 seq 到服务器，同时更新本地 DB（last_read_seq / unread_count）
-  Future<void> _reportReadSeq(String roomId, int seq) async {
+  Future<void> _sendReadCursor(String roomId, int seq) async {
     try {
-      await ref.read(markAsReadUseCaseProvider)(roomId, seq: seq);
+      await ref
+          .read(localDataSourceProvider)
+          .markConversationAsRead(roomId, seq: seq);
+      ref
+          .read(wsControllerProvider.notifier)
+          .sendMessage(ImPacketV6.encodeReadCursorFrame(roomId, seq));
     } catch (e) {
       debugLog('上报已读失败: $e');
     }

@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
+import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/provider/core/favorite_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
@@ -184,8 +185,8 @@ Stream<List<ChatMessage>> roomMessages(Ref ref, String roomId) {
     ),
   );
   return ref
-       .read(chatRepositoryProvider)
-       .watchMessages(roomId, limit: limit)
+      .read(chatRepositoryProvider)
+      .watchMessages(roomId, limit: limit)
       .map((messages) {
         scheduleMicrotask(() {
           if (!ref.mounted) return;
@@ -220,11 +221,12 @@ typedef QuotedMessageLookupArgs = ({String roomId, String messageId});
 /// 窗口外则查本地库——本地库也查不到说明消息已被撤回/删除（或从未同步）。
 final quotedMessageLookupProvider = FutureProvider.autoDispose
     .family<ChatMessage?, QuotedMessageLookupArgs>((ref, args) {
-  final inWindow =
-      ref.watch(roomMessageIndexProvider(args.roomId))[args.messageId];
-  if (inWindow != null) return inWindow;
-  return ref.read(localDataSourceProvider).getMessageById(args.messageId);
-});
+      final inWindow = ref.watch(
+        roomMessageIndexProvider(args.roomId),
+      )[args.messageId];
+      if (inWindow != null) return inWindow;
+      return ref.read(localDataSourceProvider).getMessageById(args.messageId);
+    });
 
 /// 历史消息加载状态追踪
 ///
@@ -280,8 +282,7 @@ class ChatMessages extends _$ChatMessages {
     final subscription = stream
         .where(
           (frame) =>
-              frame.topic == PacketType.message &&
-              frame.data is RoomMessage,
+              frame.topic == PacketType.message && frame.data is RoomMessage,
         )
         .map((frame) => frame.data as RoomMessage)
         .listen(_handleIncomingMessage);
@@ -490,11 +491,9 @@ class ChatMessages extends _$ChatMessages {
       );
 
       if (history.isEmpty) {
-        history = await ref.read(messageRepositoryProvider).fetchHistory(
-              roomId,
-              beforeSeq: oldestSeq,
-              pageSize: _pageSize,
-            );
+        history = await ref
+            .read(messageRepositoryProvider)
+            .fetchHistory(roomId, beforeSeq: oldestSeq, pageSize: _pageSize);
         if (history.isEmpty) {
           _lastLoadedHistoryBoundary[roomId] = oldestSeq;
           ref.read(chatHasMoreProvider.notifier).setHasMore(roomId, false);
@@ -553,9 +552,18 @@ class ChatMessages extends _$ChatMessages {
 
   Future<bool> recallMessage(String messageId, String roomId) async {
     try {
-      final ok = await ref
-          .read(messageRepositoryProvider)
-          .recallMessage(messageId);
+      final requestId = 'recall_${DateTime.now().microsecondsSinceEpoch}';
+      final ack = await ref
+          .read(wsControllerProvider.notifier)
+          .sendCommand(
+            ImPacketV6.encodeRecallFrame(
+              roomId,
+              messageId,
+              requestId: requestId,
+            ),
+            requestId: requestId,
+          );
+      final ok = ack.isSuccess;
 
       if (ok) {
         await removeMessage(messageId, roomId);

@@ -38,8 +38,21 @@
 | 路由 | `go_router` |
 | 网络 | `dio` / `web_socket_channel` |
 | 音视频 | `livekit_client` / `flutter_webrtc` |
-| 本地存储 | `shared_preferences` / `flutter_secure_storage` |
+| 本地存储 | `shared_preferences` / `flutter_secure_storage` / `drift`(SQLite) |
 | 富文本 | `flutter_quill` |
+| IM 协议 | V6 protobuf（`AnoxiaProtocol` 生成的 `anoxia_protocol` 包） |
+
+---
+
+## 📡 消息链路（V6 协议）
+
+- **传输**：WebSocket 二进制帧负载直接是 `ClientFrame`/`ServerFrame` protobuf（无应用层帧头，无版本探测）。路径 `ws://host:8081/chat?token=`，保活走 RFC 6455 Ping/Pong。
+- **编解码**：`ImPacketV6`（`lib/framework/codec/v6/im_packet_v6.dart`）在生成的 `anoxia_protocol` 包与本地领域模型间转换；线上无手写 codec。
+- **发送**：`SendMessageCommand` 的 `client_message_id` 必须与 `ClientFrame.request_id` 相同；服务端以它为幂等键（24h 去重，DB 唯一索引兜底）。
+- **ACK**：关联键是 `ClientFrame.request_id`；先收"入队 ACK"（无 seq），再收下行 `ServerFrame.message` 与携带 `message_id/seq` 的二次 ACK，按 `clientMessageId` 幂等合并（`ws_controller.dart`）。
+- **重连**：断线后基于 Drift 本地状态按 `SENDING`/`FAILED` 待确认队列重发，**复用原 `clientMsgId`** 保证服务端去重幂等（见 `AGENTS.md` 消息同步不变量）。未确认超时 15s，自动重试上限 3 次，待确认上限 500。
+- **本地持久化**：收到下行消息落 `drift`（`Drift`），撤回/删除经 `MessageOperationEvent` 本地同步移除/标记。
+- 协议定义与字段见相邻仓库 `../AnoxiaProtocol`（`proto/anoxia/im/v6/im.proto`）。
 
 ---
 

@@ -3,7 +3,7 @@ import 'package:anoxia/framework/domain/message_search_result.dart';
 
 /// 消息仓库抽象接口
 ///
-/// 定义消息相关的远程数据操作契约：历史消息、撤回消息和消息搜索。
+/// 定义消息相关的只读远程数据操作契约：历史消息和消息搜索。
 /// 数据层通过实现此接口提供具体实现，UI 层 Provider 仅依赖此接口。
 abstract interface class MessageRepository {
   /// 获取历史消息
@@ -18,13 +18,6 @@ abstract interface class MessageRepository {
     required int beforeSeq,
     required int pageSize,
   });
-
-  /// 撤回消息
-  ///
-  /// [messageId] 目标消息 ID
-  ///
-  /// 返回是否操作成功。
-  Future<bool> recallMessage(String messageId);
 
   /// 搜索消息
   ///

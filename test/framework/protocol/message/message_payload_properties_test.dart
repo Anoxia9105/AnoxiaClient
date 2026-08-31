@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CardPayload properties 兼容服务端 List[{key,value}] 格式', () {
-    test('Map 格式（本地缓存 / V5 本地序列化）', () {
+    test('Map 格式（当前本地缓存序列化）', () {
       final card = CardPayload.fromJson({
         'cardType': 'note',
         'properties': {

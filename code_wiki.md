@@ -144,11 +144,8 @@ lib/
 │
 ├── framework/                   # 核心框架层
 │   ├── codec/                   # 协议编解码层
-│   │   ├── FrameCodec.dart
-│   │   ├── ProtoReader.dart
-│   │   ├── ProtoWriter.dart
-│   │   └── v5/
-│   │       └── ImPacketV5.dart
+│   │   └── v6/
+│   │       └── im_packet_v6.dart # 原始 V6 ClientFrame/ServerFrame Protobuf
 │   ├── core/                    # 核心基础设施
 │   │   ├── app_globals.dart     # 全局变量
 │   │   └── push_manager.dart    # 推送管理器
@@ -198,8 +195,6 @@ lib/
 │   │   │   ├── MessageEunm.dart
 │   │   │   ├── MessagePayload.dart
 │   │   │   └── RoomMessage.dart   # 聊天室消息
-│   │   └── register/             # 协议注册
-│   │       └── PacketRegistry.dart
 │   ├── provider/                  # Riverpod 状态管理
 │   │   ├── ai/                   # AI 对话
 │   │   │   ├── ai_chat_controller.dart
@@ -623,30 +618,25 @@ final response = await DioClient().uploadFile(
 
 支持后端传来的数字下标（0, 1, 2...）或字符串名称（"MESSAGE", "EVENT"）。
 
-#### 3.3.2 PacketRegistry
+#### 3.3.2 ImPacketV6
 
-**文件路径**: `lib/framework/protocol/register/PacketRegistry.dart`
+**文件路径**: `lib/framework/codec/v6/im_packet_v6.dart`
 
-**职责描述**: 数据包解析注册表，维护 `PacketType` 到解析器的映射。
+**职责描述**: 在生成的 Protobuf V6 `ClientFrame` / `ServerFrame` 与客户端领域模型之间做唯一编解码映射。
 
 **核心方法**:
 
 | 方法名 | 描述 |
 |--------|------|
-| `register(PacketType type, PacketParser parser)` | 注册解析器 |
-| `parse(PacketType type, Map<String, dynamic> data)` | 根据类型解析消息 |
+| `encodeMessageFrame(...)` | 编码原始 V6 上行消息帧 |
+| `encodeReadCursorFrame(...)` | 编码已读游标命令 |
+| `encodeRecallFrame(...)` | 编码撤回命令 |
+| `decodeServerFrame(...)` | 解码 V6 下行帧并映射为领域消息 |
 
-**注册示例**:
+**解码示例**:
 
 ```dart
-PacketRegistry.register(
-  PacketType.message,
-  (data) => RoomMessage.fromJson(data),
-);
-PacketRegistry.register(
-  PacketType.event,
-  (data) => EventMessage.fromJson(data),
-);
+final frame = ImPacketV6.decodeServerFrame(bytes);
 ```
 
 #### 3.3.3 RoomMessage
@@ -1267,10 +1257,10 @@ Text('item_count').trplural('other', 10)
 
 ### 11.3 WebSocket 消息处理规范
 
-1. 在 `main.dart` 中注册协议解析器
-2. 通过 `wsControllerProvider` 的 `messageStream` 监听消息
-3. 使用 `PacketRegistry.parse()` 解析消息
-4. 遵循 `PacketType` 枚举区分消息类型
+1. WebSocket 二进制消息必须直接使用 V6 `ClientFrame` / `ServerFrame`
+2. 统一通过 `ImPacketV6` 编解码，不添加应用层帧头或版本探测
+3. 通过 `wsControllerProvider` 的 `messageStream` 监听映射后的消息
+4. 使用 `request_id` 关联 ACK，并用 `client_message_id` 保证缓存补发幂等
 
 ### 11.4 状态管理规范
 
@@ -1338,7 +1328,6 @@ Text('item_count').trplural('other', 10)
 | 聊天室 | `/chat/createGroup` | POST | 创建群聊 |
 | 消息 | `/chat/history` | GET | 获取历史消息 |
 | 消息 | `/chat/search` | GET | 搜索消息 |
-| 消息 | `/chat/recall` | GET | 撤回消息 |
 | 通话 | `/call/token` | GET | 获取通话 Token |
 | 更新 | `/app/update/latest` | GET | 检查版本更新 |
 

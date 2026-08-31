@@ -11,13 +11,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('send message is a raw V6 ClientFrame and preserves cache identity', () {
-    final message = RoomMessage(
+    const message = RoomMessage(
       messageId: '',
       clientMsgId: 'client-1',
       roomId: 'room-1',
       senderId: 7,
       messageType: MessageType.text,
-      payload: const MessagePayload(content: 'hello'),
+      payload: MessagePayload(content: 'hello'),
       clientTimestamp: 123,
     );
 

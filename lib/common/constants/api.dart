@@ -157,19 +157,16 @@ class API {
   static const String chatHistory = '/chat/history';
 
   /// REST fallback for sending a message when WebSocket integration is not used.
-  static const String chatSendMessage = '/chat/message/send';
 
   /// 获取聊天室成员
   static const String chatMembers = '/chat/members';
 
   /// 上报消息已读状态
-  static const String chatReadReport = '/chat/readReport';
 
   /// 搜索聊天消息
   static const String chatSearch = '/chat/search';
 
   /// 撤回消息
-  static const String chatRecall = '/chat/recall';
 
   /// 收藏消息
   static const String chatFavoriteAdd = '/chat/favorite/add';

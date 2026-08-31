@@ -3,7 +3,7 @@ import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ChatFavorite V5 typed payload 解析', () {
+  group('ChatFavorite typed payload 解析', () {
     test('richText typed payload 提取摘要与详情文本', () {
       final favorite = ChatFavorite.fromJson({
         'id': 1,

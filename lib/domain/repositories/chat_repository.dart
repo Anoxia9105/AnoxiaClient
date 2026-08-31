@@ -37,20 +37,6 @@ abstract interface class ChatRepository {
   /// 同步指定会话的消息
   Future<void> syncMessages(String convId, {DateTime? since});
 
-  /// 发送消息
-  /// 返回本地消息对象（包含服务端返回的 ID、序号等）
-  Future<ChatMessage> sendMessage(ChatMessage message);
-
-  /// 重试待发送的消息
-  Future<void> retryPendingOutgoing();
-
-  /// 标记已读
-  Future<void> markAsRead(
-    String conversationId, {
-    String? messageId,
-    int? seq,
-  });
-
   /// 缓存传入的消息
   Future<void> cacheIncomingMessage(ChatMessage message);
 

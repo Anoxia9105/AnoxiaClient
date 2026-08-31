@@ -270,7 +270,9 @@ class WsController extends _$WsController {
     final completer = Completer<AckV6>();
     final timer = Timer(timeout, () {
       final pending = _pendingCommands.remove(requestId);
-      pending?.completer.completeError(TimeoutException('V6 command ACK timeout'));
+      pending?.completer.completeError(
+        TimeoutException('V6 command ACK timeout'),
+      );
     });
     _pendingCommands[requestId] = _PendingCommand(completer, timer);
     try {
@@ -363,6 +365,12 @@ class WsController extends _$WsController {
           // 若关联 pending，则标记失败
           final rid = decoded.requestId;
           if (rid != null && rid.isNotEmpty) {
+            final command = _pendingCommands.remove(rid);
+            if (command != null) {
+              command.timeoutTimer.cancel();
+              command.completer.completeError(StateError(msg));
+              break;
+            }
             _removePendingOutbound(rid);
             ref
                 .read(chatMessagesProvider.notifier)

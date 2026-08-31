@@ -51,15 +51,6 @@ class _FakeRemoteDataSource extends RemoteDataSource {
         .take(pageSize)
         .toList();
   }
-
-  @override
-  Future<RemoteSendResult> sendMessage(ChatMessage message) async {
-    return RemoteSendResult(
-      messageId: message.messageId!,
-      seq: 100,
-      sentAt: DateTime.fromMillisecondsSinceEpoch(2000),
-    );
-  }
 }
 
 ChatMessage _message({
@@ -98,29 +89,33 @@ void main() {
     await database.close();
   });
 
-  test('backlog sync loops until caught up and watermark reaches max seq',
-      () async {
-    remote.history['room-1'] = List.generate(
-      250,
-      (index) => _message(
-        id: 'message-${index + 1}',
-        roomId: 'room-1',
-        seq: index + 1,
-      ),
-    );
+  test(
+    'backlog sync loops until caught up and watermark reaches max seq',
+    () async {
+      remote.history['room-1'] = List.generate(
+        250,
+        (index) => _message(
+          id: 'message-${index + 1}',
+          roomId: 'room-1',
+          seq: index + 1,
+        ),
+      );
 
-    await syncRepository.syncMessages('room-1');
+      await syncRepository.syncMessages('room-1');
 
-    expect(remote.fetchMessagesCalls, 3);
-    expect(await local.messageSyncWatermark('room-1'), 250);
-    final messages =
-        await local.getMessagesForConversation('room-1', limit: 1000);
-    expect(messages, hasLength(250));
-    expect(
-      messages.map((message) => message.seq).toSet(),
-      List.generate(250, (index) => index + 1).toSet(),
-    );
-  });
+      expect(remote.fetchMessagesCalls, 3);
+      expect(await local.messageSyncWatermark('room-1'), 250);
+      final messages = await local.getMessagesForConversation(
+        'room-1',
+        limit: 1000,
+      );
+      expect(messages, hasLength(250));
+      expect(
+        messages.map((message) => message.seq).toSet(),
+        List.generate(250, (index) => index + 1).toSet(),
+      );
+    },
+  );
 
   test('watermark jumps past permanent holes inside the response', () async {
     remote.history['room-1'] = [
@@ -137,56 +132,60 @@ void main() {
 
     expect(remote.fetchMessagesCalls, 1);
     expect(await local.messageSyncWatermark('room-1'), 7);
-    final messages =
-        await local.getMessagesForConversation('room-1', limit: 1000);
+    final messages = await local.getMessagesForConversation(
+      'room-1',
+      limit: 1000,
+    );
     expect(messages.map((message) => message.seq).toSet(), {5, 6, 7});
   });
 
-  test('empty remote response breaks the loop without advancing watermark',
-      () async {
-    await local.updateSyncState(
-      scope: 'messages',
-      scopeId: 'room-1',
-      lastSeq: 5,
-    );
+  test(
+    'empty remote response breaks the loop without advancing watermark',
+    () async {
+      await local.updateSyncState(
+        scope: 'messages',
+        scopeId: 'room-1',
+        lastSeq: 5,
+      );
 
-    await syncRepository.syncMessages('room-1');
+      await syncRepository.syncMessages('room-1');
 
-    expect(remote.fetchMessagesCalls, 1);
-    expect(await local.messageSyncWatermark('room-1'), 5);
-  });
+      expect(remote.fetchMessagesCalls, 1);
+      expect(await local.messageSyncWatermark('room-1'), 5);
+    },
+  );
 
-  test('conversation sync deletes stale local rooms with messages and watermark',
-      () async {
-    await local.upsertConversations([
-      ChatRoomVO(roomId: 'keep-1', roomName: 'keep'),
-      ChatRoomVO(roomId: 'stale-1', roomName: 'stale'),
-    ]);
-    await local.upsertMessages([
-      _message(id: 'stale-message-1', roomId: 'stale-1', seq: 1),
-    ]);
-    await local.updateSyncState(
-      scope: 'messages',
-      scopeId: 'stale-1',
-      lastSyncedAt: DateTime.now(),
-      lastSeq: 1,
-    );
-    remote.rooms = [
-      ChatRoomVO(roomId: 'keep-1', roomName: 'keep'),
-    ];
+  test(
+    'conversation sync deletes stale local rooms with messages and watermark',
+    () async {
+      await local.upsertConversations([
+        ChatRoomVO(roomId: 'keep-1', roomName: 'keep'),
+        ChatRoomVO(roomId: 'stale-1', roomName: 'stale'),
+      ]);
+      await local.upsertMessages([
+        _message(id: 'stale-message-1', roomId: 'stale-1', seq: 1),
+      ]);
+      await local.updateSyncState(
+        scope: 'messages',
+        scopeId: 'stale-1',
+        lastSyncedAt: DateTime.now(),
+        lastSeq: 1,
+      );
+      remote.rooms = [ChatRoomVO(roomId: 'keep-1', roomName: 'keep')];
 
-    await syncRepository.syncConversations();
+      await syncRepository.syncConversations();
 
-    final rooms = await local.getConversations();
-    expect(rooms.map((room) => room.roomId), ['keep-1']);
-    expect(await local.messageSyncWatermark('stale-1'), 0);
-    expect(
-      await local.getMessagesForConversation('stale-1', limit: 1000),
-      isEmpty,
-    );
-    final state = await database.syncStateDao.getState('conversations');
-    expect(state?.lastSyncedAt, isNotNull);
-  });
+      final rooms = await local.getConversations();
+      expect(rooms.map((room) => room.roomId), ['keep-1']);
+      expect(await local.messageSyncWatermark('stale-1'), 0);
+      expect(
+        await local.getMessagesForConversation('stale-1', limit: 1000),
+        isEmpty,
+      );
+      final state = await database.syncStateDao.getState('conversations');
+      expect(state?.lastSyncedAt, isNotNull);
+    },
+  );
 
   test('null remote conversation response never wipes local cache', () async {
     await local.upsertConversations([
@@ -214,18 +213,5 @@ void main() {
     );
     final state = await database.syncStateDao.getState('conversations');
     expect(state?.lastSyncedAt, isNull);
-  });
-
-  test('sendMessage success persists server seq and delivery status', () async {
-    final result = await syncRepository.sendMessage(
-      _message(id: 'local-1', roomId: 'room-1', seq: 0)
-          .copyWith(deliveryStatus: DeliveryStatus.sending),
-    );
-
-    expect(result.seq, 100);
-    expect(result.deliveryStatus, DeliveryStatus.sent);
-    final saved = await local.getMessageById('local-1');
-    expect(saved?.seq, 100);
-    expect(saved?.deliveryStatus, DeliveryStatus.sent);
   });
 }
