@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
@@ -454,6 +456,7 @@ Future<void> noteInsertImage(
 
   final ids = List.generate(result.files.length, (_) => const Uuid().v4());
   final files = <XFile>[];
+  final sizes = <int>[];
   for (var i = 0; i < result.files.length; i++) {
     final file = result.files[i];
     files.add(
@@ -461,6 +464,40 @@ Future<void> noteInsertImage(
           ? XFile.fromData(file.bytes!, name: file.name)
           : XFile(file.path!, name: file.name),
     );
+    sizes.add(file.size);
+  }
+  _insertNoteImageEmbeds(controller, files, ids, sizes);
+  focusNode.requestFocus();
+
+  await _uploadNoteImages(context, ref, controller, noteId, files, ids);
+}
+
+/// 从剪贴板粘贴图片字节，参考聊天输入框行为：立即插入占位并上传，成功后原位替换。
+Future<void> notePasteImageBytes(
+  BuildContext context,
+  WidgetRef ref,
+  QuillController controller,
+  Uint8List imageBytes,
+) async {
+  final noteId = ref.read(noteSessionServiceProvider)?.noteId;
+  if (noteId == null || imageBytes.isEmpty) return;
+
+  final id = const Uuid().v4();
+  final file = XFile.fromData(imageBytes, name: 'pasted_image.png');
+  _insertNoteImageEmbeds(controller, [file], [id], [imageBytes.length]);
+
+  await _uploadNoteImages(context, ref, controller, noteId, [file], [id]);
+}
+
+/// 为每个文件生成图片嵌入占位并标记上传中。
+void _insertNoteImageEmbeds(
+  QuillController controller,
+  List<XFile> files,
+  List<String> ids, [
+  List<int>? sizes,
+]) {
+  for (var i = 0; i < files.length; i++) {
+    final file = files[i];
     noteImageUploadStore.uploading(ids[i]);
     QuillEmbedUtil.insertEmbed(
       controller: controller,
@@ -470,13 +507,22 @@ Future<void> noteInsertImage(
         'kind': 'IMAGE',
         'url': '',
         'name': file.name,
-        'size': file.size,
-        'type': 'image/${file.extension ?? 'jpeg'}',
+        'size': sizes != null ? sizes[i] : 0,
+        'type': 'image/${file.name.split('.').last.toLowerCase()}',
       },
     );
   }
-  focusNode.requestFocus();
+}
 
+/// 上传图片列表，成功后按图片 ID 把占位替换为真实 URL。
+Future<void> _uploadNoteImages(
+  BuildContext context,
+  WidgetRef ref,
+  QuillController controller,
+  int? noteId,
+  List<XFile> files,
+  List<String> ids,
+) async {
   try {
     final uploads = await ref
         .read(uploadRepositoryProvider)
@@ -485,21 +531,16 @@ Future<void> noteInsertImage(
           clientFileIds: ids,
           noteId: noteId,
           onProgress: (id, sent, total) {
-            noteImageUploadStore.uploading(
-              id,
-              total <= 0 ? 0 : sent / total,
-            );
+            noteImageUploadStore.uploading(id, total <= 0 ? 0 : sent / total);
           },
           onCompleted: (upload) {
             if (!upload.isSuccess || upload.url == null) {
               noteImageUploadStore.failed(upload.clientFileId);
               return;
             }
-            updateNoteImageEmbed(
-              controller,
-              upload.clientFileId,
-              {'url': upload.url},
-            );
+            updateNoteImageEmbed(controller, upload.clientFileId, {
+              'url': upload.url,
+            });
             noteImageUploadStore.complete(upload.clientFileId);
           },
         );

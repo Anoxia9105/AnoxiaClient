@@ -1,3 +1,5 @@
+// ignore_for_file: experimental_member_use
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -13,9 +15,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'note_ai_panel.dart';
 import 'note_editor_parts.dart';
+import 'note_editor_interactions.dart';
 import 'note_editor_widgets.dart';
 import 'note_markdown_io.dart';
 import 'note_pdf_io.dart';
+import 'note_quill_actions.dart';
 import 'note_quill_divider_build.dart';
 import 'note_quill_image_build.dart';
 import 'note_search_panel.dart';
@@ -108,10 +112,22 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
 
   void _initEditor(NoteEditSession session) {
     final delta = _tryDecodeDelta(session.content);
-    _quillController = QuillController(
+    late final QuillController controller;
+    controller = QuillController(
       document: delta,
       selection: const TextSelection.collapsed(offset: 0),
+      config: QuillControllerConfig(
+        clipboardConfig: QuillClipboardConfig(
+          onImagePaste: (imageBytes) async {
+            // 剪贴板粘贴图片：插入占位并上传，成功后原位替换为真实 URL。
+            await notePasteImageBytes(context, ref, controller, imageBytes);
+            // 返回 null，跳过 flutter_quill 默认的图片插入行为。
+            return null;
+          },
+        ),
+      ),
     );
+    _quillController = controller;
     _quillController!.addListener(_onQuillChanged);
     _wordCount = session.plainText.length;
   }
@@ -145,9 +161,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
     // toPlainText 会把嵌入（分割线/图片）输出为 U+FFFC 对象占位符，
     // 直接入库会让左侧列表预览显示成乱码方块（看起来像"obj"），这里剔除
     final plain = controller.document.toPlainText().replaceAll(
-          Embed.kObjectReplacementCharacter,
-          '',
-        );
+      Embed.kObjectReplacementCharacter,
+      '',
+    );
     final notifier = _sessionService;
     notifier.updateContent(content: delta, plainText: plain);
 
@@ -271,7 +287,12 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
                             placeholder: 'note_content_placeholder'.tr(),
                             autoFocus: false,
                             padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                            customStyles: QuillStyleConfig.get(context),
+                            customStyles: QuillStyleConfig.get(
+                              context,
+                              checkboxBuilder: const NoteTaskCheckboxBuilder(),
+                              listLineSpacing: const VerticalSpacing(3, 3),
+                            ),
+                            textSpanBuilder: noteTextSpanBuilder,
                             editorKey: _editorKey,
                             embedBuilders: [
                               NoteQuillImageBuild(),

@@ -63,6 +63,8 @@ class QuillStyleConfig {
     BuildContext context, {
     Color? color,
     bool compact = false,
+    QuillCheckboxBuilder? checkboxBuilder,
+    VerticalSpacing? listLineSpacing,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -122,10 +124,10 @@ class QuillStyleConfig {
         baseTextStyle,
         baseHorizontalSpacing,
         baseVerticalSpacing,
-        VerticalSpacing.zero,
+        listLineSpacing ?? VerticalSpacing.zero,
         null,
         // 任务列表复选框放大到 18px，点击区域更大、更易操作。
-        const _TaskCheckboxBuilder(),
+        checkboxBuilder ?? const _TaskCheckboxBuilder(),
         // 任务列表的引导槽加宽：18px 复选框按真实尺寸渲染，
         // 与正文之间留出约 10px 间距，避免复选框紧贴文字。
         indentWidthBuilder: (block, context, count, numberPointWidth) {
