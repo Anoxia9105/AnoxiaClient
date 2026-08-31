@@ -30,88 +30,99 @@ class AddFriendSearchBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'add_friend_search_hint'.tr(),
-                  hintStyle: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.outline,
-                    fontSize: 14,
-                  ),
-                  prefixIcon: Center(
-                    child: SizedBox.square(
-                      dimension: 14,
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedSearch02,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                  prefixIconConstraints: const BoxConstraints.tightFor(
-                    width: 32,
-                    height: 36,
-                  ),
-                  suffixIcon: controller.text.isNotEmpty
-                      ? IconButton(
-                          icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedCancel01,
-                            color: colorScheme.outline,
-                            size: 18,
-                          ),
-                          onPressed: onClear,
-                          splashRadius: 18,
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'add_friend_search_hint'.tr(),
+                hintStyle: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.outline,
+                  fontSize: 14,
                 ),
-                style: textTheme.bodyMedium?.copyWith(fontSize: 15),
-                onSubmitted: onSubmitted,
-                onChanged: onChanged,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(5),
-              child: Tooltip(
-                message: 'add_friend_search_btn'.tr(),
-                child: FilledButton(
-                  onPressed: isSearching || controller.text.trim().isEmpty
-                      ? null
-                      : onSearch,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(42, 42),
-                    maximumSize: const Size(42, 42),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(11),
+                prefixIcon: Center(
+                  child: SizedBox.square(
+                    dimension: 14,
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedSearch02,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 14,
                     ),
-                    padding: EdgeInsets.zero,
                   ),
-                  child: isSearching
-                      ? const SizedBox.square(
-                          dimension: 17,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const HugeIcon(
-                          icon: HugeIcons.strokeRoundedArrowRight01,
-                          size: 19,
+                ),
+                prefixIconConstraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 36,
+                ),
+                suffixIcon: controller.text.isNotEmpty
+                    ? IconButton(
+                        icon: HugeIcon(
+                          icon: HugeIcons.strokeRoundedCancel01,
+                          color: colorScheme.outline,
+                          size: 18,
                         ),
+                        onPressed: onClear,
+                        splashRadius: 18,
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 1.2,
+                  ),
+                ),
+                isDense: true,
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.35,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 13,
                 ),
               ),
+              style: textTheme.bodyMedium?.copyWith(fontSize: 15),
+              onSubmitted: onSubmitted,
+              onChanged: onChanged,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'add_friend_search_btn'.tr(),
+            child: FilledButton(
+              onPressed: isSearching || controller.text.trim().isEmpty
+                  ? null
+                  : onSearch,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(46, 46),
+                maximumSize: const Size(46, 46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: isSearching
+                  ? const SizedBox.square(
+                      dimension: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowRight01,
+                      size: 19,
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

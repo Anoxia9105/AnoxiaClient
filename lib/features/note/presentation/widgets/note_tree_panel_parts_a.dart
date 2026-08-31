@@ -13,7 +13,7 @@ import 'note_tree_widgets.dart';
 // 从 note_tree_panel.dart 拆出，均为公开部件（super.key），保留中文注释与文案
 // ---------------------------------------------------------------------------
 
-/// 操作行（新建笔记 / 新建文件夹）
+/// 操作行（新建笔记 / 新建文件夹，图标按钮右对齐）
 class NoteTreePanelActionRow extends StatelessWidget {
   final VoidCallback onCreateNote;
   final VoidCallback onCreateFolder;
@@ -26,24 +26,42 @@ class NoteTreePanelActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: NoteTreeActionButton(
-            icon: HugeIcons.strokeRoundedNoteAdd,
-            label: 'note_new'.tr(),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          IconButton(
+            tooltip: 'note_new'.tr(),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(
+              width: 34,
+              height: 34,
+            ),
             onPressed: onCreateNote,
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedNoteAdd,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: NoteTreeActionButton(
-            icon: HugeIcons.strokeRoundedFolderAdd,
-            label: 'note_new_folder'.tr(),
+          IconButton(
+            tooltip: 'note_new_folder'.tr(),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(
+              width: 34,
+              height: 34,
+            ),
             onPressed: onCreateFolder,
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedFolderAdd,
+              size: 17,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

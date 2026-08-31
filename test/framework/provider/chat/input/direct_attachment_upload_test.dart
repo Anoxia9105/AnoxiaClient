@@ -19,9 +19,11 @@ class _SuccessfulUploadRepository implements UploadRepository {
     List<XFile> files, {
     required List<String> clientFileIds,
     UploadProgressCallback? onProgress,
+    UploadCompletedCallback? onCompleted,
+    int? noteId,
   }) async {
     uploadedFiles.addAll(files);
-    return [
+    final results = [
       for (var index = 0; index < files.length; index++)
         UploadFileResult(
           clientFileId: clientFileIds[index],
@@ -35,6 +37,10 @@ class _SuccessfulUploadRepository implements UploadRepository {
           bitrate: 2000000,
         ),
     ];
+    for (final result in results) {
+      onCompleted?.call(result);
+    }
+    return results;
   }
 
   @override

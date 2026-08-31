@@ -5,6 +5,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/colors_box.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
+import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -13,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+
+import 'note_image_embed.dart';
 
 /// 清除光标处的所有行内/块级格式。
 void noteClearFormat(QuillController controller) {
@@ -432,7 +435,7 @@ void noteInsertHorizontalRule(QuillController controller, FocusNode focusNode) {
   focusNode.requestFocus();
 }
 
-/// 选择并上传图片，成功后插入编辑器。
+/// 选择图片后立即插入占位，上传成功时按图片 ID 原位替换。
 Future<void> noteInsertImage(
   BuildContext context,
   WidgetRef ref,
@@ -446,6 +449,9 @@ Future<void> noteInsertImage(
   if (result == null || result.files.isEmpty) return;
   if (!context.mounted) return;
 
+  final noteId = ref.read(noteSessionServiceProvider)?.noteId;
+  if (noteId == null) return;
+
   final ids = List.generate(result.files.length, (_) => const Uuid().v4());
   final files = <XFile>[];
   for (var i = 0; i < result.files.length; i++) {
@@ -453,48 +459,63 @@ Future<void> noteInsertImage(
     files.add(
       file.bytes != null
           ? XFile.fromData(file.bytes!, name: file.name)
-          : XFile(file.path!),
+          : XFile(file.path!, name: file.name),
+    );
+    noteImageUploadStore.uploading(ids[i]);
+    QuillEmbedUtil.insertEmbed(
+      controller: controller,
+      type: BlockEmbed.imageType,
+      data: {
+        'id': ids[i],
+        'kind': 'IMAGE',
+        'url': '',
+        'name': file.name,
+        'size': file.size,
+        'type': 'image/${file.extension ?? 'jpeg'}',
+      },
     );
   }
+  focusNode.requestFocus();
 
   try {
     final uploads = await ref
         .read(uploadRepositoryProvider)
-        .uploadFiles(files, clientFileIds: ids);
-    if (!context.mounted) return;
+        .uploadFiles(
+          files,
+          clientFileIds: ids,
+          noteId: noteId,
+          onProgress: (id, sent, total) {
+            noteImageUploadStore.uploading(
+              id,
+              total <= 0 ? 0 : sent / total,
+            );
+          },
+          onCompleted: (upload) {
+            if (!upload.isSuccess || upload.url == null) {
+              noteImageUploadStore.failed(upload.clientFileId);
+              return;
+            }
+            updateNoteImageEmbed(
+              controller,
+              upload.clientFileId,
+              {'url': upload.url},
+            );
+            noteImageUploadStore.complete(upload.clientFileId);
+          },
+        );
 
-    var inserted = 0;
-    var failed = 0;
-    for (var i = 0; i < uploads.length; i++) {
-      final upload = uploads[i];
-      if (!upload.isSuccess || upload.url == null) {
-        failed++;
-        continue;
-      }
-      QuillEmbedUtil.insertEmbed(
-        controller: controller,
-        type: BlockEmbed.imageType,
-        data: {
-          'kind': 'IMAGE',
-          'url': upload.url,
-          'name': result.files[i].name,
-          'size': result.files[i].size,
-          'type': 'image/${result.files[i].extension ?? 'jpeg'}',
-        },
-      );
-      inserted++;
-    }
+    final failed = uploads.where((upload) => !upload.isSuccess).length;
 
-    if (failed > 0) {
+    if (failed > 0 && context.mounted) {
       Toast.showToast(
         'note_image_upload_failed'.tr(args: [failed.toString()]),
         type: ToastType.error,
       );
     }
-    if (inserted > 0) {
-      focusNode.requestFocus();
-    }
   } catch (e, st) {
+    for (final id in ids) {
+      noteImageUploadStore.failed(id);
+    }
     debugLog('插入笔记图片失败: $e', st);
     if (!context.mounted) return;
     Toast.showToast('note_image_upload_error'.tr(), type: ToastType.error);

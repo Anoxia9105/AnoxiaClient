@@ -5,51 +5,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-/// 操作按钮（新建笔记 / 新建文件夹）
-class NoteTreeActionButton extends StatelessWidget {
-  final List<List<dynamic>> icon;
-  final String label;
-  final VoidCallback onPressed;
-
-  const NoteTreeActionButton({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: colorScheme.primaryContainer.withValues(alpha: .45),
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              HugeIcon(icon: icon, size: 15, color: colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// 文件夹行
 class NoteTreeFolderRow extends StatelessWidget {
   final NoteFolderNode folder;

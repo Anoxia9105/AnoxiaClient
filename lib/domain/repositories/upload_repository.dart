@@ -3,6 +3,7 @@ import 'package:cross_file/cross_file.dart';
 
 typedef UploadProgressCallback =
     void Function(String clientFileId, int sent, int total);
+typedef UploadCompletedCallback = void Function(UploadFileResult result);
 
 /// 文件上传仓库抽象接口
 ///
@@ -20,6 +21,8 @@ abstract interface class UploadRepository {
     List<XFile> files, {
     required List<String> clientFileIds,
     UploadProgressCallback? onProgress,
+    UploadCompletedCallback? onCompleted,
+    int? noteId,
   });
 
   /// 取消指定客户端文件 ID 对应的在途上传。

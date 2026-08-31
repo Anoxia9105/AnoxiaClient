@@ -34,10 +34,22 @@ class GroupRoomListPage extends ConsumerWidget {
       ),
       body: groups.isEmpty
           ? _EmptyState(
-              onCreate: () => presentAdaptivePage(
-                context,
-                builder: (_) => const CreateChatDialogWidget(),
-              ),
+              onCreate: () {
+                if (DeviceUtil.isMobile(context)) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const CreateChatDialogWidget(asPage: true),
+                    ),
+                  );
+                  return;
+                }
+                showEscClosableDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const CreateChatDialogWidget(),
+                );
+              },
             )
           : AnimationLimiter(
               child: ListView.separated(

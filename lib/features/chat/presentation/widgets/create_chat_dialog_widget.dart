@@ -93,13 +93,19 @@ class _CreateChatDialogWidgetState
                 vertical: 13,
               ),
               prefixIcon: SizedBox(
-                width: 20,
-                height: 20,
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedEdit02,
-                  color: colorScheme.primary,
-                  size: 13,
+                width: 22,
+                height: 22,
+                child: Center(
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedEdit02,
+                    color: colorScheme.primary,
+                    size: 14,
+                  ),
                 ),
+              ),
+              prefixIconConstraints: const BoxConstraints.tightFor(
+                width: 22,
+                height: 22,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -127,6 +133,11 @@ class _CreateChatDialogWidgetState
                 label: Text('create_group_join_approval'.tr()),
               ),
             ],
+            style: SegmentedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             selected: {_joinPolicy},
             onSelectionChanged: (value) =>
                 setState(() => _joinPolicy = value.first),
@@ -148,7 +159,7 @@ class _CreateChatDialogWidgetState
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       backgroundColor: colorScheme.surface,

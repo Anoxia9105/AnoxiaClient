@@ -20,6 +20,8 @@ class UploadRepositoryImpl implements UploadRepository {
     List<XFile> files, {
     required List<String> clientFileIds,
     UploadProgressCallback? onProgress,
+    UploadCompletedCallback? onCompleted,
+    int? noteId,
   }) async {
     if (files.length != clientFileIds.length) {
       throw ArgumentError('files 与 clientFileIds 数量必须一致');
@@ -32,11 +34,14 @@ class UploadRepositoryImpl implements UploadRepository {
     Future<void> worker() async {
       while (nextIndex < files.length) {
         final index = nextIndex++;
-        results[index] = await _uploadOne(
+        final result = await _uploadOne(
           files[index],
           clientFileIds[index],
           onProgress,
+          noteId,
         );
+        results[index] = result;
+        onCompleted?.call(result);
       }
     }
 
@@ -53,6 +58,7 @@ class UploadRepositoryImpl implements UploadRepository {
     XFile file,
     String clientFileId,
     UploadProgressCallback? onProgress,
+    int? noteId,
   ) async {
     final cancelToken = CancelToken();
     _activeCancels[clientFileId]?.cancel('replaced by a new upload attempt');
@@ -60,7 +66,7 @@ class UploadRepositoryImpl implements UploadRepository {
 
     try {
       final response = await DioClient().uploadFile(
-        '/file/uploadV2',
+        noteId == null ? '/file/uploadV2' : '/file/note/$noteId/image',
         file: file,
         data: {'clientFileId': clientFileId},
         cancelToken: cancelToken,

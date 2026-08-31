@@ -45,9 +45,9 @@ class _AddFriendDialogState extends ConsumerState<AddFriendDialog> {
     final textTheme = Theme.of(context).textTheme;
     final user = widget.user;
 
-    return Dialog(
+return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       elevation: 8,
       shadowColor: colorScheme.shadow.withValues(alpha: 0.14),
       backgroundColor: colorScheme.surface,
