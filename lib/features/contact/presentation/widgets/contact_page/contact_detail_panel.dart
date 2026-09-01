@@ -2,6 +2,7 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 桌面端联系人详情右侧内容面板
 ///
@@ -41,11 +42,11 @@ class ContactDetailPanel extends ConsumerWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: cs.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.18)),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           child: child,
         ),
       ),

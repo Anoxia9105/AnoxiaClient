@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// Quill 编辑器样式配置类
 ///
@@ -55,7 +56,7 @@ class QuillStyleConfig {
         color: colorScheme.outlineVariant.withValues(alpha: 0.6),
         width: 1,
       ),
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(RadiusToken.sm),
     );
   }
 
@@ -163,7 +164,7 @@ class QuillStyleConfig {
           border: Border(
             left: BorderSide(width: 4, color: colorScheme.outlineVariant),
           ),
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(RadiusToken.sm),
         ),
       ),
     );
@@ -198,11 +199,11 @@ class _TaskCheckboxBuilder implements QuillCheckboxBuilder {
                   : colorScheme.onSurface.withValues(alpha: .4),
               width: 1.4,
             ),
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(RadiusToken.sm),
           ),
           child: InkWell(
             onTap: () => onChanged(!isChecked),
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(RadiusToken.sm),
             child: isChecked
                 ? Icon(
                     Icons.check,

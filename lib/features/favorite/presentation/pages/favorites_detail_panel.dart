@@ -14,6 +14,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'favorites_common.dart';
 import 'favorites_detail_widgets.dart';
 import 'favorites_list_panel.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 收藏详情面板组件
 class FavoriteDetailPanel extends StatelessWidget {
@@ -83,7 +84,7 @@ class FavoriteDetailPanel extends StatelessWidget {
                 height: 28,
                 decoration: BoxDecoration(
                   color: style.color.withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                 ),
                 child: Center(
                   child: SizedBox.square(

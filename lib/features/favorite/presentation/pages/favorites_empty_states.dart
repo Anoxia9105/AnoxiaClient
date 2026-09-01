@@ -58,7 +58,7 @@ class EmptyFavorites extends StatelessWidget {
               'favorite_empty_subtitle'.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 12,
                 color: cs.onSurfaceVariant,
                 height: 1.5,
               ),

@@ -17,6 +17,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../note/presentation/pages/note_page.dart';
 import '../../../note/presentation/widgets/note_card_content.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 记事本卡片预览页。
 ///
@@ -83,7 +84,7 @@ class NoteCardPreviewPage extends ConsumerWidget {
                   colorScheme.surfaceContainerLow.withValues(alpha: .7),
                 ],
               ),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: .5),
               ),

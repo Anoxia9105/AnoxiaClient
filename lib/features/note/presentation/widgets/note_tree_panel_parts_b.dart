@@ -11,6 +11,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'note_tree_dnd.dart';
 import 'note_tree_menu.dart';
 import 'note_tree_widgets.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 /// 文件夹分支（递归构建文件夹及其子笔记/子文件夹）
 class NoteTreeFolderBranch extends ConsumerWidget {
   final NoteFolderNode folder;
@@ -331,7 +332,7 @@ class NoteTreeContextMenu {
       shadowColor: Colors.black.withValues(alpha: .25),
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         side: BorderSide(
           color: colorScheme.outlineVariant.withValues(alpha: .4),
         ),

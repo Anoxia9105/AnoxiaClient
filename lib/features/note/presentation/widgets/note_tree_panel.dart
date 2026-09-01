@@ -18,6 +18,7 @@ import 'note_tags_dialog.dart';
 import 'note_tree_panel_parts.dart';
 import 'note_tree_widgets.dart';
 import 'note_trash_dialog.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 记事本树面板
 ///
@@ -334,7 +335,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
               ),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: .55),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
               ),
               child: Text(
                 'note_total_count'.tr(args: [total.toString()]),

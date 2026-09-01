@@ -1,8 +1,9 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 个人中心页面头部相关组件集合
 
@@ -24,7 +25,7 @@ class MeProfileCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -129,7 +130,7 @@ class _Chip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
       ),
       child: Row(
@@ -163,7 +164,7 @@ class MeTabSwitcher extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
       ),
       padding: const EdgeInsets.all(4),
@@ -172,7 +173,7 @@ class MeTabSwitcher extends StatelessWidget {
         dividerColor: Colors.transparent,
         indicator: BoxDecoration(
           color: cs.primary,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: cs.onPrimary,

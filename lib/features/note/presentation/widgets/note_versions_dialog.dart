@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'note_dialog_skeleton.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 打开版本历史对话框
 Future<void> showNoteVersionsDialog(BuildContext context, int noteId) {
@@ -178,7 +179,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: colorScheme.primaryContainer.withValues(alpha: .5),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(RadiusToken.md),
                               ),
                               child: Text(
                                 '#${version.version}',
@@ -199,7 +200,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 13.5,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -209,7 +210,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
@@ -228,7 +229,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                               onPressed: () => _restore(version),
                               child: Text(
                                 'note_version_restore'.tr(),
-                                style: const TextStyle(fontSize: 12.5),
+                                style: const TextStyle(fontSize: 12),
                               ),
                             ),
                           ],

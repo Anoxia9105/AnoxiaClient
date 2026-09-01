@@ -4,6 +4,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'note_image_embed.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class NoteQuillImageBuild implements EmbedBuilder {
   @override
@@ -80,7 +81,7 @@ class _NoteImageEmbedState extends State<_NoteImageEmbed> {
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 border: Border.all(
                   color: isFailed
                       ? scheme.error

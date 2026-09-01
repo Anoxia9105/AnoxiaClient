@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 /// 全屏页面上的大号圆形动作按钮（带下方文字标签）
 class CallAction extends StatelessWidget {
   const CallAction({super.key, 
@@ -84,6 +85,7 @@ class IncomingCallBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>();
     final isGroup = invitation.isGroup;
     final mediaLabel = invitation.initialMedia.value == 'video'
         ? 'call_invite_video_title'.tr()
@@ -99,7 +101,7 @@ class IncomingCallBanner extends ConsumerWidget {
             color: cs.surface,
             elevation: 8,
             shadowColor: Colors.black.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
@@ -178,7 +180,7 @@ class IncomingCallBanner extends ConsumerWidget {
                     tooltip: isGroup
                         ? 'call_ignore'.tr()
                         : 'notification_call_reject'.tr(),
-                    backgroundColor: const Color(0xFFE53945),
+                    backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
                     icon: isGroup
                         ? HugeIcons.strokeRoundedCancel01
                         : HugeIcons.strokeRoundedCallEnd01,
@@ -302,7 +304,7 @@ class MinimizedInvitationBubble extends ConsumerWidget {
       child: Material(
         elevation: 10,
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         clipBehavior: Clip.antiAlias,
         child: Container(
           width: CallWindowSizes.audioWidth,
@@ -311,7 +313,7 @@ class MinimizedInvitationBubble extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
             border: Border.all(color: cs.outlineVariant),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
           ),
           child: Row(
             children: [
@@ -390,7 +392,7 @@ class CallNoticeCard extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: cs.inverseSurface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               boxShadow: const [
                 BoxShadow(
                   blurRadius: 16,

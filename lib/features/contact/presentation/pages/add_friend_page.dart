@@ -13,6 +13,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 添加好友页面
 ///
@@ -105,7 +106,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                         height: 40,
                         decoration: BoxDecoration(
                           color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                         ),
                         alignment: Alignment.center,
                         child: HugeIcon(

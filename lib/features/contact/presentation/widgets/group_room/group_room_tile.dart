@@ -1,8 +1,9 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 群聊列表项组件
 ///
@@ -52,7 +53,7 @@ class _GroupRoomTileState extends State<GroupRoomTile> {
           color: _hovered
               ? cs.surfaceContainerHighest.withValues(alpha: isDark ? 0.5 : 0.6)
               : cs.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           border: Border.all(
             color: _hovered
                 ? cs.primary.withValues(alpha: 0.35)
@@ -76,7 +77,7 @@ class _GroupRoomTileState extends State<GroupRoomTile> {
         ),
         child: InkWell(
           onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

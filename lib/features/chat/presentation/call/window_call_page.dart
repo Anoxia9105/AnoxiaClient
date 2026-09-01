@@ -225,6 +225,7 @@ class _DesktopCallRingingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>();
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -263,7 +264,7 @@ class _DesktopCallRingingPage extends StatelessWidget {
           FilledButton.icon(
             onPressed: onCancel,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFE53945),
+              backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
             ),

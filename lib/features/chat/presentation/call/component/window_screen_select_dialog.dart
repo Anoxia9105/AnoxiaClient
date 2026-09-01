@@ -6,6 +6,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:anoxia/framework/theme/app_colors.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 桌面端屏幕共享：弹出窗口/屏幕选择对话框
 ///
@@ -99,7 +101,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
         unawaited(rtc.desktopCapturer.updateSources(types: types));
       });
     } catch (e) {
-      debugPrint('获取共享源失败: $e');
+      debugLog('获取共享源失败: $e');
     }
   }
 
@@ -122,7 +124,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             gradient: gradient,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
           child: Column(
             children: [
@@ -263,7 +265,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
               ),
             ),
             onPressed: _selectedSource != null ? _onOk : null,
@@ -322,7 +324,7 @@ class ThumbnailWidget extends StatelessWidget {
                       : Colors.grey.withValues(alpha: 0.2),
                   width: selected ? 3 : 1,
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
                 boxShadow: selected
                     ? [
                         BoxShadow(
@@ -335,7 +337,7 @@ class ThumbnailWidget extends StatelessWidget {
                     : null,
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 child: Container(
                   color: Colors.black87,
                   child: source.thumbnail != null

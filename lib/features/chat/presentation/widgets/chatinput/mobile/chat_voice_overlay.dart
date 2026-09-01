@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 语音录制覆盖层组件
 ///
@@ -49,7 +50,7 @@ class _VoiceIndicator extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -88,7 +89,7 @@ class _VoiceIndicator extends StatelessWidget {
               color: willCancel
                   ? Theme.of(context).colorScheme.error.withValues(alpha: 0.8)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(RadiusToken.sm),
             ),
             child: Text(
               willCancel ? 'voice_release_to_cancel'.tr() : 'voice_slide_up_to_cancel'.tr(),

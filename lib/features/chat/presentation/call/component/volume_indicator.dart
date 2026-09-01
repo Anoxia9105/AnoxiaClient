@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 音量指示器组件
 ///
@@ -35,7 +36,7 @@ class VolumeIndicator extends StatelessWidget {
             color: active
                 ? Color.lerp(Colors.greenAccent, Colors.redAccent, i / barCount)
                 : Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(1),
+            borderRadius: BorderRadius.circular(RadiusToken.sm),
           ),
         );
       }),

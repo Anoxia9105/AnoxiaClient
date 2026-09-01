@@ -2,6 +2,7 @@ import 'package:anoxia/framework/provider/ws/ws_state.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// WebSocket 连接状态横幅组件
 ///
@@ -58,7 +59,7 @@ class WsConnectionBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(color: fg.withValues(alpha: .25)),
       ),
       child: Row(

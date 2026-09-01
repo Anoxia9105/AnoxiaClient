@@ -1,5 +1,6 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 好友请求列表项组件
 ///
@@ -46,7 +47,7 @@ class _NewFriendsRequestTileState extends State<NewFriendsRequestTile> {
           color: _hovered
               ? cs.surfaceContainerHighest.withValues(alpha: isDark ? 0.5 : 0.6)
               : cs.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           border: Border.all(
             color: _hovered
                 ? cs.primary.withValues(alpha: 0.35)

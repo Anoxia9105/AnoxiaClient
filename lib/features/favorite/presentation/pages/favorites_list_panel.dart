@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'favorites_common.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 收藏列表面板组件
 class FavoritesListPanel extends StatelessWidget {
@@ -86,7 +87,7 @@ class FavoritesListPanel extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: cs.primaryContainer.withValues(alpha: .55),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
               ),
               child: Text(
                 'favorite_count'.tr(args: [totalCount.toString()]),
@@ -159,7 +160,7 @@ class FavoritesListPanel extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText: 'favorite_search_hint'.tr(),
                       hintStyle: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 12,
                         color: cs.onSurfaceVariant.withValues(alpha: .7),
                       ),
                       prefixIconConstraints: const BoxConstraints.tightFor(
@@ -238,9 +239,9 @@ class FavoritesListItem extends StatelessWidget {
 
     return Material(
       color: selected ? color.withValues(alpha: .10) : Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(RadiusToken.xl),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -265,7 +266,7 @@ class FavoritesListItem extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         height: 1.35,
                         color: cs.onSurface,
@@ -341,9 +342,9 @@ class FavoriteTypeFilterChip extends StatelessWidget {
 
     return Material(
       color: selected ? cs.primary : cs.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -386,7 +387,7 @@ class FavoriteTypeChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -461,7 +462,7 @@ class FavoriteListSkeleton extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   color: Theme.of(context).colorScheme.surfaceContainerLow,
                 ),
                 child: const Row(

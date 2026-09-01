@@ -1,5 +1,6 @@
-﻿import 'package:anoxia/common/widgets/skeleton_box.dart';
+import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 添加好友搜索骨架屏
 ///
@@ -19,7 +20,7 @@ class AddFriendSearchSkeleton extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
           ),
           child: const Row(
             children: [

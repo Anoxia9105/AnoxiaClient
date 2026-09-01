@@ -45,9 +45,8 @@ extension ChatAiActionX on ChatAiAction {
 
   /// CUSTOM 动作的内置指令（后端 CUSTOM 必须携带 instruction）
   String? instruction(String? customText) => switch (this) {
-        ChatAiAction.explain =>
-          '用简洁易懂的中文解释这段内容的含义，包括潜在语气与言外之意。只输出解释本身。',
-        ChatAiAction.simplify => '精简以下内容，去除冗余但保留全部关键信息。只输出精简结果。',
+        ChatAiAction.explain => 'ai_assist_explain_instruction'.tr(),
+        ChatAiAction.simplify => 'ai_assist_simplify_instruction'.tr(),
         ChatAiAction.custom => customText ?? '',
         _ => null,
       };

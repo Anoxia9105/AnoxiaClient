@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 全局搜索对话框
 ///
@@ -26,7 +27,7 @@ class GlobalSearchDialog extends ConsumerWidget {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 120, vertical: 80),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.xl)),
       child: SizedBox(
         width: 720,
         height: 520,
@@ -42,7 +43,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                     .read(desktopSearchControllerProvider.notifier)
                     .updateQuery(v),
                 decoration: InputDecoration(
-                  hintText: '${'search'.tr()}（会话 / 联系人）',
+                  hintText: 'global_search_hint'.tr(),
                   prefixIcon: const HugeIcon(
                     icon: HugeIcons.strokeRoundedSearch02,
                     size: 14,
@@ -53,7 +54,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                   ),
                   suffixText: 'Ctrl+K',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                   ),
                   isDense: true,
                 ),
@@ -63,7 +64,7 @@ class GlobalSearchDialog extends ConsumerWidget {
               child: searchState.query.isEmpty
                   ? Center(
                       child: Text(
-                        '输入关键词以搜索会话和联系人',
+                        'global_search_empty_hint'.tr(),
                         style: TextStyle(color: colorScheme.outline),
                       ),
                     )
@@ -74,7 +75,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                           title: 'global_search_section_conversations'.tr(),
                         ),
                         if (searchState.rooms.isEmpty)
-                          const _ResultEmpty(text: '未找到相关会话')
+                          _ResultEmpty(text: 'chat_no_related_conversations'.tr())
                         else
                           ...searchState.rooms.map(
                             (room) => _ResultTile(
@@ -105,7 +106,7 @@ class GlobalSearchDialog extends ConsumerWidget {
                           title: 'global_search_section_contacts'.tr(),
                         ),
                         if (searchState.contacts.isEmpty)
-                          const _ResultEmpty(text: '未找到相关联系人')
+                          _ResultEmpty(text: 'global_search_no_contacts'.tr())
                         else
                           ...searchState.contacts.map(
                             (contact) => _ResultTile(
@@ -198,7 +199,7 @@ class _ResultTile extends StatelessWidget {
           ? null
           : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
       onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
     );
   }
 }

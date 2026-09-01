@@ -14,6 +14,7 @@ import '../../../../../framework/domain/chat_message.dart';
 import '../../../../../framework/protocol/message/attachment.dart';
 import 'base/message_render_strategy.dart';
 import 'image_render_metrics.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// Renders image messages using the dimensions carried by the message protocol.
 ///
@@ -407,7 +408,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
                 bottom: 6,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999)),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(RadiusToken.pill)),
                   child: const Text('gif', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
                 ),
               ),
@@ -422,7 +423,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
       width: size.width,
       height: size.height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

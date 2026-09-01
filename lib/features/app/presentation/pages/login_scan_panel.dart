@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 扫码登录面板（桌面/Web）
 ///
@@ -130,7 +131,7 @@ class _ScanLoginPanelState extends ConsumerState<ScanLoginPanel> {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Padding(
@@ -222,7 +223,7 @@ class QrSkeleton extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Stack(

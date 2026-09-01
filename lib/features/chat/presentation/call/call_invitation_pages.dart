@@ -18,6 +18,7 @@ class IncomingCallPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>();
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
     final isVideo = invitation.initialMedia == CallInitialMedia.video;
     final displayName = invitation.callerName.isEmpty
@@ -103,7 +104,7 @@ class IncomingCallPage extends ConsumerWidget {
                           CallAction(
                             label: 'notification_call_reject'.tr(),
                             icon: HugeIcons.strokeRoundedCallEnd01,
-                            backgroundColor: const Color(0xFFE53945),
+                            backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
                             onPressed: () => controller.reject(invitation),
                           ),
                           const SizedBox(width: 56),
@@ -112,7 +113,7 @@ class IncomingCallPage extends ConsumerWidget {
                             icon: isVideo
                                 ? HugeIcons.strokeRoundedVideo01
                                 : HugeIcons.strokeRoundedCall02,
-                            backgroundColor: const Color(0xFF22C55E),
+                            backgroundColor: appColors?.success ?? const Color(0xFF22C55E),
                             onPressed: () =>
                                 controller.acceptAndOpen(invitation),
                           ),
@@ -181,6 +182,7 @@ class OutgoingCallPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>();
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
     final room = ref.watch(currentRoomProvider(invitation.roomId));
     final displayName = room?.roomName ?? invitation.title;
@@ -258,7 +260,7 @@ class OutgoingCallPage extends ConsumerWidget {
                           CallAction(
                             label: 'call_cancel_call'.tr(),
                             icon: HugeIcons.strokeRoundedCallEnd01,
-                            backgroundColor: const Color(0xFFE53945),
+                            backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
                             onPressed: () => controller.cancelCurrent(),
                           ),
                         ],

@@ -6,6 +6,7 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 内部隔离组件：群成员行式列表区块，防止成员列表数据更新时触发整个 Settings 树重构
 ///
@@ -130,7 +131,7 @@ class MemberListSection extends ConsumerWidget {
         height: 40,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
         ),
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedAddSquare,

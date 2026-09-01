@@ -54,13 +54,9 @@ class _SkeletonBoxState extends State<SkeletonBox>
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final base = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.06);
-    final glow = isDark
-        ? Colors.white.withValues(alpha: 0.18)
-        : Colors.white.withValues(alpha: 0.75);
+    final scheme = Theme.of(context).colorScheme;
+    final base = scheme.onSurface.withValues(alpha: 0.08);
+    final glow = scheme.onSurface.withValues(alpha: 0.16);
 
     final child = AnimatedBuilder(
       animation: _controller,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 拖拽负载：标识来源类型与所在容器
 ///
@@ -63,7 +64,7 @@ class NoteDraggableRow extends StatelessWidget {
           duration: const Duration(milliseconds: 120),
           decoration: hovering
               ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                   color: colorScheme.primaryContainer.withValues(alpha: .55),
                   border: Border.all(color: colorScheme.primary.withValues(alpha: .55)),
                 )
@@ -92,7 +93,7 @@ class _DragFeedback extends StatelessWidget {
     return Material(
       color: colorScheme.surfaceContainerHigh,
       elevation: 4,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 220),
         child: Padding(
@@ -111,7 +112,7 @@ class _DragFeedback extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],

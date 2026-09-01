@@ -17,6 +17,7 @@ import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 应用主布局页面
 ///
@@ -184,7 +185,7 @@ class _DesktopContentSurface extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: cs.surface.withValues(alpha: surfaceOpacity),
-          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(18),
+          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(RadiusToken.xl),
           border: isFlat
               ? Border(
                   left: BorderSide(
@@ -214,7 +215,7 @@ class _DesktopContentSurface extends StatelessWidget {
                 ],
         ),
         child: ClipRRect(
-          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(18),
+          borderRadius: isFlat ? BorderRadius.zero : BorderRadius.circular(RadiusToken.xl),
           child: child,
         ),
       ),

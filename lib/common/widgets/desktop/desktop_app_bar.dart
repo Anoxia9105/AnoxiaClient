@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import '../../../gen/assets.gen.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 桌面端应用栏
 ///
@@ -87,7 +88,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           style: ButtonStyle(
             shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
             ),
           ),
         ),
@@ -102,7 +103,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
           },
           style: ButtonStyle(
             shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
             ),
             foregroundColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.hovered)) {
@@ -140,7 +141,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
         style: ButtonStyle(
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
           ),
         ),
       );
@@ -152,7 +153,7 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
       icon: const HugeIcon(icon: HugeIcons.strokeRoundedSquare, size: 16),
       style: ButtonStyle(
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
         ),
       ),
     );

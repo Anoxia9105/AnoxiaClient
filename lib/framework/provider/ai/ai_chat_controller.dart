@@ -169,7 +169,7 @@ class AiChatController extends _$AiChatController {
               if (resolved.isEmpty) {
                 updateAiMessage(content: '⚠️ ${'chat_ai.failed'.tr()}', streaming: false, clearThinking: true);
                 _loading = false;
-                if (!completer.isCompleted) completer.completeError(const AiException('AI请求失败 请稍后在试'));
+                if (!completer.isCompleted) completer.completeError(AiException('chat_ai.failed'.tr()));
                 return;
               }
               updateAiMessage(content: resolved, streaming: false, clearThinking: true);
@@ -182,7 +182,7 @@ class AiChatController extends _$AiChatController {
         },
         onError: (Object e) {
           _loading = false;
-          final msg = e is AiException ? e.message : 'AI请求失败 请稍后在试';
+          final msg = e is AiException ? e.message : 'chat_ai.failed'.tr();
           // 保留已收到的增量，仅在完全无内容时展示错误占位
           final collected = _deltaBuf.toString();
           if (collected.isEmpty) {
@@ -199,7 +199,7 @@ class AiChatController extends _$AiChatController {
             final collected = _deltaBuf.toString();
             if (collected.isEmpty) {
               // 无 done 即失败兜底
-              updateAiMessage(content: '⚠️ AI请求失败 请稍后在试', streaming: false, clearThinking: true);
+              updateAiMessage(content: '⚠️ ${'chat_ai.failed'.tr()}', streaming: false, clearThinking: true);
             } else {
               // 有增量但无 done：视为成功（网络提前断开但内容已完整）
               updateAiMessage(content: collected, streaming: false, clearThinking: true);
@@ -219,7 +219,7 @@ class AiChatController extends _$AiChatController {
         if (cur.streaming) {
           updateAiMessage(streaming: false, clearThinking: true);
           if (cur.content.isEmpty) {
-            final msg = e is AiException ? e.message : 'AI请求失败 请稍后在试';
+            final msg = e is AiException ? e.message : 'chat_ai.failed'.tr();
             updateAiMessage(content: '⚠️ $msg');
           }
         }

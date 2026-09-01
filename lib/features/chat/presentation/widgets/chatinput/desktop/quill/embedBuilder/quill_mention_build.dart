@@ -1,6 +1,7 @@
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// @提及的 Embed 构建器
 /// 用于在富文本编辑器中显示@某人的特殊样式
@@ -16,7 +17,7 @@ class QuillMentionBuild implements EmbedBuilder {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
         color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
       ),
       child: Text(
         '@$userName',

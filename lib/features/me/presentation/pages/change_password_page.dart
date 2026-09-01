@@ -4,6 +4,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 桌面端密码修改对话框，避免在主内容区继续压入移动端页面。
 class ChangePasswordDialog extends StatefulWidget {
@@ -289,7 +290,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final cs = Theme.of(context).colorScheme;
     return Material(
       color: cs.surfaceContainer,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(RadiusToken.xl),
       child: Column(children: children),
     );
   }
@@ -316,7 +317,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       visualDensity: const VisualDensity(vertical: -1),
       minVerticalPadding: 14,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      title: Text(title, style: const TextStyle(fontSize: 14.5)),
+      title: Text(title, style: const TextStyle(fontSize: 14)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

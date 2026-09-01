@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天操作项组件
 ///
@@ -27,14 +28,14 @@ class ChatActionItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(RadiusToken.xl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
             ),
             padding: const EdgeInsets.all(8),
             child: HugeIcon(icon: icon, color: colorScheme.onSurface, size: 20),

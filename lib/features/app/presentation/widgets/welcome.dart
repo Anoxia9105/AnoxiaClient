@@ -8,6 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 欢迎页功能特性数据模型。
 class WelcomeFeature {
@@ -180,7 +181,7 @@ class _WelcomeState extends State<Welcome> with TickerProviderStateMixin {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(RadiusToken.pill),
                     border: Border.all(
                       color: colorScheme.primary.withValues(alpha: 0.16),
                     ),
@@ -240,7 +241,7 @@ class _WelcomeState extends State<Welcome> with TickerProviderStateMixin {
                             colorScheme.primary.withValues(alpha: 0.45),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(RadiusToken.xl),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.25),
                           width: 1.2,
@@ -405,7 +406,7 @@ class _FeatureRow extends StatelessWidget {
                     colorScheme.primary.withValues(alpha: 0.06),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
                 border: Border.all(
                   color: colorScheme.primary.withValues(alpha: 0.18),
                 ),

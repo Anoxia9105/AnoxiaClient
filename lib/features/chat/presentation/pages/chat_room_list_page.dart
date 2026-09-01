@@ -83,7 +83,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
         //                 contentPadding: EdgeInsets.zero,
         //                 hintText: 'chat_search_placeholder'.tr(),
         //                 border: OutlineInputBorder(
-        //                   borderRadius: BorderRadius.circular(20),
+        //                   borderRadius: BorderRadius.circular(RadiusToken.xl),
         //                   borderSide: BorderSide.none,
         //                 ),
         //                 filled: true,

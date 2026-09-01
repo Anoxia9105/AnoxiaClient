@@ -19,6 +19,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'login_captcha.dart';
 import 'login_scan_panel.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 登录页面
 ///
@@ -239,7 +240,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
             boxShadow: [
               BoxShadow(
                 color: colorScheme.primary.withValues(alpha: 0.2),
@@ -249,7 +250,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
             child: Assets.images.appLogo.image(
               fit: BoxFit.cover,
               filterQuality: FilterQuality.high,
@@ -290,13 +291,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
           width: 36,
           height: 16,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
@@ -335,13 +336,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
@@ -376,14 +377,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 height: 16,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 borderSide: BorderSide(color: colorScheme.outlineVariant),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 borderSide: BorderSide(color: colorScheme.primary, width: 2),
               ),
             ),
@@ -409,7 +410,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         onPressed: isDisabled ? null : _handleLogin,
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),

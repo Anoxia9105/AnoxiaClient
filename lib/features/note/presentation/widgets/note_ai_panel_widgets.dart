@@ -14,6 +14,7 @@ import 'package:anoxia/common/widgets/skeleton_box.dart';
 
 import 'note_ai_langs.dart';
 import 'note_ai_panel_action.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// AI 能力选择器：ChoiceChip + 自定义指令输入 / 翻译语言下拉
 class NoteAiPanelActionSelector extends StatelessWidget {
@@ -40,7 +41,7 @@ class NoteAiPanelActionSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('AI 能力',
+        Text('note_ai_capabilities'.tr(),
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: .4, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         Wrap(
@@ -49,7 +50,7 @@ class NoteAiPanelActionSelector extends StatelessWidget {
           children: [
             for (final a in AiPanelAction.values)
               ChoiceChip(
-                label: Text(a.label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500)),
+                label: Text(a.label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 avatar: HugeIcon(
                     icon: a.icon, size: 14, color: action == a ? cs.onPrimaryContainer : cs.onSurfaceVariant),
                 selected: action == a,
@@ -57,7 +58,7 @@ class NoteAiPanelActionSelector extends StatelessWidget {
                 backgroundColor: cs.surfaceContainerHighest.withValues(alpha: .6),
                 side: BorderSide(
                     color: action == a ? cs.primary.withValues(alpha: .4) : cs.outlineVariant.withValues(alpha: .6)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.pill)),
                 showCheckmark: false,
                 onSelected: streaming ? null : (_) => onSelected(a),
               ),
@@ -78,15 +79,15 @@ class NoteAiPanelActionSelector extends StatelessWidget {
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: 'note_ai.instruction_hint'.tr(),
-                      hintStyle: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant.withValues(alpha: .7)),
+                      hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: .7)),
                       filled: true,
                       fillColor: cs.surfaceContainerHighest.withValues(alpha: .5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                           borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: .6))),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                           borderSide: BorderSide(color: cs.primary, width: 1.4)),
                     ),
                   ),
@@ -103,12 +104,12 @@ class NoteAiPanelActionSelector extends StatelessWidget {
                           labelText: 'note_ai.target_lang'.tr(),
                           filled: true,
                           fillColor: cs.surfaceContainerHighest.withValues(alpha: .5),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
                           enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(RadiusToken.lg),
                               borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: .6))),
                           focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(RadiusToken.lg),
                               borderSide: BorderSide(color: cs.primary, width: 1.4)),
                         ),
                         items: [
@@ -154,7 +155,7 @@ class NoteAiPanelPreviewArea extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.primaryContainer.withValues(alpha: .6),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
                 border: Border.all(color: cs.primary.withValues(alpha: .15)),
               ),
               child: Row(
@@ -162,7 +163,7 @@ class NoteAiPanelPreviewArea extends StatelessWidget {
                 children: [
                   HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 12, color: cs.primary),
                   const SizedBox(width: 4),
-                  Text('预览', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.primary)),
+                  Text('ai_preview_label'.tr(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.primary)),
                 ],
               ),
             ),
@@ -172,9 +173,9 @@ class NoteAiPanelPreviewArea extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: cs.tertiaryContainer.withValues(alpha: .5),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
                 ),
-                child: Text('${preview.length} 字', style: TextStyle(fontSize: 10.5, color: cs.onTertiaryContainer)),
+                child: Text('note_ai_word_count'.tr(args: [preview.length.toString()]), style: TextStyle(fontSize: 11, color: cs.onTertiaryContainer)),
               ),
             const Spacer(),
             if (!empty)
@@ -185,7 +186,7 @@ class NoteAiPanelPreviewArea extends StatelessWidget {
                 icon: HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 16, color: cs.onSurfaceVariant),
                 style: IconButton.styleFrom(
                   backgroundColor: cs.surfaceContainerHighest.withValues(alpha: .7),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
                 ),
               ),
           ],
@@ -198,7 +199,7 @@ class NoteAiPanelPreviewArea extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest.withValues(alpha: .45),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
             border: Border.all(
                 color: empty ? cs.outlineVariant.withValues(alpha: .35) : cs.primary.withValues(alpha: isStreaming ? .25 : .0),
                 width: 1),
@@ -237,9 +238,9 @@ class NoteAiPanelPreviewArea extends StatelessWidget {
                             ),
                             const SizedBox(height: 10),
                             Text('note_ai.preview_empty'.tr(),
-                                style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant)),
+                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                             const SizedBox(height: 4),
-                            Text('选择上方能力后点击运行',
+                            Text('note_ai_choose_action_hint'.tr(),
                                 style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: .6))),
                           ],
                         ),
@@ -292,7 +293,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: null,
           style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
             disabledBackgroundColor: cs.surfaceContainerHighest,
             disabledForegroundColor: cs.onSurfaceVariant,
           ),
@@ -313,7 +314,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: (action == null) ? null : onRun,
             style: FilledButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
               elevation: action == null ? 0 : 2,
               shadowColor: cs.primary.withValues(alpha: .35),
             ),
@@ -355,7 +356,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
                               icon: HugeIcon(icon: HugeIcons.strokeRoundedNoteAdd, size: 16, color: cs.primary),
                               label: Text('note_ai.append'.tr()),
                               style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
                                 side: BorderSide(color: cs.outlineVariant.withValues(alpha: .7)),
                               ),
                             ),
@@ -374,7 +375,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
                               icon: HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 16, color: cs.onPrimary),
                               label: Text('note_ai.replace_selection'.tr()),
                               style: FilledButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg))),
                             ),
                           )
                         else if (selStart == null)
@@ -385,7 +386,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
                               icon: HugeIcon(icon: HugeIcons.strokeRoundedFileEdit, size: 16, color: cs.onPrimary),
                               label: Text('note_ai.replace_all'.tr()),
                               style: FilledButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg))),
                             ),
                           ),
                       ],
@@ -400,7 +401,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: cs.errorContainer.withValues(alpha: .6),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                           border: Border.all(color: cs.error.withValues(alpha: .3)),
                         ),
                         child: Row(

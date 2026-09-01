@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../framework/protocol/message/attachment.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class FileMessageList extends StatefulWidget {
   final List<Attachment> fileList;
@@ -424,12 +425,12 @@ class FileMessageListState extends State<FileMessageList> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => isDownloaded ? _openLocalFile(file) : _downloadFile(file),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -440,7 +441,7 @@ class FileMessageListState extends State<FileMessageList> {
                 height: 42,
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                 ),
                 alignment: Alignment.center,
                 child: FileUtil.buildFileIcon(
@@ -514,7 +515,7 @@ class FileMessageListState extends State<FileMessageList> {
                     if (isDownloading) ...[
                       const SizedBox(height: 6),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(RadiusToken.sm),
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 3,

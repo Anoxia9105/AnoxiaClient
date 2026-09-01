@@ -2,6 +2,7 @@ import 'package:anoxia/domain/repositories/settings_repository.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 设置页的问题反馈表单。
 class SettingsFeedbackSection extends StatelessWidget {
@@ -40,7 +41,7 @@ class SettingsFeedbackSection extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withValues(alpha: 0.38),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               border: Border.all(
                 color: colorScheme.primary.withValues(alpha: 0.16),
               ),
@@ -153,7 +154,7 @@ class SettingsFeedbackSection extends StatelessWidget {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
             ),
           ),
@@ -185,13 +186,13 @@ class SettingsFeedbackSection extends StatelessWidget {
       filled: true,
       fillColor: colorScheme.surfaceContainerLowest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         borderSide: BorderSide(color: colorScheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
     );
@@ -272,7 +273,7 @@ class _ImagePickerArea extends StatelessWidget {
               minimumSize: const Size.fromHeight(48),
               side: BorderSide(color: colorScheme.outlineVariant),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
             ),
           ),
@@ -303,7 +304,7 @@ class _ImagePreview extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             child: Image.memory(
               image.bytes,
               key: ValueKey('feedback-image-$index'),

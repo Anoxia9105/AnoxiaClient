@@ -3,6 +3,7 @@ import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/framework/provider/chat/room/group_join_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 紧凑型开关行：缩小开关控件与行高，适配会话详情侧栏。
 class RoomSwitchTile extends StatelessWidget {
@@ -157,7 +158,7 @@ class SkeletonCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Material(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         clipBehavior: Clip.antiAlias,
         child: child,
       ),

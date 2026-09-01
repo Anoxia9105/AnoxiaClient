@@ -3,6 +3,7 @@ import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 分区标签组件
 class SectionLabel extends StatelessWidget {
@@ -43,7 +44,7 @@ class AppOverviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.16)),
       ),
       child: Column(
@@ -57,7 +58,7 @@ class AppOverviewCard extends StatelessWidget {
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                   ),
@@ -87,7 +88,7 @@ class AppOverviewCard extends StatelessWidget {
                         child: InkWell(
                           key: const Key('about-version-button'),
                           canRequestFocus: true,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(RadiusToken.md),
                           onTap: onVersionTap,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 44),
@@ -168,7 +169,7 @@ class InfoPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: colorScheme.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.7),
         ),
@@ -208,7 +209,7 @@ class ActionGroup extends StatelessWidget {
       color: colorScheme.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         side: BorderSide(
           color: colorScheme.outlineVariant.withValues(alpha: 0.72),
         ),
@@ -254,7 +255,7 @@ class SupportShortcut extends StatelessWidget {
       color: colorScheme.secondaryContainer.withValues(alpha: 0.34),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         side: BorderSide(color: colorScheme.secondary.withValues(alpha: 0.18)),
       ),
       child: InkWell(
@@ -385,7 +386,7 @@ class IconSurface extends StatelessWidget {
         color: emphasized
             ? colorScheme.secondaryContainer
             : colorScheme.primaryContainer.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       alignment: Alignment.center,
       child: HugeIcon(
@@ -427,7 +428,7 @@ class UpdateCard extends StatelessWidget {
             : colorScheme.surface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           side: BorderSide(
             color: hasAppUpdate
                 ? colorScheme.tertiary.withValues(alpha: 0.22)

@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'note_image_embed.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 清除光标处的所有行内/块级格式。
 void noteClearFormat(QuillController controller) {
@@ -100,7 +101,7 @@ Function showNoteBubble(
           color: colorScheme.outlineVariant.withValues(alpha: .8),
           width: .5,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         shadows: [
           BoxShadow(
             color: Colors.black.withValues(alpha: .16),
@@ -331,14 +332,14 @@ class _NoteLinkBubbleState extends State<NoteLinkBubble> {
             TextField(
               controller: widget.textController,
               focusNode: _textFocus,
-              style: const TextStyle(fontSize: 13.5),
+              style: const TextStyle(fontSize: 14),
               onSubmitted: (_) => _urlFocus.requestFocus(),
               decoration: InputDecoration(
                 labelText: 'note_link_text'.tr(),
                 hintText: 'note_link_text_hint'.tr(),
                 isDense: true,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                 ),
               ),
             ),
@@ -346,7 +347,7 @@ class _NoteLinkBubbleState extends State<NoteLinkBubble> {
             TextField(
               controller: widget.urlController,
               focusNode: _urlFocus,
-              style: const TextStyle(fontSize: 13.5),
+              style: const TextStyle(fontSize: 14),
               keyboardType: TextInputType.url,
               onSubmitted: (_) => widget.onApply(),
               decoration: InputDecoration(
@@ -354,7 +355,7 @@ class _NoteLinkBubbleState extends State<NoteLinkBubble> {
                 hintText: 'note_link_url_hint'.tr(),
                 isDense: true,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                 ),
               ),
             ),

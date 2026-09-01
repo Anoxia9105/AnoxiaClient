@@ -1,6 +1,7 @@
 import 'package:anoxia/features/chat/presentation/call/component/participant_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 通话房间轮播布局组件
 ///
@@ -63,7 +64,7 @@ class LayoutRoomCarouselWidget extends StatelessWidget {
             width: 150,
             height: 120,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               child: ParticipantTile(
                 participant: local,
                 handRaised: handRaiseMap[local.identity] == true,

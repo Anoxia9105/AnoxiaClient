@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 头像裁剪编辑器（纯 Flutter 实现，全平台可用，含 Web/Wasm）
 ///
@@ -240,7 +241,7 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
             onScaleStart: _onScaleStart,
             onScaleUpdate: _onScaleUpdate,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               child: SizedBox(
                 width: s,
                 height: s,

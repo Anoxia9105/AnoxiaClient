@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/features/chat/presentation/pages/qr_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 扫码页面。
 ///
@@ -294,7 +295,7 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
                   color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
             ),
           ),
@@ -305,7 +306,7 @@ class _ScanQrPageState extends ConsumerState<ScanQrPage> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -379,7 +380,7 @@ class ScanQrResultPage extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(12),

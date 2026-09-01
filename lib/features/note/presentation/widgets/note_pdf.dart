@@ -16,6 +16,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart' as pw;
 import 'package:pdf/widgets.dart' as pw;
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 生成笔记 PDF 字节流
 Future<Uint8List> buildNotePdf({
@@ -171,7 +172,7 @@ List<pw.Widget> _buildContent(
         padding: const pw.EdgeInsets.all(10),
         decoration: pw.BoxDecoration(
           color: pw.PdfColors.grey100,
-          borderRadius: pw.BorderRadius.circular(4),
+          borderRadius: pw.BorderRadius.circular(RadiusToken.sm),
         ),
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -329,7 +330,7 @@ pw.TextSpan _runToSpan(_PdfRun run) {
       color: pw.PdfColors.grey800,
       background: pw.BoxDecoration(
         color: pw.PdfColors.grey200,
-        borderRadius: pw.BorderRadius.circular(2),
+        borderRadius: pw.BorderRadius.circular(RadiusToken.sm),
       ),
     );
   }

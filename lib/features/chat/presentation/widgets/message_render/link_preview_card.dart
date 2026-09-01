@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 链接预览元数据加载器类型定义。
 typedef LinkPreviewLoader = Future<LinkPreviewMetadata> Function(String link);
@@ -217,7 +219,7 @@ class _LinkPreviewQueue {
       final metadata = await _LinkPreviewWorker.fetch(job.link);
       if (!job.completer.isCompleted) job.completer.complete(metadata);
     } catch (error, stackTrace) {
-      debugPrint('[LinkPreview] ${job.link} failed: $error\n$stackTrace');
+      debugLog('[LinkPreview] ${job.link} failed: $error\n$stackTrace');
       if (!job.completer.isCompleted) {
         job.completer.complete(LinkPreviewMetadata.fallback(job.link));
       }
@@ -254,14 +256,14 @@ class _LinkPreviewWorker {
       final response = await responsePort.first.timeout(_hardTimeout);
       if (response is Map) {
         final error = response['error'];
-        if (error != null) debugPrint('[LinkPreview] $link failed: $error');
+        if (error != null) debugLog('[LinkPreview] $link failed: $error');
         return LinkPreviewMetadata.fromWorker(link, response);
       }
       return LinkPreviewMetadata.fallback(link);
     } on TimeoutException {
       return LinkPreviewMetadata.fallback(link);
     } catch (error) {
-      debugPrint('[LinkPreview] $link worker failed: $error');
+      debugLog('[LinkPreview] $link worker failed: $error');
       return LinkPreviewMetadata.fallback(link);
     } finally {
       isolate?.kill(priority: Isolate.immediate);
@@ -405,7 +407,7 @@ class _ResolvedLinkPreview extends StatelessWidget {
         ),
         child: Material(
           color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(RadiusToken.sm),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,

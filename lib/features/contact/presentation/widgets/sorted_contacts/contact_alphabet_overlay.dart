@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 字母索引滑动时的高亮浮层组件
 class ContactAlphabetOverlay extends StatelessWidget {
@@ -17,7 +18,7 @@ class ContactAlphabetOverlay extends StatelessWidget {
       height: 60,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),

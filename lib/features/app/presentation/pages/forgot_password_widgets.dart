@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 图形验证码数据
 ///
@@ -59,7 +60,7 @@ class _ForgotPasswordCaptchaImageState extends State<ForgotPasswordCaptchaImage>
         child: Container(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
           child: const Center(
             child: SizedBox.square(
@@ -76,12 +77,12 @@ class _ForgotPasswordCaptchaImageState extends State<ForgotPasswordCaptchaImage>
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: Material(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         clipBehavior: Clip.antiAlias,
         color: colorScheme.surfaceContainerHigh,
         child: InkWell(
           onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           child: SizedBox(
             width: widget.width,
             height: widget.height,

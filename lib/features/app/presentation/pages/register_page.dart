@@ -17,6 +17,7 @@ import 'package:flutter/services.dart'
         LengthLimitingTextInputFormatter,
         TextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 注册页面
 ///
@@ -331,7 +332,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: scheme.primaryContainer.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         child: Row(
           children: [
@@ -428,7 +429,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         width: 36,
         height: 16,
       ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
     ),
   );
 
@@ -467,7 +468,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           size: 16,
         ),
       ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
     ),
   );
 

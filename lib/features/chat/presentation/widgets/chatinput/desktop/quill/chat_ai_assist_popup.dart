@@ -18,6 +18,7 @@ import 'package:flutter_quill/quill_delta.dart';
 
 import '../../ai/chat_ai_assist_core.dart';
 import 'chat_ai_assist_widgets.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 弹出输入框 AI 助手气泡（锚定按钮 context）
 ///
@@ -82,7 +83,7 @@ void showChatAiAssistBubble(
                 color: colorScheme.outlineVariant.withValues(alpha: .8),
                 width: .5,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               shadows: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: .16),
@@ -418,7 +419,7 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(_errorText!,
-                  style: TextStyle(fontSize: 11.5, color: _cs.error)),
+                  style: TextStyle(fontSize: 12, color: _cs.error)),
             ),
           if (_hasResult) ...[
             const SizedBox(height: 8),

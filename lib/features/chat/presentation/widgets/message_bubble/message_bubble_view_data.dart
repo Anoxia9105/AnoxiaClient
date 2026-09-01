@@ -5,6 +5,7 @@
 library;
 
 import 'package:anoxia/features/chat/models/chat_message_extensions.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -120,7 +121,7 @@ class MessageBubbleViewData {
   static String _displaySenderName(int? senderId, String? nickName) {
     final name = nickName?.trim();
     if (name != null && name.isNotEmpty) return name;
-    if (senderId != null) return '用户$senderId';
+    if (senderId != null) return 'reply_user_prefix'.tr(args: ['$senderId']);
     return '';
   }
 }

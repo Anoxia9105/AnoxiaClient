@@ -73,7 +73,7 @@ Future<void> main(List<String> args) async {
         );
       } catch (_) {
         // debugLog 本身失败时，用 debugPrint 兜底（WASM 安全）
-        debugPrint('FlutterError (log failed): ${details.exception}');
+        debugLog('FlutterError (log failed): ${details.exception}');
       }
     };
 
@@ -88,7 +88,7 @@ Future<void> main(List<String> args) async {
           details.stack,
         );
       } catch (_) {
-        debugPrint('Build error: ${details.exception}');
+        debugLog('Build error: ${details.exception}');
       }
       return ErrorPage(
         details: details.exceptionAsString(),
@@ -107,7 +107,7 @@ Future<void> main(List<String> args) async {
       try {
         debugLog('未捕获异步错误', error, stack);
       } catch (_) {
-        debugPrint('Async error: $error');
+        debugLog('Async error: $error');
       }
       return true;
     };

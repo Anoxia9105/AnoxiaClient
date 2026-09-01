@@ -4,6 +4,7 @@ import 'package:anoxia/features/contact/presentation/widgets/contact_detail/cont
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 群成员基本信息页
 ///
@@ -35,7 +36,7 @@ class MemberBasicInfoPage extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: colorScheme.secondaryContainer.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                 ),
@@ -66,7 +67,7 @@ class MemberBasicInfoPage extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),

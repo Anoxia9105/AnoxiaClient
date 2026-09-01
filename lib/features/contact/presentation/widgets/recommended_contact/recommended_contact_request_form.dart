@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 推荐联系人页面的好友请求表单
 ///
@@ -44,7 +45,7 @@ class _RecommendedContactRequestFormState
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         child: Row(
           children: [

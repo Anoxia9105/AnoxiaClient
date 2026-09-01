@@ -13,6 +13,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'base/message_render_strategy.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 位置消息渲染策略
 ///
@@ -50,7 +51,7 @@ class _LocationMessage extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.of(context).push(

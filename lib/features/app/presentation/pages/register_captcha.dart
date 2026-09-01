@@ -4,6 +4,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 注册页验证码图片
 class RegisterCaptchaImage extends ConsumerStatefulWidget {
@@ -36,12 +37,12 @@ class _RegisterCaptchaImageState extends ConsumerState<RegisterCaptchaImage> {
             onEnter: (_) => setState(() => _isHovering = true),
             onExit: (_) => setState(() => _isHovering = false),
             child: Material(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               clipBehavior: Clip.antiAlias,
               color: scheme.surfaceContainerHigh,
               child: InkWell(
                 onTap: widget.onTap,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
                 child: SizedBox(
                   width: widget.width,
                   height: 44,
@@ -75,7 +76,7 @@ class _RegisterCaptchaImageState extends ConsumerState<RegisterCaptchaImage> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: scheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
               child: const CircularProgressIndicator(strokeWidth: 2),
             ),
@@ -87,7 +88,7 @@ class _RegisterCaptchaImageState extends ConsumerState<RegisterCaptchaImage> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: scheme.errorContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
               child: IconButton(
                 icon: HugeIcon(

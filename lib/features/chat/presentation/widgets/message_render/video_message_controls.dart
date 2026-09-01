@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class VideoMessageControlPill extends StatelessWidget {
   final List<List<dynamic>> icon;
@@ -16,9 +17,9 @@ class VideoMessageControlPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.black.withValues(alpha: 0.48),
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(7),

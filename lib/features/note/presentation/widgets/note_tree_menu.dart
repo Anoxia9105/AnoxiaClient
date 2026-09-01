@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 树节点操作（右键 / 长按菜单项）
 enum NoteTreeAction {
@@ -72,7 +73,7 @@ class NoteTreeMenuItemState extends State<NoteTreeMenuItem> {
       onTap: enabled
           ? () => Navigator.of(context).pop(entry.action)
           : null,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       hoverColor: colorScheme.primaryContainer.withValues(alpha: .35),
       highlightColor: accent.withValues(alpha: .1),
       child: Padding(
@@ -87,7 +88,7 @@ class NoteTreeMenuItemState extends State<NoteTreeMenuItem> {
                 color: enabled
                     ? accent.withValues(alpha: entry.danger ? .10 : .08)
                     : colorScheme.onSurface.withValues(alpha: .04),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
               ),
               child: HugeIcon(
                 icon: entry.icon,
@@ -106,7 +107,7 @@ class NoteTreeMenuItemState extends State<NoteTreeMenuItem> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: labelColor,
                 ),
@@ -152,7 +153,7 @@ class NoteTreeMenuHeaderEntryState extends State<NoteTreeMenuHeaderEntry> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: .1),
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
             ),
             child: HugeIcon(
               icon: widget.icon,

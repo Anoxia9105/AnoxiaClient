@@ -17,6 +17,7 @@ import '../../../../../framework/protocol/message/high_message.dart';
 import '../../../../../framework/provider/chat/message/high_message_service.dart';
 import '../../../../../framework/provider/chat/room/room_list_service.dart';
 import '../../../../../framework/provider/chat/chat_focus_mode_controller.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天房间 AppBar 组件
 ///
@@ -93,7 +94,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                     ),
                     child: Assets.images.appIconPng.image(
                       fit: BoxFit.contain,

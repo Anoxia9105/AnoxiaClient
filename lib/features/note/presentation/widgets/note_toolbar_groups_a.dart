@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'note_quill_actions.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 记事本工具栏分组组件 - 基础部件
 ///
@@ -104,7 +105,7 @@ class NoteToolbarBubbleMenuTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       hoverColor: colorScheme.primary.withValues(alpha: .08),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -156,7 +157,7 @@ class NoteToolbarAiBubbleTile extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       hoverColor: cs.primary.withValues(alpha: .08),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),

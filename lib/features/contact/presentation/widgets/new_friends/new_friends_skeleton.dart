@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 新好友请求骨架屏
 ///
@@ -20,7 +21,7 @@ class NewFriendsSkeleton extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
           decoration: BoxDecoration(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
             border: Border.all(
               color: Theme.of(
                 context,

@@ -16,6 +16,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:anoxia/platform/shims/pip_shim.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 通话命令栏组件
 ///
@@ -214,7 +216,7 @@ class CommandBar extends ConsumerWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.redAccent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         child: InkWell(
           onTap: () async {
@@ -229,14 +231,14 @@ class CommandBar extends ConsumerWidget {
               try {
                 await Pip().dispose();
               } catch (e) {
-                debugPrint('PiP dispose error: $e');
+                debugLog('PiP dispose error: $e');
               }
               ref.read(mobileCallSessionControllerProvider.notifier).end();
             }
 
             notifier.leave();
           },
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             child: HugeIcon(

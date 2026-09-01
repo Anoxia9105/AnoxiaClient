@@ -1,7 +1,8 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 添加好友用户卡片组件
 ///
@@ -26,12 +27,12 @@ class AddFriendUserCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           onTap: isFriend ? null : onTapAdd,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -59,7 +60,7 @@ class AddFriendUserCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.outline,
-                          fontSize: 12.5,
+                          fontSize: 12,
                         ),
                       ),
                       if ((user.phonenumber ?? '').isNotEmpty)
@@ -71,7 +72,7 @@ class AddFriendUserCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.bodySmall?.copyWith(
                               color: colorScheme.outline,
-                              fontSize: 12.5,
+                              fontSize: 12,
                             ),
                           ),
                         ),
@@ -87,7 +88,7 @@ class AddFriendUserCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(RadiusToken.pill),
                         ),
                         child: Text(
                           'add_friend_already_friend'.tr(),
@@ -110,7 +111,7 @@ class AddFriendUserCard extends StatelessWidget {
                           visualDensity: VisualDensity.compact,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(RadiusToken.pill),
                           ),
                         ),
                         child: Text(

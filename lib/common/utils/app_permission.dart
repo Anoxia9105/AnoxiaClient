@@ -154,7 +154,7 @@ Future<bool> ensureGalleryWritePermission(BuildContext context) async {
     return ensureAppPermission(
       context,
       Permission.photosAddOnly,
-      permissionName: '相册',
+      permissionName: 'permission_gallery'.tr(),
       acceptLimited: true,
     );
   }
@@ -166,7 +166,7 @@ Future<bool> ensureGalleryWritePermission(BuildContext context) async {
     return ensureAppPermission(
       context,
       Permission.storage,
-      permissionName: '存储',
+      permissionName: 'permission_storage'.tr(),
     );
   }
   return true;

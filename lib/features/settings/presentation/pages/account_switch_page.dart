@@ -10,6 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 切换账号页面
 ///
@@ -105,7 +106,7 @@ class AccountSwitchPage extends ConsumerWidget {
                       color: colorScheme.outlineVariant.withValues(alpha: .8),
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                     ),
                   ),
                   onPressed: isSwitching ? null : () => _addAccount(context, ref),
@@ -202,7 +203,7 @@ class _CurrentUserTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: .35),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
           color: colorScheme.primary.withValues(alpha: .35),
         ),
@@ -241,7 +242,7 @@ class _CurrentUserTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(RadiusToken.pill),
             ),
             child: Text(
               'account_switch_current'.tr(),
@@ -277,9 +278,9 @@ class _SavedAccountTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Material(
       color: colorScheme.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(RadiusToken.xl),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         onTap: enabled ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -381,7 +382,7 @@ class _AccountTileSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: highlight
             ? Border.all(
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: .35),

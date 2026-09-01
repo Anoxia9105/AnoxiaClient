@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 头部搜索入口
 class HeaderSearchEntry extends StatelessWidget {
@@ -14,14 +15,14 @@ class HeaderSearchEntry extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       child: Container(
         height: 30,
         width: 190,
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           border: Border.all(
             color: colorScheme.outlineVariant.withValues(alpha: 0.8),
           ),

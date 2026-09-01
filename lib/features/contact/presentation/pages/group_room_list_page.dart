@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/date_util.dart';
+import 'package:anoxia/common/utils/date_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
@@ -14,6 +14,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../framework/provider/chat/room/room_member_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 群聊列表页面
 ///
@@ -147,7 +148,7 @@ class _EmptyState extends StatelessWidget {
               padding: const EdgeInsets.all(26),
               decoration: BoxDecoration(
                 color: cs.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 boxShadow: [
                   BoxShadow(
                     color: cs.primary.withValues(alpha: 0.12),

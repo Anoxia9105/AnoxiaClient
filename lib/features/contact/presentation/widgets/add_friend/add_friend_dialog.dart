@@ -1,10 +1,11 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/user_vo.dart';
 import 'package:anoxia/framework/provider/contact/user_search_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 发送好友申请对话框
 ///
@@ -47,7 +48,7 @@ class _AddFriendDialogState extends ConsumerState<AddFriendDialog> {
 
 return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
       elevation: 8,
       shadowColor: colorScheme.shadow.withValues(alpha: 0.14),
       backgroundColor: colorScheme.surface,
@@ -87,7 +88,7 @@ return Dialog(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                 ),
                 child: Row(
                   children: [
@@ -158,15 +159,15 @@ return Dialog(
                 decoration: InputDecoration(
                   hintText: 'add_friend_verify_hint'.tr(),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                     borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                     borderSide: BorderSide(
                       color: colorScheme.primary,
                       width: 1.5,
@@ -191,7 +192,7 @@ return Dialog(
                       style: TextButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                         ),
                       ),
                       child: Text('add_friend_cancel'.tr()),
@@ -204,7 +205,7 @@ return Dialog(
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                         ),
                       ),
                       child: _isSending

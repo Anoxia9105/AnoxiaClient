@@ -2,6 +2,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 
 import '../../framework/core/toast_service.dart';
+import '../../framework/theme/app_colors.dart';
 
 export '../../framework/core/toast_service.dart' show ToastType;
 
@@ -100,7 +101,7 @@ class Toast {
     final messenger = messengerKey.currentState;
     if (messenger == null) return () {};
 
-    final bg = backgroundColor ?? _colorFor(type);
+    final bg = backgroundColor ?? _colorFor(type, messenger.context);
     final textColor = _foregroundFor(bg);
     messenger.hideCurrentSnackBar();
     final controller = messenger.showSnackBar(
@@ -136,12 +137,13 @@ class Toast {
     return controller.close;
   }
 
-  static Color _colorFor(ToastType type) {
+  static Color _colorFor(ToastType type, BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>();
     return switch (type) {
-      ToastType.success => const Color(0xFF2E7D32),
-      ToastType.error => const Color(0xFFB3261E),
-      ToastType.warning => const Color(0xFF8A5A00),
-      ToastType.info => const Color(0xFF455A64),
+      ToastType.success => appColors?.success ?? const Color(0xFF2E7D32),
+      ToastType.error => appColors?.danger ?? const Color(0xFFB3261E),
+      ToastType.warning => appColors?.warning ?? const Color(0xFF8A5A00),
+      ToastType.info => appColors?.info ?? const Color(0xFF455A64),
     };
   }
 

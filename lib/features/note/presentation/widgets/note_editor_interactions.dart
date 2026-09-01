@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class NoteTaskCheckboxBuilder implements QuillCheckboxBuilder {
   const NoteTaskCheckboxBuilder();
@@ -40,7 +41,7 @@ class NoteTaskCheckboxBuilder implements QuillCheckboxBuilder {
                               : colors.onSurface.withValues(alpha: .45),
                           width: 1.4,
                         ),
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(RadiusToken.sm),
                       ),
                     ),
                     child: isChecked

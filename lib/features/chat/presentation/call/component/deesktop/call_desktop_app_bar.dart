@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 桌面端通话应用栏组件
 ///
@@ -96,7 +97,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
           },
           style: ButtonStyle(
             shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
             ),
             foregroundColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.hovered)) {

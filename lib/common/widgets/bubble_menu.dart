@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 右上角气泡菜单公共构建工具
 ///
@@ -35,7 +36,7 @@ class BubbleMenu {
     required double maxWidth,
   }) {
     // 与 buildMenuItem 中 Text 的样式保持一致
-    const style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w400);
+    const style = TextStyle(fontSize: 12, fontWeight: FontWeight.w400);
     final textScaler = MediaQuery.textScalerOf(context);
     var maxTextWidth = 0.0;
     for (final title in titles) {
@@ -64,7 +65,7 @@ class BubbleMenu {
     return InkWell(
       mouseCursor: SystemMouseCursors.click,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(RadiusToken.sm),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: itemHPadding,
@@ -90,7 +91,7 @@ class BubbleMenu {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
                   color: color,
                 ),

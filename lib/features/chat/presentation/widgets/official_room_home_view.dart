@@ -2,6 +2,7 @@ import 'package:anoxia/features/chat/presentation/widgets/room_detail_settings/o
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 官方虚拟房间内容页。
 ///
@@ -71,7 +72,7 @@ class _WelcomeHeader extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.36),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.16)),
       ),
       child: Padding(
@@ -85,7 +86,7 @@ class _WelcomeHeader extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 boxShadow: [
                   BoxShadow(
                     color: colorScheme.shadow.withValues(alpha: 0.08),

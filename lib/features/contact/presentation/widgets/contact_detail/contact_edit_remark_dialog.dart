@@ -4,6 +4,7 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 显示编辑备注对话框并处理保存
 ///
@@ -21,7 +22,7 @@ Future<bool> showContactEditRemarkDialog(
     builder: (dialogContext) {
       final colorScheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.xl)),
         title: Text('contact_edit_remark'.tr()),
         content: TextField(
           controller: controller,
@@ -33,17 +34,17 @@ Future<bool> showContactEditRemarkDialog(
               alpha: 0.35,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               borderSide: BorderSide(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.7),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
             ),
           ),

@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'change_password_page.dart';
 import 'me_page.dart';
 import 'personal_qr_page.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 抽屉左侧菜单页面（带完整个人信息展示）
 class MenuPage extends ConsumerWidget {
@@ -93,7 +94,7 @@ class MenuPage extends ConsumerWidget {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(RadiusToken.xl),
                     ),
                     child: Column(
                       children: [
@@ -139,7 +140,7 @@ class MenuPage extends ConsumerWidget {
                   // 第一组：个人中心 / 我的二维码 / 修改密码 / 深色模式
                   Material(
                     color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                     child: Column(
                       children: [
                         _buildMenuTile(
@@ -184,7 +185,7 @@ class MenuPage extends ConsumerWidget {
                   // 第二组：切换账号 / 设置
                   Material(
                     color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                     child: Column(
                       children: [
                         _buildMenuTile(
@@ -225,7 +226,7 @@ class MenuPage extends ConsumerWidget {
                     vertical: 8,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                   ),
                 ),
                 label: Text('sidebar_logout'.tr()),
@@ -305,7 +306,7 @@ class MenuPage extends ConsumerWidget {
       minVerticalPadding: 14,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       horizontalTitleGap: 12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
       leading: HugeIcon(
         icon: icon,
         color: displayColor.withValues(alpha: 0.85),
@@ -315,7 +316,7 @@ class MenuPage extends ConsumerWidget {
         title,
         style: TextStyle(
           color: displayColor,
-          fontSize: 14.5,
+          fontSize: 14,
           fontWeight: isDanger ? FontWeight.w500 : FontWeight.normal,
         ),
       ),
@@ -361,7 +362,7 @@ class MenuPage extends ConsumerWidget {
       ),
       title: Text(
         'sidebar_dark_mode'.tr(),
-        style: const TextStyle(color: Colors.white, fontSize: 14.5),
+        style: const TextStyle(color: Colors.white, fontSize: 14),
       ),
       trailing: SizedBox.square(
         dimension: 44,

@@ -413,8 +413,8 @@ class NotificationHelper {
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'incoming_call_channel',
-        '来电通知',
-        channelDescription: '语音和视频通话邀请',
+        'notification_incoming_call_channel'.tr(),
+        channelDescription: 'notification_incoming_call_channel_desc'.tr(),
         importance: Importance.max,
         priority: Priority.max,
         category: AndroidNotificationCategory.call,

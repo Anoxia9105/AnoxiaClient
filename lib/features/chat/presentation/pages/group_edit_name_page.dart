@@ -7,6 +7,7 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 群组名称编辑页面。
 ///
@@ -112,7 +113,7 @@ class _GroupEditNamePageState extends ConsumerState<GroupEditNamePage> {
           onSubmitted: (_) => _submit(),
           decoration: InputDecoration(
             hintText: 'create_group_name_hint'.tr(),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
           ),
         ),
       ),

@@ -1,8 +1,9 @@
-﻿import 'dart:math';
+import 'dart:math';
 
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 表情反应全屏特效叠加层
 ///
@@ -173,7 +174,7 @@ class _ReactionBubbleState extends State<_ReactionBubble>
                         ),
                         decoration: BoxDecoration(
                           color: Colors.black54,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(RadiusToken.xl),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,

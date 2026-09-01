@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/chat/sticker/sticker_packs_provider.da
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 设置-自定义表情包区块
 ///
@@ -84,7 +85,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.xl)),
         titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
         contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -167,7 +168,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
               ? Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(RadiusToken.pill),
                     child: const LinearProgressIndicator(minHeight: 6),
                   ),
                 )
@@ -196,7 +197,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,7 +206,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
             children: [
               if (pack.iconUrl.isNotEmpty)
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
                   child: CachedNetworkImageView(
                     imageUrl: pack.iconUrl,
                     width: 28,
@@ -266,7 +267,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(RadiusToken.md),
           ),
           child: CachedNetworkImageView(
             imageUrl: sticker.imageUrl,

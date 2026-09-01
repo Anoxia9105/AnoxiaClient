@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天输入框骨架屏
 class ChatInputSkeleton extends StatelessWidget {
@@ -35,7 +36,7 @@ class _DesktopChatInputSkeleton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           border: Border.all(
             width: 1,
             color: colorScheme.outlineVariant.withValues(alpha: 0.6),
@@ -96,7 +97,7 @@ class _MobileChatInputSkeleton extends StatelessWidget {
           color: colorScheme.surfaceContainerLow,
           elevation: 10,
           shadowColor: Colors.black.withValues(alpha: 0.28),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
@@ -114,7 +115,7 @@ class _MobileChatInputSkeleton extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                     ),
                     alignment: Alignment.centerLeft,
                     child: const SkeletonLine(

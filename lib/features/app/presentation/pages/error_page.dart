@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 全局错误页面
 ///
@@ -121,7 +122,7 @@ class ErrorPage extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(RadiusToken.md),
                       border: Border.all(color: scheme.outlineVariant),
                     ),
                     child: SelectableText(

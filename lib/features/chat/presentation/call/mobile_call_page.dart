@@ -10,6 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 移动端通话页面
 ///
@@ -55,7 +56,7 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
       const channel = MethodChannel('screen_control');
       await channel.invokeMethod('setKeepScreenOn', on);
     } catch (e) {
-      debugPrint('setKeepScreenOn error: $e');
+      debugLog('setKeepScreenOn error: $e');
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 连接状态标签组件
 ///
@@ -75,7 +76,7 @@ class ConnectionStatusTag extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: statusColor.withValues(alpha: 0.12), // 轻微的背景色浸润
-          borderRadius: BorderRadius.circular(12),   // 完美的圆角胶囊
+          borderRadius: BorderRadius.circular(RadiusToken.lg),   // 完美的圆角胶囊
           border: Border.all(
             color: statusColor.withValues(alpha: 0.25),
             width: 1,

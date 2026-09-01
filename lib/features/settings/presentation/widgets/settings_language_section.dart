@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 语言设置组件
 ///
@@ -65,7 +66,7 @@ class _LanguageOption extends StatelessWidget {
     final selected = selectedLanguageCode == value;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       mouseCursor: SystemMouseCursors.click,
       onTap: () => onLanguageChanged(value),
       child: Container(
@@ -75,7 +76,7 @@ class _LanguageOption extends StatelessWidget {
           color: selected
               ? colorScheme.primary.withValues(alpha: 0.08)
               : colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           border: Border.all(
             color: selected
                 ? colorScheme.primary

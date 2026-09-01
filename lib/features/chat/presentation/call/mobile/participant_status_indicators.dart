@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 状态指示胶囊
 class StatusPill extends StatelessWidget {
@@ -22,7 +23,7 @@ class StatusPill extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: Colors.white24),
       ),
       child: child,
@@ -50,7 +51,7 @@ class SpeakingWaves extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(RadiusToken.sm),
           ),
         );
       }),
@@ -83,7 +84,7 @@ class ConnectionQualityIcon extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 7),
       decoration: BoxDecoration(
         color: Colors.black54,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: Colors.white24),
       ),
       child: Row(
@@ -96,7 +97,7 @@ class ConnectionQualityIcon extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 1),
             decoration: BoxDecoration(
               color: level <= bars ? color : Colors.white24,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(RadiusToken.sm),
             ),
           );
         }),

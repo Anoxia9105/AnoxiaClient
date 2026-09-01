@@ -11,6 +11,7 @@ import '../../../../domain/repositories/app_background_repository.dart';
 import '../../../../framework/domain/app_background.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
 import 'background_video_thumbnail.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class SettingsBackgroundSection extends ConsumerWidget {
   const SettingsBackgroundSection({super.key});
@@ -125,7 +126,7 @@ class SettingsBackgroundSection extends ConsumerWidget {
               ? Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(RadiusToken.pill),
                     child: LinearProgressIndicator(
                       value:
                           (state.uploadProgress ?? 0) >=
@@ -233,12 +234,12 @@ class _BackgroundAssetTile extends StatelessWidget {
       label: asset.displayName,
       child: InkWell(
         onTap: onSelect,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
             color: colors.surfaceContainerHighest.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(RadiusToken.md),
             border: Border.all(
               color: selected ? colors.primary : colors.outlineVariant,
               width: selected ? 2 : 1,
@@ -248,7 +249,7 @@ class _BackgroundAssetTile extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 child: asset.type == AppBackgroundMediaType.image
                     ? Image(
                         image: appCachedNetworkImageProvider(asset.url),

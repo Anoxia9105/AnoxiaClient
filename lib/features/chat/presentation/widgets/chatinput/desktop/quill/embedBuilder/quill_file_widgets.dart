@@ -3,10 +3,12 @@ import 'package:anoxia/common/widgets/video_first_frame_view.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class VideoEmbedCard extends ConsumerStatefulWidget {
   final Attachment attachment;
@@ -37,7 +39,7 @@ class VideoEmbedCardState extends ConsumerState<VideoEmbedCard> {
       height: 148,
       decoration: BoxDecoration(
         color: Colors.black87,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(
           color: isFailed ? Colors.redAccent : Colors.white.withValues(alpha: 0.08),
           width: isFailed ? 2 : 1,
@@ -51,7 +53,7 @@ class VideoEmbedCardState extends ConsumerState<VideoEmbedCard> {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -143,7 +145,7 @@ class VideoEmbedCardState extends ConsumerState<VideoEmbedCard> {
                 right: 8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(999)),
+                  decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(RadiusToken.pill)),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -218,6 +220,7 @@ class FileEmbedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>();
     final isFailed = entry.isFailed;
     final isUploading = entry.isUploading;
     final progress = entry.progress;
@@ -230,7 +233,7 @@ class FileEmbedCard extends StatelessWidget {
         color: isFailed
             ? scheme.errorContainer.withValues(alpha: 0.18)
             : scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
           color: isFailed ? scheme.error : scheme.outlineVariant.withValues(alpha: isDark ? 0.35 : 0.55),
           width: isFailed ? 1.4 : 1,
@@ -244,7 +247,7 @@ class FileEmbedCard extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -258,7 +261,7 @@ class FileEmbedCard extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: isFailed ? scheme.error.withValues(alpha: 0.12) : scheme.surface,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                       border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
                     ),
                     alignment: Alignment.center,
@@ -290,7 +293,7 @@ class FileEmbedCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
                                 color: scheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(999),
+                                borderRadius: BorderRadius.circular(RadiusToken.pill),
                               ),
                               child: Text(
                                 FileUtil.formatFileSize(attachment.size ?? 0),
@@ -300,7 +303,7 @@ class FileEmbedCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             if (isUploading)
                               Text(
-                                '${(progress * 100).round()}% 上传中…',
+                                'chat_upload_progress'.tr(args: ['${(progress * 100).round()}']),
                                 style: TextStyle(fontSize: 11, color: scheme.primary, fontWeight: FontWeight.w600),
                               )
                             else if (isFailed)
@@ -309,12 +312,12 @@ class FileEmbedCard extends StatelessWidget {
                                 style: TextStyle(fontSize: 11, color: scheme.error, fontWeight: FontWeight.w700),
                               )
                             else
-                              const Row(
+                              Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 12, color: Color(0xFF2E7D32)),
-                                  SizedBox(width: 4),
-                                  Text('已上传', style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32), fontWeight: FontWeight.w600)),
+                                  HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 12, color: appColors?.success ?? const Color(0xFF2E7D32)),
+                                  const SizedBox(width: 4),
+                                  Text('chat_uploaded'.tr(), style: TextStyle(fontSize: 11, color: appColors?.success ?? const Color(0xFF2E7D32), fontWeight: FontWeight.w600)),
                                 ],
                               ),
                           ],
@@ -336,7 +339,7 @@ class FileEmbedCard extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(RadiusToken.pill),
                             child: LinearProgressIndicator(
                               value: progress > 0 ? progress : null,
                               minHeight: 6,

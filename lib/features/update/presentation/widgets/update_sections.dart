@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 更新页面相关组件集合
 
@@ -26,7 +27,7 @@ class UpdateHeaderCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: .50),
         ),
@@ -44,7 +45,7 @@ class UpdateHeaderCard extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               color: colorScheme.primaryContainer,
             ),
             child: HugeIcon(
@@ -73,7 +74,7 @@ class UpdateHeaderCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(RadiusToken.pill),
                         color: colorScheme.primaryContainer,
                       ),
                       child: Text(
@@ -93,7 +94,7 @@ class UpdateHeaderCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
                 color: colorScheme.errorContainer,
               ),
               child: Text(
@@ -128,7 +129,7 @@ class UpdateReleaseNotesCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: .50),
         ),
@@ -161,7 +162,7 @@ class UpdateReleaseNotesCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(RadiusToken.pill),
                   color: colorScheme.secondaryContainer,
                 ),
                 child: Text(
@@ -268,7 +269,7 @@ class UpdateActionArea extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: .50),
         ),
@@ -309,7 +310,7 @@ class UpdateActionArea extends StatelessWidget {
           LinearProgressIndicator(
             value: progress <= 0 ? null : progress,
             minHeight: 8,
-            borderRadius: BorderRadius.circular(99),
+            borderRadius: BorderRadius.circular(RadiusToken.pill),
           ),
         ],
       ),
@@ -333,7 +334,7 @@ class UpdateErrorCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: colorScheme.error.withValues(alpha: .30)),
       ),
       child: Row(

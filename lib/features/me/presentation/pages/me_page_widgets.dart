@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 「我的」页骨架屏
 ///
@@ -45,7 +46,7 @@ class ProfileCardSkeleton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: cs.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       child: const Row(
         children: [
@@ -80,7 +81,7 @@ class TileSectionSkeleton extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Material(
       color: cs.surfaceContainer,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(RadiusToken.xl),
       child: Column(
         children: [
           for (var i = 0; i < rows; i++) ...[
@@ -125,7 +126,7 @@ class MeTileSection extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Material(
       color: cs.surfaceContainer,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(RadiusToken.xl),
       child: Column(children: children),
     );
   }
@@ -200,7 +201,7 @@ class MeEditableTile extends StatelessWidget {
       minVerticalPadding: 14,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       leading: HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
-      title: Text(title, style: const TextStyle(fontSize: 14.5)),
+      title: Text(title, style: const TextStyle(fontSize: 14)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -239,13 +240,13 @@ class MeAvatarTile extends StatelessWidget {
       minVerticalPadding: 10,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserCircle, size: 22),
-      title: Text('me_avatar'.tr(), style: const TextStyle(fontSize: 14.5)),
+      title: Text('me_avatar'.tr(), style: const TextStyle(fontSize: 14)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'me_avatar_change'.tr(),
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12.5),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
           ),
           const SizedBox(width: 4),
           HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),

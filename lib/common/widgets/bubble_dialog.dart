@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 typedef AnchoredBubblePlacement = ({
   AxisDirection arrowDirection,
@@ -465,7 +466,7 @@ class BubbleWidget extends StatelessWidget {
         shape: BubbleShapeBorder(
           side: border,
           arrowDirection: arrowDirection,
-          borderRadius: borderRadius ?? BorderRadius.circular(4),
+          borderRadius: borderRadius ?? BorderRadius.circular(RadiusToken.sm),
           arrowLength: arrowLength,
           arrowWidth: arrowWidth,
           arrowRadius: arrowRadius,

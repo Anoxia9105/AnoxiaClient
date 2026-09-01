@@ -18,6 +18,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 群聊二维码页面
 ///
@@ -185,7 +186,7 @@ class _GroupQrPageState extends ConsumerState<GroupQrPage> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: cs.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -217,7 +218,7 @@ class _GroupQrPageState extends ConsumerState<GroupQrPage> {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(RadiusToken.lg),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(12),

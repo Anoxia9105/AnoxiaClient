@@ -9,6 +9,7 @@ import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 创建群聊对话框组件
 ///
@@ -108,13 +109,13 @@ class _CreateChatDialogWidgetState
                 height: 22,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 borderSide: BorderSide(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.8),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
               ),
             ),
@@ -135,7 +136,7 @@ class _CreateChatDialogWidgetState
             ],
             style: SegmentedButton.styleFrom(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
               ),
             ),
             selected: {_joinPolicy},
@@ -159,7 +160,7 @@ class _CreateChatDialogWidgetState
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       backgroundColor: colorScheme.surface,
@@ -181,10 +182,10 @@ class _CreateChatDialogWidgetState
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 10, 16),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.65),
                   ),
@@ -220,10 +221,10 @@ class _CreateChatDialogWidgetState
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.6),
                   ),
@@ -239,7 +240,7 @@ class _CreateChatDialogWidgetState
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
           child: Text(
             'create_group_selected_count'.tr(
@@ -294,7 +295,7 @@ class _CreateChatDialogWidgetState
                 : _submit,
             style: FilledButton.styleFrom(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
@@ -366,7 +367,7 @@ class _CreateChatDialogWidgetState
       margin: const EdgeInsets.fromLTRB(10, 8, 16, 16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +405,7 @@ class _CreateChatDialogWidgetState
                       final id = selectedIds.elementAt(index);
                       return ListTile(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                         ),
                         tileColor: colorScheme.surface,
                         leading: AvatarWidget(
@@ -444,7 +445,7 @@ class _CreateChatDialogWidgetState
           margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
           child: CheckboxListTile(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 8),
             visualDensity: const VisualDensity(horizontal: -2, vertical: -2),

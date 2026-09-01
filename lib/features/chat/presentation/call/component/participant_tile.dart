@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
@@ -7,6 +7,7 @@ import 'package:anoxia/features/chat/presentation/call/component/participant_mor
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 通话参与者磁贴组件
 ///
@@ -149,7 +150,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
         padding: const EdgeInsets.all(4),
         child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           border: Border.all(
             color: isSpeaking
                 ? Colors.blueAccent
@@ -160,7 +161,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
           ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -185,7 +186,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: Colors.black54,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(RadiusToken.sm),
                     ),
                     child: const Text('✋', style: TextStyle(fontSize: 20)),
                   ),
@@ -203,7 +204,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(RadiusToken.sm),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 统一的时间格式化：`mm:ss` 或 `hh:mm:ss`，零时长返回 `--:--`。
 String formatVideoDuration(Duration duration) {
@@ -46,7 +47,7 @@ class VideoControlBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: surfaceColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       constraints: BoxConstraints(maxWidth: maxBarW),
       child: Column(
@@ -127,7 +128,7 @@ class VideoControlButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(10),

@@ -52,12 +52,10 @@ class AcrylicContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
 
     // 自动主题色遮罩
-    final Color autoOverlayColor = isDark
-        ? Colors.grey.shade800.withValues(alpha: 0.5)
-        : Colors.grey.shade200.withValues(alpha: 0.5);
+    final Color autoOverlayColor = scheme.surfaceContainerHighest.withValues(alpha: 0.5);
 
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.zero,

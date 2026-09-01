@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class CaptchaImage extends ConsumerStatefulWidget {
   const CaptchaImage({super.key});
@@ -31,12 +32,12 @@ class _CaptchaImageState extends ConsumerState<CaptchaImage> {
                 onExit: (_) => setState(() => _isHovering = false),
                 cursor: SystemMouseCursors.click,
                 child: Material(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                   clipBehavior: Clip.antiAlias,
                   color: colorScheme.surfaceContainerHigh,
                   child: InkWell(
                     onTap: () => ref.invalidate(getCaptchaProvider),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                     child: SizedBox(
                       width: 120,
                       height: 44,
@@ -72,7 +73,7 @@ class _CaptchaImageState extends ConsumerState<CaptchaImage> {
             height: 44,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
             child: const Center(
               child: SizedBox.square(
@@ -86,7 +87,7 @@ class _CaptchaImageState extends ConsumerState<CaptchaImage> {
             height: 44,
             decoration: BoxDecoration(
               color: colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
             child: IconButton(
               icon: HugeIcon(

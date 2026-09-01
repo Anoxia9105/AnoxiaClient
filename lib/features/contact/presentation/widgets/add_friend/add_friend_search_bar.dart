@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 添加好友搜索栏组件
 ///
@@ -69,13 +70,13 @@ class AddFriendSearchBar extends StatelessWidget {
                       )
                     : null,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   borderSide: BorderSide(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.8),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   borderSide: BorderSide(
                     color: colorScheme.primary,
                     width: 1.2,
@@ -107,7 +108,7 @@ class AddFriendSearchBar extends StatelessWidget {
                 minimumSize: const Size(46, 46),
                 maximumSize: const Size(46, 46),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                 ),
                 padding: EdgeInsets.zero,
               ),

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 分区标签组件
 class SectionLabel extends StatelessWidget {
@@ -38,7 +39,7 @@ class BrightnessTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final selected = brightness == selectedBrightness;
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       mouseCursor: SystemMouseCursors.click,
       onTap: () => onChanged(brightness),
       child: AnimatedContainer(
@@ -48,7 +49,7 @@ class BrightnessTile extends StatelessWidget {
           color: selected
               ? colorScheme.primary.withValues(alpha: 0.08)
               : colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           border: Border.all(
             color: selected ? colorScheme.primary : colorScheme.outlineVariant,
             width: selected ? 1.6 : 1,
@@ -148,10 +149,12 @@ class AccentSwatch extends StatelessWidget {
     );
   }
 
-  Color _contrastingTextColor(Color bg) {
-    final lightness = HSLColor.fromColor(bg).lightness;
-    return lightness > 0.55 ? Colors.black87 : Colors.white;
-  }
+  Color _contrastingTextColor(Color bg) => _readableOn(bg);
+}
+
+Color _readableOn(Color bg) {
+  final lightness = HSLColor.fromColor(bg).lightness;
+  return lightness > 0.6 ? Colors.black87 : Colors.white;
 }
 
 /// 自定义颜色行
@@ -169,7 +172,7 @@ class CustomColorRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(
           color: isCustom ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.6),
           width: isCustom ? 1.4 : 1,
@@ -241,10 +244,7 @@ class CustomColorRow extends StatelessWidget {
     );
   }
 
-  Color _contrast(Color bg) {
-    final l = HSLColor.fromColor(bg).lightness;
-    return l > 0.6 ? Colors.black87 : Colors.white;
-  }
+  Color _contrast(Color bg) => _readableOn(bg);
 
   Future<void> _showColorPicker(BuildContext context) async {
     final result = await showDialog<Color>(
@@ -311,7 +311,7 @@ class ColorPickerDialogState extends State<ColorPickerDialog> {
                 height: 56,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                   border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 alignment: Alignment.center,
@@ -363,7 +363,7 @@ class ColorPickerDialogState extends State<ColorPickerDialog> {
                   labelText: 'HEX',
                   prefixText: '#',
                   isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
                 ),
                 maxLength: 7,
                 onSubmitted: (value) {

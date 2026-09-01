@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 语音消息渲染策略
 ///
@@ -92,7 +93,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
     try {
       await manager.play(messageId: widget.messageId, url: widget.url);
     } catch (e) {
-      debugPrint('播放失败: $e');
+      debugLog('播放失败: $e');
     }
   }
 

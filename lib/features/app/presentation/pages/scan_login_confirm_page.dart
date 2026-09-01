@@ -7,6 +7,7 @@ import 'package:dio/dio.dart' show DioException;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 扫码登录确认页（手机端）
 ///
@@ -98,7 +99,7 @@ class _ScanLoginConfirmPageState extends ConsumerState<ScanLoginConfirmPage> {
                 height: 96,
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                 ),
                 child: Center(
                   child: SizedBox.square(
@@ -147,7 +148,7 @@ class _ScanLoginConfirmPageState extends ConsumerState<ScanLoginConfirmPage> {
                   onPressed: _submitting ? null : _confirm,
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                     ),
                     textStyle: const TextStyle(
                       fontSize: 16,

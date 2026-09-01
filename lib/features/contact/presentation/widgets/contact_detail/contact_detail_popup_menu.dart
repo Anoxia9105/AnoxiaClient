@@ -1,9 +1,10 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:anoxia/common/widgets/bubble_menu.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 联系人详情右上角弹出菜单按钮
 ///
@@ -87,7 +88,7 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
                       arrowDirection: AxisDirection.up,
                       arrowOffset: arrowOffset,
                       backgroundColor: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                       shadows: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.08),

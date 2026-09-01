@@ -4,6 +4,7 @@ import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/video_viewer.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 判断是否应使用对话框呈现媒体详情。
 ///
@@ -154,7 +155,7 @@ class _ImageDialogContent extends StatelessWidget {
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxW.toDouble(), maxHeight: maxH.toDouble()),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         child: Container(
           color: Colors.black,
           child: Stack(

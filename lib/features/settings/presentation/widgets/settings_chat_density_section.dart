@@ -2,6 +2,7 @@ import 'package:anoxia/framework/provider/chat/message/chat_content_density_cont
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class SettingsChatDensitySection extends StatelessWidget {
   const SettingsChatDensitySection({
@@ -107,7 +108,7 @@ class _DensityOption extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           child: AnimatedContainer(
             duration: reduceMotion
                 ? Duration.zero
@@ -117,7 +118,7 @@ class _DensityOption extends StatelessWidget {
               color: selected
                   ? colors.primaryContainer.withValues(alpha: 0.36)
                   : colors.surfaceContainerHighest.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               border: Border.all(
                 color: selected ? colors.primary : colors.outlineVariant,
                 width: selected ? 1.6 : 1,
@@ -181,7 +182,7 @@ class _DensityPreview extends StatelessWidget {
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
         color: colors.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         border: Border.all(
           color: colors.outlineVariant.withValues(alpha: 0.52),
         ),
@@ -243,7 +244,7 @@ class _PreviewMessage extends StatelessWidget {
             height: height,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.38),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(RadiusToken.sm),
             ),
           ),
         ],

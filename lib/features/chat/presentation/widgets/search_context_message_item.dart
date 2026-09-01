@@ -9,6 +9,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 单条搜索结果的渲染（头像 + 发送者 + 时间 + 高亮文本/图片缩略图）。
 ///
@@ -71,7 +72,7 @@ class SearchContextMessageItem extends ConsumerWidget {
         color: isHighlighted
             ? colorScheme.primary.withValues(alpha: 0.08)
             : colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(
           color: isHighlighted
               ? colorScheme.primary.withValues(alpha: 0.3)
@@ -158,7 +159,7 @@ class SearchContextMessageItem extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
                 ),
                 child: HugeIcon(
                   icon: HugeIcons.strokeRoundedCheckmarkBadge01,
@@ -194,7 +195,7 @@ class SearchContextMessageItem extends ConsumerWidget {
           children: [
             // 显示图片缩略图
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
               child: Image.network(
                 attachment.url ?? '',
                 width: imageSize,
@@ -214,7 +215,7 @@ class SearchContextMessageItem extends ConsumerWidget {
                     height: size,
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(RadiusToken.md),
                     ),
                     child: Center(
                       child: HugeIcon(

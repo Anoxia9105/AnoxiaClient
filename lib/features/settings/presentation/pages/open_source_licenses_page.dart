@@ -4,6 +4,7 @@ import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 开源许可证页面
 ///
@@ -43,7 +44,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   child: InkWell(
                     mouseCursor: SystemMouseCursors.click,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                     onTap: () {
                       OpenSourceLicenseDetailRoute(
                         packageName: pkg.name,
@@ -75,7 +76,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(RadiusToken.md),
                                   ),
                                   child: Text(
                                     version,

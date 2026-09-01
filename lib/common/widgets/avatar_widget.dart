@@ -1,4 +1,5 @@
 ﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -170,9 +171,9 @@ class AvatarWidget extends StatelessWidget {
 
     return Tooltip(
       message: status == AvatarStatus.online
-          ? '在线'
+          ? 'avatar_status_online'.tr()
           : status == AvatarStatus.offline
-          ? '离线'
+          ? 'avatar_status_offline'.tr()
           : '',
       waitDuration: const Duration(milliseconds: 500),
       child: Container(

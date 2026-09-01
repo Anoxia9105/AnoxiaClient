@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 回复预览栏
 ///
@@ -48,7 +49,7 @@ class ReplyPreviewBar extends ConsumerWidget {
       ),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
         border: Border(left: BorderSide(color: colorScheme.primary, width: 3)),
       ),
       child: Row(
@@ -119,7 +120,7 @@ class ReplyPreviewBar extends ConsumerWidget {
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
         child: IntrinsicWidth(child: bar),
       ),
     );
@@ -147,8 +148,8 @@ class ReplyPreviewBar extends ConsumerWidget {
     }
 
     final senderId = message.senderId;
-    if (senderId != null) return '用户$senderId';
-    return '未知用户';
+    if (senderId != null) return 'reply_user_prefix'.tr(args: ['$senderId']);
+    return 'chat_unknown_user'.tr();
   }
 
   static String _displayContent(ChatMessage? message) {
@@ -159,25 +160,25 @@ class ReplyPreviewBar extends ConsumerWidget {
     if (content.isNotEmpty) return content;
 
     return switch (message.messageType) {
-      MessageType.image => '[图片]',
-      MessageType.audio => '[语音]',
-      MessageType.video => '[视频]',
+      MessageType.image => 'reply_placeholder_image'.tr(),
+      MessageType.audio => 'reply_placeholder_audio'.tr(),
+      MessageType.video => 'reply_placeholder_video'.tr(),
       MessageType.file =>
         payload?.file?.name?.isNotEmpty == true
-            ? '[文件] ${payload!.file!.name}'
-            : '[文件]',
+            ? '${'reply_placeholder_file'.tr()} ${payload!.file!.name}'
+            : 'reply_placeholder_file'.tr(),
       MessageType.emoji =>
         payload?.asset?.url?.isNotEmpty == true
-            ? '[表情]'
+            ? 'reply_placeholder_emoji'.tr()
             : payload?.emojiCode?.isNotEmpty == true
             ? payload!.emojiCode!
-            : '[表情]',
-      MessageType.system => '[系统消息]',
-      MessageType.card => '[卡片]',
-      MessageType.location => '[位置]',
-      MessageType.codeSnippet => '[代码]',
-      MessageType.richText || MessageType.text => '消息',
-      null => '消息',
+            : 'reply_placeholder_emoji'.tr(),
+      MessageType.system => 'reply_placeholder_system'.tr(),
+      MessageType.card => 'reply_placeholder_card'.tr(),
+      MessageType.location => 'reply_placeholder_location'.tr(),
+      MessageType.codeSnippet => 'reply_placeholder_code'.tr(),
+      MessageType.richText || MessageType.text => 'reply_placeholder_text'.tr(),
+      null => 'reply_placeholder_text'.tr(),
     };
   }
 }

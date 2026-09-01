@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 移动端底部面板类型
 enum MobileBottomPanelType { emoji, more, ai }
@@ -35,7 +36,7 @@ class MobileCompactButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final borderRadius = BorderRadius.circular(8);
+    final borderRadius = BorderRadius.circular(RadiusToken.md);
     return Tooltip(
       message: tooltipMessage,
       child: Material(
@@ -70,7 +71,7 @@ class MobileSendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final borderRadius = BorderRadius.circular(12);
+    final borderRadius = BorderRadius.circular(RadiusToken.lg);
     return Tooltip(
       message: 'toolbar_send'.tr(),
       child: Material(
@@ -135,7 +136,7 @@ class MobileInputCapsule extends StatelessWidget {
             : isActive
                 ? colorScheme.surfaceContainerHigh
                 : colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(
           color: isRecording
               ? Colors.transparent

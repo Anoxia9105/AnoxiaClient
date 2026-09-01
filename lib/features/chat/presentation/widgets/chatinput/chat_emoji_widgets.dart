@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 表情分类 Tab 栏（HugeIcons 定制）
 ///
@@ -104,7 +105,7 @@ class _EmojiCategoryTabBarState extends State<EmojiCategoryTabBar> {
     final icon = _categoryIcons[category] ?? HugeIcons.strokeRoundedHappy;
     return InkWell(
       key: ValueKey('emoji_category_$index'),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       onTap: () {
         widget.pageController.jumpToPage(index);
       },
@@ -119,7 +120,7 @@ class _EmojiCategoryTabBarState extends State<EmojiCategoryTabBar> {
           color: selected
               ? scheme.primary.withValues(alpha: 0.14)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         child: HugeIcon(
           icon: icon,
@@ -137,7 +138,7 @@ class _EmojiCategoryTabBarState extends State<EmojiCategoryTabBar> {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       key: const ValueKey('emoji_category_sticker'),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       onTap: widget.onStickerTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -148,7 +149,7 @@ class _EmojiCategoryTabBarState extends State<EmojiCategoryTabBar> {
         ),
         decoration: BoxDecoration(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedSticker,

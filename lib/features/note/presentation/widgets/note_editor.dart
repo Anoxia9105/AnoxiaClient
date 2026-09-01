@@ -7,11 +7,14 @@ import 'dart:math' as math;
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
+import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pasteboard/pasteboard.dart';
 
 import 'note_ai_panel.dart';
 import 'note_editor_parts.dart';
@@ -65,10 +68,13 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   QuillController? _quillController;
   @override
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
   @override
   bool _disposed = false;
   int _wordCount = 0;
+  Uint8List? _lastHandledImageBytes;
+  DateTime? _lastImagePasteTime;
 
   /// 会话服务实例（懒加载缓存一次，后续复用）
   NoteSessionService? _cachedSessionService;
@@ -110,6 +116,20 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
     }
   }
 
+  bool _isDuplicateImagePaste(Uint8List bytes) {
+    final lastBytes = _lastHandledImageBytes;
+    final lastTime = _lastImagePasteTime;
+    if (lastBytes == null || lastTime == null) return false;
+    if (DateTime.now().difference(lastTime) > const Duration(seconds: 2)) {
+      return false;
+    }
+    if (lastBytes.length != bytes.length) return false;
+    for (var i = 0; i < bytes.length; i++) {
+      if (bytes[i] != lastBytes[i]) return false;
+    }
+    return true;
+  }
+
   void _initEditor(NoteEditSession session) {
     final delta = _tryDecodeDelta(session.content);
     late final QuillController controller;
@@ -119,9 +139,11 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
       config: QuillControllerConfig(
         clipboardConfig: QuillClipboardConfig(
           onImagePaste: (imageBytes) async {
-            // 剪贴板粘贴图片：插入占位并上传，成功后原位替换为真实 URL。
+            // 去重：若 Focus 层已处理过同一图片，则跳过
+            if (_isDuplicateImagePaste(imageBytes)) return null;
+            _lastHandledImageBytes = Uint8List.fromList(imageBytes);
+            _lastImagePasteTime = DateTime.now();
             await notePasteImageBytes(context, ref, controller, imageBytes);
-            // 返回 null，跳过 flutter_quill 默认的图片插入行为。
             return null;
           },
         ),
@@ -140,6 +162,76 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
       // 忽略损坏数据，回退到空文档
     }
     return Document();
+  }
+
+  Future<void> _handlePasteWithStyle(QuillController controller) async {
+    // 1. 优先处理图片（最明确的富媒体）
+    try {
+      final imageBytes = await Pasteboard.image;
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        if (_isDuplicateImagePaste(imageBytes)) return;
+        if (!mounted) return;
+        _lastHandledImageBytes = Uint8List.fromList(imageBytes);
+        _lastImagePasteTime = DateTime.now();
+        await notePasteImageBytes(context, ref, controller, imageBytes);
+        return;
+      }
+    } catch (_) {}
+
+    // 2. 尝试处理富文本 HTML（保留加粗/颜色等）
+    try {
+      final htmlData = await Clipboard.getData('text/html');
+      final html = htmlData?.text;
+      if (html != null && html.isNotEmpty && html.contains('<')) {
+        if (!mounted) return;
+        final selection = controller.selection;
+        if (!selection.isValid) return;
+        final delta = _tryParseHtmlToDelta(html);
+        if (delta != null && delta.isNotEmpty) {
+          final index = selection.start;
+          final length = selection.end - selection.start;
+          controller.replaceText(index, length, delta, null);
+          controller.updateSelection(
+            TextSelection.collapsed(offset: index + delta.length),
+            ChangeSource.local,
+          );
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // 3. 回退到纯文本粘贴（保留换行符规范化，与聊天输入框一致）
+    try {
+      final textData = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = textData?.text;
+      if (text == null || text.isEmpty) return;
+      if (!mounted) return;
+      final normalized = text.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+      final selection = controller.selection;
+      final index = selection.isValid ? selection.start : controller.document.length - 1;
+      final length = selection.isValid && !selection.isCollapsed
+          ? selection.end - selection.start
+          : 0;
+      controller.replaceText(index, length, normalized, null);
+      controller.updateSelection(
+        TextSelection.collapsed(offset: index + normalized.length),
+        ChangeSource.local,
+      );
+    } catch (_) {}
+  }
+
+  Delta? _tryParseHtmlToDelta(String html) {
+    try {
+      // 使用与 Markdown 导入相同的 HtmlToDelta，保留加粗/斜体/下划线/颜色等行内样式
+      final delta = HtmlToDelta().convert(html);
+      // 过滤掉空 Delta（仅换行）
+      if (delta.isEmpty) return null;
+      // 若 Delta 仅含单个换行则视为无效
+      if (delta.length == 1 && delta.first.data == '\n') return null;
+      return delta;
+    } catch (_) {
+      return null;
+    }
   }
 
   void _teardownEditor() {
@@ -216,6 +308,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
     _quillController?.dispose();
     _titleController?.dispose();
     _slashScrollController.dispose();
+    _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -241,6 +334,18 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
             HardwareKeyboard.instance.isControlPressed &&
             event.logicalKey == LogicalKeyboardKey.keyS) {
           _sessionService.save().catchError((Object _) => false);
+          return KeyEventResult.handled;
+        }
+        // 粘贴：统一拦截 Ctrl/Cmd+V，优先处理图片与富文本 HTML 以保留样式
+        // 文本粘贴不再交由 Quill 默认的纯文本路径，避免加粗/颜色丢失
+        if (event is KeyDownEvent &&
+            (HardwareKeyboard.instance.isControlPressed ||
+                HardwareKeyboard.instance.isMetaPressed) &&
+            event.logicalKey == LogicalKeyboardKey.keyV) {
+          final controller = _quillController;
+          if (controller != null) {
+            unawaited(_handlePasteWithStyle(controller));
+          }
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -282,6 +387,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
                         child: QuillEditor.basic(
                           focusNode: _focusNode,
                           controller: controller,
+                          scrollController: _scrollController,
                           config: QuillEditorConfig(
                             enableSelectionToolbar: false,
                             placeholder: 'note_content_placeholder'.tr(),

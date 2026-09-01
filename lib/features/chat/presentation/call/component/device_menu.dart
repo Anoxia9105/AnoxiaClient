@@ -8,6 +8,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 设备菜单项数据
 class DeviceMenuItem {
@@ -48,7 +49,7 @@ void showDeviceMenu({
       color: Colors.transparent,
       child: CallBubbleMenu(
         anchorContext: context,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         backgroundColor: Theme.of(context).colorScheme.surface,
         border: BorderSide(
           color: Theme.of(context).colorScheme.outlineVariant,
@@ -322,7 +323,7 @@ class _DeviceItemTile extends StatelessWidget {
     final primary = theme.colorScheme.primary;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       hoverColor: primary.withValues(alpha: 0.08),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

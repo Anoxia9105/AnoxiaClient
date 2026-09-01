@@ -1,8 +1,9 @@
-﻿import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_info_tile.dart';
+import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_info_tile.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 联系人信息区域组件
 ///
@@ -26,7 +27,7 @@ class ContactInfoSection extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
           border: Border.all(
             color: colorScheme.outlineVariant.withValues(alpha: 0.4),
           ),

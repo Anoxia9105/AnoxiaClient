@@ -13,6 +13,7 @@ import 'package:anoxia/framework/provider/contact/contact_selection_controller.d
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 群组成员列表页面。
 ///
@@ -68,7 +69,7 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
 
                 return ListTile(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                   ),
                   tileColor: Theme.of(context)
                       .colorScheme
@@ -103,7 +104,7 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .primaryContainer,
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(RadiusToken.pill),
                           ),
                           child: Text(
                             'chat_admin_role'.tr(),

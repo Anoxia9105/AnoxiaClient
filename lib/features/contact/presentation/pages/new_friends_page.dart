@@ -10,6 +10,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 新好友请求页面
 ///
@@ -118,7 +119,7 @@ class _EmptyState extends StatelessWidget {
               padding: const EdgeInsets.all(26),
               decoration: BoxDecoration(
                 color: cs.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 boxShadow: [
                   BoxShadow(
                     color: cs.primary.withValues(alpha: 0.12),
@@ -188,7 +189,7 @@ class _ErrorState extends StatelessWidget {
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: cs.errorContainer.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 boxShadow: [
                   BoxShadow(
                     color: cs.error.withValues(alpha: 0.08),

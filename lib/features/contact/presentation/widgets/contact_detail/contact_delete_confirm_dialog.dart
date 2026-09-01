@@ -4,6 +4,7 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 显示删除联系人确认对话框并执行删除
 ///
@@ -19,7 +20,7 @@ Future<bool> showContactDeleteConfirmDialog(
     builder: (dialogContext) {
       final colorScheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.xl)),
         title: Text('contact_delete'.tr()),
         content: Text(
           'contact_delete_confirm_content'.tr(args: [nickName ?? '']),

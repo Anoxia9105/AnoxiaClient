@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天栏操作处理器
 ///
@@ -175,7 +176,7 @@ class ChatBarHandlers {
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
             ),
             titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
             contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -186,7 +187,7 @@ class ChatBarHandlers {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                   ),
                   child: HugeIcon(
                     icon: isMute
@@ -230,7 +231,7 @@ class ChatBarHandlers {
                   ),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                   ),
                   child: Row(
                     children: [

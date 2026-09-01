@@ -4,6 +4,7 @@ import 'package:anoxia/framework/domain/note_tree.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 文件夹行
 class NoteTreeFolderRow extends StatelessWidget {
@@ -34,9 +35,9 @@ class NoteTreeFolderRow extends StatelessWidget {
       onLongPressStart: (details) => onMenuPosition(details.globalPosition),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.fromLTRB(8 + depth * 18, 8, 8, 8),
@@ -66,7 +67,7 @@ class NoteTreeFolderRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
@@ -80,12 +81,12 @@ class NoteTreeFolderRow extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(RadiusToken.pill),
                     ),
                     child: Text(
                       folder.totalNoteCount.toString(),
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
@@ -135,9 +136,9 @@ class NoteTreeRow extends StatelessWidget {
         color: selected
             ? colorScheme.primaryContainer.withValues(alpha: .35)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.fromLTRB(8 + indent * 18, 8, 8, 8),
@@ -227,7 +228,7 @@ class NoteTreeRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(RadiusToken.pill),
             ),
             child: Text(
               '+$overflow',
@@ -369,9 +370,9 @@ class NoteTreeTagChip extends StatelessWidget {
       color: selected
           ? colorScheme.primaryContainer
           : colorScheme.surfaceContainerHighest.withValues(alpha: .7),
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         onTap: onTap,
         child: Container(
           height: dense ? 18 : 24,

@@ -16,6 +16,7 @@ import '../../../../../framework/domain/chat_message.dart';
 import 'code/code_block_view.dart';
 import 'link_preview_card.dart';
 import 'quill_renderer_helpers.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 是否为 WASM 编译模式。
 ///
@@ -434,7 +435,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
                       color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                   ),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(RadiusToken.sm),
                 ),
                 child: richText,
               )
@@ -614,7 +615,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
           color: Colors.red.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(RadiusToken.sm),
         ),
         child: Text(
           _mentionText(rawData),

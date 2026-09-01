@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 打开编辑标签对话框
 Future<void> showNoteTagsDialog(
@@ -143,7 +144,7 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
                       decoration: InputDecoration(
                         hintText: 'note_tag_add_hint'.tr(),
                         hintStyle: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 12,
                           color: colorScheme.onSurfaceVariant
                               .withValues(alpha: .7),
                         ),
@@ -166,7 +167,7 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
                           vertical: 9,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
                         ),
                       ),
                     ),

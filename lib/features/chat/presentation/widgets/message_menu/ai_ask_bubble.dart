@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../chatinput/ai/chat_ai_assist_core.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 支持的翻译目标语言（专有名词不做 i18n）
 const _translateLangs = <String>['中文', 'English', '日本語', '한국어', 'Français'];
@@ -143,16 +144,16 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   // ---------------- 提示词组装 ----------------
 
   String _buildFirstPrompt(String task) =>
-      '以下是收到的消息：\n"""\n${widget.quotedText}\n"""\n\n$task';
+      'ai_ask_context'.tr(args: [widget.quotedText, task]);
 
-  void _askExplain() => _startChat(_buildFirstPrompt('请解释这条消息的含义与语气。'));
+  void _askExplain() => _startChat(_buildFirstPrompt('ai_ask_explain'.tr()));
 
-  void _askSummarize() => _startChat(_buildFirstPrompt('请总结这条消息的要点。'));
+  void _askSummarize() => _startChat(_buildFirstPrompt('ai_ask_summarize'.tr()));
 
   void _askTranslate(String lang) {
     setState(() => _showLangs = false);
     _startChat(
-      _buildFirstPrompt('请把这条消息翻译成$lang，只输出译文，不要解释。'),
+      _buildFirstPrompt('ai_ask_translate'.tr(args: [lang])),
     );
   }
 
@@ -238,7 +239,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       arrowOffset: widget.arrowOffset,
       backgroundColor: _cs.surface,
       border: BorderSide(color: _cs.outlineVariant.withValues(alpha: .8), width: .5),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       shadows: [
         BoxShadow(
           color: Colors.black.withValues(alpha: .16),
@@ -271,7 +272,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         _errorText!,
-                        style: TextStyle(fontSize: 11.5, color: _cs.error),
+                        style: TextStyle(fontSize: 12, color: _cs.error),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -290,7 +291,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: _cs.primaryContainer.withValues(alpha: .18),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         border: Border.all(color: _cs.primary.withValues(alpha: .12)),
       ),
       child: Row(
@@ -300,7 +301,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
             height: 22,
             decoration: BoxDecoration(
               color: _cs.primary.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(RadiusToken.sm),
             ),
             child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 13, color: _cs.primary),
           ),
@@ -313,7 +314,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
               widget.quotedText,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
+              style: TextStyle(fontSize: 12, color: _cs.onSurfaceVariant),
             ),
           ),
           const SizedBox(width: 4),
@@ -361,12 +362,12 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
   Widget _chip(String label, List<List<dynamic>>? icon, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       hoverColor: _cs.primary.withValues(alpha: .08),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
           border: Border.all(color: _cs.outlineVariant.withValues(alpha: .7)),
         ),
         child: Row(
@@ -376,7 +377,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
               HugeIcon(icon: icon, size: 12, color: _cs.primary),
               const SizedBox(width: 4),
             ],
-            Text(label, style: TextStyle(fontSize: 11.5, color: _cs.onSurface)),
+            Text(label, style: TextStyle(fontSize: 12, color: _cs.onSurface)),
           ],
         ),
       ),
@@ -391,13 +392,13 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: _cs.surfaceContainerHighest.withValues(alpha: .45),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(color: _cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: empty
           ? Center(
               child: Text('chat_ai.empty_tip'.tr(),
-                  style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant)),
+                  style: TextStyle(fontSize: 12, color: _cs.onSurfaceVariant)),
             )
           : _streaming && _answer.isEmpty
               ? _buildSkeleton()
@@ -424,7 +425,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
         if (_thinking != null && _thinking!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(_thinking!,
-              style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              style: TextStyle(fontSize: 11, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -439,25 +440,25 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
           child: TextField(
             controller: _followCtrl,
             enabled: !_streaming,
-            style: const TextStyle(fontSize: 12.5),
+            style: const TextStyle(fontSize: 12),
             onSubmitted: (_) => _sendFollowUp(),
             decoration: InputDecoration(
               isDense: true,
               hintText: 'chat_ai.followup_hint'.tr(),
               hintStyle: TextStyle(
-                  fontSize: 11.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+                  fontSize: 12, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 borderSide: BorderSide(color: _cs.outlineVariant),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 borderSide: BorderSide(color: _cs.outlineVariant.withValues(alpha: .6)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 borderSide: BorderSide(color: _cs.primary, width: 1.1),
               ),
             ),
@@ -470,13 +471,13 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
                 child: CircularProgressIndicator(strokeWidth: 2))
             : InkWell(
                 onTap: _sendFollowUp,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
                 child: Container(
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
                     color: _cs.primary,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(RadiusToken.md),
                   ),
                   child: Center(
                     child: SizedBox.square(
@@ -503,7 +504,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
         child: Padding(
           padding: const EdgeInsets.all(3),
           child: HugeIcon(

@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../ai/chat_ai_assist_core.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 const _translateLangs = <String>['中文', 'English', '日本語', '한국어', 'Français'];
 
@@ -241,13 +242,13 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                             enabled: !_streaming,
                             maxLines: 2,
                             minLines: 1,
-                            style: const TextStyle(fontSize: 12.5),
+                            style: const TextStyle(fontSize: 12),
                             onSubmitted: (_) => _start(ChatAiAction.custom),
                             decoration: InputDecoration(
                               isDense: true,
                               hintText: 'chat_ai.custom_hint'.tr(),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(RadiusToken.md),
                               ),
                             ),
                           ),
@@ -259,7 +260,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                             onPressed: _streaming ? null : () => _start(ChatAiAction.custom),
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
                             ),
                             child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           ),
@@ -273,7 +274,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child:
-                          Text(_errorText!, style: TextStyle(fontSize: 11.5, color: _cs.error)),
+                          Text(_errorText!, style: TextStyle(fontSize: 12, color: _cs.error)),
                     ),
                   if (_preview.isNotEmpty && !_streaming) ...[
                     const SizedBox(height: 8),
@@ -300,7 +301,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(color: _cs.outlineVariant.withValues(alpha: .35)),
       ),
       child: Row(
@@ -310,7 +311,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
             height: 26,
             decoration: BoxDecoration(
               color: _cs.primary.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
             ),
             child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 14, color: _cs.primary),
           ),
@@ -321,7 +322,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
               children: [
                 Text('chat_ai.assist_title'.tr(),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                Text(scope, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: _cs.primary)),
+                Text(scope, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _cs.primary)),
               ],
             ),
           ),
@@ -332,7 +333,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
             icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16, color: _cs.onSurfaceVariant),
             style: IconButton.styleFrom(
               backgroundColor: _cs.surfaceContainerHighest.withValues(alpha: .6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
             ),
           ),
         ],
@@ -389,11 +390,11 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   Widget _chip(String label, VoidCallback? onTap, {bool selected = false}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
           color: selected ? _cs.primaryContainer.withValues(alpha: .6) : null,
           border: Border.all(
             color: selected
@@ -404,7 +405,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? _cs.primary : _cs.onSurface,
           ),
@@ -421,13 +422,13 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: _cs.surfaceContainerHighest.withValues(alpha: .45),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(color: _cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: empty
           ? Center(
               child: Text('chat_ai.preview_empty'.tr(),
-                  style: TextStyle(fontSize: 11.5, color: _cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 12, color: _cs.onSurfaceVariant),
                   textAlign: TextAlign.center))
           : _streaming && _preview.isEmpty
               ? _buildSkeleton()
@@ -453,7 +454,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
         if (_thinking != null && _thinking!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(_thinking!,
-              style: TextStyle(fontSize: 10.5, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              style: TextStyle(fontSize: 11, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -481,17 +482,17 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
   Widget _applyBtn(String label, VoidCallback onTap, {bool filled = false}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: filled ? _cs.primary : _cs.surfaceContainerHighest.withValues(alpha: .7),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: filled ? _cs.onPrimary : _cs.onSurface,
           ),

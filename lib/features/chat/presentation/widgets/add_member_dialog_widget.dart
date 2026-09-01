@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -9,6 +9,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 添加群成员对话框组件
 ///
@@ -50,7 +51,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
     final currentMemberIds = members.map((e) => e.userId).toSet();
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
         child: Column(
@@ -96,7 +97,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceBright,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                 ),
                 child: Row(
                   children: [
@@ -105,7 +106,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(RadiusToken.md),
                       ),
                       child: const Center(
                         child: HugeIcon(

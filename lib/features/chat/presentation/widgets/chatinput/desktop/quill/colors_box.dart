@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 颜色选择器工具类
 ///
@@ -113,7 +114,7 @@ class ColorsBox {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
               )
             : BorderSide.none,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       color: theme.colorScheme.surfaceBright,
       child: Container(
@@ -216,7 +217,7 @@ class _ColorItem extends StatelessWidget {
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(4), // 稍微圆角更好看
+            borderRadius: BorderRadius.circular(RadiusToken.sm), // 稍微圆角更好看
             border: Border.all(
               color: color == Colors.white
                   ? Colors.grey[300]!

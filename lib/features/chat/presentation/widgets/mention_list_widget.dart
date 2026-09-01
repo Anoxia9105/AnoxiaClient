@@ -7,6 +7,7 @@ import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 提及用户数据模型
 class MentionUser {
@@ -163,7 +164,7 @@ class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
     if (filteredUsers.isEmpty) {
       return Material(
         elevation: 8,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         color: colorScheme.surface,
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -183,7 +184,7 @@ class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
 
     return Material(
       elevation: 8,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       color: colorScheme.surface,
       child: Container(
         constraints: const BoxConstraints(

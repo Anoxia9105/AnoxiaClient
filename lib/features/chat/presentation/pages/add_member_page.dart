@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
@@ -10,6 +10,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 手机端添加群成员页面
 class AddMemberPage extends ConsumerStatefulWidget {
@@ -54,7 +55,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
               child: Row(
                 children: [
@@ -63,7 +64,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                     height: 40,
                     decoration: BoxDecoration(
                       color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(RadiusToken.md),
                     ),
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedUserGroup,

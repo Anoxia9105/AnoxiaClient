@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 设置页左侧导航项及其对应详情面板。
 class SettingsDestination {
@@ -70,7 +71,7 @@ class _SettingsSplitViewState extends State<SettingsSplitView> {
                 padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
                 child: RepaintBoundary(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                     child: IndexedStack(
                       index: _selectedIndex,
                       children: [
@@ -141,14 +142,14 @@ class _SettingsNavigationList extends StatelessWidget {
           color: selected
               ? colorScheme.secondaryContainer.withValues(alpha: 0.72)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           child: ListTile(
             key: Key('settings-navigation-item-$index'),
             minTileHeight: 52,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14),
             horizontalTitleGap: 12,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
             selected: selected,
             leading: HugeIcon(
@@ -163,7 +164,7 @@ class _SettingsNavigationList extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14.5,
+                fontSize: 14,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),

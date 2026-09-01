@@ -24,6 +24,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'chat_ai_assist_core.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class SmartReplyBar extends ConsumerStatefulWidget {
   const SmartReplyBar({
@@ -108,10 +109,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
     final core = _core ??= ChatAiAssistCore();
     final quoted = (last.payload?.content ?? '').trim();
     core.chat(
-      message: '以下是一条收到的聊天消息：\n"""\n$quoted\n"""\n\n'
-          '请为这条消息生成 $_maxSuggestions 条简短的中文回复建议，'
-          '每条不超过20个字符，语气自然口语化。'
-          '只输出一个 JSON 字符串数组，例如 ["好的","收到","没问题"]，不要输出其他内容。',
+      message: 'ai_smart_reply_prompt'.tr(args: [quoted, _maxSuggestions.toString()]),
       handlers: ChatAiStreamHandlers(
         onDelta: (_) {},
         onDone: (_, fullText) {
@@ -263,16 +261,16 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
   Widget _chip(String text) {
     return InkWell(
       onTap: () => widget.onPick(text),
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
           border: Border.all(color: _cs.outlineVariant.withValues(alpha: .7)),
           color: _cs.surfaceContainerHighest.withValues(alpha: .35),
         ),
         child: Text(text,
-            style: TextStyle(fontSize: 11.5, color: _cs.onSurface)),
+            style: TextStyle(fontSize: 12, color: _cs.onSurface)),
       ),
     );
   }
@@ -280,11 +278,11 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
   Widget _pill({required VoidCallback onTap, required Widget child}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
           border: Border.all(color: _cs.outlineVariant.withValues(alpha: .5)),
         ),
         child: child,
@@ -297,7 +295,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
         child: Padding(
           padding: const EdgeInsets.all(4),
           child: HugeIcon(icon: icon, size: 13, color: _cs.onSurfaceVariant),

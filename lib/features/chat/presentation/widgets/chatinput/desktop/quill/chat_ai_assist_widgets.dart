@@ -9,6 +9,7 @@ import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 翻译目标语言列表（与原 _translateLangs 一致，公开供外部复用）
 const chatAiAssistTranslateLangs = <String>['中文', 'English', '日本語', '한국어', 'Français'];
@@ -36,12 +37,12 @@ class ChatAiAssistChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       hoverColor: colorScheme.primary.withValues(alpha: .08),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
           color: selected ? colorScheme.primaryContainer.withValues(alpha: .6) : null,
           border: Border.all(
             color: selected
@@ -52,7 +53,7 @@ class ChatAiAssistChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? colorScheme.primary : colorScheme.onSurface,
           ),
@@ -89,7 +90,7 @@ class ChatAiAssistHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: .35)),
       ),
       child: Row(
@@ -99,7 +100,7 @@ class ChatAiAssistHeader extends StatelessWidget {
             height: 26,
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
             ),
             child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 14, color: colorScheme.primary),
           ),
@@ -110,7 +111,7 @@ class ChatAiAssistHeader extends StatelessWidget {
               children: [
                 Text('chat_ai.assist_title'.tr(),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                Text(scopeText, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: colorScheme.primary)),
+                Text(scopeText, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: colorScheme.primary)),
               ],
             ),
           ),
@@ -262,12 +263,12 @@ class ChatAiAssistCustomInput extends StatelessWidget {
             enabled: enabled,
             maxLines: 2,
             minLines: 1,
-            style: const TextStyle(fontSize: 12.5),
+            style: const TextStyle(fontSize: 12),
             onSubmitted: (_) => onSubmit(),
             decoration: InputDecoration(
               isDense: true,
               hintText: 'chat_ai.custom_hint'.tr(),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
             ),
           ),
         ),
@@ -278,7 +279,7 @@ class ChatAiAssistCustomInput extends StatelessWidget {
             onPressed: enabled ? onSubmit : null,
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
             ),
             child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           ),
@@ -322,14 +323,14 @@ class ChatAiAssistPreviewArea extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer.withValues(alpha: .6),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 11, color: colorScheme.primary),
                   const SizedBox(width: 4),
-                  Text('预览', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                  Text('ai_preview_label'.tr(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colorScheme.primary)),
                 ],
               ),
             ),
@@ -337,7 +338,7 @@ class ChatAiAssistPreviewArea extends StatelessWidget {
             if (!empty)
               InkWell(
                 onTap: onCopy,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(RadiusToken.sm),
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: HugeIcon(icon: HugeIcons.strokeRoundedCopy01, size: 14, color: colorScheme.onSurfaceVariant),
@@ -353,7 +354,7 @@ class ChatAiAssistPreviewArea extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: .45),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             border: Border.all(
                 color: empty ? colorScheme.outlineVariant.withValues(alpha: .5) : colorScheme.primary.withValues(alpha: .18)),
             boxShadow: empty
@@ -366,7 +367,7 @@ class ChatAiAssistPreviewArea extends StatelessWidget {
                 ? Center(
                     key: const ValueKey('empty_chat'),
                     child: Text('chat_ai.preview_empty'.tr(),
-                        style: TextStyle(fontSize: 11.5, color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
+                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
                   )
                 : isStreaming && preview.isEmpty
                     ? ChatAiAssistSkeleton(key: const ValueKey('streaming'), thinking: thinking, colorScheme: colorScheme)
@@ -409,7 +410,7 @@ class ChatAiAssistSkeleton extends StatelessWidget {
         if (thinking != null && thinking!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(thinking!,
-              style: TextStyle(fontSize: 10.5, color: colorScheme.onSurfaceVariant.withValues(alpha: .6)),
+              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -507,17 +508,17 @@ class ChatAiAssistApplyButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: filled ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: .7),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: filled ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
@@ -550,7 +551,7 @@ class ChatAiAssistIconButton extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
         child: Padding(
           padding: padding,
           child: HugeIcon(icon: icon, size: 14, color: colorScheme.onSurfaceVariant),

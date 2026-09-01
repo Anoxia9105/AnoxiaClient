@@ -1,10 +1,11 @@
-﻿import 'package:anoxia/features/chat/presentation/call/mobile/mobile_call_timer.dart';
+import 'package:anoxia/features/chat/presentation/call/mobile/mobile_call_timer.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/mobile_participant_surface.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 最小化音频通话悬浮窗
 class MinimizedAudioCall extends StatelessWidget {
@@ -21,7 +22,7 @@ class MinimizedAudioCall extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
         border: Border.all(color: cs.outlineVariant),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       child: Row(
         children: [

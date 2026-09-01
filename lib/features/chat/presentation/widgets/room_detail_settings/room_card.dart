@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 基础结构组件：圆角卡片包裹器
 class RoomCard extends StatelessWidget {
@@ -13,7 +14,7 @@ class RoomCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Material(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         clipBehavior: Clip.antiAlias,
         child: children != null
             ? Column(mainAxisSize: MainAxisSize.min, children: children!)

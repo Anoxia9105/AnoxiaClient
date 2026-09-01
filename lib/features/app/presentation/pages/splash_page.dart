@@ -7,6 +7,7 @@ import 'package:anoxia/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -184,7 +185,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                                     alpha: 0.08,
                                   ),
                                   color: primaryColor.withValues(alpha: 0.65),
-                                  borderRadius: BorderRadius.circular(2),
+                                  borderRadius: BorderRadius.circular(RadiusToken.sm),
                                 ),
                               ),
                               const SizedBox(height: 16),

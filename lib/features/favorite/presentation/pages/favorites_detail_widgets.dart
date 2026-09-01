@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'favorites_common.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 /// 通用内容卡片容器（媒体 / 富文本）
 class FavoriteContentCard extends StatelessWidget {
   final Widget child;
@@ -26,7 +27,7 @@ class FavoriteContentCard extends StatelessWidget {
             cs.surfaceContainerLow.withValues(alpha: .6),
           ],
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: child,
@@ -63,7 +64,7 @@ class FavoriteNoteDetailCard extends StatelessWidget {
             cs.surfaceContainerLow.withValues(alpha: .75),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: Column(
@@ -76,7 +77,7 @@ class FavoriteNoteDetailCard extends StatelessWidget {
                 height: 26,
                 decoration: BoxDecoration(
                   color: cs.primary.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                 ),
                 child: HugeIcon(
                   icon: HugeIcons.strokeRoundedNote01,
@@ -138,7 +139,7 @@ class TextDetailCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow.withValues(alpha: .6),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: SelectableText(
@@ -178,7 +179,7 @@ class FavoriteTextDetailCard extends StatelessWidget {
             cs.surfaceContainerLow.withValues(alpha: .75),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
       ),
       child: Column(

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/pip_shim.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 全局通话悬浮层组件
 ///
@@ -88,7 +89,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                 break;
 
               case PipState.pipStateFailed:
-                debugPrint('PiP failed: $error');
+                debugLog('PiP failed: $error');
 
                 break;
             }
@@ -96,7 +97,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
         ),
       );
     } catch (e) {
-      debugPrint('Init pip error: $e');
+      debugLog('Init pip error: $e');
     }
   }
 
@@ -134,7 +135,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
 
       await _pip.start();
     } catch (e) {
-      debugPrint('Auto start pip error: $e');
+      debugLog('Auto start pip error: $e');
     }
   }
 

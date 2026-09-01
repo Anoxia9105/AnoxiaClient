@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 搜索结果的加载骨架屏。
 class SearchContextSkeleton extends StatelessWidget {
@@ -16,7 +17,7 @@ class SearchContextSkeleton extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             border: Border.all(
               color: Theme.of(
                 context,

@@ -1,10 +1,11 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_input_field.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_status_tag.dart';
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_input_skeleton.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天房间详情页底部栏组件
 ///
@@ -75,7 +76,7 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                   border: Border.all(
                     width: 1,
                     color: colorScheme.outlineVariant.withValues(alpha: 0.6),
@@ -96,7 +97,7 @@ class ChatRoomDetailBottomBar extends StatelessWidget {
                   color: colorScheme.surfaceContainerLow,
                   // 移动端外层为悬浮圆角胶囊：阴影上浮避开屏幕底边，
                   // 与内层输入胶囊（圆角 12 + 描边）形成嵌套层次。
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(

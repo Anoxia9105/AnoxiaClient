@@ -22,6 +22,8 @@ import 'package:anoxia/framework/provider/chat/message/chat_content_density_cont
 import 'system_message_bubble.dart';
 import 'user_message_bubble.dart';
 import 'message_bubble_view_data.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
 
 /// 单条消息气泡组件（顶层入口）
 ///
@@ -69,17 +71,18 @@ class ChatMessageBubble extends ConsumerWidget {
     } catch (e, stack) {
       // 单条消息渲染失败不影响整个列表。WASM 下可能因 Platform._operatingSystem
       // 等异常导致渲染中断，这里隔离错误并显示降级 UI，同时记录原始堆栈以便定位。
-      debugPrint('消息渲染失败 [type=${message.messageType}]: $e\n$stack');
+      debugLog('消息渲染失败 [type=${message.messageType}]: $e\n$stack');
+      final errorColor = Theme.of(context).colorScheme.error;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 4),
         child: Material(
-          color: const Color(0x1AFF0000),
-          borderRadius: BorderRadius.circular(8),
+          color: errorColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Text(
               '消息渲染失败: $e',
-              style: const TextStyle(fontSize: 11, color: Colors.red),
+              style: TextStyle(fontSize: 11, color: errorColor),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

@@ -19,6 +19,7 @@ import 'package:anoxia/gen/assets.gen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 房间列表项组件
 ///
@@ -118,7 +119,7 @@ class RoomListItem extends ConsumerWidget {
           }
         }
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       selected: isSelected,
       leading: () {
         if (isOfficial) {
@@ -131,7 +132,7 @@ class RoomListItem extends ConsumerWidget {
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
                 border: Border.all(color: cs.primary.withValues(alpha: 0.18)),
               ),
               child: Assets.images.appIconPng.image(
@@ -362,7 +363,7 @@ class RoomListItem extends ConsumerWidget {
     final result = await showMenu<String>(
       context: context,
       position: position,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
       elevation: 4,
       items: items,
     );

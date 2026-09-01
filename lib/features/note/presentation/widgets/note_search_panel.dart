@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 记事本「在文档中查找」侧边面板
 ///
@@ -181,7 +182,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
                 isDense: true,
                 hintText: 'note_find_placeholder'.tr(),
                 hintStyle: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 12,
                   color: colorScheme.onSurfaceVariant.withValues(alpha: .6),
                 ),
                 prefixIcon: SizedBox(
@@ -205,19 +206,19 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
                     const BoxConstraints.tightFor(width: 32, height: 32),
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                   borderSide: BorderSide(
                     color: colorScheme.outlineVariant,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                   borderSide: BorderSide(
                     color: colorScheme.outlineVariant.withValues(alpha: .6),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                   borderSide: BorderSide(
                     color: colorScheme.primary,
                     width: 1.2,
@@ -275,7 +276,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         onTap: enabled ? onTap : null,
         child: Container(
           height: 30,
@@ -284,7 +285,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
             color: enabled
                 ? colorScheme.surfaceContainerHighest.withValues(alpha: .6)
                 : colorScheme.surfaceContainerHighest.withValues(alpha: .2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(RadiusToken.md),
           ),
           child: HugeIcon(
             icon: icon,
@@ -306,7 +307,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () => onChanged(!value),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Row(
@@ -317,7 +318,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: value ? colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(RadiusToken.sm),
                 border: Border.all(
                   color: value
                       ? colorScheme.primary
@@ -338,7 +339,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 12,
                   color: value
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,

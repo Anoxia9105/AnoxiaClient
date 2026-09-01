@@ -16,6 +16,7 @@ import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 通话邀请成员按钮
 ///
@@ -37,15 +38,15 @@ class CallInviteMembersButton extends ConsumerWidget {
           ).colorScheme.onSurface.withValues(alpha: 0.15),
           width: 0.5,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         child: Tooltip(
           message: 'call_invite_members'.tr(),
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             onTap: () => _showMembers(context, ref),
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),

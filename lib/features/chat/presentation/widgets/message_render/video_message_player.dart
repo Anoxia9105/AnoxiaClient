@@ -9,6 +9,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_message_controls.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class VideoMessagePlayer extends ConsumerStatefulWidget {
   final String heroTag;
@@ -234,7 +235,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
         children: [
           RepaintBoundary(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               child: SizedBox(
                 width: displaySize.width,
                 height: displaySize.height,
@@ -326,7 +327,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
-                fontSize: 11.5,
+                fontSize: 12,
               ),
             ),
           ],
@@ -447,7 +448,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.48),
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(RadiusToken.pill),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

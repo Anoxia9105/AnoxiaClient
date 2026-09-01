@@ -12,6 +12,7 @@ import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 房间列表对话框菜单工具类
 ///
@@ -61,7 +62,7 @@ class RoomListDialogMenus {
             arrowOffset: isMobile ? menuWidth - 20 : 25,
             backgroundColor: Theme.of(context).colorScheme.surface,
             // 1. 增加精致圆角与柔和阴影
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             shadows: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
@@ -162,7 +163,7 @@ class RoomListDialogMenus {
 //           clipBehavior: Clip.antiAlias,
 //           backgroundColor: colorScheme.surface,
 //           shape: RoundedRectangleBorder(
-//             borderRadius: BorderRadius.circular(8),
+//             borderRadius: BorderRadius.circular(RadiusToken.md),
 //             side: BorderSide(
 //               color: colorScheme.outlineVariant.withValues(alpha: 0.7),
 //               width: 1,

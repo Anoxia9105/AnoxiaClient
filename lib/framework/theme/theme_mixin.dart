@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 mixin ThemeMixin {
   /// 工具：基于整数 alpha (0.0-1.0 -> 0-255) 返回带透明度的颜色。
@@ -10,6 +11,30 @@ mixin ThemeMixin {
   static Color colorWithAlpha(Color c, double alpha) {
     assert(alpha >= 0.0 && alpha <= 1.0);
     return c.withAlpha((alpha * 255).round());
+  }
+
+  /// 语义色令牌：根据亮/暗模式返回一组高对比度的成功/警告/危险/信息色。
+  ///
+  /// 亮色使用深色调（白底上可读），暗色使用浅色调（深底上可读）。
+  /// 危险色直接复用 colorScheme.error，保证与表单错误、删除操作一致。
+  static ({Color success, Color warning, Color danger, Color info, Color onGradient})
+      _buildSemanticColors(ColorScheme colorScheme, Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return (
+        success: const Color(0xFF81C784),
+        warning: const Color(0xFFFFB74D),
+        danger: colorScheme.error,
+        info: const Color(0xFFB0BEC5),
+        onGradient: Colors.white,
+      );
+    }
+    return (
+      success: const Color(0xFF2E7D32),
+      warning: const Color(0xFF8A5A00),
+      danger: colorScheme.error,
+      info: const Color(0xFF455A64),
+      onGradient: Colors.white,
+    );
   }
 
   /// 构建 ThemeData：所有组件样式都基于此 colorScheme。
@@ -51,7 +76,7 @@ mixin ThemeMixin {
           return colorScheme.primary;
         }),
         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
         ),
         padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
           const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -69,7 +94,7 @@ mixin ThemeMixin {
           return colorScheme.primary;
         }),
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
         ),
         padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -97,7 +122,7 @@ mixin ThemeMixin {
           return 4;
         }),
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
         ),
         padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -117,7 +142,7 @@ mixin ThemeMixin {
         foregroundColor: WidgetStateProperty.all(colorScheme.onPrimary),
         elevation: WidgetStateProperty.all(4.0),
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
         ),
       ),
     );
@@ -133,7 +158,7 @@ mixin ThemeMixin {
           return colorScheme.onSurface;
         }),
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
         ),
       ),
     );
@@ -144,7 +169,7 @@ mixin ThemeMixin {
       foregroundColor: colorScheme.onPrimary,
       elevation: 6,
       hoverElevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.xl)),
     );
 
     // -------------------------
@@ -158,21 +183,21 @@ mixin ThemeMixin {
       // 表单背景使用 surfaceContainerHighest，适配 M3
       // contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         borderSide: BorderSide(
           color: colorWithAlpha(colorScheme.onSurface, 0.06),
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         borderSide: BorderSide(color: colorScheme.primary, width: 1.25),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         borderSide: BorderSide(color: colorScheme.error),
       ),
       hintStyle: TextStyle(color: colorWithAlpha(colorScheme.onSurface, 0.6)),
@@ -244,7 +269,7 @@ mixin ThemeMixin {
           brightness: brightness,
         ).copyWith(
           backgroundColor: colorScheme.surfaceContainerHighest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         );
 
@@ -256,14 +281,14 @@ mixin ThemeMixin {
           width: 1,
           color: colorWithAlpha(colorScheme.onSurface, 0.1),
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
       ),
       margin: const EdgeInsets.all(8),
     );
 
     final dialogTheme = DialogThemeData(
       // backgroundColor: brightness == Brightness.light ? Colors.white : null,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
       titleTextStyle: TextStyle(
         color: colorScheme.onSurface,
         fontSize: 18,
@@ -278,13 +303,13 @@ mixin ThemeMixin {
       color: colorScheme.surface,
       textStyle: TextStyle(color: colorScheme.onSurface),
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
     );
 
     final tooltipTheme = TooltipThemeData(
       decoration: BoxDecoration(
         color: colorWithAlpha(colorScheme.onSurface, 0.9),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
       ),
       textStyle: TextStyle(color: colorScheme.onPrimary),
       waitDuration: const Duration(milliseconds: 500),
@@ -344,7 +369,7 @@ mixin ThemeMixin {
       strokeWidth: 4.0, // 圆环的粗细
       refreshBackgroundColor: colorScheme.primary, // 下拉刷新时的背景色
       strokeCap: StrokeCap.round,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(RadiusToken.sm),
       constraints: BoxConstraints.tight(const Size(25, 25)),
     );
 
@@ -372,7 +397,7 @@ mixin ThemeMixin {
 
     final listTileTheme = ListTileThemeData(
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
     );
 
     // -------------------------
@@ -390,6 +415,9 @@ mixin ThemeMixin {
     // -------------------------
     // 最终 ThemeData 组装并返回
     // -------------------------
+    // 语义色令牌：亮色用深色调、暗色用浅色调，保证对比度
+    final semanticColors = _buildSemanticColors(colorScheme, brightness);
+
     return ThemeData(
       useMaterial3: true,
       fontFamily: fontFamily,
@@ -402,7 +430,14 @@ mixin ThemeMixin {
       scaffoldBackgroundColor: Colors.transparent,
       appBarTheme: appBarTheme,
       extensions: <ThemeExtension<dynamic>>[
-        AppColors(scaffoldGradient: gradient),
+        AppColors(
+          scaffoldGradient: gradient,
+          success: semanticColors.success,
+          warning: semanticColors.warning,
+          danger: semanticColors.danger,
+          info: semanticColors.info,
+          onGradient: semanticColors.onGradient,
+        ),
       ],
 
       // 组件级主题注入

@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:io';
 
@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// Quill 图片嵌入构建器
 ///
@@ -38,7 +39,7 @@ class QuillImageBuild implements EmbedBuilder {
           margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           constraints: const BoxConstraints(maxWidth: 220, maxHeight: 320),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             border: Border.all(
               color: isFailed
                   ? Colors.redAccent
@@ -57,7 +58,7 @@ class QuillImageBuild implements EmbedBuilder {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             child: Stack(
               alignment: Alignment.center,
               children: [

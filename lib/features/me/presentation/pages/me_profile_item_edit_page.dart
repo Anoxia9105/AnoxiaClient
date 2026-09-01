@@ -1,7 +1,8 @@
-﻿import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class MeProfileEditOption {
   const MeProfileEditOption({required this.value, required this.label});
@@ -155,10 +156,10 @@ class _MeProfileItemEditDialogState extends State<MeProfileItemEditDialog> {
           padding: const EdgeInsets.only(bottom: 8),
           child: Material(
             color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             child: ListTile(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
               ),
               title: Text(option.label),
               trailing: selected

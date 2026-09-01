@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 根据参与者连接质量构建信号强度图标
 ///
@@ -50,7 +51,7 @@ Widget buildParticipantSignalIcon(Participant p) {
       margin: const EdgeInsets.symmetric(horizontal: 1.0),
       decoration: BoxDecoration(
         color: active ? color : Colors.white10,
-        borderRadius: BorderRadius.circular(1),
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
       ),
     );
   }
@@ -59,7 +60,7 @@ Widget buildParticipantSignalIcon(Participant p) {
     message: qualityLabel,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(RadiusToken.sm)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,

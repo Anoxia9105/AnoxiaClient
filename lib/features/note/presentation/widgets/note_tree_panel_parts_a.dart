@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'note_tree_widgets.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 // ---------------------------------------------------------------------------
 // 操作行 / 搜索框 / 标签过滤 / 空状态 / 搜索结果 / 标签过滤视图
@@ -93,7 +94,7 @@ class NoteTreePanelSearchField extends StatelessWidget {
         decoration: InputDecoration(
           hintText: 'note_search_hint'.tr(),
           hintStyle: TextStyle(
-            fontSize: 12.5,
+            fontSize: 12,
             color: colorScheme.onSurfaceVariant.withValues(alpha: .7),
           ),
           prefixIconConstraints: const BoxConstraints.tightFor(
@@ -351,7 +352,7 @@ class NoteTreePanelEmptyView extends StatelessWidget {
             'note_empty_subtitle'.tr(),
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 12,
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
@@ -389,7 +390,7 @@ class _TagChip extends StatelessWidget {
           color: selected
               ? colorScheme.primaryContainer
               : colorScheme.surfaceContainerHighest.withValues(alpha: .5),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(RadiusToken.xl),
         ),
         child: Text(
           label,

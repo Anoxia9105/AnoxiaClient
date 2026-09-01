@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 消息数量徽章组件
 ///
@@ -119,7 +120,7 @@ class _VibratingBadgeState extends State<VibratingBadge>
         decoration: BoxDecoration(
           color: widget.color,
           shape: isSingleDigit ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: isSingleDigit ? null : BorderRadius.circular(100),
+          borderRadius: isSingleDigit ? null : BorderRadius.circular(RadiusToken.pill),
           border: widget.borderColor != null
               ? Border.all(color: widget.borderColor!, width: 1.5)
               : null,

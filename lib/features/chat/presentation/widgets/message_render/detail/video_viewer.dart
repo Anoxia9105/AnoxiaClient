@@ -7,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_viewer_widgets.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 export 'video_viewer_widgets.dart'
     show VideoControlBar, VideoControlButton, formatVideoDuration;
@@ -199,7 +200,7 @@ class _VideoViewerDialogState
       height: dialogH,
       child: Material(
         color: Colors.black,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [

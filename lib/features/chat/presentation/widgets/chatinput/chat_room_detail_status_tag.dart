@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天房间详情页状态提示标签组件
 ///
@@ -23,7 +24,7 @@ class ChatRoomDetailStatusTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(
           width: 1,
           color: cs.outlineVariant.withValues(alpha: 0.2),
@@ -43,7 +44,7 @@ class ChatRoomDetailStatusTag extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 12,
               color: cs.onSurfaceVariant.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,

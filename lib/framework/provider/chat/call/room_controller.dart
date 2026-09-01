@@ -127,7 +127,7 @@ class RoomController extends _$RoomController {
         /// 重连逻辑由 SDK 自动处理，不需要手动干预
         ..on<RoomDisconnectedEvent>((event) {
           if (event.reason == DisconnectReason.participantRemoved) {
-            unawaited(_handleRemovedFromCall('主持人'));
+            unawaited(_handleRemovedFromCall('call_host'.tr()));
           }
         })
         /// 房间正在重连中（网络抖动时触发）
@@ -502,7 +502,7 @@ class RoomController extends _$RoomController {
   void _onMuteCommand(Map<String, dynamic> payload) {
     final targetUid = payload['uid'] as String?;
     final muted = payload['muted'] as bool? ?? true;
-    final senderName = payload['senderName'] as String? ?? '主持人';
+    final senderName = payload['senderName'] as String? ?? 'call_host'.tr();
     final current = state.value;
     if (current == null) return;
 
@@ -517,14 +517,16 @@ class RoomController extends _$RoomController {
     ref
         .read(toastServiceProvider)
         .showNotificationNow(
-          muted ? '$senderName 将您静音' : '$senderName 取消了您的静音',
+          muted
+              ? 'call_muted_by_host'.tr(args: [senderName])
+              : 'call_unmuted_by_host'.tr(args: [senderName]),
           type: muted ? ToastType.warning : ToastType.info,
         );
   }
 
   Future<void> _onKickCommand(Map<String, dynamic> payload) async {
     final targetUid = payload['uid'] as String?;
-    final senderName = payload['senderName'] as String? ?? '主持人';
+    final senderName = payload['senderName'] as String? ?? 'call_host'.tr();
     final current = state.value;
     if (current == null) return;
 
@@ -541,7 +543,7 @@ class RoomController extends _$RoomController {
     ref
         .read(toastServiceProvider)
         .showNotificationNow(
-          '$senderName 已将你移出通话',
+          'call_removed_by_host'.tr(args: [senderName]),
           type: ToastType.warning,
           duration: const Duration(seconds: 2),
         );
@@ -780,11 +782,11 @@ class RoomController extends _$RoomController {
   Future<bool> _safeActivateAndroidBackground() async {
     try {
       // 1. 先初始化
-      const androidConfig = rtc.FlutterBackgroundAndroidConfig(
-        notificationTitle: '通话中',
-        notificationText: '屏幕共享服务正在后台运行',
+      final androidConfig = rtc.FlutterBackgroundAndroidConfig(
+        notificationTitle: 'call_in_progress'.tr(),
+        notificationText: 'call_screen_share_background'.tr(),
         notificationImportance: rtc.AndroidNotificationImportance.normal,
-        notificationIcon: rtc.AndroidResource(
+        notificationIcon: const rtc.AndroidResource(
           name: 'ic_launcher',
           defType: 'mipmap',
         ),
@@ -1120,7 +1122,7 @@ class RoomController extends _$RoomController {
             );
             return true;
       } else {
-        final msg = '未知错误';
+        final msg = 'call_unknown_error'.tr();
         ref
             .read(toastServiceProvider)
             .showNotificationNow(

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 斜杠命令菜单中的单项
 class SlashCommandItem extends StatelessWidget {
@@ -39,7 +40,7 @@ class SlashCommandItem extends StatelessWidget {
                   color: selected
                       ? colorScheme.primary
                       : colorScheme.primaryContainer.withValues(alpha: .5),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                 ),
                 child: Icon(
                   icon,
@@ -122,7 +123,7 @@ class NoteEditorEmpty extends StatelessWidget {
             'note_editor_empty_subtitle'.tr(),
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 12,
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
@@ -154,9 +155,9 @@ class EditorTagChip extends StatelessWidget {
       color: selected
           ? colorScheme.primaryContainer
           : colorScheme.surfaceContainerHighest.withValues(alpha: .7),
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(RadiusToken.pill),
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         onTap: onTap,
         child: Container(
           height: 22,

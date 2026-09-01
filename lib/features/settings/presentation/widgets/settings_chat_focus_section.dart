@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class SettingsChatFocusSection extends StatelessWidget {
   const SettingsChatFocusSection({
@@ -29,7 +30,7 @@ class SettingsChatFocusSection extends StatelessWidget {
         const SizedBox(height: 10),
         Material(
           color: colors.surfaceContainerHighest.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           child: SwitchListTile.adaptive(
             key: const Key('chat-focus-mode-switch'),
             value: enabled,
@@ -52,7 +53,7 @@ class SettingsChatFocusSection extends StatelessWidget {
               style: TextStyle(color: colors.onSurfaceVariant, height: 1.35),
             ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               side: BorderSide(
                 color: enabled ? colors.primary : colors.outlineVariant,
                 width: enabled ? 1.4 : 1,

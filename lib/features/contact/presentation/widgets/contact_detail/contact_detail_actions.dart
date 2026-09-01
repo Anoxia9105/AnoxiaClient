@@ -14,6 +14,7 @@ import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 联系人详情操作按钮组件
 ///
@@ -45,7 +46,7 @@ class ContactDetailActions extends ConsumerWidget {
               label: Text('contact_recommend_to_friend'.tr()),
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                 ),
               ),
             ),
@@ -101,7 +102,7 @@ class ContactDetailActions extends ConsumerWidget {
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                 ),
                 elevation: 0,
               ),

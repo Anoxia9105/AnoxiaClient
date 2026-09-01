@@ -2,6 +2,7 @@ import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart'
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 设置-桌面布局区块。
 class SettingsLayoutSection extends StatelessWidget {
@@ -138,7 +139,7 @@ class _LayoutOption extends StatelessWidget {
         child: InkWell(
           key: data.key,
           mouseCursor: SystemMouseCursors.click,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           onTap: onTap,
           child: AnimatedContainer(
             duration: reduceMotion
@@ -150,7 +151,7 @@ class _LayoutOption extends StatelessWidget {
               color: selected
                   ? colorScheme.primaryContainer.withValues(alpha: 0.36)
                   : colorScheme.surfaceContainerHighest.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               border: Border.all(
                 color: selected
                     ? colorScheme.primary
@@ -220,7 +221,7 @@ class _LayoutPreview extends StatelessWidget {
       padding: EdgeInsets.all(cardMode ? 6 : 0),
       decoration: BoxDecoration(
         color: colorScheme.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(RadiusToken.md),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.52),
         ),
@@ -232,7 +233,7 @@ class _LayoutPreview extends StatelessWidget {
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.2),
               borderRadius: cardMode
-                  ? BorderRadius.circular(5)
+                  ? BorderRadius.circular(RadiusToken.sm)
                   : BorderRadius.zero,
               border: Border(
                 right: BorderSide(color: accent.withValues(alpha: 0.28)),
@@ -245,7 +246,7 @@ class _LayoutPreview extends StatelessWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLowest,
                 borderRadius: cardMode
-                    ? BorderRadius.circular(6)
+                    ? BorderRadius.circular(RadiusToken.sm)
                     : BorderRadius.zero,
                 border: cardMode
                     ? Border.all(color: accent.withValues(alpha: 0.2))

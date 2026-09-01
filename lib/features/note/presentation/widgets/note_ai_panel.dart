@@ -24,6 +24,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'note_ai_panel_action.dart';
 import 'note_ai_panel_widgets.dart';
 import 'note_markdown.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 右侧 AI 面板（与搜索面板互斥，仿 NoteSearchPanel 布局）
 ///
@@ -356,7 +357,7 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
                   height: 28,
                   decoration: BoxDecoration(
                     color: cs.primary.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(RadiusToken.md),
                     border: Border.all(color: cs.primary.withValues(alpha: .18)),
                   ),
                   child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 16, color: cs.primary),
@@ -381,7 +382,7 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
                   icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18, color: cs.onSurfaceVariant),
                   style: IconButton.styleFrom(
                     backgroundColor: cs.surfaceContainerHighest.withValues(alpha: .5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
                   ),
                 ),
               ],

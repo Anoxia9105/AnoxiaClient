@@ -208,7 +208,7 @@ icon: HugeIcons.strokeRoundedDelete02,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 13.5,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -227,7 +227,7 @@ icon: HugeIcons.strokeRoundedDelete02,
                               onPressed: () => _restore(context, ref, note),
                               child: Text(
                                 'note_trash_restore'.tr(),
-                                style: const TextStyle(fontSize: 12.5),
+                                style: const TextStyle(fontSize: 12),
                               ),
                             ),
                             TextButton(
@@ -235,7 +235,7 @@ icon: HugeIcons.strokeRoundedDelete02,
                               child: Text(
                                 'note_trash_purge'.tr(),
                                 style: TextStyle(
-                                  fontSize: 12.5,
+                                  fontSize: 12,
                                   color: colorScheme.error,
                                 ),
                               ),

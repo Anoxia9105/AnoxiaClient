@@ -16,6 +16,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'note_editor_parts_a.dart';
 import 'note_editor_widgets.dart';
 import 'note_tags_dialog.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 // ======================= 斜杠菜单浮层 =======================
 
@@ -86,10 +87,10 @@ class NoteSlashMenuOverlay extends StatelessWidget {
           onExit: (_) => onPointerExit(),
           child: Material(
             elevation: 10,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             color: colorScheme.surface,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               child: commands.isEmpty
                   ? SizedBox(
                       height: contentHeight,
@@ -105,7 +106,7 @@ class NoteSlashMenuOverlay extends StatelessWidget {
                           Text(
                             'note_slash_no_result'.tr(),
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -277,15 +278,15 @@ class NoteEditorTitleField extends StatelessWidget {
             vertical: 14,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             borderSide: const BorderSide(color: Colors.transparent),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             borderSide: BorderSide(color: colorScheme.primary, width: 1.2),
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 设置页「通用」分区
 ///
@@ -145,7 +146,7 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
       child: Column(children: children),
     );
   }
@@ -178,7 +179,7 @@ class _SwitchTile extends StatelessWidget {
     return ListTile(
       leading: HugeIcon(icon: icon, size: 22),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-      subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12.5)),
+      subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
       trailing: Transform.scale(
         scale: 0.85,
         child: Switch.adaptive(value: value, onChanged: onChanged),
@@ -227,7 +228,7 @@ class _SegmentTile<T> extends StatelessWidget {
                   children: [
                     Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5)),
+                    Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
                   ],
                 ),
               ),
@@ -280,7 +281,7 @@ class _TextScaleTile extends StatelessWidget {
                   children: [
                     Text('settings_text_scale'.tr(), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     const SizedBox(height: 2),
-                    Text('settings_text_scale_desc'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5)),
+                    Text('settings_text_scale_desc'.tr(), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
                   ],
                 ),
               ),
@@ -288,7 +289,7 @@ class _TextScaleTile extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(RadiusToken.pill),
                 ),
                 child: Text(labels[value]?.tr() ?? '${(value * 100).round()}%', style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700, fontSize: 12)),
               ),

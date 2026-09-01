@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 展示统一的危险操作二次确认弹窗（删除会话 / 退出群聊 / 解散群聊）
 ///
@@ -94,7 +95,7 @@ class DangerConfirmDialog extends StatelessWidget {
             foregroundColor: colorScheme.outline,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
               side: BorderSide(color: colorScheme.outlineVariant),
             ),
           ),
@@ -107,7 +108,7 @@ class DangerConfirmDialog extends StatelessWidget {
             foregroundColor: colorScheme.onError,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
           ),
           child: Text(

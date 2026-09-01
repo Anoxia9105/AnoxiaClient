@@ -3,6 +3,7 @@
 // 支持音频通话和视频通话两种模式，群组通话中额外显示邀请成员按钮。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
@@ -15,6 +16,7 @@ import 'package:anoxia/platform/shims/pip_shim.dart';
 import 'mobile_call_timer.dart';
 import '../component/call_invite_members_button.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 移动端通话控制栏
 ///
@@ -44,6 +46,7 @@ class MobileCallControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final appColors = Theme.of(context).extension<AppColors>();
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
     final isGroup = ref.watch(callIsGroupProvider(roomId));
     return SafeArea(
@@ -55,7 +58,7 @@ class MobileCallControls extends ConsumerWidget {
           DecoratedBox(
             decoration: BoxDecoration(
               color: cs.onSurface.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -75,7 +78,7 @@ class MobileCallControls extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: cs.surface.withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(RadiusToken.xl),
               border: Border.all(
                 color: cs.outlineVariant.withValues(alpha: 0.6),
               ),
@@ -138,7 +141,7 @@ class MobileCallControls extends ConsumerWidget {
                 _CallControlButton(
                   tooltip: 'call_hangup_tooltip'.tr(),
                   icon: HugeIcons.strokeRoundedCallEnd01,
-                  backgroundColor: const Color(0xFFE53945),
+                  backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
                   foregroundColor: Colors.white,
                   onPressed: () => _hangUp(ref, notifier),
                 ),

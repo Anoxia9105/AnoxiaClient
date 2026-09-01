@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'base/message_render_strategy.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 卡片消息渲染策略
 ///
@@ -57,7 +58,7 @@ class _CardMessage extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(RadiusToken.md),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: isContactCard || isGroupCard || isNoteCard
@@ -161,7 +162,7 @@ class _CardThumbnail extends StatelessWidget {
     final imageUrl = url;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(RadiusToken.sm),
       child: Container(
         width: 52,
         height: 52,

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 好友请求状态操作按钮
 ///
@@ -109,7 +110,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
@@ -120,7 +121,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,
             ),

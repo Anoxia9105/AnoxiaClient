@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 开发者致敬 / 彩蛋页面
 ///
@@ -126,7 +127,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: scheme.surface.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(RadiusToken.pill),
                             border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
                           ),
                           child: Row(
@@ -197,7 +198,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                             const SizedBox(height: 10),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(color: scheme.secondaryContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(999)),
+                              decoration: BoxDecoration(color: scheme.secondaryContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(RadiusToken.pill)),
                               child: Text('你连续点击了 7 次才来到这里 · 谢谢你的好奇心', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w600)),
                             ),
                           ],
@@ -212,7 +213,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                           padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                           decoration: BoxDecoration(
                             color: scheme.surface.withValues(alpha: isDark ? 0.72 : 0.88),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(RadiusToken.xl),
                             border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
                             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.06), blurRadius: 24, offset: const Offset(0, 12))],
                           ),
@@ -221,7 +222,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                             children: [
                               Row(
                                 children: [
-                                  Container(width: 3, height: 18, decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(999))),
+                                  Container(width: 3, height: 18, decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(RadiusToken.pill))),
                                   const SizedBox(width: 10),
                                   Text('一封小小的信', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                                   const Spacer(),
@@ -236,7 +237,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                               const SizedBox(height: 16),
                               Container(
                                 padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(14)),
+                                decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(RadiusToken.xl)),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -295,7 +296,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                           padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
                           decoration: BoxDecoration(
                             color: scheme.primaryContainer.withValues(alpha: isDark ? 0.22 : 0.42),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(RadiusToken.xl),
                             border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
                           ),
                           child: Row(
@@ -325,7 +326,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                                 onPressed: _share,
                                 icon: const HugeIcon(icon: HugeIcons.strokeRoundedShare01, size: 18),
                                 label: Text('分享这份心意'.tr()),
-                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999))),
+                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.pill))),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -334,7 +335,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                                 onPressed: () => Navigator.of(context).pop(),
                                 icon: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 18),
                                 label: const Text('收下了'),
-                                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999))),
+                                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.pill))),
                               ),
                             ),
                           ],
@@ -416,7 +417,7 @@ class _ValueCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: scheme.surface.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
       ),
       child: Column(
@@ -424,7 +425,7 @@ class _ValueCard extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(RadiusToken.lg)),
             alignment: Alignment.center,
             child: HugeIcon(icon: icon, size: 18, color: scheme.primary),
           ),

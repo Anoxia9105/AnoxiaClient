@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 将项目中已有但原先分散在个人菜单里的账户能力集中到设置页。
 class SettingsAccountSection extends StatelessWidget {
@@ -93,7 +94,7 @@ class _AccountTile extends StatelessWidget {
         size: 18,
         color: colorScheme.outline,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
       onTap: onTap,
     );
   }

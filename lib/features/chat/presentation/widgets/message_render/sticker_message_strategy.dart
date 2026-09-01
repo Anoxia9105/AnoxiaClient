@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../../../../../framework/domain/chat_message.dart';
 import '../../../../../framework/protocol/message/attachment.dart';
 import 'base/message_render_strategy.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class StickerMessageStrategy extends MessageRenderStrategy {
   @override
@@ -48,7 +49,7 @@ class StickerMessageStrategy extends MessageRenderStrategy {
         width: size.width,
         height: size.height,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
         ),
       ),
@@ -57,7 +58,7 @@ class StickerMessageStrategy extends MessageRenderStrategy {
         height: size.height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
         ),
         child: HugeIcon(

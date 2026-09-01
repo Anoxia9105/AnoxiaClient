@@ -20,6 +20,7 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'ai_ask_bubble.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天消息上下文菜单组件
 ///
@@ -100,7 +101,7 @@ class _ChatMessageContextMenuState
     final action = await showMenu<String>(
       context: context,
       position: position,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
       elevation: 8,
       items: _buildMenuItems(context),
       menuPadding: const EdgeInsets.symmetric(vertical: 6),

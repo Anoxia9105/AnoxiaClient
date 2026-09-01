@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:anoxia/framework/provider/layout/desktop_layout_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天主页面
 ///
@@ -92,7 +93,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(RadiusToken.xl),
                           border: Border.all(
                             color: Theme.of(
                               context,
@@ -100,7 +101,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           ),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(RadiusToken.xl),
                           child: room == null
                               ? const Welcome.chat()
                               : ChatRoomDetail(
@@ -163,7 +164,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       margin: const EdgeInsets.fromLTRB(8, 10, 12, 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
           color: Theme.of(
             context,
@@ -178,7 +179,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         child: ChatRoomDetailPanel(roomId: roomId, onClose: _closeRightPanel),
       ),
     );

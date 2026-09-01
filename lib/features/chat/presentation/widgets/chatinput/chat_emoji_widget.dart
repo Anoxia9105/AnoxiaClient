@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'chat_emoji_widgets.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 export 'chat_emoji_widgets.dart'
     show MyCustomSearchView, MyCustomSearchViewState;
@@ -119,7 +120,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
                         color: Theme.of(context).brightness == Brightness.light
                             ? Colors.white.withValues(alpha: 0.4)
                             : Colors.black.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(RadiusToken.md),
                         border: Border.all(
                           color:
                               Theme.of(context).brightness == Brightness.light
@@ -217,7 +218,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: InkWell(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
                 onTap: () {
                   setState(() {
                     _selectedPackIndex = index;
@@ -234,13 +235,13 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
                     color: index == _selectedPackIndex
                         ? scheme.primary.withValues(alpha: 0.14)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(RadiusToken.xl),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(RadiusToken.sm),
                         child: CachedNetworkImageView(
                           imageUrl: pack.iconUrl,
                           width: 24,
@@ -332,7 +333,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         final sticker = stickers[i];
         final size = _resolveStickerSize(sticker);
         return InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           onTap: () {
             if (widget.closeOnSelect && widget.closeSelected != null) {
               widget.closeSelected!();
@@ -351,7 +352,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
                 width: size.width,
                 height: size.height,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                   color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 ),
               ),
@@ -360,7 +361,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
                 height: size.height,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(RadiusToken.md),
                   color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 ),
                 child: HugeIcon(

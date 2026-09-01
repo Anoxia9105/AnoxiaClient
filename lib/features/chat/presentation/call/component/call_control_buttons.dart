@@ -1,9 +1,10 @@
-﻿import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/call/component/device_menu.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 构建分裂按钮（左侧功能按钮 + 右侧下拉箭头）
 ///
@@ -24,10 +25,10 @@ Widget buildSplitButton({
   return DecoratedBox(
     decoration: BoxDecoration(
       border: Border.all(color: dividerColor, width: 0.5),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       child: IntrinsicHeight(
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -92,15 +93,15 @@ Widget buildSoloButton({
         ).colorScheme.onSurface.withValues(alpha: 0.15),
         width: 0.5,
       ),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(RadiusToken.lg),
       child: Tooltip(
         message: label,
         child: InkWell(
           mouseCursor: SystemMouseCursors.click,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -127,7 +128,7 @@ void showReactionPicker(
       color: Colors.transparent,
       child: CallBubbleMenu(
         anchorContext: context,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         backgroundColor: Theme.of(context).colorScheme.surface,
         border: BorderSide(
           color: Theme.of(context).colorScheme.outlineVariant,
@@ -149,7 +150,7 @@ void showReactionPicker(
               return Tooltip(
                 message: 'call_reaction'.tr(),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                   hoverColor: Theme.of(
                     context,
                   ).colorScheme.primary.withValues(alpha: 0.08),
@@ -166,7 +167,7 @@ void showReactionPicker(
                           .colorScheme
                           .surfaceContainerHighest
                           .withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(RadiusToken.lg),
                       border: Border.all(
                         color: Theme.of(
                           context,

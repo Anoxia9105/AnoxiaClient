@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 屏幕过小提示页
 ///
@@ -40,7 +41,7 @@ class UnsupportedDevicePage extends StatelessWidget {
                     height: 76,
                     decoration: BoxDecoration(
                       color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(RadiusToken.xl),
                     ),
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedSmartPhone01,
@@ -75,7 +76,7 @@ class UnsupportedDevicePage extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: cs.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(RadiusToken.xl),
                     ),
                     child: Row(
                       children: [
@@ -106,7 +107,7 @@ class UnsupportedDevicePage extends StatelessWidget {
                         onPressed: onContinue,
                         style: FilledButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(RadiusToken.lg),
                           ),
                           textStyle: const TextStyle(
                             fontSize: 15,

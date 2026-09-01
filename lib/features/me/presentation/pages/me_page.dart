@@ -16,6 +16,7 @@ import 'avatar_edit_page.dart';
 import 'me_profile_item_edit_page.dart';
 import 'me_page_widgets.dart';
 import 'personal_qr_page.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 个人中心页面
 ///
@@ -219,7 +220,7 @@ class _MyPageState extends ConsumerState<MyPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: cs.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
       ),
       child: Row(
         children: [
@@ -277,7 +278,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                   '${'me_profile_username'.tr()}: ${user.userName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                 ),
               ],
             ),

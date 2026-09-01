@@ -9,6 +9,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'search_context_message_item.dart';
 import 'search_context_skeleton.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天上下文深度搜索页面
 /// 功能：显示搜索结果列表，自动定位到匹配消息，高亮显示匹配范围
@@ -185,7 +186,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
           child: Material(
             color: colorScheme.surface,
             elevation: isDesktop ? 1 : 0,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(RadiusToken.xl),
             child: TextField(
               controller: _searchController,
               style: textTheme.bodyMedium,
@@ -343,7 +344,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(32),
+                            borderRadius: BorderRadius.circular(RadiusToken.xl),
                           ),
                           child: HugeIcon(
                             icon: HugeIcons.strokeRoundedSearch02,

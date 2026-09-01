@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 class AiMarkdownPreview extends StatelessWidget {
   const AiMarkdownPreview({
@@ -68,7 +69,7 @@ class AiMarkdownPreview extends StatelessWidget {
         listBullet: textTheme.bodyMedium?.copyWith(fontSize: 13, color: cs.onSurface),
         // 引用
         blockquote: textTheme.bodyMedium?.copyWith(
-          fontSize: 12.5,
+          fontSize: 12,
           height: 1.6,
           color: cs.onSurfaceVariant,
           fontStyle: FontStyle.italic,
@@ -76,7 +77,7 @@ class AiMarkdownPreview extends StatelessWidget {
         blockquoteDecoration: BoxDecoration(
           color: cs.surfaceContainerHighest.withValues(alpha: .35),
           border: Border(left: BorderSide(color: cs.primary.withValues(alpha: .6), width: 3)),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(RadiusToken.sm),
         ),
         blockquotePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         // 行内代码
@@ -89,7 +90,7 @@ class AiMarkdownPreview extends StatelessWidget {
         // 代码块
         codeblockDecoration: BoxDecoration(
           color: cs.surfaceContainerHighest.withValues(alpha: .65),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(RadiusToken.md),
           border: Border.all(color: cs.outlineVariant.withValues(alpha: .5)),
         ),
         codeblockPadding: const EdgeInsets.all(10),

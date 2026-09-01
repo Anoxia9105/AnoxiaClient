@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 官方虚拟房间的静态帮助内容。
 ///
@@ -92,7 +93,7 @@ class _HelpCard extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(RadiusToken.lg),
             border: Border.all(
               color: colorScheme.outlineVariant.withValues(alpha: 0.42),
             ),
@@ -108,7 +109,7 @@ class _HelpCard extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                   ),
                   child: HugeIcon(
                     icon: item.icon,
