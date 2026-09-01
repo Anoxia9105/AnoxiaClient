@@ -60,7 +60,7 @@ class NoteEditorBody extends ConsumerStatefulWidget {
 }
 
 class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
-    with _SlashMenuMixin {
+    with _SlashMenuMixin, WidgetsBindingObserver {
   @override
   QuillController? _quillController;
   @override
@@ -72,6 +72,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   int _wordCount = 0;
   Uint8List? _lastHandledImageBytes;
   DateTime? _lastImagePasteTime;
+  double _lastBottomViewInset = 0;
 
   /// 会话服务实例（懒加载缓存一次，后续复用）
   NoteSessionService? _cachedSessionService;
@@ -99,8 +100,33 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _focusNode.addListener(_onFocusChanged);
     _initEditor(widget.session);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _lastBottomViewInset = MediaQuery.of(context).viewInsets.bottom;
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    if (bottomInset > _lastBottomViewInset) {
+      _scrollCaretIntoView();
+    }
+    _lastBottomViewInset = bottomInset;
+  }
+
+  void _scrollCaretIntoView() {
+    final editorState = _editorKey.currentState;
+    if (editorState == null) return;
+    final controller = _quillController;
+    if (controller == null || !controller.selection.isValid) return;
+    editorState.bringIntoView(controller.selection.base);
   }
 
   @override
@@ -228,6 +254,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   @override
   void dispose() {
     _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_slashHardwareKeyHandler);
     _dismissSlashMenu();
     _debounce?.cancel();
