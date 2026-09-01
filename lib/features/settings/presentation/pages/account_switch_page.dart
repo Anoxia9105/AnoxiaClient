@@ -230,8 +230,7 @@ class _CurrentUserTile extends StatelessWidget {
                   '@$userName',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -246,8 +245,7 @@ class _CurrentUserTile extends StatelessWidget {
             ),
             child: Text(
               'account_switch_current'.tr(),
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.labelSmall!.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onPrimary,
               ),
@@ -313,8 +311,7 @@ class _SavedAccountTile extends StatelessWidget {
                       '@${account.userName}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),

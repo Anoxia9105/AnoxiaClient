@@ -93,8 +93,7 @@ class NoteTreePanelSearchField extends StatelessWidget {
         style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
           hintText: 'note_search_hint'.tr(),
-          hintStyle: TextStyle(
-            fontSize: 12,
+          hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
             color: colorScheme.onSurfaceVariant.withValues(alpha: .7),
           ),
           prefixIconConstraints: const BoxConstraints.tightFor(
@@ -351,8 +350,7 @@ class NoteTreePanelEmptyView extends StatelessWidget {
           Text(
             'note_empty_subtitle'.tr(),
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
@@ -394,8 +392,7 @@ class _TagChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected
                 ? colorScheme.onPrimaryContainer

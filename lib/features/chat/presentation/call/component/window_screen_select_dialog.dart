@@ -162,8 +162,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
         child: Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.grey,
           ),
@@ -366,8 +365,7 @@ class ThumbnailWidget extends StatelessWidget {
             source.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               color: selected ? Theme.of(context).primaryColor : null,
             ),

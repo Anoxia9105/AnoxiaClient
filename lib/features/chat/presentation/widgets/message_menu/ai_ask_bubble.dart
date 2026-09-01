@@ -272,7 +272,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         _errorText!,
-                        style: TextStyle(fontSize: 12, color: _cs.error),
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.error),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -314,7 +314,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
               widget.quotedText,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: _cs.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.onSurfaceVariant),
             ),
           ),
           const SizedBox(width: 4),
@@ -377,7 +377,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
               HugeIcon(icon: icon, size: 12, color: _cs.primary),
               const SizedBox(width: 4),
             ],
-            Text(label, style: TextStyle(fontSize: 12, color: _cs.onSurface)),
+            Text(label, style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.onSurface)),
           ],
         ),
       ),
@@ -398,7 +398,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       child: empty
           ? Center(
               child: Text('chat_ai.empty_tip'.tr(),
-                  style: TextStyle(fontSize: 12, color: _cs.onSurfaceVariant)),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.onSurfaceVariant)),
             )
           : _streaming && _answer.isEmpty
               ? _buildSkeleton()
@@ -425,7 +425,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
         if (_thinking != null && _thinking!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(_thinking!,
-              style: TextStyle(fontSize: 11, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith( color: _cs.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -445,8 +445,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
             decoration: InputDecoration(
               isDense: true,
               hintText: 'chat_ai.followup_hint'.tr(),
-              hintStyle: TextStyle(
-                  fontSize: 12, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.onSurfaceVariant.withValues(alpha: .6)),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               border: OutlineInputBorder(

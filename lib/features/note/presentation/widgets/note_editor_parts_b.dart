@@ -105,8 +105,7 @@ class NoteSlashMenuOverlay extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'note_slash_no_result'.tr(),
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
@@ -440,7 +439,7 @@ class NoteEditorStatusBar extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             'note_word_count'.tr(args: [wordCount.toString()]),
-            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith( color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),

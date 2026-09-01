@@ -27,8 +27,7 @@ class CallLoadingState extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             message ?? 'call_loading'.tr(),
-            style: TextStyle(
-              fontSize: 14,
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
               fontWeight: FontWeight.w400,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),

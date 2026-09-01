@@ -278,7 +278,7 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
         const SizedBox(height: 8),
         Text(
           'me_avatar_upload_hint'.tr(),
-          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith( color: cs.onSurfaceVariant),
         ),
       ],
     );

@@ -238,8 +238,7 @@ class _MentionListWidgetState extends ConsumerState<MentionListWidget> {
                     Expanded(
                       child: Text(
                         user.name,
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: colorScheme.onSurface,
                         ),
                         maxLines: 1,

@@ -70,8 +70,7 @@ class MemberListSection extends ConsumerWidget {
             'chat_member_status_summary'.tr(
               args: [onlineCount.toString(), totalCount.toString()],
             ),
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
@@ -105,8 +104,7 @@ class MemberListSection extends ConsumerWidget {
       ),
       subtitle: Text(
         isOnline ? 'contact_online'.tr() : 'contact_offline'.tr(),
-        style: TextStyle(
-          fontSize: 12,
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(
           color: isOnline ? Colors.green : colorScheme.onSurfaceVariant,
         ),
       ),

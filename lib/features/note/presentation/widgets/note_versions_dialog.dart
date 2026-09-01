@@ -118,8 +118,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                   Expanded(
                     child: Text(
                       'note_versions'.tr(),
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -183,8 +182,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                               ),
                               child: Text(
                                 '#${version.version}',
-                                style: TextStyle(
-                                  fontSize: 12,
+                                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: colorScheme.primary,
                                 ),
@@ -199,8 +197,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                                     _titleOf(version),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 14,
+                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -209,8 +206,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                                     _previewOf(version),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
+                                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
@@ -220,8 +216,7 @@ class _NoteVersionsDialogState extends ConsumerState<NoteVersionsDialog> {
                             const SizedBox(width: 8),
                             Text(
                               _formatTime(version.createdAt),
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: Theme.of(context).textTheme.labelSmall!.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),

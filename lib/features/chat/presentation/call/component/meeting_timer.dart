@@ -80,8 +80,7 @@ class _MeetingTimerState extends State<MeetingTimer> {
           const HugeIcon(icon: HugeIcons.strokeRoundedTime01, size: 20),
           Text(
             '--:--',
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),

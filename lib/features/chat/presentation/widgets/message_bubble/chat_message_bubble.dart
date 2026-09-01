@@ -82,7 +82,7 @@ class ChatMessageBubble extends ConsumerWidget {
             padding: const EdgeInsets.all(8),
             child: Text(
               '消息渲染失败: $e',
-              style: TextStyle(fontSize: 11, color: errorColor),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith( color: errorColor),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

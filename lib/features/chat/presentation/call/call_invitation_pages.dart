@@ -1,5 +1,6 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/call_button.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
@@ -18,7 +19,6 @@ class IncomingCallPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final appColors = Theme.of(context).extension<AppColors>();
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
     final isVideo = invitation.initialMedia == CallInitialMedia.video;
     final displayName = invitation.callerName.isEmpty
@@ -101,19 +101,17 @@ class IncomingCallPage extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CallAction(
+                          CallActionButton.hangUp(
                             label: 'notification_call_reject'.tr(),
                             icon: HugeIcons.strokeRoundedCallEnd01,
-                            backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
                             onPressed: () => controller.reject(invitation),
                           ),
                           const SizedBox(width: 56),
-                          CallAction(
+                          CallActionButton.accept(
                             label: 'notification_call_accept'.tr(),
                             icon: isVideo
                                 ? HugeIcons.strokeRoundedVideo01
                                 : HugeIcons.strokeRoundedCall02,
-                            backgroundColor: appColors?.success ?? const Color(0xFF22C55E),
                             onPressed: () =>
                                 controller.acceptAndOpen(invitation),
                           ),
@@ -182,7 +180,6 @@ class OutgoingCallPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final appColors = Theme.of(context).extension<AppColors>();
     final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
     final room = ref.watch(currentRoomProvider(invitation.roomId));
     final displayName = room?.roomName ?? invitation.title;
@@ -257,10 +254,9 @@ class OutgoingCallPage extends ConsumerWidget {
                             ),
                             const SizedBox(width: 56),
                           ],
-                          CallAction(
+                          CallActionButton.hangUp(
                             label: 'call_cancel_call'.tr(),
                             icon: HugeIcons.strokeRoundedCallEnd01,
-                            backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
                             onPressed: () => controller.cancelCurrent(),
                           ),
                         ],

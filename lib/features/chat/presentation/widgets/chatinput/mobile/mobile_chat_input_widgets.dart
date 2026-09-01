@@ -192,8 +192,7 @@ class MobileVoiceCapsuleContent extends StatelessWidget {
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          style: TextStyle(
-            fontSize: 14,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontWeight: isRecording ? FontWeight.w600 : FontWeight.normal,
             color: isRecording
                 ? colorScheme.onPrimary

@@ -52,8 +52,7 @@ class ChatAiAssistChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? colorScheme.primary : colorScheme.onSurface,
           ),
@@ -111,7 +110,7 @@ class ChatAiAssistHeader extends StatelessWidget {
               children: [
                 Text('chat_ai.assist_title'.tr(),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                Text(scopeText, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: colorScheme.primary)),
+                Text(scopeText, style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w500, color: colorScheme.primary)),
               ],
             ),
           ),
@@ -281,7 +280,7 @@ class ChatAiAssistCustomInput extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
             ),
-            child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            child: Text('note_ai.run'.tr(), style: Theme.of(context).textTheme.bodySmall!.copyWith( fontWeight: FontWeight.w600)),
           ),
         ),
       ],
@@ -330,7 +329,7 @@ class ChatAiAssistPreviewArea extends StatelessWidget {
                 children: [
                   HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 11, color: colorScheme.primary),
                   const SizedBox(width: 4),
-                  Text('ai_preview_label'.tr(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                  Text('ai_preview_label'.tr(), style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w600, color: colorScheme.primary)),
                 ],
               ),
             ),
@@ -367,7 +366,7 @@ class ChatAiAssistPreviewArea extends StatelessWidget {
                 ? Center(
                     key: const ValueKey('empty_chat'),
                     child: Text('chat_ai.preview_empty'.tr(),
-                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith( color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
                   )
                 : isStreaming && preview.isEmpty
                     ? ChatAiAssistSkeleton(key: const ValueKey('streaming'), thinking: thinking, colorScheme: colorScheme)
@@ -410,7 +409,7 @@ class ChatAiAssistSkeleton extends StatelessWidget {
         if (thinking != null && thinking!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(thinking!,
-              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant.withValues(alpha: .6)),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith( color: colorScheme.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -517,8 +516,7 @@ class ChatAiAssistApplyButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             fontWeight: FontWeight.w500,
             color: filled ? colorScheme.onPrimary : colorScheme.onSurface,
           ),

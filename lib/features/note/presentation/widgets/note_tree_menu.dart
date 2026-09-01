@@ -106,8 +106,7 @@ class NoteTreeMenuItemState extends State<NoteTreeMenuItem> {
                 entry.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   fontWeight: FontWeight.w500,
                   color: labelColor,
                 ),
@@ -167,8 +166,7 @@ class NoteTreeMenuHeaderEntryState extends State<NoteTreeMenuHeaderEntry> {
               widget.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),

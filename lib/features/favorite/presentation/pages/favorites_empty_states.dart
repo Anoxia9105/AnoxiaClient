@@ -49,7 +49,7 @@ class EmptyFavorites extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'favorite_empty_title'.tr(),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith( fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Padding(
@@ -57,8 +57,7 @@ class EmptyFavorites extends StatelessWidget {
             child: Text(
               'favorite_empty_subtitle'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
                 color: cs.onSurfaceVariant,
                 height: 1.5,
               ),

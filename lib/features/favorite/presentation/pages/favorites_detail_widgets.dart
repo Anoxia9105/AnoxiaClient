@@ -105,8 +105,7 @@ class FavoriteNoteDetailCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 16,
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w700,
               color: cs.onSurface,
             ),
@@ -211,8 +210,7 @@ class FavoriteTextDetailCard extends StatelessWidget {
           const SizedBox(height: 12),
           SelectableText(
             text,
-            style: TextStyle(
-              fontSize: 16,
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
               height: 1.7,
               color: cs.onSurface,
               fontWeight: FontWeight.w500,

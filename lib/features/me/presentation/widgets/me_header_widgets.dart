@@ -140,8 +140,7 @@ class _Chip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             text,
-            style: TextStyle(
-              fontSize: 11,
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(
               fontWeight: FontWeight.w600,
               color: Colors.white.withValues(alpha: 0.95),
             ),

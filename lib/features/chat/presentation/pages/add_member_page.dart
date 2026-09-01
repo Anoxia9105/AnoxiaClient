@@ -85,8 +85,7 @@ class _AddMemberPageState extends ConsumerState<AddMemberPage> {
                         ),
                         Text(
                           'member_group_chat'.tr(),
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: Theme.of(context).textTheme.bodySmall!.copyWith(
                             color: colorScheme.outline,
                           ),
                         ),

@@ -279,8 +279,7 @@ class FileEmbedCard extends StatelessWidget {
                           attachment.name ?? 'file_unknown'.tr(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                             fontWeight: FontWeight.w700,
                             height: 1.2,
                             color: isFailed ? scheme.error : scheme.onSurface,
@@ -297,19 +296,19 @@ class FileEmbedCard extends StatelessWidget {
                               ),
                               child: Text(
                                 FileUtil.formatFileSize(attachment.size ?? 0),
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
+                                style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
                               ),
                             ),
                             const SizedBox(width: 8),
                             if (isUploading)
                               Text(
                                 'chat_upload_progress'.tr(args: ['${(progress * 100).round()}']),
-                                style: TextStyle(fontSize: 11, color: scheme.primary, fontWeight: FontWeight.w600),
+                                style: Theme.of(context).textTheme.labelSmall!.copyWith( color: scheme.primary, fontWeight: FontWeight.w600),
                               )
                             else if (isFailed)
                               Text(
                                 'upload_failed_retry'.tr(),
-                                style: TextStyle(fontSize: 11, color: scheme.error, fontWeight: FontWeight.w700),
+                                style: Theme.of(context).textTheme.labelSmall!.copyWith( color: scheme.error, fontWeight: FontWeight.w700),
                               )
                             else
                               Row(
@@ -317,7 +316,7 @@ class FileEmbedCard extends StatelessWidget {
                                 children: [
                                   HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 12, color: appColors?.success ?? const Color(0xFF2E7D32)),
                                   const SizedBox(width: 4),
-                                  Text('chat_uploaded'.tr(), style: TextStyle(fontSize: 11, color: appColors?.success ?? const Color(0xFF2E7D32), fontWeight: FontWeight.w600)),
+                                  Text('chat_uploaded'.tr(), style: Theme.of(context).textTheme.labelSmall!.copyWith( color: appColors?.success ?? const Color(0xFF2E7D32), fontWeight: FontWeight.w600)),
                                 ],
                               ),
                           ],

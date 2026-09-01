@@ -243,8 +243,7 @@ class _DeviceMenuContent extends StatelessWidget {
                     ],
                     Text(
                       title!,
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
                       ),

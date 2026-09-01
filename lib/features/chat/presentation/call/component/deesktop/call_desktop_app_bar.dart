@@ -64,7 +64,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
       centerTitle: DeviceUtil.isRealMobile(),
       title: Text(
         widget.title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.bold),
       ),
       leading: Center(
         child: Assets.images.appLogo.image(

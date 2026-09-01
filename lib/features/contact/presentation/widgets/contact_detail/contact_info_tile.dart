@@ -50,8 +50,7 @@ class ContactInfoTile extends StatelessWidget {
               onTap: onTap,
               child: Text(
                 value,
-                style: TextStyle(
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),

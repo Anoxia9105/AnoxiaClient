@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/features/chat/presentation/call/component/command_bar.dart';
+import 'package:anoxia/features/chat/presentation/call/component/command_bar.dart';
 import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_carousel_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_screen_widget.dart';
@@ -115,8 +115,7 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
                     const SizedBox(height: 8),
                     Text(
                       'call_reconnecting_hint'.tr(),
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         color: Colors.white70,
                       ),
                     ),

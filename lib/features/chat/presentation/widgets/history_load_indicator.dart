@@ -67,16 +67,14 @@ class HistoryLoadIndicator extends ConsumerWidget {
               const SizedBox(width: 6),
               Text(
                 errorMsg,
-                style: TextStyle(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.error.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 'chat_history_retry'.tr(),
-                style: TextStyle(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w500,
                 ),

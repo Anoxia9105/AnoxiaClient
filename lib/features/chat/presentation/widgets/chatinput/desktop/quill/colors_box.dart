@@ -141,8 +141,7 @@ class ColorsBox {
                     const SizedBox(width: 12),
                     Text(
                       'toolbar_reset_color'.tr(),
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),

@@ -339,8 +339,7 @@ class _NoteTreePanelState extends ConsumerState<NoteTreePanel> {
               ),
               child: Text(
                 'note_total_count'.tr(args: [total.toString()]),
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),

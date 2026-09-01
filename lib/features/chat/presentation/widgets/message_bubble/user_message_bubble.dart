@@ -113,8 +113,7 @@ class MessageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontSize: 11,
+    final style = Theme.of(context).textTheme.labelSmall!.copyWith(
       color: Theme.of(context).colorScheme.outline,
       fontWeight: FontWeight.bold,
     );

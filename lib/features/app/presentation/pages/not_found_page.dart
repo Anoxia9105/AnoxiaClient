@@ -91,8 +91,7 @@ class NotFoundPage extends StatelessWidget {
                       '您访问的页面不存在或已被移除，请检查链接是否正确。',
                     ),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                       height: 1.6,
                       color: scheme.onSurfaceVariant,
                     ),

@@ -112,7 +112,7 @@ class _DragFeedback extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith( fontWeight: FontWeight.w600),
                 ),
               ),
             ],

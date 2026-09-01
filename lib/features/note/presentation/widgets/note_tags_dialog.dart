@@ -102,8 +102,7 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
                   Expanded(
                     child: Text(
                       'note_tags'.tr(),
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -113,8 +112,7 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
               const SizedBox(height: 6),
               Text(
                 'note_tags_hint'.tr(),
-                style: TextStyle(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -143,8 +141,7 @@ class _NoteTagsDialogState extends ConsumerState<NoteTagsDialog> {
                       style: const TextStyle(fontSize: 13),
                       decoration: InputDecoration(
                         hintText: 'note_tag_add_hint'.tr(),
-                        hintStyle: TextStyle(
-                          fontSize: 12,
+                        hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
                           color: colorScheme.onSurfaceVariant
                               .withValues(alpha: .7),
                         ),

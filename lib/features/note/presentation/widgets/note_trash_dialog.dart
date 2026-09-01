@@ -127,8 +127,7 @@ class NoteTrashDialog extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       'note_trash'.tr(),
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -207,16 +206,14 @@ icon: HugeIcons.strokeRoundedDelete02,
                                     _titleOf(note),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 14,
+                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     _formatDeletedAt(note.deletedAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
+                                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
@@ -234,8 +231,7 @@ icon: HugeIcons.strokeRoundedDelete02,
                               onPressed: () => _purge(context, ref, note),
                               child: Text(
                                 'note_trash_purge'.tr(),
-                                style: TextStyle(
-                                  fontSize: 12,
+                                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                                   color: colorScheme.error,
                                 ),
                               ),

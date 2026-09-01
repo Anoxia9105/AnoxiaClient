@@ -135,8 +135,7 @@ class FavoriteDetailPanel extends StatelessWidget {
                             item.senderDisplayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color: cs.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
                             ),
@@ -159,8 +158,7 @@ class FavoriteDetailPanel extends StatelessWidget {
                             formatFavoriteDate(item.createdAt),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
                           ),

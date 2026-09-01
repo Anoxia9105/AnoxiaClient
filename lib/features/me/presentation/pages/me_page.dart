@@ -268,8 +268,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                   user.nickName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -278,7 +277,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                   '${'me_profile_username'.tr()}: ${user.userName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith( color: cs.onSurfaceVariant),
                 ),
               ],
             ),

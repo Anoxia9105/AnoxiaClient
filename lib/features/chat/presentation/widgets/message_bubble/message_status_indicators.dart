@@ -1,4 +1,4 @@
-﻿/// 消息状态指示器集合
+/// 消息状态指示器集合
 ///
 /// 包含：@提及标识、发送状态（发送中/失败/已发送）。
 /// 统一管理消息侧边状态展示。
@@ -46,10 +46,9 @@ class MentionIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
+    return Text(
       '@',
-      style: TextStyle(
-        fontSize: 16,
+      style: Theme.of(context).textTheme.titleMedium!.copyWith(
         color: Colors.red,
         fontWeight: FontWeight.bold,
       ),

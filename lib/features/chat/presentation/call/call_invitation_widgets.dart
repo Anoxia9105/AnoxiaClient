@@ -166,8 +166,7 @@ class IncomingCallBanner extends ConsumerWidget {
                             mediaLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
                           ),

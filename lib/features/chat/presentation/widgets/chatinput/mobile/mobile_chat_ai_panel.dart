@@ -262,7 +262,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
                             ),
-                            child: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            child: Text('note_ai.run'.tr(), style: Theme.of(context).textTheme.bodySmall!.copyWith( fontWeight: FontWeight.w600)),
                           ),
                         ),
                       ],
@@ -274,7 +274,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child:
-                          Text(_errorText!, style: TextStyle(fontSize: 12, color: _cs.error)),
+                          Text(_errorText!, style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.error)),
                     ),
                   if (_preview.isNotEmpty && !_streaming) ...[
                     const SizedBox(height: 8),
@@ -322,7 +322,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
               children: [
                 Text('chat_ai.assist_title'.tr(),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                Text(scope, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _cs.primary)),
+                Text(scope, style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w500, color: _cs.primary)),
               ],
             ),
           ),
@@ -404,8 +404,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? _cs.primary : _cs.onSurface,
           ),
@@ -428,7 +427,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
       child: empty
           ? Center(
               child: Text('chat_ai.preview_empty'.tr(),
-                  style: TextStyle(fontSize: 12, color: _cs.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.onSurfaceVariant),
                   textAlign: TextAlign.center))
           : _streaming && _preview.isEmpty
               ? _buildSkeleton()
@@ -454,7 +453,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
         if (_thinking != null && _thinking!.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(_thinking!,
-              style: TextStyle(fontSize: 11, color: _cs.onSurfaceVariant.withValues(alpha: .6)),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith( color: _cs.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -491,8 +490,7 @@ class _MobileChatAiPanelState extends State<MobileChatAiPanel> {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             fontWeight: FontWeight.w500,
             color: filled ? _cs.onPrimary : _cs.onSurface,
           ),

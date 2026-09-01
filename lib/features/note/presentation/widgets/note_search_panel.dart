@@ -154,8 +154,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
                 Expanded(
                   child: Text(
                     'note_find_title'.tr(),
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -181,8 +180,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
               decoration: InputDecoration(
                 isDense: true,
                 hintText: 'note_find_placeholder'.tr(),
-                hintStyle: TextStyle(
-                  fontSize: 12,
+                hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: colorScheme.onSurfaceVariant.withValues(alpha: .6),
                 ),
                 prefixIcon: SizedBox(
@@ -196,8 +194,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
                   ),
                 ),
                 suffixText: _matchLabel,
-                suffixStyle: TextStyle(
-                  fontSize: 11,
+                suffixStyle: Theme.of(context).textTheme.labelSmall!.copyWith(
                   color: _offsets.isEmpty && _query.isNotEmpty
                       ? colorScheme.error
                       : colorScheme.onSurfaceVariant,
@@ -338,8 +335,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: value
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,

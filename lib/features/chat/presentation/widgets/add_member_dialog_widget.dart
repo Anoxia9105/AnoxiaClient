@@ -127,8 +127,7 @@ class _AddMemberDialogWidgetState extends ConsumerState<AddMemberDialogWidget> {
                           ),
                           Text(
                             'member_group_chat'.tr(),
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color: Theme.of(context).colorScheme.outline,
                             ),
                           ),

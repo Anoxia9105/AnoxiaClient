@@ -19,8 +19,7 @@ class ContactAlphabetSymbol extends StatelessWidget {
     return Center(
       child: Text(
         safeSymbol,
-        style: TextStyle(
-          fontSize: 12,
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(
           color: isActive
               ? Theme.of(context).colorScheme.primary
               : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),

@@ -220,15 +220,14 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
                   pack.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
               Text(
                 '${pack.stickers.length}',
-                style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall!.copyWith( color: scheme.onSurfaceVariant),
               ),
               IconButton(
                 onPressed: state.deleting ? null : () => _confirmDeletePack(pack),

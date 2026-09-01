@@ -124,8 +124,7 @@ class _ScanLoginConfirmPageState extends ConsumerState<ScanLoginConfirmPage> {
               Text(
                 'scan_login_confirm_hint'.tr(),
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.5,
                 ),
@@ -150,8 +149,7 @@ class _ScanLoginConfirmPageState extends ConsumerState<ScanLoginConfirmPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(RadiusToken.lg),
                     ),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
+                    textStyle: Theme.of(context).textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),

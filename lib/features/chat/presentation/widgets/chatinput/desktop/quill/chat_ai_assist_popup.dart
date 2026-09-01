@@ -419,7 +419,7 @@ class _ChatAiAssistCardState extends State<ChatAiAssistCard> {
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(_errorText!,
-                  style: TextStyle(fontSize: 12, color: _cs.error)),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.error)),
             ),
           if (_hasResult) ...[
             const SizedBox(height: 8),

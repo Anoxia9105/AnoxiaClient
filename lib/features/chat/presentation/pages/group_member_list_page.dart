@@ -108,8 +108,7 @@ class _GroupMemberListPageState extends ConsumerState<GroupMemberListPage> {
                           ),
                           child: Text(
                             'chat_admin_role'.tr(),
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: Theme.of(context).textTheme.labelSmall!.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
                                   .onPrimaryContainer,

@@ -91,8 +91,7 @@ class FavoritesListPanel extends StatelessWidget {
               ),
               child: Text(
                 'favorite_count'.tr(args: [totalCount.toString()]),
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   color: cs.primary,
                   fontWeight: FontWeight.w600,
                 ),
@@ -159,8 +158,7 @@ class FavoritesListPanel extends StatelessWidget {
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
                       hintText: 'favorite_search_hint'.tr(),
-                      hintStyle: TextStyle(
-                        fontSize: 12,
+                      hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
                         color: cs.onSurfaceVariant.withValues(alpha: .7),
                       ),
                       prefixIconConstraints: const BoxConstraints.tightFor(
@@ -265,8 +263,7 @@ class FavoritesListItem extends StatelessWidget {
                       displayFavoriteSummary(item, item.summary),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w600,
                         height: 1.35,
                         color: cs.onSurface,
@@ -283,8 +280,7 @@ class FavoritesListItem extends StatelessWidget {
                               item.senderDisplayName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: Theme.of(context).textTheme.labelSmall!.copyWith(
                                 color: cs.onSurfaceVariant,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -293,8 +289,7 @@ class FavoritesListItem extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             formatFavoriteDate(item.createdAt),
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: Theme.of(context).textTheme.labelSmall!.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
                           ),
@@ -359,8 +354,7 @@ class FavoriteTypeFilterChip extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   fontWeight: FontWeight.w600,
                   color: selected ? cs.onPrimary : cs.onSurfaceVariant,
                 ),
@@ -396,8 +390,7 @@ class FavoriteTypeChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             favoriteTypeLabel(type),
-            style: TextStyle(
-              fontSize: 11,
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
             ),

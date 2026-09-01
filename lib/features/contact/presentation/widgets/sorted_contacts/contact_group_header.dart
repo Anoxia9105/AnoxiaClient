@@ -20,7 +20,7 @@ class ContactGroupHeader extends StatelessWidget {
       width: double.infinity,
       child: Text(
         safeTag,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.bodySmall!.copyWith( fontWeight: FontWeight.bold),
       ),
     );
   }

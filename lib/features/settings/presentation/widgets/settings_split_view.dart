@@ -163,8 +163,7 @@ class _SettingsNavigationList extends StatelessWidget {
               destination.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),

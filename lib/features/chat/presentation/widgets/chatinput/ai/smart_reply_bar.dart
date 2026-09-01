@@ -206,7 +206,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
                     size: 12, color: _cs.primary),
                 const SizedBox(width: 4),
                 Text('chat_ai.smart_reply'.tr(),
-                    style: TextStyle(fontSize: 11, color: _cs.onSurfaceVariant)),
+                    style: Theme.of(context).textTheme.labelSmall!.copyWith( color: _cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -230,8 +230,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
                             child: CircularProgressIndicator(strokeWidth: 1.5)),
                         const SizedBox(width: 6),
                         Text('note_ai.generating'.tr(),
-                            style: TextStyle(
-                                fontSize: 11, color: _cs.onSurfaceVariant)),
+                            style: Theme.of(context).textTheme.labelSmall!.copyWith( color: _cs.onSurfaceVariant)),
                       ],
                     ),
                   )
@@ -270,7 +269,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
           color: _cs.surfaceContainerHighest.withValues(alpha: .35),
         ),
         child: Text(text,
-            style: TextStyle(fontSize: 12, color: _cs.onSurface)),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith( color: _cs.onSurface)),
       ),
     );
   }

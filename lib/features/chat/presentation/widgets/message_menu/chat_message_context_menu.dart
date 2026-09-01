@@ -189,7 +189,7 @@ class _ChatMessageContextMenuState
             children: [
               HugeIcon(icon: icon, size: 16, color: color),
               const SizedBox(width: 10),
-              Text(label, style: TextStyle(fontSize: 12, color: color)),
+              Text(label, style: Theme.of(context).textTheme.bodySmall!.copyWith( color: color)),
             ],
           ),
         ),

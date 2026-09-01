@@ -107,8 +107,7 @@ class ContactList extends ConsumerWidget {
           'contact_status_summary'.tr(
             args: [totalCount.toString(), onlineCount.toString()],
           ),
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),

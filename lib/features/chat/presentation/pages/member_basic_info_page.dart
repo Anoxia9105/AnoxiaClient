@@ -52,8 +52,7 @@ class MemberBasicInfoPage extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'member_not_contact_hint'.tr(),
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
                         color: colorScheme.onSecondaryContainer,
                       ),
                     ),

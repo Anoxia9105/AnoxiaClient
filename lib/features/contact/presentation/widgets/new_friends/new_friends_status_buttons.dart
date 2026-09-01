@@ -61,8 +61,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             backgroundColor: cs.primary,
             foregroundColor: cs.onPrimary,
-            textStyle: const TextStyle(
-              fontSize: 12,
+            textStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -82,8 +81,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             foregroundColor: cs.error,
             side: BorderSide(color: cs.error.withValues(alpha: 0.45)),
-            textStyle: const TextStyle(
-              fontSize: 12,
+            textStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -120,8 +118,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               fontWeight: FontWeight.w600,
               color: color,
             ),

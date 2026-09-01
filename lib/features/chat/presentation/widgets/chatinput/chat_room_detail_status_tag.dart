@@ -43,8 +43,7 @@ class ChatRoomDetailStatusTag extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               color: cs.onSurfaceVariant.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,

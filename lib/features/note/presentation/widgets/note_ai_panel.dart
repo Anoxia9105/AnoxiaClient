@@ -368,10 +368,10 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('note_ai.title'.tr(),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.2)),
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w800, letterSpacing: -.2)),
                       if (hasSelection)
                         Text('note_ai.selection_scope'.tr(),
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary)),
+                            style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w500, color: cs.primary)),
                     ],
                   ),
                 ),

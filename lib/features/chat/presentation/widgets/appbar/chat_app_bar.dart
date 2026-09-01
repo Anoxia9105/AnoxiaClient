@@ -214,8 +214,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           'official_room_list_hint'.tr(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 12,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
@@ -229,7 +228,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           'appbar_user_typing'.tr(),
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Colors.grey[600]),
         ),
       );
     }
@@ -253,7 +252,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Colors.grey[600]),
               ),
             ),
           ],

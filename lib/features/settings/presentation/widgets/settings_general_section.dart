@@ -308,7 +308,7 @@ class _TextScaleTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (final v in [0.9, 1.0, 1.1, 1.2])
-                Text(labels[v]!.tr(), style: TextStyle(fontSize: 11, color: v == value ? scheme.primary : scheme.onSurfaceVariant, fontWeight: v == value ? FontWeight.w700 : FontWeight.w400)),
+                Text(labels[v]!.tr(), style: Theme.of(context).textTheme.labelSmall!.copyWith( color: v == value ? scheme.primary : scheme.onSurfaceVariant, fontWeight: v == value ? FontWeight.w700 : FontWeight.w400)),
             ],
           ),
         ],

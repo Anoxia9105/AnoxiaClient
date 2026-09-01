@@ -38,8 +38,7 @@ class NoteAiActionSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('note_ai_capabilities'.tr(),
-            style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: .4, color: cs.onSurfaceVariant)),
+            style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w600, letterSpacing: .4, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -47,7 +46,7 @@ class NoteAiActionSelector extends StatelessWidget {
           children: [
             for (final a in NoteAiAction.values)
               ChoiceChip(
-                label: Text(a.label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                label: Text(a.label, style: Theme.of(context).textTheme.bodySmall!.copyWith( fontWeight: FontWeight.w500)),
                 avatar: HugeIcon(
                     icon: a.icon,
                     size: 14,
@@ -78,7 +77,7 @@ class NoteAiActionSelector extends StatelessWidget {
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: 'note_ai.instruction_hint'.tr(),
-                      hintStyle: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: .7)),
+                      hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith( color: cs.onSurfaceVariant.withValues(alpha: .7)),
                       filled: true,
                       fillColor: cs.surfaceContainerHighest.withValues(alpha: .5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
@@ -162,7 +161,7 @@ class NoteAiPreviewArea extends StatelessWidget {
                 children: [
                   HugeIcon(icon: HugeIcons.strokeRoundedEye, size: 12, color: cs.primary),
                   const SizedBox(width: 4),
-                  Text('ai_preview_label'.tr(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.primary)),
+                  Text('ai_preview_label'.tr(), style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w600, color: cs.primary)),
                 ],
               ),
             ),
@@ -174,7 +173,7 @@ class NoteAiPreviewArea extends StatelessWidget {
                   color: cs.tertiaryContainer.withValues(alpha: .5),
                   borderRadius: BorderRadius.circular(RadiusToken.sm),
                 ),
-                child: Text('note_ai_word_count'.tr(args: [preview.length.toString()]), style: TextStyle(fontSize: 11, color: cs.onTertiaryContainer)),
+                child: Text('note_ai_word_count'.tr(args: [preview.length.toString()]), style: Theme.of(context).textTheme.labelSmall!.copyWith( color: cs.onTertiaryContainer)),
               ),
             const Spacer(),
             if (!empty)
@@ -230,7 +229,7 @@ class NoteAiPreviewArea extends StatelessWidget {
                             ),
                             const SizedBox(height: 10),
                             Text('note_ai.preview_empty'.tr(),
-                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                                style: Theme.of(context).textTheme.bodySmall!.copyWith( color: cs.onSurfaceVariant)),
                           ],
                         ),
                       )
@@ -268,7 +267,7 @@ class _NoteAiSkeleton extends StatelessWidget {
         if (thinking != null && thinking!.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(thinking!,
-              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: .6)),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith( color: cs.onSurfaceVariant.withValues(alpha: .6)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ],
@@ -338,7 +337,7 @@ class NoteAiActionsRow extends StatelessWidget {
                 icon: HugeIcons.strokeRoundedSparkles,
                 size: 16,
                 color: (action == null) ? cs.onSurface.withValues(alpha: .4) : cs.onPrimary),
-            label: Text('note_ai.run'.tr(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+            label: Text('note_ai.run'.tr(), style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w700)),
           ),
         ),
         AnimatedSwitcher(

@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:flutter/material.dart';
 
 /// 联系人详情头部组件
@@ -47,8 +47,7 @@ class ContactDetailHeader extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               remark!,
-              style: TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),

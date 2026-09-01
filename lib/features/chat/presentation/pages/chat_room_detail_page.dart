@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/features/chat/models/message_item.dart';
@@ -91,8 +91,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     return Center(
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 11,
+        style: Theme.of(context).textTheme.labelSmall!.copyWith(
           color: Theme.of(
             context,
           ).colorScheme.onSurface.withValues(alpha: 0.45),

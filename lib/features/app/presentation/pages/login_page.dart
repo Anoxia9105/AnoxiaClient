@@ -191,7 +191,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'login_scan_or'.tr(),
-            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith( color: colorScheme.onSurfaceVariant),
           ),
         ),
         const Expanded(child: Divider()),
@@ -412,7 +412,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(RadiusToken.lg),
           ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: Theme.of(context).textTheme.titleMedium!.copyWith( fontWeight: FontWeight.w600),
         ),
         child: isDisabled
             ? const SizedBox.square(

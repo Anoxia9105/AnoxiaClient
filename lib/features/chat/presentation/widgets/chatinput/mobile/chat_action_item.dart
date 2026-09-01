@@ -43,7 +43,7 @@ class ChatActionItem extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith( color: colorScheme.onSurfaceVariant),
             overflow: TextOverflow.ellipsis,
           ),
         ],

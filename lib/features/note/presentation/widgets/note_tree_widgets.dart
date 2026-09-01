@@ -66,8 +66,7 @@ class NoteTreeFolderRow extends StatelessWidget {
                     folder.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
@@ -85,8 +84,7 @@ class NoteTreeFolderRow extends StatelessWidget {
                     ),
                     child: Text(
                       folder.totalNoteCount.toString(),
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
@@ -189,8 +187,7 @@ class NoteTreeRow extends StatelessWidget {
                         _buildHighlighted(
                           note.preview.trim(),
                           query,
-                          TextStyle(
-                            fontSize: 11,
+                          Theme.of(context).textTheme.labelSmall!.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
                           colorScheme.primary,

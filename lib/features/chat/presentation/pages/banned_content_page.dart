@@ -34,8 +34,7 @@ class BannedContentPage extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               'chat_room_banned_status'.tr(),
-              style: TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: cs.error,
                 fontWeight: FontWeight.w600,
               ),
@@ -44,8 +43,7 @@ class BannedContentPage extends StatelessWidget {
             Text(
               'chat_room_banned_hint'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.labelSmall!.copyWith(
                 color: cs.onSurfaceVariant,
                 height: 1.4,
               ),

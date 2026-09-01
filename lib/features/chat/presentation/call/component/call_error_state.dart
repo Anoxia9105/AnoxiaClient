@@ -159,8 +159,7 @@ class _CallErrorStateState extends ConsumerState<CallErrorState> {
                           )
                         : Text(
                             'call_retry'.tr(),
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: Theme.of(context).textTheme.titleMedium!.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),

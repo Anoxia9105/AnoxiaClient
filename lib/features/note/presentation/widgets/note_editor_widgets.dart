@@ -116,14 +116,13 @@ class NoteEditorEmpty extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'note_editor_empty_title'.tr(),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith( fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             'note_editor_empty_subtitle'.tr(),
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
@@ -178,8 +177,7 @@ class EditorTagChip extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   color: selected
                       ? colorScheme.primary

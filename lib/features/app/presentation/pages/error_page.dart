@@ -109,8 +109,7 @@ class ErrorPage extends StatelessWidget {
                 Text(
                   messageText,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     height: 1.5,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -127,8 +126,7 @@ class ErrorPage extends StatelessWidget {
                     ),
                     child: SelectableText(
                       detailsText,
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
                         fontFamily: 'monospace',
                         color: scheme.onSurfaceVariant,
                       ),

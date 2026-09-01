@@ -442,8 +442,7 @@ class _ResolvedLinkPreview extends StatelessWidget {
                             metadata.description,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
