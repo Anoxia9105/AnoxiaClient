@@ -109,6 +109,9 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
       }
     } else if (value.isPlaying != _isPlaying) {
       setState(() => _isPlaying = value.isPlaying);
+    } else {
+      // 位置变化时也触发重建，使右下角时间进度文本实时刷新
+      setState(() {});
     }
   }
 

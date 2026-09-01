@@ -7,14 +7,11 @@ import 'dart:math' as math;
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
-import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pasteboard/pasteboard.dart';
 
 import 'note_ai_panel.dart';
 import 'note_editor_parts.dart';
@@ -164,76 +161,6 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
     return Document();
   }
 
-  Future<void> _handlePasteWithStyle(QuillController controller) async {
-    // 1. 优先处理图片（最明确的富媒体）
-    try {
-      final imageBytes = await Pasteboard.image;
-      if (imageBytes != null && imageBytes.isNotEmpty) {
-        if (_isDuplicateImagePaste(imageBytes)) return;
-        if (!mounted) return;
-        _lastHandledImageBytes = Uint8List.fromList(imageBytes);
-        _lastImagePasteTime = DateTime.now();
-        await notePasteImageBytes(context, ref, controller, imageBytes);
-        return;
-      }
-    } catch (_) {}
-
-    // 2. 尝试处理富文本 HTML（保留加粗/颜色等）
-    try {
-      final htmlData = await Clipboard.getData('text/html');
-      final html = htmlData?.text;
-      if (html != null && html.isNotEmpty && html.contains('<')) {
-        if (!mounted) return;
-        final selection = controller.selection;
-        if (!selection.isValid) return;
-        final delta = _tryParseHtmlToDelta(html);
-        if (delta != null && delta.isNotEmpty) {
-          final index = selection.start;
-          final length = selection.end - selection.start;
-          controller.replaceText(index, length, delta, null);
-          controller.updateSelection(
-            TextSelection.collapsed(offset: index + delta.length),
-            ChangeSource.local,
-          );
-          return;
-        }
-      }
-    } catch (_) {}
-
-    // 3. 回退到纯文本粘贴（保留换行符规范化，与聊天输入框一致）
-    try {
-      final textData = await Clipboard.getData(Clipboard.kTextPlain);
-      final text = textData?.text;
-      if (text == null || text.isEmpty) return;
-      if (!mounted) return;
-      final normalized = text.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-      final selection = controller.selection;
-      final index = selection.isValid ? selection.start : controller.document.length - 1;
-      final length = selection.isValid && !selection.isCollapsed
-          ? selection.end - selection.start
-          : 0;
-      controller.replaceText(index, length, normalized, null);
-      controller.updateSelection(
-        TextSelection.collapsed(offset: index + normalized.length),
-        ChangeSource.local,
-      );
-    } catch (_) {}
-  }
-
-  Delta? _tryParseHtmlToDelta(String html) {
-    try {
-      // 使用与 Markdown 导入相同的 HtmlToDelta，保留加粗/斜体/下划线/颜色等行内样式
-      final delta = HtmlToDelta().convert(html);
-      // 过滤掉空 Delta（仅换行）
-      if (delta.isEmpty) return null;
-      // 若 Delta 仅含单个换行则视为无效
-      if (delta.length == 1 && delta.first.data == '\n') return null;
-      return delta;
-    } catch (_) {
-      return null;
-    }
-  }
-
   void _teardownEditor() {
     _dismissSlashMenu();
     _showSearch = false;
@@ -321,9 +248,11 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
       return const NoteEditorEmpty();
     }
 
-    return Focus(
-      autofocus: false,
-      onKeyEvent: (node, event) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Focus(
+        autofocus: false,
+        onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             HardwareKeyboard.instance.isControlPressed &&
             event.logicalKey == LogicalKeyboardKey.keyF) {
@@ -336,18 +265,9 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
           _sessionService.save().catchError((Object _) => false);
           return KeyEventResult.handled;
         }
-        // 粘贴：统一拦截 Ctrl/Cmd+V，优先处理图片与富文本 HTML 以保留样式
-        // 文本粘贴不再交由 Quill 默认的纯文本路径，避免加粗/颜色丢失
-        if (event is KeyDownEvent &&
-            (HardwareKeyboard.instance.isControlPressed ||
-                HardwareKeyboard.instance.isMetaPressed) &&
-            event.logicalKey == LogicalKeyboardKey.keyV) {
-          final controller = _quillController;
-          if (controller != null) {
-            unawaited(_handlePasteWithStyle(controller));
-          }
-          return KeyEventResult.handled;
-        }
+        // 粘贴不再拦截 Ctrl/Cmd+V — Quill v11 内置剪贴板处理已保留加粗/颜色等
+        // 行内样式；外部拦截反而导致 HtmlToDelta 转换失败后回退纯文本，丢失格式。
+        // 图片粘贴由 QuillClipboardConfig.onImagePaste 回调处理（见 _initEditor）。
         return KeyEventResult.ignored;
       },
       child: Column(
@@ -450,6 +370,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
                 showNoteVersionsDialog(ctx, session.noteId),
           ),
         ],
+        ),
       ),
     );
   }
