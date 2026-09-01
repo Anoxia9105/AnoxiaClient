@@ -135,9 +135,10 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
       selection: const TextSelection.collapsed(offset: 0),
       config: QuillControllerConfig(
         clipboardConfig: QuillClipboardConfig(
+          enableExternalRichPaste: true,
           onImagePaste: (imageBytes) async {
-            // 去重：若 Focus 层已处理过同一图片，则跳过
             if (_isDuplicateImagePaste(imageBytes)) return null;
+            if (!mounted) return null;
             _lastHandledImageBytes = Uint8List.fromList(imageBytes);
             _lastImagePasteTime = DateTime.now();
             await notePasteImageBytes(context, ref, controller, imageBytes);
