@@ -81,47 +81,145 @@ Future<void> noteSetLink(
 /// 在按钮下方弹出气泡面板（仿聊天输入框的气泡样式）。
 ///
 /// 返回关闭函数；点击气泡外部会自动关闭。
+/// 使用 OverlayEntry + GlobalKey 精确计算箭头偏移，确保气泡尖角指向按钮中心。
+///
+/// [anchorKey] 按钮的 GlobalKey，提供时可精确获取按钮 render box；不提供时退回 Builder 上下文查找。
 Function showNoteBubble(
   BuildContext anchorContext, {
   required Widget child,
   double arrowOffset = 20,
   double maxWidth = 260,
+  GlobalKey? anchorKey,
 }) {
   final colorScheme = Theme.of(anchorContext).colorScheme;
-  return Toast.showWidget(
-    anchorContext,
-    direction: PreferDirection.bottomLeft,
-    child: Material(
-      color: Colors.transparent,
-      child: BubbleWidget(
-        arrowDirection: AxisDirection.up,
-        arrowOffset: arrowOffset,
-        backgroundColor: colorScheme.surface,
-        border: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: .8),
-          width: .5,
-        ),
-        borderRadius: BorderRadius.circular(RadiusToken.lg),
-        shadows: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .16),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+  RenderBox? getRenderBox() {
+    if (anchorKey != null && anchorKey.currentContext != null) {
+      return anchorKey.currentContext!.findRenderObject() as RenderBox?;
+    }
+    return anchorContext.findRenderObject() as RenderBox?;
+  }
+
+  final renderBox = getRenderBox();
+  if (renderBox == null || !renderBox.hasSize) {
+    return Toast.showWidget(
+      anchorContext,
+      direction: PreferDirection.bottomLeft,
+      child: Material(
+        color: Colors.transparent,
+        child: BubbleWidget(
+          arrowDirection: AxisDirection.up,
+          arrowOffset: arrowOffset,
+          backgroundColor: colorScheme.surface,
+          border: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: .8),
+            width: .5,
           ),
-        ],
-        contentBuilder: (_) => ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: child,
+          borderRadius: BorderRadius.circular(RadiusToken.lg),
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .16),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          contentBuilder: (_) => ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: child,
+          ),
         ),
       ),
+    );
+  }
+
+  final buttonGlobal = renderBox.localToGlobal(Offset.zero);
+  final screenSize = MediaQuery.sizeOf(anchorContext);
+  final targetRect = Rect.fromLTWH(
+    buttonGlobal.dx,
+    buttonGlobal.dy,
+    renderBox.size.width,
+    renderBox.size.height,
+  );
+  final bubbleWidth = maxWidth;
+  final estimatedHeight = 200.0;
+  final placement = resolveAnchoredBubblePlacement(
+    targetRect: targetRect,
+    screenSize: screenSize,
+    bubbleWidth: bubbleWidth,
+    estimatedHeight: estimatedHeight,
+    preferRightArrow: targetRect.center.dx >= screenSize.width / 2,
+    arrowInset: 20,
+    safeTop: MediaQuery.paddingOf(anchorContext).top,
+  );
+
+  // 修正：left 不能超出屏幕右边界；arrowOffset 必须在气泡宽度范围内
+  final clampedLeft = placement.left.clamp(8.0, screenSize.width - bubbleWidth - 8.0);
+  final clampedArrowOffset = placement.arrowOffset.clamp(20.0, bubbleWidth - 20.0);
+
+  final overlay = Overlay.of(anchorContext, rootOverlay: true);
+  late final OverlayEntry entry;
+  bool closed = false;
+
+  void close() {
+    if (closed) return;
+    closed = true;
+    entry.remove();
+  }
+
+  entry = OverlayEntry(
+    builder: (_) => Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => close(),
+            child: const SizedBox.expand(),
+          ),
+        ),
+        Positioned(
+          left: clampedLeft,
+          top: placement.showBelow ? placement.anchorY : null,
+          bottom: placement.showBelow ? null : screenSize.height - placement.anchorY,
+          child: Material(
+            color: Colors.transparent,
+            child: BubbleWidget(
+              arrowDirection: placement.arrowDirection,
+              arrowOffset: clampedArrowOffset,
+              backgroundColor: colorScheme.surface,
+              border: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: .8),
+                width: .5,
+              ),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .16),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              contentBuilder: (_) => SizedBox(
+                width: bubbleWidth,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: placement.maxHeight - 10),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     ),
   );
+
+  overlay.insert(entry);
+  return close;
 }
 
 /// 选择文字/背景颜色：以气泡方式弹出颜色面板（仿聊天输入框），
 /// 锚定在按钮下方，点击颜色立即生效并关闭。
 void notePickColorBubble(
   BuildContext buttonContext,
+  GlobalKey anchorKey,
   QuillController controller,
   FocusNode focusNode, {
   required bool background,
@@ -129,6 +227,7 @@ void notePickColorBubble(
   Function? onCancel;
   onCancel = showNoteBubble(
     buttonContext,
+    anchorKey: anchorKey,
     maxWidth: 300,
     child: ColorsBox.buildColorsWidget(
       (hex) {
@@ -166,6 +265,7 @@ void notePickColorBubble(
 /// 文本输入框自动回显选中内容，只需填写链接即可。
 void noteSetLinkBubble(
   BuildContext buttonContext,
+  GlobalKey anchorKey,
   QuillController controller,
   FocusNode focusNode,
 ) {
@@ -190,6 +290,7 @@ void noteSetLinkBubble(
   Function? onCancel;
   onCancel = showNoteBubble(
     buttonContext,
+    anchorKey: anchorKey,
     maxWidth: 320,
     child: NoteLinkBubble(
       textController: textController,

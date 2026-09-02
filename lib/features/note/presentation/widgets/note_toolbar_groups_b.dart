@@ -29,15 +29,17 @@ class NoteToolbarLinkButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final btnKey = GlobalKey();
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
         final isLinked = controller.getSelectionStyle().attributes.containsKey(Attribute.link.key);
         return IconButton(
+          key: btnKey,
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_link'.tr(),
           visualDensity: VisualDensity.compact,
-          onPressed: () => noteSetLinkBubble(context, controller, focusNode),
+          onPressed: () => noteSetLinkBubble(context, btnKey, controller, focusNode),
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedLink01,
             size: 16,
@@ -180,101 +182,102 @@ class NoteToolbarAiButton extends StatelessWidget {
       );
     }
     // 兼容旧版：气泡快捷入口
-    return Builder(
-      builder: (buttonContext) => IconButton(
-        mouseCursor: SystemMouseCursors.click,
-        tooltip: 'note_ai.title'.tr(),
-        visualDensity: VisualDensity.compact,
-        onPressed: () {
-          if (onAiTap != null && noteId == null && onTitleSelected == null) {
-            onAiTap!.call();
-            return;
-          }
-          Function? close;
-          close = showNoteBubble(
-            buttonContext,
-            maxWidth: 280,
-            child: Material(
-              color: Colors.transparent,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedFileSearch,
-                    label: 'note_ai.action_summarize'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'SUMMARIZE');
-                    },
-                  ),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedBrush,
-                    label: 'note_ai.action_polish'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'POLISH');
-                    },
-                  ),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedExpand,
-                    label: 'note_ai.action_expand'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'EXPAND');
-                    },
-                  ),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedText,
-                    label: 'note_ai.action_title'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'TITLE');
-                    },
-                  ),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedTranslate,
-                    label: 'note_ai.action_translate'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'TRANSLATE');
-                    },
-                  ),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedPen01,
-                    label: 'note_ai.action_continue'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'CONTINUE');
-                    },
-                  ),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedMagicWand01,
-                    label: 'note_ai.action_custom'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, 'CUSTOM');
-                    },
-                  ),
-                  const Divider(height: 1, thickness: .5),
-                  NoteToolbarAiBubbleTile(
-                    icon: HugeIcons.strokeRoundedSparkles,
-                    label: 'note_ai.title'.tr(),
-                    onTap: () {
-                      close?.call();
-                      _openAiSheet(buttonContext, null);
-                    },
-                  ),
-                ],
-              ),
+    final btnKey = GlobalKey();
+    return IconButton(
+      key: btnKey,
+      mouseCursor: SystemMouseCursors.click,
+      tooltip: 'note_ai.title'.tr(),
+      visualDensity: VisualDensity.compact,
+      onPressed: () {
+        if (onAiTap != null && noteId == null && onTitleSelected == null) {
+          onAiTap!.call();
+          return;
+        }
+        Function? close;
+        close = showNoteBubble(
+          context,
+          anchorKey: btnKey,
+          maxWidth: 280,
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedFileSearch,
+                  label: 'note_ai.action_summarize'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'SUMMARIZE');
+                  },
+                ),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedBrush,
+                  label: 'note_ai.action_polish'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'POLISH');
+                  },
+                ),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedExpand,
+                  label: 'note_ai.action_expand'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'EXPAND');
+                  },
+                ),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedText,
+                  label: 'note_ai.action_title'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'TITLE');
+                  },
+                ),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedTranslate,
+                  label: 'note_ai.action_translate'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'TRANSLATE');
+                  },
+                ),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedPen01,
+                  label: 'note_ai.action_continue'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'CONTINUE');
+                  },
+                ),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedMagicWand01,
+                  label: 'note_ai.action_custom'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, 'CUSTOM');
+                  },
+                ),
+                const Divider(height: 1, thickness: .5),
+                NoteToolbarAiBubbleTile(
+                  icon: HugeIcons.strokeRoundedSparkles,
+                  label: 'note_ai.title'.tr(),
+                  onTap: () {
+                    close?.call();
+                    _openAiSheet(context, null);
+                  },
+                ),
+              ],
             ),
-          );
-        },
-        icon: HugeIcon(
-          icon: HugeIcons.strokeRoundedSparkles,
-          size: 16,
-          color: colorScheme.primary,
-          strokeWidth: 1.8,
-        ),
+          ),
+        );
+      },
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedSparkles,
+        size: 16,
+        color: colorScheme.primary,
+        strokeWidth: 1.8,
       ),
     );
   }
@@ -293,33 +296,35 @@ class NoteToolbarColorGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fgKey = GlobalKey();
+    final bgKey = GlobalKey();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Builder(
-          builder: (buttonContext) => ChatQuillColorStyleButton(
-            controller: controller,
-            type: ChatQuillColorStyleType.foreground,
-            tooltip: 'toolbar_text_color'.tr(),
-            onPressed: () => notePickColorBubble(
-              buttonContext,
-              controller,
-              focusNode,
-              background: false,
-            ),
+        ChatQuillColorStyleButton(
+          key: fgKey,
+          controller: controller,
+          type: ChatQuillColorStyleType.foreground,
+          tooltip: 'toolbar_text_color'.tr(),
+          onPressed: () => notePickColorBubble(
+            context,
+            fgKey,
+            controller,
+            focusNode,
+            background: false,
           ),
         ),
-        Builder(
-          builder: (buttonContext) => ChatQuillColorStyleButton(
-            controller: controller,
-            type: ChatQuillColorStyleType.background,
-            tooltip: 'toolbar_bg_color'.tr(),
-            onPressed: () => notePickColorBubble(
-              buttonContext,
-              controller,
-              focusNode,
-              background: true,
-            ),
+        ChatQuillColorStyleButton(
+          key: bgKey,
+          controller: controller,
+          type: ChatQuillColorStyleType.background,
+          tooltip: 'toolbar_bg_color'.tr(),
+          onPressed: () => notePickColorBubble(
+            context,
+            bgKey,
+            controller,
+            focusNode,
+            background: true,
           ),
         ),
       ],

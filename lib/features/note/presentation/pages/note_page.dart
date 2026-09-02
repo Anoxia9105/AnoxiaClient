@@ -97,7 +97,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     // 标题由树面板的 AppBar 提供（与聊天/人员/收藏页一致）：
     // 桌面端靠左显示在树面板栏内，移动端整页居中显示。
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       body: mobile
           ? NoteTreePanel(
               selectedNoteId: null,
@@ -211,10 +211,14 @@ class NoteEditorPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         centerTitle: true,
         title: Text('sidebar_note'.tr()),
+        backgroundColor: colorScheme.surfaceContainerLowest,
+        surfaceTintColor: Colors.transparent,
       ),
       body: const NoteEditor(),
     );

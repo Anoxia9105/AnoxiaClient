@@ -17,12 +17,15 @@ class NoteSearchPanel extends StatefulWidget {
   final QuillController controller;
   final FocusNode editorFocusNode;
   final VoidCallback onClose;
+  /// 面板宽度，null 时自适应全屏宽度（用于移动端底部上滑面板）
+  final double? width;
 
   const NoteSearchPanel({
     super.key,
     required this.controller,
     required this.editorFocusNode,
     required this.onClose,
+    this.width,
   });
 
   @override
@@ -128,7 +131,7 @@ class _NoteSearchPanelState extends State<NoteSearchPanel> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      width: 260,
+      width: widget.width ?? 260,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow.withValues(alpha: .4),
         border: Border(

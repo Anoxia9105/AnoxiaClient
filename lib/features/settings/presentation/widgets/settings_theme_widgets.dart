@@ -141,7 +141,7 @@ class AccentSwatch extends StatelessWidget {
               ),
             ),
             child: selected
-                ? Icon(Icons.check, color: _contrastingTextColor(color), size: 18)
+                ? Center(child: Icon(Icons.check, color: _contrastingTextColor(color), size: 20))
                 : null,
           ),
         ),

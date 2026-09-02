@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pasteboard/pasteboard.dart';
 
 import 'note_ai_panel.dart';
+import 'note_ai_sheet.dart';
 import 'note_editor_clipboard.dart';
 import 'note_editor_parts.dart';
 import 'note_editor_interactions.dart';
@@ -499,6 +501,26 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
 
   /// 切换右侧查找面板；与 AI 面板互斥，关闭时清除查找高亮选区。
   void _toggleSearchPanel() {
+    final mobile = DeviceUtil.isMobile(context);
+    if (mobile) {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: NoteSearchPanel(
+            controller: _quillController!,
+            editorFocusNode: _focusNode,
+            onClose: () => Navigator.of(ctx).pop(),
+            width: double.infinity,
+          ),
+        ),
+      );
+      return;
+    }
     final willShow = !_showSearch;
     setState(() {
       _showSearch = willShow;
@@ -518,6 +540,18 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
 
   /// 切换右侧 AI 面板；与搜索面板互斥
   void _toggleAiPanel() {
+    final mobile = DeviceUtil.isMobile(context);
+    if (mobile) {
+      final controller = _quillController;
+      if (controller == null) return;
+      showNoteAiSheet(
+        context,
+        controller: controller,
+        noteId: widget.session.noteId,
+        onTitle: (t) => _titleControllerOf(widget.session).text = t,
+      );
+      return;
+    }
     setState(() {
       final willShow = !_showAi;
       _showAi = willShow;

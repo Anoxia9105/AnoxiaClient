@@ -191,6 +191,7 @@ class NoteToolbarHeaderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final btnKey = GlobalKey();
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
@@ -214,6 +215,7 @@ class NoteToolbarHeaderButton extends StatelessWidget {
         }
 
         return IconButton(
+          key: btnKey,
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_header'.tr(),
           visualDensity: VisualDensity.compact,
@@ -222,6 +224,7 @@ class NoteToolbarHeaderButton extends StatelessWidget {
             Function? close;
             close = showNoteBubble(
               context,
+              anchorKey: btnKey,
               child: Material(
                 color: Colors.transparent,
                 child: Column(
@@ -310,6 +313,7 @@ class NoteToolbarAlignButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final btnKey = GlobalKey();
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
@@ -324,6 +328,7 @@ class NoteToolbarAlignButton extends StatelessWidget {
         final active = alignValue != null;
 
         return IconButton(
+          key: btnKey,
           mouseCursor: SystemMouseCursors.click,
           tooltip: 'note_align'.tr(),
           visualDensity: VisualDensity.compact,
@@ -332,6 +337,7 @@ class NoteToolbarAlignButton extends StatelessWidget {
             Function? close;
             close = showNoteBubble(
               context,
+              anchorKey: btnKey,
               child: Material(
                 color: Colors.transparent,
                 child: Column(
