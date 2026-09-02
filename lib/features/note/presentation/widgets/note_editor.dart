@@ -8,14 +8,18 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pasteboard/pasteboard.dart';
 
 import 'note_ai_panel.dart';
+import 'note_editor_clipboard.dart';
 import 'note_editor_parts.dart';
 import 'note_editor_interactions.dart';
+import 'note_editor_platform_clipboard.dart';
 import 'note_editor_widgets.dart';
 import 'note_markdown_io.dart';
 import 'note_pdf_io.dart';
@@ -73,6 +77,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   Uint8List? _lastHandledImageBytes;
   DateTime? _lastImagePasteTime;
   double _lastBottomViewInset = 0;
+  NotePlatformClipboardBinding? _platformClipboardBinding;
 
   /// 会话服务实例（懒加载缓存一次，后续复用）
   NoteSessionService? _cachedSessionService;
@@ -103,22 +108,45 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
     WidgetsBinding.instance.addObserver(this);
     _focusNode.addListener(_onFocusChanged);
     _initEditor(widget.session);
+    _platformClipboardBinding = bindNotePlatformClipboard(
+      isActive: () => mounted && _focusNode.hasFocus,
+      pasteHtml: (html, plainText) async {
+        final controller = _quillController;
+        if (controller == null) return;
+        pasteNoteEditorHtml(controller, html, plainTextFallback: plainText);
+      },
+      pasteText: (plainText) async {
+        final controller = _quillController;
+        if (controller != null) {
+          pasteNoteEditorPlainText(controller, plainText);
+        }
+      },
+      pasteImage: _pasteImageBytes,
+    );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _lastBottomViewInset = MediaQuery.of(context).viewInsets.bottom;
+    _lastBottomViewInset = _bottomViewInset;
   }
 
   @override
   void didChangeMetrics() {
     super.didChangeMetrics();
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    if (!mounted) return;
+    final bottomInset = _bottomViewInset;
     if (bottomInset > _lastBottomViewInset) {
-      _scrollCaretIntoView();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollCaretIntoView();
+      });
     }
     _lastBottomViewInset = bottomInset;
+  }
+
+  double get _bottomViewInset {
+    final view = View.of(context);
+    return view.viewInsets.bottom / view.devicePixelRatio;
   }
 
   void _scrollCaretIntoView() {
@@ -127,6 +155,46 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
     final controller = _quillController;
     if (controller == null || !controller.selection.isValid) return;
     editorState.bringIntoView(controller.selection.base);
+  }
+
+  KeyEventResult? _handleEditorKeyPressed(
+    KeyEvent event,
+    QuillController controller,
+  ) {
+    if (event is! KeyDownEvent ||
+        !(HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed) ||
+        event.logicalKey != LogicalKeyboardKey.keyV) {
+      return null;
+    }
+
+    if (kIsWeb) {
+      unawaited(
+        _platformClipboardBinding!.paste().then((handled) async {
+          if (!handled) await controller.clipboardPaste();
+        }),
+      );
+      return KeyEventResult.handled;
+    }
+
+    unawaited(
+      handleNoteEditorPaste(
+        readImage: () => Pasteboard.image,
+        pasteImage: _pasteImageBytes,
+        pasteRichText: controller.clipboardPaste,
+      ),
+    );
+    return KeyEventResult.handled;
+  }
+
+  Future<void> _pasteImageBytes(Uint8List bytes) async {
+    final controller = _quillController;
+    if (controller == null || _isDuplicateImagePaste(bytes) || !mounted) {
+      return;
+    }
+    _lastHandledImageBytes = Uint8List.fromList(bytes);
+    _lastImagePasteTime = DateTime.now();
+    await notePasteImageBytes(context, ref, controller, bytes);
   }
 
   @override
@@ -254,6 +322,7 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
   @override
   void dispose() {
     _disposed = true;
+    _platformClipboardBinding?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_slashHardwareKeyHandler);
     _dismissSlashMenu();
@@ -281,123 +350,148 @@ class _NoteEditorBodyState extends ConsumerState<NoteEditorBody>
       body: Focus(
         autofocus: false,
         onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            HardwareKeyboard.instance.isControlPressed &&
-            event.logicalKey == LogicalKeyboardKey.keyF) {
-          _toggleSearchPanel();
-          return KeyEventResult.handled;
-        }
-        if (event is KeyDownEvent &&
-            HardwareKeyboard.instance.isControlPressed &&
-            event.logicalKey == LogicalKeyboardKey.keyS) {
-          _sessionService.save().catchError((Object _) => false);
-          return KeyEventResult.handled;
-        }
-        // 粘贴不再拦截 Ctrl/Cmd+V — Quill v11 内置剪贴板处理已保留加粗/颜色等
-        // 行内样式；外部拦截反而导致 HtmlToDelta 转换失败后回退纯文本，丢失格式。
-        // 图片粘贴由 QuillClipboardConfig.onImagePaste 回调处理（见 _initEditor）。
-        return KeyEventResult.ignored;
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-                        child: NoteEditorTitleArea(
-                          session: session,
-                          titleController: _titleControllerOf(session),
-                          onTitleChanged: (value) {
-                            _sessionService.updateTitle(value);
-                            _scheduleSave();
-                          },
-                          onTitleSubmitted: (_) => _saveNow(),
-                          onSaveNow: _saveNow,
+          if (event is KeyDownEvent &&
+              HardwareKeyboard.instance.isControlPressed &&
+              event.logicalKey == LogicalKeyboardKey.keyF) {
+            _toggleSearchPanel();
+            return KeyEventResult.handled;
+          }
+          if (event is KeyDownEvent &&
+              HardwareKeyboard.instance.isControlPressed &&
+              event.logicalKey == LogicalKeyboardKey.keyS) {
+            _sessionService.save().catchError((Object _) => false);
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                          child: NoteEditorTitleArea(
+                            session: session,
+                            titleController: _titleControllerOf(session),
+                            onTitleChanged: (value) {
+                              _sessionService.updateTitle(value);
+                              _scheduleSave();
+                            },
+                            onTitleSubmitted: (_) => _saveNow(),
+                            onSaveNow: _saveNow,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      NoteToolbar(
-                        controller: controller,
-                        focusNode: _focusNode,
-                        searchActive: _showSearch,
-                        onSearchToggle: _toggleSearchPanel,
-                        aiActive: _showAi,
-                        onAiToggle: _toggleAiPanel,
-                      ),
-                      Expanded(
-                        child: QuillEditor.basic(
-                          focusNode: _focusNode,
+                        const SizedBox(height: 4),
+                        NoteToolbar(
                           controller: controller,
-                          scrollController: _scrollController,
-                          config: QuillEditorConfig(
-                            enableSelectionToolbar: false,
-                            placeholder: 'note_content_placeholder'.tr(),
-                            autoFocus: false,
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                            customStyles: QuillStyleConfig.get(
-                              context,
-                              checkboxBuilder: const NoteTaskCheckboxBuilder(),
-                              listLineSpacing: const VerticalSpacing(3, 3),
-                            ),
-                            textSpanBuilder: noteTextSpanBuilder,
-                            editorKey: _editorKey,
-                            embedBuilders: [
-                              NoteQuillImageBuild(),
-                              NoteQuillDividerBuild(),
-                            ],
-                            customShortcuts: const {
-                              // 关闭 flutter_quill 自带的查找弹窗（带遮罩），
-                              // Ctrl+F 交由外层 Focus 切换右侧查找面板。
-                              SingleActivator(
-                                LogicalKeyboardKey.keyF,
-                                control: true,
-                              ): DoNothingIntent(),
-                              SingleActivator(
-                                LogicalKeyboardKey.keyF,
-                                meta: true,
-                              ): DoNothingIntent(),
+                          focusNode: _focusNode,
+                          searchActive: _showSearch,
+                          onSearchToggle: _toggleSearchPanel,
+                          aiActive: _showAi,
+                          onAiToggle: _toggleAiPanel,
+                        ),
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SingleChildScrollView(
+                                controller: _scrollController,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: constraints.maxHeight,
+                                  ),
+                                  child: QuillEditor.basic(
+                                    focusNode: _focusNode,
+                                    controller: controller,
+                                    scrollController: _scrollController,
+                                    config: QuillEditorConfig(
+                                      scrollable: false,
+                                      onKeyPressed: (event, node) =>
+                                          _handleEditorKeyPressed(
+                                            event,
+                                            controller,
+                                          ),
+                                      enableSelectionToolbar: false,
+                                      placeholder: 'note_content_placeholder'
+                                          .tr(),
+                                      autoFocus: false,
+                                      padding: const EdgeInsets.fromLTRB(
+                                        20,
+                                        12,
+                                        20,
+                                        12,
+                                      ),
+                                      customStyles: QuillStyleConfig.get(
+                                        context,
+                                        checkboxBuilder:
+                                            const NoteTaskCheckboxBuilder(),
+                                        listLineSpacing: const VerticalSpacing(
+                                          3,
+                                          3,
+                                        ),
+                                      ),
+                                      textSpanBuilder: noteTextSpanBuilder,
+                                      editorKey: _editorKey,
+                                      embedBuilders: [
+                                        NoteQuillImageBuild(),
+                                        NoteQuillDividerBuild(),
+                                      ],
+                                      customShortcuts: const {
+                                        // 关闭 flutter_quill 自带的查找弹窗（带遮罩），
+                                        // Ctrl+F 交由外层 Focus 切换右侧查找面板。
+                                        SingleActivator(
+                                          LogicalKeyboardKey.keyF,
+                                          control: true,
+                                        ): DoNothingIntent(),
+                                        SingleActivator(
+                                          LogicalKeyboardKey.keyF,
+                                          meta: true,
+                                        ): DoNothingIntent(),
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
                             },
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                if (_showSearch)
-                  NoteSearchPanel(
-                    controller: controller,
-                    editorFocusNode: _focusNode,
-                    onClose: () => setState(() => _showSearch = false),
-                  )
-                else if (_showAi)
-                  NoteAiPanel(
-                    controller: controller,
-                    noteId: session.noteId,
-                    onTitle: (t) => _titleControllerOf(session).text = t,
-                    onClose: () => setState(() => _showAi = false),
-                  ),
-              ],
+                  if (_showSearch)
+                    NoteSearchPanel(
+                      controller: controller,
+                      editorFocusNode: _focusNode,
+                      onClose: () => setState(() => _showSearch = false),
+                    )
+                  else if (_showAi)
+                    NoteAiPanel(
+                      controller: controller,
+                      noteId: session.noteId,
+                      onTitle: (t) => _titleControllerOf(session).text = t,
+                      onClose: () => setState(() => _showAi = false),
+                    ),
+                ],
+              ),
             ),
-          ),
-          NoteEditorStatusBar(
-            session: session,
-            wordCount: _wordCount,
-            onSaveRetry: () => _sessionService.save(),
-            onShare: _shareNote,
-            onImportMarkdown: _importMarkdown,
-            onExportMarkdown: _exportMarkdown,
-            onExportPdf: _exportPdf,
-            onShowVersions: (ctx) =>
-                showNoteVersionsDialog(ctx, session.noteId),
-          ),
-        ],
+            NoteEditorStatusBar(
+              session: session,
+              wordCount: _wordCount,
+              onSaveRetry: () => _sessionService.save(),
+              onShare: _shareNote,
+              onImportMarkdown: _importMarkdown,
+              onExportMarkdown: _exportMarkdown,
+              onExportPdf: _exportPdf,
+              onShowVersions: (ctx) =>
+                  showNoteVersionsDialog(ctx, session.noteId),
+            ),
+          ],
         ),
       ),
     );
