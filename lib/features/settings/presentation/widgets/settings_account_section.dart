@@ -7,13 +7,11 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 class SettingsAccountSection extends StatelessWidget {
   const SettingsAccountSection({
     super.key,
-    required this.onOpenProfile,
     required this.onOpenQrCode,
     required this.onChangePassword,
     required this.onSwitchAccount,
   });
 
-  final VoidCallback onOpenProfile;
   final VoidCallback onOpenQrCode;
   final VoidCallback onChangePassword;
 
@@ -24,12 +22,6 @@ class SettingsAccountSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _AccountTile(
-          icon: HugeIcons.strokeRoundedUser,
-          title: 'me_page_title'.tr(),
-          subtitle: 'settings_account_profile_subtitle'.tr(),
-          onTap: onOpenProfile,
-        ),
         _divider(context),
         _AccountTile(
           icon: HugeIcons.strokeRoundedQrCode01,

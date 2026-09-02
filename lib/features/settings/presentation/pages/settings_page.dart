@@ -2,7 +2,6 @@ import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/features/me/presentation/pages/change_password_page.dart';
-import 'package:anoxia/features/me/presentation/pages/me_page.dart';
 import 'package:anoxia/features/me/presentation/pages/personal_qr_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/account_switch_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
@@ -199,12 +198,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _feedbackImages.removeAt(index));
   }
 
-  void _openProfile() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const MyPage()));
-  }
-
   void _openPersonalQrCode() {
     final user = ref.read(authControllerProvider).value;
     if (user == null) return;
@@ -266,7 +259,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             subtitle: 'settings_account_subtitle'.tr(),
             icon: HugeIcons.strokeRoundedUserAccount,
             builder: (_) => SettingsAccountSection(
-              onOpenProfile: _openProfile,
               onOpenQrCode: _openPersonalQrCode,
               onChangePassword: _openChangePassword,
               onSwitchAccount: _openSwitchAccount,
@@ -297,8 +289,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onAccentChanged: (index) {
                     ref.read(customAccentColorProvider.notifier).setCustomColor(null);
                     ref.read(themeAccentProvider.notifier).setAccent(index);
+                    final brightness = ref.read(themeModeProvider);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                      brightness: themeMode,
+                      brightness: brightness,
                       accentIndex: index,
                     );
                     ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
