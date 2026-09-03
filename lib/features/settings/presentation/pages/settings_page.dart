@@ -231,9 +231,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final pageState = ref.watch(settingsPageControllerProvider);
-    final themeMode = ref.watch(themeModeProvider);
-    final themeAccentIndex = ref.watch(themeAccentProvider);
-    final customAccentColor = ref.watch(customAccentColorProvider);
     final desktopLayoutPreference = ref.watch(desktopLayoutProvider);
     final appVersionAsync = ref.watch(appVersionProvider);
     final hasUpdateBadge = ref.watch(hasAppUpdateProvider);
@@ -271,17 +268,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             builder: (_) => Column(
               children: [
                 SettingsThemeSection(
-                  selectedBrightness: themeMode,
-                  selectedAccentIndex: themeAccentIndex,
-                  customColor: customAccentColor,
                   onBrightnessChanged: (brightness) {
                     ref.read(themeModeProvider.notifier).setMode(brightness);
                     final compatibilityIndex = AppTheme.compatibilityThemeIndex(
                       brightness: brightness,
-                      accentIndex: themeAccentIndex,
+                      accentIndex: ref.read(themeAccentProvider),
                     );
                     ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
-                    if (customAccentColor != null) {
+                    if (ref.read(customAccentColorProvider) != null) {
                       // 保持自定义色时同步更新兼容索引（避免切回预设时跳色）
                       ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
                     }
@@ -301,8 +295,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     if (color != null) {
                       // 自定义色不依赖 accentIndex，兼容索引仍以当前预设为准
                       final compatibilityIndex = AppTheme.compatibilityThemeIndex(
-                        brightness: themeMode,
-                        accentIndex: themeAccentIndex,
+                        brightness: ref.read(themeModeProvider),
+                        accentIndex: ref.read(themeAccentProvider),
                       );
                       ref.read(themeIndexProvider.notifier).setTheme(compatibilityIndex);
                     }

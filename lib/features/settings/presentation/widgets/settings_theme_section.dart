@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/provider/theme/theme_controller.dart';
 import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -10,15 +11,6 @@ import 'settings_theme_widgets.dart';
 ///
 /// 提供亮暗主题切换、分组强调色选择与自定义取色功能。
 class SettingsThemeSection extends ConsumerWidget {
-  /// 当前选中的亮度
-  final Brightness selectedBrightness;
-
-  /// 当前选中的强调色索引
-  final int selectedAccentIndex;
-
-  /// 自定义颜色（null 表示未启用）
-  final Color? customColor;
-
   /// 亮度变更回调
   final ValueChanged<Brightness> onBrightnessChanged;
 
@@ -30,9 +22,6 @@ class SettingsThemeSection extends ConsumerWidget {
 
   const SettingsThemeSection({
     super.key,
-    required this.selectedBrightness,
-    required this.selectedAccentIndex,
-    required this.customColor,
     required this.onBrightnessChanged,
     required this.onAccentChanged,
     required this.onCustomColorChanged,
@@ -40,6 +29,9 @@ class SettingsThemeSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final selectedBrightness = ref.watch(themeModeProvider);
+    final selectedAccentIndex = ref.watch(themeAccentProvider);
+    final customColor = ref.watch(customAccentColorProvider);
     final grouped = AppTheme.groupedAccentIndices;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
