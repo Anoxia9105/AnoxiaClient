@@ -324,7 +324,7 @@ class NoteAiPanelActionsRow extends StatelessWidget {
               color: (action == null) ? cs.onSurface.withValues(alpha: .4) : cs.onPrimary,
             ),
             label: Text('note_ai.run'.tr(),
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w700, letterSpacing: .2)),
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w700, letterSpacing: .2, color: (action == null) ? cs.onSurface.withValues(alpha: .4) : cs.onPrimary)),
           ),
         ),
         AnimatedSwitcher(

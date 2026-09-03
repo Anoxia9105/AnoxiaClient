@@ -337,7 +337,7 @@ class NoteAiActionsRow extends StatelessWidget {
                 icon: HugeIcons.strokeRoundedSparkles,
                 size: 16,
                 color: (action == null) ? cs.onSurface.withValues(alpha: .4) : cs.onPrimary),
-            label: Text('note_ai.run'.tr(), style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w700)),
+            label: Text('note_ai.run'.tr(), style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w700, color: (action == null) ? cs.onSurface.withValues(alpha: .4) : cs.onPrimary)),
           ),
         ),
         AnimatedSwitcher(
