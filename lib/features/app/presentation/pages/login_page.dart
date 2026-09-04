@@ -251,8 +251,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(RadiusToken.xl),
+            clipBehavior: Clip.antiAlias,
             child: Assets.images.appLogo.image(
-              fit: BoxFit.cover,
+              width: 72,
+              height: 72,
+              fit: BoxFit.contain,
+              isAntiAlias: true,
               filterQuality: FilterQuality.high,
             ),
           ),

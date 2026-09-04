@@ -70,6 +70,8 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
         child: Assets.images.appLogo.image(
           width: 24,
           height: 24,
+          fit: BoxFit.contain,
+          isAntiAlias: true,
           filterQuality: FilterQuality.high,
         ),
       ),

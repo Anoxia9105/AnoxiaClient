@@ -54,6 +54,8 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
               child: Assets.images.appLogo.image(
                 width: 24,
                 height: 24,
+                fit: BoxFit.contain,
+                isAntiAlias: true,
                 filterQuality: FilterQuality.high,
                 // fit: BoxFit.cover
               ),

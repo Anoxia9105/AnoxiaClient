@@ -568,7 +568,8 @@ Future<void> noteInsertImage(
     );
     sizes.add(file.size);
   }
-  _insertNoteImageEmbeds(controller, files, ids, sizes);
+  await _insertNoteImageEmbeds(controller, files, ids, sizes);
+  if (!context.mounted) return;
   focusNode.requestFocus();
 
   await _uploadNoteImages(context, ref, controller, noteId, files, ids);
@@ -586,33 +587,56 @@ Future<void> notePasteImageBytes(
 
   final id = const Uuid().v4();
   final file = XFile.fromData(imageBytes, name: 'pasted_image.png');
-  _insertNoteImageEmbeds(controller, [file], [id], [imageBytes.length]);
+  await _insertNoteImageEmbeds(controller, [file], [id], [imageBytes.length]);
+  if (!context.mounted) return;
 
   await _uploadNoteImages(context, ref, controller, noteId, [file], [id]);
 }
 
 /// 为每个文件生成图片嵌入占位并标记上传中。
-void _insertNoteImageEmbeds(
+///
+/// 插入前先解码图片自然尺寸并写入 embed，展示层首帧即可按真实比例
+/// 自适应，而不是固定 320x220；解码失败则不写宽高，由展示层占位。
+Future<void> _insertNoteImageEmbeds(
   QuillController controller,
   List<XFile> files,
   List<String> ids, [
   List<int>? sizes,
-]) {
+]) async {
+  final dimensions = <(double?, double?)>[];
+  for (final file in files) {
+    dimensions.add(await _readNoteImageDimensions(file));
+  }
   for (var i = 0; i < files.length; i++) {
     final file = files[i];
     noteImageUploadStore.uploading(ids[i]);
+    final data = <String, dynamic>{
+      'id': ids[i],
+      'kind': 'IMAGE',
+      'url': '',
+      'name': file.name,
+      'size': sizes != null ? sizes[i] : 0,
+      'type': 'image/${file.name.split('.').last.toLowerCase()}',
+    };
+    final (naturalWidth, naturalHeight) = dimensions[i];
+    if (naturalWidth != null && naturalHeight != null) {
+      data['width'] = naturalWidth;
+      data['height'] = naturalHeight;
+    }
     QuillEmbedUtil.insertEmbed(
       controller: controller,
       type: BlockEmbed.imageType,
-      data: {
-        'id': ids[i],
-        'kind': 'IMAGE',
-        'url': '',
-        'name': file.name,
-        'size': sizes != null ? sizes[i] : 0,
-        'type': 'image/${file.name.split('.').last.toLowerCase()}',
-      },
+      data: data,
     );
+  }
+}
+
+/// 读取待插入图片的自然尺寸，失败返回 (null, null) 不阻塞插入。
+Future<(double?, double?)> _readNoteImageDimensions(XFile file) async {
+  try {
+    return await decodeNoteImageBytesSize(await file.readAsBytes());
+  } catch (_) {
+    return (null, null);
   }
 }
 

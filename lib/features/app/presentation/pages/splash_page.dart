@@ -138,12 +138,15 @@ class _SplashPageState extends ConsumerState<SplashPage>
                     children: [
                       const SizedBox(height: 40),
 
-                      // 图标主体
+                      // 图标主体（等比缩放 + 抗锯齿，避免小尺寸下锯齿模糊）
                       SizedBox(
                         width: 152,
                         height: 152,
                         child: Assets.images.appLogo.image(
-                          fit: BoxFit.cover,
+                          width: 152,
+                          height: 152,
+                          fit: BoxFit.contain,
+                          isAntiAlias: true,
                           filterQuality: FilterQuality.high,
                         ),
                       ),

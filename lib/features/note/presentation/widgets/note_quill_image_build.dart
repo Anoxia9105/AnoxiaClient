@@ -49,15 +49,90 @@ class _NoteImageEmbedState extends State<_NoteImageEmbed> {
   double? _dragWidth;
   double? _dragHeight;
 
+  // 存量笔记可能没有宽高，此时从 ImageProvider 回调拿自然尺寸再自适应。
+  double? _intrinsicWidth;
+  double? _intrinsicHeight;
+  String? _intrinsicUrl;
+  ImageStream? _intrinsicStream;
+  ImageStreamListener? _intrinsicListener;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybeResolveIntrinsic();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _NoteImageEmbed oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybeResolveIntrinsic();
+    });
+  }
+
+  @override
+  void dispose() {
+    _detachIntrinsicListener();
+    super.dispose();
+  }
+
+  /// embed 自带宽高或用户拖过尺寸时无需解析；否则按 url 解析自然尺寸。
+  void _maybeResolveIntrinsic() {
+    final data = decodeNoteImageData(widget.node.value.data);
+    final storedWidth = (data['width'] as num?)?.toDouble();
+    final storedHeight = (data['height'] as num?)?.toDouble();
+    final hasStored = storedWidth != null &&
+        storedWidth > 0 &&
+        storedHeight != null &&
+        storedHeight > 0;
+    final url = data['url']?.toString();
+    if (hasStored ||
+        _dragWidth != null ||
+        url == null ||
+        url.isEmpty ||
+        url == _intrinsicUrl) {
+      return;
+    }
+    _detachIntrinsicListener();
+    _intrinsicUrl = url;
+    // url 已换，旧自然尺寸不再可用，先清掉避免沿用错误比例。
+    _intrinsicWidth = null;
+    _intrinsicHeight = null;
+    final stream = NetworkImage(url).resolve(const ImageConfiguration());
+    _intrinsicStream = stream;
+    _intrinsicListener = ImageStreamListener(
+      (info, _) {
+        if (!mounted) return;
+        setState(() {
+          _intrinsicWidth = info.image.width.toDouble();
+          _intrinsicHeight = info.image.height.toDouble();
+        });
+      },
+      onError: (_, _) {},
+    );
+    stream.addListener(_intrinsicListener!);
+  }
+
+  void _detachIntrinsicListener() {
+    final stream = _intrinsicStream;
+    final listener = _intrinsicListener;
+    if (stream != null && listener != null) {
+      stream.removeListener(listener);
+    }
+    _intrinsicStream = null;
+    _intrinsicListener = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = decodeNoteImageData(widget.node.value.data);
     final id = data['id']?.toString();
     final url = data['url']?.toString();
-    final rawWidth = (data['width'] as num?)?.toDouble() ?? 320;
-    final rawHeight = (data['height'] as num?)?.toDouble() ?? 220;
-    final storedWidth = rawWidth > 0 ? rawWidth : 320.0;
-    final storedHeight = rawHeight > 0 ? rawHeight : 220.0;
+    // 缺宽高时不再回退固定值，交由 resolve 按自然尺寸或占位自适应。
+    final storedWidth = (data['width'] as num?)?.toDouble();
+    final storedHeight = (data['height'] as num?)?.toDouble();
     final scheme = Theme.of(context).colorScheme;
 
     return LayoutBuilder(
@@ -65,8 +140,15 @@ class _NoteImageEmbedState extends State<_NoteImageEmbed> {
         final maxWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width - 40;
-        final width = (_dragWidth ?? storedWidth).clamp(120.0, maxWidth);
-        final height = _dragHeight ?? storedHeight * width / storedWidth;
+        final displaySize = resolveNoteImageDisplaySize(
+          storedWidth: _dragWidth ?? storedWidth,
+          storedHeight: _dragHeight ?? storedHeight,
+          intrinsicWidth: _intrinsicWidth,
+          intrinsicHeight: _intrinsicHeight,
+          maxWidth: maxWidth,
+        );
+        final width = displaySize.width;
+        final height = displaySize.height;
         return ListenableBuilder(
           listenable: noteImageUploadStore,
           builder: (context, _) {
@@ -141,10 +223,12 @@ class _NoteImageEmbedState extends State<_NoteImageEmbed> {
                           key: const ValueKey('note_image_resize_handle'),
                           behavior: HitTestBehavior.opaque,
                           onPanUpdate: (details) {
+                            // 右下角手柄只做等比缩放：以宽度为基准，
+                            // 横向与纵向位移合并驱动，任意方向拖动都跟手。
                             final resized = noteImageResize(
-                              _dragWidth ?? width,
-                              _dragHeight ?? height,
-                              details.delta.dx,
+                              width,
+                              height,
+                              details.delta.dx + details.delta.dy,
                               maxWidth: maxWidth,
                             );
                             setState(() {

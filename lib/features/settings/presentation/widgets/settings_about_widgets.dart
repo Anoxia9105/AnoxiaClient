@@ -64,6 +64,10 @@ class AppOverviewCard extends StatelessWidget {
                   ),
                 ),
                 child: Assets.images.appLogo.image(
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.contain,
+                  isAntiAlias: true,
                   filterQuality: FilterQuality.high,
                   semanticLabel: 'Anoxia IM Client',
                 ),
