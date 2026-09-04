@@ -76,6 +76,17 @@ String deltaToMarkdown(Document document) {
 
 /// Markdown → Document（Quill Delta）
 Document markdownToDocument(String markdown) {
+  // 规范化：去 BOM、统一换行，避免空文件 / CRLF / BOM 导致转换异常
+  final normalized = markdown
+      .replaceAll('\r\n', '\n')
+      .replaceAll('\r', '\n')
+      .replaceFirst(RegExp('^\uFEFF'), '');
+  // 空文件 / 纯空白：直接返回空文档。
+  // 否则 HtmlToDelta 会产出空 Delta，Document.fromDelta 会抛
+  // `Document Delta cannot be empty.`，上层导入直接显示“导入失败”。
+  if (normalized.trim().isEmpty) {
+    return Document();
+  }
   try {
     // flutter_quill_delta_from_html 不识别 <hr>，分割线会被静默丢弃；
     // 且其不会在相邻块级元素间补换行。这里先把 <hr> 替换成哨兵文本，
@@ -85,8 +96,15 @@ Document markdownToDocument(String markdown) {
     // 的 <p><p> 不会在块间补换行，`第一行\n\n第二行` 会被合并为
     // `第一行第二行\n`（换行丢失、全部挤成一行）。这里通过 isBlockValidator
     // 将 <p> 视为块级，确保段落间保留换行。
+    //
+    // 兼容旧版导出的 <center>：上游库不识别该标签会静默丢弃内容，
+    // 先转为 <p align="center"> 再走正常流程，保证往返不丢字。
+    var preprocessed = normalized.replaceAllMapped(
+      RegExp('<center>(.*?)</center>', caseSensitive: false, dotAll: true),
+      (m) => '<p align="center">${m.group(1)}</p>',
+    );
     final html = md
-        .markdownToHtml(markdown)
+        .markdownToHtml(preprocessed)
         .replaceAllMapped(_hrTagPattern, (_) => _hrSentinel);
     final delta = HtmlToDelta(
       isBlockValidator: (name) =>
@@ -109,12 +127,37 @@ Document markdownToDocument(String markdown) {
           }.contains(name),
     ).convert(html);
     return Document.fromDelta(
-      _restoreHorizontalRules(delta),
+      _ensureDocumentDelta(_restoreHorizontalRules(delta)),
     );
   } catch (_) {
-    // 转换失败回退为纯文本
-    return Document.fromDelta(Delta()..insert(markdown));
+    // 转换失败回退为纯文本；同样保证 Delta 以换行结尾，
+    // 否则 Document.fromDelta 在 debug 下断言失败、release 下文档非法
+    try {
+      var fallback = normalized;
+      if (!fallback.endsWith('\n')) fallback = '$fallback\n';
+      if (fallback.trim().isEmpty) return Document();
+      return Document.fromDelta(_ensureDocumentDelta(Delta()..insert(fallback)));
+    } catch (_) {
+      return Document();
+    }
   }
+}
+
+/// 保证 Delta 符合 Document 要求：非空且以换行结尾。
+///
+/// HtmlToDelta 对 `<center>` / 纯图片等输入可能产出不以 `\n` 结尾的
+/// Delta，Document.fromDelta 在 debug 下直接断言失败，
+/// release 下则得到非法文档（后续编辑/保存异常）。
+Delta _ensureDocumentDelta(Delta delta) {
+  if (delta.isEmpty) return Delta()..insert('\n');
+  final last = delta.last;
+  if (last.isInsert &&
+      last.data is String &&
+      (last.data as String).endsWith('\n')) {
+    return delta;
+  }
+  delta.insert('\n');
+  return delta;
 }
 
 final RegExp _hrTagPattern = RegExp(r'<hr\s*/?>', caseSensitive: false);
@@ -202,7 +245,9 @@ String _blockWrap(_MdLine line) {
   if (list == 'ordered') return '1. ${line.text}';
   if (list == 'checked') return '- [x] ${line.text}';
   if (list == 'unchecked') return '- [ ] ${line.text}';
-  if (align == 'center') return '<center>${line.text}</center>';
+  // 居中/右对齐统一用 <p align>：HtmlToDelta 可识别并还原 align，
+  // 此前 <center> 会被上游库静默丢弃，导致“导出→导入”内容丢失。
+  if (align == 'center') return '<p align="center">${line.text}</p>';
   if (align == 'right') return '<p align="right">${line.text}</p>';
   return line.text;
 }

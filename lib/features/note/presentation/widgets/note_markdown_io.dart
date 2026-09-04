@@ -7,13 +7,11 @@
 library;
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -60,9 +58,8 @@ Future<bool> exportNoteMarkdown(
         bytes: Uint8List.fromList(bytes),
       );
       if (path == null) return false; // 用户取消
-      if (!kIsWeb) {
-        await File(path).writeAsBytes(bytes);
-      }
+      // FilePicker.saveFile(bytes: ...) 已负责落盘（桌面端写文件/Web 直接下载），
+      // 无需再手动 File.writeAsBytes（且 dart:io 会破坏 Web 编译）。
       _toast(ref, 'note_markdown_exported', ToastType.success);
       return true;
     } catch (_) {
@@ -80,18 +77,28 @@ Future<bool> importNoteMarkdown(
   WidgetRef ref, {
   required QuillController controller,
 }) async {
-  final result = await FilePicker.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['md'],
-  );
-  if (result == null || result.files.isEmpty) return false; // 用户取消
-
   try {
+    // withData:true 让各端（桌面/移动/Web）都直接返回 bytes，
+    // 无需 dart:io File 读盘（dart:io 会破坏 Web 编译，且桌面端默认
+    // withData:false 时 bytes 为空是“导入失败”的另一常见来源）。
+    final result = await FilePicker.pickFiles(
+      dialogTitle: 'note_markdown_import'.tr(),
+      type: FileType.custom,
+      allowedExtensions: ['md', 'markdown', 'txt'],
+      allowMultiple: false,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return false; // 用户取消
+
     final file = result.files.single;
-    final bytes = file.bytes ??
-        (file.path != null ? await File(file.path!).readAsBytes() : null);
-    if (bytes == null) return false;
+    final bytes = file.bytes;
+    if (bytes == null) {
+      _toast(ref, 'note_markdown_import_failed', ToastType.error);
+      return false;
+    }
     final text = utf8.decode(bytes, allowMalformed: true);
+    // markdownToDocument 已保证永不抛错（空文件返回空文档），
+    // 这里不再因空文件/特殊 HTML 而显示“导入失败”。
     controller.document = markdownToDocument(text);
     _toast(ref, 'note_markdown_imported', ToastType.success);
     return true;
