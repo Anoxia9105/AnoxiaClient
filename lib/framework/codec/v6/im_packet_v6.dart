@@ -39,13 +39,17 @@ class ImPacketV6 {
   }
 
   /// 编码已读游标
-  static Uint8List encodeReadCursorFrame(String roomId, int readSeq) {
+  static Uint8List encodeReadCursorFrame(
+    String roomId,
+    int readSeq, {
+    String? requestId,
+  }) {
     final cmd = v6.ReadCursorCommand(
       roomId: roomId,
       readSeq: fixnum.Int64(readSeq),
     );
     final frame = v6.ClientFrame(
-      requestId: 'read_${DateTime.now().microsecondsSinceEpoch}',
+      requestId: requestId ?? 'read_${DateTime.now().microsecondsSinceEpoch}',
       readCursor: cmd,
     );
     return frame.writeToBuffer();
@@ -79,14 +83,12 @@ class ImPacketV6 {
   static Uint8List encodeCallSignalFrame({
     required String roomId,
     int? targetUserId,
-    required int type,
+    required v6.CallSignalType type,
     required String content,
   }) {
     final cmd = v6.CallSignalCommand(
       roomId: roomId,
-      type:
-          v6.CallSignalType.valueOf(type) ??
-          v6.CallSignalType.CALL_SIGNAL_TYPE_UNSPECIFIED,
+      type: type,
       content: content,
     );
     if (targetUserId != null) {

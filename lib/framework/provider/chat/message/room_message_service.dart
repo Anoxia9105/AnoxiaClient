@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math' show max;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
@@ -418,12 +419,16 @@ class ChatMessages extends _$ChatMessages {
       sync: false,
     );
     final localMaxSeq = _maxSeq(localMessages);
+    final watermark = await ref
+        .read(localDataSourceProvider)
+        .messageSyncWatermark(roomId);
 
     ref
         .read(chatHasMoreProvider.notifier)
         .setHasMore(roomId, localMessages.length >= _pageSize);
 
-    if (serverLastSeq == null || localMaxSeq >= serverLastSeq) {
+    final targetSeq = max(localMaxSeq, serverLastSeq ?? 0);
+    if (watermark >= targetSeq) {
       _syncedRoomIds.add(roomId);
       _syncedSeqByRoom[roomId] = localMaxSeq;
       return;

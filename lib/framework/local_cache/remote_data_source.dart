@@ -36,8 +36,9 @@ class RemoteDataSource {
 
   /// 获取消息历史
   ///
-  /// [convId] 会话 ID；[since] 获取该时间之后的消息；[lastSeq] 获取该序号之后的消息；
+  /// [convId] 会话 ID；[lastSeq] 获取该序号之后的消息；
   /// [beforeSeq] 获取该序号之前的消息（分页向前加载）；[pageSize] 每页数量。
+  /// [since] 仅保留调用兼容；消息同步以序号为准，后端不支持时间游标。
   Future<List<ChatMessage>> fetchMessages(
     String convId, {
     DateTime? since,
@@ -49,9 +50,7 @@ class RemoteDataSource {
       API.chatHistory,
       queryParameters: {
         'roomId': convId,
-        if (beforeSeq != null && beforeSeq > 0) 'before_seq': beforeSeq,
-        if (lastSeq != null && lastSeq > 0) 'lastSeq': lastSeq,
-        if (since != null) 'since': since.toIso8601String(),
+        if ((beforeSeq ?? lastSeq ?? 0) > 0) 'lastSeq': beforeSeq ?? lastSeq,
         'pageSize': pageSize,
         'direction': beforeSeq == null ? 1 : 0,
       },

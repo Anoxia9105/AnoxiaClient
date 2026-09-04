@@ -74,7 +74,7 @@ final class ChatInputControllerProvider
 }
 
 String _$chatInputControllerHash() =>
-    r'c5fa0d94f278943e98fcb56cb6384694607e5517';
+    r'6db4184097d97d7ba75db9d7f613287651a5919c';
 
 /// 聊天输入控制器
 ///

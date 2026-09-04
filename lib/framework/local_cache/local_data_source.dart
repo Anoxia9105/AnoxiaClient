@@ -294,6 +294,44 @@ class LocalDataSource {
     return db.conversationDao.markAsRead(conversationId, lastReadSeq: seq);
   }
 
+  /// 本地已读与待确认游标同事务提交；旧请求不能覆盖较大的游标。
+  Future<void> queueReadCursor(String roomId, int seq) async {
+    if (seq <= 0) return;
+    await db.transaction(() async {
+      final room = await db.conversationDao.getConversation(roomId);
+      if (room == null) return;
+      final effectiveSeq = room.lastReadSeq > seq ? room.lastReadSeq : seq;
+      await markConversationAsRead(roomId, seq: effectiveSeq);
+      final pending = await db.syncStateDao.getState(
+        'read_cursor_pending',
+        roomId,
+      );
+      if (pending != null && pending.lastSeq >= effectiveSeq) return;
+      await db.syncStateDao.upsertState(
+        scope: 'read_cursor_pending',
+        scopeId: roomId,
+        lastSeq: effectiveSeq,
+      );
+    });
+  }
+
+  Future<Map<String, int>> pendingReadCursors() async {
+    final rows = await (db.select(
+      db.syncStates,
+    )..where((t) => t.scope.equals('read_cursor_pending'))).get();
+    return {for (final row in rows) row.scopeId: row.lastSeq};
+  }
+
+  Future<void> acknowledgeReadCursor(String roomId, int seq) async {
+    await (db.delete(db.syncStates)..where(
+          (t) =>
+              t.scope.equals('read_cursor_pending') &
+              t.scopeId.equals(roomId) &
+              t.lastSeq.isSmallerOrEqualValue(seq),
+        ))
+        .go();
+  }
+
   Future<List<ChatMessage>> pendingOutgoingMessages() async {
     final rows = await db.messageDao.getPendingOutgoingMessages();
     return rows.map(_messageFromRow).toList();
@@ -365,7 +403,7 @@ class LocalDataSource {
       )..where((tbl) => tbl.id.equals(conversationId))).go();
       await (db.delete(db.syncStates)..where(
             (tbl) =>
-                tbl.scope.equals('messages') &
+                tbl.scope.isIn(['messages', 'read_cursor_pending']) &
                 tbl.scopeId.equals(conversationId),
           ))
           .go();
@@ -384,7 +422,7 @@ class LocalDataSource {
         await db.delete(db.messages).go();
         await db.delete(db.conversations).go();
         await (db.delete(db.syncStates)..where(
-              (tbl) => tbl.scope.equals('messages'),
+              (tbl) => tbl.scope.isIn(['messages', 'read_cursor_pending']),
             ))
             .go();
         return;
@@ -397,7 +435,7 @@ class LocalDataSource {
       )..where((tbl) => tbl.id.isNotIn(keep))).go();
       await (db.delete(db.syncStates)..where(
             (tbl) =>
-                tbl.scope.equals('messages') &
+                tbl.scope.isIn(['messages', 'read_cursor_pending']) &
                 tbl.scopeId.isNotIn(keep),
           ))
           .go();

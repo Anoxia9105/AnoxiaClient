@@ -87,6 +87,8 @@ class SystemEventService extends _$SystemEventService {
   /// 根据 [EventMessage.eventType] 分发到对应的处理函数
   void _onEventReceived(EventMessage event) {
     switch (event.eventType) {
+      case SystemEventType.unknown:
+        return;
       case SystemEventType.userOnline:
       case SystemEventType.userOffline:
         _handleUserStatusChange(event);

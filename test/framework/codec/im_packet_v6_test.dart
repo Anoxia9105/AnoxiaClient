@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
+import 'package:anoxia/framework/protocol/message/event_message.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -10,6 +11,20 @@ import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('未指定系统事件不能被解码成联系人请求', () {
+    final bytes = v6.ServerFrame(
+      systemEvent: v6.SystemEvent(type: v6.SystemEventType.valueOf(0)),
+    ).writeToBuffer();
+
+    final decoded = ImPacketV6.decodeServerFrame(bytes);
+    expect(
+      decoded?.data is EventMessage
+          ? (decoded!.data as EventMessage).eventType
+          : null,
+      isNot(SystemEventType.contactRequest),
+    );
+  });
+
   test('send message is a raw V6 ClientFrame and preserves cache identity', () {
     const message = RoomMessage(
       messageId: '',
@@ -89,7 +104,7 @@ void main() {
   test('group call target remains absent instead of becoming user zero', () {
     final bytes = ImPacketV6.encodeCallSignalFrame(
       roomId: 'room-1',
-      type: v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE.value,
+      type: v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE,
       content: '{}',
     );
 

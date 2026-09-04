@@ -72,7 +72,7 @@ class CallWindowController extends _$CallWindowController {
             ImPacketV6.encodeCallSignalFrame(
               roomId: roomId,
               targetUserId: userId,
-              type: v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE.value,
+              type: v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE,
               content: content,
             ),
           );

@@ -5,6 +5,8 @@ import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/core/device_identity.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
+import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/provider/core/network_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -54,6 +56,9 @@ class WsController extends _$WsController {
   /// 在新连接建立后才完成，不允许其覆盖当前连接或污染状态）。
   int _connectGeneration = 0;
   Timer? _reconnectTimer;
+  Timer? _readCursorTimer;
+  Timer? _messageRecoveryTimer;
+  bool _flushingReadCursors = false;
   int _reconnectAttempts = 0;
   bool _reconnectEnabled = true;
   int? _lastAckErrorCode;
@@ -207,6 +212,16 @@ class WsController extends _$WsController {
       _reconnectAttempts = 0;
       state = WsState(status: WsStatus.connected);
       unawaited(_resendCachedOutbounds());
+      _readCursorTimer?.cancel();
+      _readCursorTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        unawaited(flushReadCursors());
+      });
+      unawaited(flushReadCursors());
+      _messageRecoveryTimer?.cancel();
+      _messageRecoveryTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        unawaited(_recoverActiveRoom());
+      });
+      unawaited(_recoverActiveRoom());
     } catch (e, st) {
       debugLog('❌ WebSocket 连接失败', e, st);
       // 过期尝试的失败不影响更新的连接状态（如连续切账号时旧
@@ -214,6 +229,62 @@ class WsController extends _$WsController {
       if (generation == _connectGeneration) {
         _handleError(e);
       }
+    }
+  }
+
+  /// 定期补齐活跃会话，包括没有后续消息暴露的尾部丢包。
+  Future<void> _recoverActiveRoom() async {
+    if (!ref.mounted || state.status != WsStatus.connected) return;
+    final roomId = ref.read(activeRoomIdProvider);
+    if (roomId == null) return;
+    try {
+      // Pub/Sub/慢消费者可能丢最后一条，没有后续 seq 也必须能恢复。
+      await ref.read(chatRepositoryProvider).syncMessages(roomId);
+    } catch (e) {
+      debugLog('活跃会话补齐失败: $e');
+    }
+  }
+
+  Future<void> flushReadCursors() async {
+    if (!ref.mounted ||
+        state.status != WsStatus.connected ||
+        _flushingReadCursors) {
+      return;
+    }
+    _flushingReadCursors = true;
+    final generation = _connectGeneration;
+    final local = ref.read(localDataSourceProvider);
+    bool isCurrent() =>
+        ref.mounted &&
+        generation == _connectGeneration &&
+        state.status == WsStatus.connected;
+    try {
+      final pending = await local.pendingReadCursors();
+      for (final entry in pending.entries) {
+        if (!isCurrent()) break;
+        final requestId =
+            'read_${DateTime.now().microsecondsSinceEpoch}_${entry.key}';
+        try {
+          final ack = await sendCommand(
+            ImPacketV6.encodeReadCursorFrame(
+              entry.key,
+              entry.value,
+              requestId: requestId,
+            ),
+            requestId: requestId,
+          );
+          if (!isCurrent()) break;
+          if (ack.isSuccess) {
+            await local.acknowledgeReadCursor(entry.key, entry.value);
+          }
+        } catch (e) {
+          debugLog('已读游标待重试: $e');
+        }
+      }
+    } catch (e) {
+      debugLog('读取已读待确认队列失败: $e');
+    } finally {
+      _flushingReadCursors = false;
     }
   }
 
@@ -607,6 +678,8 @@ class WsController extends _$WsController {
     bool manual = false,
   }) async {
     _reconnectTimer?.cancel();
+    _readCursorTimer?.cancel();
+    _messageRecoveryTimer?.cancel();
     // 代际自增：使仍在握手的连接尝试失效，防止其登记为当前连接
     _connectGeneration++;
     final channel = _channel;

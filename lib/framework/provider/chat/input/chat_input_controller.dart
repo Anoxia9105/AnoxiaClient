@@ -55,6 +55,7 @@ class ChatInputController extends _$ChatInputController {
   bool _isSending = false;
   DateTime? _lastLimitNoticeAt;
   Timer? _typingTimer;
+  Timer? _typingThrottle;
 
   /// 计算发送超时时间（秒）
   ///
@@ -120,6 +121,7 @@ class ChatInputController extends _$ChatInputController {
 
     ref.onDispose(() {
       _typingTimer?.cancel();
+      _typingThrottle?.cancel();
       controller.dispose();
     });
 
@@ -140,7 +142,7 @@ class ChatInputController extends _$ChatInputController {
     if (_enforceInputLimit(controller)) return;
     final bool hasContent = controller.document.length > 1;
 
-    if (hasContent && !_isTyping) {
+    if (hasContent) {
       _isTyping = true;
       _sendTypingStatus(true);
     }
@@ -272,6 +274,7 @@ class ChatInputController extends _$ChatInputController {
 
   void _sendTypingStatus(bool isTyping) {
     if (!ref.mounted) return;
+    if (isTyping && _typingThrottle != null) return;
     final room = ref.read(currentRoomProvider(roomId));
     if (room == null || room.peerId == null) return;
 
@@ -295,6 +298,10 @@ class ChatInputController extends _$ChatInputController {
       return;
     }
 
+    _typingThrottle?.cancel();
+    _typingThrottle = isTyping
+        ? Timer(const Duration(seconds: 3), () => _typingThrottle = null)
+        : null;
     ref
         .read(wsControllerProvider.notifier)
         .sendMessage(ImPacketV6.encodeTypingFrame(room.roomId!, isTyping));
@@ -780,7 +787,7 @@ class ChatInputController extends _$ChatInputController {
   void handlePlainTextChanged(String text) {
     final hasContent = text.trim().isNotEmpty;
 
-    if (hasContent && !_isTyping) {
+    if (hasContent) {
       _isTyping = true;
       _sendTypingStatus(true);
     }

@@ -19,7 +19,6 @@ class MessageRepositoryImpl implements MessageRepository {
       API.chatHistory,
       queryParameters: {
         'roomId': roomId,
-        'before_seq': beforeSeq,
         'lastSeq': beforeSeq,
         'pageSize': pageSize,
         'direction': 0,

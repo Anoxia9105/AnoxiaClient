@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
-import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/sync_conversations_usecase_provider.dart';
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
@@ -350,12 +349,8 @@ class RoomListService extends _$RoomListService {
   /// 上报已读 seq 到服务器，同时更新本地 DB（last_read_seq / unread_count）
   Future<void> _sendReadCursor(String roomId, int seq) async {
     try {
-      await ref
-          .read(localDataSourceProvider)
-          .markConversationAsRead(roomId, seq: seq);
-      ref
-          .read(wsControllerProvider.notifier)
-          .sendMessage(ImPacketV6.encodeReadCursorFrame(roomId, seq));
+      await ref.read(localDataSourceProvider).queueReadCursor(roomId, seq);
+      await ref.read(wsControllerProvider.notifier).flushReadCursors();
     } catch (e) {
       debugLog('上报已读失败: $e');
     }

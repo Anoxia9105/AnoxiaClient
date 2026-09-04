@@ -674,23 +674,16 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     int? targetId,
   }) {
     final callType = switch (type) {
-      HighMessageType.CALL_INVITE =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE.value,
-      HighMessageType.CALL_CANCEL =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_CANCEL.value,
-      HighMessageType.CALL_ACCEPT =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_ACCEPT.value,
-      HighMessageType.CALL_REJECT =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_REJECT.value,
-      HighMessageType.CALL_END =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_HANGUP.value,
-      HighMessageType.CALL_BUSY =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_BUSY.value,
-      HighMessageType.CALL_CANDIDATE =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_ICE.value,
+      HighMessageType.CALL_INVITE => v6.CallSignalType.CALL_SIGNAL_TYPE_INVITE,
+      HighMessageType.CALL_CANCEL => v6.CallSignalType.CALL_SIGNAL_TYPE_CANCEL,
+      HighMessageType.CALL_ACCEPT => v6.CallSignalType.CALL_SIGNAL_TYPE_ACCEPT,
+      HighMessageType.CALL_REJECT => v6.CallSignalType.CALL_SIGNAL_TYPE_REJECT,
+      HighMessageType.CALL_END => v6.CallSignalType.CALL_SIGNAL_TYPE_HANGUP,
+      HighMessageType.CALL_BUSY => v6.CallSignalType.CALL_SIGNAL_TYPE_BUSY,
+      HighMessageType.CALL_CANDIDATE => v6.CallSignalType.CALL_SIGNAL_TYPE_ICE,
       HighMessageType.CALL_MEDIA_CHANGE =>
-        v6.CallSignalType.CALL_SIGNAL_TYPE_MEDIA_CHANGE.value,
-      _ => v6.CallSignalType.CALL_SIGNAL_TYPE_UNSPECIFIED.value,
+        v6.CallSignalType.CALL_SIGNAL_TYPE_MEDIA_CHANGE,
+      _ => v6.CallSignalType.CALL_SIGNAL_TYPE_UNSPECIFIED,
     };
     final content = jsonEncode({
       'inviteId': invite.inviteId,

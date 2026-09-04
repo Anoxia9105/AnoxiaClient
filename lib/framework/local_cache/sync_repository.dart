@@ -107,8 +107,8 @@ class SyncRepository implements ChatRepository {
   @override
   Future<void> syncMessages(String convId, {DateTime? since}) {
     // 同一会话已在同步中，直接复用，避免并发重复请求
-    return _syncMessagesInflight[convId] ??=
-        _doSyncMessages(convId, since: since).whenComplete(() {
+    return _syncMessagesInflight[convId] ??= _doSyncMessages(convId)
+        .whenComplete(() {
           // 注意：不能写成 `return _syncMessagesInflight.remove(convId)`。
           // remove 返回被移除的 future 自身，而 whenComplete 会等待回调返回的
           // Future 完成，等于「未来等待自己」，导致该 future 永不完成。
@@ -116,12 +116,11 @@ class SyncRepository implements ChatRepository {
         });
   }
 
-  Future<void> _doSyncMessages(String convId, {DateTime? since}) async {
+  Future<void> _doSyncMessages(String convId) async {
     if (!await _hasNetwork()) return;
 
     try {
       var lastSeq = await _local.messageSyncWatermark(convId);
-      final latestSentAt = since ?? await _local.latestMessageSentAt(convId);
       var maxSeq = lastSeq;
 
       // 循环拉取：服务端单次最多返回 pageSize(≤100) 条。若会话积压超过一页，
@@ -129,7 +128,6 @@ class SyncRepository implements ChatRepository {
       while (true) {
         final remoteMessages = await _remote.fetchMessages(
           convId,
-          since: latestSentAt,
           lastSeq: lastSeq,
         );
         if (remoteMessages.isEmpty) break;

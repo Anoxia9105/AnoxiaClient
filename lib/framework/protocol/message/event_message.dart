@@ -5,6 +5,7 @@ import '../i_packet.dart';
 /// 该枚举定义了服务端可能推送的所有系统事件类型，例如用户进出房间、权限变更、消息撤回等。
 /// `fromCode()` 将服务端下发的数字事件码映射为对应的枚举值。
 enum SystemEventType {
+  unknown(0),
   roomCreated(1),
   roomDissolved(2),
   userJoined(3),
@@ -35,7 +36,7 @@ enum SystemEventType {
   static SystemEventType fromCode(int code) {
     return SystemEventType.values.firstWhere(
       (event) => event.code == code,
-      orElse: () => SystemEventType.contactRequest,
+      orElse: () => SystemEventType.unknown,
     );
   }
 }
