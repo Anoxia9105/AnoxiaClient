@@ -170,7 +170,10 @@ class WsController extends _$WsController {
     final generation = ++_connectGeneration;
 
     try {
-      final deviceId = await DeviceIdentity.instance.getPlatformQualifiedId();
+      // Web 每个标签页/每次加载使用独立连接 deviceId，使服务端按连接计在线设备：
+      // 共用稳定 ID 时刷新重叠会导致新连接无 ONLINE、旧连接误删误发 OFFLINE，
+      // 观察端在线状态卡死离线。原生保持稳定标识。
+      final deviceId = await DeviceIdentity.instance.getWsConnectionDeviceId();
       final url =
           '${API.wsBaseUrl}${Uri.encodeQueryComponent(token)}'
           '&deviceId=${Uri.encodeQueryComponent(deviceId)}';

@@ -16,6 +16,16 @@ class DeviceIdentity {
   static const String _storageKey = 'client_device_uid';
   static const String _legacyPushStorageKey = 'push_device_uid';
 
+  /// WS 连接后缀长度（8 位字母数字）。
+  static const int wsConnectionSuffixLength = 8;
+
+  /// 服务端 deviceId 规范（与 TokenAuthHandler.DEVICE_ID_PATTERN 对齐）。
+  static final RegExp wsDeviceIdPattern = RegExp(r'^[A-Za-z0-9._:-]{8,128}$');
+
+  /// 本页/本进程 WS 连接后缀缓存：同页重连复用，跨页（多标签/刷新）
+  /// 因各自独立 isolate 而天然不同，使每个 WS 连接独立计在线设备。
+  String? _wsConnectionSuffix;
+
   /// 获取或创建设备唯一标识。
   ///
   /// 优先返回已持久化的标识，不存在时创建新的 UUID 并持久化。
@@ -37,5 +47,31 @@ class DeviceIdentity {
   Future<String> getPlatformQualifiedId() async {
     final platform = kIsWeb ? 'web' : defaultTargetPlatform.name.toLowerCase();
     return '$platform:${await getOrCreate()}';
+  }
+
+  /// 本页 WS 连接后缀，同页内稳定、跨页唯一。
+  String wsConnectionSuffix() {
+    final existing = _wsConnectionSuffix;
+    if (existing != null) return existing;
+    final suffix = const Uuid()
+        .v4()
+        .replaceAll('-', '')
+        .substring(0, wsConnectionSuffixLength);
+    _wsConnectionSuffix = suffix;
+    return suffix;
+  }
+
+  /// 组装 WS 连接设备标识（纯函数，便于测试多标签页互异性）。
+  static String buildWsConnectionDeviceId(String stableId, String suffix) {
+    return '$stableId:$suffix';
+  }
+
+  /// WS 握手 deviceId：Web 追加单页后缀使每个连接独立计在线设备，
+  /// 避免多标签页/刷新重叠时新连接无 ONLINE、旧连接误删触发误 OFFLINE；
+  /// 原生保持稳定标识。登录/扫码/push 绑定仍用稳定标识，不受影响。
+  Future<String> getWsConnectionDeviceId() async {
+    final stable = await getPlatformQualifiedId();
+    if (!kIsWeb) return stable;
+    return buildWsConnectionDeviceId(stable, wsConnectionSuffix());
   }
 }
