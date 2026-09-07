@@ -166,9 +166,7 @@ class SystemMessageFormatter {
       'CALL_ENDED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedCallEnd03,
-        text: 'system_msg_callend'.tr(
-          args: [formatCallDuration(message)],
-        ),
+        text: _callEndedText(message),
       ),
       'CALL_REJECTED' => SystemMessageDisplay(
         action: action,
@@ -227,6 +225,18 @@ class SystemMessageFormatter {
           text: 'system_msg_unknown'.tr(),
         ),
     };
+  }
+
+  /// 通话结束文案
+  ///
+  /// 有通话时长时带时长展示；缺失时长（历史缓存的老数据等）时直接显示
+  /// “通话已结束”，避免出现“通话已结束 --”这类残缺文案。
+  static String _callEndedText(ChatMessage message) {
+    final hasDuration =
+        (message.properties['duration']?.toString().isNotEmpty == true) ||
+        (message.properties['durationText']?.toString().isNotEmpty == true);
+    if (!hasDuration) return 'call_ended'.tr();
+    return 'system_msg_callend'.tr(args: [formatCallDuration(message)]);
   }
 
   /// 通话时长格式化（国际化）

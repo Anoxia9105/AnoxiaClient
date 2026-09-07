@@ -88,6 +88,14 @@ cd AnoxiaClient
 
 ### 2) 安装依赖
 
+先将 `AnoxiaProtocol` 克隆到客户端同级目录，安装 `protoc`，然后仅生成 Dart 协议包。
+`flutter pub get` 不会刷新 `../AnoxiaProtocol/gen/dart` 中的协议代码。
+
+```powershell
+dart pub global activate protoc_plugin 25.0.0
+../AnoxiaProtocol/tool_generate_dart.ps1
+```
+
 ```bash
 flutter pub get
 ```
@@ -109,6 +117,11 @@ dart run flutter_oss_licenses:generate
 ```bash
 flutter run
 ```
+
+Windows 发布使用 `./tool_build.bat -Target web -Wasm`（或 `./tool_build.ps1`）。
+该入口强制重新生成 Dart 协议，执行固定 wire bytes 回归测试后才构建，任一步失败即停止。
+直接运行 `flutter run` / `flutter build` 不经过此保护，必须先执行上述生成脚本。
+协议脚本的工具参数及非 Windows 命令见 `../AnoxiaProtocol/README.md`。
 
 ---
 

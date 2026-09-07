@@ -12,12 +12,17 @@ $Mode = if ($Debug) { '--debug' } else { '--release' }
 
 $rc = 1
 try {
+    & (Join-Path $PKG_ROOT '../AnoxiaProtocol/tool_generate_dart.ps1')
     Write-Host ">>> $FLUTTER_BIN pub get"
     & $FLUTTER_BIN pub get
     if ($LASTEXITCODE -ne 0) {
         Write-Host "flutter pub get failed (rc=$LASTEXITCODE)"
         $rc = $LASTEXITCODE
     } else {
+        & $FLUTTER_BIN test test/framework/codec/im_packet_v6_test.dart
+        if ($LASTEXITCODE -ne 0) {
+            throw "Protocol wire compatibility tests failed (rc=$LASTEXITCODE)"
+        }
         $extra = @()
         if ($Target -eq 'web') {
             $extra += '--no-tree-shake-icons'
