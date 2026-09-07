@@ -365,12 +365,24 @@ class RoomController extends _$RoomController {
 
   /// 刷新远端参与者列表
   /// 在任何参与者/轨道变化事件中调用，确保 UI 同步最新状态
+  /// 同时检测本地屏幕共享轨道是否仍然活跃，防止浏览器取消共享后 UI 状态不同步
   void _updateParticipants() {
     final current = state.value;
     if (current == null) return;
+
+    bool screenStillActive = current.screenSharing;
+    if (current.screenSharing) {
+      final localParticipant = current.room.localParticipant;
+      screenStillActive = localParticipant != null &&
+          localParticipant.videoTrackPublications
+              .any((p) => p.isScreenShare && !p.muted);
+    }
+
     state = AsyncData(
       current.copyWith(
         remoteParticipants: current.room.remoteParticipants.values.toList(),
+        screenSharing: screenStillActive,
+        screenShareTrack: screenStillActive ? current.screenShareTrack : null,
       ),
     );
   }

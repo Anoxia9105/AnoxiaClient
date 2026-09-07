@@ -33,6 +33,12 @@ class ParticipantTile extends StatefulWidget {
   final void Function(String identity)? onKick;
   final VoidCallback? onTap;
 
+  /// 视频画面填充模式，默认 contain（保持宽高比，可能有黑边）
+  final VideoViewFit fit;
+
+  /// 是否移除外层 4px 边距，用于屏幕共享主画面等需要恰好填满容器的场景
+  final bool removePadding;
+
   const ParticipantTile({
     super.key,
     required this.participant,
@@ -40,6 +46,8 @@ class ParticipantTile extends StatefulWidget {
     this.onMute,
     this.onKick,
     this.onTap,
+    this.fit = VideoViewFit.contain,
+    this.removePadding = false,
   });
 
   @override
@@ -143,31 +151,26 @@ class _ParticipantTileState extends State<ParticipantTile> {
 
     final displayName = nickName;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(RadiusToken.md),
-          border: Border.all(
-            color: isSpeaking
-                ? Colors.blueAccent
-                : Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.1),
-            width: isSpeaking ? 2.0 : 1.0,
-          ),
+    final tileContent = Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(RadiusToken.md),
+        border: Border.all(
+          color: isSpeaking
+              ? Colors.blueAccent
+              : Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.1),
+          width: isSpeaking ? 2.0 : 1.0,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(RadiusToken.md),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (track != null)
-                VideoTrackRenderer(track, fit: VideoViewFit.contain)
-              else
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(RadiusToken.md),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (track != null)
+              VideoTrackRenderer(track, fit: widget.fit)
+            else
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -256,8 +259,14 @@ class _ParticipantTileState extends State<ParticipantTile> {
             ],
           ),
         ),
-        ),
-      ),
+      );
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      child: widget.removePadding
+          ? tileContent
+          : Padding(padding: const EdgeInsets.all(4), child: tileContent),
     );
   }
 }

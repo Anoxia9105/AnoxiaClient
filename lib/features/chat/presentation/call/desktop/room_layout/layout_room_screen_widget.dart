@@ -52,6 +52,8 @@ class LayoutRoomScreenWidget extends StatelessWidget {
           onMute: onMute,
           onKick: onKick,
           onTap: () => onParticipantTap?.call(screenParticipant),
+          fit: VideoViewFit.cover,
+          removePadding: true,
           key: ValueKey('${screenParticipant.sid}-screen'),
         );
         Widget thumbnail(Participant p) => ParticipantTile(
