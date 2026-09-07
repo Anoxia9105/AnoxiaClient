@@ -601,6 +601,13 @@ class LocalDataSource {
   ChatMessage _messageFromRow(CachedMessage row) {
     final payloadMap = _decodeJsonMap(row.payloadJson);
     final propertiesMap = _decodeJsonMap(row.propertiesJson);
+    final payload =
+        payloadMap == null ? null : MessagePayload.fromJson(payloadMap);
+    final baseProperties =
+        propertiesMap?.map(
+          (key, value) => MapEntry(key, value?.toString() ?? ''),
+        ) ??
+        const {};
     return ChatMessage(
       messageId: row.id,
       clientMsgId: row.clientMsgId,
@@ -608,12 +615,10 @@ class LocalDataSource {
       senderId: row.senderId,
       messageType: MessageType.fromCode(row.messageType),
       content: row.content,
-      payload: payloadMap == null ? null : MessagePayload.fromJson(payloadMap),
-      properties:
-          propertiesMap?.map(
-            (key, value) => MapEntry(key, value?.toString() ?? ''),
-          ) ??
-          const {},
+      payload: payload,
+      // V6 老缓存行的系统展示变量可能只存在 payload.system.properties 里
+      // （properties 列当时为空），加载时一并合并，避免回显“--”残缺文案。
+      properties: ChatMessage.mergeSystemProperties(baseProperties, payload),
       deliveryStatus: DeliveryStatus.from(row.deliveryStatus),
       timestamp:
           row.sentAt?.millisecondsSinceEpoch ??

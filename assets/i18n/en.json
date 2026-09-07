@@ -786,7 +786,7 @@
   "chat_revoke_error": "Revoke operation error",
   "system_msg_recall": "{} recalled a message",
   "system_msg_callstart": "{} started a meeting",
-  "system_msg_callend": "{} ended a meeting",
+  "system_msg_callend": "Meeting ended after {}",
   "system_msg_call_rejected": "{nickName} rejected the call",
   "system_msg_call_cancelled": "{nickName} cancelled the call",
   "common_back": "Back",

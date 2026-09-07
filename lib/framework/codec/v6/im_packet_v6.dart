@@ -363,7 +363,12 @@ class ImPacketV6 {
     try {
       final payload = _fromV6MessagePayload(m.payload);
       final type = _detectMessageType(m.payload);
-      // properties 在 V6 中已移除，保留空
+      // V6 下 RoomMessage.properties 已随协议下线，系统消息的展示变量
+      // （action / nickName / duration / durationText 等）由服务端写入
+      // SystemPayload.arguments，解码后归入 payload.system.properties。
+      // 这里转填回 properties，供 SystemMessageFormatter 与通知层统一读取，
+      // 避免渲染出“-- 取消了通话”“通话已结束(无时长)”等残缺文案。
+      final systemProps = payload?.system?.properties ?? const <String, String>{};
       return RoomMessage(
         messageId: m.messageId,
         clientMsgId: m.hasClientMessageId() ? m.clientMessageId : null,
@@ -371,7 +376,7 @@ class ImPacketV6 {
         senderId: m.senderId.toInt(),
         messageType: type,
         payload: payload,
-        properties: const {},
+        properties: systemProps.isEmpty ? const {} : systemProps,
         seq: m.hasSeq() ? m.seq.toInt() : null,
         serverTimestamp: m.hasServerTimestampMs()
             ? m.serverTimestampMs.toInt()

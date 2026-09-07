@@ -786,7 +786,7 @@
   "chat_revoke_error": "撤回操作エラー",
   "system_msg_recall": "{} ニュースを1件撤回した",
   "system_msg_callstart": "{} が会議を開始しました",
-  "system_msg_callend": "{} が会議を終了しました",
+  "system_msg_callend": "会議が {} で終了しました",
   "system_msg_call_rejected": "{nickName} が通話を拒否しました",
   "system_msg_call_cancelled": "{nickName} が通話をキャンセルしました",
   "common_back": "戻る",

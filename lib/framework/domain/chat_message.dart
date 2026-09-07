@@ -108,7 +108,10 @@ class ChatMessage {
       messageType: MessageType.fromCode(json['messageType']),
       content: content,
       payload: payload,
-      properties: rawExtra is Map ? Map<String, String>.from(rawExtra) : {},
+      properties: mergeSystemProperties(
+        rawExtra is Map ? Map<String, String>.from(rawExtra) : const {},
+        payload,
+      ),
       timestamp: json['timestamp'] != null
           ? int.tryParse(json['timestamp'].toString())
           : int.tryParse((json['serverTimestamp'] ?? '').toString()),
@@ -126,10 +129,26 @@ class ChatMessage {
       messageType: msg.messageType,
       content: msg.payload?.content ?? '',
       payload: msg.payload,
-      properties: msg.properties,
+      properties: mergeSystemProperties(msg.properties, msg.payload),
       timestamp: msg.timestamp == 0 ? null : msg.timestamp,
       seq: msg.seq,
     );
+  }
+
+  /// 合并系统消息载荷中的展示变量到 properties。
+  ///
+  /// V6 下 RoomMessage.properties 已下线，系统消息的展示字段
+  /// （action / nickName / duration / durationText 等）由服务端写入
+  /// SystemPayload.arguments，解码后位于 [MessagePayload.system]。
+  /// 这里在历史/缓存 JSON 等仍可能缺失 properties 的路径上将两者合并，
+  /// 冲突时外部传入的 [base] 优先，保持对旧协议数据兼容。
+  static Map<String, String> mergeSystemProperties(
+    Map<String, String> base,
+    MessagePayload? payload,
+  ) {
+    final systemProps = payload?.system?.properties;
+    if (systemProps == null || systemProps.isEmpty) return base;
+    return <String, String>{...systemProps, ...base};
   }
 
   static dynamic _decodeMaybeJson(dynamic source) {
