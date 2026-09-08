@@ -52,7 +52,7 @@ class LayoutRoomScreenWidget extends StatelessWidget {
           onMute: onMute,
           onKick: onKick,
           onTap: () => onParticipantTap?.call(screenParticipant),
-          fit: VideoViewFit.cover,
+          fit: VideoViewFit.contain,
           removePadding: true,
           key: ValueKey('${screenParticipant.sid}-screen'),
         );
