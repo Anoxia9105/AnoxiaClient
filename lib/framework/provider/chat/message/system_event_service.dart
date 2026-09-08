@@ -1,5 +1,6 @@
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/announcement/announcement_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -34,6 +35,11 @@ class SystemEventService extends _$SystemEventService {
         .where((frame) => frame.topic == PacketType.event)
         .map((frame) => frame.data as EventMessage)
         .listen(_onEventReceived);
+    final announcementSubscription = stream
+        .where((frame) => frame.topic == PacketType.announcement)
+        .listen(
+          (_) => ref.read(announcementControllerProvider.notifier).refresh(),
+        );
 
     // 监听 WS 连接状态：断线重连后自动补偿数据
     ref.listen(wsControllerProvider, (previous, next) {
@@ -46,13 +52,18 @@ class SystemEventService extends _$SystemEventService {
     });
 
     // 销毁时释放订阅
-    ref.onDispose(() => subscription.cancel());
+    ref.onDispose(() {
+      subscription.cancel();
+      announcementSubscription.cancel();
+    });
   }
 
   /// WS 重连成功后的数据补偿
   ///
   /// 断线期间可能丢失事件推送，需要重新拉取各模块数据
   Future<void> _onReconnected() async {
+    // REST 补偿公告状态，失败由控制器承接，不阻塞其它重连恢复。
+    ref.read(announcementControllerProvider.notifier).refresh();
     // 刷新房间列表（补偿新房间、删除、禁言、未读数等）
     await ref.read(roomListServiceProvider.notifier).refresh(silent: true);
 

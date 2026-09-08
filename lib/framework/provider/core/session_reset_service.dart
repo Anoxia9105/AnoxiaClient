@@ -1,5 +1,6 @@
 import 'package:anoxia/framework/core/app_globals.dart';
 import 'package:anoxia/framework/provider/ai/ai_chat_controller.dart';
+import 'package:anoxia/framework/provider/announcement/announcement_controller.dart';
 import 'package:anoxia/framework/provider/desktop/desktop_search_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
@@ -76,6 +77,7 @@ class SessionResetService {
     'aiChatControllerProvider',
     'desktopSearchControllerProvider',
     'createGroupControllerProvider',
+    'announcementControllerProvider',
   ];
 
   void reset(Ref ref, {required SessionResetReason reason}) {
@@ -156,5 +158,6 @@ class SessionResetService {
 
     // 建群结果 AsyncNotifier：上个账号创建中的群聊状态不应带入新会话。
     container.invalidate(createGroupControllerProvider);
+    container.invalidate(announcementControllerProvider);
   }
 }

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
+import 'package:anoxia/framework/protocol/message/announcement_event.dart';
 import 'package:anoxia/framework/protocol/message/code_payload.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -161,6 +162,28 @@ class ImPacketV6 {
                 requestId: requestId,
                 traceId: traceId,
               );
+      } else if (frame.hasAnnouncementEvent()) {
+        final event = frame.announcementEvent;
+        final action = switch (event.action) {
+          v6.AnnouncementAction.ANNOUNCEMENT_ACTION_PUBLISHED =>
+            AnnouncementAction.published,
+          v6.AnnouncementAction.ANNOUNCEMENT_ACTION_UPDATED =>
+            AnnouncementAction.updated,
+          v6.AnnouncementAction.ANNOUNCEMENT_ACTION_OFFLINE =>
+            AnnouncementAction.offline,
+          _ => null,
+        };
+        if (action != null) {
+          return DecodedV6.announcement(
+            AnnouncementEvent(
+              id: event.id.toInt(),
+              revision: event.revision,
+              action: action,
+            ),
+            requestId: requestId,
+            traceId: traceId,
+          );
+        }
       } else if (frame.hasError()) {
         final err = frame.error;
         return DecodedV6.error(
@@ -368,7 +391,8 @@ class ImPacketV6 {
       // SystemPayload.arguments，解码后归入 payload.system.properties。
       // 这里转填回 properties，供 SystemMessageFormatter 与通知层统一读取，
       // 避免渲染出“-- 取消了通话”“通话已结束(无时长)”等残缺文案。
-      final systemProps = payload?.system?.properties ?? const <String, String>{};
+      final systemProps =
+          payload?.system?.properties ?? const <String, String>{};
       return RoomMessage(
         messageId: m.messageId,
         clientMsgId: m.hasClientMessageId() ? m.clientMessageId : null,
@@ -743,6 +767,16 @@ class DecodedV6 {
     String? requestId,
     String? traceId,
   }) => DecodedV6._('operation', o, requestId: requestId, traceId: traceId);
+  factory DecodedV6.announcement(
+    AnnouncementEvent event, {
+    String? requestId,
+    String? traceId,
+  }) => DecodedV6._(
+    'announcement',
+    event,
+    requestId: requestId,
+    traceId: traceId,
+  );
   factory DecodedV6.error(
     String code,
     String message,

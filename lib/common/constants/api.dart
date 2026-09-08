@@ -35,6 +35,9 @@ class API {
   /// 应用更新检查接口
   static const String appUpdateLatest = '/app/update/latest';
 
+  /// 系统公告
+  static const String systemAnnouncements = '/system/announcements';
+
   // ======================== 认证接口 ========================
   /// 用户登录接口
   static const String login = '/login';

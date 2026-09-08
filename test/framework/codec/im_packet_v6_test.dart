@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/protocol/message/event_message.dart';
+import 'package:anoxia/framework/protocol/message/announcement_event.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
@@ -174,5 +175,23 @@ void main() {
 
     final frame = v6.ClientFrame.fromBuffer(bytes);
     expect(frame.callSignal.hasTargetUserId(), isFalse);
+  });
+
+  test('announcement notification maps only identity revision and action', () {
+    final bytes = v6.ServerFrame(
+      announcementEvent: v6.AnnouncementEvent(
+        id: fixnum.Int64(8),
+        revision: 4,
+        action: v6.AnnouncementAction.ANNOUNCEMENT_ACTION_UPDATED,
+      ),
+    ).writeToBuffer();
+
+    final decoded = ImPacketV6.decodeServerFrame(Uint8List.fromList(bytes));
+    final event = decoded!.data as AnnouncementEvent;
+
+    expect(decoded.type, 'announcement');
+    expect(event.id, 8);
+    expect(event.revision, 4);
+    expect(event.action, AnnouncementAction.updated);
   });
 }

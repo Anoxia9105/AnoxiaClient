@@ -1220,5 +1220,18 @@
   "ai_ask_translate": "このメッセージを{}に翻訳し、訳文のみを出力してください。",
   "ai_assist_explain_instruction": "この内容の意味を、含意やニュアンスも含めて簡潔に説明してください。説明のみを出力してください。",
   "ai_assist_simplify_instruction": "以下の内容を、冗長な部分を除いて重要な情報をすべて残して簡潔にしてください。要約結果のみを出力してください。",
-  "ai_smart_reply_prompt": "受信したチャットメッセージ：\n\"\"\"\n{}\n\"\"\"\n\nこのメッセージへの短い返信候補を {} 件、各20文字以内で、自然な口語調で生成してください。JSON文字列配列のみを出力してください。例：[\"はい\",\"了解\",\"大丈夫です\"]。それ以外は出力しないでください。"
+  "ai_smart_reply_prompt": "受信したチャットメッセージ：\n\"\"\"\n{}\n\"\"\"\n\nこのメッセージへの短い返信候補を {} 件、各20文字以内で、自然な口語調で生成してください。JSON文字列配列のみを出力してください。例：[\"はい\",\"了解\",\"大丈夫です\"]。それ以外は出力しないでください。",
+  "announcement_settings_title": "システム公告",
+  "announcement_settings_subtitle": "このバージョンに適用される公告を表示します",
+  "announcement_close": "閉じる",
+  "announcement_acknowledge": "確認しました",
+  "announcement_ack_error": "確認に失敗しました。もう一度お試しください。",
+  "announcement_load_error": "公告を読み込めませんでした",
+  "announcement_retry": "再試行",
+  "announcement_refresh": "更新",
+  "announcement_empty": "適用される公告はありません",
+  "announcement_acknowledged": "確認済み",
+  "announcement_required_pending": "確認が必要です",
+  "announcement_read": "既読",
+  "announcement_unread": "未読"
 }

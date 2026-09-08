@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
+import 'package:anoxia/features/announcement/presentation/widgets/announcement_presenter.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
@@ -286,7 +287,9 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
         );
         // 让 BotToast 包裹路由子节点与全局悬浮层（通话层等），
         // 保证 Toast 气泡（表情/设备菜单等）始终显示在最上层
-        final overlays = _AppOverlays(child: mediaChild);
+        final overlays = AnnouncementPresenter(
+          child: _AppOverlays(child: mediaChild),
+        );
         return _botToastBuilder(context, overlays);
       },
       debugShowCheckedModeBanner: false,

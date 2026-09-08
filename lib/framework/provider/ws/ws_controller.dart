@@ -19,6 +19,7 @@ import '../../../common/constants/api.dart';
 import '../../codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import '../../protocol/message/event_message.dart';
+import '../../protocol/message/announcement_event.dart';
 import '../../protocol/message/high_message.dart';
 import '../../protocol/message/room_message.dart';
 import '../../protocol/message/message_enum.dart';
@@ -465,6 +466,14 @@ class WsController extends _$WsController {
           final eventMsg = decoded.data as EventMessage;
           final evFrame = PacketFrame(topic: PacketType.event, data: eventMsg);
           if (!_messageController.isClosed) _messageController.add(evFrame);
+          break;
+        case 'announcement':
+          final announcement = decoded.data as AnnouncementEvent;
+          final frame = PacketFrame(
+            topic: PacketType.announcement,
+            data: announcement,
+          );
+          if (!_messageController.isClosed) _messageController.add(frame);
           break;
         case 'operation':
           final op = decoded.data as Map<String, dynamic>;

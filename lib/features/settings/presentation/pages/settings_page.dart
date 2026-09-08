@@ -7,6 +7,7 @@ import 'package:anoxia/features/settings/presentation/pages/account_switch_page.
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_account_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
+import 'package:anoxia/features/settings/presentation/widgets/settings_announcement_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_chat_density_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_feedback_section.dart';
@@ -251,6 +252,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       body: SettingsSplitView(
         destinations: [
+          SettingsDestination(
+            title: 'announcement_settings_title'.tr(),
+            subtitle: 'announcement_settings_subtitle'.tr(),
+            icon: HugeIcons.strokeRoundedMegaphone01,
+            builder: (_) => const SettingsAnnouncementSection(),
+          ),
           SettingsDestination(
             title: 'settings_account_title'.tr(),
             subtitle: 'settings_account_subtitle'.tr(),

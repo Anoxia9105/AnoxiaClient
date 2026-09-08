@@ -1220,5 +1220,18 @@
   "ai_ask_translate": "请把这条消息翻译成{}，只输出译文，不要解释。",
   "ai_assist_explain_instruction": "用简洁易懂的中文解释这段内容的含义，包括潜在语气与言外之意。只输出解释本身。",
   "ai_assist_simplify_instruction": "精简以下内容，去除冗余但保留全部关键信息。只输出精简结果。",
-  "ai_smart_reply_prompt": "以下是一条收到的聊天消息：\n\"\"\"\n{}\n\"\"\"\n\n请为这条消息生成 {} 条简短的中文回复建议，每条不超过20个字符，语气自然口语化。只输出一个 JSON 字符串数组，例如 [\"好的\",\"收到\",\"没问题\"]，不要输出其他内容。"
+  "ai_smart_reply_prompt": "以下是一条收到的聊天消息：\n\"\"\"\n{}\n\"\"\"\n\n请为这条消息生成 {} 条简短的中文回复建议，每条不超过20个字符，语气自然口语化。只输出一个 JSON 字符串数组，例如 [\"好的\",\"收到\",\"没问题\"]，不要输出其他内容。",
+  "announcement_settings_title": "系统公告",
+  "announcement_settings_subtitle": "查看当前版本适用的系统公告",
+  "announcement_close": "关闭",
+  "announcement_acknowledge": "确认知悉",
+  "announcement_ack_error": "确认失败，请重试",
+  "announcement_load_error": "公告加载失败",
+  "announcement_retry": "重试",
+  "announcement_refresh": "刷新",
+  "announcement_empty": "暂无适用公告",
+  "announcement_acknowledged": "已确认",
+  "announcement_required_pending": "需要确认",
+  "announcement_read": "已读",
+  "announcement_unread": "未读"
 }

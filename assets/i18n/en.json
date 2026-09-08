@@ -1220,5 +1220,18 @@
   "ai_ask_translate": "Translate this message into {}, output the translation only.",
   "ai_assist_explain_instruction": "Explain this content in plain, easy-to-understand language, including the implied tone and subtext. Output only the explanation.",
   "ai_assist_simplify_instruction": "Condense the following content, removing redundancy while keeping all key information. Output only the condensed result.",
-  "ai_smart_reply_prompt": "Here is a received chat message:\n\"\"\"\n{}\n\"\"\"\n\nGenerate {} short reply suggestions for this message, each within 20 characters, in a natural conversational tone. Output only a JSON string array, e.g. [\"OK\",\"Got it\",\"No problem\"], nothing else."
+  "ai_smart_reply_prompt": "Here is a received chat message:\n\"\"\"\n{}\n\"\"\"\n\nGenerate {} short reply suggestions for this message, each within 20 characters, in a natural conversational tone. Output only a JSON string array, e.g. [\"OK\",\"Got it\",\"No problem\"], nothing else.",
+  "announcement_settings_title": "Announcements",
+  "announcement_settings_subtitle": "View system announcements applicable to this version",
+  "announcement_close": "Close",
+  "announcement_acknowledge": "Acknowledge",
+  "announcement_ack_error": "Acknowledgement failed. Please try again.",
+  "announcement_load_error": "Couldn't load announcements",
+  "announcement_retry": "Retry",
+  "announcement_refresh": "Refresh",
+  "announcement_empty": "No applicable announcements",
+  "announcement_acknowledged": "Acknowledged",
+  "announcement_required_pending": "Acknowledgement required",
+  "announcement_read": "Read",
+  "announcement_unread": "Unread"
 }

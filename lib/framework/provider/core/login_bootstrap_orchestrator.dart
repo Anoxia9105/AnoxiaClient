@@ -12,6 +12,7 @@ import '../chat/room/room_list_service.dart';
 import '../chat/room/room_lookup_helper.dart';
 import '../chat/room/room_member_service.dart';
 import '../setting/update_check_provider.dart';
+import '../announcement/announcement_controller.dart';
 
 final loginBootstrapOrchestratorProvider = Provider<LoginBootstrapOrchestrator>(
   (ref) => LoginBootstrapOrchestrator(ref),
@@ -63,6 +64,9 @@ class LoginBootstrapOrchestrator {
     _ref.read(systemEventServiceProvider);
     _ref.read(systemMessageServiceProvider);
     _ref.read(appUpdateCheckerProvider);
+
+    // 公告失败不影响登录主流程，控制器自行记录错误供设置页重试。
+    unawaited(_ref.read(announcementControllerProvider.notifier).refresh());
 
     // Step 3: 后台预热当前房间。预热是体验优化，不能阻塞 App 进入主界面。
     unawaited(_warmUpActiveRoomContext(rooms));

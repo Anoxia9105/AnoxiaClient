@@ -11,7 +11,8 @@ enum PacketType {
   message(1),
   highFrequency(2),
   event(3),
-  ack(4);
+  ack(4),
+  announcement(5);
 
   final int code;
   const PacketType(this.code);
@@ -35,6 +36,7 @@ enum PacketType {
         'HIGHFREQUENCY': PacketType.highFrequency,
         'EVENT': PacketType.event,
         'ACK': PacketType.ack,
+        'ANNOUNCEMENT': PacketType.announcement,
       };
       return map[upper] ?? PacketType.unknown;
     }
