@@ -91,16 +91,17 @@ class SettingsAnnouncementSection extends ConsumerWidget {
     Announcement item,
   ) async {
     final required = item.level == AnnouncementLevel.required;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: !required,
-      builder: (dialogContext) => AnnouncementDialog(
+    final route = AnnouncementDialog.buildRoute(
+      context,
+      (dialogContext) => AnnouncementDialog(
         announcement: item,
         onClose: () => Navigator.of(dialogContext).pop(),
         onAcknowledge: () =>
             ref.read(announcementControllerProvider.notifier).acknowledge(item),
       ),
+      dismissible: !required,
     );
+    await Navigator.of(context).push(route);
     if (!required && context.mounted) {
       await ref.read(announcementControllerProvider.notifier).markRead(item);
     }

@@ -8,24 +8,33 @@ part of 'ai_chat_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// AI 对话控制器
+/// AI 对话控制器（SSE 流式）
 ///
-/// 管理 AI 聊天的消息列表和请求状态。
-/// 支持发送用户消息并获取 AI 回复。
+/// 对接 `POST /chat/ai/stream`，与 `framework/network/sse_client.dart` 协议一致：
+/// - thinking 命名事件（`[done]` 哨兵 = 思考结束）
+/// - 匿名 data 为正文增量
+/// - done / error 终态
+/// - 多轮会话通过 `conversationId` 持久化（SharedPreferences per-user）
 
 @ProviderFor(AiChatController)
 final aiChatControllerProvider = AiChatControllerProvider._();
 
-/// AI 对话控制器
+/// AI 对话控制器（SSE 流式）
 ///
-/// 管理 AI 聊天的消息列表和请求状态。
-/// 支持发送用户消息并获取 AI 回复。
+/// 对接 `POST /chat/ai/stream`，与 `framework/network/sse_client.dart` 协议一致：
+/// - thinking 命名事件（`[done]` 哨兵 = 思考结束）
+/// - 匿名 data 为正文增量
+/// - done / error 终态
+/// - 多轮会话通过 `conversationId` 持久化（SharedPreferences per-user）
 final class AiChatControllerProvider
     extends $NotifierProvider<AiChatController, List<AiChatMessage>> {
-  /// AI 对话控制器
+  /// AI 对话控制器（SSE 流式）
   ///
-  /// 管理 AI 聊天的消息列表和请求状态。
-  /// 支持发送用户消息并获取 AI 回复。
+  /// 对接 `POST /chat/ai/stream`，与 `framework/network/sse_client.dart` 协议一致：
+  /// - thinking 命名事件（`[done]` 哨兵 = 思考结束）
+  /// - 匿名 data 为正文增量
+  /// - done / error 终态
+  /// - 多轮会话通过 `conversationId` 持久化（SharedPreferences per-user）
   AiChatControllerProvider._()
     : super(
         from: null,
@@ -53,12 +62,15 @@ final class AiChatControllerProvider
   }
 }
 
-String _$aiChatControllerHash() => r'bf9583d3ceca4a3a55245ec51a63d1ffd0cbba10';
+String _$aiChatControllerHash() => r'ad57256ef5e0d8fb8a2d9bd0db144aca034888fe';
 
-/// AI 对话控制器
+/// AI 对话控制器（SSE 流式）
 ///
-/// 管理 AI 聊天的消息列表和请求状态。
-/// 支持发送用户消息并获取 AI 回复。
+/// 对接 `POST /chat/ai/stream`，与 `framework/network/sse_client.dart` 协议一致：
+/// - thinking 命名事件（`[done]` 哨兵 = 思考结束）
+/// - 匿名 data 为正文增量
+/// - done / error 终态
+/// - 多轮会话通过 `conversationId` 持久化（SharedPreferences per-user）
 
 abstract class _$AiChatController extends $Notifier<List<AiChatMessage>> {
   List<AiChatMessage> build();

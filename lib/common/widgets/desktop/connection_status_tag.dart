@@ -23,49 +23,55 @@ class ConnectionStatusTag extends ConsumerWidget {
     final networkAsync = ref.watch(networkStatusProvider);
     final wsState = ref.watch(wsControllerProvider);
 
-    // 1. 默认状态（未初始化或连接中）
-    Color statusColor = Colors.orange;
-    dynamic networkIcon = HugeIcons.strokeRoundedNoInternet; 
-    String tooltipText = 'status_connecting'.tr();
+    // 1. 先按业务层 WebSocket 状态决定颜色与文案。网络介质数据在部分
+    // 平台（如 Web/WASM）可能长期无数据，不能仅依赖它，否则标签会
+    // 一直卡在默认的「连接中」。
+    late Color statusColor;
+    late String statusText;
+    switch (wsState.status) {
+      case WsStatus.connected:
+        statusColor = Colors.green;
+        statusText = 'status_online'.tr();
+        break;
+      case WsStatus.connecting:
+        statusColor = Colors.orange;
+        statusText = 'status_connecting'.tr();
+        break;
+      case WsStatus.disconnected:
+      case WsStatus.error:
+        statusColor = Colors.grey;
+        statusText = 'status_offline'.tr();
+        break;
+    }
 
-    // 2. 解析当前具体的网络物理介质，匹配对应图标
-    networkAsync.whenData((results) {
-      if (results.contains(ConnectivityResult.none)) {
+    // 2. 有网络介质数据时再叠加图标与提示；明确无网络时标红。
+    dynamic networkIcon = HugeIcons.strokeRoundedInternet;
+    String tooltipText = statusText;
+    final statuses = switch (networkAsync) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (statuses != null && statuses.isNotEmpty) {
+      if (statuses.contains(ConnectivityResult.none)) {
         statusColor = Colors.red;
         networkIcon = HugeIcons.strokeRoundedNoInternet; // 无网络图标
         tooltipText = 'status_network_unavailable'.tr();
-        return;
+      } else {
+        // 根据当前最高优先级的连接方式匹配图标
+        String? mediumText;
+        if (statuses.contains(ConnectivityResult.ethernet)) {
+          networkIcon = HugeIcons.strokeRoundedInternet; // 有线网线/以太网
+          mediumText = 'Ethernet';
+        } else if (statuses.contains(ConnectivityResult.mobile)) {
+          networkIcon = HugeIcons.strokeRoundedCellularNetwork; // 移动网络
+          mediumText = 'Mobile Network';
+        } else if (statuses.contains(ConnectivityResult.wifi)) {
+          networkIcon = HugeIcons.strokeRoundedWifi02; // WiFi
+          mediumText = 'WiFi';
+        }
+        tooltipText = mediumText == null ? statusText : '$mediumText - $statusText';
       }
-
-      // 根据当前最高优先级的连接方式匹配图标
-      if (results.contains(ConnectivityResult.ethernet)) {
-        networkIcon = HugeIcons.strokeRoundedInternet; // 有线网线/以太网
-        tooltipText = 'Ethernet';
-      } else if (results.contains(ConnectivityResult.mobile)) {
-        networkIcon = HugeIcons.strokeRoundedCellularNetwork; // 移动网络
-        tooltipText = 'Mobile Network';
-      } else if (results.contains(ConnectivityResult.wifi)) {
-        networkIcon = HugeIcons.strokeRoundedWifi02; // WiFi
-        tooltipText = 'WiFi';
-      }
-
-      // 3. 叠加业务层 WebSocket 的连接状态来决定颜色
-      switch (wsState.status) {
-        case WsStatus.connected:
-          statusColor = Colors.green;
-          tooltipText = '$tooltipText - ${'status_online'.tr()}';
-          break;
-        case WsStatus.connecting:
-          statusColor = Colors.orange;
-          tooltipText = '$tooltipText - ${'status_connecting'.tr()}';
-          break;
-        case WsStatus.disconnected:
-        case WsStatus.error:
-          statusColor = Colors.grey;
-          tooltipText = '$tooltipText - ${'status_offline'.tr()}';
-          break;
-      }
-    });
+    }
 
     // 4. 渲染圆角包裹的精简状态标签
     return Tooltip(

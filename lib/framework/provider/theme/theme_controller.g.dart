@@ -76,6 +76,7 @@ abstract class _$ThemeIndex extends $Notifier<int> {
 /// 应用主题 Provider
 ///
 /// 固定字体：JetBrainsMono（拉丁/等宽）+ NotoSansSC（CJK 回退），全平台（含 Web）强制使用
+/// 若存在自定义强调色则优先使用。
 
 @ProviderFor(appTheme)
 final appThemeProvider = AppThemeProvider._();
@@ -83,6 +84,7 @@ final appThemeProvider = AppThemeProvider._();
 /// 应用主题 Provider
 ///
 /// 固定字体：JetBrainsMono（拉丁/等宽）+ NotoSansSC（CJK 回退），全平台（含 Web）强制使用
+/// 若存在自定义强调色则优先使用。
 
 final class AppThemeProvider
     extends $FunctionalProvider<ThemeData, ThemeData, ThemeData>
@@ -90,6 +92,7 @@ final class AppThemeProvider
   /// 应用主题 Provider
   ///
   /// 固定字体：JetBrainsMono（拉丁/等宽）+ NotoSansSC（CJK 回退），全平台（含 Web）强制使用
+  /// 若存在自定义强调色则优先使用。
   AppThemeProvider._()
     : super(
         from: null,
@@ -123,4 +126,4 @@ final class AppThemeProvider
   }
 }
 
-String _$appThemeHash() => r'011f4304627d0652bdaf7c76e70d00e2b5542ea4';
+String _$appThemeHash() => r'ffe0bff5fc90aec0bc7edfa33c450038197e7ae7';

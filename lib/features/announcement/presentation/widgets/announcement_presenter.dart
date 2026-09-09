@@ -90,11 +90,13 @@ class _AnnouncementPresenterState extends ConsumerState<AnnouncementPresenter>
     if (userId == null) return;
     _syncSessionUser();
     final pending = ref.read(announcementControllerProvider).pending;
-    final candidates = pending.where(
-      (item) =>
-          item.level == AnnouncementLevel.required ||
-          !_shownNormalIdentities.contains(item.identity),
-    );
+    final candidates = pending
+        .where(
+          (item) =>
+              item.level == AnnouncementLevel.required ||
+              !_shownNormalIdentities.contains(item.identity),
+        )
+        .toList();
     if (candidates.isEmpty) return;
     final item = candidates.first;
     final context = appNavigatorKey.currentContext;
@@ -105,10 +107,9 @@ class _AnnouncementPresenterState extends ConsumerState<AnnouncementPresenter>
     _showingIdentity = item.identity;
     final required = item.level == AnnouncementLevel.required;
     if (!required) _shownNormalIdentities.add(item.identity);
-    final route = DialogRoute<void>(
-      context: context,
-      barrierDismissible: !required,
-      builder: (dialogContext) => AnnouncementDialog(
+    final route = AnnouncementDialog.buildRoute(
+      context,
+      (dialogContext) => AnnouncementDialog(
         announcement: item,
         onClose: () => Navigator.of(dialogContext).pop(),
         onAcknowledge: () async {
@@ -119,7 +120,10 @@ class _AnnouncementPresenterState extends ConsumerState<AnnouncementPresenter>
               .read(announcementControllerProvider.notifier)
               .acknowledge(item);
         },
+        queueIndex: 0,
+        queueTotal: candidates.length,
       ),
+      dismissible: !required,
     );
     _dialogRoute = route;
     await Navigator.of(context, rootNavigator: true).push(route);

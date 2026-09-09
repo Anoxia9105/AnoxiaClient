@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anoxia 官方帮助页 · 重设计稿</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --bg:#eef0f6; --surface:#ffffff; --surface2:#f5f6fa; --surface3:#eceef5;
+  --text:#1b1d27; --text2:#5b6172; --text3:#8b91a3;
+  --line:#e4e6ee; --line2:#d7dae6;
+  --accent:#5E66D0; --accent-deep:#4a54c4; --accent-soft:#eceefc; --accent-ink:#3c46b8;
+  --green:#2fa87a; --amber:#c98a1b;
+  --shadow:0 1px 2px rgba(20,24,44,.05),0 10px 30px rgba(20,24,44,.08);
+}
+body.dark{
+  --bg:#0d0f15; --surface:#151824; --surface2:#1b1f2e; --surface3:#232840;
+  --text:#e9ebf4; --text2:#a0a7bb; --text3:#69708a;
+  --line:#252a3c; --line2:#313754;
+  --accent:#7f89ea; --accent-deep:#9aa2f5; --accent-soft:#242946; --accent-ink:#b9c0f7;
+  --green:#3ecf95; --amber:#e8b562;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 34px rgba(0,0,0,.4);
+}
+html{scroll-behavior:smooth;}
+body{
+  font-family:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--text); font-size:14px; line-height:1.5;
+  transition:background .3s,color .3s;
+}
+/* ============ 设计稿工具栏 ============ */
+.mock-bar{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:14px 28px; background:var(--surface); border-bottom:1px solid var(--line);
+}
+.mock-bar h1{font-size:16px; font-weight:700;}
+.mock-bar .sub{color:var(--text3); font-size:12px;}
+.mock-bar .spacer{flex:1;}
+.theme-btn{
+  display:flex; align-items:center; gap:6px; padding:7px 14px; cursor:pointer;
+  border:1px solid var(--line2); border-radius:999px; background:var(--surface2); color:var(--text2);
+  font-size:12.5px; transition:.2s;
+}
+.theme-btn:hover{border-color:var(--accent); color:var(--accent-ink);}
+/* ============ 通用布局 ============ */
+.stage{padding:36px 28px 8px; display:flex; flex-direction:column; gap:44px; align-items:center;}
+.stage > section{width:100%; max-width:1320px;}
+.stage h2.view-title{font-size:13px; font-weight:700; color:var(--text3); letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; padding-left:4px;}
+.stage h2.view-title span{color:var(--accent-ink);}
+.caption{margin-top:12px; color:var(--text3); font-size:12px; text-align:center;}
+/* ============ 桌面窗口框架 ============ */
+.window{
+  width:1240px; height:780px; margin:0 auto; display:flex; flex-direction:column;
+  background:var(--surface); border:1px solid var(--line2); border-radius:14px; overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.titlebar{
+  height:40px; flex:none; display:flex; align-items:center; gap:8px; padding:0 14px;
+  background:var(--surface2); border-bottom:1px solid var(--line);
+}
+.dots{display:flex; gap:6px;}
+.dots i{width:11px; height:11px; border-radius:50%; display:block;}
+.dots .r{background:#ff5f57;} .dots .y{background:#febc2e;} .dots .g{background:#28c840;}
+.titlebar .t{flex:1; text-align:center; font-size:12px; color:var(--text3); letter-spacing:.02em;}
+.titlebar .ver{font-size:11px; color:var(--text3); background:var(--surface3); padding:2px 8px; border-radius:6px;}
+.app{flex:1; display:grid; grid-template-columns:56px 312px 1fr; min-height:0;}
+/* 侧边图标栏 */
+.rail{background:var(--surface2); border-right:1px solid var(--line); display:flex; flex-direction:column; align-items:center; padding:10px 0; gap:4px;}
+.rail .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-deep)); display:flex; align-items:center; justify-content:center; margin-bottom:10px; box-shadow:0 4px 10px rgba(94,102,208,.35);}
+.rail .item{width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--text3); cursor:pointer; position:relative;}
+.rail .item:hover{background:var(--surface3); color:var(--text2);}
+.rail .item.active{background:var(--accent-soft); color:var(--accent-ink);}
+.rail .item.active::before{content:""; position:absolute; left:-7px; top:12px; bottom:12px; width:3px; border-radius:3px; background:var(--accent);}
+.rail .grow{flex:1;}
+/* 会话列表 */
+.roomlist{background:var(--surface2); border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0;}
+.rl-head{padding:14px 14px 8px; display:flex; align-items:center; justify-content:space-between;}
+.rl-head b{font-size:15px;}
+.rl-head .plus{width:30px; height:30px; border-radius:9px; background:var(--accent-soft); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+.rl-search{margin:6px 14px 10px; position:relative;}
+.rl-search input{
+  width:100%; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+  padding:0 10px 0 32px; font-size:12.5px; color:var(--text); outline:none;
+}
+.rl-search svg{position:absolute; left:9px; top:8px; color:var(--text3);}
+.rl-items{flex:1; overflow:hidden; padding:0 8px;}
+.rl-item{display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:11px; cursor:pointer;}
+.rl-item:hover{background:var(--surface3);}
+.rl-item.sel{background:var(--accent-soft);}
+.rl-item .av{width:38px; height:38px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#fff;}
+.rl-item .mid{flex:1; min-width:0;}
+.rl-item .nm{font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:5px;}
+.rl-item .pv{font-size:11.5px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.rl-item .meta{display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none;}
+.rl-item .tm{font-size:10.5px; color:var(--text3);}
+.badge{min-width:17px; height:17px; padding:0 5px; border-radius:9px; background:var(--accent); color:#fff; font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+.tag-sys{font-size:10px; padding:1px 6px; border-radius:5px; background:var(--accent-soft); color:var(--accent-ink); font-weight:600;}
+/* 详情区 */
+.detail{display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--surface);}
+.appbar{height:58px; flex:none; display:flex; align-items:center; gap:11px; padding:0 18px; border-bottom:1px solid var(--line); background:var(--surface);}
+.appbar .av{width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,var(--accent),var(--accent-deep)); display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(94,102,208,.3);}
+.appbar .tt b{font-size:14.5px; display:block;}
+.appbar .tt span{font-size:11.5px; color:var(--text3);}
+.appbar .acts{margin-left:auto; display:flex; gap:4px;}
+.appbar .acts .a{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text2); cursor:pointer;}
+.appbar .acts .a:hover{background:var(--surface3); color:var(--text);}
+/* 页面主体 */
+.page{flex:1; overflow-y:auto; scroll-behavior:smooth; padding:20px 26px 30px;}
+.page::-webkit-scrollbar{width:8px;}
+.page::-webkit-scrollbar-thumb{background:var(--line2); border-radius:4px;}
+.content{max-width:780px; margin:0 auto; display:flex; flex-direction:column; gap:26px;}
+/* 粘性章节导航 */
+.chips{
+  position:sticky; top:0; z-index:5; display:flex; gap:8px; flex-wrap:wrap;
+  background:color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter:blur(10px); padding:10px 0; margin:-20px -26px 0; padding-left:26px; padding-right:26px;
+}
+.chips a{
+  font-size:12px; font-weight:600; color:var(--accent-ink); text-decoration:none;
+  padding:6px 13px; border-radius:999px; border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); background:color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
+  transition:.18s; display:flex; align-items:center; gap:5px;
+}
+.chips a:hover{border-color:var(--accent); filter:brightness(1.02);}
+.chips a.on{background:var(--accent); border-color:transparent; color:#fff;}
+/* Hero */
+.hero{
+  position:relative; overflow:hidden; border-radius:18px; padding:26px 26px 22px;
+  background:linear-gradient(120deg, var(--accent-soft), var(--surface2) 55%);
+  border:1px solid var(--line);
+}
+.hero .glo{position:absolute; right:-70px; top:-70px; width:230px; height:230px; border-radius:50%; background:radial-gradient(circle, var(--accent) 0%, transparent 68%); opacity:.16;}
+.hero .row{display:flex; gap:16px; align-items:center; position:relative;}
+.hero .logo{width:64px; height:64px; flex:none; border-radius:18px; background:var(--surface); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);}
+.hero h1{font-size:22px; font-weight:800; letter-spacing:.01em;}
+.hero .d{margin-top:5px; color:var(--text2); font-size:13px; max-width:460px;}
+.hero .meta{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; position:relative;}
+.chip{display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--text2);}
+.chip .dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); animation:breath 2s infinite;}
+.chip .dot.amber{background:var(--amber); box-shadow:0 0 0 3px color-mix(in srgb, var(--amber) 25%, transparent);}
+@keyframes breath{0%,100%{opacity:1;}50%{opacity:.35;}}
+/* 更新 / 公告卡 */
+.update-card{
+  display:flex; align-items:center; gap:14px; border-radius:16px; padding:16px 18px;
+  background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow);
+  position:relative;
+}
+.update-card .ic{width:44px; height:44px; flex:none; border-radius:13px; background:var(--accent-soft); color:var(--accent-ink); display:flex; align-items:center; justify-content:center;}
+.update-card .tx{flex:1; min-width:0;}
+.update-card .tx b{font-size:13.5px; display:flex; align-items:center; gap:8px;}
+.update-card .tx p{font-size:12px; color:var(--text2); margin-top:3px;}
+.pill{font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--accent); color:#fff; letter-spacing:.04em;}
+.btn{
+  flex:none; display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; cursor:pointer;
+  padding:9px 16px; border-radius:10px; border:none; background:var(--accent); color:#fff; transition:.15s;
+}
+.btn:hover{background:var(--accent-deep); transform:translateY(-1px);}
+.btn.ghost{background:var(--surface2); color:var(--text2); border:1px solid var(--line);}
+.btn.ghost:hover{color:var(--accent-ink); border-color:var(--accent);}
+.close-x{position:absolute; top:10px; right:10px; width:24px; height:24px; border-radius:7px; display:flex; align-items:center; justify-content:center; color:var(--text3); cursor:pointer;}
+.close-x:hover{background:var(--surface3); color:var(--text);}
+/* 区块 */
+.sec-head{display:flex; align-items:baseline; gap:10px; margin-bottom:13px;}
+.sec-head h3{font-size:16px; font-weight:800;}
+.sec-head .en{font-size:11px; font-weight:700; color:var(--text3); letter-spacing:.08em; text-transform:uppercase;}
+.sec-head .more{margin-left:auto; font-size:12px; color:var(--accent-ink); font-weight:600; cursor:pointer;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+/* 快速操作卡 */
+.act{
+  display:flex; align-items:center; gap:12px; padding:14px; border-radius:15px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); transition:.16s; position:relative; overflow:hidden;
+}
+.act:hover{border-color:var(--accent); transform:translateY(-2px); box-shadow:var(--shadow);}
+.act .ic{width:42px; height:42px; flex:none; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;}
+.act:nth-child(1) .ic{background:#e8f1ff; color:#3574d4;}
+.act:nth-child(2) .ic{background:#e9f9f1; color:#1f9d63;}
+.act:nth-child(3) .ic{background:#fff4e3; color:#c07a10;}
+.act:nth-child(4) .ic{background:#f1ecfd; color:#6d4fd0;}
+.act:nth-child(5) .ic{background:#fdebf1; color:#c2527d;}
+.act:nth-child(6) .ic{background:#e8f4f9; color:#2f88a8;}
+.act .tx{flex:1; min-width:0;}
+.act .tx b{font-size:13.5px;}
+.act .tx p{font-size:11.5px; color:var(--text3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.act .go{color:var(--text3);}
+.act:hover .go{color:var(--accent); transform:translateX(2px);}
+/* 功能卡（增强版） */
+.feat{
+  border-radius:15px; padding:15px; background:var(--surface); border:1px solid var(--line);
+  transition:.16s; position:relative; overflow:hidden;
+}
+.feat:hover{transform:translateY(-2px); box-shadow:var(--shadow); border-color:var(--line2);}
+.feat .top{display:flex; align-items:center; gap:10px;}
+.feat .ic{width:38px; height:38px; flex:none; border-radius:11px; display:flex; align-items:center; justify-content:center;}
+.feat .tt{flex:1; min-width:0;}
+.feat .tt b{font-size:13.5px; display:block;}
+.feat .tt span{font-size:11px; color:var(--text3);}
+.feat p.desc{font-size:12px; color:var(--text2); margin-top:10px; line-height:1.55;}
+.feat .tags{display:flex; gap:5px; flex-wrap:wrap; margin-top:10px;}
+.feat .tags i{font-style:normal; font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:6px; background:var(--surface3); color:var(--text2);}
+.feat .tags i.hot{background:var(--accent-soft); color:var(--accent-ink);}
+/* 入门步骤 */
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; position:relative;}
+.step{border-radius:15px; padding:16px 14px; background:var(--surface); border:1px solid var(--line); position:relative;}
+.step .num{width:30px; height:30px; border-radius:9px; background:var(--accent-soft); color:var(--accent-ink); font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center;}
+.step b{display:block; margin-top:10px; font-size:13px;}
+.step p{font-size:11.5px; color:var(--text3); margin-top:4px; line-height:1.5;}
+.step:not(:last-child)::after{content:"→"; position:absolute; right:-9px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:13px; z-index:1;}
+/* FAQ */
+.faq-item{border:1px solid var(--line); border-radius:13px; background:var(--surface); margin-bottom:9px; overflow:hidden; transition:.15s;}
+.faq-item.open{border-color:var(--accent); box-shadow:var(--shadow);}
+.faq-q{display:flex; align-items:center; gap:10px; padding:13px 15px; cursor:pointer; font-size:13px; font-weight:600;}
+.faq-q .qi{width:26px; height:26px; flex:none; border-radius:8px; background:var(--accent-soft); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;}
+.faq-q .car{margin-left:auto; color:var(--text3); transition:.25s;}
+.faq-item.open .car{transform:rotate(90deg); color:var(--accent);}
+.faq-a{max-height:0; overflow:hidden; transition:max-height .28s ease;}
+.faq-a p{padding:0 15px 14px 51px; font-size:12px; color:var(--text2); line-height:1.65;}
+.faq-item.open .faq-a{max-height:200px;}
+/* 小贴士 */
+.tips{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+.tip{border-radius:13px; padding:13px 14px; background:var(--surface2); border:1px solid var(--line); font-size:12px; color:var(--text2);}
+.tip b{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text); margin-bottom:4px;}
+.tip .em{font-size:15px;}
+/* 导航链接 */
+.nav-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.nav-row{display:flex; align-items:center; gap:11px; padding:12px 14px; border-radius:13px; background:var(--surface); border:1px solid var(--line); cursor:pointer; transition:.15s;}
+.nav-row:hover{border-color:var(--accent); transform:translateY(-1px); box-shadow:var(--shadow);}
+.nav-row .ic{width:34px; height:34px; flex:none; border-radius:10px; background:var(--surface3); color:var(--text2); display:flex; align-items:center; justify-content:center;}
+.nav-row:hover .ic{background:var(--accent-soft); color:var(--accent-ink);}
+.nav-row .tx{flex:1; min-width:0;}
+.nav-row .tx b{font-size:13px; display:block;}
+.nav-row .tx span{font-size:11px; color:var(--text3);}
+/* 页脚 */
+.footer{text-align:center; padding:6px 0 2px; color:var(--text3); font-size:11.5px; line-height:1.9;}
+.footer .ver{font-weight:700; color:var(--text2);}
+.footer .heart{color:#e0567d;}
+/* ============ 手机端框架 ============ */
+.phone{
+  width:392px; margin:0 auto; background:#000; border-radius:44px; padding:10px;
+  box-shadow:var(--shadow);
+}
+.phone .screen{border-radius:35px; overflow:hidden; background:var(--surface); height:740px; display:flex; flex-direction:column; position:relative;}
+.notch{position:absolute; top:10px; left:50%; transform:translateX(-50%); width:110px; height:24px; background:#000; border-radius:14px; z-index:9;}
+.m-status{height:34px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 22px 5px; font-size:11px; font-weight:700; color:var(--text);}
+.m-appbar{height:50px; flex:none; display:flex; align-items:center; gap:9px; padding:0 14px; border-bottom:1px solid var(--line);}
+.m-appbar .bk{width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:var(--text2);}
+.m-appbar .av{width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--accent),var(--accent-deep)); display:flex; align-items:center; justify-content:center;}
+.m-appbar .tt b{font-size:13.5px; display:block; line-height:1.2;}
+.m-appbar .tt span{font-size:10.5px; color:var(--text3);}
+.m-appbar .a{margin-left:auto; width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:var(--text2);}
+.m-page{flex:1; overflow-y:auto; padding:14px 14px 22px; scroll-behavior:smooth;}
+.m-page::-webkit-scrollbar{display:none;}
+.m-page .content{gap:18px;}
+.m-page .grid2,.m-page .nav-grid{grid-template-columns:1fr 1fr; gap:9px;}
+.m-page .feat{padding:12px;}
+.m-page .feat p.desc{display:none;}
+.m-page .steps{grid-template-columns:1fr 1fr; gap:8px;}
+.m-page .step:not(:last-child)::after{display:none;}
+.m-page .tips{grid-template-columns:1fr;}
+.m-page .hero{padding:18px;}
+.m-page .hero .row{gap:12px;}
+.m-page .hero .logo{width:50px; height:50px; border-radius:14px;}
+.m-page .hero h1{font-size:18px;}
+.m-page .act .tx p{white-space:normal;}
+.m-page .update-card{padding:13px 14px;}
+.m-page .update-card .tx p{display:none;}
+.m-page .update-card .btn{padding:8px 12px;}
+/* ============ 设计说明 ============ */
+.notes{max-width:880px; margin:6px auto 0; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px 28px; box-shadow:var(--shadow);}
+.notes h3{font-size:15px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+.notes h3 .n{width:22px; height:22px; border-radius:7px; background:var(--accent); color:#fff; font-size:12px; display:flex; align-items:center; justify-content:center;}
+.notes ul{list-style:none; display:flex; flex-direction:column; gap:9px;}
+.notes li{display:flex; gap:10px; font-size:12.5px; color:var(--text2); line-height:1.6; align-items:baseline;}
+.notes li::before{content:""; flex:none; width:6px; height:6px; border-radius:50%; background:var(--accent); position:relative; top:-1px; left:1px;}
+.notes li b{color:var(--text);}
+.notes li code{font-family:Consolas,monospace; font-size:11.5px; background:var(--surface3); padding:1px 6px; border-radius:5px; color:var(--accent-ink);}
+.notes .col{display:grid; grid-template-columns:1fr 1fr; gap:22px 34px;}
+@media (max-width:1360px){ .window{transform:scale(.92); transform-origin:top center;} }
+@media (max-width:1024px){ .window{transform:scale(.7); } .notes .col{grid-template-columns:1fr;} }
+svg{display:block;}
+</style>
+</head>
+<body>
+<!-- ============ 顶部工具栏 ============ -->
+<div class="mock-bar">
+  <h1>Anoxia 官方帮助页 · 重新设计</h1>
+  <span class="sub">基于 AnoxiaClient 现有功能 · 默认强调色 Indigo #5E66D0 · 桌面 + 移动端双视图</span>
+  <span class="spacer"></span>
+  <button class="theme-btn" onclick="document.body.classList.toggle('dark');this.querySelector('span').textContent=document.body.classList.contains('dark')?'浅色':'深色';">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    <span>深色</span>
+  </button>
+</div>
+
+<div class="stage">
+<!-- ============ 桌面视图 ============ -->
+<section>
+  <h2 class="view-title">Desktop · <span>会话详情内嵌官方页（1240×780 窗口）</span></h2>
+  <div class="window">
+    <div class="titlebar">
+      <div class="dots"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+      <div class="t">Anoxia — Anoxia 官方</div>
+      <div class="ver">v2.1.0</div>
+    </div>
+    <div class="app">
+      <!-- 图标栏 -->
+      <div class="rail">
+        <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="item active" title="聊天"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="item" title="联系人"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="item" title="记事本"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+        <div class="item" title="收藏"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></div>
+        <div class="grow"></div>
+        <div class="item" title="设置"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.8l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.8-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.8.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.8 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.8l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.8.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.8-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.8v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      </div>
+      <!-- 会话列表 -->
+      <div class="roomlist">
+        <div class="rl-head">
+          <b>会话</b>
+          <div class="plus" title="新聊天"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="rl-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="搜索会话 / 联系人…" readonly>
+        </div>
+        <div class="rl-items">
+          <div class="rl-item sel">
+            <div class="av" style="background:linear-gradient(135deg,var(--accent),var(--accent-deep));"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+            <div class="mid">
+              <div class="nm">Anoxia 官方 <span class="tag-sys">系统</span></div>
+              <div class="pv">系统帮助与功能引导</div>
+            </div>
+            <div class="meta"><span class="tm">刚刚</span></div>
+          </div>
+          <div class="rl-item">
+            <div class="av" style="background:#3574d4;">张</div>
+            <div class="mid">
+              <div class="nm">张伟</div>
+              <div class="pv">收到，下午会议见</div>
+            </div>
+            <div class="meta"><span class="tm">14:32</span><span class="badge">3</span></div>
+          </div>
+          <div class="rl-item">
+            <div class="av" style="background:#1f9d63;">前</div>
+            <div class="mid">
+              <div class="nm">前端项目组</div>
+              <div class="pv">李娜：文档已更新</div>
+            </div>
+            <div class="meta"><span class="tm">13:05</span><span class="badge">12</span></div>
+          </div>
+          <div class="rl-item">
+            <div class="av" style="background:#c07a10;">李</div>
+            <div class="mid">
+              <div class="nm">李娜</div>
+              <div class="pv">[图片] 设计稿第三版</div>
+            </div>
+            <div class="meta"><span class="tm">昨天</span></div>
+          </div>
+          <div class="rl-item">
+            <div class="av" style="background:#c2527d;">妈</div>
+            <div class="mid">
+              <div class="nm">妈妈</div>
+              <div class="pv">晚上早点回家吃饭</div>
+            </div>
+            <div class="meta"><span class="tm">周一</span><span style="font-size:10px;color:var(--text3);">免打扰</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- 详情区 -->
+      <div class="detail">
+        <div class="appbar">
+          <div class="av"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+          <div class="tt"><b>Anoxia 官方</b><span>系统帮助与功能引导 · 无需回复</span></div>
+          <div class="acts">
+            <div class="a" title="会话中查找"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></div>
+            <div class="a" title="帮助 / 反馈"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg></div>
+            <div class="a" title="会话详情"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.8l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4"/></svg></div>
+          </div>
+        </div>
+        <div class="page" id="page">
+          <div class="content">
+            <!-- 粘性章节导航 -->
+            <nav class="chips">
+              <a href="#hero" class="on">🏠 概览</a>
+              <a href="#quick">⚡ 快速操作</a>
+              <a href="#steps">🧭 快速上手</a>
+              <a href="#feat">✨ 功能一览</a>
+              <a href="#faq">💬 常见问题</a>
+              <a href="#tips">💡 小贴士</a>
+              <a href="#nav">🔗 快捷入口</a>
+            </nav>
+            <!-- Hero -->
+            <section class="hero" id="hero">
+              <div class="glo"></div>
+              <div class="row">
+                <div class="logo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+                <div style="flex:1;">
+                  <h1>欢迎使用 Anoxia</h1>
+                  <p class="d">这是系统帮助房间，在这里快速了解应用的核心能力：消息、通话、AI 助手与效率工具。本页无需回复任何消息。</p>
+                  <div class="meta">
+                    <span class="chip"><i class="dot"></i> 服务已连接</span>
+                    <span class="chip">当前版本 <b style="margin-left:2px;">v2.1.0</b></span>
+                    <span class="chip"><i class="dot amber"></i> 检测到 v2.2.0 可用</span>
+                    <span class="chip">多端同步中</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <!-- 更新 / 公告卡 -->
+            <section class="update-card" id="upd">
+              <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+              <div class="tx">
+                <b>新版本 v2.2.0 可用 <span class="pill">UPDATE</span></b>
+                <p>新增 AI 助手自定义指令、会议表情反应、14 组主题强调色与自定义取色；优化消息同步速度。</p>
+              </div>
+              <button class="btn">立即检查更新</button>
+              <div class="close-x" title="暂不提醒"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+            </section>
+            <!-- 快速操作 -->
+            <section id="quick">
+              <div class="sec-head"><h3>快速操作</h3><span class="en">Quick Actions</span></div>
+              <div class="grid2">
+                <div class="act" onclick="this.querySelector('.go').style.transition='transform .3s'">
+                  <div class="ic">👤</div>
+                  <div class="tx"><b>添加好友</b><p>搜索用户名 / 昵称发送好友申请</p></div>
+                  <svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="act">
+                  <div class="ic">👥</div>
+                  <div class="tx"><b>发起群聊</b><p>多选好友创建群组，支持审批入群</p></div>
+                  <svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="act">
+                  <div class="ic">🔄</div>
+                  <div class="tx"><b>检查更新</b><p>检查并安装应用最新版本</p></div>
+                  <svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="act">
+                  <div class="ic">📤</div>
+                  <div class="tx"><b>分享 Anoxia</b><p>把官网链接分享给朋友，一起体验</p></div>
+                  <svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="act">
+                  <div class="ic">🔔</div>
+                  <div class="tx"><b>系统公告</b><p>查看当前版本适用的系统公告</p></div>
+                  <svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+              </div>
+            </section>
+            <!-- 快速上手 -->
+            <section id="steps">
+              <div class="sec-head"><h3>快速上手</h3><span class="en">Getting Started</span></div>
+              <div class="steps">
+                <div class="step"><div class="num">1</div><b>添加好友</b><p>搜索用户名发送申请，通过后开始聊天</p></div>
+                <div class="step"><div class="num">2</div><b>开始对话</b><p>发送文字、图片、语音，或 @ 提醒群成员</p></div>
+                <div class="step"><div class="num">3</div><b>发起通话</b><p>顶栏通话按钮一键开始音视频会议</p></div>
+                <div class="step"><div class="num">4</div><b>探索效率</b><p>试试 AI 助手、记事本与收藏</p></div>
+              </div>
+            </section>
+            <!-- 功能一览（手风琴，与常见问题同式样） -->
+            <section id="feat">
+              <div class="sec-head"><h3>功能一览</h3><span class="en">Features</span></div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">💬</span>实时消息<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>支持文字、图片、语音、视频、文件、表情与位置；长按或右键消息可撤回、转发、收藏与引用。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">📹</span>音视频通话<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>在单聊或群聊中一键发起通话，支持多人会议、共享屏幕、举手表情与通话录制提示。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">✨</span>AI 助手<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>选中消息文字即可让 AI 解释、翻译、总结、润色、扩写；支持自定义指令与智能回复建议。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">📝</span>记事本<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>带文件夹层级的全功能笔记：富文本、代码块、图片、标签、回收站与版本历史，可分享回聊天。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">⭐</span>收藏<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>右键 / 长按消息即可收藏，支持按类型筛选与全文搜索，跨会话沉淀重要信息。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">😊</span>表情包<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>上传自定义图片表情包，手机 / 桌面 / Web 多端同步，聊天输入框直接选用。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">🔍</span>全局搜索<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>顶栏搜索框一步直达：会话、联系人、历史消息上下文，结果可直接跳转定位。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">📱</span>多端同步<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>同一账号多设备登录，消息增量同步、设置与表情包共享，离线队列自动补发。</p></div>
+              </div>
+            </section>
+            <!-- 常见问题 -->
+            <section id="faq">
+              <div class="sec-head"><h3>常见问题</h3><span class="en">FAQ</span></div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">?</span>如何隐藏官方帮助入口？<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>在「设置 → 通用」中关闭“显示官方帮助入口”，会话列表将不再显示本房间，随时可再打开。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">?</span>AI 助手怎么用？<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>在输入框选中文字或右键 / 长按消息，选择“问 AI / 解释 / 总结 / 翻译 / 润色 / 扩写”，也可输入自定义指令；智能回复会在智能回复栏给出 3 条建议。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">?</span>通话支持加密吗？<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>支持。通话界面显示“E2E 加密已启用”标识即表示端到端加密已生效；主持人可对成员静音或移出会议。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">?</span>消息发错了怎么办？<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>右键 / 长按自己发送的消息选择“撤回”，群内可转发给正确的会话；重要内容建议先“收藏”再发送。</p></div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-q"><span class="qi">?</span>如何自定义主题与强调色？<svg class="car" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                <div class="faq-a"><p>「设置 → 外观」提供 14 组强调色（经典活力 / 柔和莫兰迪 / 深邃夜色 / 温暖大地）与自定义取色，并支持深浅色主题与背景视频。</p></div>
+              </div>
+            </section>
+            <!-- 小贴士 -->
+            <section id="tips">
+              <div class="sec-head"><h3>小贴士</h3><span class="en">Tips</span></div>
+              <div class="tips">
+                <div class="tip"><b><span class="em">📌</span>置顶会话</b>右键会话选择“置顶”，重要对话始终保持在列表顶部。</div>
+                <div class="tip"><b><span class="em">🔕</span>免打扰</b>开启后该会话新消息不弹出通知，仍可正常接收与查看。</div>
+                <div class="tip"><b><span class="em">📱</span>多端登录</b>手机 App 扫码即可登录桌面端，消息与设置自动同步。</div>
+              </div>
+            </section>
+            <!-- 快捷入口 -->
+            <section id="nav">
+              <div class="sec-head"><h3>快捷入口</h3><span class="en">Shortcuts</span></div>
+              <div class="nav-grid">
+                <div class="nav-row"><div class="ic">⚙️</div><div class="tx"><b>设置中心</b><span>主题、布局、通知、存储</span></div><svg class="go" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="nav-row"><div class="ic">📜</div><div class="tx"><b>开源许可</b><span>查看依赖组件许可证</span></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="nav-row"><div class="ic">🔒</div><div class="tx"><b>隐私政策</b><span>数据如何收集与使用</span></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="nav-row"><div class="ic">📄</div><div class="tx"><b>用户协议</b><span>服务条款与使用规范</span></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="nav-row"><div class="ic">📤</div><div class="tx"><b>分享 Anoxia</b><span>把官网分享给朋友</span></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+                <div class="nav-row"><div class="ic">🐙</div><div class="tx"><b>GitHub</b><span>项目仓库与 Issue 反馈</span></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+              </div>
+            </section>
+            <!-- 页脚 -->
+            <footer class="footer">
+              <div class="ver">Anoxia v2.1.0 · 最后检查更新 今天 09:12</div>
+              <div>© 2026 Anoxia · 愿每一句重要的话都稳稳送达 <span class="heart">❤</span></div>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">桌面窗口 1240×780 · 官方页替代消息流与输入框（纯前端虚拟房间）· 小窗口自动降为紧凑排版</p>
+</section>
+<!-- ============ 移动视图 ============ -->
+<section>
+  <h2 class="view-title">Mobile · <span>手机全屏官方页（390×844）</span></h2>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="m-status"><span>9:41</span><span style="display:flex;gap:4px;align-items:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg></span></div>
+      <div class="m-appbar">
+        <div class="bk"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div class="av"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="tt"><b>Anoxia 官方</b><span>系统帮助与功能引导</span></div>
+        <div class="a"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg></div>
+      </div>
+      <div class="m-page">
+        <div class="content">
+          <section class="hero">
+            <div class="row">
+              <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+              <div style="flex:1;">
+                <h1>欢迎使用 Anoxia</h1>
+                <p class="d">系统帮助房间：消息、通话、AI 助手与效率工具一览。无需回复。</p>
+                <div class="meta">
+                  <span class="chip"><i class="dot"></i> 已连接</span>
+                  <span class="chip">v2.1.0</span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="update-card">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+            <div class="tx"><b>v2.2.0 可用 <span class="pill">UPDATE</span></b><p>新增 AI 自定义指令与会议表情反应</p></div>
+            <button class="btn">检查</button>
+          </section>
+          <section>
+            <div class="sec-head"><h3>快速操作</h3></div>
+            <div class="grid2">
+              <div class="act"><div class="ic">👤</div><div class="tx"><b>添加好友</b><p>搜索用户名申请</p></div></div>
+              <div class="act"><div class="ic">👥</div><div class="tx"><b>发起群聊</b><p>多选好友建群</p></div></div>
+              <div class="act"><div class="ic">📷</div><div class="tx"><b>扫一扫</b><p>名片 / 群码</p></div></div>
+              <div class="act"><div class="ic">🔄</div><div class="tx"><b>检查更新</b><p>安装最新版本</p></div></div>
+              <div class="act"><div class="ic">📤</div><div class="tx"><b>分享 Anoxia</b><p>官网分享给朋友</p></div></div>
+              <div class="act"><div class="ic">⚙️</div><div class="tx"><b>打开设置</b><p>主题与通知</p></div></div>
+            </div>
+          </section>
+          <section>
+            <div class="sec-head"><h3>快速上手</h3></div>
+            <div class="steps">
+              <div class="step"><div class="num">1</div><b>添加好友</b><p>搜索用户名发送申请</p></div>
+              <div class="step"><div class="num">2</div><b>开始对话</b><p>发送图文语音或 @ 提醒</p></div>
+              <div class="step"><div class="num">3</div><b>发起通话</b><p>一键开始音视频会议</p></div>
+              <div class="step"><div class="num">4</div><b>探索效率</b><p>AI 助手、记事本与收藏</p></div>
+            </div>
+          </section>
+          <section>
+            <div class="sec-head"><h3>功能一览</h3></div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">💬</span>实时消息<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>文字、图片、语音、视频、文件、表情与位置；长按或右键可撤回转发。</p></div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">📹</span>音视频通话<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>多人会议、屏幕共享与举手反应。</p></div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">✨</span>AI 助手<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>解释、翻译、总结、润色与智能回复。</p></div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">📝</span>记事本<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>文件夹、版本历史与 AI 润色。</p></div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">⭐</span>收藏<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>重要消息一键收藏与全文搜索。</p></div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">😊</span>表情包<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>自定义图片表情多端同步。</p></div>
+            </div>
+          </section>
+          <section>
+            <div class="sec-head"><h3>常见问题</h3></div>
+            <div class="faq-item open">
+              <div class="faq-q"><span class="qi">?</span>AI 助手怎么用？<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>长按消息选择“问 AI / 翻译 / 总结 / 润色”，或输入自定义指令。</p></div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q"><span class="qi">?</span>消息发错了怎么办？<svg class="car" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              <div class="faq-a"><p>长按消息选择“撤回”，或转发到正确的会话。</p></div>
+            </div>
+          </section>
+          <section>
+            <div class="sec-head"><h3>快捷入口</h3></div>
+            <div class="nav-grid">
+              <div class="nav-row"><div class="ic">⚙️</div><div class="tx"><b>设置中心</b></div></div>
+              <div class="nav-row"><div class="ic">🔒</div><div class="tx"><b>隐私政策</b></div></div>
+              <div class="nav-row"><div class="ic">📄</div><div class="tx"><b>用户协议</b></div></div>
+              <div class="nav-row"><div class="ic">🐙</div><div class="tx"><b>GitHub</b></div></div>
+            </div>
+          </section>
+          <footer class="footer">
+            <div class="ver">Anoxia v2.1.0</div>
+            <div>© 2026 Anoxia · 愿每一句重要的话都稳稳送达 <span class="heart">❤</span></div>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">移动端 392 宽 · 单列排版 · 功能卡隐藏描述行、双列压缩 · FAQ 默认折叠</p>
+</section>
+
+<!-- ============ 设计说明 ============ -->
+<section>
+  <div class="notes">
+    <h3><span class="n">i</span>设计说明 & 改动清单</h3>
+    <div class="col">
+      <ul>
+        <li><b>新增「粘性章节导航」chips：</b>长页面内 7 个锚点（概览/快速操作/上手/功能一览/FAQ/贴士/入口），自绘胶囊按钮（主题强调色底 + <code>RadiusToken.pill</code> 圆角，不用 ActionChip 默认样式），点击滚动到对应区块并避开吸顶条遮挡。</li>
+        <li><b>Hero 区状态化：</b>版本徽章 + 服务连接呼吸点 + “检测到新版”提示，把 <code>appVersionProvider</code> / <code>ws_state</code> 信息上移，用户一眼掌握环境状态。</li>
+        <li><b>新增「更新 / 公告」卡：</b>整合 <code>settingsPageController.checkUpdate()</code> 与公告（announcement）入口，主 CTA “立即检查更新”可关闭暂不提醒。</li>
+        <li><b>快速操作按平台裁剪：</b>桌面端 / Web PC 六卡（添加好友 / 发起群聊 / 系统公告 / 检查更新 / 分享 / 设置，走 <code>presentAdaptivePage</code> 弹窗）；移动端六卡（增加「扫一扫」，隐藏「系统公告」，走页面跳转）；「扫一扫」为原生移动端专属，Web 与桌面端一律不展示。</li>
+        <li><b>功能引导 4 → 8 项手风琴：</b>补齐项目真实能力——AI 助手（chat_ai / note_ai）、记事本（版本历史 / 导出）、收藏、表情包、全局搜索、多端同步；位于「快速上手」之下，与常见问题同为点击展开面板样式。</li>
+        <li><b>FAQ 4 → 5 条：</b>覆盖 AI 用法、E2E 加密、撤回、主题强调色等高频疑问，手风琴单开。</li>
+        <li><b>新增「小贴士」3 条：</b>置顶 / 免打扰 / 多端登录，均对应已有能力（<code>chat_pin</code> / <code>chat_do_not_disturb</code>）。</li>
+        <li><b>修复 i18n 缺失：</b>旧版 <code>official_room_action_*</code> / <code>onboarding_*</code> / <code>faq_*</code> / <code>nav_*</code> / <code>footer_*</code> 共 30+ key 在 zh/en/ja 中不存在，页面渲染原始 key；实施时需补齐三语文案（本稿文案即定稿）。</li>
+      </ul>
+      <ul>
+        <li><b>排版与层级：</b>内容最大宽 780px 居中；卡片 15px 圆角、hover 上浮 2px + 阴影；强调色默认 Indigo <code>#5E66D0</code>，跟随主题 14 色 + 自定义取色。</li>
+        <li><b>移动端策略：</b>功能一览与 FAQ 同为折叠面板、步骤 2×2、Hero 压缩；与现有 <code>compact</code>（&lt;520/&lt;620）降级逻辑一致。</li>
+        <li><b>无障碍：</b>保留现有 Semantics label；卡片区全部可焦点化；呼吸点动效需响应“减少动效”设置（<code>settings_reduce_motion</code>）。</li>
+        <li><b>不动的部分：</b>官方房间仍为纯前端虚拟房间（<code>official_welcome</code>），不渲染消息流与输入框；<code>ChatAppBar</code> 保持现有结构，仅确认副标题显示 <code>official_room_list_hint</code>。</li>
+        <li><b>实施文件：</b>重构 <code>official_room_home_view.dart</code> 与 <code>official_room_sections.dart</code>（拆分为 quick / features / steps / faq / tips / nav 六个 section widget），i18n 三语补齐，图标沿用 hugeicons 线性风格。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+// FAQ 手风琴（单开）
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const it=q.closest('.faq-item');
+    const open=it.classList.contains('open');
+    it.closest('.parent-faq, section, .content')?.querySelectorAll('.faq-item.open').forEach(o=>{
+      if(o!==it){o.classList.remove('open');}
+    });
+    it.classList.toggle('open',!open);
+  });
+});
+// 更新卡关闭
+document.querySelectorAll('.close-x').forEach(x=>{
+  x.addEventListener('click',()=>{x.closest('.update-card').style.display='none';});
+});
+// 粘性 chips 滚动高亮
+const page=document.getElementById('page');
+const links=[...document.querySelectorAll('.chips a')];
+const ids=links.map(a=>a.getAttribute('href').slice(1));
+if(page){
+  const obs=new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id));
+      }
+    });
+  },{root:page,rootMargin:'-20% 0px -60% 0px',threshold:0});
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)obs.observe(el);});
+}
+</script>
+</body>
+</html>

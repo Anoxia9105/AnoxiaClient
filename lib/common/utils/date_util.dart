@@ -38,6 +38,16 @@ class DateUtil {
     return DateFormat('yyyy/M/d').format(date); // 例如 2026/7/5
   }
 
+  /// 短日期：今年 M/d，跨年 yyyy/M/d
+  ///
+  /// 纯数字格式、无需 intl locale 数据，适用于公告发布时间等元信息展示。
+  static String formatShortDate(DateTime date) {
+    if (date.year == DateTime.now().year) {
+      return DateFormat('M/d').format(date);
+    }
+    return DateFormat('yyyy/M/d').format(date);
+  }
+
   /// 微信风格时间分隔格式化
   ///
   /// [timestamp] 毫秒级时间戳
