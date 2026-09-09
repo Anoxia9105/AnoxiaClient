@@ -18,6 +18,8 @@ flutter run -d windows / -d chrome / ...
 - Generated `*.g.dart` files are **committed** (35 files) — after codegen, the diff must include them. Do not edit them by hand.
 - `pubspec.lock` is gitignored; never rely on it for dependency state.
 - Flutter is on `PATH` (stable); `.fvmrc` exists but no `.fvm/` checkout is installed.
+- Widget 测试字体：`test/flutter_test_config.dart` 全局加载真实字体（JetBrainsMono + NotoSansSC），所有 golden / 文本断言均按真实排版运行；新增需要视觉验证的页面可参照 `test/features/chat/presentation/widgets/official_room_home_view_preview_test.dart` 的假 Provider + `--update-goldens` 预览模式（截图落到 `build/` 下，非回归断言）。easy_localization 在测试环境需手动 `SharedPreferences.setMockInitialValues` + `EasyLocalizationController.initEasyLocation()`，并显式传 `startLocale`（设备 locale 会解析到不存在的 `zh-CN.json`）。
+- Widget 测试字体：`test/flutter_test_config.dart` 全局加载真实字体（JetBrainsMono + NotoSansSC），所有 golden / 文本断言均按真实排版运行；新增需要视觉验证的页面可参照 `test/features/chat/presentation/widgets/official_room_home_view_preview_test.dart` 的假 Provider + `--update-goldens` 预览模式（截图落到 `build/` 下，非回归断言）。easy_localization 在测试环境需手动 `SharedPreferences.setMockInitialValues` + `EasyLocalizationController.initEasyLocation()`，并显式传 `startLocale`（设备 locale 会解析到不存在的 `zh-CN.json`）。
 
 ## Web support (critical quirks)
 
