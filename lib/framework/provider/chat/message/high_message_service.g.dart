@@ -81,7 +81,7 @@ final class HighMessageServiceProvider
 }
 
 String _$highMessageServiceHash() =>
-    r'f54e0bdb7ff8262921de9b4ff94df4826c7f3e53';
+    r'bf9f820a8217294e128d23a30cba867ceb7c013a';
 
 /// 高优先级消息服务
 ///

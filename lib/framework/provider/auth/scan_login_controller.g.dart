@@ -52,7 +52,7 @@ final class ScanLoginControllerProvider
 }
 
 String _$scanLoginControllerHash() =>
-    r'11ebb399635938c2636d8753a2c91556d7206f3c';
+    r'c88d06167e89d4ef7c825719a3b622ccc267ada5';
 
 /// 扫码登录控制器（桌面/Web 展示端）
 ///
