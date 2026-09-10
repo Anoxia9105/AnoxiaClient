@@ -125,10 +125,9 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
 
 /// 移动端视频布局组件
 ///
-/// 所有人数统一使用网格布局：
-/// - 1人：单画面占满
-/// - 2人（1v1）：等分网格（竖屏上下分、横屏左右分），不再使用主画面 + 小窗
-/// - 3人以上：多列网格
+/// 根据参与者数量自动切换布局模式：
+/// - 1-2人：一对一布局（主画面 + 小窗）
+/// - 3人以上：网格布局
 /// - 点击参与者可进入聚焦模式
 class MobileVideoLayout extends StatelessWidget {
   const MobileVideoLayout({
@@ -149,7 +148,7 @@ class MobileVideoLayout extends StatelessWidget {
     }
 
     if (participants.length <= 2) {
-      return _buildOneToOneGridLayout();
+      return _buildOneToOneLayout();
     }
 
     final focused = participants
@@ -163,43 +162,38 @@ class MobileVideoLayout extends StatelessWidget {
     return _buildGridLayout();
   }
 
-  /// 1v1 网格布局：两路画面等分占满可用区域。
-  ///
-  /// 竖屏上下分、横屏左右分，不再使用远端全屏 + 本地小窗；
-  /// 每块磁贴均为 cover 填充铺满，无空白、无挤压。
-  /// 点击磁贴进入聚焦模式，与多人网格行为一致。
-  Widget _buildOneToOneGridLayout() {
-    if (participants.length == 1) {
-      return MobileParticipantSurface(
-        key: ValueKey('mobile-grid-${participants.first.sid}'),
-        participant: participants.first,
-        borderRadius: 22,
-      );
+  Widget _buildOneToOneLayout() {
+    final remote = participants.whereType<RemoteParticipant>().firstOrNull;
+    final local = participants.whereType<LocalParticipant>().firstOrNull;
+    Participant primary = participants.first;
+    if (remote != null) {
+      primary = remote;
+    } else if (local != null) {
+      primary = local;
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final horizontal = constraints.maxWidth > constraints.maxHeight;
-        Widget tile(Participant p) => Expanded(
-          child: GestureDetector(
-            onTap: () => onFocusChanged(p.identity),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        MobileParticipantSurface(
+          key: ValueKey('mobile-primary-${primary.sid}'),
+          participant: primary,
+          borderRadius: 22,
+        ),
+        if (local != null && local != primary)
+          Positioned(
+            top: 12,
+            right: 12,
+            width: 104,
+            height: 150,
             child: MobileParticipantSurface(
-              key: ValueKey('mobile-grid-${p.sid}'),
-              participant: p,
+              key: ValueKey('mobile-local-${local.sid}'),
+              participant: local,
+              compact: true,
               borderRadius: 16,
             ),
           ),
-        );
-        final tiles = [tile(participants[0]), tile(participants[1])];
-        if (horizontal) {
-          return Row(
-            children: [tiles[0], const SizedBox(width: 8), tiles[1]],
-          );
-        }
-        return Column(
-          children: [tiles[0], const SizedBox(height: 8), tiles[1]],
-        );
-      },
+      ],
     );
   }
 
