@@ -16,7 +16,6 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_limit.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/reply_target_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -356,7 +355,6 @@ class _DesktopChatInputState extends ConsumerState<DesktopChatInput> {
               autoFocus: false,
               padding: const EdgeInsets.all(8),
               customStyles: QuillStyleConfig.get(context),
-              textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
               // flutter_quill 的 onKeyPressed 仍是 experimental，但这是当前版本
               // 处理键盘快捷键（Ctrl+B/I/U 等）的唯一入口，故忽略该提示。
               // ignore: experimental_member_use

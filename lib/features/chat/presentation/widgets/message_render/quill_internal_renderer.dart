@@ -5,7 +5,6 @@ import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quil
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_image_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/embedBuilder/quill_mention_build.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_style_config.dart';
-import 'package:anoxia/features/chat/presentation/widgets/chatinput/desktop/quill/quill_syntax_highlighter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -207,7 +206,6 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
                           color: widget.textColor,
                           compact: true,
                         ),
-                        textSpanBuilder: QuillSyntaxHighlighter.buildSpan,
                         onTapOutside: (_, focusNode) {
                           focusNode.unfocus();
                           _clearSelection();

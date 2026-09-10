@@ -94,7 +94,6 @@ const allDependencies = <Package>[
   _flutter_colorpicker,
   _flutter_gen_core,
   _flutter_gen_runner,
-  _flutter_highlight,
   _flutter_keyboard_visibility_linux,
   _flutter_keyboard_visibility_macos,
   _flutter_keyboard_visibility_platform_interface,
@@ -142,7 +141,6 @@ const allDependencies = <Package>[
   _graphs,
   _gsettings,
   _hashcodes,
-  _highlight,
   _hooks,
   _hotkey_manager,
   _hotkey_manager_linux,
@@ -360,8 +358,6 @@ const dependencies = <Package>[
   _web_socket_channel,
   _tray_manager,
   _flutter_quill,
-  _flutter_highlight,
-  _highlight,
   _cross_file,
   _cross_cache,
   _photo_view,
@@ -5283,40 +5279,6 @@ SOFTWARE.''',
     devDependencies: [PackageRef('lints'), PackageRef('test')],
   );
 
-/// flutter_highlight 0.7.0
-const _flutter_highlight = Package(
-    name: 'flutter_highlight',
-    description: 'Syntax highlighting widget for Flutter with lots of languages and themes support.',
-    homepage: 'https://github.com/git-touch/highlight',
-    authors: [],
-    version: '0.7.0',
-    license: '''MIT License
-
-Copyright (c) 2019 Rongjian Zhang
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('highlight')],
-    devDependencies: [],
-  );
-
 /// flutter_keyboard_visibility_linux 1.0.0
 const _flutter_keyboard_visibility_linux = Package(
     name: 'flutter_keyboard_visibility_linux',
@@ -7917,40 +7879,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
     isSdk: false,
     dependencies: [],
     devDependencies: [PackageRef('test')],
-  );
-
-/// highlight 0.7.0
-const _highlight = Package(
-    name: 'highlight',
-    description: 'Syntax highlighting for Dart with lots of languages and themes support.',
-    homepage: 'https://github.com/pd4d10/highlight',
-    authors: [],
-    version: '0.7.0',
-    license: '''MIT License
-
-Copyright (c) 2019 Rongjian Zhang
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('collection')],
-    devDependencies: [PackageRef('test'), PackageRef('path')],
   );
 
 /// hooks 2.0.2
@@ -18036,7 +17964,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('flutter_screenutil'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('dio'), PackageRef('go_router'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('connectivity_plus'), PackageRef('permission_handler'), PackageRef('flutter_map'), PackageRef('latlong2'), PackageRef('geolocator'), PackageRef('easy_localization'), PackageRef('hugeicons'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('web_socket_channel'), PackageRef('tray_manager'), PackageRef('flutter_quill'), PackageRef('flutter_highlight'), PackageRef('highlight'), PackageRef('cross_file'), PackageRef('cross_cache'), PackageRef('photo_view'), PackageRef('window_manager'), PackageRef('bot_toast'), PackageRef('url_launcher'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('desktop_multi_window'), PackageRef('file_picker'), PackageRef('video_player'), PackageRef('video_player_win'), PackageRef('uuid'), PackageRef('package_info_plus'), PackageRef('path_provider'), PackageRef('open_filex'), PackageRef('pub_semver'), PackageRef('path'), PackageRef('characters'), PackageRef('intl'), PackageRef('share_plus'), PackageRef('web'), PackageRef('image'), PackageRef('emoji_picker_flutter'), PackageRef('flutter_local_notifications'), PackageRef('app_badge_plus'), PackageRef('pasteboard'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_zoom_drawer'), PackageRef('hotkey_manager'), PackageRef('flutter_background'), PackageRef('pip'), PackageRef('just_audio'), PackageRef('audio_waveforms'), PackageRef('jpush_flutter'), PackageRef('firebase_core'), PackageRef('firebase_messaging'), PackageRef('chat_bottom_container'), PackageRef('mobile_scanner'), PackageRef('qr_flutter'), PackageRef('image_gallery_saver_plus'), PackageRef('image_cropper'), PackageRef('image_picker'), PackageRef('html'), PackageRef('http'), PackageRef('device_info_plus'), PackageRef('drift'), PackageRef('sqlite3_flutter_libs'), PackageRef('flutter_quill_delta_from_html'), PackageRef('markdown'), PackageRef('flutter_markdown'), PackageRef('dart_quill_delta'), PackageRef('pdf')],
+    dependencies: [PackageRef('flutter'), PackageRef('flutter_screenutil'), PackageRef('flutter_riverpod'), PackageRef('riverpod_annotation'), PackageRef('dio'), PackageRef('go_router'), PackageRef('shared_preferences'), PackageRef('flutter_secure_storage'), PackageRef('connectivity_plus'), PackageRef('permission_handler'), PackageRef('flutter_map'), PackageRef('latlong2'), PackageRef('geolocator'), PackageRef('easy_localization'), PackageRef('hugeicons'), PackageRef('flutter_list_view'), PackageRef('scrollable_positioned_list'), PackageRef('livekit_client'), PackageRef('flutter_webrtc'), PackageRef('web_socket_channel'), PackageRef('tray_manager'), PackageRef('flutter_quill'), PackageRef('cross_file'), PackageRef('cross_cache'), PackageRef('photo_view'), PackageRef('window_manager'), PackageRef('bot_toast'), PackageRef('url_launcher'), PackageRef('alphabet_list_view'), PackageRef('lpinyin'), PackageRef('desktop_multi_window'), PackageRef('file_picker'), PackageRef('video_player'), PackageRef('video_player_win'), PackageRef('uuid'), PackageRef('package_info_plus'), PackageRef('path_provider'), PackageRef('open_filex'), PackageRef('pub_semver'), PackageRef('path'), PackageRef('characters'), PackageRef('intl'), PackageRef('share_plus'), PackageRef('web'), PackageRef('image'), PackageRef('emoji_picker_flutter'), PackageRef('flutter_local_notifications'), PackageRef('app_badge_plus'), PackageRef('pasteboard'), PackageRef('flutter_staggered_animations'), PackageRef('flutter_zoom_drawer'), PackageRef('hotkey_manager'), PackageRef('flutter_background'), PackageRef('pip'), PackageRef('just_audio'), PackageRef('audio_waveforms'), PackageRef('jpush_flutter'), PackageRef('firebase_core'), PackageRef('firebase_messaging'), PackageRef('chat_bottom_container'), PackageRef('mobile_scanner'), PackageRef('qr_flutter'), PackageRef('image_gallery_saver_plus'), PackageRef('image_cropper'), PackageRef('image_picker'), PackageRef('html'), PackageRef('http'), PackageRef('device_info_plus'), PackageRef('drift'), PackageRef('sqlite3_flutter_libs'), PackageRef('flutter_quill_delta_from_html'), PackageRef('markdown'), PackageRef('flutter_markdown'), PackageRef('dart_quill_delta'), PackageRef('pdf')],
     devDependencies: [PackageRef('flutter_lints'), PackageRef('riverpod_generator'), PackageRef('riverpod_lint'), PackageRef('build_runner'), PackageRef('drift_dev'), PackageRef('flutter_gen_runner'), PackageRef('go_router_builder'), PackageRef('flutter_oss_licenses'), PackageRef('connectivity_plus_platform_interface'), PackageRef('plugin_platform_interface')],
   );
 
