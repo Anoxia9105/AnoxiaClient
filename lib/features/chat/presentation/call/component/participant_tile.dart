@@ -379,7 +379,9 @@ class _ParticipantTileState extends State<ParticipantTile> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
+      // 纯头像（无可见视频轨道）不可点击：点击头像不切换视图，
+      // 上层聚焦逻辑同样会忽略无画面的参与者，这里直接置空以去掉点击手势。
+      onTap: track != null ? widget.onTap : null,
       child: widget.removePadding
           ? tileContent
           : Padding(padding: const EdgeInsets.all(4), child: tileContent),

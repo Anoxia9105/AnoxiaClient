@@ -53,12 +53,14 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
       ...roomState.remoteParticipants,
     ];
 
-    final screenSharer = participants
-        .where((p) => p.videoTrackPublications.any((pub) => pub.isScreenShare))
-        .firstOrNull;
-    final focused = participants
+    final screenSharer = participants.where(_hasActiveScreenShare).firstOrNull;
+    final focusedRaw = participants
         .where((p) => p.identity == _focusedIdentity)
         .firstOrNull;
+    // 纯头像（无可见视频轨道）不允许成为焦点：点击头像不切换视图，
+    // 关摄像头后也自动回落到网格/共享布局，避免头像独占主画面。
+    final focused =
+        (focusedRaw != null && _hasVisibleVideo(focusedRaw)) ? focusedRaw : null;
 
     final notifier = ref.read(roomControllerProvider(token).notifier);
 
@@ -130,6 +132,42 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
     );
   }
 
+  /// 是否有可见视频轨道（摄像头或屏幕共享其一即可）
+  ///
+  /// 与 [ParticipantTile] 的显示逻辑对齐：仅 `!muted && subscribed`
+  ///（即 `track != null`）的视频轨道才算有画面，纯头像返回 false。
+  bool _hasVisibleVideo(Participant p) {
+    return p.videoTrackPublications.any(
+      (pub) => !pub.muted && pub.subscribed && pub.track is VideoTrack,
+    );
+  }
+
+  /// 是否正在活跃共享屏幕（静音/未订阅的残留 publication 不算）
+  bool _hasActiveScreenShare(Participant p) {
+    return p.videoTrackPublications.any(
+      (pub) => pub.isScreenShare && !pub.muted && pub.subscribed,
+    );
+  }
+
+  /// 网格点击：仅有画面的磁贴才能进入焦点/共享大屏，纯头像直接忽略
+  void _onGridTap(Participant participant) {
+    if (!_hasVisibleVideo(participant)) return;
+    setState(() => _focusedIdentity = participant.identity);
+  }
+
+  /// 大屏/侧栏点击：纯头像缩略图不允许抢占主画面，点击主画面可取消聚焦
+  void _onScreenTap(Participant participant) {
+    if (participant.identity != _focusedIdentity &&
+        !_hasVisibleVideo(participant)) {
+      return;
+    }
+    setState(() {
+      _focusedIdentity = participant.identity == _focusedIdentity
+          ? null
+          : participant.identity;
+    });
+  }
+
   /// 根据布局模式构建对应的布局组件
   Widget _buildLayout({
     required LayoutMode mode,
@@ -150,11 +188,7 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
         handRaiseMap: handRaiseMap,
         onMute: onMute,
         onKick: onKick,
-        onParticipantTap: (participant) => setState(() {
-          _focusedIdentity = participant.identity == _focusedIdentity
-              ? null
-              : participant.identity;
-        }),
+        onParticipantTap: _onScreenTap,
       );
     }
     return switch (mode) {
@@ -163,20 +197,27 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
         handRaiseMap: handRaiseMap,
         onMute: onMute,
         onKick: onKick,
-        onParticipantTap: (participant) =>
-            setState(() => _focusedIdentity = participant.identity),
+        onParticipantTap: _onGridTap,
       ),
-      LayoutMode.focus => LayoutRoomScreenWidget(
-        screenParticipant: screenSharer!,
-        otherParticipants: participants
-            .where((p) => p.sid != screenSharer.sid)
-            .toList(),
-        handRaiseMap: handRaiseMap,
-        onMute: onMute,
-        onKick: onKick,
-        onParticipantTap: (participant) =>
-            setState(() => _focusedIdentity = participant.identity),
-      ),
+      LayoutMode.focus => screenSharer == null
+          // 防御：mode 与实际轨道状态短暂不一致时回落网格，避免 `!` 崩溃
+          ? LayoutRoomWidget(
+              participants: participants,
+              handRaiseMap: handRaiseMap,
+              onMute: onMute,
+              onKick: onKick,
+              onParticipantTap: _onGridTap,
+            )
+          : LayoutRoomScreenWidget(
+              screenParticipant: screenSharer,
+              otherParticipants: participants
+                  .where((p) => p.sid != screenSharer.sid)
+                  .toList(),
+              handRaiseMap: handRaiseMap,
+              onMute: onMute,
+              onKick: onKick,
+              onParticipantTap: _onScreenTap,
+            ),
       // 兼容旧值：1v1 不再使用轮播（远端全屏 + 本地画中画），统一降级为网格。
       // ignore: deprecated_member_use_from_same_package
       LayoutMode.carousel => LayoutRoomWidget(
@@ -184,8 +225,7 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
         handRaiseMap: handRaiseMap,
         onMute: onMute,
         onKick: onKick,
-        onParticipantTap: (participant) =>
-            setState(() => _focusedIdentity = participant.identity),
+        onParticipantTap: _onGridTap,
       ),
     };
   }

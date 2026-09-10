@@ -36,7 +36,11 @@ LayoutMode layoutMode(Ref ref, RoomState roomState) {
   ];
 
   final hasScreenShare = participants.any(
-    (p) => p.videoTrackPublications.any((pub) => pub.isScreenShare),
+    (p) => p.videoTrackPublications.any(
+      // 仅活跃的共享轨道才算共享中：已静音/未订阅（远端尚未收到/已停止但
+      // publication 残留）必须视为无共享，否则纯头像也会被误判进焦点布局。
+      (pub) => pub.isScreenShare && !pub.muted && pub.subscribed,
+    ),
   );
 
   if (hasScreenShare) return LayoutMode.focus;
