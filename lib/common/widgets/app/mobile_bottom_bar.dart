@@ -15,7 +15,7 @@ import '../vibrating_badge.dart';
 ///
 /// 与 HTML 预览稿 `bottom-nav-redesign-v2.html` 的「V2-C」一致（已按确认意见
 /// 去掉底部圆点、图文贴合）：悬浮液态玻璃胶囊 + 弹簧滑块
-/// （`AnimatedPositioned` 320ms `easeOutBack`），图标下方紧贴 11px 文字标签。
+/// （320ms `easeOutBack`，位置钳制在框内防撞穿），图标下方紧贴 11px 文字标签。
 ///
 /// - 可见项与之前一致：过滤掉记事本、设置，保留聊天 / 人员 / 收藏 / 我的。
 /// - 聊天 Tab 显示总未读，人员 Tab 显示联系人请求数（99+ 封顶由
@@ -63,14 +63,18 @@ class MobileBottomBar extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final tabWidth =
-                constraints.maxWidth / visibleEntries.length;
+            // 注意：这里量到的是整栏宽（含容器左右各 _kBarHPad 内边距），
+            // Row/滑块实际只占内容宽，必须先减掉，否则末项滑块静止时也会
+            // 右溢约 13px（此前只修过冲没修这里，切“我的”依然顶框）。
+            final tabWidth = (constraints.maxWidth - _kBarHPad * 2) /
+                visibleEntries.length;
             return ClipRRect(
               borderRadius: BorderRadius.circular(_kBarRadius),
               child: BackdropFilter(
                 filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                  key: const Key('mobile-bottom-bar'),
+                  padding: const EdgeInsets.fromLTRB(_kBarHPad, 8, _kBarHPad, 6),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -94,26 +98,18 @@ class MobileBottomBar extends ConsumerWidget {
                     ],
                   ),
                   child: Stack(
+                    // 硬裁剪兜底：滑块任何时刻都不许画出内容区。
+                    clipBehavior: Clip.hardEdge,
                     children: [
-                      // 弹簧滑块：跟随选中项，带过冲的果味动效。
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 320),
-                        curve: Curves.easeOutBack,
+                      // 弹簧滑块：跟随选中项，带过冲的果味动效，
+                      // 内部钳制保证不撞穿玻璃框（见下方 [_SlidingHighlight]）。
+                      _SlidingHighlight(
                         left: safeSelectedPos * tabWidth + 3,
-                        top: 0,
                         width: tabWidth - 6,
-                        height: _kIconBox,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: highlightFill,
-                            borderRadius:
-                                BorderRadius.circular(_kSliderRadius),
-                            border: Border.all(
-                              color: highlightBorder,
-                              width: 1,
-                            ),
-                          ),
-                        ),
+                        minLeft: 3,
+                        maxLeft: 3 * tabWidth + 3,
+                        fill: highlightFill,
+                        border: highlightBorder,
                       ),
                       Row(
                         children: visibleEntries.map((entry) {
@@ -153,6 +149,103 @@ class MobileBottomBar extends ConsumerWidget {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// 弹簧滑块：用显式 [AnimationController] 跑 320ms [Curves.easeOutBack]，
+/// 位置钳制在 [minLeft]～[maxLeft] 内。
+///
+/// 直接用 [AnimatedPositioned] + easeOutBack 时，切到两端 Tab 的长行程
+/// 过冲约 10%，动画中途会撞穿玻璃外框（复现见
+/// `test/common/widgets/app/mobile_bottom_bar_slider_test.dart`）；
+/// 这里保留弹簧手感，只把出界部分截掉，滑块贴框 decelerate 而不是穿框。
+class _SlidingHighlight extends StatefulWidget {
+  final double left;
+  final double width;
+  final double minLeft;
+  final double maxLeft;
+  final Color fill;
+  final Color border;
+
+  const _SlidingHighlight({
+    required this.left,
+    required this.width,
+    required this.minLeft,
+    required this.maxLeft,
+    required this.fill,
+    required this.border,
+  });
+
+  @override
+  State<_SlidingHighlight> createState() => _SlidingHighlightState();
+}
+
+class _SlidingHighlightState extends State<_SlidingHighlight>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  double _from = 0;
+  double _to = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _from = widget.left;
+    _to = widget.left;
+  }
+
+  @override
+  void didUpdateWidget(_SlidingHighlight oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.left != _to) {
+      // 以当前实际显示位置为新起点，动画中途变向也不跳帧。
+      _from = _displayedLeft;
+      _to = widget.left;
+      _controller.forward(from: 0);
+    }
+  }
+
+  double get _displayedLeft {
+    final raw = ui.lerpDouble(
+          _from,
+          _to,
+          Curves.easeOutBack.transform(_controller.value),
+        ) ??
+        _to;
+    return raw.clamp(widget.minLeft, widget.maxLeft);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Positioned(
+          left: _displayedLeft,
+          top: 0,
+          width: widget.width,
+          height: _kIconBox,
+          child: child!,
+        );
+      },
+      child: DecoratedBox(
+        key: const Key('mobile-bottom-bar-slider'),
+        decoration: BoxDecoration(
+          color: widget.fill,
+          borderRadius: BorderRadius.circular(_kSliderRadius),
+          border: Border.all(color: widget.border, width: 1),
         ),
       ),
     );
@@ -267,7 +360,9 @@ class _GlassNavIconState extends State<_GlassNavIcon> {
   }
 }
 
-/// HTML 稿映射的固定尺寸：外栏圆角 30、滑块圆角 18、图标区 36。
+/// HTML 稿映射的固定尺寸：外栏圆角 30、滑块圆角 18、图标区 36、
+/// 外栏水平内边距 8（滑块分格时从整栏宽里扣除，见 build 注释）。
 const double _kBarRadius = 30;
 const double _kSliderRadius = 18;
 const double _kIconBox = 36;
+const double _kBarHPad = 8;
