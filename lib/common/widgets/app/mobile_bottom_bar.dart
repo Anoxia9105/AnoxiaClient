@@ -11,11 +11,11 @@ import '../../../framework/provider/contact/contact_requests_controller.dart';
 import '../../../framework/provider/layout/layout_controller.dart';
 import '../vibrating_badge.dart';
 
-/// 移动端底部导航栏（V2-C · 纯图标液态玻璃版）
+/// 移动端底部导航栏（V2-C · 液态玻璃图文紧凑版）
 ///
-/// 与 HTML 预览稿 `bottom-nav-redesign-v2.html` 的「V2-C · 纯图标版」一致：
-/// 悬浮液态玻璃胶囊 + 弹簧滑块（`AnimatedPositioned` 320ms `easeOutBack`），
-/// 只显示图标（无文字标签），选中靠滑块高光 + 主色图标表达。
+/// 与 HTML 预览稿 `bottom-nav-redesign-v2.html` 的「V2-C」一致（已按确认意见
+/// 去掉底部圆点、图文贴合）：悬浮液态玻璃胶囊 + 弹簧滑块
+/// （`AnimatedPositioned` 320ms `easeOutBack`），图标下方紧贴 11px 文字标签。
 ///
 /// - 可见项与之前一致：过滤掉记事本、设置，保留聊天 / 人员 / 收藏 / 我的。
 /// - 聊天 Tab 显示总未读，人员 Tab 显示联系人请求数（99+ 封顶由
@@ -159,10 +159,10 @@ class MobileBottomBar extends ConsumerWidget {
   }
 }
 
-/// 液态玻璃导航里的单个纯图标项。
+/// 液态玻璃导航里的单个图文项（紧凑版）。
 ///
-/// 36x36 图标区 + 右上悬挂角标；按压只缩放图标本身（0.88），
-/// 语义上保留文字标签给读屏软件。
+/// 36x36 图标区 + 下方 11px 文字（间距 1px）+ 右上悬挂角标；
+/// 按压只缩放图标本身（0.88），读屏 label 去重（可见文字不再重复播报）。
 class _GlassNavIcon extends StatefulWidget {
   final String label;
   final List<List<dynamic>> icon;
@@ -209,10 +209,10 @@ class _GlassNavIconState extends State<_GlassNavIcon> {
           borderRadius: BorderRadius.circular(_kSliderRadius),
           splashColor: colorScheme.primary.withValues(alpha: 0.10),
           highlightColor: colorScheme.primary.withValues(alpha: 0.06),
-          child: SizedBox(
-            height: _kIconBox,
-            child: Center(
-              child: AnimatedScale(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
                 scale: _pressed ? 0.88 : 1.0,
                 duration: const Duration(milliseconds: 140),
                 curve: Curves.easeInOut,
@@ -244,7 +244,22 @@ class _GlassNavIconState extends State<_GlassNavIcon> {
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 1),
+              ExcludeSemantics(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: widget.selected
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                    color: widget.selected
+                        ? colorScheme.primary
+                        : unselectedColor,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
