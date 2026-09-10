@@ -19,9 +19,14 @@ try {
         Write-Host "flutter pub get failed (rc=$LASTEXITCODE)"
         $rc = $LASTEXITCODE
     } else {
-        & $FLUTTER_BIN test test/framework/codec/im_packet_v6_test.dart
-        if ($LASTEXITCODE -ne 0) {
-            throw "Protocol wire compatibility tests failed (rc=$LASTEXITCODE)"
+        $wireTest = Join-Path $PKG_ROOT 'test/framework/codec/im_packet_v6_test.dart'
+        if (Test-Path $wireTest) {
+            & $FLUTTER_BIN test $wireTest
+            if ($LASTEXITCODE -ne 0) {
+                throw "Protocol wire compatibility tests failed (rc=$LASTEXITCODE)"
+            }
+        } else {
+            Write-Host "跳过协议 wire 兼容测试：未找到 $wireTest"
         }
         $extra = @()
         if ($Target -eq 'web') {

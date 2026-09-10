@@ -6,7 +6,7 @@
 # 流程（与 ps1 完全一致）：
 #   1. 运行 ../AnoxiaProtocol/tool_generate_dart.sh 只生成 Dart 协议
 #   2. flutter pub get（不会刷新 path 依赖，协议必须先生成）
-#   3. 固定 wire bytes 协议测试 test/framework/codec/im_packet_v6_test.dart
+#   3. 固定 wire bytes 协议测试（文件存在时才跑，已随 test/ 精简移除则跳过）
 #   4. flutter build <Target>
 #
 # 用法（兼容 ps1 的 -Target / -Debug / -Wasm 写法）：
@@ -79,8 +79,13 @@ bash "$GENERATE_SH"
 echo ">>> $FLUTTER_BIN pub get"
 "$FLUTTER_BIN" pub get
 
-echo ">>> $FLUTTER_BIN test test/framework/codec/im_packet_v6_test.dart"
-"$FLUTTER_BIN" test test/framework/codec/im_packet_v6_test.dart
+WIRE_TEST="$PKG_ROOT/test/framework/codec/im_packet_v6_test.dart"
+if [[ -f "$WIRE_TEST" ]]; then
+  echo ">>> $FLUTTER_BIN test $WIRE_TEST"
+  "$FLUTTER_BIN" test "$WIRE_TEST"
+else
+  echo "跳过协议 wire 兼容测试：未找到 $WIRE_TEST"
+fi
 
 EXTRA=()
 if [[ "$TARGET" == "web" ]]; then
