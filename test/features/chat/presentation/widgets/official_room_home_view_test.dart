@@ -64,9 +64,7 @@ void main() {
     expect(find.text('official_room_action_scan'), findsNothing);
     // 桌面端展示系统公告入口
     expect(find.text('official_room_action_announcement'), findsOneWidget);
-    // 粘性 chips 导航存在（首个 chip 可见）
-    expect(find.text('official_room_chips_overview'), findsOneWidget);
-    // 各区块标题至少渲染一次（chips 与区块容器会重复出现，惰性构建下数量不定）
+    // 各区块标题至少渲染一次
     expect(find.text('official_room_action_title'), findsAtLeast(1));
     expect(find.text('official_room_feat_title'), findsAtLeast(1));
     expect(find.text('official_room_feat_ai'), findsOneWidget);

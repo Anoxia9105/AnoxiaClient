@@ -2,7 +2,7 @@
 //
 // 以假 Provider 渲染 OfficialRoomHomeView，将亮色 / 暗色两种主题下的
 // 页面截图写入 build/official_room_preview/，供开发期肉眼核对
-// 3D 胶囊导航坞的视觉效果。不生成 golden 断言文件，不进入常规回归。
+// 页面视觉效果。不生成 golden 断言文件，不进入常规回归。
 import 'dart:io';
 import 'dart:ui' show ImageByteFormat;
 
@@ -47,7 +47,7 @@ void main() {
     required int accentIndex,
     required String fileName,
   }) async {
-    // 假更新信息：不弹更新横幅，聚焦导航坞本身。
+    // 假更新信息：不弹更新横幅，聚焦页面本身。
     final overrides = [
       wsControllerProvider.overrideWith(() => _FakeWsController()),
       // 屏蔽真实 connectivity 插件（测试环境无平台通道实现）。
