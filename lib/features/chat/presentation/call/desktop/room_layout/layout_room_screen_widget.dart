@@ -58,9 +58,7 @@ class LayoutRoomScreenWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surfaceContainerLow,
             borderRadius: BorderRadius.circular(RadiusToken.lg),
-            border: Border.all(
-              color: cs.outlineVariant.withValues(alpha: 0.6),
-            ),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
@@ -90,12 +88,19 @@ class LayoutRoomScreenWidget extends StatelessWidget {
           onTap: () => onParticipantTap?.call(p),
           key: ValueKey(p.sid),
         );
-          if (!showSidebar) {
-            return Column(
-              children: [
-                Expanded(child: main),
-                if (otherParticipants.isNotEmpty)
-                  SizedBox(
+        // 共享主画面固定 16:9：宽度决定高度，宽 1600 时高强制为 900，
+        // 禁止卡片无限拉伸宽度，避免 contain 信箱产生大面积黑边。
+        Widget mainBox() => Center(
+          child: AspectRatio(aspectRatio: 16 / 9, child: main),
+        );
+        if (!showSidebar) {
+          return Column(
+            children: [
+              Expanded(child: mainBox()),
+              if (otherParticipants.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: SizedBox(
                     height: 112,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
@@ -107,34 +112,35 @@ class LayoutRoomScreenWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-              ],
-            );
-          }
-          final sidebarWidth = (constraints.maxWidth * 0.2).clamp(180.0, 260.0);
-          return Row(
-            children: [
-              Expanded(child: main),
+                ),
+            ],
+          );
+        }
+        final sidebarWidth = (constraints.maxWidth * 0.2).clamp(180.0, 260.0);
+        return Row(
+          children: [
+            Expanded(child: mainBox()),
 
-              if (showSidebar) ...[
-                const SizedBox(width: 8),
-                SizedBox(
+            if (showSidebar) ...[
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: SizedBox(
                   width: sidebarWidth,
                   child: ListView.separated(
                     itemCount: otherParticipants.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final p = otherParticipants[index];
-                      return AspectRatio(
-                        aspectRatio: 1.0,
-                        child: thumbnail(p),
-                      );
+                      return AspectRatio(aspectRatio: 1.0, child: thumbnail(p));
                     },
                   ),
                 ),
-              ],
+              ),
             ],
-          );
-        },
+          ],
+        );
+      },
     );
   }
 }
