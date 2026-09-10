@@ -28,11 +28,27 @@ class CardMessageStrategy extends MessageRenderStrategy {
   ) {
     final card = message.payload?.card;
     if (card == null) {
-      final fallback = message.payload?.content ?? message.content;
-      return Text(fallback, style: TextStyle(color: textColor, fontSize: 15));
+      final fallback = (message.payload?.content ?? message.content).trim();
+      if (fallback.isNotEmpty && !_isPlaceholder(fallback)) {
+        return Text(fallback, style: TextStyle(color: textColor, fontSize: 15));
+      }
+      return Text(
+        'reply_placeholder_card'.tr(),
+        style: TextStyle(color: textColor, fontSize: 15),
+      );
     }
 
     return _CardMessage(card: card);
+  }
+
+  static bool _isPlaceholder(String text) {
+    final lower = text.trim().toLowerCase();
+    return const {
+      '[card]',
+      '[卡片]',
+      '[名片]',
+      '[empty]',
+    }.contains(lower);
   }
 }
 
@@ -100,7 +116,9 @@ class _CardMessage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title.isNotEmpty ? title : '[card]',
+                        title.isNotEmpty
+                            ? title
+                            : 'reply_placeholder_card'.tr(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(

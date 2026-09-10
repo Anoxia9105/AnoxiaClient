@@ -1103,6 +1103,8 @@ class ChatInputController extends _$ChatInputController {
   /// 发送代码片段消息
   ///
   /// 从代码编辑对话框调用，直接发送代码消息，不经过 Quill 编辑器。
+  /// 本地预览 content 使用标题或代码首行（会话列表展示用），
+  /// 无有效文本时留空，由预览层按当前语言展示本地化占位。
   bool sendCodeMessage(CodePayload codePayload) {
     if (!codePayload.isValid) return false;
     final room = ref.read(currentRoomProvider(roomId));
@@ -1111,9 +1113,7 @@ class ChatInputController extends _$ChatInputController {
     _doSend(
       type: MessageType.codeSnippet,
       payload: MessagePayload(
-        content: codePayload.hasTitle
-            ? codePayload.title
-            : codePayload.displayLanguage,
+        content: codePayload.previewSnippet,
         code: codePayload,
       ),
     );

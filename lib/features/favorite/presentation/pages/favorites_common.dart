@@ -43,6 +43,10 @@ const Map<MessageType, FavoriteTypeStyle> favoriteTypeStyles = {
     Colors.green,
   ),
   MessageType.card: FavoriteTypeStyle(HugeIcons.strokeRoundedBadge, Colors.cyan),
+  MessageType.codeSnippet: FavoriteTypeStyle(
+    HugeIcons.strokeRoundedCode,
+    Colors.deepPurple,
+  ),
   MessageType.system: FavoriteTypeStyle(
     HugeIcons.strokeRoundedInformationCircle,
     Colors.blueGrey,
@@ -79,7 +83,7 @@ String favoriteTypeLabel(MessageType type) {
   };
 }
 
-/// 是否为协议媒体占位标记（如 `[image]`、`[IMAGE]`、`[empty]`）
+/// 是否为协议媒体占位标记（如 `[image]`、`[IMAGE]`、`[empty]`、`[code]`）
 bool isPlaceholderSummary(String text) {
   const markers = {
     '[image]',
@@ -89,6 +93,7 @@ bool isPlaceholderSummary(String text) {
     '[emoji]',
     '[location]',
     '[card]',
+    '[code]',
     '[system]',
     '[empty]',
   };

@@ -15,7 +15,7 @@
 | 联系人管理 | 好友申请、联系人列表、群组管理 |
 | 富文本输入 | 基于 Flutter Quill 实现支持 Mention、文件嵌入的富文本编辑器 |
 | 多窗口支持 | 桌面端支持多窗口通话页面 |
-| 主题系统 | 支持 19 种预设主题（7 种亮色 + 12 种暗色） |
+| 主题系统 | 支持 32 种预设主题（16 种强调色 × 亮/暗，见 `lib/framework/theme/app_theme.dart` `accentOptions`/`themes`） |
 | 多语言支持 | 支持中文、英文、日文三种语言 |
 
 ### 1.3 技术栈概览
@@ -601,22 +601,22 @@ final response = await DioClient().uploadFile(
 
 #### 3.3.1 PacketType
 
-**文件路径**: `lib/framework/protocol/PacketType.dart`
+**文件路径**: `lib/framework/protocol/packet_type.dart`
 
-**职责描述**: WebSocket 消息主题枚举，用于区分不同类型的业务消息。
+**职责描述**: V6 内部总线信封的粗粒度路由枚举。注意：WebSocket 线上**没有**应用层主题头，二进制负载直接是 `ClientFrame`/`ServerFrame` protobuf；`PacketType` 只是客户端内部 `PacketFrame` 封装与服务端 Redis 信封路由使用。
 
-**枚举值**:
+**枚举值**（数字码与内部主题一致）：
 
-| 枚举值 | 描述 | 对应后端类型 |
-|-------|------|------------|
-| `message` | 普通聊天消息 | MESSAGE |
-| `highFrequency` | 高频消息（如输入状态、通话信令） | HIGH_FREQUENCY |
-| `event` | 系统事件消息 | EVENT |
-| `unknown` | 未知类型（解析失败时的默认值） | - |
+| 枚举值 | code | 描述 |
+|-------|------|------|
+| `unknown` | 0 | 未知类型（解析失败时的默认值） |
+| `message` | 1 | 普通聊天消息 |
+| `highFrequency` | 2 | 高频消息（如输入状态、通话信令） |
+| `event` | 3 | 系统事件消息 |
+| `ack` | 4 | 发送结果 ACK |
+| `announcement` | 5 | 系统公告推送 |
 
-**解析方法**: `PacketType.from(dynamic value)`
-
-支持后端传来的数字下标（0, 1, 2...）或字符串名称（"MESSAGE", "EVENT"）。
+**解析方法**: `PacketType.fromCode(int)` / 兼容旧调用 `PacketType.from(dynamic value)`（支持数字码与 `"MESSAGE"`/`"EVENT"`/`"ACK"`/`"ANNOUNCEMENT"` 字符串）。
 
 #### 3.3.2 ImPacketV6
 
@@ -677,8 +677,8 @@ final frame = ImPacketV6.decodeServerFrame(bytes);
 
 | 功能 | 描述 |
 |-----|------|
-| 连接管理 | 建立 WebSocket 连接，支持 Web 和桌面端 |
-| 心跳保活 | 每 30 秒发送一次 ping，保持连接活跃 |
+| 连接管理 | 建立 WebSocket 连接（`wss://host/chat?token=`，二进制帧直接承载 `ClientFrame`/`ServerFrame` protobuf，无应用层帧头），支持 Web 和桌面端 |
+| 心跳保活 | 保活使用 RFC 6455 Ping/Pong，由服务端每 30s 空闲发送 Ping、客户端协议栈自动回 Pong，不进入业务消息流；`WsController` 自身不发送应用层 ping，只做 5s 已读游标重试 / 15s 活跃会话补齐 |
 | 自动重连 | 指数退避 + Full Jitter，最大 30s，避免客户端同一时间批量重连 |
 | 消息分发 | 将接收到的消息通过 Stream 分发给各 Consumer |
 | 错误处理 | 解析 ACK 错误码，显示 Toast 提示（2秒内重复错误不重复提示） |
@@ -751,8 +751,8 @@ logout()
 | 功能 | 描述 |
 |-----|------|
 | 消息订阅 | 监听 WebSocket 消息流，自动接收新消息 |
-| 消息同步 | 首次进入房间时按本地最大连续 seq 水印同步增量消息 |
-| 历史加载 | 基于 `before_seq` 加载更早历史消息（每页50条） |
+| 消息同步 | 首次进入房间时按本地最大连续 seq 水印同步增量消息（起点用连续水印，推进到响应最大 seq；响应区间内的空洞为服务端永久缺失，直接跳过，见 `AGENTS.md` 消息同步不变量） |
+| 历史加载 | 基于服务端 `GET /chat/history?roomId&lastSeq&pageSize&direction` 定向分页（`direction=0` 查旧、`1` 查新，每页 50 条）；线上传参只有 `lastSeq`，**没有** `before_seq`/`since`（Dart 侧 `beforeSeq` 只是形参名，最终仍映射为 `lastSeq` + `direction=0`） |
 | 消息去重 | 通过 clientMsgId 或 messageId 去重 |
 | 消息状态 | 跟踪消息投递状态（发送中、已发送、发送失败） |
 | 消息撤回 | 调用撤回接口并更新本地列表 |
@@ -765,11 +765,10 @@ logout()
 
 **同步与分页规则**:
 
-- 增量同步不能使用本地最大 seq，必须使用本地最大连续 seq 作为已读/已收水印，避免本地 SQLite 存在空洞时跳过缺失消息。
+- 增量同步起点必须使用本地最大连续 seq（`LocalDataSource.maxContinuousMessageSeq()`），不能用本地最大 seq，避免 SQLite 存在空洞时以错误水印续传；但推进时以前进到响应最大 seq 为准——响应是一个连续 SQL 区间，区间内空洞是服务端永久缺失（撤回/删除行），直接跳过不丢失。WS 推送路径仍要求连续（`watermark+1`）。
 - 重复进入同一房间时，`RoomMessageService.syncRoomMessages()` 必须先检查内存消息与最新本地页；当本地最新 seq 已覆盖到服务端 `lastMessage.seq` 时，直接返回，不能请求历史接口。
-- 本地加载更多历史时使用 `beforeSeq` 查询 `seq < oldestSeq` 的消息，不使用列表长度 offset。
-- 远端历史接口使用 `before_seq` 定向分页，并保留 `lastSeq + direction` 作为当前后端兼容参数。
-- `SyncRepository.syncMessages()` 会读取 `LocalDataSource.maxContinuousMessageSeq()`，再向 `/chat/history` 上报该水印做断点续传。
+- 本地加载更多历史时使用 `seq < oldestSeq` 查询，不使用列表长度 offset。
+- 远端历史接口统一使用 `lastSeq + pageSize + direction`（`direction=0` 查旧），服务端无 `before_seq`/`since` 参数；`SyncRepository.syncMessages()` 会读取连续水印，再向 `/chat/history` 上报该水印做断点续传。
 - 进入房间后的已读同步只在存在未读数或待上报 seq 时触发；对已经为 0 未读的房间重复点击，不应再次调用本地/远端 `markAsRead`。
 - 离线待发送消息以 SQLite 中的 `SENDING` / `FAILED` 状态为唯一队列来源，由 `SyncRepository.retryPendingOutgoing()` 在网络恢复时重试；`WsController` 不再维护 SharedPreferences 离线二进制帧队列。
 
@@ -812,6 +811,12 @@ sendReaction(emoji)
   ├── 启动 3 秒 Timer，到期后按 id 删除
   └── 通过 publishData 广播给房间内其他用户
 ```
+
+**通话信令契约（V6 `CallSignalCommand` / `CallSignal`）**:
+
+- 线上 9 种：INVITE / ACCEPT / REJECT / CANCEL / HANGUP / SDP / ICE / BUSY / MEDIA_CHANGE；群呼可省略 `target_user_id`（1:1 则必填）。
+- 客户端将 SDP/ICE 合并为 `CALL_CANDIDATE` 一种本地类型（见 `im_packet_v6.dart`），服务端 `HighMessageType` 为 8 种；联调以线上 9 种为准。
+- 信令经 `ServerFrame.call_signal` 实时转发，**不落 MySQL、不进 seq**；仅单聊 `REJECT`/`CANCEL` 会旁落一条系统消息（`SystemEventType.CALL_REJECTED` 等，`inviteId` + Redis `SETNX` 24h 幂等），群聊无此旁落。
 
 #### 3.4.5 扫码登录 (ScanLoginController)
 
@@ -906,9 +911,9 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 | `roomId` | `String?` | 聊天室唯一标识 |
 | `roomName` | `String?` | 聊天室名称 |
 | `roomAvatar` | `String?` | 聊天室头像 URL |
-| `roomDescription` | `String?` | 聊天室描述/公告 |
+| `roomDescription` | `String?` | 群公告/描述（群公告经 `POST /chat/room/updateAnnouncement` 维护；不要与系统公告 `system_announcement` 混淆，后者走 `ServerFrame.announcement_event` + REST `/system/announcements`） |
 | `roomStatus` | `int?` | 聊天室状态：0=正常，1=全员禁言，2=封禁，3=已删除 |
-| `roomType` | `int?` | 聊天室类型：0=单聊，1=群聊，2=AI对话 |
+| `roomType` | `int?` | 聊天室类型：0=单聊，1=群聊，2=AI对话，3=官方虚拟房（纯前端 `official_welcome`，服务端 `RoomType.UNKNOWN=3` 保留值，DB 无 3；服务端下发未知类型 3 时不要误判为官方房） |
 | `createdAt` | `DateTime?` | 创建时间 |
 | `lastReadSeq` | `int?` | 已读水印（用于未读数计算） |
 | `peerId` | `int?` | 对方用户ID（仅单聊时有值） |
@@ -1023,6 +1028,11 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 | `contactListServiceProvider` | `AsyncNotifier` | keepAlive | 联系人列表服务 |
 | `appThemeProvider` | `Notifier` | keepAlive | 主题状态 |
 | `settingsProvider` | `Notifier` | keepAlive | 设置状态 |
+| `scanLoginControllerProvider` | `AsyncNotifier` | 普通 | 扫码登录展示端轮询（`POST /login/scan/create` + 每 2s `GET /login/scan/status`） |
+| `announcementControllerProvider` | `AsyncNotifier` | keepAlive | 系统公告（`ServerFrame.announcement_event` 仅通知，正文走 REST `/system/announcements` 重取） |
+| `noteTree/Content/Trash/Tag/Version` | `AsyncNotifier` | keepAlive | 记事本 v2（`note_folder`/`note_doc`/`note_doc_version`/`note_tag`，见 `2026-08-18-note-v2-*.sql`） |
+| `aiChatControllerProvider` | `Notifier` | 普通 | AI 对话（`POST /chat/ai/stream` SSE，`ai_chat_controller.dart`；旧 `/chat/gemini` 已废弃） |
+| `updateCheckProvider` | `Notifier` | 普通 | 版本更新检查（`GET /app/update/latest`，公开接口） |
 
 ---
 
@@ -1075,14 +1085,14 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 
 **文件路径**: `lib/framework/theme/AppTheme.dart`
 
-**职责描述**: 应用主题配置，支持 19 种预设主题。
+**职责描述**: 应用主题配置，支持 32 种预设主题（16 种强调色 × 亮/暗，`accentOptions` 16 项 + `themes` 32 项）。
 
 **主题列表**:
 
-| 主题名称 | 亮度 | 主色调 |
-|---------|------|-------|
-| app_light_themes1 ~ 7 | 亮色 | Indigo, Emerald, Pink, Teal, Gray, Amber, Violet |
-| app_dark_themes8 ~ 19 | 暗色 | Blue, Purple, Emerald, Amber, Red, Sky, Amber, Purple, Green, Orange, Cyan, Gray |
+| 主题名称 | 亮度 | 说明 |
+|---------|------|------|
+| 16 强调色 × 亮色 | 亮色 | vibrant/morandi/deep/earth 四分组（Indigo、Aurora、Teal、Emerald、Rose、Cortl 等，见 `accentOptions`） |
+| 16 强调色 × 暗色 | 暗色 | 同 16 色的暗色映射 |
 
 ### 7.2 ThemeController
 

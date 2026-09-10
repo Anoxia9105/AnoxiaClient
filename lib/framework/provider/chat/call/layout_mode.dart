@@ -9,20 +9,24 @@ part 'layout_mode.g.dart';
 
 /// 通话布局模式枚举
 enum LayoutMode {
-  /// 多人网格布局
+  /// 多人网格布局（1v1 与多人统一使用）
   grid,
 
   /// 屏幕共享焦点布局（有人共享屏幕时）
   focus,
 
-  /// 1v1 轮播布局
+  /// 1v1 轮播布局（历史保留：远端全屏 + 本地画中画）
+  ///
+  /// 现已不再使用，[layoutMode] 对 1v1 直接返回 [LayoutMode.grid]，
+  /// 保留该枚举值仅为兼容旧的持久化/调用方，渲染层会将其降级为网格。
+  @Deprecated('1v1 已统一使用网格布局，该值不再产生，仅做兼容降级为 grid')
   carousel,
 }
 
 /// 通话布局模式 Provider
 ///
 /// 根据 [RoomState] 中的参与者数量和屏幕共享状态自动计算布局模式。
-/// 规则：有屏幕共享 → 焦点模式；参与者 ≤2 → 轮播模式；其余 → 网格模式。
+/// 规则：有屏幕共享 → 焦点模式；其余（含 1v1） → 网格模式。
 @riverpod
 LayoutMode layoutMode(Ref ref, RoomState roomState) {
   final participants = <Participant>[
@@ -34,10 +38,7 @@ LayoutMode layoutMode(Ref ref, RoomState roomState) {
   final hasScreenShare = participants.any(
     (p) => p.videoTrackPublications.any((pub) => pub.isScreenShare),
   );
-  
-  final count = 1 + roomState.remoteParticipants.length;
 
   if (hasScreenShare) return LayoutMode.focus;
-  if (count <= 2) return LayoutMode.carousel;
   return LayoutMode.grid;
 }

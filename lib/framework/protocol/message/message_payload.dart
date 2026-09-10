@@ -365,12 +365,13 @@ class MessagePayload {
     if (codeMap != null) {
       final code = CodePayload.fromJson(codeMap);
       final interaction = _asMap(codeMap['interaction']);
+      // 本地预览优先标题/代码首行；语言名（如 dart/plaintext）不是用户内容，
+      // 不做 content，避免会话列表出现语言原文或 [code] 占位。
+      final topContent = _readString(json, ['content']);
       return MessagePayload(
-        content: _readString(json, ['content']).isNotEmpty
-            ? _readString(json, ['content'])
-            : code.hasTitle
-            ? code.title
-            : code.displayLanguage,
+        content: topContent.isNotEmpty
+            ? topContent
+            : code.previewSnippet,
         code: code,
         replyTo: _readReplyTo(interaction).isNotEmpty
             ? _readReplyTo(interaction)

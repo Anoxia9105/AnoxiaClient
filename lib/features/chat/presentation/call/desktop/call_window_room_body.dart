@@ -1,6 +1,5 @@
 import 'package:anoxia/features/chat/presentation/call/component/command_bar.dart';
 import 'package:anoxia/features/chat/presentation/call/component/reaction_overlay.dart';
-import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_carousel_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_screen_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/desktop/room_layout/layout_room_widget.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
@@ -178,11 +177,15 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
         onParticipantTap: (participant) =>
             setState(() => _focusedIdentity = participant.identity),
       ),
-      LayoutMode.carousel => LayoutRoomCarouselWidget(
+      // 兼容旧值：1v1 不再使用轮播（远端全屏 + 本地画中画），统一降级为网格。
+      // ignore: deprecated_member_use_from_same_package
+      LayoutMode.carousel => LayoutRoomWidget(
         participants: participants,
         handRaiseMap: handRaiseMap,
         onMute: onMute,
         onKick: onKick,
+        onParticipantTap: (participant) =>
+            setState(() => _focusedIdentity = participant.identity),
       ),
     };
   }

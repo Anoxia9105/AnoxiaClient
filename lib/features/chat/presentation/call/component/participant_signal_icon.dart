@@ -5,13 +5,24 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 根据参与者连接质量构建信号强度图标
 ///
+/// 服务端下发的上行质量优先；服务端长期 unknown 时调用方可传入本地下行
+/// 估算值并置 [estimated] 为 true，tooltip 会追加估算弱提示。
 /// 根据不同的连接质量显示不同颜色和信号条数量：
 /// - 优秀/良好：绿色，3格信号
 /// - 较差：橙色，2格信号
 /// - 丢失：红色，1格信号
 /// - 未知：灰色，0格信号
 Widget buildParticipantSignalIcon(Participant p) {
-  final quality = p.connectionQuality;
+  return buildParticipantSignalIconFromQuality(
+    p.connectionQuality,
+  );
+}
+
+/// 按质量值构建信号图标（供估算兜底复用）。
+Widget buildParticipantSignalIconFromQuality(
+  ConnectionQuality quality, {
+  bool estimated = false,
+}) {
 
   Color color;
   int level;
@@ -57,7 +68,9 @@ Widget buildParticipantSignalIcon(Participant p) {
   }
 
   return Tooltip(
-    message: qualityLabel,
+    message: estimated && quality != ConnectionQuality.unknown
+        ? '$qualityLabel${'call_quality_estimated_suffix'.tr()}'
+        : qualityLabel,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(RadiusToken.sm)),

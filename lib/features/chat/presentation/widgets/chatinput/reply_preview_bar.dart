@@ -157,7 +157,11 @@ class ReplyPreviewBar extends ConsumerWidget {
 
     final payload = message.payload;
     final content = (payload?.content ?? message.content).trim();
-    if (content.isNotEmpty) return content;
+    // 非空且不是历史协议占位符（如 [code]/[video]/plaintext）时直接展示原文；
+    // 文本/富文本/表情的用户原文即使形如 [code] 也是有效内容，不做过滤。
+    if (content.isNotEmpty && !_isPlaceholderForType(content, message.messageType)) {
+      return content;
+    }
 
     return switch (message.messageType) {
       MessageType.image => 'reply_placeholder_image'.tr(),
@@ -180,5 +184,53 @@ class ReplyPreviewBar extends ConsumerWidget {
       MessageType.richText || MessageType.text => 'reply_placeholder_text'.tr(),
       null => 'reply_placeholder_text'.tr(),
     };
+  }
+
+  /// 历史协议占位符识别（需回退到本地化文案，而非展示英文原文）。
+  ///
+  /// 文本/富文本/表情消息永不视为占位（用户原文可能就是 "[code]"）。
+  /// 仅代码类型识别 `[dart]` 这类语言占位与裸 `plaintext`。
+  static bool _isPlaceholderForType(String content, MessageType? type) {
+    if (type == MessageType.text ||
+        type == MessageType.richText ||
+        type == MessageType.emoji) {
+      return false;
+    }
+    final trimmed = content.trim();
+    final lower = trimmed.toLowerCase();
+    const markers = {
+      '[image]',
+      '[audio]',
+      '[video]',
+      '[file]',
+      '[emoji]',
+      '[location]',
+      '[card]',
+      '[system]',
+      '[code]',
+      '[empty]',
+      '[图像]',
+      '[图片]',
+      '[语音]',
+      '[视频]',
+      '[文件]',
+      '[表情]',
+      '[位置]',
+      '[卡片]',
+      '[代码]',
+      '[系统消息]',
+      '[系统]',
+      '[空内容]',
+      'plaintext',
+      '[plaintext]',
+    };
+    if (markers.contains(lower) || markers.contains(trimmed)) return true;
+    if (type == MessageType.codeSnippet &&
+        trimmed.length >= 3 &&
+        trimmed.length <= 20 &&
+        RegExp(r'^\[[A-Za-z0-9_+#-]+\]$').hasMatch(trimmed)) {
+      return true;
+    }
+    return false;
   }
 }

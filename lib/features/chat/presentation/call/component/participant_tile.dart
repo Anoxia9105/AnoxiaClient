@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/features/chat/presentation/call/component/participant_signal_icon.dart';
+import 'package:anoxia/features/chat/presentation/call/component/remote_quality_estimator.dart';
 import 'package:anoxia/features/chat/presentation/call/component/participant_more_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -58,10 +60,18 @@ class _ParticipantTileState extends State<ParticipantTile> {
   /// 监听参与者事件，变化时触发 rebuild
   EventsListener<ParticipantEvent>? _participantListener;
 
+  /// 服务端质量长期 unknown 时的本地下行估算值（下行视角兜底）。
+  ConnectionQuality? _estimatedQuality;
+
+  /// 估算轮询定时器，仅远端 + 服务端 unknown 时运行。
+  Timer? _qualityTimer;
+  bool _estimating = false;
+
   @override
   void initState() {
     super.initState();
     _subscribeParticipant(widget.participant);
+    _maybeStartEstimator(immediate: true);
   }
 
   @override
@@ -69,18 +79,25 @@ class _ParticipantTileState extends State<ParticipantTile> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.participant != widget.participant) {
       _participantListener?.dispose();
+      _stopEstimator();
       _subscribeParticipant(widget.participant);
     }
+    _maybeStartEstimator();
   }
 
   /// 订阅参与者事件
   ///
-  /// 监听说话状态、轨道静音/取消静音、轨道发布/取消发布等事件
+  /// 监听说话状态、轨道静音/取消静音、轨道发布/取消发布等事件。
+  /// 连接质量事件（服务端转发对方上行质量）必须监听，否则远端信号条
+  /// 收不到更新会一直卡在 unknown（本地因更新频繁恰好能被父重建带上）。
   void _subscribeParticipant(Participant p) {
     _participantListener = p.createListener();
     _participantListener!
       ..on<SpeakingChangedEvent>((_) {
         if (mounted) setState(() {});
+      })
+      ..on<ParticipantConnectionQualityUpdatedEvent>((_) {
+        _onQualityChanged();
       })
       ..on<TrackMutedEvent>((_) {
         if (mounted) setState(() {});
@@ -96,15 +113,83 @@ class _ParticipantTileState extends State<ParticipantTile> {
       })
       ..on<TrackSubscribedEvent>((_) {
         if (mounted) setState(() {});
+        _maybeStartEstimator(immediate: true);
       })
       ..on<TrackUnsubscribedEvent>((_) {
         if (mounted) setState(() {});
+        _maybeStartEstimator(immediate: true);
       });
+  }
+
+  void _onQualityChanged() {
+    if (!mounted) return;
+    // 服务端恢复已知：停掉估算，清除旧估算值。
+    if (widget.participant.connectionQuality != ConnectionQuality.unknown) {
+      _stopEstimator();
+    } else {
+      _maybeStartEstimator();
+    }
+    setState(() {});
+  }
+
+  /// 服务端 unknown 且为远端时启动下行估算轮询；服务端恢复已知时停掉。
+  void _maybeStartEstimator({bool immediate = false}) {
+    if (widget.participant is! RemoteParticipant ||
+        widget.participant.connectionQuality != ConnectionQuality.unknown) {
+      _stopEstimator();
+      return;
+    }
+    _qualityTimer ??= Timer.periodic(
+      const Duration(seconds: 3),
+      (_) => _runEstimation(),
+    );
+    if (immediate) _runEstimation();
+  }
+
+  Future<void> _runEstimation() async {
+    if (_estimating || !mounted) return;
+    final Participant p = widget.participant;
+    if (p is! RemoteParticipant) return;
+    if (p.connectionQuality != ConnectionQuality.unknown) {
+      _stopEstimator();
+      return;
+    }
+    _estimating = true;
+    try {
+      final ConnectionQuality? q =
+          await RemoteQualityEstimator.estimateRemoteDownlinkQuality(p);
+      if (!mounted) return;
+      if (q != _estimatedQuality) {
+        setState(() => _estimatedQuality = q);
+      }
+    } finally {
+      _estimating = false;
+    }
+  }
+
+  void _stopEstimator() {
+    _qualityTimer?.cancel();
+    _qualityTimer = null;
+    _estimatedQuality = null;
+  }
+
+  /// 服务端优先，unknown 时用本地估算兜底。
+  (ConnectionQuality quality, bool estimated) _effectiveQuality() {
+    final ConnectionQuality server = widget.participant.connectionQuality;
+    if (server != ConnectionQuality.unknown) {
+      return (server, false);
+    }
+    final ConnectionQuality? e = _estimatedQuality;
+    if (e != null && e != ConnectionQuality.unknown) {
+      return (e, true);
+    }
+    return (ConnectionQuality.unknown, false);
   }
 
   @override
   void dispose() {
     _participantListener?.dispose();
+    _qualityTimer?.cancel();
     super.dispose();
   }
 
@@ -150,6 +235,8 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final isMuted = p.isMicrophoneEnabled() == false;
 
     final displayName = nickName;
+    final (ConnectionQuality signalQuality, bool signalEstimated) =
+        _effectiveQuality();
 
     final tileContent = Container(
       decoration: BoxDecoration(
@@ -232,7 +319,10 @@ class _ParticipantTileState extends State<ParticipantTile> {
                             fontSize: 12,
                           ),
                         ),
-                        buildParticipantSignalIcon(p),
+                        buildParticipantSignalIconFromQuality(
+                          signalQuality,
+                          estimated: signalEstimated,
+                        ),
                         if (!isCurrentUser)
                           Builder(
                             builder: (btnCtx) => IconButton(

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:anoxia/common/utils/date_util.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/domain/announcement.dart';
-import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -45,6 +44,7 @@ class AnnouncementDialog extends StatefulWidget {
       return ModalBottomSheetRoute<void>(
         capturedThemes: InheritedTheme.capture(from: context, to: null),
         builder: builder,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         isDismissible: dismissible,
         enableDrag: dismissible,
         showDragHandle: dismissible,
@@ -96,10 +96,6 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final appColors = theme.extension<AppColors>();
-    final warning = appColors?.warning ?? const Color(0xFF8A5A00);
-    final onWarning =
-        theme.brightness == Brightness.dark ? Colors.black87 : Colors.white;
     final screenHeight = MediaQuery.sizeOf(context).height;
     final bodyMaxHeight =
         math.min(280.0, (isMobile ? 0.30 : 0.35) * screenHeight);
@@ -109,10 +105,8 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     final queueTotal = widget.queueTotal;
     final showQueue = queueIndex != null && (queueTotal ?? 0) > 1;
 
-    final chipColor = required
-        ? warning.withValues(alpha: 0.16)
-        : colorScheme.primaryContainer;
-    final chipIconColor = required ? warning : colorScheme.onPrimaryContainer;
+    final chipColor = colorScheme.primaryContainer;
+    final chipIconColor = colorScheme.onPrimaryContainer;
 
     final header = Padding(
       padding: isMobile ? const EdgeInsets.all(4) : EdgeInsets.zero,
@@ -147,7 +141,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1.5),
                     decoration: BoxDecoration(
-                      color: warning.withValues(alpha: 0.16),
+                      color: colorScheme.primary.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(RadiusToken.pill),
                     ),
                     child: Text(
@@ -155,7 +149,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: warning,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),
@@ -201,19 +195,19 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
               color: colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
-            child: Row(
+              child: Row(
               children: [
                 Icon(
                   Icons.error_outline,
                   size: 16,
-                  color: colorScheme.onError,
+                  color: colorScheme.onErrorContainer,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'announcement_ack_error'.tr(),
                     key: const Key('announcement-ack-error'),
-                    style: TextStyle(color: colorScheme.onError),
+                    style: TextStyle(color: colorScheme.onErrorContainer),
                   ),
                 ),
               ],
@@ -228,10 +222,6 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
               key: const Key('announcement-acknowledge'),
               onPressed: _submitting ? null : _acknowledge,
               style: FilledButton.styleFrom(
-                backgroundColor: warning,
-                foregroundColor: onWarning,
-                disabledBackgroundColor: warning.withValues(alpha: 0.55),
-                disabledForegroundColor: onWarning,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(RadiusToken.lg),
                 ),
@@ -241,7 +231,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                       dimension: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: onWarning,
+                        color: colorScheme.onPrimary,
                       ),
                     )
                   : Text(
@@ -270,7 +260,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                     height: 6,
                     decoration: BoxDecoration(
                       color: i <= queueIndex
-                          ? (required ? warning : colorScheme.primary)
+                          ? colorScheme.primary
                           : colorScheme.surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
@@ -332,6 +322,10 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
               child: Material(
                 color: colorScheme.surfaceContainerLow,
                 shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                    width: 1,
+                    color: colorScheme.onSurface.withValues(alpha: 0.1),
+                  ),
                   borderRadius: BorderRadius.circular(RadiusToken.xl),
                 ),
                 clipBehavior: Clip.antiAlias,

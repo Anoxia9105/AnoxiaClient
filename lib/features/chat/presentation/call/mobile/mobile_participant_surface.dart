@@ -1,9 +1,11 @@
 // 移动端通话参与者画面组件，渲染单个参与者的视频/音频画面。
 //
 // 支持视频渲染、画面替代占位、麦克风静音指示、说话状态动画、连接质量指示等功能。
+import 'dart:async';
 import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:anoxia/features/chat/presentation/call/component/remote_quality_estimator.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_placeholder.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_status_indicators.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +55,11 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
   EventsListener<ParticipantEvent>? _listener;
   late final AnimationController _speakingController;
 
+  /// 服务端 unknown 时的本地下行估算兜底。
+  ConnectionQuality? _estimatedQuality;
+  Timer? _qualityTimer;
+  bool _estimating = false;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +68,7 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
       duration: const Duration(milliseconds: 760),
     );
     _subscribe(widget.participant);
+    _maybeStartEstimator(immediate: true);
     _syncSpeakingAnimation();
   }
 
@@ -69,20 +77,88 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.participant != widget.participant) {
       _listener?.dispose();
+      _stopEstimator();
       _subscribe(widget.participant);
     }
+    _maybeStartEstimator();
     _syncSpeakingAnimation();
   }
 
   void _subscribe(Participant participant) {
     _listener = participant.createListener()
       ..on<SpeakingChangedEvent>((_) => _refresh())
+      ..on<ParticipantConnectionQualityUpdatedEvent>((_) =>
+          _onQualityChanged())
       ..on<TrackMutedEvent>((_) => _refresh())
       ..on<TrackUnmutedEvent>((_) => _refresh())
       ..on<TrackPublishedEvent>((_) => _refresh())
       ..on<TrackUnpublishedEvent>((_) => _refresh())
-      ..on<TrackSubscribedEvent>((_) => _refresh())
-      ..on<TrackUnsubscribedEvent>((_) => _refresh());
+      ..on<TrackSubscribedEvent>((_) {
+        _refresh();
+        _maybeStartEstimator(immediate: true);
+      })
+      ..on<TrackUnsubscribedEvent>((_) {
+        _refresh();
+        _maybeStartEstimator(immediate: true);
+      });
+  }
+
+  void _onQualityChanged() {
+    if (!mounted) return;
+    if (widget.participant.connectionQuality != ConnectionQuality.unknown) {
+      _stopEstimator();
+    } else {
+      _maybeStartEstimator();
+    }
+    _refresh();
+  }
+
+  void _maybeStartEstimator({bool immediate = false}) {
+    if (widget.participant is! RemoteParticipant ||
+        widget.participant.connectionQuality != ConnectionQuality.unknown) {
+      _stopEstimator();
+      return;
+    }
+    _qualityTimer ??= Timer.periodic(
+      const Duration(seconds: 3),
+      (_) => _runEstimation(),
+    );
+    if (immediate) _runEstimation();
+  }
+
+  Future<void> _runEstimation() async {
+    if (_estimating || !mounted) return;
+    final Participant p = widget.participant;
+    if (p is! RemoteParticipant) return;
+    if (p.connectionQuality != ConnectionQuality.unknown) {
+      _stopEstimator();
+      return;
+    }
+    _estimating = true;
+    try {
+      final ConnectionQuality? q =
+          await RemoteQualityEstimator.estimateRemoteDownlinkQuality(p);
+      if (!mounted) return;
+      if (q != _estimatedQuality) {
+        setState(() => _estimatedQuality = q);
+      }
+    } finally {
+      _estimating = false;
+    }
+  }
+
+  void _stopEstimator() {
+    _qualityTimer?.cancel();
+    _qualityTimer = null;
+    _estimatedQuality = null;
+  }
+
+  (ConnectionQuality quality, bool estimated) _effectiveQuality() {
+    final ConnectionQuality server = widget.participant.connectionQuality;
+    if (server != ConnectionQuality.unknown) return (server, false);
+    final ConnectionQuality? e = _estimatedQuality;
+    if (e != null && e != ConnectionQuality.unknown) return (e, true);
+    return (ConnectionQuality.unknown, false);
   }
 
   void _refresh() {
@@ -135,6 +211,7 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
   @override
   void dispose() {
     _listener?.dispose();
+    _qualityTimer?.cancel();
     _speakingController.dispose();
     super.dispose();
   }
@@ -145,6 +222,8 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     final track = _visibleTrack();
     final meta = _participantMeta();
     final isMuted = !participant.isMicrophoneEnabled();
+    final (ConnectionQuality signalQuality, bool signalEstimated) =
+        _effectiveQuality();
 
     return AnimatedBuilder(
       animation: _speakingController,
@@ -227,8 +306,9 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                       ),
                       SizedBox(width: widget.compact ? 4 : 6),
                       ConnectionQualityIcon(
-                        quality: participant.connectionQuality,
+                        quality: signalQuality,
                         compact: widget.compact,
+                        estimated: signalEstimated,
                       ),
                     ],
                   ),

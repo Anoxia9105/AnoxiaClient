@@ -268,11 +268,11 @@ class ChatFavorite {
     return '';
   }
 
-  /// 是否为协议媒体占位标记（如 `[image]`、`[audio]`、`[video]`）
+  /// 是否为协议媒体占位标记（如 `[image]`、`[audio]`、`[video]`、`[code]`）
   static bool _isPlaceholderMarker(String text) {
     const markers = {
       '[image]', '[audio]', '[video]', '[file]',
-      '[emoji]', '[location]', '[card]', '[system]',
+      '[emoji]', '[location]', '[card]', '[code]', '[system]',
     };
     return markers.contains(text.trim().toLowerCase());
   }

@@ -198,6 +198,10 @@ class RoomController extends _$RoomController {
             );
             qmap[e.participant.identity] = e.connectionQuality;
             state = AsyncData(current.copyWith(participantQuality: qmap));
+            debugLog(
+              '远端信号更新: ${e.participant.identity} '
+              '${e.participant.sid} -> ${e.connectionQuality.name}',
+            );
           }
         })
         // ============ Track（媒体轨道）事件 ============

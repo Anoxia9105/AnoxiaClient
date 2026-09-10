@@ -28,10 +28,26 @@ class LocationMessageStrategy extends MessageRenderStrategy {
   ) {
     final location = message.payload?.location;
     if (location == null || !location.hasCoordinate) {
-      final fallback = message.payload?.content ?? message.content;
-      return Text(fallback, style: TextStyle(color: textColor, fontSize: 15));
+      final fallback =
+          (message.payload?.content ?? message.content).trim();
+      if (fallback.isNotEmpty && !_isPlaceholder(fallback)) {
+        return Text(fallback, style: TextStyle(color: textColor, fontSize: 15));
+      }
+      return Text(
+        'reply_placeholder_location'.tr(),
+        style: TextStyle(color: textColor, fontSize: 15),
+      );
     }
     return _LocationMessage(location: location);
+  }
+
+  static bool _isPlaceholder(String text) {
+    final lower = text.trim().toLowerCase();
+    return const {
+      '[location]',
+      '[位置]',
+      '[empty]',
+    }.contains(lower);
   }
 }
 
