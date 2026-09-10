@@ -224,6 +224,7 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     final isMuted = !participant.isMicrophoneEnabled();
     final (ConnectionQuality signalQuality, bool signalEstimated) =
         _effectiveQuality();
+    final cs = Theme.of(context).colorScheme;
 
     return AnimatedBuilder(
       animation: _speakingController,
@@ -234,28 +235,24 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
         return AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: const Color(0xFF171A22),
+            // 主题卡片底（跟随浅色/深色主题）
+            color: cs.surfaceContainerLow,
             borderRadius: BorderRadius.circular(widget.borderRadius),
             border: Border.all(
               color: participant.isSpeaking
-                  ? Color.lerp(
-                      const Color(0xFF56E39F),
-                      const Color(0xFFB7FFD9),
-                      speakingStrength,
-                    )!
-                  : Colors.white.withValues(alpha: 0.08),
+                  ? cs.primary
+                  : cs.onSurface.withValues(alpha: 0.1),
               width: participant.isSpeaking ? 2.4 : 1,
             ),
-            boxShadow: participant.isSpeaking
-                ? [
-                    BoxShadow(
-                      color: const Color(
-                        0xFF56E39F,
-                      ).withValues(alpha: 0.18 * speakingStrength),
-                      blurRadius: 18,
-                    ),
-                  ]
-                : null,
+            boxShadow: [
+              BoxShadow(
+                color: participant.isSpeaking
+                    ? cs.primary.withValues(alpha: 0.18 * speakingStrength)
+                    : Colors.black.withValues(alpha: 0.08),
+                blurRadius: participant.isSpeaking ? 18 : 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           clipBehavior: Clip.antiAlias,
           child: Stack(
@@ -269,16 +266,17 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                   avatar: meta.avatar,
                   compact: widget.compact,
                 ),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Color(0x99000000)],
-                    stops: [0.58, 1],
+              if (track != null)
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Color(0x99000000)],
+                      stops: [0.58, 1],
+                    ),
                   ),
                 ),
-              ),
               if (widget.showStatus)
                 Positioned(
                   top: widget.compact ? 6 : 10,
@@ -324,10 +322,13 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
+                    // 视频上有黑色渐变压底，用白字；无视频（主题卡片底）用主题文字色
+                    color: track != null ? Colors.white : cs.onSurface,
                     fontSize: widget.compact ? 10 : 13,
                     fontWeight: FontWeight.w600,
-                    shadows: const [Shadow(color: Colors.black, blurRadius: 5)],
+                    shadows: track != null
+                        ? const [Shadow(color: Colors.black, blurRadius: 5)]
+                        : null,
                   ),
                 ),
               ),

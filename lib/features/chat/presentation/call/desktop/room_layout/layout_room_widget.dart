@@ -55,7 +55,7 @@ class LayoutRoomWidget extends StatelessWidget {
       return Row(
         children: [
           Expanded(child: _tile(participants[0])),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           Expanded(child: _tile(participants[1])),
         ],
       );
@@ -70,17 +70,17 @@ class LayoutRoomWidget extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(child: _tile(row1[0])),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
                 Expanded(child: _tile(row1[1])),
               ],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Expanded(
             child: Row(
               children: [
                 Expanded(child: _tile(row2[0])),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
                 Expanded(
                   child: row2.length > 1
                       ? _tile(row2[1])
@@ -107,8 +107,8 @@ class LayoutRoomWidget extends StatelessWidget {
           itemCount: count,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisSpacing: 4,
-            crossAxisSpacing: 4,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
             childAspectRatio: tileWidth / tileHeight.clamp(1, double.infinity),
           ),
           itemBuilder: (context, index) => _tile(participants[index]),

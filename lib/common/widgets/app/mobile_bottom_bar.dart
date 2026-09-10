@@ -47,15 +47,18 @@ class MobileBottomBar extends ConsumerWidget {
     }).toList();
 
     // 当前选中项在可见列表中的位置（滑块定位用，找不到时兜底 0）。
-    final selectedPos = visibleEntries
-        .indexWhere((entry) => entry.value.name == currentItem.name);
+    final selectedPos = visibleEntries.indexWhere(
+      (entry) => entry.value.name == currentItem.name,
+    );
     final safeSelectedPos = selectedPos < 0 ? 0 : selectedPos;
 
     // 滑块高光：亮色 primary 14%、暗色 20%，描边带 primary 光晕。
-    final highlightFill =
-        colorScheme.primary.withValues(alpha: isDark ? 0.20 : 0.14);
-    final highlightBorder =
-        colorScheme.primary.withValues(alpha: isDark ? 0.30 : 0.35);
+    final highlightFill = colorScheme.primary.withValues(
+      alpha: isDark ? 0.20 : 0.14,
+    );
+    final highlightBorder = colorScheme.primary.withValues(
+      alpha: isDark ? 0.30 : 0.35,
+    );
 
     return SafeArea(
       top: false,
@@ -66,82 +69,112 @@ class MobileBottomBar extends ConsumerWidget {
             // 注意：这里量到的是整栏宽（含容器左右各 _kBarHPad 内边距），
             // Row/滑块实际只占内容宽，必须先减掉，否则末项滑块静止时也会
             // 右溢约 13px（此前只修过冲没修这里，切“我的”依然顶框）。
-            final tabWidth = (constraints.maxWidth - _kBarHPad * 2) /
-                visibleEntries.length;
+            final tabWidth =
+                (constraints.maxWidth - _kBarHPad * 2) / visibleEntries.length;
             return ClipRRect(
               borderRadius: BorderRadius.circular(_kBarRadius),
               child: BackdropFilter(
                 filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                 child: Container(
                   key: const Key('mobile-bottom-bar'),
-                  padding: const EdgeInsets.fromLTRB(_kBarHPad, 8, _kBarHPad, 6),
+                  padding: const EdgeInsets.fromLTRB(
+                    _kBarHPad,
+                    8,
+                    _kBarHPad,
+                    6,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        colorScheme.surface.withValues(alpha: 0.88),
-                        colorScheme.surface.withValues(alpha: 0.72),
+                        colorScheme.surface.withValues(alpha: 0.94),
+                        colorScheme.surface.withValues(alpha: 0.78),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(_kBarRadius),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.28),
-                      width: 1,
+                      color: Colors.white.withValues(alpha: 0.18),
+                      width: 0.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.28),
-                        blurRadius: 44,
-                        offset: const Offset(0, 20),
+                        color: Colors.black.withValues(alpha: 0.22),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
                   child: Stack(
-                    // 硬裁剪兜底：滑块任何时刻都不许画出内容区。
                     clipBehavior: Clip.hardEdge,
                     children: [
-                      // 弹簧滑块：跟随选中项，带过冲的果味动效，
-                      // 内部钳制保证不撞穿玻璃框（见下方 [_SlidingHighlight]）。
-                      _SlidingHighlight(
-                        left: safeSelectedPos * tabWidth + 3,
-                        width: tabWidth - 6,
-                        minLeft: 3,
-                        maxLeft: 3 * tabWidth + 3,
-                        fill: highlightFill,
-                        border: highlightBorder,
-                      ),
-                      Row(
-                        children: visibleEntries.map((entry) {
-                          final idx = entry.key;
-                          final item = entry.value;
-                          final isSelected =
-                              item.name == currentItem.name;
-
-                          final int badgeCount;
-                          if (idx == chatIndex) {
-                            badgeCount = totalUnread;
-                          } else if (idx == contactsIndex) {
-                            badgeCount = pendingRequests;
-                          } else {
-                            badgeCount = 0;
-                          }
-
-                          return Expanded(
-                            child: _GlassNavIcon(
-                              label: item.name.tr(),
-                              icon: item.icon,
-                              selected: isSelected,
-                              badgeCount: badgeCount,
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                ref
-                                    .read(layoutControllerProvider.notifier)
-                                    .setIndex(idx);
-                              },
+                      // 顶部内高光：提亮玻璃质感，贴合液态玻璃的受光面。
+                      IgnorePointer(
+                        child: Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 28,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.20),
+                                  Colors.white.withValues(alpha: 0.0),
+                                ],
+                              ),
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ),
+                      ),
+                      Stack(
+                        // 硬裁剪兜底：滑块任何时刻都不许画出内容区。
+                        clipBehavior: Clip.hardEdge,
+                        children: [
+                          // 弹簧滑块：跟随选中项，带过冲的果味动效，
+                          // 内部钳制保证不撞穿玻璃框（见下方 [_SlidingHighlight]）。
+                          _SlidingHighlight(
+                            left: safeSelectedPos * tabWidth + 3,
+                            width: tabWidth - 6,
+                            minLeft: 3,
+                            maxLeft: 3 * tabWidth + 3,
+                            fill: highlightFill,
+                            border: highlightBorder,
+                          ),
+                          Row(
+                            children: visibleEntries.map((entry) {
+                              final idx = entry.key;
+                              final item = entry.value;
+                              final isSelected = item.name == currentItem.name;
+
+                              final int badgeCount;
+                              if (idx == chatIndex) {
+                                badgeCount = totalUnread;
+                              } else if (idx == contactsIndex) {
+                                badgeCount = pendingRequests;
+                              } else {
+                                badgeCount = 0;
+                              }
+
+                              return Expanded(
+                                child: _GlassNavIcon(
+                                  label: item.name.tr(),
+                                  icon: item.icon,
+                                  selected: isSelected,
+                                  badgeCount: badgeCount,
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    ref
+                                        .read(layoutControllerProvider.notifier)
+                                        .setIndex(idx);
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -212,7 +245,8 @@ class _SlidingHighlightState extends State<_SlidingHighlight>
   }
 
   double get _displayedLeft {
-    final raw = ui.lerpDouble(
+    final raw =
+        ui.lerpDouble(
           _from,
           _to,
           Curves.easeOutBack.transform(_controller.value),
@@ -281,8 +315,9 @@ class _GlassNavIconState extends State<_GlassNavIcon> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final unselectedColor =
-        colorScheme.onSurfaceVariant.withValues(alpha: 0.72);
+    final unselectedColor = colorScheme.onSurfaceVariant.withValues(
+      alpha: 0.72,
+    );
 
     return Semantics(
       button: true,
@@ -360,9 +395,9 @@ class _GlassNavIconState extends State<_GlassNavIcon> {
   }
 }
 
-/// HTML 稿映射的固定尺寸：外栏圆角 30、滑块圆角 18、图标区 36、
+/// HTML 稿映射的固定尺寸：外栏圆角 12、滑块圆角 10、图标区 36、
 /// 外栏水平内边距 8（滑块分格时从整栏宽里扣除，见 build 注释）。
-const double _kBarRadius = 30;
-const double _kSliderRadius = 18;
+const double _kBarRadius = 12;
+const double _kSliderRadius = 10;
 const double _kIconBox = 36;
 const double _kBarHPad = 8;

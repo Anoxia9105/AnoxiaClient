@@ -38,6 +38,15 @@ class ParticipantTile extends StatefulWidget {
   /// 视频画面填充模式，默认 contain（保持宽高比，可能有黑边）
   final VideoViewFit fit;
 
+  /// 磁贴内容区底色，默认主题卡片色（surfaceContainerLow，跟随主题）。
+  ///
+  /// 屏幕共享主画面可传 [Colors.black]，让 contain 信箱边与视频黑底融合，
+  /// 而外层布局仍跟随主题。
+  final Color? backgroundColor;
+
+  /// 磁贴圆角，默认 lg（12，卡片风格）；共享主画面内层等可用 md（8）。
+  final double borderRadius;
+
   /// 是否移除外层 4px 边距，用于屏幕共享主画面等需要恰好填满容器的场景
   final bool removePadding;
 
@@ -49,6 +58,8 @@ class ParticipantTile extends StatefulWidget {
     this.onKick,
     this.onTap,
     this.fit = VideoViewFit.contain,
+    this.backgroundColor,
+    this.borderRadius = RadiusToken.lg,
     this.removePadding = false,
   });
 
@@ -238,20 +249,27 @@ class _ParticipantTileState extends State<ParticipantTile> {
     final (ConnectionQuality signalQuality, bool signalEstimated) =
         _effectiveQuality();
 
+    final cs = Theme.of(context).colorScheme;
     final tileContent = Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(RadiusToken.md),
+        color: widget.backgroundColor ?? cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(widget.borderRadius),
         border: Border.all(
           color: isSpeaking
-              ? Colors.blueAccent
-              : Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.1),
+              ? cs.primary
+              : cs.onSurface.withValues(alpha: 0.1),
           width: isSpeaking ? 2.0 : 1.0,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(RadiusToken.md),
+        borderRadius: BorderRadius.circular(widget.borderRadius),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -262,7 +280,15 @@ class _ParticipantTileState extends State<ParticipantTile> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AvatarWidget(size: 36, url: avatarUrl, name: nickName),
+                      AvatarWidget(size: 56, url: avatarUrl, name: nickName),
+                      const SizedBox(height: 8),
+                      Text(
+                        displayName,
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                 ),

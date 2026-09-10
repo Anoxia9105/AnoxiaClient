@@ -16,21 +16,29 @@ class ParticipantPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF252A38), Color(0xFF11131A)],
-        ),
-      ),
-      child: Center(
-        child: AvatarWidget(
-          url: avatar,
-          name: name,
-          size: compact ? 42 : 72,
-          borderRadius: compact ? 21 : 36,
-        ),
+    // 背景透明，主题卡片底由外层 MobileParticipantSurface 统一绘制，
+    // 这里只负责居中的大头像 + 昵称。
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AvatarWidget(
+            url: avatar,
+            name: name,
+            size: compact ? 48 : 84,
+            borderRadius: compact ? 24 : 42,
+          ),
+          if (!compact) ...[
+            const SizedBox(height: 10),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+            ),
+          ],
+        ],
       ),
     );
   }
