@@ -39,7 +39,7 @@ class ParticipantScreenShareBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            'call_participant_sharing'.tr(args: [name]),
+            'call_participant_sharing'.tr(namedArgs: {'name': name}),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
