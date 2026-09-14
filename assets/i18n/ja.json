@@ -1016,6 +1016,7 @@
   "call_invite_members": "メンバーを招待",
   "call_me_label": "（自分）",
   "call_voice_call_in_progress": "音声通話中",
+  "call_n_in_call": "{count}人が通話中",
   "call_kick": "キック",
   "call_hand_raise": "挙手",
   "call_reaction": "リアクション",

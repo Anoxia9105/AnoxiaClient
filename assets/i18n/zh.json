@@ -1016,6 +1016,7 @@
   "call_invite_members": "邀请成员",
   "call_me_label": "（我）",
   "call_voice_call_in_progress": "语音通话中",
+  "call_n_in_call": "{count} 人在通话",
   "call_kick": "踢出",
   "call_hand_raise": "举手",
   "call_reaction": "表情",

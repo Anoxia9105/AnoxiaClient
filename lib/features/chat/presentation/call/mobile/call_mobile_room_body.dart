@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 
+import 'draggable_self_view.dart';
 import 'mobile_call_controls.dart';
 import 'mobile_participant_surface.dart';
 
@@ -31,6 +32,9 @@ class CallMobileRoomBody extends ConsumerStatefulWidget {
 class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
   String? _focusedParticipantIdentity;
 
+  /// 上一次渲染时的共享者 sid，用于感知「共享开始/停止/换人」
+  String? _lastSharerSid;
+
   @override
   void didUpdateWidget(covariant CallMobileRoomBody oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -41,6 +45,12 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
         )) {
       _focusedParticipantIdentity = null;
     }
+    // 共享者发生变化时清掉聚焦：否则上一轮聚焦的人会顶掉刚开始的共享画面
+    final sharerSid = _sharerSid;
+    if (sharerSid != _lastSharerSid) {
+      _lastSharerSid = sharerSid;
+      _focusedParticipantIdentity = null;
+    }
   }
 
   List<Participant> get _participants => [
@@ -48,6 +58,10 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       widget.roomState.room.localParticipant!,
     ...widget.roomState.remoteParticipants,
   ];
+
+  /// 当前正在共享屏幕的参与者 sid
+  String? get _sharerSid =>
+      _participants.where(_isSharingScreen).firstOrNull?.sid;
 
   @override
   Widget build(BuildContext context) {
@@ -57,22 +71,30 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     final title = session?.title ?? '';
     final roomId = session?.roomId ?? '';
     final participants = _participants;
+    // 有人在共享屏幕（含语音通话中被共享的场景）
+    final screenSharer = participants.where(_isSharingScreen).firstOrNull;
     // 音频通话页中央头像：取房间头像（1:1 即对方头像，群聊为群头像）
     final roomAvatar =
         roomId.isEmpty ? '' : ref.watch(currentRoomProvider(roomId))?.roomAvatar ?? '';
 
     if (isInPipMode) {
-      return _buildPipContent(participants, isVideoCall);
+      return _buildPipContent(participants, isVideoCall, screenSharer);
     }
+
+    // 语音通话下有人共享屏幕时也要展示共享内容，不能只画音频背景。
+    final showVideoSurface = isVideoCall || screenSharer != null;
+    // 底部控制区预留高度：手机 Web 横屏等矮屏场景收紧，避免画面被压扁
+    final bottomInset = _controlsReservedHeight(context);
+    final compactControls = bottomInset < _controlsInsetDefault;
 
     // 背景由外层 MobileCallPage 的统一渐变绘制（AppBar 与正文无缝衔接），
     // 这里不再重复绘制渐变，避免「appbar 区域与页面颜色不一致」。
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (isVideoCall)
+        if (showVideoSurface)
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 148),
+            padding: EdgeInsets.fromLTRB(10, 8, 10, bottomInset),
             child: MobileVideoLayout(
               participants: participants,
               focusedParticipantIdentity: _focusedParticipantIdentity,
@@ -82,7 +104,15 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
             ),
           )
         else
-          AudioCallBackground(title: title, avatarUrl: roomAvatar),
+          AudioCallBackground(
+            title: title,
+            avatarUrl: roomAvatar,
+            participantCount: participants.length,
+          ),
+        // 视频画面底部叠一层主题色渐变，保证悬浮的控制栏/计时器始终可读
+        // （顶部由 AppBar 所在的渐变外壳承接，无需重复遮罩）
+        if (showVideoSurface)
+          _CallEdgeScrim(top: false, height: bottomInset + 24),
         Align(
           alignment: Alignment.bottomCenter,
           child: MobileCallControls(
@@ -90,6 +120,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
             roomId: roomId,
             title: title,
             isVideoCall: isVideoCall,
+            compact: compactControls,
           ),
         ),
         ReactionOverlay(reactions: widget.roomState.reactions ?? []),
@@ -97,8 +128,12 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     );
   }
 
-  Widget _buildPipContent(List<Participant> participants, bool isVideoCall) {
-    if (!isVideoCall) {
+  Widget _buildPipContent(
+    List<Participant> participants,
+    bool isVideoCall,
+    Participant? screenSharer,
+  ) {
+    if (!isVideoCall && screenSharer == null) {
       final cs = Theme.of(context).colorScheme;
       return Center(
         child: HugeIcon(
@@ -109,6 +144,7 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       );
     }
     final Participant? participant =
+        screenSharer ??
         widget.roomState.remoteParticipants.firstOrNull ??
         widget.roomState.room.localParticipant;
     if (participant == null) {
@@ -119,8 +155,72 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
       compact: true,
       showStatus: false,
       borderRadius: 0,
+      fit: screenSharer != null ? VideoViewFit.contain : VideoViewFit.cover,
     );
   }
+}
+
+/// 常规竖屏下底部控制区预留高度
+const double _controlsInsetDefault = 148;
+
+/// 底部控制区预留高度
+///
+/// 手机 Web 横屏等矮屏场景下收敛，避免视频/共享画面被控制栏挤扁。
+double _controlsReservedHeight(BuildContext context) {
+  final size = MediaQuery.sizeOf(context);
+  if (size.width > size.height && size.height < 480) return 92;
+  if (size.height < 560) return 118;
+  return _controlsInsetDefault;
+}
+
+/// 通话画面边缘渐变遮罩
+///
+/// 视频/共享画面亮度不可控，顶部标题栏与底部控制栏直接压在画面上会看不清。
+/// 这里用主题 surface 色从边缘向内渐隐（浅色主题为白、深色主题为黑），
+/// 保证两种主题下文字与图标都保持对比度；不拦截触摸。
+class _CallEdgeScrim extends StatelessWidget {
+  const _CallEdgeScrim({required this.top, required this.height});
+
+  /// true 为顶部遮罩，false 为底部遮罩
+  final bool top;
+
+  /// 遮罩高度
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return IgnorePointer(
+      child: Align(
+        alignment: top ? Alignment.topCenter : Alignment.bottomCenter,
+        child: SizedBox(
+          height: height,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+                end: top ? Alignment.bottomCenter : Alignment.topCenter,
+                colors: [
+                  cs.surface.withValues(alpha: 0.6),
+                  cs.surface.withValues(alpha: 0),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 是否正在活跃共享屏幕。
+///
+/// 依赖 `track != null` 判断可用轨道：远端订阅成功才有 track，
+/// 本端（LocalParticipant）发布的轨道 track 恒存在，无需 `subscribed`。
+bool _isSharingScreen(Participant p) {
+  return p.videoTrackPublications.any(
+    (pub) => pub.isScreenShare && !pub.muted && pub.track is VideoTrack,
+  );
 }
 
 /// 移动端视频布局组件
@@ -147,12 +247,24 @@ class MobileVideoLayout extends StatelessWidget {
       return const CallLoadingState();
     }
 
-    // 有人在共享屏幕时，优先展示共享画面（与桌面端一致）。
-    final screenSharer = participants
-        .where(_hasActiveScreenShare)
-        .firstOrNull;
+    // 有人在共享屏幕时，优先展示共享画面（与桌面端一致）；
+    // 点击底部缩略条可临时把某人切到大屏，再点共享者缩略图切回。
+    final screenSharer = participants.where(_isSharingScreen).firstOrNull;
     if (screenSharer != null) {
-      return _buildScreenShareLayout(screenSharer);
+      final pinned = participants
+          .where(
+            (participant) =>
+                participant.identity == focusedParticipantIdentity &&
+                participant.sid != screenSharer.sid,
+          )
+          .firstOrNull;
+      // 矮屏（手机 Web 横屏）收紧缩略条高度，避免挤占主画面
+      final thumbHeight = MediaQuery.sizeOf(context).height < 480 ? 68.0 : 92.0;
+      return _buildScreenShareLayout(
+        screenSharer,
+        pinned: pinned,
+        thumbHeight: thumbHeight,
+      );
     }
 
     if (participants.length <= 2) {
@@ -170,27 +282,28 @@ class MobileVideoLayout extends StatelessWidget {
     return _buildGridLayout();
   }
 
-  /// 是否正在活跃共享屏幕。
-  ///
-  /// 依赖 `track != null` 判断可用轨道：远端订阅成功才有 track，
-  /// 本端（LocalParticipant）发布的轨道 track 恒存在，无需 `subscribed`。
-  bool _hasActiveScreenShare(Participant p) {
-    return p.videoTrackPublications.any(
-      (pub) => pub.isScreenShare && !pub.muted && pub.track is VideoTrack,
-    );
-  }
-
   /// 屏幕共享布局：共享画面大屏 + 底部其他参与者横滑缩略条。
-  Widget _buildScreenShareLayout(Participant sharer) {
-    final others = participants
-        .where((participant) => participant.sid != sharer.sid)
-        .toList();
+  ///
+  /// [pinned] 非空时把该参与者提到大屏，共享者退回缩略条首位，便于一键切回。
+  Widget _buildScreenShareLayout(
+    Participant sharer, {
+    Participant? pinned,
+    double thumbHeight = 92,
+  }) {
+    final primary = pinned ?? sharer;
+    final others = <Participant>[
+      if (pinned != null) sharer,
+      ...participants.where(
+        (participant) =>
+            participant.sid != primary.sid && participant.sid != sharer.sid,
+      ),
+    ];
     return Stack(
       fit: StackFit.expand,
       children: [
         MobileParticipantSurface(
-          key: ValueKey('mobile-screen-${sharer.sid}'),
-          participant: sharer,
+          key: ValueKey('mobile-screen-${primary.sid}'),
+          participant: primary,
           borderRadius: 22,
           fit: VideoViewFit.contain,
         ),
@@ -199,7 +312,7 @@ class MobileVideoLayout extends StatelessWidget {
             left: 10,
             right: 10,
             bottom: 10,
-            height: 92,
+            height: thumbHeight,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: others.length,
@@ -207,7 +320,10 @@ class MobileVideoLayout extends StatelessWidget {
               itemBuilder: (context, index) {
                 final p = others[index];
                 return GestureDetector(
-                  onTap: () => onFocusChanged(p.identity),
+                  // 点共享者缩略图表示「回到共享画面」，故传 null 清空聚焦
+                  onTap: () => onFocusChanged(
+                    p.sid == sharer.sid ? null : p.identity,
+                  ),
                   child: SizedBox(
                     width: 76,
                     child: MobileParticipantSurface(
@@ -243,18 +359,11 @@ class MobileVideoLayout extends StatelessWidget {
           participant: primary,
           borderRadius: 22,
         ),
+        // 自己的小窗：默认右下角，可拖拽滑动并自动吸边
         if (local != null && local != primary)
-          Positioned(
-            top: 12,
-            right: 12,
-            width: 104,
-            height: 150,
-            child: MobileParticipantSurface(
-              key: ValueKey('mobile-local-${local.sid}'),
-              participant: local,
-              compact: true,
-              borderRadius: 16,
-            ),
+          DraggableSelfView(
+            key: ValueKey('mobile-local-${local.sid}'),
+            participant: local,
           ),
       ],
     );

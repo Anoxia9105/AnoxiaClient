@@ -42,13 +42,7 @@ class CallInvitationOverlay extends ConsumerWidget {
     }
 
     return switch (invitation.phase) {
-      CallInvitationPhase.incoming =>
-        // 1:1 手机端全屏来电；真实桌面 + Web PC 宽屏用右上角卡片通知；
-        // 真实手机 + Web 移动窄屏用顶部右上角卡片，让接听/拒绝按钮贴近最右侧。
-        // 桌面端另由 app.dart 触发系统来电通知，两者并存
-        (DeviceUtil.isRealMobile() && !invitation.isGroup)
-            ? IncomingCallPage(invitation: invitation)
-            : IncomingCallBanner(invitation: invitation, alignTopRight: true),
+      CallInvitationPhase.incoming => _buildIncoming(context, invitation),
       CallInvitationPhase.outgoing => (DeviceUtil.isRealDesktop() ||
               invitation.isGroup)
           ? const SizedBox.shrink()
@@ -68,5 +62,24 @@ class CallInvitationOverlay extends ConsumerWidget {
       CallInvitationPhase.busy => const CallNoticeCard(text: 'call_peer_busy'),
       CallInvitationPhase.ended => const CallNoticeCard(text: 'call_ended'),
     };
+  }
+
+  /// 来电阶段 UI 分流
+  ///
+  /// - 真实手机 1:1：全屏来电页；
+  /// - Web 手机/平板窄屏（含 SP 横屏）：顶部横条，宽度占满，便于单手点按；
+  /// - 真实桌面 + Web PC 宽屏：右上角限宽卡片通知（桌面端另有系统通知并存）。
+  Widget _buildIncoming(
+    BuildContext context,
+    CallInvitationState invitation,
+  ) {
+    if (DeviceUtil.isRealMobile() && !invitation.isGroup) {
+      return IncomingCallPage(invitation: invitation);
+    }
+    final isNarrowWeb = DeviceUtil.isWeb && !DeviceUtil.isDesktop(context);
+    return IncomingCallBanner(
+      invitation: invitation,
+      alignTopRight: !isNarrowWeb,
+    );
   }
 }

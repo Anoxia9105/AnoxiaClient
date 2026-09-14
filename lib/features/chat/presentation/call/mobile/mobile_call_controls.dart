@@ -29,6 +29,7 @@ class MobileCallControls extends ConsumerWidget {
     required this.roomId,
     required this.title,
     required this.isVideoCall,
+    this.compact = false,
   });
 
   /// 当前房间状态
@@ -43,37 +44,80 @@ class MobileCallControls extends ConsumerWidget {
   /// 是否为视频通话
   final bool isVideoCall;
 
+  /// 是否使用紧凑布局（手机 Web 横屏等矮屏场景）
+  ///
+  /// 紧凑模式下通话计时器并入按钮同一行，减少垂直占用，把高度让给画面。
+  final bool compact;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final appColors = Theme.of(context).extension<AppColors>();
     final notifier = ref.read(roomControllerProvider(state.token).notifier);
     final isGroup = ref.watch(callIsGroupProvider(roomId));
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    final timerChip = _CallTimerChip(joinedAt: state.joinedAt);
+
+    final actions = <Widget>[
+      _CallControlButton(
+        tooltip: state.micEnabled ? 'call_mic_mute'.tr() : 'call_mic_unmute'.tr(),
+        icon: state.micEnabled ? HugeIcons.strokeRoundedMic01 : HugeIcons.strokeRoundedMicOff01,
+        active: state.micEnabled,
+        onPressed: notifier.toggleMic,
+      ),
+      // 听筒/扬声器切换仅真机有意义（Web/桌面由系统输出设备决定）
+      if (DeviceUtil.isRealMobile()) ...[
+        const SizedBox(width: 7),
+        _CallControlButton(
+          tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
+          icon: state.speakerOn
+              ? HugeIcons.strokeRoundedVolumeUp
+              : HugeIcons.strokeRoundedEar,
+          active: state.speakerOn,
+          onPressed: notifier.toggleSpeaker,
+        ),
+      ],
+      if (isVideoCall) ...[
+        const SizedBox(width: 7),
+        _CallControlButton(
+          tooltip: state.cameraEnabled ? 'call_camera_off'.tr() : 'call_camera_on'.tr(),
+          icon: state.cameraEnabled
+              ? HugeIcons.strokeRoundedVideo01
+              : HugeIcons.strokeRoundedVideoOff,
+          active: state.cameraEnabled,
+          onPressed: notifier.toggleCamera,
+        ),
+        const SizedBox(width: 7),
+        _CallControlButton(
+          tooltip: 'call_switch_camera_tooltip'.tr(),
+          icon: HugeIcons.strokeRoundedCameraRotated01,
+          active: false,
+          enabled: state.cameraEnabled,
+          onPressed: notifier.switchCamera,
+        ),
+      ],
+      if (isGroup) ...[
+        const SizedBox(width: 7),
+        CallInviteMembersButton(state: state),
+      ],
+      const SizedBox(width: 7),
+      _CallControlButton(
+        tooltip: 'call_hangup_tooltip'.tr(),
+        icon: HugeIcons.strokeRoundedCallEnd01,
+        backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
+        foregroundColor: Colors.white,
+        onPressed: () => _hangUp(ref, notifier),
+      ),
+    ];
+
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(12, 0, 12, 14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: cs.onSurface.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(RadiusToken.xl),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: MobileCallTimer(
-                joinedAt: state.joinedAt,
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 11),
+          if (!compact) ...[timerChip, const SizedBox(height: 11)],
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
             decoration: BoxDecoration(
@@ -90,63 +134,29 @@ class MobileCallControls extends ConsumerWidget {
                 ),
               ],
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                _CallControlButton(
-                  tooltip: state.micEnabled ? 'call_mic_mute'.tr() : 'call_mic_unmute'.tr(),
-                  icon: state.micEnabled ? HugeIcons.strokeRoundedMic01 : HugeIcons.strokeRoundedMicOff01,
-                  active: state.micEnabled,
-                  onPressed: notifier.toggleMic,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (compact) ...[timerChip, const SizedBox(width: 8)],
+                ConstrainedBox(
+                  // 给横滑区一个有界宽度，否则 Row 内无法计算滚动范围
+                  constraints: BoxConstraints(
+                    maxWidth: (screenWidth - (compact ? 176 : 56)).clamp(
+                      120.0,
+                      screenWidth,
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: actions,
+                    ),
+                  ),
                 ),
-                // 听筒/扬声器切换仅真机有意义（Web/桌面由系统输出设备决定）
-                if (DeviceUtil.isRealMobile()) ...[
-                  const SizedBox(width: 7),
-                  _CallControlButton(
-                    tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
-                    icon: state.speakerOn
-                        ? HugeIcons.strokeRoundedVolumeUp
-                        : HugeIcons.strokeRoundedEar,
-                    active: state.speakerOn,
-                    onPressed: notifier.toggleSpeaker,
-                  ),
-                ],
-                if (isVideoCall) ...[
-                  const SizedBox(width: 7),
-                  _CallControlButton(
-                    tooltip: state.cameraEnabled ? 'call_camera_off'.tr() : 'call_camera_on'.tr(),
-                    icon: state.cameraEnabled
-                        ? HugeIcons.strokeRoundedVideo01
-                        : HugeIcons.strokeRoundedVideoOff,
-                    active: state.cameraEnabled,
-                    onPressed: notifier.toggleCamera,
-                  ),
-                  const SizedBox(width: 7),
-                  _CallControlButton(
-                    tooltip: 'call_switch_camera_tooltip'.tr(),
-                    icon: HugeIcons.strokeRoundedCameraRotated01,
-                    active: false,
-                    enabled: state.cameraEnabled,
-                    onPressed: notifier.switchCamera,
-                  ),
-                ],
-                if (isGroup) ...[
-                  const SizedBox(width: 7),
-                  CallInviteMembersButton(state: state),
-                ],
-                const SizedBox(width: 7),
-                _CallControlButton(
-                  tooltip: 'call_hangup_tooltip'.tr(),
-                  icon: HugeIcons.strokeRoundedCallEnd01,
-                  backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
-                  foregroundColor: Colors.white,
-                  onPressed: () => _hangUp(ref, notifier),
-                ),
-                ],
-              ),
+              ],
             ),
           ),
         ],
@@ -163,6 +173,39 @@ class MobileCallControls extends ConsumerWidget {
         .endRoom(roomId, title: title);
     ref.read(mobileCallSessionControllerProvider.notifier).end();
     await notifier.leave();
+  }
+}
+
+/// 通话计时器胶囊
+///
+/// 紧凑布局（手机 Web 横屏等矮屏）时与按钮同一行展示，节省垂直空间。
+class _CallTimerChip extends StatelessWidget {
+  const _CallTimerChip({required this.joinedAt});
+
+  /// 加入房间的时间点
+  final DateTime? joinedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cs.onSurface.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: MobileCallTimer(
+          joinedAt: joinedAt,
+          style: TextStyle(
+            color: cs.onSurface,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
+      ),
+    );
   }
 }
 

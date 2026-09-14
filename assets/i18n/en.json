@@ -1016,6 +1016,7 @@
   "call_invite_members": "Invite members",
   "call_me_label": "(Me)",
   "call_voice_call_in_progress": "Voice call in progress",
+  "call_n_in_call": "{count} in call",
   "call_kick": "Kick",
   "call_hand_raise": "Raise hand",
   "call_reaction": "Reaction",

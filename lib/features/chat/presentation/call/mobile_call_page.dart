@@ -74,6 +74,8 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               centerTitle: true,
+              // 手机 Web 横屏等矮屏场景压低标题栏，把高度让给通话画面
+              toolbarHeight: _appBarHeight(context),
               title: Text(
                 widget.title,
                 maxLines: 1,
@@ -106,6 +108,13 @@ class _MobileCallPageState extends ConsumerState<MobileCallPage> {
       ),
       child: scaffold,
     );
+  }
+
+  /// 标题栏高度：矮屏（手机 Web 横屏）收紧，其余走默认高度
+  double? _appBarHeight(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    if (size.width > size.height && size.height < 480) return 44;
+    return null;
   }
 
   Widget _buildBody(String? token) {
