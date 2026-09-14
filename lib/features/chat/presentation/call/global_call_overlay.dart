@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/platform/shims/pip_shim.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 全局通话悬浮层组件
 ///
@@ -213,7 +214,7 @@ class _GlobalCallOverlayState extends ConsumerState<GlobalCallOverlay>
                 child: Material(
                   elevation: 10,
                   color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(isVideoCall ? 12 : 28),
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
                   clipBehavior: Clip.antiAlias,
                   child: SizedBox(
                     width: isVideoCall

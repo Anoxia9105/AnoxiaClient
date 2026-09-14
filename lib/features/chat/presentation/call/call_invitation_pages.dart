@@ -97,39 +97,45 @@ class IncomingCallPage extends ConsumerWidget {
                         ),
                       ),
                       const Spacer(flex: 4),
-                      // 拒绝 / 接听
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CallActionButton.hangUp(
-                            label: 'notification_call_reject'.tr(),
-                            icon: HugeIcons.strokeRoundedCallEnd01,
-                            onPressed: () => controller.reject(invitation),
-                          ),
-                          const SizedBox(width: 56),
-                          CallActionButton.accept(
-                            label: 'notification_call_accept'.tr(),
-                            icon: isVideo
-                                ? HugeIcons.strokeRoundedVideo01
-                                : HugeIcons.strokeRoundedCall02,
-                            onPressed: () =>
-                                controller.acceptAndOpen(invitation),
-                          ),
-                        ],
+                      // 接听 / 拒绝 按钮组（整体靠右，与桌面端通知按钮成组在右侧的布局对齐）
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CallActionButton.hangUp(
+                              label: 'notification_call_reject'.tr(),
+                              icon: HugeIcons.strokeRoundedCallEnd01,
+                              onPressed: () => controller.reject(invitation),
+                            ),
+                            const SizedBox(width: 40),
+                            CallActionButton.accept(
+                              label: 'notification_call_accept'.tr(),
+                              icon: isVideo
+                                  ? HugeIcons.strokeRoundedVideo01
+                                  : HugeIcons.strokeRoundedCall02,
+                              onPressed: () =>
+                                  controller.acceptAndOpen(invitation),
+                            ),
+                          ],
+                        ),
                       ),
-                      // 视频来电：以语音方式接听
+                      // 视频来电：以语音方式接听（与按钮组同侧靠右）
                       if (isVideo) ...[
                         const SizedBox(height: 20),
-                        TextButton(
-                          onPressed: () => controller.acceptAndOpen(
-                            invitation,
-                            media: CallInitialMedia.audio,
-                          ),
-                          child: Text(
-                            'call_answer_as_voice'.tr(),
-                            style: TextStyle(
-                              color: cs.onSurfaceVariant,
-                              fontSize: 14,
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => controller.acceptAndOpen(
+                              invitation,
+                              media: CallInitialMedia.audio,
+                            ),
+                            child: Text(
+                              'call_answer_as_voice'.tr(),
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ),
