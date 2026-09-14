@@ -179,16 +179,17 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     }
   }
 
-  /// 本端轨道无需 `subscribed`（本地发布自己的轨道，subscribed 恒为 false）。
-  bool get _isLocal => widget.participant is LocalParticipant;
-
   /// 正在共享屏幕的轨道（未静音），优先于摄像头显示。
   ///
   /// 与桌面端 [ParticipantTile] 一致：有人共享时就展示共享画面。
+  /// 依赖 `track != null` 判断可用轨道：远端订阅成功才有 track，
+  /// 本端（LocalParticipant）发布的轨道 track 恒存在，无需 `subscribed`。
   VideoTrack? _screenShareTrack() {
     return widget.participant.videoTrackPublications
-        .where((publication) => publication.isScreenShare)
-        .where((publication) => !publication.muted && (_isLocal || publication.subscribed))
+        .where((publication) =>
+            publication.isScreenShare &&
+            !publication.muted &&
+            publication.track is VideoTrack)
         .map((publication) => publication.track)
         .whereType<VideoTrack>()
         .firstOrNull;
@@ -202,8 +203,10 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     if (screen != null) return screen;
 
     return widget.participant.videoTrackPublications
-        .where((publication) => !publication.isScreenShare)
-        .where((publication) => !publication.muted && (_isLocal || publication.subscribed))
+        .where((publication) =>
+            !publication.isScreenShare &&
+            !publication.muted &&
+            publication.track is VideoTrack)
         .map((publication) => publication.track)
         .whereType<VideoTrack>()
         .firstOrNull;

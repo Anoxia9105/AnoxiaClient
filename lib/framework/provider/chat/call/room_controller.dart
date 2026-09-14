@@ -231,6 +231,16 @@ class RoomController extends _$RoomController {
         ..on<TrackUnmutedEvent>((e) {
           _updateParticipants();
         })
+        /// 远端轨道订阅成功 / 取消订阅（任意参与者）
+        ///
+        /// 订阅完成前远端画面轨道的 track 为 null，无法渲染；
+        /// 订阅完成后需刷新参与者列表，让 UI（尤其手机端）切换到共享大屏等视图。
+        ..on<TrackSubscribedEvent>((e) {
+          _updateParticipants();
+        })
+        ..on<TrackUnsubscribedEvent>((e) {
+          _updateParticipants();
+        })
         // ============ 自定义数据通道 ============
         /// 收到房间内任意参与者发送的自定义数据
         /// 注意：LiveKit publishData 不会回传给发送方自己，

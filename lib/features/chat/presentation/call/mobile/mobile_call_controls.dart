@@ -61,21 +61,21 @@ class MobileCallControls extends ConsumerWidget {
               borderRadius: BorderRadius.circular(RadiusToken.xl),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: MobileCallTimer(
                 joinedAt: state.joinedAt,
                 style: TextStyle(
                   color: cs.onSurface,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.8,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 11),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
             decoration: BoxDecoration(
               color: cs.surface.withValues(alpha: 0.94),
               borderRadius: BorderRadius.circular(RadiusToken.xl),
@@ -104,7 +104,7 @@ class MobileCallControls extends ConsumerWidget {
                 ),
                 // 听筒/扬声器切换仅真机有意义（Web/桌面由系统输出设备决定）
                 if (DeviceUtil.isRealMobile()) ...[
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 7),
                   _CallControlButton(
                     tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
                     icon: state.speakerOn
@@ -115,7 +115,7 @@ class MobileCallControls extends ConsumerWidget {
                   ),
                 ],
                 if (isVideoCall) ...[
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 7),
                   _CallControlButton(
                     tooltip: state.cameraEnabled ? 'call_camera_off'.tr() : 'call_camera_on'.tr(),
                     icon: state.cameraEnabled
@@ -124,7 +124,7 @@ class MobileCallControls extends ConsumerWidget {
                     active: state.cameraEnabled,
                     onPressed: notifier.toggleCamera,
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 7),
                   _CallControlButton(
                     tooltip: 'call_switch_camera_tooltip'.tr(),
                     icon: HugeIcons.strokeRoundedCameraRotated01,
@@ -134,10 +134,10 @@ class MobileCallControls extends ConsumerWidget {
                   ),
                 ],
                 if (isGroup) ...[
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 7),
                   CallInviteMembersButton(state: state),
                 ],
-                const SizedBox(width: 10),
+                const SizedBox(width: 7),
                 _CallControlButton(
                   tooltip: 'call_hangup_tooltip'.tr(),
                   icon: HugeIcons.strokeRoundedCallEnd01,
@@ -207,7 +207,7 @@ class _CallControlButton extends StatelessWidget {
     final scale = (MediaQuery.sizeOf(context).width / 375)
         .clamp(0.9, 1.1)
         .toDouble();
-    final dim = (52 * scale).clamp(46.0, 56.0).toDouble();
+    final dim = (44 * scale).clamp(40.0, 48.0).toDouble();
     final resolvedBackground =
         backgroundColor ??
         (active ? cs.primary : cs.surfaceContainerHighest);

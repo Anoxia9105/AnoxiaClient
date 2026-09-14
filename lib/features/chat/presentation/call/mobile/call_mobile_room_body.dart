@@ -170,11 +170,13 @@ class MobileVideoLayout extends StatelessWidget {
     return _buildGridLayout();
   }
 
-  /// 是否正在活跃共享屏幕（本端轨道无需 `subscribed`）。
+  /// 是否正在活跃共享屏幕。
+  ///
+  /// 依赖 `track != null` 判断可用轨道：远端订阅成功才有 track，
+  /// 本端（LocalParticipant）发布的轨道 track 恒存在，无需 `subscribed`。
   bool _hasActiveScreenShare(Participant p) {
-    final isLocal = p is LocalParticipant;
     return p.videoTrackPublications.any(
-      (pub) => pub.isScreenShare && !pub.muted && (isLocal || pub.subscribed),
+      (pub) => pub.isScreenShare && !pub.muted && pub.track is VideoTrack,
     );
   }
 

@@ -44,14 +44,11 @@ class CallInvitationOverlay extends ConsumerWidget {
     return switch (invitation.phase) {
       CallInvitationPhase.incoming =>
         // 1:1 手机端全屏来电；真实桌面 + Web PC 宽屏用右上角卡片通知；
-        // 真实手机 + Web 移动窄屏用顶部横条。桌面端另由 app.dart 触发系统来电通知，两者并存
+        // 真实手机 + Web 移动窄屏用顶部右上角卡片，让接听/拒绝按钮贴近最右侧。
+        // 桌面端另由 app.dart 触发系统来电通知，两者并存
         (DeviceUtil.isRealMobile() && !invitation.isGroup)
             ? IncomingCallPage(invitation: invitation)
-            : IncomingCallBanner(
-                invitation: invitation,
-                alignTopRight:
-                    DeviceUtil.supportsDesktopLayoutPreference(context),
-              ),
+            : IncomingCallBanner(invitation: invitation, alignTopRight: true),
       CallInvitationPhase.outgoing => (DeviceUtil.isRealDesktop() ||
               invitation.isGroup)
           ? const SizedBox.shrink()
