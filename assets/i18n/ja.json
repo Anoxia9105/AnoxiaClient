@@ -414,6 +414,7 @@
   "call_permission_restricted_tooltip": "この参加者には権限制限があります",
   "call_screen_sharing": "🖥️ 画面を共有中です",
   "call_screen_sharing_hint": "他の参加者があなたの画面を見ることができます",
+  "call_participant_sharing": "{name} が画面を共有しています",
   "call_stop_sharing": "共有を停止",
   "call_window_room_creation_failed": "ルームの作成に失敗しました",
   "call_window_retry": "再試行",

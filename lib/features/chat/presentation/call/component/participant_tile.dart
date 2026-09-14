@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/features/chat/presentation/call/component/participant_screen_share_badge.dart';
 import 'package:anoxia/features/chat/presentation/call/component/participant_signal_icon.dart';
 import 'package:anoxia/features/chat/presentation/call/component/remote_quality_estimator.dart';
 import 'package:anoxia/features/chat/presentation/call/component/participant_more_menu.dart';
@@ -227,10 +228,19 @@ class _ParticipantTileState extends State<ParticipantTile> {
     return null;
   }
 
+  /// 是否正在展示屏幕共享画面（用于顶部「正在共享」标签）。
+  bool _isSharingScreen() {
+    final screenPub = widget.participant.videoTrackPublications
+        .where((pub) => pub.isScreenShare && !pub.muted && pub.subscribed)
+        .firstOrNull;
+    return screenPub?.track is VideoTrack;
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.participant;
     final track = _getVisibleVideoTrack();
+    final isSharingScreen = _isSharingScreen();
 
     Map<String, dynamic> meta = {};
     try {
@@ -306,6 +316,14 @@ class _ParticipantTileState extends State<ParticipantTile> {
                     ),
                     child: const Text('✋', style: TextStyle(fontSize: 20)),
                   ),
+                ),
+
+              /// 屏幕共享标签：有人共享时在视频区域顶部标识共享者
+              if (isSharingScreen)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: ParticipantScreenShareBadge(name: displayName),
                 ),
 
               /// 参与者信息和操作菜单（桌面端及 Web 端显示）

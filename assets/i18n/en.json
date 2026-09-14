@@ -414,6 +414,7 @@
   "call_permission_restricted_tooltip": "This participant has permission restrictions",
   "call_screen_sharing": "🖥️ You are sharing your screen",
   "call_screen_sharing_hint": "Other participants can see your screen",
+  "call_participant_sharing": "{name} is sharing their screen",
   "call_stop_sharing": "Stop sharing",
   "call_window_room_creation_failed": "Failed to create room",
   "call_window_retry": "Retry",

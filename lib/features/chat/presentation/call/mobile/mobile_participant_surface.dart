@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:anoxia/features/chat/presentation/call/component/participant_screen_share_badge.dart';
 import 'package:anoxia/features/chat/presentation/call/component/remote_quality_estimator.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_placeholder.dart';
 import 'package:anoxia/features/chat/presentation/call/mobile/participant_status_indicators.dart';
@@ -178,18 +179,31 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     }
   }
 
-  VideoTrack? _visibleTrack() {
-    final camera = widget.participant.videoTrackPublications
-        .where((publication) => !publication.isScreenShare)
-        .where((publication) => !publication.muted && publication.subscribed)
+  /// 本端轨道无需 `subscribed`（本地发布自己的轨道，subscribed 恒为 false）。
+  bool get _isLocal => widget.participant is LocalParticipant;
+
+  /// 正在共享屏幕的轨道（未静音），优先于摄像头显示。
+  ///
+  /// 与桌面端 [ParticipantTile] 一致：有人共享时就展示共享画面。
+  VideoTrack? _screenShareTrack() {
+    return widget.participant.videoTrackPublications
+        .where((publication) => publication.isScreenShare)
+        .where((publication) => !publication.muted && (_isLocal || publication.subscribed))
         .map((publication) => publication.track)
         .whereType<VideoTrack>()
         .firstOrNull;
-    if (camera != null) return camera;
+  }
+
+  /// 是否正在展示屏幕共享画面（用于顶部共享标签）。
+  bool get _isScreenSharing => _screenShareTrack() != null;
+
+  VideoTrack? _visibleTrack() {
+    final screen = _screenShareTrack();
+    if (screen != null) return screen;
 
     return widget.participant.videoTrackPublications
-        .where((publication) => publication.isScreenShare)
-        .where((publication) => !publication.muted && publication.subscribed)
+        .where((publication) => !publication.isScreenShare)
+        .where((publication) => !publication.muted && (_isLocal || publication.subscribed))
         .map((publication) => publication.track)
         .whereType<VideoTrack>()
         .firstOrNull;
@@ -309,6 +323,16 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                         estimated: signalEstimated,
                       ),
                     ],
+                  ),
+                ),
+              // 屏幕共享标签：有人共享时在视频区域顶部标识共享者
+              if (_isScreenSharing)
+                Positioned(
+                  top: widget.compact ? 6 : 10,
+                  left: widget.compact ? 6 : 10,
+                  child: ParticipantScreenShareBadge(
+                    name: meta.name,
+                    compact: widget.compact,
                   ),
                 ),
               Positioned(

@@ -147,6 +147,14 @@ class MobileVideoLayout extends StatelessWidget {
       return const CallLoadingState();
     }
 
+    // 有人在共享屏幕时，优先展示共享画面（与桌面端一致）。
+    final screenSharer = participants
+        .where(_hasActiveScreenShare)
+        .firstOrNull;
+    if (screenSharer != null) {
+      return _buildScreenShareLayout(screenSharer);
+    }
+
     if (participants.length <= 2) {
       return _buildOneToOneLayout();
     }
@@ -160,6 +168,59 @@ class MobileVideoLayout extends StatelessWidget {
       return _buildFocusLayout(focused);
     }
     return _buildGridLayout();
+  }
+
+  /// 是否正在活跃共享屏幕（本端轨道无需 `subscribed`）。
+  bool _hasActiveScreenShare(Participant p) {
+    final isLocal = p is LocalParticipant;
+    return p.videoTrackPublications.any(
+      (pub) => pub.isScreenShare && !pub.muted && (isLocal || pub.subscribed),
+    );
+  }
+
+  /// 屏幕共享布局：共享画面大屏 + 底部其他参与者横滑缩略条。
+  Widget _buildScreenShareLayout(Participant sharer) {
+    final others = participants
+        .where((participant) => participant.sid != sharer.sid)
+        .toList();
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        MobileParticipantSurface(
+          key: ValueKey('mobile-screen-${sharer.sid}'),
+          participant: sharer,
+          borderRadius: 22,
+          fit: VideoViewFit.contain,
+        ),
+        if (others.isNotEmpty)
+          Positioned(
+            left: 10,
+            right: 10,
+            bottom: 10,
+            height: 92,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: others.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final p = others[index];
+                return GestureDetector(
+                  onTap: () => onFocusChanged(p.identity),
+                  child: SizedBox(
+                    width: 76,
+                    child: MobileParticipantSurface(
+                      key: ValueKey('mobile-screen-thumb-${p.sid}'),
+                      participant: p,
+                      compact: true,
+                      borderRadius: 12,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _buildOneToOneLayout() {

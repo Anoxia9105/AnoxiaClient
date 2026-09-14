@@ -414,6 +414,7 @@
   "call_permission_restricted_tooltip": "该参与者有权限限制",
   "call_screen_sharing": "🖥️ 您正在共享屏幕",
   "call_screen_sharing_hint": "其他参与者可以看到您的屏幕",
+  "call_participant_sharing": "{name} 正在共享屏幕",
   "call_stop_sharing": "停止共享",
   "call_window_room_creation_failed": "创建房间失败",
   "call_window_retry": "重试",
