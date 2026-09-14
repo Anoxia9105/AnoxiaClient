@@ -109,12 +109,15 @@ class MobileBottomBar extends ConsumerWidget {
                     clipBehavior: Clip.hardEdge,
                     children: [
                       // 顶部内高光：提亮玻璃质感，贴合液态玻璃的受光面。
-                      IgnorePointer(
-                        child: Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: 28,
+                      // 注意：Positioned 必须是 Stack 的直接子节点，
+                      // IgnorePointer 只能包在 Positioned 里面，否则抛
+                      // Incorrect use of ParentDataWidget（debug 断言/release 强转异常）。
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 28,
+                        child: IgnorePointer(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
