@@ -7,7 +7,6 @@ import 'package:anoxia/framework/provider/layout/window_maximized_provider.dart'
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import '../../../gen/assets.gen.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
@@ -41,13 +40,16 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     // 最大化/还原图标以窗口真实状态为准（幂等同步），与侧边栏等 UI 状态解耦
     final maximized = ref.watch(windowMaximizedProvider);
 
-    final canGoBack = context.canPop();
+    // 用 Navigator 而非 GoRouter 扩展判断：桌面端子窗口（如强制更新窗口）
+    // 的树里没有 GoRouter，context.canPop() 会抛 "No GoRouter found in context"。
+    // GoRouter 的 Navigator 同样会通过 onPopPage 回调把 URL 状态同步回去。
+    final canGoBack = Navigator.of(context).canPop();
     return AppBar(
       elevation: 0,
       titleSpacing: 4,
       leading: hideAppBarLogo && canGoBack
           ? IconButton(
-              onPressed: () => context.pop(),
+              onPressed: () => Navigator.of(context).pop(),
               icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
             )
           : Center(

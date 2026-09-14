@@ -1,30 +1,49 @@
 import 'dart:io';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
-import '../../../../common/utils/device_util.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
-import '../../../../framework/network/dio_client.dart';
-import '../../../../framework/domain/app_update_info.dart';
-import '../../../../common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/framework/network/dio_client.dart';
+// AppUpdateInfo 由 settings_provider.dart 显式 re-export，无需再单独引入 domain 文件
+// （同时这里还需要 appVersionProvider 读取当前版本号）
+import 'package:anoxia/framework/provider/setting/settings_provider.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import '../widgets/update_sections.dart';
 
 /// 应用更新页面
 ///
-/// 显示应用更新信息、下载进度，并支持更新安装
+/// 显示应用更新信息、下载进度，并支持更新安装。
+///
+/// 注意：本页会在两种宿主中出现——
+/// 1. GoRouter 的 [UpdateRoute] 页面路由（设置页/官方号主动检查进入）；
+/// 2. 强制更新时由 main.dart 通过 `runApp` 直接挂载的独立更新窗口，
+///    此时整棵树里**没有 GoRouter、也没有可返回的路由栈**。
+///
+/// 因此本页严禁使用 `context.canPop()` / `context.pop()` 这类 GoRouter 扩展
+/// （会抛 `No GoRouter found in context`），一律改用 Navigator 的安全写法。
 class UpdatePage extends ConsumerStatefulWidget {
   /// 更新信息对象
   final AppUpdateInfo updateInfo;
 
-  const UpdatePage({super.key, required this.updateInfo});
+  /// 是否以独立更新窗口方式启动（无路由栈可返回，需要提供退出入口）
+  final bool standalone;
+
+  const UpdatePage({
+    super.key,
+    required this.updateInfo,
+    this.standalone = false,
+  });
 
   @override
   ConsumerState<UpdatePage> createState() => _UpdatePageState();
@@ -37,6 +56,8 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
   bool _isDownloading = false;
   /// 是否已经开始下载
   bool _hasStarted = false;
+  /// 是否已跳转浏览器（移动端外部下载）
+  bool _openedInBrowser = false;
   /// 错误信息
   String? _error;
 
@@ -48,6 +69,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
       _isDownloading = true;
       _hasStarted = true;
       _error = null;
+      _openedInBrowser = false;
     });
 
     try {
@@ -69,6 +91,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         setState(() {
           _isDownloading = false;
           _progress = 0;
+          _openedInBrowser = true;
         });
         return;
       }
@@ -133,27 +156,72 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         .toList();
   }
 
+  /// 当前版本号：更新信息里没有时回落到包信息（去掉 build number）
+  String _resolveCurrentVersion() {
+    final fromInfo = widget.updateInfo.currentVersion.trim();
+    String raw = fromInfo;
+    if (raw.isEmpty) {
+      final asyncVersion = ref.watch(appVersionProvider);
+      raw = asyncVersion.hasValue ? (asyncVersion.value ?? '') : '';
+    }
+    return raw.split('+').first.trim();
+  }
+
+  /// 返回上一页
+  ///
+  /// 不依赖 GoRouter：既能用在路由页（GoRouter 的 Navigator 会同步 URL），
+  /// 也能在没有 GoRouter 的独立更新窗口里安全执行（此时 canPop 为 false）。
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop();
+  }
+
+  /// 退出应用（强制更新且无路可退时给用户一个明确出口）
+  Future<void> _exitApp() async {
+    if (DeviceUtil.isRealDesktop()) {
+      try {
+        await windowManager.setPreventClose(false);
+        await windowManager.close();
+        return;
+      } catch (e) {
+        debugLog('❌ 关闭窗口失败，直接退出: $e');
+      }
+    } else if (DeviceUtil.isRealMobile()) {
+      await SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop');
+      return;
+    }
+    exit(0);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final width = MediaQuery.of(context).size.width;
     final isCompact = width < 560;
     final notes = _releaseNoteLines();
-    final canGoBack = context.canPop() && !_isForceUpdate;
+    final currentVersion = _resolveCurrentVersion();
+    // standalone 时整棵树是 runApp 重建的独立更新窗口，无上层路由可返回
+    final canGoBack =
+        !_isForceUpdate &&
+        !widget.standalone &&
+        Navigator.of(context).canPop();
 
     return AppScaffold(
+      // 独立更新窗口里没有完整业务上下文，禁用全局搜索热键（Ctrl/Cmd+K）
+      enableGlobalSearchHotkey: false,
+      hideAppBarLogo: true,
+      title: Text('update_title'.tr()),
       body: PopScope(
         canPop: !_isForceUpdate,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
-                horizontal: isCompact ? 16 : 24,
-                vertical: 32,
+                horizontal: isCompact ? SpacingToken.lg : SpacingToken.xl,
+                vertical: SpacingToken.xxl,
               ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isCompact ? double.infinity : 560,
-                ),
+                constraints: const BoxConstraints(maxWidth: 520),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -161,39 +229,86 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
-                          onPressed: () => context.pop(),
-                          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 18),
+                          onPressed: _goBack,
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedArrowLeft01,
+                            size: 18,
+                          ),
                           label: Text('common_back'.tr()),
                           style: TextButton.styleFrom(
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: SpacingToken.md,
+                              vertical: SpacingToken.xs,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: SpacingToken.sm),
                     ],
-                    UpdateHeaderCard(
+                    UpdateHeroCard(
+                      currentVersion: currentVersion,
                       latestVersion: widget.updateInfo.latestVersion,
                       isForceUpdate: _isForceUpdate,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: SpacingToken.lg),
                     UpdateReleaseNotesCard(notes: notes),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: SpacingToken.lg),
                     UpdateActionArea(
                       isDownloading: _isDownloading,
                       hasStarted: _hasStarted,
+                      openedInBrowser: _openedInBrowser,
                       progress: _progress,
                       onStartDownload: _startDownload,
                     ),
                     if (_error != null && !_isDownloading) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: SpacingToken.md),
                       UpdateErrorCard(message: _error!),
                     ],
+                    const SizedBox(height: SpacingToken.lg),
+                    if (_isForceUpdate)
+                      // 强制更新：没有「稍后再说」，独立窗口下提供退出入口
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _exitApp,
+                          icon: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedLogout03,
+                            size: 16,
+                          ),
+                          label: Text('update_exit_app'.tr()),
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: SpacingToken.lg,
+                              vertical: SpacingToken.sm,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                RadiusToken.pill,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Center(
+                        child: TextButton(
+                          onPressed: _goBack,
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: SpacingToken.lg,
+                              vertical: SpacingToken.sm,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                RadiusToken.pill,
+                              ),
+                            ),
+                          ),
+                          child: Text('update_later'.tr()),
+                        ),
+                      ),
                   ],
                 ),
               ),

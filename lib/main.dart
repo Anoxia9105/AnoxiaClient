@@ -43,7 +43,7 @@ import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/domain/app_update_info.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:anoxia/features/update/presentation/pages/update_page.dart';
+import 'package:anoxia/features/update/presentation/pages/update_app.dart';
 
 /// 应用入口
 Future<void> main(List<String> args) async {
@@ -380,7 +380,9 @@ Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
       UncontrolledProviderScope(
         container: globalContainer,
         child: _buildAppWrapper(
-          UpdatePage(updateInfo: updateInfo),
+          // UpdateApp 内部自带主题（跟随用户所选强调色/亮暗模式），
+          // 且不强依赖 GoRouter —— 详见 UpdateApp/UpdatePage 注释。
+          UpdateApp(updateInfo: updateInfo),
           startLocale: _resolveStartLocale(),
         ),
       ),

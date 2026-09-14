@@ -25,6 +25,11 @@ class AppScaffold extends ConsumerStatefulWidget {
   final bool hideAppBarLogo;
   final bool showDesktopHeaderEnhancements;
   final bool showWebNavigationBar;
+  /// 是否注册全局搜索热键（Ctrl/Cmd + K）
+  ///
+  /// 独立窗口（如强制更新页）没有完整业务上下文，弹搜索框会取不到数据，
+  /// 这里允许关闭热键注册。
+  final bool enableGlobalSearchHotkey;
 
   const AppScaffold({
     super.key,
@@ -34,6 +39,7 @@ class AppScaffold extends ConsumerStatefulWidget {
     this.hideAppBarLogo = false,
     this.showDesktopHeaderEnhancements = false,
     this.showWebNavigationBar = false,
+    this.enableGlobalSearchHotkey = true,
   });
 
   @override
@@ -58,7 +64,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
   @override
   void initState() {
     super.initState();
-    if (DeviceUtil.isRealDesktop()) {
+    if (DeviceUtil.isRealDesktop() && widget.enableGlobalSearchHotkey) {
       _initGlobalHotKey();
     }
   }
@@ -98,7 +104,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
 
   @override
   void dispose() {
-    if (DeviceUtil.isRealDesktop()) {
+    if (DeviceUtil.isRealDesktop() && widget.enableGlobalSearchHotkey) {
       // 页面销毁时必须注销热键，防止内存泄漏
       hotKeyManager.unregister(_searchHotKey);
     }
