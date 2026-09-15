@@ -1,19 +1,20 @@
-import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/features/update/domain/update_download_target.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
+import 'package:anoxia/platform/shims/app_exit_shim.dart';
 // AppUpdateInfo 由 settings_provider.dart 显式 re-export，无需再单独引入 domain 文件
 // （同时这里还需要 appVersionProvider 读取当前版本号）
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
@@ -52,35 +53,44 @@ class UpdatePage extends ConsumerStatefulWidget {
 class _UpdatePageState extends ConsumerState<UpdatePage> {
   /// 下载进度（0-1）
   double _progress = 0;
+
   /// 是否正在下载
   bool _isDownloading = false;
+
   /// 是否已经开始下载
   bool _hasStarted = false;
+
   /// 是否已跳转浏览器（移动端外部下载）
   bool _openedInBrowser = false;
+
   /// 错误信息
   String? _error;
+  bool _downloadFinished = false;
 
   /// 是否为强制更新
   bool get _isForceUpdate => widget.updateInfo.forceUpdate;
 
   Future<void> _startDownload() async {
+    UpdateDownloadTarget target;
+    try {
+      target = UpdateDownloadTarget.parse(widget.updateInfo.downloadUrl);
+    } on FormatException {
+      setState(() => _error = 'update_error_invalid_url'.tr());
+      return;
+    }
+
     setState(() {
       _isDownloading = true;
       _hasStarted = true;
       _error = null;
       _openedInBrowser = false;
+      _downloadFinished = false;
     });
 
     try {
-      if (DeviceUtil.isRealMobile()) {
-        final uri = Uri.tryParse(widget.updateInfo.downloadUrl);
-        if (uri == null) {
-          throw Exception('invalid update url');
-        }
-
+      if (DeviceUtil.isRealMobile() || DeviceUtil.isRealWeb()) {
         final launched = await launchUrl(
-          uri,
+          target.uri,
           mode: LaunchMode.externalApplication,
         );
         if (!launched) {
@@ -96,27 +106,33 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         return;
       }
 
-      final tempDir = await getApplicationDocumentsDirectory();
-      final fileName = widget.updateInfo.downloadUrl.split('/').last;
-      final savePath = '${tempDir.path}/$fileName';
+      final tempDir = await getTemporaryDirectory();
+      final savePath = path.join(tempDir.path, target.fileName);
 
       final response = await DioClient().download(
         widget.updateInfo.downloadUrl,
         savePath,
         onReceiveProgress: (received, total) {
-          if (total != -1) {
+          if (total > 0) {
             if (!mounted) return;
             setState(() {
-              _progress = received / total;
+              _progress = (received / total).clamp(0, 1);
             });
           }
         },
       );
 
-      if (response.statusCode != 200) {
+      final statusCode = response.statusCode;
+      if (statusCode == null || statusCode < 200 || statusCode >= 300) {
         throw Exception('服务器响应异常: ${response.statusCode}');
       }
 
+      if (mounted) {
+        setState(() {
+          _progress = 1;
+          _downloadFinished = true;
+        });
+      }
       final result = await OpenFilex.open(savePath);
 
       if (result.type == ResultType.done) {
@@ -125,7 +141,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         }
 
         await Future.delayed(const Duration(milliseconds: 500));
-        exit(0);
+        await terminateAppProcess();
       } else {
         throw Exception('无法启动安装包: ${result.message}');
       }
@@ -143,7 +159,13 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     final s = e.toString();
     if (s.contains('404')) return 'update_error_404'.tr();
     if (s.contains('SocketException')) return 'update_error_network'.tr();
-    return 'update_error_generic'.tr(args: [e.toString()]);
+    if (s.contains('cannot open update url')) {
+      return 'update_error_open_browser'.tr();
+    }
+    if (s.contains('无法启动安装包')) {
+      return 'update_error_open_installer'.tr();
+    }
+    return 'update_error_generic_safe'.tr();
   }
 
   List<String> _releaseNoteLines() {
@@ -190,7 +212,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
       await SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop');
       return;
     }
-    exit(0);
+    await terminateAppProcess();
   }
 
   @override
@@ -202,9 +224,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     final currentVersion = _resolveCurrentVersion();
     // standalone 时整棵树是 runApp 重建的独立更新窗口，无上层路由可返回
     final canGoBack =
-        !_isForceUpdate &&
-        !widget.standalone &&
-        Navigator.of(context).canPop();
+        !_isForceUpdate && !widget.standalone && Navigator.of(context).canPop();
 
     return AppScaffold(
       // 独立更新窗口里没有完整业务上下文，禁用全局搜索热键（Ctrl/Cmd+K）
@@ -259,6 +279,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
                       hasStarted: _hasStarted,
                       openedInBrowser: _openedInBrowser,
                       progress: _progress,
+                      downloadFinished: _downloadFinished,
                       onStartDownload: _startDownload,
                     ),
                     if (_error != null && !_isDownloading) ...[

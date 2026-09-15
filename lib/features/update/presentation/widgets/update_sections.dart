@@ -377,6 +377,7 @@ class UpdateActionArea extends StatelessWidget {
   final bool isDownloading;
   final bool hasStarted;
   final bool openedInBrowser;
+  final bool downloadFinished;
   final double progress;
   final VoidCallback onStartDownload;
 
@@ -385,12 +386,13 @@ class UpdateActionArea extends StatelessWidget {
     required this.isDownloading,
     required this.hasStarted,
     required this.openedInBrowser,
+    required this.downloadFinished,
     required this.progress,
     required this.onStartDownload,
   });
 
   String _downloadText() {
-    if (progress >= 1) {
+    if (downloadFinished) {
       return 'update_preparing_install'.tr();
     }
     return 'update_downloading'.tr();
@@ -412,7 +414,7 @@ class UpdateActionArea extends StatelessWidget {
             Row(
               children: [
                 HugeIcon(
-                  icon: progress >= 1
+                  icon: downloadFinished
                       ? HugeIcons.strokeRoundedSmartPhone01
                       : HugeIcons.strokeRoundedDownload04,
                   size: 18,
