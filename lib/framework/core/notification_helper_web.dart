@@ -29,6 +29,7 @@ class NotificationHelper {
     required void Function(String roomId) onOpenRoom,
     FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
     onCallAction,
+    void Function()? onUpdateInstall,
   }) {
     _onOpenRoom = onOpenRoom;
   }

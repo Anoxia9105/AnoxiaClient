@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:anoxia/framework/provider/setting/update_download_provider.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'package:anoxia/common/utils/device_util.dart';
@@ -70,7 +73,28 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
   /// 是否为强制更新
   bool get _isForceUpdate => widget.updateInfo.forceUpdate;
 
+  /// 是否支持应用内下载安装（Android / Windows / macOS / Linux）
+  ///
+  /// 这些平台走 [UpdateDownloadController]：后台静默下载 + 就绪一键安装；
+  /// iOS / Web 仍走系统浏览器/应用商店路径。
+  bool get _useInAppDownload =>
+      !DeviceUtil.isRealWeb() && !DeviceUtil.isIOS();
+
   Future<void> _startDownload() async {
+    // 应用内下载：交给全局下载控制器（后台静默下载 + 完整性校验）
+    if (_useInAppDownload) {
+      setState(() {
+        _hasStarted = true;
+        _error = null;
+      });
+      unawaited(
+        ref
+            .read(updateDownloadControllerProvider.notifier)
+            .startDownload(widget.updateInfo),
+      );
+      return;
+    }
+
     UpdateDownloadTarget target;
     try {
       target = UpdateDownloadTarget.parse(widget.updateInfo.downloadUrl);
@@ -222,6 +246,29 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     final isCompact = width < 560;
     final notes = _releaseNoteLines();
     final currentVersion = _resolveCurrentVersion();
+
+    // 应用内下载（Android/桌面）：镜像全局下载控制器状态
+    final dlState = _useInAppDownload
+        ? ref.watch(updateDownloadControllerProvider)
+        : null;
+    final dlMatches =
+        dlState != null && dlState.version == widget.updateInfo.latestVersion;
+    final dlDownloading =
+        dlMatches && dlState.phase == UpdateDownloadPhase.downloading;
+    final dlReady =
+        dlMatches && dlState.phase == UpdateDownloadPhase.ready;
+    final dlFailed = dlMatches && dlState.phase == UpdateDownloadPhase.failed;
+
+    final effectiveDownloading = _isDownloading || dlDownloading;
+    final effectiveProgress = dlDownloading
+        ? dlState.progress
+        : _progress;
+    final String? effectiveError = dlFailed
+        ? (dlState.errorMessage.isNotEmpty
+              ? dlState.errorMessage.tr()
+              : 'update_error_generic_safe'.tr())
+        : _error;
+
     // standalone 时整棵树是 runApp 重建的独立更新窗口，无上层路由可返回
     final canGoBack =
         !_isForceUpdate && !widget.standalone && Navigator.of(context).canPop();
@@ -275,16 +322,21 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
                     UpdateReleaseNotesCard(notes: notes),
                     const SizedBox(height: SpacingToken.lg),
                     UpdateActionArea(
-                      isDownloading: _isDownloading,
+                      isDownloading: effectiveDownloading,
                       hasStarted: _hasStarted,
                       openedInBrowser: _openedInBrowser,
-                      progress: _progress,
+                      progress: effectiveProgress,
                       downloadFinished: _downloadFinished,
+                      isReady: dlReady,
+                      onInstall: () => ref
+                          .read(updateDownloadControllerProvider.notifier)
+                          .installReadyUpdate(),
                       onStartDownload: _startDownload,
                     ),
-                    if (_error != null && !_isDownloading) ...[
+                    if (effectiveError != null && !effectiveDownloading) ...[
                       const SizedBox(height: SpacingToken.md),
-                      UpdateErrorCard(message: _error!),
+                      // effectiveError 已被条件判空提升为非空，无需再断言
+                      UpdateErrorCard(message: effectiveError),
                     ],
                     const SizedBox(height: SpacingToken.lg),
                     if (_isForceUpdate)

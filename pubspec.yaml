@@ -43,6 +43,7 @@ dependencies:
   uuid: ^4.5.2 # 客户端消息 ID 等唯一标识
   characters: ^1.4.0 # Unicode 字符处理
   pub_semver: ^2.2.0 # 版本号比较（更新检查）
+  crypto: ^3.0.7 # SHA-256（更新安装包完整性校验）
   package_info_plus: ^9.0.0 # 应用包信息（版本号）
   device_info_plus: ^12.3.0 # 设备信息
   url_launcher: ^6.3.2 # 外链跳转（隐私政策/条款/GitHub）

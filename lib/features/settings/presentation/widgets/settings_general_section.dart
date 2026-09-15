@@ -27,6 +27,8 @@ class SettingsGeneralSection extends ConsumerWidget {
     final sendShortcut = ref.watch(chatSendShortcutProvider);
     final messagePreview = ref.watch(messagePreviewProvider);
     final autoPlay = ref.watch(autoPlayMediaProvider);
+    final autoDownloadUpdate = ref.watch(autoDownloadUpdateProvider);
+    final updateCellularDownload = ref.watch(updateCellularDownloadProvider);
     final launchAtStartup = ref.watch(launchAtStartupProvider);
     final launchSilent = ref.watch(launchAtStartupSilentProvider);
     final startupSupported = autoStartSupported();
@@ -94,6 +96,38 @@ class SettingsGeneralSection extends ConsumerWidget {
             ),
           ],
         ),
+        const SizedBox(height: 18),
+        // 应用更新（Web 端无安装包概念；iOS 走应用商店，均不展示）
+        if (!DeviceUtil.isRealWeb() && !DeviceUtil.isIOS()) ...[
+          _GroupLabel(icon: HugeIcons.strokeRoundedDownload04, title: 'settings_general_group_update'.tr()),
+          _SettingsCard(
+            children: [
+              _SwitchTile(
+                icon: HugeIcons.strokeRoundedCloudSavingDone01,
+                title: 'settings_auto_download_update'.tr(),
+                subtitle: 'settings_auto_download_update_desc'.tr(),
+                value: autoDownloadUpdate,
+                onChanged: (v) => ref
+                    .read(autoDownloadUpdateProvider.notifier)
+                    .setEnabled(v),
+              ),
+              // 移动流量开关仅移动端有意义（桌面端无计费流量概念）
+              if (DeviceUtil.isRealMobile()) ...[
+                _Divider(),
+                _SwitchTile(
+                  icon: HugeIcons.strokeRoundedSmartPhone01,
+                  title: 'settings_cellular_download_update'.tr(),
+                  subtitle: 'settings_cellular_download_update_desc'.tr(),
+                  value: updateCellularDownload,
+                  enabled: autoDownloadUpdate,
+                  onChanged: (v) => ref
+                      .read(updateCellularDownloadProvider.notifier)
+                      .setEnabled(v),
+                ),
+              ],
+            ],
+          ),
+        ],
         const SizedBox(height: 18),
         _GroupLabel(icon: HugeIcons.strokeRoundedDatabase, title: 'settings_general_group_storage'.tr()),
         _SettingsCard(

@@ -60,6 +60,12 @@ class StorageKeys {
   /// 是否自动播放视频/媒体
   static const String autoPlayMediaEnabled = 'AUTO_PLAY_MEDIA_ENABLED';
 
+  /// 是否后台自动下载更新安装包（布尔值，true=有新版本时自动下载，默认开）
+  static const String autoDownloadUpdate = 'AUTO_DOWNLOAD_UPDATE';
+
+  /// 是否允许移动流量下载更新安装包（布尔值，默认关，仅 Wi-Fi/以太网自动下载）
+  static const String updateCellularDownload = 'UPDATE_CELLULAR_DOWNLOAD';
+
   /// AI 会话 ID（按用户隔离，key 前缀 + userId）
   ///
   /// 用于持久化 `/chat/ai/stream` 返回的 `conversationId`，实现多轮记忆。

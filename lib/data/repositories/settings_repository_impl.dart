@@ -89,6 +89,16 @@ class SettingsRepositoryImpl implements SettingsRepository {
       downloadUrl: (data['downloadUrl'] ?? '').toString(),
       releaseNotes: (data['releaseNotes'] ?? '').toString(),
       minSupportVersion: (data['minSupportVersion'] ?? '').toString(),
+      fileSize: _parseFileSize(data['fileSize']),
+      fileHash: (data['fileHash'] ?? '').toString().trim(),
     );
+  }
+
+  /// 安装包字节数解析（服务端可能返回 int/num/字符串）
+  static int _parseFileSize(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim()) ?? 0;
+    return 0;
   }
 }

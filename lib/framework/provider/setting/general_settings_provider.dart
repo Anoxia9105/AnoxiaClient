@@ -108,3 +108,31 @@ class AutoPlayMediaController extends legacy.StateNotifier<bool> {
 
 final autoPlayMediaProvider =
     legacy.StateNotifierProvider<AutoPlayMediaController, bool>((ref) => AutoPlayMediaController());
+
+/// 后台自动下载更新安装包
+class AutoDownloadUpdateController extends legacy.StateNotifier<bool> {
+  AutoDownloadUpdateController() : super(_load());
+  static bool _load() => SPUtil.instance.getBool(StorageKeys.autoDownloadUpdate, defValue: true) ?? true;
+  void setEnabled(bool v) {
+    if (state == v) return;
+    state = v;
+    SPUtil.instance.setBool(StorageKeys.autoDownloadUpdate, v);
+  }
+}
+
+final autoDownloadUpdateProvider =
+    legacy.StateNotifierProvider<AutoDownloadUpdateController, bool>((ref) => AutoDownloadUpdateController());
+
+/// 允许移动流量下载更新安装包（默认仅 Wi-Fi/以太网）
+class UpdateCellularDownloadController extends legacy.StateNotifier<bool> {
+  UpdateCellularDownloadController() : super(_load());
+  static bool _load() => SPUtil.instance.getBool(StorageKeys.updateCellularDownload, defValue: false) ?? false;
+  void setEnabled(bool v) {
+    if (state == v) return;
+    state = v;
+    SPUtil.instance.setBool(StorageKeys.updateCellularDownload, v);
+  }
+}
+
+final updateCellularDownloadProvider =
+    legacy.StateNotifierProvider<UpdateCellularDownloadController, bool>((ref) => UpdateCellularDownloadController());

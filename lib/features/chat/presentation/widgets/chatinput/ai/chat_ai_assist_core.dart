@@ -11,6 +11,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/domain/ai_stream_event.dart';
 import 'package:anoxia/framework/network/sse_client.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -207,7 +208,9 @@ class ChatAiAssistCore {
       onError: (Object e) {
         _streaming = false;
         var msg = 'chat_ai.failed'.tr();
-        if (e is DioException) {
+        if (e is AiException) {
+          if (e.message.isNotEmpty) msg = e.message;
+        } else if (e is DioException) {
           final err = e.error?.toString();
           if (err != null && err.isNotEmpty && !err.startsWith('SSE HTTP')) {
             msg = err;

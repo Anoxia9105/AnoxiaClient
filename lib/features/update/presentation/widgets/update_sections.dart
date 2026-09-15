@@ -58,14 +58,9 @@ class UpdateHeroCard extends StatelessWidget {
       decoration: updateCardDecoration(cs),
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: 64,
             height: 64,
-            padding: const EdgeInsets.all(SpacingToken.md),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(RadiusToken.xl),
-            ),
             child: Assets.images.appLogo.image(
               fit: BoxFit.contain,
               isAntiAlias: true,
@@ -369,8 +364,9 @@ class UpdateReleaseNotesCard extends StatelessWidget {
 
 /// 更新操作区域组件
 ///
-/// 三种状态：
+/// 四种状态：
 /// - 下载中：展示进度条与百分比
+/// - 已就绪：安装包下载完成，主按钮变「立即安装」
 /// - 移动端已跳转浏览器：提示用户到浏览器完成安装，可重新打开
 /// - 默认：主按钮「立即升级」（失败重试时变为「重试下载」）
 class UpdateActionArea extends StatelessWidget {
@@ -379,6 +375,13 @@ class UpdateActionArea extends StatelessWidget {
   final bool openedInBrowser;
   final bool downloadFinished;
   final double progress;
+
+  /// 安装包已就绪（后台静默下载完成），可直接安装
+  final bool isReady;
+
+  /// 一键安装回调（[isReady] 为 true 时生效）
+  final VoidCallback? onInstall;
+
   final VoidCallback onStartDownload;
 
   const UpdateActionArea({
@@ -389,6 +392,8 @@ class UpdateActionArea extends StatelessWidget {
     required this.downloadFinished,
     required this.progress,
     required this.onStartDownload,
+    this.isReady = false,
+    this.onInstall,
   });
 
   String _downloadText() {
@@ -446,6 +451,65 @@ class UpdateActionArea extends StatelessWidget {
             ),
           ],
         ),
+      );
+    }
+
+    // 安装包已就绪：主按钮变「立即安装」，一键拉起安装器
+    if (isReady) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(SpacingToken.md),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: .45),
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
+              border: Border.all(
+                color: cs.primary.withValues(alpha: .35),
+              ),
+            ),
+            child: Row(
+              children: [
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedTick01,
+                  size: 18,
+                  color: cs.primary,
+                ),
+                const SizedBox(width: SpacingToken.sm),
+                Expanded(
+                  child: Text(
+                    'update_ready_state'.tr(),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: SpacingToken.md),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
+                ),
+                textStyle: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              onPressed: onInstall,
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedRocket,
+              ),
+              label: Text('update_install_now'.tr()),
+            ),
+          ),
+        ],
       );
     }
 

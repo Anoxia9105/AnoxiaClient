@@ -12,6 +12,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:anoxia/domain/ai_stream_event.dart';
 import 'package:anoxia/framework/network/sse_client.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:dio/dio.dart';
@@ -289,7 +290,9 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
           _failed = true;
         });
         String msg = 'note_ai.failed'.tr();
-        if (e is DioException) {
+        if (e is AiException) {
+          if (e.message.isNotEmpty) msg = e.message;
+        } else if (e is DioException) {
           final err = e.error?.toString();
           if (err != null && err.isNotEmpty && !err.startsWith('SSE HTTP')) {
             msg = err;

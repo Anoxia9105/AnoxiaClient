@@ -9,6 +9,8 @@
 /// [releaseNotes] 更新说明/发行日志
 /// [forceUpdate] 是否强制更新（用户无法跳过）
 /// [minSupportVersion] 最低支持版本，低于此版本的客户端将强制更新
+/// [fileSize] 安装包字节数（服务端上传时计算，用于下载完整性校验）
+/// [fileHash] 安装包 SHA-256（十六进制，服务端上传时计算，用于下载完整性校验）
 class AppUpdateInfo {
   final bool hasUpdate;
   final String latestVersion;
@@ -17,6 +19,8 @@ class AppUpdateInfo {
   final String releaseNotes;
   final bool forceUpdate;
   final String minSupportVersion;
+  final int fileSize;
+  final String fileHash;
 
   const AppUpdateInfo({
     this.hasUpdate = false,
@@ -26,6 +30,8 @@ class AppUpdateInfo {
     required this.releaseNotes,
     this.forceUpdate = false,
     this.minSupportVersion = '',
+    this.fileSize = 0,
+    this.fileHash = '',
   });
 
   /// 从 JSON 解析更新信息
@@ -47,6 +53,8 @@ class AppUpdateInfo {
       minSupportVersion:
           (json['minSupportVersion'] ?? json['min_support_version'] ?? '')
               .toString(),
+      fileSize: _parseInt(json['fileSize'] ?? json['file_size']),
+      fileHash: (json['fileHash'] ?? json['file_hash'] ?? '').toString().trim(),
     );
   }
 
@@ -57,5 +65,12 @@ class AppUpdateInfo {
       return normalized == 'true' || normalized == '1';
     }
     return false;
+  }
+
+  static int _parseInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim()) ?? 0;
+    return 0;
   }
 }

@@ -41,6 +41,9 @@ class NotificationHelper {
   FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
   _onCallAction;
 
+  /// 「更新已就绪」通知点击回调（由 main.dart 注入，触发安装）
+  void Function()? _onUpdateInstall;
+
   static const String callAcceptAction = 'call_accept';
   static const String callRejectAction = 'call_reject';
   static const String _incomingCallCategory = 'incoming_call';
@@ -49,9 +52,11 @@ class NotificationHelper {
     required void Function(String roomId) onOpenRoom,
     FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
     onCallAction,
+    void Function()? onUpdateInstall,
   }) {
     _onOpenRoom = onOpenRoom;
     _onCallAction = onCallAction;
+    _onUpdateInstall = onUpdateInstall;
   }
 
   /// 初始化通知插件
@@ -275,6 +280,14 @@ class NotificationHelper {
     if (roomId != null && roomId.startsWith('{')) {
       try {
         final decoded = jsonDecode(roomId);
+        if (decoded is Map && decoded['kind'] == 'update_install') {
+          // 「更新已就绪」通知点击：拉起安装器（回调由 main.dart 注入）
+          _onUpdateInstall?.call();
+          if (DeviceUtil.isRealDesktop()) {
+            unawaited(_ensureWindowActive());
+          }
+          return;
+        }
         if (decoded is Map && decoded['kind'] == 'incoming_call') {
           final payload = Map<String, dynamic>.from(decoded);
           final actionId =

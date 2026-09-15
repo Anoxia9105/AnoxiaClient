@@ -4,16 +4,23 @@
 /// - 匿名事件：`data:<增量文本>`（多次，纯文本）
 /// - 命名事件：`event:done` + `data:{json}`、`event:error` + `data:{json}`
 ///
-/// EventSource 不支持 POST，因此基于 Dio 的 ResponseType.stream 手工解析。
-/// Web 端使用 fetch + ReadableStream 真流式（Dio 在 Web 下缓冲导致增量丢失与超时误判）。
+/// EventSource 不支持 POST，因此基于 package:http 的流式请求手工解析。
+///
+/// ⚠️ 为什么不用 Dio？ Dio 的 `ResponseType.stream` 在 Web 与原生（Android/iOS/Windows）
+/// 下都会**缓冲响应体**，SSE 增量不会实时到达；推理期长空窗会被误判为超时，导致
+/// 「有回复仍报失败」。此前 Web 端已切到 http.Client() 修复该问题，原生端沿用同一套
+/// 实现即可全平台一致。
+///
+/// - Web：http.Client() 为 BrowserClient，底层 fetch + ReadableStream，真流式。
+/// - 原生：http.Client() 为 IOClient，底层 dart:io HttpClientResponse 字节流，逐块到达。
 library;
 
 import 'dart:convert';
 
-import 'package:anoxia/common/constants/api.dart';
-import 'package:anoxia/framework/network/token_manager.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:anoxia/common/constants/api.dart';
+import 'package:anoxia/domain/ai_stream_event.dart';
+import 'package:anoxia/framework/network/token_manager.dart';
 import 'package:http/http.dart' as http;
 
 /// 单条 SSE 帧
@@ -32,75 +39,20 @@ class SseFrame {
 class SseClient {
   SseClient._();
 
-  static final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: API.httpBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      // 整体时长由服务端 sse-timeout 兜底，这里不设 receiveTimeout
-      responseType: ResponseType.stream,
-      headers: {'Accept': 'text/event-stream'},
-    ),
-  );
-
   /// POST 并返回解析后的 SSE 帧流。
   ///
-  /// 连接失败/5xx 抛 [DioException]；HTTP 层成功但业务失败（如未登录）时
-  /// 后端直接返回 JSON，此时没有合法 SSE 帧，由调用方按「无 done 即失败」兜底处理。
+  /// 连接失败 / 非 2xx 抛 [AiException]（携带服务端或 HTTP 层具体文案）；
+  /// HTTP 层成功但业务失败（如未登录）时，后端直接返回 JSON，此时没有合法 SSE 帧，
+  /// 由调用方按「无 done 即失败」兜底处理。
   static Stream<SseFrame> post(String path, {Object? body}) async* {
-    if (kIsWeb) {
-      yield* _postWeb(path, body);
-      return;
-    }
-    final token = await TokenManager.instance.getToken();
-    final Response<ResponseBody> resp = await _dio.post<ResponseBody>(
-      path,
-      data: body,
-      options: Options(
-        headers: {
-          if (token != null && token.isNotEmpty)
-            'Authorization': 'Bearer $token',
-        },
-        validateStatus: (code) => code != null && code < 500,
-      ),
-    );
-
-    if (resp.statusCode != 200 || resp.data == null) {
-      // 尝试读取错误体中的 message（如参数校验失败的 JSON），便于调用方展示具体原因
-      String? errMsg;
-      try {
-        final bytes = await resp.data?.stream
-                .fold<List<int>>(<int>[], (a, b) => a..addAll(b))
-                .timeout(const Duration(seconds: 2)) ??
-            [];
-        if (bytes.isNotEmpty) {
-          final bodyStr = utf8.decode(bytes, allowMalformed: true);
-          try {
-            final j = jsonDecode(bodyStr);
-            if (j is Map) {
-              errMsg = (j['message'] ?? j['msg'] ?? j['error'])?.toString();
-            }
-            errMsg ??= bodyStr;
-          } catch (_) {
-            errMsg = bodyStr;
-          }
-        }
-      } catch (_) {}
-      throw DioException(
-        requestOptions: RequestOptions(path: path),
-        response: resp,
-        type: DioExceptionType.badResponse,
-        error: errMsg ?? 'SSE HTTP ${resp.statusCode}',
-      );
-    }
-
-    yield* _parse(resp.data!.stream);
+    yield* _postHttp(path, body);
   }
 
-  /// Web 端真流式实现：基于 http.Client（底层 fetch + ReadableStream）
+  /// 全平台统一的真流式实现：基于 http.Client()。
   ///
-  /// Dio 在 Web 下对 ResponseType.stream 为缓冲实现，推理期长空窗会超时误判为失败。
-  /// 此处改用 http 的 BrowserClient，其内部直接消费 fetch 的 ReadableStream，增量实时到达。
-  static Stream<SseFrame> _postWeb(String path, Object? body) async* {
+  /// Web 与原生均逐块消费响应字节流，不会像 Dio 那样缓冲整段响应体，
+  /// 因此 SSE 增量实时到达、长空窗不会被误判超时。
+  static Stream<SseFrame> _postHttp(String path, Object? body) async* {
     final token = await TokenManager.instance.getToken();
     final url = Uri.parse('${API.httpBaseUrl}$path');
     final client = http.Client();
@@ -134,15 +86,7 @@ class SseClient {
             }
           }
         } catch (_) {}
-        throw DioException(
-          requestOptions: RequestOptions(path: path),
-          response: Response(
-            requestOptions: RequestOptions(path: path),
-            statusCode: streamed.statusCode,
-          ),
-          type: DioExceptionType.badResponse,
-          error: errMsg ?? 'SSE HTTP ${streamed.statusCode}',
-        );
+        throw AiException(errMsg ?? 'AI请求失败 请稍后在试');
       }
       yield* _parse(streamed.stream);
     } finally {
@@ -151,7 +95,8 @@ class SseClient {
   }
 
   @visibleForTesting
-  static Stream<SseFrame> parseStream(Stream<List<int>> byteStream) => _parse(byteStream);
+  static Stream<SseFrame> parseStream(Stream<List<int>> byteStream) =>
+      _parse(byteStream);
 
   /// 字节流 → 行 → SSE 帧。
   ///

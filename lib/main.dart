@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 // ignore: unused_import
 import 'package:anoxia/framework/extensions/window_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
+import 'package:anoxia/framework/provider/setting/update_download_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:anoxia/platform/shims/auto_start_shim.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
@@ -27,7 +28,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart' as desktop;
 
 import 'app.dart';
-import 'common/constants/api.dart';
 import 'common/constants/storage_keys.dart';
 import 'common/utils/device_util.dart';
 import 'common/utils/sp_util.dart';
@@ -44,7 +44,6 @@ import 'framework/provider/core/session_reset_service.dart';
 import 'framework/provider/chat/room/room_list_service.dart';
 import 'framework/provider/layout/layout_controller.dart';
 import 'framework/domain/app_update_info.dart';
-import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_app.dart';
 
 /// 本次启动是否由开机自启拉起（桌面端有效，其它平台恒为 false）
@@ -158,23 +157,31 @@ void _backgroundAsyncInit() {
     unawaited(() async {
       try {
         // 读包信息即使失败，也不影响用户进 App
-        PackageInfo packageInfo = await PackageInfo.fromPlatform();
+        await PackageInfo.fromPlatform();
+
+        // 关键：先初始化更新检查器 —— 无论下面的首查成败，
+        // provider 内部的「30 分钟轮询 + 网络恢复重试」都已保底启动。
+        // （旧实现只在首查成功后才 read provider，一旦启动期超时/异常，
+        //  轮询永远不会启动，导致发版后长时间检测不到新版本。）
+        final updateChecker =
+            globalContainer.read(appUpdateCheckerProvider.notifier);
 
         if (!DeviceUtil.isWeb) {
-          // 查更新设置硬超时，防止启动阶段等待过久
-          final updateInfo = await _checkUpdate().timeout(
-            const Duration(seconds: 5),
-          );
-          // 把结果同步给 provider，避免 provider 内 3s 延迟重复请求
-          globalContainer
-              .read(appUpdateCheckerProvider.notifier)
-              .syncResult(updateInfo, currentVersion: packageInfo.version);
+          // 启动期立即检查一次（带超时保护）：
+          // - 成功：结果已在 provider 内部生效（state 已更新）；
+          // - 超时/失败：不影响已启动的轮询与网络恢复重试。
+          AppUpdateInfo? updateInfo;
+          try {
+            updateInfo = await updateChecker
+                .checkNow()
+                .timeout(const Duration(seconds: 10));
+          } on TimeoutException {
+            debugLog('启动更新检查超时，交给定时轮询兜底');
+          }
           if (updateInfo != null && updateInfo.forceUpdate) {
             await runUpdateApp(updateInfo);
           }
         }
-      } on TimeoutException {
-        debugLog('后台更新检查超时，已跳过本次检查');
       } catch (e) {
         debugLog('后台异步初始化异常: $e');
       }
@@ -279,6 +286,14 @@ Future<void> runMainApp() async {
           await controller.reject(invitation);
         }
         await NotificationHelper().cancelIncomingCall(invitation.inviteId);
+      },
+      // 「更新已就绪」通知点击：拉起安装器
+      onUpdateInstall: () {
+        unawaited(
+          globalContainer
+              .read(updateDownloadControllerProvider.notifier)
+              .installReadyUpdate(),
+        );
       },
     );
     if (DeviceUtil.isRealMobile()) {
@@ -522,53 +537,4 @@ Widget _buildErrorPage(String message) {
       },
     ),
   );
-}
-
-Future<AppUpdateInfo?> _checkUpdate() async {
-  try {
-    final packageInfo = await PackageInfo.fromPlatform();
-    final currentVersionText = packageInfo.version;
-    final currentVersion = Version.parse(currentVersionText);
-
-    String clientType = 'all';
-    if (DeviceUtil.isRealWeb()) {
-      clientType = 'web';
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      clientType = 'android';
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      clientType = 'ios';
-    } else if (defaultTargetPlatform == TargetPlatform.windows) {
-      clientType = 'windows';
-    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
-      clientType = 'macos';
-    } else if (defaultTargetPlatform == TargetPlatform.linux) {
-      clientType = 'linux';
-    }
-
-    final response = await DioClient().get(
-      API.appUpdateLatest,
-      auth: false,
-      queryParameters: {
-        'clientType': clientType,
-        'currentVersion': currentVersionText,
-      },
-    );
-    final payload = response.data;
-    if (payload is! Map || payload['code'] != 200 || payload['data'] is! Map) {
-      return null;
-    }
-
-    final remoteData = AppUpdateInfo.fromJson(payload['data']);
-    if (remoteData.latestVersion.isEmpty || remoteData.downloadUrl.isEmpty) {
-      return null;
-    }
-    final latestVersion = Version.parse(remoteData.latestVersion);
-
-    if (latestVersion > currentVersion || remoteData.hasUpdate) {
-      return remoteData;
-    }
-  } catch (e) {
-    debugLog('检查更新失败: $e');
-  }
-  return null;
 }

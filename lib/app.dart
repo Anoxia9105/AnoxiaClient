@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:anoxia/features/chat/presentation/call/call_invitation_overlay.dart';
 import 'package:anoxia/features/chat/presentation/call/global_call_overlay.dart';
 import 'package:anoxia/features/announcement/presentation/widgets/announcement_presenter.dart';
+import 'package:anoxia/features/update/presentation/widgets/update_ready_banner.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
@@ -316,6 +317,8 @@ class _AppOverlays extends ConsumerWidget {
     return Stack(
       children: [
         child,
+        // 「新版本已就绪」全局横幅（后台静默下载完成后提示直接安装）
+        const Positioned(top: 0, left: 0, right: 0, child: UpdateReadyBanner()),
         // 移动端（Android/iOS）与 Web：通话会话由全局浮层接管；
         // 桌面端走独立通话窗口，不需要应用内浮层。
         if ((DeviceUtil.isRealMobile() || DeviceUtil.isWeb) && hasMobileCall)
