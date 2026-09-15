@@ -1,9 +1,10 @@
-/// 记事本 AI 面板（摘要/润色/扩写/标题/翻译/续写/自定义指令）
+/// 记事本 AI 底部弹出框（手机端）
 ///
 /// 交互流程：
-/// 1. 选择动作（有选区时自动提示"仅处理选中文字"）→ 开始；
-/// 2. 调用 POST /note/ai/stream，增量文本实时渲染到预览区；
-/// 3. 完成后按动作提供：替换全文 / 追加到文末 / 设为标题 / 复制。
+/// 1. 顶部「作用范围」分段控件确认 AI 读的是选中文字还是整篇；
+/// 2. 在 4 列能力网格里选一个动作（自定义 / 翻译会就地展开附加输入）；
+/// 3. 调 POST /note/ai/stream，增量文本实时渲染到预览区；生成中可随时「停止生成」；
+/// 4. 完成后底栏主按钮变为当前动作的主去向（替换选中 / 替换全文 / 追加 / 设为标题）。
 ///
 /// 结果不直接写入编辑器，统一经确认后落盘，避免与防抖自动保存冲突。
 library;
@@ -22,8 +23,14 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
+
+import 'ai/note_ai_capability_grid.dart';
+import 'ai/note_ai_footer.dart';
+import 'ai/note_ai_preview.dart';
+import 'ai/note_ai_scope_bar.dart';
 import 'note_ai_action.dart';
-import 'note_ai_sheet_widgets.dart';
 import 'note_markdown.dart';
 
 /// 打开记事本 AI 面板。
@@ -43,7 +50,9 @@ Future<void> showNoteAiSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
+    backgroundColor: Colors.transparent,
+    // 自绘抓取条 + 顶部圆角，交给 NoteAiSheet 统一处理
+    showDragHandle: false,
     useSafeArea: true,
     builder: (_) => NoteAiSheet(
       controller: controller,
@@ -80,9 +89,33 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
   String _targetLang = 'English';
   Timer? _uiThrottle;
 
+  /// 作用范围：true = 整篇笔记，false = 仅选中文字
+  late bool _whole;
+
+  /// 打开面板时冻结的选区 / 全文字数，用于「作用范围」展示
+  late final int _selectionChars;
+  late final int _totalChars;
+
+  /// 流式预览文本
+  String _preview = '';
+  bool _streaming = false;
+  bool _failed = false;
+  String? _thinking;
+  StreamSubscription<SseFrame>? _sub;
+
+  /// 开始生成时捕获的选区（非折叠则仅处理选中文字）
+  int? _selStart;
+  int? _selEnd;
+
   @override
   void initState() {
     super.initState();
+    // 打开时冻结一次，避免用户切到整篇后字数展示跳变
+    _selectionChars = (_selectedPlainText() ?? '').trim().length;
+    _totalChars = _wholeMarkdown.trim().length;
+    // 无选区时直接落在「整篇笔记」，不必先让用户点一次
+    _whole = _selectionChars == 0;
+
     final init = widget.initialAction;
     if (init != null) {
       for (final a in NoteAiAction.values) {
@@ -94,20 +127,10 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
     }
   }
 
-  /// 流式预览文本
-  String _preview = '';
-  bool _streaming = false;
-  bool _failed = false;
-  String? _thinking;
-  StreamSubscription<SseFrame>? _sub;
-
-  /// 打开面板时捕获的选区（非折叠则仅处理选中文字）
-  int? _selStart;
-  int? _selEnd;
-
   @override
   void dispose() {
     _unsub();
+    _uiThrottle?.cancel();
     _instructionCtrl.dispose();
     super.dispose();
   }
@@ -131,23 +154,28 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
     if (end <= start) return null;
     // 索引必须基于原始 toPlainText（嵌入占位符占位）计算，
     // 截取后再剔除 U+FFFC，避免把对象占位符发给 AI
-    return plain.substring(start, end).replaceAll(
-          Embed.kObjectReplacementCharacter,
-          '',
-        );
+    return plain
+        .substring(start, end)
+        .replaceAll(Embed.kObjectReplacementCharacter, '');
   }
 
-  /// 组装请求体：优先使用选中文字，其次全文 Markdown；若均为空则改用 noteId 让后端读取
+  /// 当前作用范围下真正要发给 AI 的文本；两边都空返回 null
+  String? _effectiveContent() {
+    if (!_whole) {
+      final sel = _selectedPlainText()?.trim();
+      if (sel != null && sel.isNotEmpty) return sel;
+    }
+    final whole = _wholeMarkdown.trim();
+    return whole.isEmpty ? null : whole;
+  }
+
+  /// 结果是否可以「替换选中文字」（整篇模式下不适用）
+  bool get _hasSelection => !_whole && _selectionChars > 0;
+
+  /// 组装请求体：按作用范围取文本；若均为空则改用 noteId 让后端读取
   Map<String, dynamic> buildRequest() {
     final action = _action!;
-    final selected = _selectedPlainText()?.trim();
-    String? effective;
-    if (selected != null && selected.isNotEmpty) {
-      effective = selected;
-    } else {
-      final whole = _wholeMarkdown.trim();
-      if (whole.isNotEmpty) effective = whole;
-    }
+    final effective = _effectiveContent();
     return {
       'action': action.api,
       if (effective != null && effective.isNotEmpty)
@@ -161,16 +189,15 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
       if (effective != null && effective.isNotEmpty && widget.noteId != null)
         'noteId': widget.noteId,
       if (action == NoteAiAction.translate) 'targetLang': _targetLang,
-      if (action == NoteAiAction.custom && _instructionCtrl.text.trim().isNotEmpty)
+      if (action == NoteAiAction.custom &&
+          _instructionCtrl.text.trim().isNotEmpty)
         'instruction': _instructionCtrl.text.trim(),
     };
   }
 
   /// 当前是否有效可发送（至少 content 或 noteId 有一可用）
   bool get _hasValidInput {
-    final sel = _selectedPlainText()?.trim();
-    if (sel != null && sel.isNotEmpty) return true;
-    if (_wholeMarkdown.trim().isNotEmpty) return true;
+    if (_effectiveContent() != null) return true;
     return widget.noteId != null;
   }
 
@@ -178,8 +205,11 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
 
   void _start() {
     if (_action == null || _streaming) return;
-    if (_action == NoteAiAction.custom && _instructionCtrl.text.trim().isEmpty) {
-      ref.read(toastServiceProvider).showToast('note_ai.instruction_required'.tr());
+    if (_action == NoteAiAction.custom &&
+        _instructionCtrl.text.trim().isEmpty) {
+      ref
+          .read(toastServiceProvider)
+          .showToast('note_ai.instruction_required'.tr());
       return;
     }
     if (!_hasValidInput) {
@@ -187,10 +217,11 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
       return;
     }
 
-    // 捕获当前选区
+    // 捕获当前选区（整篇模式下不需要）
     final sel = widget.controller.selection;
-    _selStart = (!sel.isCollapsed && sel.start >= 0) ? sel.start : null;
-    _selEnd = (!sel.isCollapsed && sel.end >= 0) ? sel.end : null;
+    final canUseSelection = !sel.isCollapsed && sel.start >= 0;
+    _selStart = _hasSelection && canUseSelection ? sel.start : null;
+    _selEnd = _hasSelection && canUseSelection ? sel.end : null;
 
     setState(() {
       _preview = '';
@@ -215,7 +246,9 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
         }
         switch (frame.event) {
           case 'thinking':
-            setState(() => _thinking = frame.data == '[done]' ? null : (_thinking ?? '') + frame.data);
+            setState(() => _thinking = frame.data == '[done]'
+                ? null
+                : (_thinking ?? '') + frame.data);
           case 'done':
             gotDone = true;
             try {
@@ -266,7 +299,9 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
               final data = e.response?.data;
               if (data is String && data.isNotEmpty) {
                 final j = jsonDecode(data);
-                if (j is Map && j['message'] is String) msg = j['message'] as String;
+                if (j is Map && j['message'] is String) {
+                  msg = j['message'] as String;
+                }
               }
             } catch (_) {}
           }
@@ -274,7 +309,9 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
           if (msg == 'note_ai.failed'.tr() && e.error is String) {
             try {
               final j = jsonDecode(e.error as String);
-              if (j is Map && j['message'] is String) msg = j['message'] as String;
+              if (j is Map && j['message'] is String) {
+                msg = j['message'] as String;
+              }
             } catch (_) {
               final raw = e.error as String;
               if (raw.trim().isNotEmpty) msg = raw;
@@ -295,6 +332,17 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
     );
   }
 
+  /// 中断当前生成：保留已产出的部分结果，空结果按失败处理
+  void _stop() {
+    if (!_streaming) return;
+    _unsub();
+    setState(() {
+      _thinking = null;
+      _streaming = false;
+      _failed = _preview.isEmpty;
+    });
+  }
+
   void _throttleUi() {
     _uiThrottle?.cancel();
     _uiThrottle = Timer(const Duration(milliseconds: 80), () {
@@ -305,8 +353,7 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
   // ---------------- 结果应用 ----------------
 
   void _applyReplaceAll() {
-    final doc = markdownToDocument(_preview);
-    widget.controller.document = doc;
+    widget.controller.document = markdownToDocument(_preview);
     Navigator.of(context).pop();
   }
 
@@ -384,75 +431,236 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
 
   // ---------------- UI ----------------
 
+  /// 头部状态文案：让用户随时知道「现在在做什么」
+  String get _statusText {
+    if (_failed) return 'note_ai.failed'.tr();
+    final label = _action?.label;
+    if (_streaming && label != null) {
+      return '${'note_ai.generating'.tr()} · $label';
+    }
+    if (_preview.isNotEmpty && label != null) {
+      return '${'note_ai.status_done'.tr()} · $label';
+    }
+    if (label != null) {
+      return '${'note_ai.status_selected'.tr()}「$label」';
+    }
+    return 'note_ai.choose_capability'.tr();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final screenH = MediaQuery.sizeOf(context).height;
+    // 键盘弹起时按剩余高度取 90%，避免底栏被挤到屏幕外
+    final maxHeight = (screenH - keyboard) * .90;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
+      padding: EdgeInsets.only(bottom: keyboard),
       child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * .82,
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(
+            top: BorderSide(color: cs.primary.withValues(alpha: .20)),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .45),
+              blurRadius: 56,
+              offset: const Offset(0, -22),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedSparkles,
-                  size: 18,
-                  color: cs.primary,
+            _buildGrabHandle(cs),
+            _buildHeader(cs),
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: SpacingToken.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    NoteAiScopeBar(
+                      whole: _whole,
+                      selectionChars: _selectionChars,
+                      totalChars: _totalChars,
+                      onChanged: _streaming
+                          ? (_) {}
+                          : (whole) => setState(() => _whole = whole),
+                    ),
+                    const SizedBox(height: SpacingToken.lg),
+                    NoteAiCapabilityGrid(
+                      action: _action,
+                      enabled: !_streaming,
+                      onSelected: (a) => setState(() => _action = a),
+                      instructionCtrl: _instructionCtrl,
+                      targetLang: _targetLang,
+                      onLangChanged: (v) {
+                        if (v == null) return;
+                        setState(() => _targetLang = v);
+                      },
+                    ),
+                    const SizedBox(height: SpacingToken.lg),
+                    Expanded(
+                      child: NoteAiPreview(
+                        text: _preview,
+                        streaming: _streaming,
+                        thinking: _thinking,
+                        onCopy: _copyResult,
+                        onQuickPick: (a) => setState(() => _action = a),
+                      ),
+                    ),
+                    const SizedBox(height: SpacingToken.lg),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text('note_ai.title'.tr(), style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                if (_selectedPlainText() != null)
-                  Text('note_ai.selection_scope'.tr(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(color: cs.primary)),
-              ],
+              ),
             ),
-            const SizedBox(height: 12),
-            NoteAiActionSelector(
-              action: _action,
-              streaming: _streaming,
-              onSelected: (a) => setState(() => _action = a),
-              instructionCtrl: _instructionCtrl,
-              targetLang: _targetLang,
-              onLangChanged: (value) {
-                if (value == null) return;
-                setState(() => _targetLang = value);
-              },
-            ),
-            const SizedBox(height: 16),
-            NoteAiPreviewArea(
-              preview: _preview,
-              streaming: _streaming,
-              thinking: _thinking,
-              onCopy: _copyResult,
-            ),
-            const SizedBox(height: 16),
-            NoteAiActionsRow(
+            NoteAiFooter(
               preview: _preview,
               streaming: _streaming,
               failed: _failed,
               action: _action,
-              selStart: _selStart,
+              hasSelection: _hasSelection,
               onRun: _start,
+              onStop: _stop,
+              onReplaceSelection: _applyReplaceSelection,
               onReplaceAll: _applyReplaceAll,
               onAppendToEnd: _applyAppendToEnd,
-              onReplaceSelection: _applyReplaceSelection,
               onApplyAsTitle: _applyAsTitle,
+              onCopy: _copyResult,
+            ),
+            // 底部手势区留白，避免与系统 home indicator 贴合
+            Container(
+              width: 128,
+              height: 5,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: cs.onSurface.withValues(alpha: .5),
+                borderRadius: BorderRadius.circular(RadiusToken.pill),
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// 自绘抓取条（showDragHandle 已关闭，避免与外层圆角打架）
+  Widget _buildGrabHandle(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 4),
+      child: Container(
+        width: 38,
+        height: 4,
+        decoration: BoxDecoration(
+          color: cs.outlineVariant,
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SpacingToken.lg,
+        2,
+        SpacingToken.md,
+        SpacingToken.md,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [cs.primary, cs.primaryContainer],
+              ),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
+            ),
+            child: Center(
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedSparkles,
+                size: 16,
+                color: cs.onPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'note_ai.title'.tr(),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -.2,
+                      ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  _statusText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10.5,
+                        color: _failed ? cs.error : cs.primary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          _HeaderIconButton(
+            icon: HugeIcons.strokeRoundedCancel01,
+            tooltip: 'close'.tr(),
+            onTap: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 头部方形图标按钮
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  final List<List<dynamic>> icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(RadiusToken.md),
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: Center(
+            child: HugeIcon(icon: icon, size: 17, color: cs.onSurfaceVariant),
+          ),
+        ),
+      ),
+    );
+    if (tooltip == null || tooltip!.isEmpty) return button;
+    return Tooltip(message: tooltip!, child: button);
   }
 }

@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
@@ -126,16 +127,19 @@ class SystemMessageService extends _$SystemMessageService {
         : '通话通知';
 
     final extra = msg.properties;
-    String body = '';
+    // 与房间内的系统消息共用同一套文案：1:1 用「通话」口径，群聊用「会议」口径
+    final isGroup = room.roomType == RoomType.groupChat.index;
+    String body;
 
     if (action == 'CALL_STARTED') {
-      final nickName = extra['nickName']?.toString();
-      body = (nickName?.isNotEmpty == true) ? '$nickName 发起了通话' : '房间通话已开始';
+      final nickName = extra['nickName']?.toString() ?? '';
+      body = nickName.isNotEmpty
+          ? SystemMessageFormatter.callStartedText(extra, isGroup: isGroup)
+          : '房间通话已开始';
     } else {
-      final durationText = extra['durationText']?.toString();
-      body = (durationText?.isNotEmpty == true)
-          ? '房间通话已结束:$durationText'
-          : '房间通话已结束';
+      // 复用房间系统消息的时长文案（1:1「通话已结束 3分39秒」/
+      // 群聊「会议已结束 1小时4分」），不再直接暴露服务端的 mm:ss。
+      body = SystemMessageFormatter.callEndedText(extra, isGroup: isGroup);
     }
 
     NotificationHelper().show(

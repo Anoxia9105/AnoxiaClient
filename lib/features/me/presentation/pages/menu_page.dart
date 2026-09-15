@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'change_password_page.dart';
-import 'me_page.dart';
 import 'personal_qr_page.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -137,19 +136,14 @@ class MenuPage extends ConsumerWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  // 第一组：个人中心 / 我的二维码 / 修改密码 / 深色模式
+                  // 第一组：我的二维码 / 记事本 / 修改密码 / 深色模式
+                  // 注：原「我的」（个人中心）入口已移除——抽屉顶部已内联展示
+                  // 头像/昵称/性别/邮箱/手机号，重复入口冗余。
                   Material(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(RadiusToken.xl),
                     child: Column(
                       children: [
-                        _buildMenuTile(
-                          context,
-                          icon: HugeIcons.strokeRoundedUser,
-                          title: 'me_page_title'.tr(), // 个人中心
-                          onTap: () => _pushPage(context, const MyPage()),
-                        ),
-                        _buildTileDivider(),
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedQrCode01,

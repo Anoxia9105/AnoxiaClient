@@ -115,6 +115,10 @@ class RoomState {
   });
 
   /// 创建当前实例的变体副本
+  ///
+  /// 注意：可空字段沿用 `?? this.x` 语义（传 null 表示"不修改"）。
+  /// 需要真正清空时，必须显式传对应的 `clearXxx: true`，
+  /// 例如停止屏幕共享时的 [clearScreenShareTrack]。
   RoomState copyWith({
     String? token,
     Room? room,
@@ -127,6 +131,7 @@ class RoomState {
     bool? isReconnecting,
     bool? isRecording,
     LocalVideoTrack? screenShareTrack,
+    bool clearScreenShareTrack = false,
     String? roomMetadata,
     String? focusedParticipantId,
     List<MediaDevice>? audioInputs,
@@ -153,7 +158,9 @@ class RoomState {
       speakerOn: speakerOn ?? this.speakerOn,
       isReconnecting: isReconnecting ?? this.isReconnecting,
       isRecording: isRecording ?? this.isRecording,
-      screenShareTrack: screenShareTrack ?? this.screenShareTrack,
+      screenShareTrack: clearScreenShareTrack
+          ? null
+          : (screenShareTrack ?? this.screenShareTrack),
       roomMetadata: roomMetadata ?? this.roomMetadata,
       focusedParticipantId: focusedParticipantId ?? this.focusedParticipantId,
       audioInputs: audioInputs ?? this.audioInputs,

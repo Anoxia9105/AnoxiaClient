@@ -1,10 +1,8 @@
-/// 右侧 AI 面板（与搜索面板互斥，仿 NoteSearchPanel 布局）
+/// 记事本 AI 侧边栏（桌面端，与搜索面板互斥）
 ///
-/// 宽度与搜索面板保持一致风格，包含：
-/// - 动作选择（ChoiceChip）
-/// - 翻译/自定义输入框
-/// - 流式预览区
-/// - 运行/应用结果按钮
+/// 结构与手机端弹框完全一致，只是换成并排容器：
+/// 渐变头 → 作用范围分段控件 → 4 列能力网格 → 弹性预览 → 固定底栏。
+/// 只有预览区随窗口高度伸缩，其余四段锁死，避免长结果把操作区顶走。
 library;
 
 import 'dart:async';
@@ -21,18 +19,17 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'note_ai_panel_action.dart';
-import 'note_ai_panel_widgets.dart';
-import 'note_markdown.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
-/// 右侧 AI 面板（与搜索面板互斥，仿 NoteSearchPanel 布局）
-///
-/// 宽度与搜索面板保持一致风格，包含：
-/// - 动作选择（ChoiceChip）
-/// - 翻译/自定义输入框
-/// - 流式预览区
-/// - 运行/应用结果按钮
+import 'ai/note_ai_capability_grid.dart';
+import 'ai/note_ai_footer.dart';
+import 'ai/note_ai_preview.dart';
+import 'ai/note_ai_scope_bar.dart';
+import 'note_ai_action.dart';
+import 'note_markdown.dart';
+
+/// 右侧 AI 侧边栏（与搜索面板互斥）
 class NoteAiPanel extends ConsumerStatefulWidget {
   const NoteAiPanel({
     super.key,
@@ -47,17 +44,27 @@ class NoteAiPanel extends ConsumerStatefulWidget {
   final int? noteId;
   final ValueChanged<String>? onTitle;
 
+  /// 侧栏宽度：348 足以容纳 4 列能力格，并与左侧 240 的列表形成三段式
+  static const double width = 348;
+
   @override
   ConsumerState<NoteAiPanel> createState() => _NoteAiPanelState();
 }
 
 class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
-  AiPanelAction? _action;
+  NoteAiAction? _action;
   final _instructionCtrl = TextEditingController();
 
   /// 翻译目标语言（下拉选择，默认 English）
   String _targetLang = 'English';
   Timer? _uiThrottle;
+
+  /// 作用范围：true = 整篇笔记，false = 仅选中文字
+  late bool _whole;
+
+  /// 打开面板时冻结的选区 / 全文字数，用于「作用范围」展示
+  late final int _selectionChars;
+  late final int _totalChars;
 
   String _preview = '';
   bool _streaming = false;
@@ -69,10 +76,18 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
   int? _selEnd;
 
   @override
+  void initState() {
+    super.initState();
+    _selectionChars = (_selectedPlainText() ?? '').trim().length;
+    _totalChars = _wholeMarkdown.trim().length;
+    _whole = _selectionChars == 0;
+  }
+
+  @override
   void dispose() {
     _unsub();
-    _instructionCtrl.dispose();
     _uiThrottle?.cancel();
+    _instructionCtrl.dispose();
     super.dispose();
   }
 
@@ -80,6 +95,8 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
     _sub?.cancel();
     _sub = null;
   }
+
+  // ---------------- 输入组装 ----------------
 
   String get _wholeMarkdown => deltaToMarkdown(widget.controller.document);
 
@@ -92,22 +109,26 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
     if (end <= start) return null;
     // 索引必须基于原始 toPlainText（嵌入占位符占位）计算，
     // 截取后再剔除 U+FFFC，避免把对象占位符发给 AI
-    return plain.substring(start, end).replaceAll(
-          Embed.kObjectReplacementCharacter,
-          '',
-        );
+    return plain
+        .substring(start, end)
+        .replaceAll(Embed.kObjectReplacementCharacter, '');
   }
+
+  String? _effectiveContent() {
+    if (!_whole) {
+      final sel = _selectedPlainText()?.trim();
+      if (sel != null && sel.isNotEmpty) return sel;
+    }
+    final whole = _wholeMarkdown.trim();
+    return whole.isEmpty ? null : whole;
+  }
+
+  /// 结果是否可以「替换选中文字」（整篇模式下不适用）
+  bool get _hasSelection => !_whole && _selectionChars > 0;
 
   Map<String, dynamic> _buildRequest() {
     final action = _action!;
-    final selected = _selectedPlainText()?.trim();
-    String? effective;
-    if (selected != null && selected.isNotEmpty) {
-      effective = selected;
-    } else {
-      final whole = _wholeMarkdown.trim();
-      if (whole.isNotEmpty) effective = whole;
-    }
+    final effective = _effectiveContent();
     return {
       'action': action.api,
       if (effective != null && effective.isNotEmpty)
@@ -118,23 +139,27 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
         'content': '',
       if (effective != null && effective.isNotEmpty && widget.noteId != null)
         'noteId': widget.noteId,
-      if (action == AiPanelAction.translate) 'targetLang': _targetLang,
-      if (action == AiPanelAction.custom && _instructionCtrl.text.trim().isNotEmpty)
+      if (action == NoteAiAction.translate) 'targetLang': _targetLang,
+      if (action == NoteAiAction.custom &&
+          _instructionCtrl.text.trim().isNotEmpty)
         'instruction': _instructionCtrl.text.trim(),
     };
   }
 
   bool get _hasValidInput {
-    final sel = _selectedPlainText()?.trim();
-    if (sel != null && sel.isNotEmpty) return true;
-    if (_wholeMarkdown.trim().isNotEmpty) return true;
+    if (_effectiveContent() != null) return true;
     return widget.noteId != null;
   }
 
+  // ---------------- 流式调用 ----------------
+
   void _start() {
     if (_action == null || _streaming) return;
-    if (_action == AiPanelAction.custom && _instructionCtrl.text.trim().isEmpty) {
-      ref.read(toastServiceProvider).showToast('note_ai.instruction_required'.tr());
+    if (_action == NoteAiAction.custom &&
+        _instructionCtrl.text.trim().isEmpty) {
+      ref
+          .read(toastServiceProvider)
+          .showToast('note_ai.instruction_required'.tr());
       return;
     }
     if (!_hasValidInput) {
@@ -143,8 +168,9 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
     }
 
     final sel = widget.controller.selection;
-    _selStart = (!sel.isCollapsed && sel.start >= 0) ? sel.start : null;
-    _selEnd = (!sel.isCollapsed && sel.end >= 0) ? sel.end : null;
+    final canUseSelection = !sel.isCollapsed && sel.start >= 0;
+    _selStart = _hasSelection && canUseSelection ? sel.start : null;
+    _selEnd = _hasSelection && canUseSelection ? sel.end : null;
 
     setState(() {
       _preview = '';
@@ -168,7 +194,9 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
         }
         switch (frame.event) {
           case 'thinking':
-            setState(() => _thinking = frame.data == '[done]' ? null : (_thinking ?? '') + frame.data);
+            setState(() => _thinking = frame.data == '[done]'
+                ? null
+                : (_thinking ?? '') + frame.data);
           case 'done':
             gotDone = true;
             try {
@@ -229,6 +257,17 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
     );
   }
 
+  /// 中断当前生成：保留已产出的部分结果，空结果按失败处理
+  void _stop() {
+    if (!_streaming) return;
+    _unsub();
+    setState(() {
+      _thinking = null;
+      _streaming = false;
+      _failed = _preview.isEmpty;
+    });
+  }
+
   void _throttleUi() {
     _uiThrottle?.cancel();
     _uiThrottle = Timer(const Duration(milliseconds: 80), () {
@@ -236,9 +275,10 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
     });
   }
 
+  // ---------------- 结果应用 ----------------
+
   void _applyReplaceAll() {
-    final doc = markdownToDocument(_preview);
-    widget.controller.document = doc;
+    widget.controller.document = markdownToDocument(_preview);
   }
 
   void _applyAppendToEnd() {
@@ -312,12 +352,28 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
     ref.read(toastServiceProvider).showToast('note_ai.copied'.tr());
   }
 
+  // ---------------- UI ----------------
+
+  String get _statusText {
+    if (_failed) return 'note_ai.failed'.tr();
+    final label = _action?.label;
+    if (_streaming && label != null) {
+      return '${'note_ai.generating'.tr()} · $label';
+    }
+    if (_preview.isNotEmpty && label != null) {
+      return '${'note_ai.status_done'.tr()} · $label';
+    }
+    if (label != null) {
+      return '${'note_ai.status_selected'.tr()}「$label」';
+    }
+    return 'note_ai.choose_capability'.tr();
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final hasSelection = _selectedPlainText() != null;
     return Container(
-      width: 320,
+      width: NoteAiPanel.width,
       decoration: BoxDecoration(
         color: cs.surfaceContainerLowest,
         border: Border(
@@ -325,109 +381,165 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: .06),
-            blurRadius: 16,
-            offset: const Offset(-4, 0),
+            color: Colors.black.withValues(alpha: .20),
+            blurRadius: 40,
+            offset: const Offset(-16, 0),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // --- Polished header with subtle gradient and badge ---
+          _buildHeader(cs),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SpacingToken.lg,
+                SpacingToken.lg,
+                SpacingToken.lg,
+                SpacingToken.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  NoteAiScopeBar(
+                    whole: _whole,
+                    selectionChars: _selectionChars,
+                    totalChars: _totalChars,
+                    onChanged: _streaming
+                        ? (_) {}
+                        : (whole) => setState(() => _whole = whole),
+                  ),
+                  const SizedBox(height: SpacingToken.lg),
+                  NoteAiCapabilityGrid(
+                    action: _action,
+                    enabled: !_streaming,
+                    onSelected: (a) => setState(() => _action = a),
+                    instructionCtrl: _instructionCtrl,
+                    targetLang: _targetLang,
+                    onLangChanged: (v) {
+                      if (v == null) return;
+                      setState(() => _targetLang = v);
+                    },
+                  ),
+                  const SizedBox(height: SpacingToken.lg),
+                  Expanded(
+                    child: NoteAiPreview(
+                      text: _preview,
+                      streaming: _streaming,
+                      thinking: _thinking,
+                      onCopy: _copyResult,
+                      onQuickPick: (a) => setState(() => _action = a),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          NoteAiFooter(
+            preview: _preview,
+            streaming: _streaming,
+            failed: _failed,
+            action: _action,
+            hasSelection: _hasSelection,
+            onRun: _start,
+            onStop: _stop,
+            onReplaceSelection: _applyReplaceSelection,
+            onReplaceAll: _applyReplaceAll,
+            onAppendToEnd: _applyAppendToEnd,
+            onApplyAsTitle: _applyAsTitle,
+            onCopy: _copyResult,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 侧栏头部：渐变底 + 主色 logo 方块 + 标题/状态 + 收起/关闭
+  Widget _buildHeader(ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        SpacingToken.lg,
+        SpacingToken.md,
+        SpacingToken.sm,
+        SpacingToken.md,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.primary.withValues(alpha: .17),
+            cs.surfaceContainerLowest.withValues(alpha: 0),
+          ],
+        ),
+        border: Border(
+          bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: .5)),
+        ),
+      ),
+      child: Row(
+        children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  cs.primaryContainer.withValues(alpha: .18),
-                  cs.surfaceContainerLow.withValues(alpha: .0),
-                ],
+                colors: [cs.primary, cs.primaryContainer],
               ),
-              border: Border(
-                bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: .5)),
+              borderRadius: BorderRadius.circular(RadiusToken.md),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primaryContainer.withValues(alpha: .40),
+                  blurRadius: 16,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Center(
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedSparkles,
+                size: 17,
+                color: cs.onPrimary,
               ),
             ),
-            child: Row(
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(RadiusToken.md),
-                    border: Border.all(color: cs.primary.withValues(alpha: .18)),
-                  ),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedSparkles, size: 16, color: cs.primary),
+                Text(
+                  'note_ai.title'.tr(),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -.2,
+                      ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('note_ai.title'.tr(),
-                          style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.w800, letterSpacing: -.2)),
-                      if (hasSelection)
-                        Text('note_ai.selection_scope'.tr(),
-                            style: Theme.of(context).textTheme.labelSmall!.copyWith( fontWeight: FontWeight.w500, color: cs.primary)),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'close'.tr(),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: widget.onClose,
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18, color: cs.onSurfaceVariant),
-                  style: IconButton.styleFrom(
-                    backgroundColor: cs.surfaceContainerHighest.withValues(alpha: .5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.md)),
-                  ),
+                const SizedBox(height: 1),
+                Text(
+                  _statusText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10.5,
+                        color: _failed ? cs.error : cs.primary,
+                      ),
                 ),
               ],
             ),
           ),
-          // Content scrollable
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  NoteAiPanelActionSelector(
-                    action: _action,
-                    streaming: _streaming,
-                    onSelected: (a) => setState(() => _action = a),
-                    instructionCtrl: _instructionCtrl,
-                    targetLang: _targetLang,
-                    onLangChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _targetLang = value);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  NoteAiPanelPreviewArea(
-                    preview: _preview,
-                    streaming: _streaming,
-                    thinking: _thinking,
-                    onCopy: _copyResult,
-                  ),
-                  const SizedBox(height: 16),
-                  NoteAiPanelActionsRow(
-                    preview: _preview,
-                    streaming: _streaming,
-                    failed: _failed,
-                    action: _action,
-                    selStart: _selStart,
-                    onRun: _start,
-                    onReplaceAll: _applyReplaceAll,
-                    onAppendToEnd: _applyAppendToEnd,
-                    onReplaceSelection: _applyReplaceSelection,
-                    onApplyAsTitle: _applyAsTitle,
-                  ),
-                ],
-              ),
+          IconButton(
+            tooltip: 'close'.tr(),
+            visualDensity: VisualDensity.compact,
+            onPressed: widget.onClose,
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedCancel01,
+              size: 18,
+              color: cs.onSurfaceVariant,
             ),
           ),
         ],

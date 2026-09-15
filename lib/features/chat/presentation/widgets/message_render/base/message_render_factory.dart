@@ -26,7 +26,6 @@ class MessageRenderFactory {
     MessageType.image: ImageMessageStrategy(),
     MessageType.file: FileMessageStrategy(),
     MessageType.richText: QuillMessageStrategy(),
-    MessageType.system: SystemMessageStrategy(),
     MessageType.audio: AudioMessageStrategy(),
     MessageType.video: VideoMessageStrategy(),
     MessageType.emoji: StickerMessageStrategy(),
@@ -38,8 +37,17 @@ class MessageRenderFactory {
   /// 根据消息类型获取对应的渲染策略
   ///
   /// [type] 消息类型
+  /// [isGroup] 当前会话是否为群聊（系统消息的通话文案需要区分单聊/群聊）。
   /// 返回对应的渲染策略，未知类型返回默认策略
-  static MessageRenderStrategy getStrategy(MessageType? type) {
+  static MessageRenderStrategy getStrategy(
+    MessageType? type, {
+    bool isGroup = false,
+  }) {
+    // 系统消息需要携带会话类型：同为 CALL_STARTED，1:1 是「发起了通话」，
+    // 群聊才是「开启了会议」，故不能复用无状态的单例。
+    if (type == MessageType.system) {
+      return SystemMessageStrategy(isGroup: isGroup);
+    }
     return _strategies[type] ?? _DefaultMessageStrategy();
   }
 }

@@ -27,6 +27,12 @@ class StorageKeys {
   /// 上限 [SavedAccountsService.maxAccounts] 个，超出淘汰最久未用的。
   static const String savedAccounts = 'SAVED_ACCOUNTS';
 
+  /// 开机自启动（布尔值，true=随系统登录自动启动，仅桌面端生效）
+  static const String launchAtStartup = 'LAUNCH_AT_STARTUP';
+
+  /// 开机自启后是否隐藏主窗口（true=仅驻留系统托盘）
+  static const String launchAtStartupSilent = 'LAUNCH_AT_STARTUP_SILENT';
+
   /// 是否隐藏官方虚拟房间（布尔值，true=隐藏）
   static const String officialRoomHidden = 'OFFICIAL_ROOM_HIDDEN';
 

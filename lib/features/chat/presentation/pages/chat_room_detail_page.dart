@@ -194,7 +194,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          child: _buildMessageList(flatItems),
+          child: _buildMessageList(
+            flatItems,
+            isGroup: currentRoom.roomType == RoomType.groupChat.index,
+          ),
         ),
         // 历史加载状态指示器，替换原来的内联骨架屏
         Positioned(
@@ -209,7 +212,10 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     );
   }
 
-  Widget _buildMessageList(List<ChatListItem> flatItems) {
+  Widget _buildMessageList(
+    List<ChatListItem> flatItems, {
+    required bool isGroup,
+  }) {
     Widget itemBuilder(BuildContext context, int index) {
       final item = flatItems[index];
       return switch (item) {
@@ -220,6 +226,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         MessageItem(:final message) => ChatMessageBubble(
           key: ValueKey(message.messageId ?? message.clientMsgId),
           message: message,
+          isGroup: isGroup,
         ),
       };
     }

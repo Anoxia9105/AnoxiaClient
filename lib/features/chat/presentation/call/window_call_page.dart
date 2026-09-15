@@ -57,7 +57,13 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
 
   /// 预取/下发的通话 token（振铃态为空）
   String _prefetchedToken = '';
+
+  /// 当前正在使用的通话 token（振铃态为空，用于关闭前断开媒体）
+  String _activeToken = '';
   bool _callSettingsInitialized = false;
+
+  /// 是否已进入关闭流程（避免重复清理媒体 / 重复关窗）
+  bool _closing = false;
 
   /// 通话窗口相位：1:1 呼出未接听时为振铃态
   _CallWindowPhase _phase = _CallWindowPhase.ringing;
@@ -93,6 +99,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
       setState(() => _callSettingsInitialized = true);
     });
     if (_phase == _CallWindowPhase.connecting) {
+      _activeToken = _prefetchedToken;
       ref.read(roomTokenProvider(_roomId));
     }
 
@@ -106,6 +113,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         if (token.isEmpty) return;
         setState(() {
           _prefetchedToken = token;
+          _activeToken = token;
           _phase = _CallWindowPhase.connecting;
         });
         return;
@@ -135,7 +143,19 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   }
 
   /// 通知主窗口窗口关闭（主窗口据此发 CALL_CANCEL / CALL_END）并退出。
+  ///
+  /// **必须在关窗之前断开 LiveKit 媒体连接**：桌面端子窗口销毁时
+  /// desktop_multi_window 会直接释放该窗口的 FlutterViewController（引擎），
+  /// 而 WebRTC 的原生对象（PeerConnection、采集/播放设备）仍被引擎线程持有，
+  /// 带着活跃的通话会话销毁引擎会让原生侧在析构过程中崩溃——由于桌面端所有
+  /// 窗口同进程，表现为整个应用闪退。对方挂断场景尤其明显：主窗口收到
+  /// CALL_END 后直接关掉本窗口，此前没有任何媒体清理动作。
   Future<void> _notifyCloseAndExit() async {
+    if (_closing) return;
+    _closing = true;
+
+    await _teardownCallMedia();
+
     try {
       await Channel.callChannel.invokeMethod('on_call_window_close');
     } catch (e) {
@@ -144,6 +164,26 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     await windowManager.setPreventClose(false);
 
     await windowManager.close();
+  }
+
+  /// 断开通话媒体连接（尽力而为，最多等待 3 秒）。
+  ///
+  /// 振铃态（未连接媒体）时直接返回——这里绝不能无条件 read
+  /// roomControllerProvider，否则会触发一次新的建连。
+  Future<void> _teardownCallMedia() async {
+    final token = _activeToken;
+    if (token.isEmpty || !mounted) return;
+    try {
+      final container = ProviderScope.containerOf(context, listen: false);
+      final provider = roomControllerProvider(token);
+      if (!container.exists(provider)) return;
+      await container
+          .read(provider.notifier)
+          .leave()
+          .timeout(const Duration(seconds: 3));
+    } catch (e, st) {
+      debugLog('关闭通话窗口前断开通话连接失败（忽略）', e, st);
+    }
   }
 
   @override
@@ -180,6 +220,10 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   }
 
   Widget _buildBody() {
+    // 正在关闭：媒体已断开（room provider 被 invalidate 进入错误态），
+    // 关窗在即，避免闪出一帧错误/空状态界面
+    if (_closing) return const SizedBox.shrink();
+
     // 1:1 呼出振铃态：不连接媒体，展示振铃页
     if (_phase == _CallWindowPhase.ringing) {
       return _DesktopCallRingingPage(

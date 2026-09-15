@@ -61,6 +61,56 @@ class Toast {
     _showSnackBar(message, type: type, duration: duration);
   }
 
+  /// 显示带操作按钮的通知框（如「已应用 · 撤销」）。
+  ///
+  /// 用于破坏性操作的后悔窗口：时长内点击 [actionLabel] 触发 [onAction]。
+  /// 返回关闭回调，便于调用方提前收起当前提示。
+  static VoidCallback showActionToast(
+    String message, {
+    required String actionLabel,
+    required VoidCallback onAction,
+    ToastType type = ToastType.info,
+    Duration duration = const Duration(seconds: 5),
+  }) {
+    final messenger = messengerKey.currentState;
+    if (messenger == null) return () {};
+
+    final bg = _colorFor(type, messenger.context);
+    final textColor = _foregroundFor(bg);
+    messenger.hideCurrentSnackBar();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: Semantics(
+          liveRegion: true,
+          child: Text(
+            message,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
+            ),
+          ),
+        ),
+        action: SnackBarAction(
+          label: actionLabel,
+          textColor: textColor,
+          onPressed: onAction,
+        ),
+        backgroundColor: bg,
+        behavior: SnackBarBehavior.floating,
+        width: double.infinity,
+        margin: null,
+        duration: duration,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        elevation: 6,
+      ),
+    );
+    return controller.close;
+  }
+
   /// 显示自定义 Widget（关联 context）。
   static Function showWidget(
     BuildContext context, {

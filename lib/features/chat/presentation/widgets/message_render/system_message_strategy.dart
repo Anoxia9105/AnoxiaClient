@@ -14,13 +14,21 @@ import 'base/message_render_strategy.dart';
 /// 将系统消息（如入群通知、退群通知等）渲染为居中的图标 + 文本。
 /// 使用 [SystemMessageFormatter] 解析消息内容。
 class SystemMessageStrategy extends MessageRenderStrategy {
+  /// 当前会话是否为群聊
+  ///
+  /// 仅影响「通话开始」文案：1:1 显示「xx 发起了通话」，
+  /// 群聊（会议）才显示「xx 开启了会议」。
+  final bool isGroup;
+
+  SystemMessageStrategy({this.isGroup = false});
+
   @override
   Widget buildContent(
     BuildContext context,
     ChatMessage message,
     Color textColor,
   ) {
-    final display = SystemMessageFormatter.display(message);
+    final display = SystemMessageFormatter.display(message, isGroup: isGroup);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),

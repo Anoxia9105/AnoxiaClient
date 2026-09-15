@@ -63,6 +63,14 @@ class RoomController extends _$RoomController {
   /// 防止 leave() 重入
   bool _isLeaving = false;
 
+  /// 进行中的「离开房间」过程。
+  ///
+  /// 并发调用 [leave]（例如桌面端「挂断按钮」与「窗口关闭回调」同时触发）
+  /// 会复用同一个 Future，调用方可以安全 await：必须等 WebRTC 资源真正释放
+  /// 之后再销毁窗口，因为桌面端子窗口关闭会直接拆除该窗口的引擎，带着活跃的
+  /// 通话会话销毁引擎会让原生侧在析构过程中崩溃（表现为整个应用闪退）。
+  Future<void>? _leaveFuture;
+
   // ================= Riverpod build =================
 
   /// Provider 入口
@@ -396,7 +404,9 @@ class RoomController extends _$RoomController {
       current.copyWith(
         remoteParticipants: current.room.remoteParticipants.values.toList(),
         screenSharing: screenStillActive,
-        screenShareTrack: screenStillActive ? current.screenShareTrack : null,
+        // 共享结束（系统侧停止/轨道被回收）时释放轨道引用，
+        // 否则 copyWith 的 `??` 语义会让旧轨道一直挂在状态里
+        clearScreenShareTrack: !screenStillActive,
       ),
     );
   }
@@ -727,80 +737,172 @@ class RoomController extends _$RoomController {
     }
   }
 
-  /// 切换屏幕共享
-  /// 精细化管理轨道，单独发布屏幕共享轨道，不影响摄像头轨道
-  /// 桌面端由 UI 层弹出窗口/屏幕选择对话框，选中后传入 [sourceId]
-  Future<void> toggleScreenShare({String? sourceId}) async {
+  /// 开始屏幕共享
+  ///
+  /// 精细化管理轨道：单独发布屏幕共享轨道，不影响摄像头轨道。
+  /// - 桌面端必须由 UI 层传入用户选中的屏幕源 [sourceId]；
+  ///   未传（用户在系统弹窗里取消）时直接终止，不做任何副作用。
+  /// - 移动端/Web 传空，由系统选择器接管。
+  ///
+  /// 已有活跃共享轨道时是空操作——切换到别的屏幕源请先 [stopScreenShare]，
+  /// 避免同一房间出现两条屏幕共享轨道。
+  Future<void> startScreenShare({String? sourceId}) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+    // 已有活跃的共享轨道：不重复发布（防止双轨道 / 状态错乱）。
+    // 注意这里看"轨道"而不是 state.screenSharing——后者可能因事件丢失而虚高，
+    // 用状态字段判断会导致用户点了开始共享却毫无反应。
+    if (_hasActiveScreenShare(currentState)) return;
+    // 桌面端未提供屏幕源：用户取消了选择，直接终止
+    if (DeviceUtil.isRealDesktop() && sourceId == null) return;
+    if (_isTogglingScreen) return;
+
+    _isTogglingScreen = true;
+    LocalVideoTrack? screenTrack;
+    try {
+      final localParticipant = currentState.room.localParticipant;
+      if (localParticipant == null) return;
+
+      // 防御：清理可能残留的屏幕共享发布（例如系统侧已回收轨道、
+      // 但 publication 尚未同步移除），避免同一房间出现两条共享轨道
+      await _removeScreenSharePublications(localParticipant);
+
+      /// Android 14+ 安全检查：如果用户拒绝或激活失败，直接阻断不往下走
+      if (DeviceUtil.isAndroid()) {
+        final isReady = await _safeActivateAndroidBackground();
+        if (!isReady) return;
+      }
+
+      screenTrack = await LocalVideoTrack.createScreenShareTrack(
+        ScreenShareCaptureOptions(
+          sourceId: sourceId,
+          captureScreenAudio: true,
+          maxFrameRate: 15,
+          params: VideoParametersPresets.screenShareH1080FPS30,
+        ),
+      );
+      await localParticipant.publishVideoTrack(screenTrack);
+      // 用最新 state 做基底：发布过程是异步的，期间可能有其他事件更新过状态
+      final latest = state.value ?? currentState;
+      state = AsyncData(
+        latest.copyWith(screenSharing: true, screenShareTrack: screenTrack),
+      );
+    } catch (e) {
+      debugLog('开始屏幕共享失败: $e');
+      // 发布失败时轨道可能已创建但无人持有，必须显式停掉，
+      // 否则底层屏幕采集会一直挂在后台
+      await _stopScreenTrackQuietly(screenTrack);
+      // 兜底：把半成功的发布也一并撤销，避免留下僵尸轨道
+      await _removeScreenSharePublications(
+        state.value?.room.localParticipant,
+      );
+      _clearScreenShareState();
+    } finally {
+      _isTogglingScreen = false;
+    }
+  }
+
+  /// 停止屏幕共享
+  ///
+  /// 幂等：即使当前状态已经是"未共享"，重复调用也不会报错。
+  /// 会撤销本地全部屏幕共享发布（不止第一条），并归还 Android 前台保活服务。
+  Future<void> stopScreenShare() async {
     if (_isTogglingScreen) return;
     _isTogglingScreen = true;
     try {
       final currentState = state.value;
       if (currentState == null) return;
-      final next = !currentState.screenSharing;
-      final localParticipant = currentState.room.localParticipant;
-      if (localParticipant == null) return;
+      await _removeScreenSharePublications(
+        currentState.room.localParticipant,
+      );
+      await _releaseScreenShareKeepAlive();
 
-      if (next) {
-        // 桌面端若未提供屏幕源（用户取消选择），直接终止
-        if (DeviceUtil.isRealDesktop() && sourceId == null) return;
-
-        /// Android 14+ 安全检查：如果用户拒绝或激活失败，直接阻断不往下走
-        if (DeviceUtil.isAndroid()) {
-          final isReady = await _safeActivateAndroidBackground();
-          if (!isReady) return;
-        }
-
-        final screenTrack = await LocalVideoTrack.createScreenShareTrack(
-          ScreenShareCaptureOptions(
-            sourceId: sourceId,
-            captureScreenAudio: true,
-            maxFrameRate: 15,
-            params: VideoParametersPresets.screenShareH1080FPS30,
-          ),
-        );
-        await localParticipant.publishVideoTrack(screenTrack);
-        state = AsyncData(
-          currentState.copyWith(
-            screenSharing: true,
-            screenShareTrack: screenTrack,
-          ),
-        );
-      } else {
-        // 找到屏幕共享轨道并撤销发布
-        final screenPub = localParticipant.videoTrackPublications
-            .where((p) => p.isScreenShare)
-            .firstOrNull;
-        if (screenPub != null) {
-          await localParticipant.removePublishedTrack(screenPub.sid);
-        }
-
-        /// 优化：关闭共享时，及时释放 Android 前台保活服务
-        if (DeviceUtil.isAndroid()) {
-          try {
-            if (rtc.FlutterBackground.isBackgroundExecutionEnabled) {
-              await rtc.FlutterBackground.disableBackgroundExecution();
-            }
-          } catch (e) {
-            debugLog('关闭 Android 后台服务失败: $e');
-          }
-        }
-
-        state = AsyncData(
-          currentState.copyWith(screenSharing: false, screenShareTrack: null),
-        );
-      }
+      /// 优化：无论是否找到轨道，都要把状态归零——
+      /// 轨道可能已被系统（如 Windows 的"停止共享"按钮）抢先回收。
+      _clearScreenShareState();
     } catch (e) {
-      debugLog('切换屏幕共享失败: $e');
-      // 出错时恢复到关闭状态，避免 UI 状态与实际不符
-      final currentState = state.value;
-      if (currentState != null) {
-        state = AsyncData(
-          currentState.copyWith(screenSharing: false, screenShareTrack: null),
-        );
-      }
+      debugLog('停止屏幕共享失败: $e');
+      _clearScreenShareState();
     } finally {
       _isTogglingScreen = false;
     }
+  }
+
+  /// 切换屏幕共享（移动端/Web 等无屏幕源选择场景的统一入口）
+  ///
+  /// 桌面端 UI 请直接调用 [startScreenShare] / [stopScreenShare]，
+  /// 以便在"停止共享"时绕过屏幕源选择框。
+  Future<void> toggleScreenShare({String? sourceId}) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+    if (_hasActiveScreenShare(currentState)) {
+      await stopScreenShare();
+    } else {
+      await startScreenShare(sourceId: sourceId);
+    }
+  }
+
+  /// 本地是否真的存在活跃的屏幕共享发布（以轨道为准，而非状态字段）
+  ///
+  /// [RoomState.screenSharing] 由事件驱动更新，存在滞后/丢失的可能；
+  /// 开关方向、重复发布防护一律以实际轨道为准。
+  bool _hasActiveScreenShare(RoomState current) {
+    final localParticipant = current.room.localParticipant;
+    if (localParticipant == null) return false;
+    return localParticipant.videoTrackPublications.any(
+      (p) => p.isScreenShare && !p.muted,
+    );
+  }
+
+  /// 撤销本地全部屏幕共享轨道
+  ///
+  /// `removePublishedTrack` 默认会顺带 `stop()` 底层轨道，释放采集设备。
+  Future<void> _removeScreenSharePublications(
+    LocalParticipant? participant,
+  ) async {
+    if (participant == null) return;
+    final publications = participant.videoTrackPublications
+        .where((p) => p.isScreenShare)
+        .toList();
+    for (final publication in publications) {
+      try {
+        await participant.removePublishedTrack(publication.sid);
+      } catch (e) {
+        debugLog('撤销屏幕共享轨道失败(${publication.sid}): $e');
+      }
+    }
+  }
+
+  /// 静默停止一条屏幕共享轨道（用于发布失败时的资源回收）
+  Future<void> _stopScreenTrackQuietly(LocalVideoTrack? track) async {
+    if (track == null) return;
+    try {
+      await track.stop();
+    } catch (e) {
+      debugLog('释放屏幕共享轨道失败: $e');
+    }
+  }
+
+  /// 关闭共享时及时释放 Android 前台保活服务
+  Future<void> _releaseScreenShareKeepAlive() async {
+    if (!DeviceUtil.isAndroid()) return;
+    try {
+      if (rtc.FlutterBackground.isBackgroundExecutionEnabled) {
+        await rtc.FlutterBackground.disableBackgroundExecution();
+      }
+    } catch (e) {
+      debugLog('关闭 Android 后台服务失败: $e');
+    }
+  }
+
+  /// 把屏幕共享相关状态归零（不改动轨道，纯状态收敛）
+  void _clearScreenShareState() {
+    final current = state.value;
+    if (current == null) return;
+    if (!current.screenSharing && current.screenShareTrack == null) return;
+    state = AsyncData(
+      current.copyWith(screenSharing: false, clearScreenShareTrack: true),
+    );
   }
 
   /// 安全激活 Android 14+ 的媒体投影前台服务
@@ -916,7 +1018,7 @@ class RoomController extends _$RoomController {
     }
   }
 
-  /// 离开房间
+  /// 离开房间（幂等，可被多处并发 await）
   ///
   /// 执行顺序：
   ///   1. 标记 _isLeaving 防止重入
@@ -925,10 +1027,18 @@ class RoomController extends _$RoomController {
   ///   4. dispose 房间
   ///   5. 标记 token 阻止 invalidateSelf 重建时重新连接
   ///   6. invalidateSelf 触发 onDispose 兜底清理
-  Future<void> leave() async {
-    if (_isLeaving) return;
+  ///
+  /// 首次调用真正执行断开；后续并发调用直接复用同一个 Future，因此
+  /// 「挂断 → 关窗」这类路径可以 await 到媒体真正释放，而不是拿到一个
+  /// 立即返回的空操作（那样会在断连尚未完成时就把窗口/引擎销毁掉）。
+  Future<void> leave() {
+    final pending = _leaveFuture;
+    if (pending != null) return pending;
     _isLeaving = true;
+    return _leaveFuture = _leave();
+  }
 
+  Future<void> _leave() async {
     final currentState = state.value;
     // 无论是否成功连接过，都要先把 token 标记为已处理：
     // 连接失败（错误态）时 state.value 为 null，若只标记成功路径，

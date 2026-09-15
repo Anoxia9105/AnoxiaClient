@@ -262,12 +262,7 @@ class MobileTextInputController extends ChangeNotifier {
   /// 文本为空时返回 null。
   /// 当存在有效 @提及时，[quillDelta] 为 Quill Delta JSON 字符串（与桌面端格式
   /// 一致），调用方应使用富文本消息类型发送；否则 [quillDelta] 为 null。
-  ({
-    String text,
-    List<int> mentionIds,
-    bool mentionAll,
-    String? quillDelta,
-  })?
+  ({String text, List<int> mentionIds, bool mentionAll, String? quillDelta})?
   buildSendData() {
     final full = textController.text;
     final text = full.trim();
@@ -365,6 +360,49 @@ class MobileTextInputController extends ChangeNotifier {
       // 与编辑区重叠的提及被破坏，丢弃高亮，保留纯文本。
     }
     textController.mentions = result;
+  }
+
+  /// 程序化整体替换输入内容（AI 结果回填等场景）
+  ///
+  /// 直接给 `textController.value` 赋值不会触发 TextField 的 `onChanged`，
+  /// 会导致空态（发送按钮显隐）与 @提及区间漂移；此方法补齐同步逻辑。
+  ///
+  /// [cursorOffset] 落点，缺省置于文末。
+  void replaceAllText(String newText, {int? cursorOffset}) {
+    final oldText = textController.text;
+    final offset = (cursorOffset ?? newText.length).clamp(0, newText.length);
+    textController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: offset),
+    );
+    _syncMentionSpans(oldText, newText);
+    _lastText = newText;
+
+    final empty = newText.isEmpty;
+    if (isEmpty != empty) {
+      isEmpty = empty;
+      notifyListeners();
+    }
+  }
+
+  /// 原样还原一次 [replaceAllText] 之前的快照（供 AI 结果撤销使用）
+  ///
+  /// 与 [replaceAllText] 不同，这里不重算提及区间，直接恢复快照，
+  /// 避免「回退」被当作一次新编辑而丢掉原有的 @提及高亮。
+  void restoreText(
+    String text,
+    TextSelection selection,
+    List<MentionSpan> mentions,
+  ) {
+    textController.value = TextEditingValue(text: text, selection: selection);
+    textController.mentions = List<MentionSpan>.of(mentions);
+    _lastText = text;
+
+    final empty = text.isEmpty;
+    if (isEmpty != empty) {
+      isEmpty = empty;
+      notifyListeners();
+    }
   }
 
   /// 清空输入框

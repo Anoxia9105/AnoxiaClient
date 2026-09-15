@@ -1,7 +1,10 @@
 import 'package:anoxia/framework/domain/official_room_config.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
+import 'package:anoxia/framework/provider/desktop/launch_at_startup_provider.dart';
 import 'package:anoxia/framework/provider/setting/general_settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/hide_official_room_provider.dart';
+import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/platform/shims/auto_start_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +27,11 @@ class SettingsGeneralSection extends ConsumerWidget {
     final sendShortcut = ref.watch(chatSendShortcutProvider);
     final messagePreview = ref.watch(messagePreviewProvider);
     final autoPlay = ref.watch(autoPlayMediaProvider);
+    final launchAtStartup = ref.watch(launchAtStartupProvider);
+    final launchSilent = ref.watch(launchAtStartupSilentProvider);
+    final startupSupported = autoStartSupported();
+    // 开机自启是桌面端专属能力（Web/移动端无此概念）
+    final showStartupGroup = DeviceUtil.isRealDesktop();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,6 +108,40 @@ class SettingsGeneralSection extends ConsumerWidget {
             ),
           ],
         ),
+        if (showStartupGroup) ...[
+          const SizedBox(height: 18),
+          _GroupLabel(
+            icon: HugeIcons.strokeRoundedComputer,
+            title: 'settings_general_group_startup'.tr(),
+          ),
+          _SettingsCard(
+            children: [
+              _SwitchTile(
+                icon: HugeIcons.strokeRoundedPower,
+                title: 'settings_launch_at_startup'.tr(),
+                subtitle: startupSupported
+                    ? 'settings_launch_at_startup_desc'.tr()
+                    : 'settings_launch_at_startup_unsupported'.tr(),
+                value: launchAtStartup && startupSupported,
+                enabled: startupSupported,
+                onChanged: (v) => ref
+                    .read(launchAtStartupProvider.notifier)
+                    .setEnabled(v),
+              ),
+              _Divider(),
+              _SwitchTile(
+                icon: HugeIcons.strokeRoundedViewOff,
+                title: 'settings_launch_silent'.tr(),
+                subtitle: 'settings_launch_silent_desc'.tr(),
+                value: launchSilent,
+                enabled: startupSupported && launchAtStartup,
+                onChanged: (v) => ref
+                    .read(launchAtStartupSilentProvider.notifier)
+                    .setEnabled(v),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -164,7 +206,8 @@ class _SwitchTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final bool enabled;
+  final ValueChanged<bool>? onChanged;
   final VoidCallback? onTapOverride;
   const _SwitchTile({
     required this.icon,
@@ -172,19 +215,24 @@ class _SwitchTile extends StatelessWidget {
     required this.subtitle,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
     this.onTapOverride,
   });
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: HugeIcon(icon: icon, size: 22),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-      subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+      subtitle: Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
       trailing: Transform.scale(
         scale: 0.85,
-        child: Switch.adaptive(value: value, onChanged: onChanged),
+        child: Switch.adaptive(value: value, onChanged: enabled ? onChanged : null),
       ),
-      onTap: onTapOverride ?? () => onChanged(!value),
+      // 禁用态整体降透明度，与开关的灰化保持视觉一致
+      textColor: enabled ? null : scheme.onSurface.withValues(alpha: 0.45),
+      enabled: enabled,
+      onTap: enabled ? (onTapOverride ?? () => onChanged?.call(!value)) : null,
     );
   }
 }

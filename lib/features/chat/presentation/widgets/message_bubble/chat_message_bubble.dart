@@ -32,13 +32,23 @@ import 'package:anoxia/framework/logs/debug_log.dart';
 class ChatMessageBubble extends ConsumerWidget {
   final ChatMessage message;
 
-  const ChatMessageBubble({super.key, required this.message});
+  /// 当前会话是否为群聊（系统消息的通话文案区分单聊/群聊，默认按 1:1 处理）
+  final bool isGroup;
+
+  const ChatMessageBubble({
+    super.key,
+    required this.message,
+    this.isGroup = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     try {
       // 1. 根据消息类型获取对应的渲染策略（文本、图片、文件等）
-      final strategy = MessageRenderFactory.getStrategy(message.messageType);
+      final strategy = MessageRenderFactory.getStrategy(
+        message.messageType,
+        isGroup: isGroup,
+      );
 
       // 2. 聚合所有展示所需的视图数据（颜色、是否自己、是否@我等）
       final view = MessageBubbleViewData.resolve(context, ref, message);

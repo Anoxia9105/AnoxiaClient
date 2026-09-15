@@ -241,7 +241,11 @@ class RoomListService extends _$RoomListService {
         if (shouldShowLocalNotification) {
           final notificationBody =
               SystemMessageFormatter.isSystemMessage(newMessage)
-              ? SystemMessageFormatter.display(newMessage).text
+              ? SystemMessageFormatter.display(
+                  newMessage,
+                  // 通话系统消息文案区分单聊/群聊（发起了通话 / 开启了会议）
+                  isGroup: oldRoom.roomType == RoomType.groupChat.index,
+                ).text
               : newMessage.content;
           NotificationHelper().show(
             id: newMessage.roomId.hashCode,

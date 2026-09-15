@@ -28,11 +28,11 @@ flutter run -d windows / -d chrome / ...
 - `pubspec.lock` is gitignored; never rely on it for dependency state.
 - Flutter is on `PATH` (stable); `.fvmrc` exists but no `.fvm/` checkout is installed.
 - There is **no `tool/` directory** — the old `dart run tool/check_architecture.dart` architecture gate has been deleted; the layering rules below are now convention-only and enforced in review. `tool_import_swap.py` no longer exists either (historical, do not resurrect).
-- 字体：`pubspec.yaml` 声明 JetBrainsMono + NotoSansSC 两套族并全平台强制使用（含 Web，不回退系统字体），测试环境同样按真实排版运行；新增 UI 不要假设等宽之外的默认字体。easy_localization 在测试环境需手动 `SharedPreferences.setMockInitialValues` + `EasyLocalizationController.initEasyLocation()`，并显式传 `startLocale`（设备 locale 会解析到不存在的 `zh-CN.json`）。
+- 字体：`pubspec.yaml` 声明 JetBrainsMono + NotoSansSC 两套族并全平台强制使用（含 Web，不回退系统字体），测试环境同样按真实排版运行；新增 UI 不要假设等宽之外的默认字体。easy_localization 在测试环境需手动 `SharedPreferences.setMockInitialValues` + `EasyLocalizationController.initEasyLocation()`，并显式传 `startLocale`（设备 locale 会解析到不存在的 `zh-CN.json`）。要断言真实文案时还得补两点（参考 `test/features/chat/system_message_formatter_test.dart`）：内层 `MaterialApp` 必须挂上 `context.localizationDelegates`，否则 `delegate.load()` 根本不会执行、`.tr()` 只回吐 key；语言包用自定义 `AssetLoader` **同步**读磁盘并返回 `Future.value`（widget 测试跑在 fake async 里，真实异步 I/O 不会被 `pumpAndSettle` 推进）。
 
 ## Web support (critical quirks)
 
-- Native-only plugins (window_manager, tray_manager, desktop_multi_window, hotkey_manager, mobile_scanner, image_cropper, image_gallery_saver_plus, flutter_background, pip) must **never be imported directly** in cross-platform code. Use the conditional-export shims in `lib/platform/shims/*_shim.dart`:
+- Native-only plugins (window_manager, tray_manager, desktop_multi_window, hotkey_manager, mobile_scanner, image_cropper, image_gallery_saver_plus, flutter_background, pip, launch_at_startup) must **never be imported directly** in cross-platform code. Use the conditional-export shims in `lib/platform/shims/*_shim.dart`:
   ```dart
   export 'xxx_stub.dart' if (dart.library.io) 'package:xxx/xxx.dart';
   ```
@@ -62,7 +62,8 @@ flutter run -d windows / -d chrome / ...
 - 本地库 drift `^2.34`（sqlite3_flutter_libs + Web worker），token/凭据走 `flutter_secure_storage`（`lib/framework/network/token_manager.dart`）；**没有 encrypt/crypto 依赖，不存在端到端加密**，别臆造 E2EE 逻辑。
 - V6 协议 Dart 包是 path 依赖 `../AnoxiaProtocol/gen/dart`；`flutter pub get` 不会帮你刷新它，改 proto → 先跑 `../AnoxiaProtocol/tool_generate_dart.ps1`。
 - 其他重要依赖：LiveKit + flutter_webrtc（通话）、JPush + firebase_messaging（推送）、flutter_quill（富文本/笔记）、flutter_map（位置消息）、easy_localization（i18n）。
-- 测试覆盖很薄，全仓只有 5 个 `*_test.dart`（`test/framework/codec/im_packet_v6_test.dart`、`announcement_dialog_theme_test.dart`、`remote_quality_estimator_test.dart`、`mobile_bottom_bar_slider_test.dart`、`sp_layout_switch_test.dart`；无 `flutter_test_config.dart`）。改动核心链路时优先补单测。
+- 桌面端开机自启：`launch_at_startup` 经 `lib/platform/shims/auto_start_*` 隔离（Windows/Linux 纯 Dart 侧实现，无原生注册）；**首期仅 Windows 正式包放开**（`autoStartSupported()` = `Platform.isWindows && kReleaseMode`，debug/其它平台走 stub 且设置项置灰）。注册表写入的命令行带 `--autostart`，`main.dart` 据此配合 `setupDesktopWindow(showWindow: false)` 实现「自启后仅驻留托盘」；Provider 在构造时用系统真实状态校正本地意图（路径变化自愈）。
+- 测试覆盖很薄，`test/` 下只有 10 个 `*_test.dart`（协议回归基线 `test/framework/codec/im_packet_v6_test.dart`；其余为 UI/主题/工具类，如 `announcement_dialog_theme_test.dart`、`features/chat/system_message_formatter_test.dart`；无 `flutter_test_config.dart`）。改动核心链路时优先补单测。
 
 ## Conventions
 

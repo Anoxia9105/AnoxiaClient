@@ -689,8 +689,13 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
           },
           otherPanelWidget: (type) {
             if (type == null) return const SizedBox.shrink();
+            // AI 助手面板需要独立的纵向空间承载结果预览：
+            // 与其他面板共用 260 会把结果区压到几乎没有。
+            final panelHeight = type == MobileBottomPanelType.ai
+                ? (MediaQuery.sizeOf(context).height * 0.62).clamp(400.0, 600.0)
+                : 260.0;
             return SizedBox(
-              height: 260.0 + MediaQuery.of(context).padding.bottom,
+              height: panelHeight + MediaQuery.of(context).padding.bottom,
               child: SafeArea(
                 top: false,
                 child: switch (type) {

@@ -74,8 +74,15 @@ class SystemMessageFormatter {
   /// 解析系统消息并返回展示数据
   ///
   /// 根据消息的动作类型和属性，匹配对应的图标和国际化文本。
-  /// [message] 待解析的聽天消息。
-  static SystemMessageDisplay display(ChatMessage message) {
+  /// [message] 待解析的系统消息。
+  /// [isGroup] 当前会话是否为群聊：仅影响「通话开始」文案——
+  /// 1:1 显示「xx 发起了通话」，群聊（会议）显示「xx 开启了会议」。
+  /// 未知会话类型（如收藏页按消息单独渲染）按 1:1 处理，
+  /// 「发起了通话」对单聊与群聊都成立，不会出现语义错误。
+  static SystemMessageDisplay display(
+    ChatMessage message, {
+    bool isGroup = false,
+  }) {
     final action = actionOf(message);
     if (action == null) {
       return SystemMessageDisplay(
@@ -159,14 +166,12 @@ class SystemMessageFormatter {
       'CALL_STARTED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedCall02,
-        text: 'system_msg_callstart'.tr(
-          args: [message.properties['nickName'] ?? '--'],
-        ),
+        text: callStartedText(message.properties, isGroup: isGroup),
       ),
       'CALL_ENDED' => SystemMessageDisplay(
         action: action,
         icon: HugeIcons.strokeRoundedCallEnd03,
-        text: _callEndedText(message),
+        text: callEndedText(message.properties, isGroup: isGroup),
       ),
       'CALL_REJECTED' => SystemMessageDisplay(
         action: action,
@@ -227,41 +232,96 @@ class SystemMessageFormatter {
     };
   }
 
-  /// 通话结束文案
+  /// 通话开始文案
   ///
-  /// 有通话时长时带时长展示；缺失时长（历史缓存的老数据等）时直接显示
-  /// “通话已结束”，避免出现“通话已结束 --”这类残缺文案。
-  static String _callEndedText(ChatMessage message) {
-    final hasDuration =
-        (message.properties['duration']?.toString().isNotEmpty == true) ||
-        (message.properties['durationText']?.toString().isNotEmpty == true);
-    if (!hasDuration) return 'call_ended'.tr();
-    return 'system_msg_callend'.tr(args: [formatCallDuration(message)]);
+  /// 1:1 是「xx 发起了通话」，群聊（会议）才是「xx 开启了会议」。
+  /// 服务端下发的 action/nickName 不区分会话类型，因此这里由 [isGroup] 决定，
+  /// 而不是笼统地用「开启了会议」。
+  ///
+  /// public：通话开始的桌面通知横幅等处复用同一套文案，避免出现第二种说法。
+  static String callStartedText(
+    Map<String, String> properties, {
+    required bool isGroup,
+  }) {
+    final nickName = properties['nickName'] ?? '--';
+    return isGroup
+        ? 'system_msg_callstart'.tr(args: [nickName])
+        : 'system_msg_callstart_single'.tr(args: [nickName]);
   }
 
-  /// 通话时长格式化（国际化）
+  /// 通话结束文案
   ///
-  /// 优先使用服务端下发的 duration 秒数，按当前语言格式化为「x时x分」；
-  /// 时长不足 1 小时仅显示「x分」，超过 1 小时且整点时仅显示「x时」。
-  /// 秒数缺失时回退到服务端的 durationText（mm:ss 样式）。
-  static String formatCallDuration(ChatMessage message) {
-    final durationSec =
-        int.tryParse(message.properties['duration']?.toString() ?? '');
-    if (durationSec != null && durationSec >= 0) {
+  /// 有通话时长时带时长展示；缺失时长（历史缓存的老数据、0 秒通话等）时只报结束，
+  /// 避免出现「通话已结束 --」这类残缺文案。同样按会话类型分口径：
+  /// 1:1 是「通话已结束 x」，群聊是「会议已结束 x」。
+  ///
+  /// public：通话结束的桌面通知横幅等处复用同一套文案。
+  static String callEndedText(
+    Map<String, String> properties, {
+    required bool isGroup,
+  }) {
+    final durationText = callDurationText(properties);
+    if (durationText == null) {
+      return isGroup
+          ? 'system_msg_callend_noduration'.tr()
+          : 'call_ended'.tr();
+    }
+    return isGroup
+        ? 'system_msg_callend'.tr(args: [durationText])
+        : 'system_msg_callend_single'.tr(args: [durationText]);
+  }
+
+  /// 通话时长文案（国际化）
+  ///
+  /// 档位规则（秒数向下截断，不夸大时长）：
+  /// - 不足 1 分钟：`39秒`
+  /// - 不足 1 小时：`2分钟`（整分）/ `3分39秒`（带秒）
+  /// - 1 小时以上：`1小时`（整点）/ `1小时4分`（秒一律不回显，避免过长）
+  ///
+  /// 秒数缺失（历史缓存的老数据）时回退到服务端的 mm:ss 文本；
+  /// 都没有（或 0 秒）时返回 null，由调用方走「不带时长」的文案。
+  static String? callDurationText(Map<String, String> properties) {
+    final durationSec = _readDurationSeconds(properties);
+    if (durationSec != null) {
       final hours = durationSec ~/ 3600;
       final minutes = (durationSec % 3600) ~/ 60;
-      if (hours > 0 && minutes > 0) {
+      final seconds = durationSec % 60;
+
+      if (hours > 0) {
+        if (minutes == 0) return 'call_duration_hours'.tr(args: ['$hours']);
         return 'call_duration_hours_minutes'.tr(
           namedArgs: {'hours': '$hours', 'minutes': '$minutes'},
         );
       }
-      if (hours > 0) {
-        return 'call_duration_hours'.tr(args: ['$hours']);
+      if (minutes > 0) {
+        if (seconds == 0) {
+          return 'call_duration_minutes'.tr(args: ['$minutes']);
+        }
+        return 'call_duration_minutes_seconds'.tr(
+          namedArgs: {'minutes': '$minutes', 'seconds': '$seconds'},
+        );
       }
-      return 'call_duration_minutes'.tr(args: ['$minutes']);
+      return 'call_duration_seconds'.tr(args: ['$seconds']);
     }
-    final durationText = message.properties['durationText']?.toString();
-    return (durationText == null || durationText.isEmpty) ? '--' : durationText;
+
+    final durationText = properties['durationText']?.toString();
+    return (durationText == null || durationText.isEmpty) ? null : durationText;
+  }
+
+  /// 通话时长格式化（按消息）
+  ///
+  /// 无可用时长时返回 `--`；需要区分「有没有时长」的场景请用
+  /// [callDurationText]（返回 null 表示没有）。
+  static String formatCallDuration(ChatMessage message) =>
+      callDurationText(message.properties) ?? '--';
+
+  /// 读取服务端下发的通话秒数
+  ///
+  /// 非数字、负数与 0 都视为「没有可用时长」：0 秒通话不该展示「0秒」，
+  /// 也不该让上层把它当成有时长而拼出「通话已结束 --」。
+  static int? _readDurationSeconds(Map<String, String> properties) {
+    final seconds = int.tryParse(properties['duration']?.toString() ?? '');
+    return (seconds != null && seconds > 0) ? seconds : null;
   }
 
   /// 从消息中提取系统动作类型

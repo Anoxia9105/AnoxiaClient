@@ -12,6 +12,7 @@ import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.d
 import 'package:anoxia/framework/extensions/window_controller.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
+import 'package:anoxia/platform/shims/auto_start_shim.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:anoxia/platform/shims/cross_tab_session_sync_shim.dart';
 import 'package:anoxia/platform/shims/system_locale_shim.dart';
@@ -27,6 +28,7 @@ import 'package:anoxia/platform/shims/window_manager_shim.dart' as desktop;
 
 import 'app.dart';
 import 'common/constants/api.dart';
+import 'common/constants/storage_keys.dart';
 import 'common/utils/device_util.dart';
 import 'common/utils/sp_util.dart';
 import 'common/widgets/toast.dart';
@@ -45,7 +47,15 @@ import 'framework/domain/app_update_info.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:anoxia/features/update/presentation/pages/update_app.dart';
 
+/// 本次启动是否由开机自启拉起（桌面端有效，其它平台恒为 false）
+///
+/// 在窗口创建之前赋值，供 [runMainApp] 决定是否静默驻留托盘。
+bool _isAutoStartLaunch = false;
+
 /// 应用入口
+///
+/// [args] 为进程命令行参数（Windows 桌面端由原生层传入），其中
+/// `--autostart` 表示本次由开机自启拉起。
 Future<void> main(List<String> args) async {
   try {
     //  优先初始化 Flutter 核心绑定
@@ -127,6 +137,10 @@ Future<void> main(List<String> args) async {
 
     // 桌面端窗口初始化（区分主/子窗口）
     if (DeviceUtil.isRealDesktop()) {
+      // 自启标记要在窗口创建之前读取：决定本次是否静默驻留托盘。
+      _isAutoStartLaunch = args.contains(kAutoStartArg);
+      // 初始化开机自启配置（内部按平台/构建类型判定，非 Windows 正式包为空操作）
+      await autoStartSetup();
       await _handleDesktopWindows(args);
     } else {
       // 非桌面端直接启动主窗口
@@ -307,9 +321,17 @@ Future<void> runMainApp() async {
 
     // 桌面端主窗口配置（标题栏隐藏 + 更大尺寸）
     if (DeviceUtil.isRealDesktop()) {
+      // 开机自启 + 用户开启了静默启动 → 只驻留托盘，不弹主窗口
+      final silentStart = _isAutoStartLaunch &&
+          (SPUtil.instance.getBool(
+                StorageKeys.launchAtStartupSilent,
+                defValue: true,
+              ) ??
+              true);
       await setupDesktopWindow(
         size: const Size(1200, 800),
         minimumSize: const Size(800, 600),
+        showWindow: !silentStart,
       );
       // 初始化通知服务
       await NotificationHelper().init();
@@ -394,9 +416,13 @@ Future<void> runUpdateApp(AppUpdateInfo updateInfo) async {
 }
 
 /// 通用窗口初始化（可配置标题栏/尺寸）
+///
+/// [showWindow] 为 false 时只创建窗口再立即隐藏（用于开机自启的静默驻留
+/// 托盘场景）：必须先 show 一次完成窗口创建，否则托盘点击无法拉起窗口。
 Future<void> setupDesktopWindow({
   required Size size,
   required Size minimumSize,
+  bool showWindow = true,
 }) async {
   await desktop.windowManager.ensureInitialized();
   desktop.windowManager.setIcon(Assets.images.appIconIco);
@@ -412,6 +438,10 @@ Future<void> setupDesktopWindow({
 
   await desktop.windowManager.waitUntilReadyToShow(windowOptions, () async {
     await desktop.windowManager.show();
+    if (!showWindow) {
+      await desktop.windowManager.hide();
+      return;
+    }
     await desktop.windowManager.focus();
   });
 }

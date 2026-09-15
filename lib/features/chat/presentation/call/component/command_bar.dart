@@ -53,6 +53,11 @@ class CommandBar extends ConsumerWidget {
     final roomId = state.room.name ?? '';
     final isGroup = ref.watch(callIsGroupProvider(roomId));
 
+    // 屏幕共享开关的真实方向：以本地实际发布的屏幕共享轨道为准。
+    // `state.screenSharing` 由 LiveKit 事件驱动，在「刚发布」/「系统侧刚停止」
+    // 的窗口期会滞后，直接用它会把「停止共享」误判成「开始共享」。
+    final isSharingScreen = _isLocalScreenSharing(state);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
@@ -183,12 +188,18 @@ class CommandBar extends ConsumerWidget {
                     // 屏幕共享按钮
                     buildSoloButton(
                       context: context,
-                      icon: state.screenSharing
+                      icon: isSharingScreen
                           ? HugeIcons.strokeRoundedComputerRemove
                           : HugeIcons.strokeRoundedComputerScreenShare,
-                      label: 'call_share'.tr(),
-                      active: state.screenSharing,
-                      onTap: () => _toggleScreenShare(context, notifier),
+                      label: isSharingScreen
+                          ? 'call_share_stop'.tr()
+                          : 'call_share'.tr(),
+                      active: isSharingScreen,
+                      onTap: () => _toggleScreenShare(
+                        context,
+                        notifier,
+                        sharing: isSharingScreen,
+                      ),
                     ),
                     const SizedBox(width: 8),
 
@@ -347,18 +358,41 @@ class CommandBar extends ConsumerWidget {
   }
 }
 
+/// 本地是否正在共享屏幕（以实际发布的屏幕共享轨道为准）
+///
+/// 不看 `state.screenSharing` 单一字段：该字段由事件驱动更新，存在滞后窗口，
+/// 会让「停止共享」误走「开始共享」分支。没有本地参与者时回退到状态字段。
+bool _isLocalScreenSharing(RoomState state) {
+  final localParticipant = state.room.localParticipant;
+  if (localParticipant == null) return state.screenSharing;
+  return localParticipant.videoTrackPublications.any(
+    (publication) => publication.isScreenShare && !publication.muted,
+  );
+}
+
 /// 切换屏幕共享
 ///
-/// 桌面端先弹出窗口/屏幕选择对话框，选中后传入屏幕源 ID。
-/// 用户取消选择时直接终止，不触发共享。
+/// - 正在共享中（[sharing] 为 true）：直接停止，**不再弹出屏幕源选择框**。
+///   历史 Bug：此处无脑弹框，用户点「取消共享」看到选择框、再点弹窗的
+///   "取消"后 sourceId 为 null 直接 return，结果共享一直停不掉。
+/// - 未共享：桌面端先弹出窗口/屏幕选择对话框，选中后传入屏幕源 ID；
+///   用户取消选择时直接终止，不触发共享。
 Future<void> _toggleScreenShare(
   BuildContext context,
-  RoomController notifier,
-) async {
+  RoomController notifier, {
+  required bool sharing,
+}) async {
+  if (sharing) {
+    await notifier.stopScreenShare();
+    return;
+  }
+
   String? sourceId;
   if (DeviceUtil.isRealDesktop()) {
+    if (!context.mounted) return;
     sourceId = await showDesktopScreenSourcePicker(context);
+    // 用户在系统弹窗中取消选择：终止本次共享，不产生任何副作用
     if (sourceId == null) return;
   }
-  await notifier.toggleScreenShare(sourceId: sourceId);
+  await notifier.startScreenShare(sourceId: sourceId);
 }
