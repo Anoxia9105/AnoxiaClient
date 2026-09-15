@@ -588,6 +588,13 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     }
     final desktopWindow = ref.read(callWindowControllerProvider);
     if (desktopWindow != null) {
+      // 防跨房/迟到信号误关：窗口已绑定其他房间时，不接受针对别的房间的
+      // CALL_END/REJECT 关闭当前活跃窗口（CALL_END 按用户维度投递到全部连接）。
+      final activeRoom = ref.read(callWindowControllerProvider.notifier).activeRoomId;
+      if (activeRoom != null && activeRoom != roomId) {
+        debugLog('[CallInvitation] ignore terminal signal for non-active room: $roomId (active=$activeRoom)');
+        return;
+      }
       try {
         await desktopWindow.close();
       } catch (error) {

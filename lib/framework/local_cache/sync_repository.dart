@@ -147,12 +147,8 @@ class SyncRepository implements ChatRepository {
         if (remoteMessages.length < 100) break;
       }
 
-      await _local.updateSyncState(
-        scope: 'messages',
-        scopeId: convId,
-        lastSyncedAt: DateTime.now(),
-        lastSeq: maxSeq,
-      );
+      // 事务内读-算-写，只升不降；避免并发 WS push 已推进的水位被本次批次快照覆盖回退
+      await _local.advanceMessagesWatermarkAtLeast(convId, maxSeq);
     } catch (e, st) {
       debugLog('syncMessages failed: $convId', e, st);
       await _local.logSyncFailure(

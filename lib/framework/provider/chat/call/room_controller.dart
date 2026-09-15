@@ -1183,7 +1183,16 @@ class RoomController extends _$RoomController {
         'avatar': meta.avatar,
       },
     );
-    if (!sent) _notifyReactionFailed();
+    if (!sent) {
+      // 发送失败：立即移除本端刚乐观添加的 ReactionItem，避免残留 3 秒
+      final afterFail = state.value;
+      if (afterFail != null) {
+        final list = List<ReactionItem>.from(afterFail.reactions ?? [])
+          ..removeWhere((r) => r.id == item.id);
+        state = AsyncData(afterFail.copyWith(reactions: list));
+      }
+      _notifyReactionFailed();
+    }
   }
 
   /// 表情/弹幕发送失败（房间未连接或数据通道异常）时的用户提示。

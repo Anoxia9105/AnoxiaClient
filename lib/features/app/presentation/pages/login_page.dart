@@ -479,6 +479,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Future<void> _handleLogin() async {
+    // 点击登录时先收起输入法，避免键盘遮挡页面或登录后残留
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final username = _usernameCtrl.text.trim();
     final password = _passwordCtrl.text;
     final code = _codeCtrl.text.trim();

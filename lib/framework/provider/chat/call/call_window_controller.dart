@@ -27,6 +27,9 @@ class CallWindowController extends _$CallWindowController {
   /// 当前通话窗口绑定的房间 ID，用于窗口关闭时补发 CALL_END。
   String? _activeRoomId;
 
+  /// 当前通话窗口绑定的房间 ID（只读，供外部做「防跨房误关」比对；可能为 null）。
+  String? get activeRoomId => _activeRoomId;
+
   @override
   WindowController? build() {
     Channel.callChannel.setMethodCallHandler((call) async {

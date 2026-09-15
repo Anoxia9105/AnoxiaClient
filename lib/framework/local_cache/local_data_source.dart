@@ -147,6 +147,24 @@ class LocalDataSource {
     return watermark;
   }
 
+  /// 将 messages 水位单调抬升到至少 [seq]（只增不回退）。
+  ///
+  /// 事务内「读当前水位 - 取大 - 写入」，防止 incremental sync 用早期批次快照
+  /// 覆盖 WS push（_advanceMessageWatermark）已推进的水位导致水位回退，
+  /// 进而破坏 push 路径的连续性 seq+1 判定。
+  Future<void> advanceMessagesWatermarkAtLeast(String convId, int seq) async {
+    await db.transaction(() async {
+      final state = await db.syncStateDao.getState('messages', convId);
+      final current = state?.lastSeq ?? 0;
+      await db.syncStateDao.upsertState(
+        scope: 'messages',
+        scopeId: convId,
+        lastSyncedAt: DateTime.now(),
+        lastSeq: seq > current ? seq : current,
+      );
+    });
+  }
+
   Future<void> _advanceMessageWatermark(String convId, int? seq) async {
     if (seq == null || seq <= 0) return;
     final current = await db.syncStateDao.getState('messages', convId);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_audio_player_manager.dart';
@@ -58,6 +60,8 @@ class _AudioBubble extends StatefulWidget {
 class _AudioBubbleState extends State<_AudioBubble> {
   final manager = ChatAudioPlayerManager.instance;
 
+  StreamSubscription<Duration>? _positionSub;
+
   int _currentSeconds = 0;
 
   @override
@@ -68,7 +72,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
     manager.addListener(_refresh);
 
     /// 监听播放进度
-    manager.positionStream.listen((position) {
+    _positionSub = manager.positionStream.listen((position) {
       if (!mounted) return;
 
       final isCurrent = manager.playingMessageId == widget.messageId;
@@ -100,6 +104,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
   @override
   void dispose() {
     manager.removeListener(_refresh);
+    _positionSub?.cancel();
     super.dispose();
   }
 
