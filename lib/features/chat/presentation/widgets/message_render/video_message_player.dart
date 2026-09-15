@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:anoxia/common/utils/file_util.dart';
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:anoxia/common/utils/media_viewer_helper.dart';
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
 import 'package:anoxia/framework/provider/setting/general_settings_provider.dart';
@@ -9,6 +12,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_message_controls.dart';
+import 'attachment_upload_overlay.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
 class VideoMessagePlayer extends ConsumerStatefulWidget {
@@ -21,6 +25,9 @@ class VideoMessagePlayer extends ConsumerStatefulWidget {
   final int? fileSize;
   final int? durationMs;
 
+  /// 视频附件 ID（即 `clientMsgId`），用于读取即时发送的上传进度
+  final String? attachmentId;
+
   const VideoMessagePlayer({
     super.key,
     required this.heroTag,
@@ -31,6 +38,7 @@ class VideoMessagePlayer extends ConsumerStatefulWidget {
     this.fileName,
     this.fileSize,
     this.durationMs,
+    this.attachmentId,
   });
 
   @override
@@ -46,11 +54,14 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
   bool _isMuted = true;
   bool _showControls = true;
 
+  /// 视频还指向本地文件（「即时发送」上传中）：拿不到可播放的地址
+  bool get _isPendingUpload => isPendingLocalMediaUrl(widget.videoUrl);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || _isPendingUpload) return;
       final autoPlay = ref.read(autoPlayMediaProvider);
       final reduceMotion = ref.read(reduceMotionProvider);
       if (autoPlay && !reduceMotion) {
@@ -59,8 +70,23 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant VideoMessagePlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoUrl == widget.videoUrl) return;
+    // 上传完成后附件地址由本地路径换成服务器地址：需要重新初始化播放器，
+    // 否则状态被复用、播放器会一直停在未初始化态。
+    if (_isPendingUpload) return;
+    _hasError = false;
+    final autoPlay = ref.read(autoPlayMediaProvider);
+    final reduceMotion = ref.read(reduceMotionProvider);
+    if (autoPlay && !reduceMotion) {
+      unawaited(_initAndPlay(muted: true));
+    }
+  }
+
   Future<void> _initAndPlay({required bool muted}) async {
-    if (_initializing || _initialized) return;
+    if (_initializing || _initialized || _isPendingUpload) return;
     setState(() {
       _initializing = true;
       _hasError = false;
@@ -116,6 +142,7 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
   }
 
   Future<void> _togglePlay() async {
+    if (_isPendingUpload) return;
     if (_hasError) {
       setState(() => _hasError = false);
       await _initAndPlay(muted: _isMuted);
@@ -285,41 +312,47 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
                           onTap: _togglePlay,
                           child: buildHeroWrapper(_placeholder(colorScheme)),
                         ),
-                    _bottomGradient(),
-                    if (!_initializing) _playButton(),
-                    if (_initializing)
-                      const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.6,
-                          color: Colors.white,
-                        ),
-                      ),
-                    if (_showControls) _topControls(),
-                    _mediaInfo(durationText, sizeText),
-                    if (_initialized && _controller != null)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: VideoProgressIndicator(
-                          _controller!,
-                          allowScrubbing: true,
-                          colors: VideoProgressColors(
-                            playedColor: colorScheme.primary,
-                            bufferedColor: Colors.white.withValues(alpha: 0.35),
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.22,
-                            ),
+                      _bottomGradient(),
+                      if (!_initializing && !_isPendingUpload) _playButton(),
+                      if (_initializing)
+                        const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.6,
+                            color: Colors.white,
                           ),
-                          padding: const EdgeInsets.only(top: 8),
                         ),
+                      if (_showControls && !_isPendingUpload) _topControls(),
+                      _mediaInfo(durationText, sizeText),
+                      if (_initialized && _controller != null)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: VideoProgressIndicator(
+                            _controller!,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: colorScheme.primary,
+                              bufferedColor: Colors.white.withValues(
+                                alpha: 0.35,
+                              ),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.22,
+                              ),
+                            ),
+                            padding: const EdgeInsets.only(top: 8),
+                          ),
+                        ),
+                      if (_hasError && !_isPendingUpload) _errorOverlay(),
+                      // 上传中：遮罩 + 进度环（本地视频没有可播放地址，不显示播放器态）
+                      AttachmentUploadOverlay(
+                        attachmentId: widget.attachmentId,
                       ),
-                    if (_hasError) _errorOverlay(),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           ),
           if (widget.fileName != null &&
               widget.fileName!.trim().isNotEmpty) ...[

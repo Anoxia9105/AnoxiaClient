@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
-import 'dart:io';
 
+import 'package:anoxia/common/widgets/attachment_image_view.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,8 +43,8 @@ class QuillImageBuild implements EmbedBuilder {
               color: isFailed
                   ? Colors.redAccent
                   : isUploading
-                      ? scheme.primary.withValues(alpha: 0.35)
-                      : Colors.grey.withValues(alpha: 0.18),
+                  ? scheme.primary.withValues(alpha: 0.35)
+                  : Colors.grey.withValues(alpha: 0.18),
               width: isFailed ? 2 : 1.2,
             ),
             boxShadow: [
@@ -64,9 +63,19 @@ class QuillImageBuild implements EmbedBuilder {
               children: [
                 Opacity(
                   opacity: isFailed ? 0.45 : 1.0,
-                  child: _buildEmbeddedImage(
-                    attachment.url,
-                    ref.read(chatImageUploadControllerProvider.notifier).bytesOf(attachment.id),
+                  child: AttachmentImageView(
+                    url: attachment.url,
+                    bytes: ref
+                        .read(chatImageUploadControllerProvider.notifier)
+                        .bytesOf(attachment.id),
+                    fit: BoxFit.cover,
+                    errorWidget: (_, _, _) => const Center(
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedImageNotFound01,
+                        size: 36,
+                        color: Colors.grey,
+                      ),
+                    ),
                   ),
                 ),
                 // 上传中半透明遮罩 + 确定性进度环
@@ -92,12 +101,20 @@ class QuillImageBuild implements EmbedBuilder {
                                   value: progress > 0 ? progress : null,
                                   strokeWidth: 3,
                                   color: Colors.white,
-                                  backgroundColor: Colors.white.withValues(alpha: 0.22),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.22,
+                                  ),
                                 ),
                               ),
                               Text(
-                                progress > 0 ? '${(progress * 100).round()}%' : '',
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                progress > 0
+                                    ? '${(progress * 100).round()}%'
+                                    : '',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ],
                           ),
@@ -115,18 +132,35 @@ class QuillImageBuild implements EmbedBuilder {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
-                            child: const HugeIcon(icon: HugeIcons.strokeRoundedCloudOff, color: Colors.white, size: 22),
+                            decoration: const BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const HugeIcon(
+                              icon: HugeIcons.strokeRoundedCloudOff,
+                              color: Colors.white,
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'upload_failed'.tr(),
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, shadows: [Shadow(color: Colors.black54, blurRadius: 4)]),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              shadows: [
+                                Shadow(color: Colors.black54, blurRadius: 4),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'upload_failed_retry'.tr(),
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 10),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 10,
+                            ),
                           ),
                         ],
                       ),
@@ -139,8 +173,15 @@ class QuillImageBuild implements EmbedBuilder {
                     right: 6,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), shape: BoxShape.circle),
-                      child: const HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, size: 14, color: Color(0xFF4CAF50)),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                        size: 14,
+                        color: Color(0xFF4CAF50),
+                      ),
                     ),
                   ),
                 // 底部确定性进度条
@@ -157,7 +198,12 @@ class QuillImageBuild implements EmbedBuilder {
                     ),
                   ),
                 if (isFailed)
-                  Positioned(left: 0, right: 0, bottom: 0, child: Container(height: 4, color: Colors.redAccent)),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(height: 4, color: Colors.redAccent),
+                  ),
               ],
             ),
           ),
@@ -167,43 +213,10 @@ class QuillImageBuild implements EmbedBuilder {
   }
 
   /// Web 端不支持 dart:io 的 File / Image.file。
-  /// 富文本内的图片嵌入统一优先按远程地址（http/https）用 Image.network 渲染；
-  /// 仅非 Web 且为本地路径时才回退到 Image.file，避免触发
+  /// 富文本内的图片嵌入统一复用 [AttachmentImageView]：远程地址走带缓存的
+  /// 网络图，非 Web 且为本地路径时才回退到 Image.file，Web 端本地待上传
+  /// 图片回退到内存 bytes，避免触发
   /// "Unsupported operation: Platform._operatingSystem"。
-  /// Web 端本地待上传图片（url 为空）回退到 bytes 内存预览。
-  Widget _buildEmbeddedImage(String? url, Uint8List? bytes) {
-    if (bytes != null && bytes.isNotEmpty && kIsWeb) {
-      return Image.memory(
-        bytes,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const Center(
-          child: HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 36, color: Colors.grey),
-        ),
-      );
-    }
-
-    if (url == null || url.isEmpty) {
-      return const Center(
-        child: HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 36, color: Colors.grey),
-      );
-    }
-
-    final isRemote =
-        url.startsWith('http://') || url.startsWith('https://');
-
-    if (isRemote || kIsWeb) {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const Center(
-          child: HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 36, color: Colors.grey),
-        ),
-      );
-    }
-
-    return Image.file(File(url), fit: BoxFit.cover);
-  }
-
   @override
   WidgetSpan buildWidgetSpan(Widget widget) =>
       WidgetSpan(child: widget, alignment: PlaceholderAlignment.bottom);

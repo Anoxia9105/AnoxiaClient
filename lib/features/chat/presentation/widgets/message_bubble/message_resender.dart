@@ -4,13 +4,17 @@
 /// 独立封装便于单元测试和复用。
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/protocol/message/room_message.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/ws/ws_controller.dart';
 
@@ -24,10 +28,27 @@ class MessageResender {
   /// 1. 将消息状态改为“发送中”
   /// 2. 构造 RoomMessage 并通过 WebSocket 发送
   /// 3. 启动超时定时器，超时后标记为失败
+  ///
+  /// 例外：媒体附件仍指向本地文件（上传就没成功）时**不能**直接重发协议帧，
+  /// 否则会把本地路径当成 URL 发给服务端。这种情况交给输入控制器先重传文件。
   static void resend(WidgetRef ref, ChatMessage message) {
     final roomId = message.roomId;
     if (roomId == null || roomId.isEmpty) {
       debugLog('重发失败：消息缺少 roomId');
+      return;
+    }
+
+    if (_hasPendingLocalMedia(message)) {
+      unawaited(
+        ref
+            .read(chatInputControllerProvider(roomId).notifier)
+            .retryLocalMediaMessage(message)
+            .then((handled) {
+              if (!handled) {
+                debugLog('重传失败：本地文件已不可用，请重新选择文件发送');
+              }
+            }),
+      );
       return;
     }
 
@@ -55,6 +76,15 @@ class MessageResender {
       ImPacketV6.encodeRoomMessageFrame(protoMsg),
       clientMsgId: clientMsgId,
       ackTimeout: Duration(seconds: _resendTimeoutSeconds(message)),
+    );
+  }
+
+  /// 附件里是否还有未上传完成的本地路径
+  static bool _hasPendingLocalMedia(ChatMessage message) {
+    final attachments = message.payload?.mediaAttachments;
+    if (attachments == null || attachments.isEmpty) return false;
+    return attachments.any(
+      (attachment) => isPendingLocalMediaUrl(attachment.url),
     );
   }
 

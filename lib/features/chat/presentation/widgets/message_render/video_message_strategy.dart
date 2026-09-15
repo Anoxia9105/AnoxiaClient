@@ -32,6 +32,7 @@ class VideoMessageStrategy extends MessageRenderStrategy {
       fileName: video.name,
       fileSize: video.size,
       durationMs: message.payload?.audioDuration,
+      attachmentId: video.id,
     );
   }
 }

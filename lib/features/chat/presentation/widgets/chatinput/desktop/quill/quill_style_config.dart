@@ -129,15 +129,29 @@ class QuillStyleConfig {
         null,
         // 任务列表复选框放大到 18px，点击区域更大、更易操作。
         checkboxBuilder ?? const _TaskCheckboxBuilder(),
-        // 任务列表的引导槽加宽：18px 复选框按真实尺寸渲染，
-        // 与正文之间留出约 10px 间距，避免复选框紧贴文字。
+        // 块级内容的单行水平内衬（每行正文的左右 padding）。
+        //
+        // ⚠️ 这个回调对**每一个 Block** 都会被调用（不只是列表），返回的是该块内
+        // 每一行正文的左右 padding：右侧会直接吃掉正文可用宽度，左侧会与 leading
+        // （复选框 / 编号 / 行号）共用同一个槽位。
+        //
+        // 右侧必须恒为 0 —— flutter_quill 的默认实现里右侧也永远是 0。原因：
+        // 消息气泡的宽度是按正文实测出来的
+        // （quill_internal_renderer.dart 的 `_measureInlineContentWidth`），渲染端
+        // 多出来的 16px 右内衬会让正文可用宽度比气泡窄 16px，**行尾最后一个字被挤到
+        // 下一行**。普通段落是 Line 节点，走段落样式的 horizontalSpacing(0,0)，
+        // 所以只有块级内容（引用 / 列表 / 代码块）会中招。
+        //
+        // 左侧保留 16px 做页面留白（测量端按 24px = 16 + 余量预留）；任务列表的
+        // 引导槽加宽到 28px —— 18px 复选框按真实尺寸渲染，与正文之间留约 10px 间距，
+        // 避免复选框紧贴文字。
         indentWidthBuilder: (block, context, count, numberPointWidth) {
           final listAttr = block.style.attributes[Attribute.list.key];
           final isCheck =
               listAttr == Attribute.checked || listAttr == Attribute.unchecked;
           return isCheck
-              ? const HorizontalSpacing(28, 16)
-              : const HorizontalSpacing(16, 16);
+              ? const HorizontalSpacing(28, 0)
+              : const HorizontalSpacing(16, 0);
         },
         numberPointWidthBuilder: (fontSize, count) => 24.0,
       ),

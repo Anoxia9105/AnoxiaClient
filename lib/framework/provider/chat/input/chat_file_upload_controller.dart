@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:anoxia/common/utils/media_kind_resolver.dart';
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/utils/media_mime_type.dart';
 import 'package:anoxia/common/utils/video_metadata_util.dart';
@@ -10,6 +11,7 @@ import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
@@ -43,6 +45,12 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   /// 服务端返回的可信媒体元数据，以附件 ID 关联到发送链路。
   final Map<String, UploadFileResult> _uploadResults = {};
 
+  /// 由富文本编辑器插入的附件 ID
+  ///
+  /// [retain] 只允许裁剪这部分记录。「即时发送」链路
+  /// （sendPickedAttachments）的附件不在编辑器文档里，不能被文档变化误清。
+  final Set<String> _editorOwnedIds = {};
+
   @override
   Map<String, UploadEntry> build() => {};
 
@@ -50,7 +58,10 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   ///
   /// [controller] Quill 编辑器控制器
   ///
-  /// 弹出文件选择器，允许用户选择多个文件，验证通过后插入编辑器并后台上传
+  /// 弹出文件选择器，允许用户选择多个文件，验证通过后插入编辑器并后台上传。
+  /// `FileType.any` 意味着这里可能选到**图片**：图片必须按图片处理
+  /// （插图片 embed + 交给图片上传控制器），否则编辑器里显示成文件 chip、
+  /// 发送时又变成图片消息，两端类型对不上。
   Future<void> selectFiles(QuillController controller) async {
     // final result = await FilePicker.platform.pickFiles(
     final result = await FilePicker.pickFiles(
@@ -66,40 +77,48 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       return;
     }
 
-    final List<Attachment> uploadList = [];
+    final toast = ref.read(toastServiceProvider);
+    final imageFiles = <PlatformFile>[];
+    final otherFiles = <Attachment>[];
     for (final file in result.files) {
-      if (!UploadValidator.validateSingleFile(
-        ref.read(toastServiceProvider),
-        file,
-      )) {
+      if (!UploadValidator.validateSingleFile(toast, file)) {
+        continue;
+      }
+      final kind = resolvePickedMediaKind(
+        name: file.name,
+        extension: file.extension,
+      );
+      if (kind == PickedMediaKind.image) {
+        imageFiles.add(file);
         continue;
       }
       final id = const Uuid().v4();
       if (file.bytes != null) {
         _filesById[id] = file;
       }
-      final ext = file.extension?.toLowerCase();
-      final isVideo = _isVideoExtension(ext, file.name);
-      final mime = isVideo
-          ? _mimeForVideo(ext)
-          : mediaMimeTypeForName(file.name);
-      final kind = isVideo ? 'VIDEO' : 'FILE';
-      uploadList.add(
+      otherFiles.add(
         Attachment(
           id: id,
-          kind: kind,
+          kind: kind == PickedMediaKind.video ? 'VIDEO' : 'FILE',
           url: file.path,
           name: file.name,
           size: file.size,
-          type: mime,
+          type: mediaMimeTypeForName(file.name),
         ),
       );
     }
-    if (uploadList.isEmpty) return;
 
-    _markUploading(uploadList);
+    if (imageFiles.isNotEmpty) {
+      await ref
+          .read(chatImageUploadControllerProvider.notifier)
+          .insertPickedImages(controller, imageFiles);
+    }
+    if (otherFiles.isEmpty) return;
 
-    for (final a in uploadList) {
+    _markUploading(otherFiles);
+    _editorOwnedIds.addAll(otherFiles.map((a) => a.id!));
+
+    for (final a in otherFiles) {
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: 'file',
@@ -107,7 +126,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       );
     }
 
-    unawaited(uploadFiles(uploadList));
+    unawaited(uploadFiles(otherFiles));
   }
 
   /// 上传文件到服务器
@@ -253,8 +272,11 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   ///
   /// 用户退格删除正在上传/已失败的 embed 时，若不清理对应记录，
   /// 工具栏发送按钮会一直处于禁用状态（Web/桌面端）。
+  ///
+  /// 注意：只裁剪 [_editorOwnedIds] 里的记录。「即时发送」链路的附件不在
+  /// 编辑器文档里，文档任何变化都不该影响它们。
   void retain(Set<String> ids) {
-    final removed = state.keys.where((id) => !ids.contains(id)).toList();
+    final removed = _editorOwnedIds.where((id) => !ids.contains(id)).toList();
     if (removed.isEmpty) return;
     for (final id in removed) {
       ref.read(uploadRepositoryProvider).cancelUpload(id);
@@ -262,7 +284,20 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       _videoMetadata.remove(id);
       _uploadResults.remove(id);
     }
-    state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));
+    _editorOwnedIds.removeAll(removed);
+    state = Map.of(state)..removeWhere((id, _) => removed.contains(id));
+  }
+
+  /// 释放某个附件的上传记录（不取消上传）
+  ///
+  /// 即时发送链路在消息发出后调用，避免本地字节与元数据随聊天记录持续增长。
+  void release(String id) {
+    _filesById.remove(id);
+    _videoMetadata.remove(id);
+    _uploadResults.remove(id);
+    _editorOwnedIds.remove(id);
+    if (!state.containsKey(id)) return;
+    state = Map.of(state)..remove(id);
   }
 
   /// 供 DeltaProcessor 使用：只返回上传成功的 id -> url 映射
@@ -277,6 +312,7 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     _filesById.clear();
     _videoMetadata.clear();
     _uploadResults.clear();
+    _editorOwnedIds.clear();
   }
 
   /// 获取附件对应的内存字节（Web 端本地预览用），无则返回 null
@@ -332,53 +368,5 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     );
     if (meta.durationMs == null || meta.durationMs! <= 0) return;
     _videoMetadata[a.id!] = meta;
-  }
-
-  bool _isVideoExtension(String? ext, String fileName) {
-    const videoExts = {
-      'mp4',
-      'mov',
-      'avi',
-      'mkv',
-      'webm',
-      'm4v',
-      'flv',
-      '3gp',
-      'wmv',
-      'mpeg',
-      'mpg',
-    };
-    final lowerExt = ext?.toLowerCase();
-    if (lowerExt != null && videoExts.contains(lowerExt)) return true;
-    final lowerName = fileName.toLowerCase();
-    for (final v in videoExts) {
-      if (lowerName.endsWith('.$v')) return true;
-    }
-    return false;
-  }
-
-  String _mimeForVideo(String? ext) {
-    switch (ext?.toLowerCase()) {
-      case 'mp4':
-        return 'video/mp4';
-      case 'mov':
-        return 'video/quicktime';
-      case 'webm':
-        return 'video/webm';
-      case 'mkv':
-        return 'video/x-matroska';
-      case 'avi':
-        return 'video/x-msvideo';
-      case 'm4v':
-        return 'video/x-m4v';
-      case 'flv':
-        return 'video/x-flv';
-      case '3gp':
-        return 'video/3gpp';
-      case 'wmv':
-        return 'video/x-ms-wmv';
-      default:
-        return 'video/${ext ?? 'mp4'}';
-    }
   }
 }

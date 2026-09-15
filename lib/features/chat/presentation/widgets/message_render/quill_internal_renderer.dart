@@ -23,6 +23,14 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 /// `dart.library.html` 仅在 JS 版 Web 为 true、WASM 版为 false 的特性来判定。
 const _kIsWasm = kIsWeb && !bool.fromEnvironment('dart.library.html');
 
+/// WASM 分支自绘引用块的文字左内衬与竖条宽度。
+///
+/// 这两个值决定引用块的文字起始位置，必须与 [_measureInlineContentWidth] 里
+/// 为引用块预留的宽度保持同量级，否则自绘分支会出现完全一样的「最后一个字
+/// 被换行」问题。
+const double _kWasmQuoteTextInset = 12;
+const double _kWasmQuoteBarWidth = 4;
+
 class QuillInternalRenderer extends StatefulWidget {
   final ChatMessage message;
   final Color textColor;
@@ -304,12 +312,17 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     final opsJson = _rawDeltaOps;
     if (opsJson is! List) return 64;
 
-    // WASM 分支渲染使用 SelectableText.rich，Flutter 会把
-    // `DefaultTextStyle.of(context).style.merge(spanStyle)` 应用到最终样式上
-    // （见 selectable_text.dart），于是 span 中为 null 的字形属性（如
-    // letterSpacing）会继承气泡默认样式。测量时必须使用同一份已合并的样式，
-    // 否则继承下来的 letterSpacing 会让实际渲染行宽大于测量值，最后一个字
-    // 被挤到下一行。桌面分支用 QuillEditor，样式不走此合并路径，故保持原样。
+    // 宽度契约：气泡宽度由这里「测」出来，文字却由 Quill（桌面/移动）或
+    // `Text.rich`（WASM）「画」出来。两边只要不同源，测窄了行尾最后一个字就会
+    // 被挤到下一行 —— 这是本类「最后一个字被换行」问题的唯一来源。
+    //
+    // WASM 分支：`Text.rich` 会执行
+    // `DefaultTextStyle.of(context).style.merge(spanStyle)`，span 中为 null 的
+    // 字形属性（如 letterSpacing）会继承气泡默认样式，测量必须用同一份已合并
+    // 的样式；桌面/移动分支用 QuillEditor，`TextLine` 把样式直接挂在 `TextSpan`
+    // 上（不经过 DefaultTextStyle 合并），故用裸样式。
+    // 行内样式本身由 [_inlineStyle] 统一产出，它必须与 flutter_quill
+    // `_getInlineTextStyle()` 保持一致 —— 尤其是行内代码的字体族/字号。
     final baseStyle = _useWasmRenderer
         ? _wasmRenderStyle(context)
         : _wasmBaseStyle(context);
@@ -383,8 +396,15 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     }
 
     // 给字形取整和 Quill 行布局留少量余量，避免临界宽度提前换行。
-    // Leave room for the quote bar and its inset, but keep short quotes
-    // compact instead of forcing them to occupy the full message width.
+    //
+    // 引用块（blockquote）另外预留左侧竖条的宽度：块级内容在桌面/移动端由
+    // flutter_quill 渲染，其每一行都会再套一层 `QuillStyleConfig.indentWidthBuilder`
+    // 给出的水平内衬（左 16px、右 0 —— 右侧为 0 是硬要求，见该回调的注释）。
+    // 左侧这 16px 必须在这里预留，否则引用正文可用宽度比气泡宽，行尾最后一个字
+    // 会被换到下一行；取 24（16 + 8 余量）是安全值，这里只能多留、绝不能少留。
+    //
+    // WASM 分支的引用块是自绘的（`Container(padding: left: 12)` + 4px 竖条 ≈ 16），
+    // 与上者同量级，24 同样覆盖。
     final blockQuoteInset = hasBlockQuote ? 24.0 : 0.0;
     return (widestLine.ceilToDouble() + blockQuoteInset + 2)
         .clamp(0.0, maxWidth)
@@ -424,12 +444,12 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
       final richText = Text.rich(TextSpan(style: baseStyle, children: spans));
       children.add(
         isBlockQuote
-            ? Container(
-                padding: const EdgeInsets.only(left: 12),
+              ? Container(
+                padding: const EdgeInsets.only(left: _kWasmQuoteTextInset),
                 decoration: BoxDecoration(
                   border: Border(
                     left: BorderSide(
-                      width: 4,
+                      width: _kWasmQuoteBarWidth,
                       color: Theme.of(context).colorScheme.outlineVariant,
                     ),
                   ),
@@ -625,6 +645,16 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     );
   }
 
+  /// 解析单个 Delta op 的行内样式。
+  ///
+  /// ⚠️ 这个返回值有两重身份，改任何一项前都必须同时考虑两边：
+  /// 1. **测量依据**：[_measureInlineContentWidth] 用它算出气泡宽度；
+  /// 2. **渲染样式**：WASM 分支（[_buildWasmRichText]）直接用它绘制文字，
+  ///    桌面分支则由 flutter_quill 用 `QuillStyleConfig` 绘制。
+  ///
+  /// 因此每一项都必须与 flutter_quill `_getInlineTextStyle()` 的合并结果一致。
+  /// 一旦两边不同源，「测出来的行宽」≠「真实渲染行宽」，测窄时行尾最后一个字
+  /// 会被挤到下一行（气泡宽度是写死的，文字却按真实宽度排版）。
   TextStyle _inlineStyle(
     BuildContext context,
     TextStyle baseStyle,
@@ -636,13 +666,15 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     final isInlineCode = attributes['code'] == true;
     final foreground = _quillColor(attributes['color']);
     final background = _quillColor(attributes['background']);
+    final explicitSize = _quillFontSize(attributes['size']);
+    final explicitFont = _quillFontFamily(attributes['font']);
     final decorations = <TextDecoration>[
       if (attributes['underline'] == true || link?.isNotEmpty == true)
         TextDecoration.underline,
       if (attributes['strike'] == true) TextDecoration.lineThrough,
     ];
 
-    return baseStyle.copyWith(
+    final style = baseStyle.copyWith(
       color:
           foreground ??
           (link?.isNotEmpty == true ? Colors.blueAccent : baseStyle.color),
@@ -653,14 +685,34 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
               : null),
       fontWeight: attributes['bold'] == true ? FontWeight.bold : null,
       fontStyle: attributes['italic'] == true ? FontStyle.italic : null,
-      fontSize: _quillFontSize(attributes['size']),
-      fontFamily: isInlineCode
-          ? 'monospace'
-          : _quillFontFamily(attributes['font']),
+      fontSize: explicitSize,
+      fontFamily: explicitFont,
       decoration: decorations.isEmpty
           ? null
           : TextDecoration.combine(decorations),
     );
+
+    if (!isInlineCode) return style;
+
+    // 行内代码必须使用**与编辑器同源**的字体族/字号（`JetBrainsMono` 13px）。
+    //
+    // flutter_quill 的 `_getInlineTextStyle()` 在合并完行内属性后才叠加
+    // `DefaultStyles.inlineCode`，随后再让显式的 font/size/color/background 覆盖，
+    // 所以这里必须复刻同一顺序：先 merge 掉 `QuillStyleConfig.codeTextStyle`，
+    // 再用显式属性覆盖回来。
+    //
+    // 之前的实现写的是 `fontFamily: 'monospace'` + 继承的 14px：`monospace` 不是
+    // Windows 的系统字体族（Windows 叫 Consolas / Courier New），会回退到更窄的
+    // 默认 UI 字体，于是测量宽度小于渲染宽度、气泡偏窄，行尾最后一个字被换行；
+    // macOS/Linux 的 monospace 回退更宽，所以只在 Windows 上暴露。
+    return style
+        .merge(QuillStyleConfig.codeTextStyle(context))
+        .copyWith(
+          fontFamily: explicitFont,
+          fontSize: explicitSize,
+          color: foreground,
+          backgroundColor: background,
+        );
   }
 
   double? _quillFontSize(dynamic value) {

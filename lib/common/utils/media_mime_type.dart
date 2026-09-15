@@ -16,6 +16,8 @@ String mediaMimeTypeForName(String fileName, {String? declaredType}) {
     'bmp' => 'image/bmp',
     'heic' => 'image/heic',
     'heif' => 'image/heif',
+    'tif' || 'tiff' => 'image/tiff',
+    'avif' => 'image/avif',
     'svg' => 'image/svg+xml',
     'pdf' => 'application/pdf',
     'txt' => 'text/plain',
@@ -42,6 +44,11 @@ String mediaMimeTypeForName(String fileName, {String? declaredType}) {
     'webm' => 'video/webm',
     'mkv' => 'video/x-matroska',
     'avi' => 'video/x-msvideo',
+    'm4v' => 'video/x-m4v',
+    'flv' => 'video/x-flv',
+    '3gp' => 'video/3gpp',
+    'wmv' => 'video/x-ms-wmv',
+    'mpeg' || 'mpg' => 'video/mpeg',
     _ => 'application/octet-stream',
   };
 }

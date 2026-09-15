@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import 'package:anoxia/common/utils/media_url_util.dart';
 import '../domain/chat_contact_vo.dart';
 import '../domain/chat_message.dart';
 import '../domain/chat_room_vo.dart';
@@ -334,7 +335,22 @@ class LocalDataSource {
 
   Future<List<ChatMessage>> pendingOutgoingMessages() async {
     final rows = await db.messageDao.getPendingOutgoingMessages();
-    return rows.map(_messageFromRow).toList();
+    // 兜底过滤：payload 里还是本地路径的消息不允许重放。
+    // 正常路径下这类消息不会落库（见 ChatMessages.upsertMessage），
+    // 但历史数据/异常写入仍可能留下脏行，重放会把本地路径当 URL 发给服务端。
+    return rows
+        .map(_messageFromRow)
+        .where((message) => !_hasPendingLocalMedia(message))
+        .toList();
+  }
+
+  /// 消息的媒体附件里是否还有未上传完成的本地路径
+  bool _hasPendingLocalMedia(ChatMessage message) {
+    final attachments = message.payload?.mediaAttachments;
+    if (attachments == null || attachments.isEmpty) return false;
+    return attachments.any(
+      (attachment) => isPendingLocalMediaUrl(attachment.url),
+    );
   }
 
   Future<ChatMessage?> getMessageByClientMsgId(String clientMsgId) async {
@@ -601,8 +617,9 @@ class LocalDataSource {
   ChatMessage _messageFromRow(CachedMessage row) {
     final payloadMap = _decodeJsonMap(row.payloadJson);
     final propertiesMap = _decodeJsonMap(row.propertiesJson);
-    final payload =
-        payloadMap == null ? null : MessagePayload.fromJson(payloadMap);
+    final payload = payloadMap == null
+        ? null
+        : MessagePayload.fromJson(payloadMap);
     final baseProperties =
         propertiesMap?.map(
           (key, value) => MapEntry(key, value?.toString() ?? ''),

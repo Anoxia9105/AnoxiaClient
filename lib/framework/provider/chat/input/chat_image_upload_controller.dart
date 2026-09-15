@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui;
 
+import 'package:anoxia/common/utils/image_size_util.dart';
 import 'package:anoxia/common/utils/quill_embed_util.dart';
 import 'package:anoxia/common/utils/media_mime_type.dart';
 import 'package:anoxia/domain/models/upload_file_result.dart';
@@ -39,6 +39,13 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   final Map<String, PlatformFile> _filesById = {};
   final Map<String, UploadFileResult> _uploadResults = {};
 
+  /// 由富文本编辑器插入的附件 ID
+  ///
+  /// [retain] 只允许裁剪这部分记录：编辑器里的 embed 被用户删除才该取消上传。
+  /// 「即时发送」链路（sendPickedAttachments）的附件不在编辑器里，文档任何
+  /// 变化都不能把它们清掉，否则正在上传的文件会被静默取消。
+  final Set<String> _editorOwnedIds = {};
+
   @override
   Map<String, UploadEntry> build() => {};
 
@@ -63,7 +70,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       if (!UploadValidator.validateSingleFile(toast, tempFile)) return;
 
       final id = const Uuid().v4();
-      final imageSize = await _readImageSizeFromBytes(imageBytes);
+      final imageSize = await readImageSizeFromBytes(imageBytes);
       String? localUrl;
       if (kIsWeb) {
         _filesById[id] = tempFile;
@@ -88,6 +95,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
       // 立即标记为 uploading，再插入 embed，彻底消灭空窗期
       _markUploading([attachment]);
+      _editorOwnedIds.add(id);
 
       QuillEmbedUtil.insertEmbed(
         controller: controller,
@@ -134,8 +142,8 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         _filesById[id] = file;
       }
       final imageSize = file.path != null
-          ? await _readImageSizeFromFile(file.path!)
-          : await _readImageSizeFromBytes(file.bytes ?? Uint8List(0));
+          ? await readImageSizeFromFile(file.path!)
+          : await readImageSizeFromBytes(file.bytes ?? Uint8List(0));
       uploadList.add(
         Attachment(
           id: id,
@@ -143,7 +151,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           url: file.path,
           name: file.name,
           size: file.size,
-          type: _imageMimeType(file.extension),
+          type: mediaMimeTypeForName(file.name),
           width: imageSize.$1,
           height: imageSize.$2,
         ),
@@ -153,6 +161,55 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
     // 先全部标记 uploading，再插入 embed
     _markUploading(uploadList);
+    _editorOwnedIds.addAll(uploadList.map((a) => a.id!));
+
+    for (final a in uploadList) {
+      QuillEmbedUtil.insertEmbed(
+        controller: controller,
+        type: BlockEmbed.imageType,
+        data: a.toJson(),
+      );
+    }
+
+    unawaited(uploadImages(uploadList));
+  }
+
+  /// 插入一批已经由外部选择好的图片（桌面端「文件」入口选到图片时复用）
+  ///
+  /// 与 [selectImages] 的差别只有"选择器已经调过了"：插入 embed、登记
+  /// 编辑器归属、发起后台上传的流程完全一致，保证编辑器所见与发送后类型统一。
+  Future<void> insertPickedImages(
+    QuillController controller,
+    List<PlatformFile> files,
+  ) async {
+    if (files.isEmpty) return;
+
+    final List<Attachment> uploadList = [];
+    for (final file in files) {
+      final id = const Uuid().v4();
+      if (file.bytes != null) {
+        _filesById[id] = file;
+      }
+      final imageSize = file.path != null
+          ? await readImageSizeFromFile(file.path!)
+          : await readImageSizeFromBytes(file.bytes ?? Uint8List(0));
+      uploadList.add(
+        Attachment(
+          id: id,
+          kind: 'IMAGE',
+          url: file.path,
+          name: file.name,
+          size: file.size,
+          type: mediaMimeTypeForName(file.name),
+          width: imageSize.$1,
+          height: imageSize.$2,
+        ),
+      );
+    }
+    if (uploadList.isEmpty) return;
+
+    _markUploading(uploadList);
+    _editorOwnedIds.addAll(uploadList.map((a) => a.id!));
 
     for (final a in uploadList) {
       QuillEmbedUtil.insertEmbed(
@@ -297,15 +354,31 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   ///
   /// 用户退格删除正在上传/已失败的 embed 时，若不清理对应记录，
   /// 工具栏发送按钮会一直处于禁用状态（Web/桌面端）。
+  ///
+  /// 注意：只裁剪 [_editorOwnedIds] 里的记录。「即时发送」链路
+  /// （sendPickedAttachments）的附件不在编辑器文档里，文档任何变化都不该
+  /// 影响它们 —— 否则上传会被静默取消，用户看到气泡永远停在 0%。
   void retain(Set<String> ids) {
-    final removed = state.keys.where((id) => !ids.contains(id)).toList();
+    final removed = _editorOwnedIds.where((id) => !ids.contains(id)).toList();
     if (removed.isEmpty) return;
     for (final id in removed) {
       ref.read(uploadRepositoryProvider).cancelUpload(id);
       _filesById.remove(id);
       _uploadResults.remove(id);
     }
-    state = Map.of(state)..removeWhere((id, _) => !ids.contains(id));
+    _editorOwnedIds.removeAll(removed);
+    state = Map.of(state)..removeWhere((id, _) => removed.contains(id));
+  }
+
+  /// 释放某个附件的上传记录（不取消上传）
+  ///
+  /// 即时发送链路在消息发出后调用，避免 `_filesById` / state 随聊天记录持续增长。
+  void release(String id) {
+    _filesById.remove(id);
+    _uploadResults.remove(id);
+    _editorOwnedIds.remove(id);
+    if (!state.containsKey(id)) return;
+    state = Map.of(state)..remove(id);
   }
 
   /// 供 DeltaProcessor 使用：只返回上传成功的 id -> url 映射
@@ -325,34 +398,6 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     state = {};
     _filesById.clear();
     _uploadResults.clear();
-  }
-
-  Future<(int?, int?)> _readImageSizeFromBytes(Uint8List bytes) async {
-    try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final size = (image.width, image.height);
-      image.dispose();
-      codec.dispose();
-      return size;
-    } catch (_) {
-      return (null, null);
-    }
-  }
-
-  Future<(int?, int?)> _readImageSizeFromFile(String path) async {
-    try {
-      return _readImageSizeFromBytes(await File(path).readAsBytes());
-    } catch (_) {
-      return (null, null);
-    }
-  }
-
-  String _imageMimeType(String? extension) {
-    final ext = extension?.toLowerCase();
-    if (ext == null || ext.isEmpty) return 'image/jpeg';
-    if (ext == 'jpg') return 'image/jpeg';
-    return 'image/$ext';
+    _editorOwnedIds.clear();
   }
 }

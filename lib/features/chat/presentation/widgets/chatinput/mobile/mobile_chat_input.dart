@@ -175,15 +175,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final result = await FilePicker.pickFiles(allowMultiple: true, type: type);
     if (result == null || result.files.isEmpty || !mounted) return;
 
-    final notifier = ref.read(
-      chatInputControllerProvider(widget.roomId).notifier,
-    );
-    if (isImage) {
-      await notifier.sendPickedImages(result.files);
-    } else {
-      await notifier.sendPickedFiles(result.files);
-    }
+    // 先收起面板，再交给「即时发送」：气泡会立刻出现在列表里，
+    // 上传进度直接反映在气泡上，不需要用户盯着空界面等上传。
     _closeAllPanels();
+    await ref
+        .read(chatInputControllerProvider(widget.roomId).notifier)
+        .sendPickedAttachments(result.files);
   }
 
   Future<void> _pickCropAndSendImagesMobile() async {
@@ -206,10 +203,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
         );
       }
       if (!mounted) return;
+      _closeAllPanels();
       await ref
           .read(chatInputControllerProvider(widget.roomId).notifier)
-          .sendPickedImages(originalFiles);
-      _closeAllPanels();
+          .sendPickedAttachments(originalFiles);
       return;
     }
 
@@ -255,10 +252,10 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
 
     if (croppedFiles.isEmpty || !mounted) return;
 
+    _closeAllPanels();
     await ref
         .read(chatInputControllerProvider(widget.roomId).notifier)
-        .sendPickedImages(croppedFiles);
-    _closeAllPanels();
+        .sendPickedAttachments(croppedFiles);
   }
 
   Future<ImageSelectionAction?> _pickImageSelectionAction() {

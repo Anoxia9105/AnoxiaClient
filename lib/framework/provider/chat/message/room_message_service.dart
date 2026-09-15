@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math' show max;
 
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
@@ -354,6 +355,11 @@ class ChatMessages extends _$ChatMessages {
       return;
     }
     ref.read(optimisticRoomMessagesProvider.notifier).upsert(msg);
+    // 附件还是本地路径（乐观发送中、尚未拿到服务器 URL）的消息**只活在内存里**。
+    // 一旦落库，ws_controller 的 _resendCachedOutbounds 在重连时会把 SENDING
+    // 的行原样重放，本地路径就被当成 URL 发给了服务端。
+    // 上传完成后发送侧会用服务器 URL 再 upsert 一次，那时才真正持久化。
+    if (_hasPendingLocalMedia(msg)) return;
     unawaited(
       _enqueueMessageWrite(
         () => ref.read(chatRepositoryProvider).cacheLocalMessage(msg),
@@ -361,6 +367,15 @@ class ChatMessages extends _$ChatMessages {
         ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
         debugLog('缓存本地发送消息失败', error, stackTrace);
       }),
+    );
+  }
+
+  /// 消息的媒体附件里是否还有未上传完成的本地路径
+  bool _hasPendingLocalMedia(ChatMessage msg) {
+    final attachments = msg.payload?.mediaAttachments;
+    if (attachments == null || attachments.isEmpty) return false;
+    return attachments.any(
+      (attachment) => isPendingLocalMediaUrl(attachment.url),
     );
   }
 

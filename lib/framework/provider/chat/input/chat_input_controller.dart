@@ -4,10 +4,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'dart:ui' as ui;
-
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/media_kind_resolver.dart';
 import 'package:anoxia/common/utils/media_mime_type.dart';
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/core/upload_repository_provider.dart';
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
@@ -56,6 +56,11 @@ class ChatInputController extends _$ChatInputController {
   DateTime? _lastLimitNoticeAt;
   Timer? _typingTimer;
   Timer? _typingThrottle;
+
+  /// 「即时发送」链路里仍在上传/待重传的本地草稿（key = clientMsgId）
+  ///
+  /// 只在内存里，应用重启即丢失 —— 与"本地文件已不可用"的事实相符。
+  final Map<String, _LocalMediaDraft> _pendingMedia = {};
 
   /// 计算发送超时时间（秒）
   ///
@@ -217,8 +222,10 @@ class ChatInputController extends _$ChatInputController {
   ///
   /// 用户退格删除图片/文件 embed 后，上传控制器中仍残留 uploading/failed
   /// 记录，导致发送按钮永久禁用（Web/桌面端 Quill 输入框）。每次文档变更
-  /// 时按当前文档内的附件 ID 裁剪两个上传控制器，移动端不插入 embed，
-  /// 文档里没有附件 ID 也不会误清（其上传走 sendPicked* 即时链路）。
+  /// 时按当前文档内的附件 ID 裁剪两个上传控制器。
+  ///
+  /// 裁剪范围由控制器内部的「编辑器归属」集合限定：移动端「即时发送」链路
+  /// 的附件不在编辑器文档里，传空集合不会误伤它们（上传不会被静默取消）。
   void _pruneDeletedUploads(QuillController controller) {
     final ids = DeltaProcessor(
       controller.document.toDelta(),
@@ -574,141 +581,248 @@ class ChatInputController extends _$ChatInputController {
     );
   }
 
-  /// 发送选中的图片（从文件选择器）
+  /// 「即时发送」：选中一批文件后**立即**插入本地气泡，再后台上传并发出
   ///
-  /// 先上传图片，再逐个发送 Image 消息。
-  Future<void> sendPickedImages(List<PlatformFile> files) async {
+  /// 旧实现是「先上传、后插入」（`await uploader.upload*()` 排在 `_doSend`
+  /// 之前），气泡出现的时刻等于整条上传完成的时刻，中途没有任何反馈。
+  /// 现在改为：先插本地气泡（本地预览 + 上传进度），上传完再原地替换。
+  ///
+  /// 约定：`clientMsgId == attachment.id == clientFileId`，
+  /// 气泡据此直接查到进度与本地字节（见 `AttachmentUploadOverlay`）。
+  ///
+  /// 媒体类型由 [resolvePickedMediaKind] 动态判定：「文件」入口选到图片
+  /// 也会走图片消息，不会退化成文件卡片。
+  Future<void> sendPickedAttachments(List<PlatformFile> files) async {
     if (files.isEmpty) return;
+    final room = ref.read(currentRoomProvider(roomId));
+    final user = ref.read(authControllerProvider).value;
+    if (room == null || user == null) return;
 
-    final List<Attachment> uploadList = [];
-    final filesById = <String, PlatformFile>{};
+    final toast = ref.read(toastServiceProvider);
+    final drafts = <_LocalMediaDraft>[];
     for (final file in files) {
-      if (!UploadValidator.validateSingleFile(
-        ref.read(toastServiceProvider),
-        file,
-      )) {
-        continue;
-      }
-      final id = const Uuid().v4();
-      if (file.bytes != null) filesById[id] = file;
-      final imageSize = file.path != null
-          ? await _readImageSizeFromFile(file.path!)
-          : await _readImageSizeFromBytes(file.bytes ?? Uint8List(0));
-      uploadList.add(
-        Attachment(
-          id: id,
-          kind: 'IMAGE',
-          url: file.path,
-          name: file.name,
-          size: file.size,
-          type: _imageMimeType(file.extension),
-          width: imageSize.$1,
-          height: imageSize.$2,
-        ),
-      );
+      if (!UploadValidator.validateSingleFile(toast, file)) continue;
+      drafts.add(_buildLocalMediaDraft(file));
     }
-    if (uploadList.isEmpty) return;
+    if (drafts.isEmpty) return;
 
-    final uploader = ref.read(chatImageUploadControllerProvider.notifier);
-    await uploader.uploadImages(uploadList, pickedFiles: filesById);
+    // 1. 先把本地气泡插进去（payload 指向本地文件，消息只存在于内存）
+    for (final draft in drafts) {
+      _pendingMedia[draft.clientMsgId] = draft;
+      ref
+          .read(chatMessagesProvider.notifier)
+          .upsertMessage(
+            _buildLocalMediaMessage(draft, DeliveryStatus.sending),
+          );
+    }
 
-    final urlMap = uploader.urlMap;
-    final uploaded = uploadList.where((item) => urlMap[item.id] != null).map((
-      item,
-    ) {
-      final result = uploader.uploadResultOf(item.id);
-      return item.copyWith(
-        url: result?.url ?? urlMap[item.id],
-        width: result?.width,
-        height: result?.height,
-      );
-    }).toList();
+    // 2. 后台上传（按控制器分批，保持各自 2 路的并发上限）
+    await _uploadLocalMediaBatch(drafts);
 
-    if (uploaded.isEmpty) return;
-
-    for (var i = 0; i < uploaded.length; i++) {
-      _doSend(
-        type: MessageType.image,
-        payload: const MessagePayload(content: '[image]'),
-        attachments: [uploaded[i]],
-        clearReplyAfterSend: i == uploaded.length - 1,
-      );
+    // 3. 逐个落地：成功 → 原地替换为服务器资源并发出；失败 → 转失败态
+    for (final draft in drafts) {
+      _finalizeLocalMediaDraft(draft);
     }
   }
 
-  /// 发送选中的文件（从文件选择器），自动识别视频文件并按视频类型发送
+  /// 重传并重新发送一条媒体仍指向本地文件的失败消息
   ///
-  /// 先批量上传文件，再逐个发送 File / Video 消息。
-  Future<void> sendPickedFiles(List<PlatformFile> files) async {
-    if (files.isEmpty) return;
+  /// 返回 `false` 表示本地文件已丢失（如应用重启后内存草稿被清），无法重传。
+  Future<bool> retryLocalMediaMessage(ChatMessage message) async {
+    final id = message.clientMsgId ?? message.messageId;
+    if (id == null || id.isEmpty) return false;
+    final draft = _pendingMedia[id];
+    if (draft == null) return false;
 
-    final List<Attachment> uploadList = [];
-    final filesById = <String, PlatformFile>{};
-    for (final file in files) {
-      if (!UploadValidator.validateSingleFile(
-        ref.read(toastServiceProvider),
-        file,
-      )) {
-        continue;
-      }
-      final id = const Uuid().v4();
-      if (file.bytes != null) filesById[id] = file;
-      final ext = file.extension?.toLowerCase();
-      final isVideo = _isVideoExtension(ext, file.name);
-      final mime = isVideo
-          ? _mimeForVideo(ext)
-          : mediaMimeTypeForName(file.name);
-      final kind = isVideo ? 'VIDEO' : 'FILE';
-      uploadList.add(
-        Attachment(
+    ref
+        .read(chatMessagesProvider.notifier)
+        .upsertMessage(_buildLocalMediaMessage(draft, DeliveryStatus.sending));
+    await _uploadLocalMediaBatch([draft]);
+    _finalizeLocalMediaDraft(draft);
+    return true;
+  }
+
+  /// 构建本地媒体草稿（本地文件 + 附件 + 目标消息类型）
+  ///
+  /// 同步方法：媒体类型判定与附件组装都不需要 IO，图片宽高由读取方
+  /// （上传控制器 / 气泡）按需补齐，避免"选完到可见"之间再插一次等待。
+  _LocalMediaDraft _buildLocalMediaDraft(PlatformFile file) {
+    final id = const Uuid().v4();
+    final mime = mediaMimeTypeForName(file.name);
+    // Web 端 path 为 null，用合成地址保证 mediaAttachments 非空
+    final localUrl = file.path ?? localPendingMediaUrl(id);
+    return switch (resolvePickedMediaKind(
+      name: file.name,
+      extension: file.extension,
+    )) {
+      PickedMediaKind.image => _LocalMediaDraft(
+        clientMsgId: id,
+        file: file,
+        messageType: MessageType.image,
+        attachment: Attachment(
           id: id,
-          kind: kind,
-          url: file.path,
+          kind: 'IMAGE',
+          url: localUrl,
           name: file.name,
           size: file.size,
           type: mime,
         ),
-      );
-    }
-    if (uploadList.isEmpty) return;
+      ),
+      PickedMediaKind.video => _LocalMediaDraft(
+        clientMsgId: id,
+        file: file,
+        messageType: MessageType.video,
+        attachment: Attachment(
+          id: id,
+          kind: 'VIDEO',
+          url: localUrl,
+          name: file.name,
+          size: file.size,
+          type: mime,
+        ),
+      ),
+      PickedMediaKind.file => _LocalMediaDraft(
+        clientMsgId: id,
+        file: file,
+        messageType: MessageType.file,
+        attachment: Attachment(
+          id: id,
+          kind: 'FILE',
+          url: localUrl,
+          name: file.name,
+          size: file.size,
+          type: mime,
+        ),
+      ),
+    };
+  }
 
-    final uploader = ref.read(chatFileUploadControllerProvider.notifier);
-    await uploader.uploadFiles(uploadList, pickedFiles: filesById);
+  /// 构建（或重建）本地媒体消息
+  ///
+  /// 时间戳固定在草稿上，重传时不会因为换新时间戳而在列表里跳位。
+  ChatMessage _buildLocalMediaMessage(
+    _LocalMediaDraft draft,
+    DeliveryStatus status,
+  ) {
+    final userId = ref.read(authControllerProvider).value?.userId;
+    final payload = MessagePayload(
+      content: _mediaPlaceholderContent(draft.messageType),
+    ).withMedia(draft.messageType, [draft.attachment]);
+    return ChatMessage(
+      messageId: draft.clientMsgId,
+      clientMsgId: draft.clientMsgId,
+      roomId: roomId,
+      senderId: userId,
+      messageType: draft.messageType,
+      content: payload.content ?? '',
+      payload: payload,
+      timestamp: draft.timestamp,
+      deliveryStatus: status,
+      seq: 0,
+    );
+  }
 
-    final urlMap = uploader.urlMap;
-    final uploaded = uploadList
-        .where((item) => urlMap[item.id] != null)
-        .map((item) => item.copyWith(url: urlMap[item.id]))
+  /// 会话列表预览用的占位文案，与发送后的取值保持一致
+  String _mediaPlaceholderContent(MessageType type) => switch (type) {
+    MessageType.image => '[image]',
+    MessageType.video => '[video]',
+    _ => '[file]',
+  };
+
+  /// 按上传控制器分批上传整批草稿
+  ///
+  /// 图片走图片控制器、视频与文件走文件控制器，各自内部并发上限为 2，
+  /// 不逐个文件各起一个请求（否则并发会随文件数线性增长）。
+  Future<void> _uploadLocalMediaBatch(List<_LocalMediaDraft> drafts) async {
+    final imageDrafts = drafts
+        .where((draft) => draft.messageType == MessageType.image)
+        .toList();
+    final otherDrafts = drafts
+        .where((draft) => draft.messageType != MessageType.image)
         .toList();
 
-    if (uploaded.isEmpty) return;
+    final futures = <Future<void>>[];
+    if (imageDrafts.isNotEmpty) {
+      futures.add(
+        ref
+            .read(chatImageUploadControllerProvider.notifier)
+            .uploadImages(
+              imageDrafts.map((draft) => draft.attachment).toList(),
+              pickedFiles: {
+                for (final draft in imageDrafts) draft.clientMsgId: draft.file,
+              },
+            ),
+      );
+    }
+    if (otherDrafts.isNotEmpty) {
+      futures.add(
+        ref
+            .read(chatFileUploadControllerProvider.notifier)
+            .uploadFiles(
+              otherDrafts.map((draft) => draft.attachment).toList(),
+              pickedFiles: {
+                for (final draft in otherDrafts) draft.clientMsgId: draft.file,
+              },
+            ),
+      );
+    }
+    if (futures.isEmpty) return;
+    try {
+      await Future.wait(futures);
+    } catch (e, st) {
+      debugLog('[即时发送] 附件上传异常: $e', st);
+    }
+  }
 
-    // 按类型分组发送：视频走 video，普通文件走 file
-    final videoList = uploaded.where((a) => a.isVideo).toList();
-    final fileList = uploaded.where((a) => !a.isVideo).toList();
+  /// 单个草稿的上传结果落地
+  void _finalizeLocalMediaDraft(_LocalMediaDraft draft) {
+    final id = draft.clientMsgId;
+    final isImage = draft.messageType == MessageType.image;
+    final imageUploader = ref.read(chatImageUploadControllerProvider.notifier);
+    final fileUploader = ref.read(chatFileUploadControllerProvider.notifier);
+    final serverUrl = isImage
+        ? imageUploader.urlMap[id]
+        : fileUploader.urlMap[id];
 
-    // 发送前置提取视频真实元数据，避免占位时长与宽高缺失
-    if (videoList.isNotEmpty) {
-      await uploader.ensureVideoMetadata(videoList);
+    if (serverUrl == null || serverUrl.isEmpty) {
+      // 上传失败：保留气泡并转失败态，点击可重传（见 retryLocalMediaMessage）
+      ref
+          .read(chatMessagesProvider.notifier)
+          .upsertMessage(_buildLocalMediaMessage(draft, DeliveryStatus.failed));
+      return;
     }
 
-    for (var i = 0; i < videoList.length; i++) {
-      final isLastOverall = i == videoList.length - 1 && fileList.isEmpty;
-      final uploaded = uploader.uploadResultOf(videoList[i].id);
-      final meta = uploader.videoMetadataOf(videoList[i].id);
-      final duration = uploaded?.durationMs ?? meta?.durationMs ?? 1000;
-      final enhanced = videoList[i].copyWith(
-        url: uploaded?.url,
-        width: uploaded?.width ?? meta?.width,
-        height: uploaded?.height ?? meta?.height,
-        bitrate: uploaded?.bitrate,
-        thumbnailUrl: uploaded?.coverUrl,
+    final result = isImage
+        ? imageUploader.uploadResultOf(id)
+        : fileUploader.uploadResultOf(id);
+    final videoMeta = draft.messageType == MessageType.video
+        ? fileUploader.videoMetadataOf(id)
+        : null;
+    final enhanced = draft.attachment.copyWith(
+      url: serverUrl,
+      width: result?.width ?? videoMeta?.width,
+      height: result?.height ?? videoMeta?.height,
+      bitrate: result?.bitrate,
+      thumbnailUrl: result?.coverUrl,
+    );
+    final coverUrl = result?.coverUrl;
+
+    if (draft.messageType == MessageType.image) {
+      _doSend(
+        type: MessageType.image,
+        payload: const MessagePayload(content: '[image]'),
+        attachments: [enhanced],
+        clearReplyAfterSend: false,
+        clientMsgId: id,
       );
-      final coverUrl = uploaded?.coverUrl;
+    } else if (draft.messageType == MessageType.video) {
       _doSend(
         type: MessageType.video,
         // 占位时长 1s 满足服务端 VIDEO 守卫 durationMs 必填，避免 CRITICAL
-        payload: MessagePayload(content: '[video]', audioDuration: duration),
+        payload: MessagePayload(
+          content: '[video]',
+          audioDuration: result?.durationMs ?? videoMeta?.durationMs ?? 1000,
+        ),
         attachments: [
           enhanced,
           if (coverUrl != null && coverUrl.isNotEmpty)
@@ -717,68 +831,29 @@ class ChatInputController extends _$ChatInputController {
               url: coverUrl,
               name: 'cover.jpg',
               type: 'image/jpeg',
-              size: uploaded?.coverSizeBytes,
+              size: result?.coverSizeBytes,
             ),
         ],
-        clearReplyAfterSend: isLastOverall,
+        clearReplyAfterSend: false,
+        clientMsgId: id,
       );
-    }
-    for (var i = 0; i < fileList.length; i++) {
+    } else {
       _doSend(
         type: MessageType.file,
         payload: const MessagePayload(content: '[file]'),
-        attachments: [fileList[i]],
-        clearReplyAfterSend: i == fileList.length - 1,
+        attachments: [enhanced],
+        clearReplyAfterSend: false,
+        clientMsgId: id,
       );
     }
-  }
 
-  bool _isVideoExtension(String? ext, String fileName) {
-    const videoExts = {
-      'mp4',
-      'mov',
-      'avi',
-      'mkv',
-      'webm',
-      'm4v',
-      'flv',
-      '3gp',
-      'wmv',
-      'mpeg',
-      'mpg',
-    };
-    final lowerExt = ext?.toLowerCase();
-    if (lowerExt != null && videoExts.contains(lowerExt)) return true;
-    final lowerName = fileName.toLowerCase();
-    for (final v in videoExts) {
-      if (lowerName.endsWith('.$v')) return true;
+    _pendingMedia.remove(id);
+    if (isImage) {
+      imageUploader.release(id);
+    } else {
+      fileUploader.release(id);
     }
-    return false;
-  }
-
-  String _mimeForVideo(String? ext) {
-    switch (ext?.toLowerCase()) {
-      case 'mp4':
-        return 'video/mp4';
-      case 'mov':
-        return 'video/quicktime';
-      case 'webm':
-        return 'video/webm';
-      case 'mkv':
-        return 'video/x-matroska';
-      case 'avi':
-        return 'video/x-msvideo';
-      case 'm4v':
-        return 'video/x-m4v';
-      case 'flv':
-        return 'video/x-flv';
-      case '3gp':
-        return 'video/3gpp';
-      case 'wmv':
-        return 'video/x-ms-wmv';
-      default:
-        return 'video/${ext ?? 'mp4'}';
-    }
+    ref.read(replyTargetControllerProvider.notifier).clear(roomId);
   }
 
   /// 纯文本变更处理（用于 Android 等平台，类似 _onTextChanged 的简化版）
@@ -969,44 +1044,6 @@ class ChatInputController extends _$ChatInputController {
         (codePoint >= 0x2600 && codePoint <= 0x27BF);
   }
 
-  /// 读取图片宽高
-  Future<(int?, int?)> _readImageSizeFromFile(String path) async {
-    try {
-      final bytes = await File(path).readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final size = (image.width, image.height);
-      image.dispose();
-      codec.dispose();
-      return size;
-    } catch (_) {
-      return (null, null);
-    }
-  }
-
-  Future<(int?, int?)> _readImageSizeFromBytes(Uint8List bytes) async {
-    try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final size = (image.width, image.height);
-      image.dispose();
-      codec.dispose();
-      return size;
-    } catch (_) {
-      return (null, null);
-    }
-  }
-
-  /// 根据扩展名获取图片 MIME 类型
-  String _imageMimeType(String? extension) {
-    final ext = extension?.toLowerCase();
-    if (ext == null || ext.isEmpty) return 'image/jpeg';
-    if (ext == 'jpg') return 'image/jpeg';
-    return 'image/$ext';
-  }
-
   /// 清空输入框内容，重置输入状态，隐藏 @提及选择器，清除回复目标
   void clearInput() {
     state.clear();
@@ -1040,13 +1077,17 @@ class ChatInputController extends _$ChatInputController {
   ///
   /// 创建本地消息（sending 状态），发送 RoomMessage 到 WebSocket，并启动超时计时器。
   /// 支持附件、回复目标等。
+  ///
+  /// [clientMsgId] 用于「即时发送」链路：本地气泡已经用这个 id 插入过，
+  /// 这里必须复用同一个 id，服务端回包才能原地替换掉乐观气泡。
   void _doSend({
     required MessageType type,
     required MessagePayload payload,
     List<Attachment>? attachments,
     bool clearReplyAfterSend = true,
+    String? clientMsgId,
   }) {
-    final String clientMsgId = const Uuid().v4();
+    final String resolvedClientMsgId = clientMsgId ?? const Uuid().v4();
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
       debugLog('send failed: missing user');
@@ -1060,8 +1101,8 @@ class ChatInputController extends _$ChatInputController {
     final derivedAttachments = payloadWithMedia.mediaAttachments;
 
     final localMsg = ChatMessage(
-      messageId: clientMsgId,
-      clientMsgId: clientMsgId,
+      messageId: resolvedClientMsgId,
+      clientMsgId: resolvedClientMsgId,
       roomId: roomId,
       senderId: user.userId,
       messageType: type,
@@ -1076,7 +1117,7 @@ class ChatInputController extends _$ChatInputController {
 
     final protoMsg = RoomMessage(
       messageId: '',
-      clientMsgId: clientMsgId,
+      clientMsgId: resolvedClientMsgId,
       roomId: roomId,
       senderId: user.userId,
       messageType: type,
@@ -1092,7 +1133,7 @@ class ChatInputController extends _$ChatInputController {
         .read(wsControllerProvider.notifier)
         .sendMessage(
           ImPacketV6.encodeRoomMessageFrame(protoMsg),
-          clientMsgId: clientMsgId,
+          clientMsgId: resolvedClientMsgId,
           ackTimeout: Duration(seconds: timeoutSeconds),
         );
     if (clearReplyAfterSend) {
@@ -1119,6 +1160,34 @@ class ChatInputController extends _$ChatInputController {
     );
     return true;
   }
+}
+
+/// 「即时发送」链路的本地媒体草稿
+///
+/// 记录本地文件与目标消息类型，供「先插气泡、后台上传、上传失败可重传」使用。
+/// 只存在于内存（`ChatInputController._pendingMedia`）。
+class _LocalMediaDraft {
+  _LocalMediaDraft({
+    required this.clientMsgId,
+    required this.attachment,
+    required this.file,
+    required this.messageType,
+  }) : timestamp = DateTime.now().millisecondsSinceEpoch;
+
+  /// 同时作为 `attachment.id`、上传的 `clientFileId` 与消息 id
+  final String clientMsgId;
+
+  /// 附件（url 先指向本地文件，上传成功后替换为服务器地址）
+  final Attachment attachment;
+
+  /// 本地选中的文件（Web 端只有 bytes，用于本地预览与重传）
+  final PlatformFile file;
+
+  /// 目标消息类型（由媒体类型动态判定得出）
+  final MessageType messageType;
+
+  /// 乐观气泡的固定时间戳：重传时不换时间戳，避免在列表里跳位
+  final int timestamp;
 }
 
 /// 聊天输入框的焦点节点 Provider

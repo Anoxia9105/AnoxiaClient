@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:anoxia/common/utils/media_viewer_helper.dart';
+import 'package:anoxia/common/widgets/attachment_image_view.dart';
 import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/provider/setting/general_settings_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +15,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../../framework/domain/chat_message.dart';
 import '../../../../../framework/protocol/message/attachment.dart';
+import 'attachment_upload_overlay.dart';
 import 'base/message_render_strategy.dart';
 import 'image_render_metrics.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
@@ -37,7 +41,10 @@ class ImageMessageStrategy extends MessageRenderStrategy {
 
     if (imageList.length == 1) {
       final attachment = imageList.single;
-      final heroTag = buildImageHeroTag(message.messageId ?? message.clientMsgId, attachment);
+      final heroTag = buildImageHeroTag(
+        message.messageId ?? message.clientMsgId,
+        attachment,
+      );
       return _SingleImageItem(
         attachment: attachment,
         messageId: message.messageId ?? message.clientMsgId,
@@ -51,7 +58,10 @@ class ImageMessageStrategy extends MessageRenderStrategy {
       spacing: 4,
       runSpacing: 4,
       children: imageList.map((attachment) {
-        final heroTag = buildImageHeroTag(message.messageId ?? message.clientMsgId, attachment);
+        final heroTag = buildImageHeroTag(
+          message.messageId ?? message.clientMsgId,
+          attachment,
+        );
         return _SingleImageItem(
           attachment: attachment,
           messageId: message.messageId ?? message.clientMsgId,
@@ -94,6 +104,14 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
 
   bool get _isGif => widget.attachment.isGif;
 
+  /// 附件还指向本地文件：上传尚未完成，不能走网络加载，也不能开大图详情
+  bool get _isPendingUpload => isPendingLocalMediaUrl(widget.attachment.url);
+
+  /// Web 端本地待上传图片只有内存字节可读
+  Uint8List? get _localBytes => ref
+      .read(chatImageUploadControllerProvider.notifier)
+      .bytesOf(widget.attachment.id);
+
   @override
   void initState() {
     super.initState();
@@ -127,9 +145,14 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
     if (_intrinsicSize != null || _dimensionListener != null) return;
     final url = widget.attachment.url;
     if (url == null || url.isEmpty) return;
-    final stream = appCachedNetworkImageProvider(
+    // 本地待上传图片走 FileImage / MemoryImage，远程走缓存网络图，
+    // 两者都能解析出内在尺寸，避免气泡先按默认比例渲染再跳变。
+    final provider = AttachmentImageView.resolveImageProvider(
       url,
-    ).resolve(const ImageConfiguration());
+      bytes: _localBytes,
+    );
+    if (provider == null) return;
+    final stream = provider.resolve(const ImageConfiguration());
     _dimensionStream = stream;
     final listener = ImageStreamListener((ImageInfo info, bool _) {
       if (!mounted) return;
@@ -155,7 +178,8 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
   }
 
   void _maybeLoadFirstFrame() {
-    if (!_isGif) return;
+    // GIF 静态首帧必须走网络缓存，本地待上传阶段直接交给本地图片渲染。
+    if (!_isGif || _isPendingUpload) return;
     final autoPlay = ref.read(autoPlayMediaProvider);
     final reduce = ref.read(reduceMotionProvider);
     final shouldShowStatic = !autoPlay || reduce;
@@ -171,23 +195,26 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
     final provider = appCachedNetworkImageProvider(url);
     final stream = provider.resolve(const ImageConfiguration());
     _frameStream = stream;
-    final listener = ImageStreamListener((ImageInfo info, bool sync) {
-      if (!mounted) return;
-      if (_firstFrame != null) return;
-      // 捕获首帧后立即移除监听，避免后续帧更新
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    final listener = ImageStreamListener(
+      (ImageInfo info, bool sync) {
         if (!mounted) return;
-        setState(() {
-          _firstFrame = info.image.clone();
-          _loadingFirstFrame = false;
+        if (_firstFrame != null) return;
+        // 捕获首帧后立即移除监听，避免后续帧更新
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            _firstFrame = info.image.clone();
+            _loadingFirstFrame = false;
+          });
         });
-      });
-      _removeListener();
-    }, onError: (_, _) {
-      if (!mounted) return;
-      setState(() => _loadingFirstFrame = false);
-      _removeListener();
-    });
+        _removeListener();
+      },
+      onError: (_, _) {
+        if (!mounted) return;
+        setState(() => _loadingFirstFrame = false);
+        _removeListener();
+      },
+    );
     _frameListener = listener;
     stream.addListener(listener);
     // 降级：如果 2s 内未获得首帧，取消 loading
@@ -226,7 +253,10 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
       try {
         bytes = await appImageCrossCache.get(url);
       } catch (_) {
-        final resp = await Dio().get<List<int>>(url, options: Options(responseType: ResponseType.bytes));
+        final resp = await Dio().get<List<int>>(
+          url,
+          options: Options(responseType: ResponseType.bytes),
+        );
         final data = resp.data;
         if (data == null || data.isEmpty) return 3000;
         bytes = Uint8List.fromList(data);
@@ -293,8 +323,10 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
     final reduce = ref.watch(reduceMotionProvider);
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final isGif = _isGif;
+    final isPendingUpload = _isPendingUpload;
     final shouldAutoPlay = autoPlay && !reduce;
-    final showStaticGif = isGif && !shouldAutoPlay && !_isPlayingOnce;
+    final showStaticGif =
+        isGif && !shouldAutoPlay && !_isPlayingOnce && !isPendingUpload;
 
     // 监听设置变化：从关闭 -> 开启 时，停止单次播放状态并尝试释放首帧
     ref.listen(autoPlayMediaProvider, (prev, next) {
@@ -331,22 +363,27 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
           }
         } else {
           // 正常动画或普通图片：等比缩放，BoxFit.contain 保证不拉伸
-          imageChild = CachedNetworkImageView(
-            imageUrl: widget.attachment.url!,
+          // 本地待上传（url 是本地路径/合成地址）时自动走文件或内存字节。
+          imageChild = AttachmentImageView(
+            url: widget.attachment.url,
+            bytes: _localBytes,
             width: displaySize.width,
             height: displaySize.height,
             fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
             memCacheWidth: (displaySize.width * dpr).round().clamp(0, 2048),
             memCacheHeight: (displaySize.height * dpr).round().clamp(0, 2048),
             placeholder: (_, _) => _buildPlaceholder(displaySize),
-            errorWidget: (_, _, _) => const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01, size: 30),
-            filterQuality: FilterQuality.medium,
+            errorWidget: (_, _, _) => const HugeIcon(
+              icon: HugeIcons.strokeRoundedImageNotFound01,
+              size: 30,
+            ),
           );
         }
 
         final borderRadius = BorderRadius.circular(widget.isGrid ? 4 : 8);
-        // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致
-        final useHero = !showStaticGif;
+        // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致；
+        // 本地待上传阶段也不启用（详情页按网络地址加载，此时还没有地址）。
+        final useHero = !showStaticGif && !isPendingUpload;
         Widget heroWrapped = RepaintBoundary(
           child: Container(
             decoration: BoxDecoration(
@@ -358,10 +395,13 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
               child: useHero
                   ? Hero(
                       tag: widget.heroTag,
-                      createRectTween: (begin, end) => MaterialRectArcTween(begin: begin, end: end),
+                      createRectTween: (begin, end) =>
+                          MaterialRectArcTween(begin: begin, end: end),
                       placeholderBuilder: (ctx, size, child) => child,
                       flightShuttleBuilder: (ctx, anim, dir, from, to) {
-                        final w = dir == HeroFlightDirection.push ? to.widget : from.widget;
+                        final w = dir == HeroFlightDirection.push
+                            ? to.widget
+                            : from.widget;
                         return Material(color: Colors.transparent, child: w);
                       },
                       transitionOnUserGestures: true,
@@ -373,10 +413,14 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
         );
 
         // 点击整图打开详情；GIF 静态时中间播放按钮仅触发单次播放
+        // 上传中的图片不响应点击（详情页按服务器地址加载，此时还没有地址）
         return Stack(
           alignment: Alignment.center,
           children: [
-            GestureDetector(onTap: _openDetail, child: heroWrapped),
+            GestureDetector(
+              onTap: isPendingUpload ? null : _openDetail,
+              child: heroWrapped,
+            ),
             if (showStaticGif)
               Positioned.fill(
                 child: GestureDetector(
@@ -407,11 +451,25 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
                 right: 6,
                 bottom: 6,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(RadiusToken.pill)),
-                  child: const Text('gif', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(RadiusToken.pill),
+                  ),
+                  child: const Text(
+                    'gif',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
+            AttachmentUploadOverlay(attachmentId: widget.attachment.id),
           ],
         );
       },

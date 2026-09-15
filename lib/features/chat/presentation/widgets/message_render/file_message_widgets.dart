@@ -3,20 +3,29 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/utils/file_util.dart';
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:anoxia/platform/shims/web_download_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../framework/protocol/message/attachment.dart';
+import 'attachment_upload_overlay.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
-class FileMessageList extends StatefulWidget {
+/// 文件消息列表
+///
+/// 用 [ConsumerStatefulWidget] 是为了读取附件上传状态（`attachment.id` 即
+/// `clientMsgId`）：「即时发送」链路里文件先以本地气泡出现，上传期间需要
+/// 在卡片上显示上传进度并禁用下载。
+class FileMessageList extends ConsumerStatefulWidget {
   final List<Attachment> fileList;
   final bool isSelf;
 
@@ -27,10 +36,10 @@ class FileMessageList extends StatefulWidget {
   });
 
   @override
-  State<FileMessageList> createState() => FileMessageListState();
+  ConsumerState<FileMessageList> createState() => FileMessageListState();
 }
 
-class FileMessageListState extends State<FileMessageList> {
+class FileMessageListState extends ConsumerState<FileMessageList> {
   final Map<String, double> _progressMap = {};
   final Map<String, bool> _downloadingMap = {};
   final Map<String, String> _downloadedPathMap = {};
@@ -46,6 +55,8 @@ class FileMessageListState extends State<FileMessageList> {
 
   Future<void> _checkExistingFiles() async {
     for (final file in widget.fileList) {
+      // 还没上传完成的文件没有服务器地址，不在"已下载"的讨论范围内
+      if (isPendingLocalMediaUrl(file.url)) continue;
       final existingPath = await _findExistingFile(file);
       if (existingPath != null && mounted) {
         setState(() {
@@ -219,6 +230,8 @@ class FileMessageListState extends State<FileMessageList> {
   }
 
   Future<void> _openLocalFile(Attachment file) async {
+    // 附件还没上传完成，唯一可用的地址是本地路径，没有"打开"的意义
+    if (isPendingLocalMediaUrl(file.url)) return;
     // Web 端通过浏览器直接打开文件 URL，不使用本地路径
     if (kIsWeb) {
       final url = file.url;
@@ -264,6 +277,8 @@ class FileMessageListState extends State<FileMessageList> {
     Attachment file, {
     bool openAfterDownload = false,
   }) async {
+    // 上传未完成：url 是本地路径或合成地址，没有可下载的服务器资源
+    if (isPendingLocalMediaUrl(file.url)) return;
     // Web 端通过浏览器下载文件，不写入本地磁盘；
     // 优先用原始文件名触发下载，浏览器保存的名字与上传时一致
     if (kIsWeb) {
@@ -404,6 +419,7 @@ class FileMessageListState extends State<FileMessageList> {
               progress: progress,
               isDownloading: isDownloading,
               isDownloaded: isDownloaded,
+              uploadEntry: uploadEntryForId(ref, file.id),
             ),
           );
         }).toList(),
@@ -417,14 +433,25 @@ class FileMessageListState extends State<FileMessageList> {
     required double? progress,
     required bool isDownloading,
     required bool isDownloaded,
+    required UploadEntry? uploadEntry,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final isUploading = uploadEntry?.isUploading ?? false;
+    final isUploadFailed = uploadEntry?.isFailed ?? false;
+    // 上传未完成 / 失败时没有可下载的服务器地址，禁用交互
+    final isBusy = isUploading || isUploadFailed;
+    final uploadProgress = uploadEntry?.progress ?? 0;
+    final showProgress = isDownloading || isUploading;
+    final progressValue = isUploading ? uploadProgress : progress;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => isDownloaded ? _openLocalFile(file) : _downloadFile(file),
+        onTap: isBusy
+            ? null
+            : () => isDownloaded ? _openLocalFile(file) : _downloadFile(file),
         borderRadius: BorderRadius.circular(RadiusToken.lg),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -477,18 +504,41 @@ class FileMessageListState extends State<FileMessageList> {
                             fontSize: 11,
                           ),
                         ),
-                        if (isDownloaded) ...[
+                        if (isUploading) ...[
                           const SizedBox(width: 6),
-                          Container(
-                            width: 3,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: colorScheme.onSurfaceVariant.withValues(
-                                alpha: 0.4,
+                          _buildStatusDot(colorScheme),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'chat_upload_progress'.tr(
+                                args: ['${(uploadProgress * 100).round()}'],
                               ),
-                              shape: BoxShape.circle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
+                        ] else if (isUploadFailed) ...[
+                          const SizedBox(width: 6),
+                          _buildStatusDot(colorScheme),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'upload_failed_retry'.tr(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.error,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ] else if (isDownloaded) ...[
+                          const SizedBox(width: 6),
+                          _buildStatusDot(colorScheme),
                           const SizedBox(width: 6),
                           HugeIcon(
                             icon: HugeIcons.strokeRoundedCheckmarkCircle01,
@@ -511,13 +561,13 @@ class FileMessageListState extends State<FileMessageList> {
                       ],
                     ),
 
-                    // 下载进度条
-                    if (isDownloading) ...[
+                    // 下载 / 上传进度条
+                    if (showProgress) ...[
                       const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(RadiusToken.sm),
                         child: LinearProgressIndicator(
-                          value: progress,
+                          value: progressValue,
                           minHeight: 3,
                           backgroundColor: colorScheme.surfaceContainerHighest,
                           color: colorScheme.primary,
@@ -525,9 +575,13 @@ class FileMessageListState extends State<FileMessageList> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'file_downloading'.tr(
-                          args: [((progress ?? 0) * 100).toInt().toString()],
-                        ),
+                        isUploading
+                            ? 'chat_upload_progress'.tr(
+                                args: ['${(uploadProgress * 100).round()}'],
+                              )
+                            : 'file_downloading'.tr(
+                                args: ['${((progress ?? 0) * 100).toInt()}'],
+                              ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 10,
                           color: colorScheme.onSurfaceVariant,
@@ -544,9 +598,10 @@ class FileMessageListState extends State<FileMessageList> {
               _buildTrailingIcon(
                 context,
                 file,
-                isDownloading,
-                isDownloaded,
-                progress,
+                isDownloading: isDownloading,
+                isDownloaded: isDownloaded,
+                progress: progress,
+                uploadEntry: uploadEntry,
               ),
             ],
           ),
@@ -555,14 +610,49 @@ class FileMessageListState extends State<FileMessageList> {
     );
   }
 
+  Widget _buildStatusDot(ColorScheme colorScheme) {
+    return Container(
+      width: 3,
+      height: 3,
+      decoration: BoxDecoration(
+        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
   Widget _buildTrailingIcon(
     BuildContext context,
-    Attachment file,
-    bool isDownloading,
-    bool isDownloaded,
-    double? progress,
-  ) {
+    Attachment file, {
+    required bool isDownloading,
+    required bool isDownloaded,
+    required double? progress,
+    required UploadEntry? uploadEntry,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    if (uploadEntry?.isFailed == true) {
+      return Padding(
+        padding: const EdgeInsets.all(10),
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedAlertCircle,
+          size: 19,
+          color: colorScheme.error,
+        ),
+      );
+    }
+
+    if (uploadEntry?.isUploading == true) {
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: uploadEntry!.progress > 0 ? uploadEntry.progress : null,
+          color: colorScheme.primary,
+        ),
+      );
+    }
 
     if (isDownloading) {
       return SizedBox(
