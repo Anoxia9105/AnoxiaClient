@@ -34,13 +34,16 @@ class HistoryLoadIndicator extends ConsumerWidget {
   }
 
   Widget _buildLoading() {
+    // 进度圈无限动画，隔离在独立重绘边界内，避免带动整条消息列表重绘。
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 12),
       child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        child: RepaintBoundary(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       ),
     );

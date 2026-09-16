@@ -266,7 +266,18 @@ class _SettingsDetailPanel extends StatelessWidget {
               compact ? 12 : 20,
               24,
             ),
-            sliver: SliverToBoxAdapter(child: destination.builder(context)),
+            // easy_localization 的 `.tr()`（不带 context）读取的是全局
+            // Localization.instance，不会建立 Localizations 依赖。详情面板的
+            // builder 又大多是 `const XxxSection()`，父级重建时因为 widget 实例
+            // 完全相同会被 Flutter 的 updateChild 短路，导致「通用」等页面切换
+            // 语言后不刷新。这里用 locale 作为 KeyedSubtree 的 key：语言变化时
+            // key 变化，强制重建整个详情内容，保证文案即时刷新。
+            sliver: SliverToBoxAdapter(
+              child: KeyedSubtree(
+                key: ValueKey(Localizations.localeOf(context).languageCode),
+                child: destination.builder(context),
+              ),
+            ),
           ),
         ],
       ),

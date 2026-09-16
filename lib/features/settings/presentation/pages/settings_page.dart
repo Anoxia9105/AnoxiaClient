@@ -230,6 +230,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 订阅 locale：语言切换时整页重建，刷新各分区标题（destination）与详情内容。
+    // easy_localization 的 `.tr()` 不带 context 时不会建立 Localizations 依赖，
+    // 这里显式 depend 一次，保证设置页在切语言后立即刷新。
+    Localizations.localeOf(context);
     final colorScheme = Theme.of(context).colorScheme;
     final pageState = ref.watch(settingsPageControllerProvider);
     final desktopLayoutPreference = ref.watch(desktopLayoutProvider);

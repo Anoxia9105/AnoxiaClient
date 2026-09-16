@@ -66,10 +66,14 @@ class DeliveryStatusIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     switch (message.deliveryStatus) {
       case DeliveryStatus.sending:
-        return const SizedBox(
-          width: 10,
-          height: 10,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        // 进度圈是无限动画，用 RepaintBoundary 隔离，避免持续重绘整条消息
+        // （含头像）触发 Web/Wasm 下的头像闪烁。
+        return const RepaintBoundary(
+          child: SizedBox(
+            width: 10,
+            height: 10,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         );
       case DeliveryStatus.failed:
         return GestureDetector(

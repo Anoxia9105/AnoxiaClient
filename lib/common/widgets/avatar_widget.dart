@@ -77,27 +77,34 @@ class AvatarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasUrl = url != null && url!.isNotEmpty;
 
+    // 仅网络图片需要 ClipRRect 裁切圆角；纯色文字/占位头像直接由容器自身的
+    // 圆角背景绘制，避免 Web/Wasm 下多出一层抗锯齿裁剪图层。
+    // 外层再包一层 RepaintBoundary：消息列表里的发送中进度圈、未读角标
+    // （VibratingBadge）等兄弟节点持续动画时，不会带着文字头像一起重绘，
+    // 消除「字母头像闪烁」。
+    final Widget avatarBody = hasUrl
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: CachedNetworkImageView(
+              maxWidthDiskCache: (size * 3).toInt(),
+              maxHeightDiskCache: (size * 3).toInt(),
+              filterQuality: FilterQuality.low,
+              imageUrl: url!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => _buildPlaceholder(context),
+              errorWidget: (context, url, error) =>
+                  _buildNameOrPlaceholder(context),
+            ),
+          )
+        : _buildNameOrPlaceholder(context);
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         // 1. 头像主体
-        ClipRRect(
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: hasUrl
-              ? CachedNetworkImageView(
-                  maxWidthDiskCache: (size * 3).toInt(),
-                  maxHeightDiskCache: (size * 3).toInt(),
-                  filterQuality: FilterQuality.low,
-                  imageUrl: url!,
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => _buildPlaceholder(context),
-                  errorWidget: (context, url, error) =>
-                      _buildNameOrPlaceholder(context),
-                )
-              : _buildNameOrPlaceholder(context),
-        ),
+        RepaintBoundary(child: avatarBody),
 
         // 2. 右下角状态角标
         if (status != AvatarStatus.none || statusWidget != null)
@@ -200,7 +207,10 @@ class AvatarWidget extends StatelessWidget {
       return Container(
         width: size,
         height: size,
-        color: backgroundColor,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
         alignment: Alignment.center,
         child: Text(
           displayText,
@@ -221,7 +231,10 @@ class AvatarWidget extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      color: Colors.grey.shade300,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
       alignment: Alignment.center,
       child: HugeIcon(
         icon: HugeIcons.strokeRoundedImage02,

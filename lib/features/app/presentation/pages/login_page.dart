@@ -314,7 +314,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.next,
       inputFormatters: [LengthLimitingTextInputFormatter(50)],
-      obscuringCharacter: '*',
+      // 使用默认的圆点遮蔽字符（与注册/找回密码页保持一致）。
+      // JetBrainsMono 的 `*` 字形本身偏上（yMin 103 / yMax 620，见字体
+      // 度量），在 Web/Wasm 下与光标行高混排时第二个字符看起来会被「挤上去」，
+      // 换成默认圆点后垂直居中，不再出现该观感问题。
       decoration: InputDecoration(
         hintText: 'login_page_password'.tr(),
         floatingLabelBehavior: FloatingLabelBehavior.never,
