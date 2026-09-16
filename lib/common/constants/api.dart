@@ -1,36 +1,32 @@
+import 'runtime_config.dart';
+
 /// API 接口常量定义
 ///
-/// 集中管理应用所有后端接口地址，包括 HTTP 和 WebSocket 接口
+/// 集中管理应用所有后端接口地址，包括 HTTP 和 WebSocket 接口。
+/// 基础地址来自 [RuntimeConfig]：Web 端由部署期注入的 runtime-config.js 决定，
+/// 未配置时回退到内置默认值（线上 chat/live 域名）。
 class API {
-  // static const String httpBaseUrl = 'http://127.0.0.1:8080';
-  // static const String wsBaseUrl = 'ws://127.0.0.1:8081/chat?token=';
-  // static const String wsRoomBaseUrl = 'ws://8.137.14.21:7880';
-
-  // static const String httpBaseUrl = 'http://8.137.14.21:8080';
-  // static const String wsBaseUrl = 'ws://8.137.14.21:8081/chat?token=';
-  // static const String wsRoomBaseUrl = 'ws://8.137.14.21:7880';
-
   /// HTTP 接口基础地址
-  static const String httpBaseUrl = 'https://chat.anoxia.cn/api';
+  static String get httpBaseUrl => RuntimeConfig.httpBaseUrl;
 
   /// WebSocket 聊天接口地址
-  static const String wsBaseUrl = 'wss://chat.anoxia.cn/chat?token=';
+  static String get wsBaseUrl => RuntimeConfig.wsBaseUrl;
 
   /// WebSocket 实时音视频通话接口地址
-  static const String wsRoomBaseUrl = 'wss://live.anoxia.cn';
+  static String get wsRoomBaseUrl => RuntimeConfig.wsRoomBaseUrl;
 
   /// 个人二维码内容前缀（`/u/{userId}`）。
   ///
   /// 二维码编码的是链接而非 JSON，微信等外部扫码器可识别为 URL；
   /// 后端同名路由提供用户名片落地页（AnoxiaServer UserQrController）。
-  static const String qrUserBaseUrl = 'https://chat.anoxia.cn/u/';
+  static String get qrUserBaseUrl => RuntimeConfig.qrUserBaseUrl;
 
   /// 群聊二维码内容前缀（`/g/{roomId}`）。
   ///
   /// 与个人二维码相同，编码的是链接而非 JSON，外部扫码器打开后端同名
   /// 路由（AnoxiaServer GroupQrController）看到的是群信息落地页；
   /// App 内扫码则由扫码页解析 URL 直接拉起群预览/加入流程。
-  static const String qrGroupBaseUrl = 'https://chat.anoxia.cn/g/';
+  static String get qrGroupBaseUrl => RuntimeConfig.qrGroupBaseUrl;
 
   /// 应用更新检查接口
   static const String appUpdateLatest = '/app/update/latest';
