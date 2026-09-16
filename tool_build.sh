@@ -76,6 +76,9 @@ fi
 echo ">>> bash $GENERATE_SH"
 bash "$GENERATE_SH"
 
+# 切到工程根：flutter pub get / build 必须在本工程目录执行
+cd "$PKG_ROOT"
+
 echo ">>> $FLUTTER_BIN pub get"
 "$FLUTTER_BIN" pub get
 
