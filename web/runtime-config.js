@@ -1,6 +1,6 @@
 // Flutter Web 运行时接口配置。
 //
-// 默认留空：客户端会回退到 Dart 内置默认值（线上 chat.anoxia.cn / live.anoxia.cn）。
+// 默认留空：客户端会按当前页面地址（域名或 IP）自动推断同源接口，产物不含写死域名。
 // anoxia-install.sh 部署时会把本文件替换为 /opt/anoxia/chat/runtime-config.js，
 // 写入本机实际的接口地址，因此同一份 Web 打包产物可直接部署到任意机器。
 //

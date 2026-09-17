@@ -1,17 +1,18 @@
-// Web 端运行时配置：读取 web/runtime-config.js 注入的 window.__ANOXIA_CONFIG__。
+// Web 端运行时配置：优先读取 web/runtime-config.js 注入的 window.__ANOXIA_CONFIG__，
+// 未注入时按当前页面地址（window.location / Uri.base）运行时推断同源接口地址，
+// 因此打包产物不含任何域名/IP 常量，部署到任意主机均可直接使用。
 //
-// 部署脚本（anoxia-install.sh）会在 Web 根目录生成 runtime-config.js，写入本机
-// 实际的接口地址，使同一份 Flutter Web 打包产物可直接部署到任意机器，无需为
-// 每个环境重新编译。未注入对应字段时返回 null，由 RuntimeConfig 回退默认值。
+// 部署脚本（anoxia-install.sh）会生成 runtime-config.js 写入本机实际地址
+// （含域名模式的 chat/live/oss 子域）；缺失时这里的同源推断保证仍可用。
 //
-// 使用 package:web 同族的 dart:js_interop（JS/WASM 双兼容），不使用 dart:html。
+// 使用 dart:js_interop（JS/WASM 双兼容），不使用 dart:html。
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
 @JS('__ANOXIA_CONFIG__')
 external JSObject? get _anoxiaConfig;
 
-/// 运行时配置覆盖项（全部可空，缺省表示使用编译期默认值）。
+/// 运行时配置覆盖项（全部可空，缺省表示按当前站点地址自动推断）。
 class RuntimeConfigOverrides {
   static String? get httpBaseUrl => _read('httpBaseUrl');
   static String? get wsBaseUrl => _read('wsBaseUrl');
@@ -31,4 +32,47 @@ class RuntimeConfigOverrides {
       return null;
     }
   }
+}
+
+/// 未注入运行时配置时的兜底：按当前页面地址（域名或 IP）推断本机接口，
+/// 不写死任何生产域名。
+class RuntimeConfigDefaults {
+  static Uri get _base => Uri.base;
+
+  static String get _httpOrigin {
+    final base = _base;
+    if (base.scheme == 'http' || base.scheme == 'https') {
+      return base.origin;
+    }
+    final port = base.hasPort ? ':${base.port}' : '';
+    return '${base.scheme}://${base.host}$port';
+  }
+
+  /// 音视频信令主机：chat./www. 子域按约定派生到 live. 子域，
+  /// 其它（如 IP 直连）保持同源，通过 /livekit 反代访问。
+  static String _liveHost(String host) {
+    if (host.startsWith('chat.')) return 'live.${host.substring(5)}';
+    if (host.startsWith('www.')) return 'live.${host.substring(4)}';
+    return host;
+  }
+
+  static String get httpBaseUrl => '$_httpOrigin/api';
+  static String get wsBaseUrl => '${_wsScheme(_base.host)}/chat?token=';
+  static String get wsRoomBaseUrl {
+    final base = _base;
+    final liveHost = _liveHost(base.host);
+    final origin = _wsScheme(liveHost);
+    // 派生到独立 live 子域时直接连该域；否则走同源 /livekit 反代
+    return liveHost == base.host ? '$origin/livekit' : origin;
+  }
+
+  static String _wsScheme(String host) {
+    final base = _base;
+    final scheme = base.scheme == 'https' ? 'wss' : 'ws';
+    final port = base.hasPort ? ':${base.port}' : '';
+    return '$scheme://$host$port';
+  }
+
+  static String get qrUserBaseUrl => '$_httpOrigin/u/';
+  static String get qrGroupBaseUrl => '$_httpOrigin/g/';
 }

@@ -4,7 +4,7 @@ import 'runtime_config.dart';
 ///
 /// 集中管理应用所有后端接口地址，包括 HTTP 和 WebSocket 接口。
 /// 基础地址来自 [RuntimeConfig]：Web 端由部署期注入的 runtime-config.js 决定，
-/// 未配置时回退到内置默认值（线上 chat/live 域名）。
+/// 未配置时按当前页面地址自动推断；原生端使用内置正式服务器地址。
 class API {
   /// HTTP 接口基础地址
   static String get httpBaseUrl => RuntimeConfig.httpBaseUrl;

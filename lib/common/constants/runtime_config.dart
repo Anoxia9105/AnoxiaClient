@@ -2,32 +2,25 @@ import '../../platform/shims/runtime_config_shim.dart';
 
 /// 客户端接口地址解析。
 ///
-/// 优先使用部署期注入的运行时配置（Flutter Web 由 anoxia-install.sh 生成的
-/// `runtime-config.js` 提供），未配置时回退到内置默认值（线上 chat/live 域名）。
-/// 这样同一份 Web 打包产物无需按环境重新编译。
+/// 优先使用运行时配置：
+/// - Flutter Web：读取部署期注入的 `runtime-config.js`（window.__ANOXIA_CONFIG__），
+///   未注入时按当前页面地址（域名或 IP）运行时推断同源接口，产物不写死域名。
+/// - 原生端：无运行时注入机制，使用平台内置的正式服务器地址（见 io shim）。
 class RuntimeConfig {
   const RuntimeConfig._();
 
-  /// 内置默认值：线上环境
-  static const String defaultHttpBaseUrl = 'https://chat.anoxia.cn/api';
-  static const String defaultWsBaseUrl =
-      'wss://chat.anoxia.cn/chat?token=';
-  static const String defaultWsRoomBaseUrl = 'wss://live.anoxia.cn';
-  static const String defaultQrUserBaseUrl = 'https://chat.anoxia.cn/u/';
-  static const String defaultQrGroupBaseUrl = 'https://chat.anoxia.cn/g/';
-
   static String get httpBaseUrl =>
-      RuntimeConfigOverrides.httpBaseUrl ?? defaultHttpBaseUrl;
+      RuntimeConfigOverrides.httpBaseUrl ?? RuntimeConfigDefaults.httpBaseUrl;
 
   static String get wsBaseUrl =>
-      RuntimeConfigOverrides.wsBaseUrl ?? defaultWsBaseUrl;
+      RuntimeConfigOverrides.wsBaseUrl ?? RuntimeConfigDefaults.wsBaseUrl;
 
   static String get wsRoomBaseUrl =>
-      RuntimeConfigOverrides.wsRoomBaseUrl ?? defaultWsRoomBaseUrl;
+      RuntimeConfigOverrides.wsRoomBaseUrl ?? RuntimeConfigDefaults.wsRoomBaseUrl;
 
   static String get qrUserBaseUrl =>
-      RuntimeConfigOverrides.qrUserBaseUrl ?? defaultQrUserBaseUrl;
+      RuntimeConfigOverrides.qrUserBaseUrl ?? RuntimeConfigDefaults.qrUserBaseUrl;
 
   static String get qrGroupBaseUrl =>
-      RuntimeConfigOverrides.qrGroupBaseUrl ?? defaultQrGroupBaseUrl;
+      RuntimeConfigOverrides.qrGroupBaseUrl ?? RuntimeConfigDefaults.qrGroupBaseUrl;
 }
