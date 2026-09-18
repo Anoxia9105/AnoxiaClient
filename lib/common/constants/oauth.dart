@@ -2,9 +2,10 @@ import 'package:anoxia/platform/shims/runtime_config_shim.dart';
 
 /// OAuth 第三方登录常量（首期仅 Google，供 Web/桌面端使用）。
 ///
-/// Client ID 是公开信息（授权 URL 里明文携带），解析优先级：
+/// Client ID 是公开信息（授权 URL 里明文携带，可进仓库），解析优先级：
 /// Web 端部署注入（runtime-config.js `googleClientId`，Docker 由
-/// `GOOGLE_OAUTH_CLIENT_ID` 渲染）→ 编译期 `--dart-define=GOOGLE_OAUTH_CLIENT_ID`。
+/// `GOOGLE_OAUTH_CLIENT_ID` 渲染）→ 编译期 `--dart-define=GOOGLE_OAUTH_CLIENT_ID`
+/// → 代码内置 [_bundledClientId]。
 /// 为空表示未配置，UI 层隐藏 Google 登录入口并提示联系管理员。
 class GoogleOAuthConfig {
   /// 编译期注入：`flutter build ... --dart-define=GOOGLE_OAUTH_CLIENT_ID=xxx.apps.googleusercontent.com`
@@ -12,10 +13,15 @@ class GoogleOAuthConfig {
     'GOOGLE_OAUTH_CLIENT_ID',
   );
 
+  /// 代码内置默认值（Google Anoxia-Web 客户端，换 ID 时改这里或用上面两种方式覆盖）。
+  static const String _bundledClientId =
+      '386358638827-ls9msjvnti5rui65qk2at1rpe40n317a.apps.googleusercontent.com';
+
   static String get clientId {
     final runtime = RuntimeConfigOverrides.googleClientId;
     if (runtime != null && runtime.trim().isNotEmpty) return runtime.trim();
-    return _dartDefineClientId.trim();
+    if (_dartDefineClientId.trim().isNotEmpty) return _dartDefineClientId.trim();
+    return _bundledClientId;
   }
 
   static bool get isConfigured => clientId.isNotEmpty;
