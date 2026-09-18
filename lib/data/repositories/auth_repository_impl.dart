@@ -41,6 +41,32 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<String?> loginWithOAuth({
+    required String provider,
+    required String code,
+    required String codeVerifier,
+    required String redirectUri,
+    required String deviceId,
+  }) async {
+    final res = await DioClient().post(
+      API.loginOAuth,
+      data: {
+        'provider': provider,
+        'code': code,
+        'codeVerifier': codeVerifier,
+        'redirectUri': redirectUri,
+        'deviceId': deviceId,
+      },
+      auth: false,
+    );
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '第三方登录失败'));
+    }
+    final token = res.data is Map ? res.data['token'] : null;
+    return token?.toString();
+  }
+
+  @override
   Future<String> sendRegisterEmailCode({
     required String email,
     required String captchaCode,

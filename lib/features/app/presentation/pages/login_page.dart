@@ -1,7 +1,12 @@
 import 'dart:async';
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/constants/oauth.dart';
+import 'package:anoxia/common/constants/storage_keys.dart';
+import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
+import 'package:anoxia/framework/core/google_oauth_service.dart';
+import 'package:anoxia/platform/shims/oauth_loopback_shim.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -16,6 +21,7 @@ import 'package:flutter/services.dart'
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'login_captcha.dart';
 import 'login_scan_panel.dart';
@@ -49,11 +55,19 @@ class _LoginPageState extends ConsumerState<LoginPage>
   /// 是否正在执行登录操作
   bool _isLoading = false;
 
+  /// 是否正在执行 Google 登录
+  bool _isOAuthLoading = false;
+
   /// 当前登录方式（仅桌面/Web 展示扫码登录）
   _LoginMode _mode = _LoginMode.password;
 
   /// 是否展示扫码登录入口（手机端扫码确认入口在 App 内）
   bool get _showScanMode => !DeviceUtil.isRealMobile();
+
+  /// 是否展示 Google 登录（首期仅 Web/桌面开放；移动端保留密码登录）
+  bool get _showOAuthLogin =>
+      (DeviceUtil.isRealWeb() || DeviceUtil.isRealDesktop()) &&
+      GoogleOAuthConfig.isConfigured;
 
   @override
   void initState() {
@@ -165,6 +179,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
         const SizedBox(height: 20),
         _buildFooterLinks(colorScheme),
+        if (_showOAuthLogin) _buildOAuthSection(colorScheme),
         if (_showScanMode) _buildSwitchToScan(colorScheme),
       ],
     );
@@ -432,6 +447,142 @@ class _LoginPageState extends ConsumerState<LoginPage>
             : Text('login_page_login'.tr()),
       ),
     );
+  }
+
+  /// Google 登录区（Web/桌面专属，与密码登录并存）
+  Widget _buildOAuthSection(ColorScheme colorScheme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 20),
+        _buildModeDivider(colorScheme),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 50,
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _isOAuthLoading || _isLoading ? null : _handleGoogleLogin,
+            icon: _isOAuthLoading
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  )
+                : const HugeIcon(
+                    icon: HugeIcons.strokeRoundedGoogle,
+                    size: 18,
+                  ),
+            label: Text('login_oauth_google'.tr()),
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(RadiusToken.lg),
+              ),
+              textStyle: Theme.of(context)
+                  .textTheme
+                  .titleMedium!
+                  .copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Google 登录总入口：按平台分流（Web 整页跳转 / 桌面本地回环）。
+  Future<void> _handleGoogleLogin() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!GoogleOAuthConfig.isConfigured) {
+      Toast.showToast(
+        'login_oauth_not_configured'.tr(),
+        type: ToastType.error,
+        singleton: true,
+      );
+      return;
+    }
+    if (DeviceUtil.isRealWeb()) {
+      await _handleGoogleLoginWeb();
+    } else if (DeviceUtil.isRealDesktop()) {
+      await _handleGoogleLoginDesktop();
+    }
+  }
+
+  /// Web 流程：暂存 PKCE → 同标签页跳 Google → 回调页接码换 token。
+  Future<void> _handleGoogleLoginWeb() async {
+    setState(() => _isOAuthLoading = true);
+    try {
+      final verifier = GoogleOAuthService.generateCodeVerifier();
+      final state = GoogleOAuthService.generateState();
+      await SPUtil.instance.set(StorageKeys.oauthCodeVerifier, verifier);
+      await SPUtil.instance.set(StorageKeys.oauthState, state);
+      final authorizeUri = GoogleOAuthService.buildAuthorizeUri(
+        redirectUri: GoogleOAuthConfig.webRedirectUri(Uri.base),
+        codeChallenge: GoogleOAuthService.codeChallenge(verifier),
+        state: state,
+      );
+      final launched = await launchUrl(
+        authorizeUri,
+        webOnlyWindowName: '_self',
+      );
+      if (!launched && mounted) {
+        await SPUtil.instance.deleteMulti([
+          StorageKeys.oauthCodeVerifier,
+          StorageKeys.oauthState,
+        ]);
+        Toast.showToast(
+          'login_oauth_open_browser_failed'.tr(),
+          type: ToastType.error,
+          singleton: true,
+        );
+      }
+      // 跳转成功后整页离开，无需复位 loading。
+    } catch (_) {
+      if (!mounted) return;
+      Toast.showToast(
+        'login_oauth_failed'.tr(),
+        type: ToastType.error,
+        singleton: true,
+      );
+      if (mounted) setState(() => _isOAuthLoading = false);
+    }
+  }
+
+  /// 桌面流程：本地回环接码 → 直接换 token 登录（不整页跳转）。
+  Future<void> _handleGoogleLoginDesktop() async {
+    setState(() => _isOAuthLoading = true);
+    try {
+      final verifier = GoogleOAuthService.generateCodeVerifier();
+      final state = GoogleOAuthService.generateState();
+      final authorizeUri = GoogleOAuthService.buildAuthorizeUri(
+        redirectUri: GoogleOAuthConfig.desktopRedirectUri,
+        codeChallenge: GoogleOAuthService.codeChallenge(verifier),
+        state: state,
+      );
+      final result = await OAuthLoopback.waitForCallback(
+        authorizeUri: authorizeUri,
+        expectedState: state,
+      );
+      await ref.read(authControllerProvider.notifier).loginWithOAuth(
+            provider: 'google',
+            code: result.code,
+            codeVerifier: verifier,
+            redirectUri: GoogleOAuthConfig.desktopRedirectUri,
+          );
+      final user = ref.read(authControllerProvider).value;
+      if (user == null) return;
+      await ref.read(appInitializerProvider.notifier).performFullReset();
+    } on OAuthCancelledException {
+      // 用户在浏览器侧取消：静默返回登录页。
+    } catch (_) {
+      // 后端错误已由 AuthController Toast；回环/超时异常给通用提示。
+      if (mounted) {
+        Toast.showToast(
+          'login_oauth_failed'.tr(),
+          type: ToastType.error,
+          singleton: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isOAuthLoading = false);
+    }
   }
 
   Widget _buildFooterLinks(ColorScheme colorScheme) {

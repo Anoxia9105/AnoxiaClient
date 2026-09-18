@@ -75,4 +75,10 @@ class StorageKeys {
   /// 获取当前用户的 AI 会话持久化 key
   static String aiConversationIdKey(String userId) =>
       '$aiConversationIdPrefix$userId';
+
+  /// Web 端 Google OAuth 回调前暂存的 PKCE verifier（整页跳转后读回即删）
+  static const String oauthCodeVerifier = 'OAUTH_CODE_VERIFIER';
+
+  /// Web 端 Google OAuth 回调前暂存的 state（防 CSRF，读回即删）
+  static const String oauthState = 'OAUTH_STATE';
 }

@@ -20,6 +20,10 @@ class RuntimeConfigOverrides {
   static String? get qrUserBaseUrl => _read('qrUserBaseUrl');
   static String? get qrGroupBaseUrl => _read('qrGroupBaseUrl');
 
+  /// Google OAuth Web 客户端 ID（部署期经 runtime-config.js 注入，Docker 入口
+  /// 由 GOOGLE_OAUTH_CLIENT_ID 环境变量渲染；未注入时回退编译期 dart-define）。
+  static String? get googleClientId => _read('googleClientId');
+
   static String? _read(String key) {
     try {
       final config = _anoxiaConfig;

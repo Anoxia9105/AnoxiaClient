@@ -38,6 +38,9 @@ class API {
   /// 用户登录接口
   static const String login = '/login';
 
+  /// OAuth 登录（Web/桌面 Google 登录，code 换站内 token）
+  static const String loginOAuth = '/login/oauth';
+
   /// 用户注册
   static const String register = '/register';
 

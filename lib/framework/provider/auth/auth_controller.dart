@@ -127,6 +127,45 @@ class AuthController extends _$AuthController {
     _finishLoginSuccess();
   }
 
+  /// OAuth 登录（Web/桌面 Google 登录）
+  ///
+  /// [code]/[codeVerifier]/[redirectUri] 为系统浏览器授权流程产物，
+  /// 服务端换发站内 token 后流程与密码登录一致：落库 → 拉取用户信息。
+  Future<void> loginWithOAuth({
+    required String provider,
+    required String code,
+    required String codeVerifier,
+    required String redirectUri,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      final token = await ref.read(authRepositoryProvider).loginWithOAuth(
+            provider: provider,
+            code: code,
+            codeVerifier: codeVerifier,
+            redirectUri: redirectUri,
+            deviceId:
+                await DeviceIdentity.instance.getPlatformQualifiedId(),
+          );
+      if (token == null || token.isEmpty) {
+        throw Exception('login_failed'.tr());
+      }
+      await _completeTokenLogin(token);
+    } catch (e, st) {
+      debugLog('[AuthController] OAuth 登录失败', e, st);
+      state = AsyncError(e, st);
+      // 统一展示后端返回的错误信息（授权过期、账号停用等）
+      ref.read(toastServiceProvider).showToast(
+            _parseLoginErrorMessage(e),
+            type: ToastType.error,
+          );
+      rethrow;
+    }
+
+    _finishLoginSuccess();
+  }
+
   /// 登录成功后的共同收尾：绑定推送、清空房间缓存、触发 App 初始化
   void _finishLoginSuccess() {
     final user = state.value;

@@ -6,6 +6,7 @@ import 'package:anoxia/features/app/presentation/pages/error_page.dart';
 import 'package:anoxia/features/app/presentation/pages/login_page.dart';
 import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
 import 'package:anoxia/features/app/presentation/pages/not_found_page.dart';
+import 'package:anoxia/features/app/presentation/pages/oauth_callback_page.dart';
 import 'package:anoxia/features/app/presentation/pages/splash_page.dart';
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
@@ -68,6 +69,11 @@ GoRouter router(Ref ref) {
       final location = state.matchedLocation;
       final isSplash = location == const SplashRoute().location;
       final isLogin = location == const InitLoginRoute().location;
+      // Web 端 Google OAuth 回调页：未登录态也必须放行，由页面自身完成换 token；
+      // 成功后认证态变为登录，下一轮 redirect 自动送往首页。
+      final isOAuthCallback =
+          location == const OAuthCallbackRoute().location;
+      if (isOAuthCallback) return null;
 
       // 初始化出错时跳转到错误页
       if (initStatus.hasError && location != const ErrorRoute().location) {
@@ -118,6 +124,16 @@ class InitLoginRoute extends GoRouteData with $InitLoginRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const LoginPage();
+}
+
+/// Web 端 Google OAuth 回调路由（同源接码，无实际导航意义）
+@TypedGoRoute<OAuthCallbackRoute>(path: '/oauth-callback')
+class OAuthCallbackRoute extends GoRouteData with $OAuthCallbackRoute {
+  const OAuthCallbackRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const OAuthCallbackPage();
 }
 
 /// 首页/主布局路由

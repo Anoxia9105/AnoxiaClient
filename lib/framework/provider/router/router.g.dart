@@ -8,6 +8,7 @@ part of 'router.dart';
 
 List<RouteBase> get $appRoutes => [
   $initLoginRoute,
+  $oAuthCallbackRoute,
   $homeRoute,
   $splashRoute,
   $errorRoute,
@@ -31,6 +32,33 @@ mixin $InitLoginRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/login');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $oAuthCallbackRoute => GoRouteData.$route(
+  path: '/oauth-callback',
+  hasOverriddenOnExit: false,
+  factory: $OAuthCallbackRoute._fromState,
+);
+
+mixin $OAuthCallbackRoute on GoRouteData {
+  static OAuthCallbackRoute _fromState(GoRouterState state) =>
+      const OAuthCallbackRoute();
+
+  @override
+  String get location => GoRouteData.$location('/oauth-callback');
 
   @override
   void go(BuildContext context) => context.go(location);

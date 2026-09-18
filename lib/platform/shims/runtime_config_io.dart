@@ -7,6 +7,9 @@ class RuntimeConfigOverrides {
   static String? get wsRoomBaseUrl => null;
   static String? get qrUserBaseUrl => null;
   static String? get qrGroupBaseUrl => null;
+
+  /// 原生端无运行时注入，Google Client ID 只走编译期 dart-define。
+  static String? get googleClientId => null;
 }
 
 class RuntimeConfigDefaults {

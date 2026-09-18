@@ -19,6 +19,19 @@ abstract interface class AuthRepository {
     required String deviceId,
   });
 
+  /// OAuth 登录（Web/桌面 Google 登录）
+  ///
+  /// [provider] 目前仅 `google`；[code]/[codeVerifier]/[redirectUri] 为
+  /// 系统浏览器授权流程产物，服务端用其换取身份并签发站内 Token。
+  /// 返回服务端下发的 Token；失败时抛出异常。
+  Future<String?> loginWithOAuth({
+    required String provider,
+    required String code,
+    required String codeVerifier,
+    required String redirectUri,
+    required String deviceId,
+  });
+
   /// 发送注册邮箱验证码
   ///
   /// 返回后端消息文本；失败时抛出异常。
