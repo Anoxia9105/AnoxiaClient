@@ -24,11 +24,24 @@ class OAuthCancelledException implements Exception {
   String toString() => message;
 }
 
+/// 回环层失败（端口被占/打不开浏览器/state 校验失败等）。
+///
+/// 携带 i18n key（[messageKey]），调用方直接 `.tr()` 展示；与后端换 token
+/// 失败区分开——后者已由 AuthController 统一 Toast，调用方不再重复提示。
+class OAuthLoopbackException implements Exception {
+  final String messageKey;
+  const OAuthLoopbackException(this.messageKey);
+
+  @override
+  String toString() => messageKey;
+}
+
 abstract final class OAuthLoopback {
   /// 拉起系统浏览器完成授权，并在本地回环等待 Google 回调。
   ///
-  /// 120 秒超时抛 [TimeoutException]；端口被占抛 [SocketException]（提示关闭冲突程序）；
-  /// 回调带 error（如用户在 Google 页点拒绝）抛 [OAuthCancelledException]。
+  /// 120 秒超时抛 [TimeoutException]；端口被占、打不开浏览器、state 校验
+  /// 失败抛 [OAuthLoopbackException]；回调带 error（如用户在 Google 页点
+  /// 拒绝）抛 [OAuthCancelledException]。
   static Future<OAuthLoopbackResult> waitForCallback({
     required Uri authorizeUri,
     required String expectedState,
@@ -39,7 +52,7 @@ abstract final class OAuthLoopback {
     try {
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
     } on SocketException {
-      throw const SocketException('本地回调端口 8080 被占用，请关闭冲突程序后重试');
+      throw const OAuthLoopbackException('login_oauth_port_busy');
     }
 
     final completer = Completer<OAuthLoopbackResult>();
@@ -50,7 +63,9 @@ abstract final class OAuthLoopback {
 
     try {
       if (!await launchUrl(authorizeUri, mode: LaunchMode.externalApplication)) {
-        throw StateError('无法打开系统浏览器，请检查默认浏览器设置');
+        throw const OAuthLoopbackException(
+          'login_oauth_open_browser_failed',
+        );
       }
       return await completer.future.timeout(timeout);
     } finally {
@@ -86,7 +101,9 @@ abstract final class OAuthLoopback {
       repo.writeln(_resultPage('安全校验失败', '请求已过期，请返回应用重新发起登录。'));
       await repo.close();
       if (!completer.isCompleted) {
-        completer.completeError(StateError('OAuth state 校验失败，可能存在 CSRF 攻击'));
+        completer.completeError(
+          const OAuthLoopbackException('login_oauth_state_mismatch'),
+        );
       }
       return;
     }

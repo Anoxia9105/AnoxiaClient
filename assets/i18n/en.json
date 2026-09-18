@@ -130,6 +130,7 @@
   "login_oauth_success": "Signed in, entering…",
   "login_oauth_back_to_login": "Back to login",
   "login_oauth_open_browser_failed": "Unable to open the browser, please check your default browser settings",
+  "login_oauth_port_busy": "Local callback port 8080 is busy, please close the conflicting app and retry",
   "login_page_username_validator_notnull": "Username cannot be empty",
   "login_page_username_validator_regex": "Username must be 2-20 characters, consisting of letters, numbers, or underscores, and cannot start with a number",
   "login_page_password_validator_notnull": "Password cannot be empty",

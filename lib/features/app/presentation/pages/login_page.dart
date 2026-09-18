@@ -6,7 +6,9 @@ import 'package:anoxia/common/constants/storage_keys.dart';
 import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/core/google_oauth_service.dart';
+import 'package:anoxia/platform/shims/browser_url_shim.dart';
 import 'package:anoxia/platform/shims/oauth_loopback_shim.dart';
+import 'package:anoxia/features/app/presentation/widgets/google_g_icon.dart';
 import 'package:anoxia/features/app/presentation/pages/forgot_password_page.dart';
 import 'package:anoxia/features/app/presentation/pages/register_page.dart';
 import 'package:anoxia/common/widgets/toast.dart';
@@ -80,6 +82,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
         _usernameCtrl.text = prefill;
         ref.read(loginPrefillAccountProvider.notifier).set(null);
       }
+      // Web 端 Google 回调：hash 路由下 Google 只能回到 path，路由页挂载不上，
+      // code 会留在地址栏 query 里，由登录页认领完成换 token（见方法注释）。
+      _handleWebOAuthReturn();
     });
   }
 
@@ -449,37 +454,40 @@ class _LoginPageState extends ConsumerState<LoginPage>
     );
   }
 
-  /// Google 登录区（Web/桌面专属，与密码登录并存）
+  /// Google 登录区（Web/桌面专属，与密码登录并存；小圆形图标按钮）
   Widget _buildOAuthSection(ColorScheme colorScheme) {
+    final isDisabled = _isOAuthLoading || _isLoading;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 20),
         _buildModeDivider(colorScheme),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 50,
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _isOAuthLoading || _isLoading ? null : _handleGoogleLogin,
-            icon: _isOAuthLoading
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  )
-                : const HugeIcon(
-                    icon: HugeIcons.strokeRoundedGoogle,
-                    size: 18,
-                  ),
-            label: Text('login_oauth_google'.tr()),
-            style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(RadiusToken.lg),
+        Center(
+          child: Tooltip(
+            message: 'login_oauth_google'.tr(),
+            child: Material(
+              color: colorScheme.surface,
+              elevation: 1,
+              shadowColor: colorScheme.shadow.withValues(alpha: 0.2),
+              shape: CircleBorder(
+                side: BorderSide(color: colorScheme.outlineVariant),
               ),
-              textStyle: Theme.of(context)
-                  .textTheme
-                  .titleMedium!
-                  .copyWith(fontWeight: FontWeight.w600),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: isDisabled ? null : _handleGoogleLogin,
+                child: SizedBox.square(
+                  dimension: 48,
+                  child: Center(
+                    child: _isOAuthLoading
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const GoogleGIcon(size: 22),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -502,6 +510,62 @@ class _LoginPageState extends ConsumerState<LoginPage>
       await _handleGoogleLoginWeb();
     } else if (DeviceUtil.isRealDesktop()) {
       await _handleGoogleLoginDesktop();
+    }
+  }
+
+  /// Web 端 Google 回调认领（hash 路由的锅，必须放登录页）。
+  ///
+  /// Web 默认 hash 路由只认 `#` 后面的 fragment，Google 按注册的重定向 URI
+  /// 回到 `/oauth-callback?code=...`（无 fragment）时，Flutter 实际挂载的是
+  /// 启动页→登录页，`/oauth-callback` 路由页永远上不来；code/state 则原样
+  /// 留在地址栏 query 里（这正是线上 `#/login` 尾巴前面还挂着一串 code 的原因）。
+  /// 这里检测到 code 就走完换 token 全程，并清掉地址栏 query 防重放。
+  Future<void> _handleWebOAuthReturn() async {
+    if (!DeviceUtil.isRealWeb() || _isOAuthLoading) return;
+    final callback = GoogleOAuthCallback.parse(Uri.base);
+    if (!callback.isSuccess) return;
+
+    setState(() => _isOAuthLoading = true);
+    try {
+      // 整页跳转回来后一次性消费暂存，防重放。
+      final verifier = SPUtil.instance.get(StorageKeys.oauthCodeVerifier);
+      final savedState = SPUtil.instance.get(StorageKeys.oauthState);
+      await SPUtil.instance.deleteMulti([
+        StorageKeys.oauthCodeVerifier,
+        StorageKeys.oauthState,
+      ]);
+      // 先清地址栏：code 只能用一次，刷新/重建时不再二次消费。
+      BrowserUrl.clearQueryParameters();
+
+      if (verifier == null || verifier.isEmpty) {
+        Toast.showToast(
+          'login_oauth_expired'.tr(),
+          type: ToastType.error,
+          singleton: true,
+        );
+        return;
+      }
+      if (savedState == null || callback.state != savedState) {
+        Toast.showToast(
+          'login_oauth_state_mismatch'.tr(),
+          type: ToastType.error,
+          singleton: true,
+        );
+        return;
+      }
+      await ref.read(authControllerProvider.notifier).loginWithOAuth(
+            provider: 'google',
+            code: callback.code!,
+            codeVerifier: verifier,
+            redirectUri: GoogleOAuthConfig.webRedirectUri(Uri.base),
+          );
+      final user = ref.read(authControllerProvider).value;
+      if (user == null) return;
+      await ref.read(appInitializerProvider.notifier).performFullReset();
+    } catch (_) {
+      // 后端错误已由 AuthController 统一 Toast，这里不再重复提示。
+    } finally {
+      if (mounted) setState(() => _isOAuthLoading = false);
     }
   }
 
@@ -571,8 +635,16 @@ class _LoginPageState extends ConsumerState<LoginPage>
       await ref.read(appInitializerProvider.notifier).performFullReset();
     } on OAuthCancelledException {
       // 用户在浏览器侧取消：静默返回登录页。
-    } catch (_) {
-      // 后端错误已由 AuthController Toast；回环/超时异常给通用提示。
+    } on OAuthLoopbackException catch (e) {
+      // 回环层失败（端口被占/打不开浏览器等）：AuthController 没参与，必须这里提示。
+      if (mounted) {
+        Toast.showToast(
+          e.messageKey.tr(),
+          type: ToastType.error,
+          singleton: true,
+        );
+      }
+    } on TimeoutException {
       if (mounted) {
         Toast.showToast(
           'login_oauth_failed'.tr(),
@@ -580,6 +652,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
           singleton: true,
         );
       }
+    } catch (_) {
+      // 后端换 token 失败已由 AuthController 统一 Toast，不再重复提示。
     } finally {
       if (mounted) setState(() => _isOAuthLoading = false);
     }

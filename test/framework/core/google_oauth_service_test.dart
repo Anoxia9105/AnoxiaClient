@@ -68,5 +68,17 @@ void main() {
       expect(result.isCancelled, isTrue);
       expect(result.error, 'access_denied');
     });
+
+    test('hash 路由改写后（code 在 #/login 前面）依然能解析', () {
+      // 线上真实形态：Flutter hash 路由把路由写进 fragment，query 原样保留。
+      final result = GoogleOAuthCallback.parse(
+        Uri.parse(
+          'https://chat.anoxia.cn/oauth-callback?code=abc&state=xyz#/login',
+        ),
+      );
+      expect(result.isSuccess, isTrue);
+      expect(result.code, 'abc');
+      expect(result.state, 'xyz');
+    });
   });
 }
