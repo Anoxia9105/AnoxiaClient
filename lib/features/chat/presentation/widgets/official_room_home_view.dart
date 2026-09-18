@@ -7,7 +7,6 @@ import 'package:anoxia/features/chat/presentation/widgets/create_chat_dialog_wid
 import 'package:anoxia/features/chat/presentation/widgets/official_room_sections.dart';
 import 'package:anoxia/features/contact/presentation/pages/add_friend_page.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
-import 'package:anoxia/features/settings/presentation/pages/open_source_licenses_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_announcement_section.dart';
 import 'package:anoxia/framework/provider/router/router.dart';
@@ -20,18 +19,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 const String _officialHomePageUrl = 'https://www.anoxia.cn';
-const String _privacyPolicyUrl = 'https://www.anoxia.cn/privacy.html';
-const String _termsUrl = 'https://www.anoxia.cn/terms.html';
-const String _githubUrl = 'https://github.com/crazydavet';
 
 /// 官方虚拟房间内容页。
 ///
-/// 纯前端富内容帮助页：欢迎 Hero（状态徽章）+ 更新/公告卡 + 快速操作
-/// （按平台裁剪与弹窗/页面自适应）+ 功能一览 + 快速上手 + 常见问题
-/// + 小贴士 + 快捷入口。小窗口或窗口尺寸限制时自动降为紧凑排版。
+/// 纯前端富内容帮助页：紧凑 Hero + 分段 Tab（功能 / 上手 / 帮助）。
+/// Tab 内为可滚动内容，一屏内切换分区，避免整页长列表下滑。
+/// 入场与分区切换采用一次性错峰淡入动画，性能可控。
 class OfficialRoomHomeView extends ConsumerStatefulWidget {
   const OfficialRoomHomeView({super.key});
 
@@ -40,8 +35,40 @@ class OfficialRoomHomeView extends ConsumerStatefulWidget {
       _OfficialRoomHomeViewState();
 }
 
-class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView> {
+class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView>
+    with SingleTickerProviderStateMixin {
   bool _updateDismissed = false;
+
+  late final AnimationController _entranceController;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    // 页面整体一次性入场动画（fade + 轻微上移 + 品牌缩放），播放一次即止。
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 560),
+    )..forward();
+    final curved = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutCubic,
+    );
+    _fade = curved;
+    _slide = Tween(begin: const Offset(0, 0.035), end: Offset.zero).animate(
+      curved,
+    );
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _entranceController.dispose();
+    super.dispose();
+  }
 
   /// 按平台构建快速操作列表。
   ///
@@ -99,45 +126,6 @@ class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView> {
     ];
   }
 
-  List<NavLinkData> _navLinks(BuildContext context) => [
-    NavLinkData(
-      icon: HugeIcons.strokeRoundedSettings01,
-      title: 'official_room_nav_settings'.tr(),
-      description: 'official_room_nav_settings_desc'.tr(),
-      onTap: _openSettings,
-    ),
-    NavLinkData(
-      icon: HugeIcons.strokeRoundedCode,
-      title: 'official_room_nav_licenses'.tr(),
-      description: 'official_room_nav_licenses_desc'.tr(),
-      onTap: _openLicenses,
-    ),
-    NavLinkData(
-      icon: HugeIcons.strokeRoundedLock,
-      title: 'official_room_nav_privacy'.tr(),
-      description: 'official_room_nav_privacy_desc'.tr(),
-      onTap: () => _launchUrl(_privacyPolicyUrl),
-    ),
-    NavLinkData(
-      icon: HugeIcons.strokeRoundedLegal01,
-      title: 'official_room_nav_terms'.tr(),
-      description: 'official_room_nav_terms_desc'.tr(),
-      onTap: () => _launchUrl(_termsUrl),
-    ),
-    NavLinkData(
-      icon: HugeIcons.strokeRoundedShare01,
-      title: 'official_room_nav_share'.tr(),
-      description: 'official_room_nav_share_desc'.tr(),
-      onTap: _shareApp,
-    ),
-    NavLinkData(
-      icon: HugeIcons.strokeRoundedGithub,
-      title: 'official_room_nav_github'.tr(),
-      description: 'official_room_nav_github_desc'.tr(),
-      onTap: () => _launchUrl(_githubUrl),
-    ),
-  ];
-
   /// 添加好友：桌面端 / Web PC 走弹窗，移动端 / Web SP 走页面跳转。
   void _openAddFriend() => presentAdaptivePage(
     context,
@@ -167,12 +155,6 @@ class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView> {
     builder: (_) => const SettingsPage(),
   );
 
-  /// 开源许可：桌面端 / Web PC 走弹窗，移动端 / Web SP 走页面跳转。
-  void _openLicenses() => presentAdaptivePage(
-    context,
-    builder: (_) => const OpenSourceLicensesPage(),
-  );
-
   Future<void> _checkUpdate() async {
     final result = await ref
         .read(settingsPageControllerProvider.notifier)
@@ -198,30 +180,14 @@ class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView> {
     }
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        _toastFailure();
-      }
-    } catch (_) {
-      _toastFailure();
-    }
-  }
-
-  void _toastFailure() {
-    if (!mounted) return;
-    Toast.showToast('official_room_link_failed'.tr(), type: ToastType.error);
-  }
-
   Future<void> _shareApp() async {
     try {
       await SharePlus.instance.share(
         ShareParams(title: 'Anoxia IM Client', text: _officialHomePageUrl),
       );
     } catch (_) {
-      _toastFailure();
+      if (!mounted) return;
+      Toast.showToast('official_room_link_failed'.tr(), type: ToastType.error);
     }
   }
 
@@ -237,59 +203,70 @@ class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView> {
       builder: (context, constraints) {
         final compact =
             constraints.maxWidth < 520 || constraints.maxHeight < 620;
-        final horizontalPadding = constraints.maxWidth < 420 ? 16.0 : 24.0;
+        final horizontalPadding = compact ? 14.0 : 20.0;
 
         return SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    compact ? 16 : 24,
-                    horizontalPadding,
-                    compact ? 16 : 24,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 900),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _WelcomeHeader(
-                            compact: compact,
-                            version: version,
-                            hasUpdate: hasUpdate,
-                          ),
-                          SizedBox(height: compact ? 20 : 28),
-                          if (hasUpdate && !_updateDismissed) ...[
-                            _UpdateBanner(
-                              latestVersion: updateInfo.latestVersion,
-                              onCheck: _checkUpdate,
-                              onDismiss: () => setState(() => _updateDismissed = true),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: FadeTransition(
+                opacity: _fade,
+                child: SlideTransition(
+                  position: _slide,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          compact ? 12 : 16,
+                          horizontalPadding,
+                          0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ScaleTransition(
+                              scale: Tween(begin: 0.96, end: 1.0).animate(
+                                _entranceController,
+                              ),
+                              child: _WelcomeHeader(
+                                compact: compact,
+                                version: version,
+                                hasUpdate: hasUpdate,
+                              ),
                             ),
-                            SizedBox(height: compact ? 20 : 28),
+                            if (hasUpdate && !_updateDismissed) ...[
+                              const SizedBox(height: 10),
+                              _UpdateBanner(
+                                latestVersion: updateInfo.latestVersion,
+                                onCheck: _checkUpdate,
+                                onDismiss: () =>
+                                    setState(() => _updateDismissed = true),
+                              ),
+                            ],
+                            Padding(
+                              padding: EdgeInsets.only(top: compact ? 10 : 14),
+                              child: _HomeTabBar(controller: _tabController),
+                            ),
                           ],
-                          QuickActionsSection(items: _buildActions(context)),
-                          SizedBox(height: compact ? 20 : 28),
-                          const OnboardingSection(),
-                          SizedBox(height: compact ? 20 : 28),
-                          const FeaturesSection(),
-                          SizedBox(height: compact ? 20 : 28),
-                          const FaqSection(),
-                          SizedBox(height: compact ? 20 : 28),
-                          const TipsSection(),
-                          SizedBox(height: compact ? 20 : 28),
-                          NavLinksSection(items: _navLinks(context)),
-                          const SizedBox(height: 20),
-                          _Footer(version: version),
-                        ],
+                        ),
                       ),
-                    ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _FeatureTab(actions: _buildActions(context)),
+                            const _OnboardingTab(),
+                            const _HelpTab(),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         );
       },
@@ -297,7 +274,147 @@ class _OfficialRoomHomeViewState extends ConsumerState<OfficialRoomHomeView> {
   }
 }
 
-/// 欢迎 Hero：品牌标识 + 标题 + 状态徽章（连接状态 / 版本 / 更新提示）。
+/// 分段 Tab 栏：胶囊分段控件，选中态着色，未选中透明。
+class _HomeTabBar extends StatelessWidget {
+  const _HomeTabBar({required this.controller});
+
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(RadiusToken.pill),
+      ),
+      child: TabBar(
+        controller: controller,
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(RadiusToken.pill),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(alpha: 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        labelColor: colorScheme.onPrimaryContainer,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        labelStyle: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        unselectedLabelStyle: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+        tabs: [
+          Tab(text: 'official_room_chips_overview'.tr()),
+          Tab(text: 'official_room_onboarding_title'.tr()),
+          Tab(text: 'official_room_faq_title'.tr()),
+        ],
+      ),
+    );
+  }
+}
+
+/// 通用 Tab 内容容器：可滚动 + 内边距 + 分区错峰淡入。
+class _TabPage extends StatelessWidget {
+  const _TabPage({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(height: 18),
+            _StaggerItem(index: i, child: children[i]),
+          ],
+          const _Footer(),
+        ],
+      ),
+    );
+  }
+}
+
+/// 一次性错峰淡入动画：单项从透明 + 轻微上移浮现。
+///
+/// 仅首次构建播放一次（TweenAnimationBuilder 单次 tween），无循环、
+/// 无持续刷新，性能可控。
+class _StaggerItem extends StatelessWidget {
+  const _StaggerItem({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final delay = (index * 70).clamp(0, 350);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 320 + delay),
+      curve: Curves.easeOutCubic,
+      child: child,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 14 * (1 - value)),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// 「功能」分区：快速操作 + 功能一览。
+class _FeatureTab extends StatelessWidget {
+  const _FeatureTab({required this.actions});
+
+  final List<QuickActionData> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return _TabPage(
+      children: [
+        QuickActionsSection(items: actions),
+        const FeaturesSection(),
+      ],
+    );
+  }
+}
+
+/// 「上手」分区：快速上手指引。
+class _OnboardingTab extends StatelessWidget {
+  const _OnboardingTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _TabPage(children: [OnboardingSection()]);
+  }
+}
+
+/// 「帮助」分区：常见问题。
+class _HelpTab extends StatelessWidget {
+  const _HelpTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _TabPage(children: [FaqSection()]);
+  }
+}
+
+/// 欢迎 Hero：紧凑品牌横幅 + 状态徽章（连接状态 / 版本 / 更新提示）。
 class _WelcomeHeader extends ConsumerWidget {
   const _WelcomeHeader({
     required this.compact,
@@ -313,7 +430,7 @@ class _WelcomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final logoSize = compact ? 62.0 : 76.0;
+    final logoSize = compact ? 48.0 : 56.0;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -322,7 +439,7 @@ class _WelcomeHeader extends ConsumerWidget {
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.16)),
       ),
       child: Padding(
-        padding: EdgeInsets.all(compact ? 16 : 20),
+        padding: EdgeInsets.all(compact ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -332,15 +449,15 @@ class _WelcomeHeader extends ConsumerWidget {
                 Container(
                   width: logoSize,
                   height: logoSize,
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(compact ? 6 : 8),
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(RadiusToken.xl),
+                    borderRadius: BorderRadius.circular(RadiusToken.lg),
                     boxShadow: [
                       BoxShadow(
                         color: colorScheme.shadow.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -349,22 +466,24 @@ class _WelcomeHeader extends ConsumerWidget {
                     semanticLabel: 'official_room_name'.tr(),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'official_room_welcome_title'.tr(),
-                        style: textTheme.titleLarge?.copyWith(
+                        style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         'official_room_welcome_desc'.tr(),
-                        style: textTheme.bodyMedium?.copyWith(
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
                           height: 1.45,
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -374,7 +493,7 @@ class _WelcomeHeader extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -423,7 +542,7 @@ class _StatusChip extends StatelessWidget {
     return Tooltip(
       message: text,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(RadiusToken.pill),
@@ -433,12 +552,12 @@ class _StatusChip extends StatelessWidget {
           ),
         ),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 240),
+          constraints: const BoxConstraints(maxWidth: 220),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(icon: icon, size: 14, color: foreground),
-              const SizedBox(width: 6),
+              HugeIcon(icon: icon, size: 13, color: foreground),
+              const SizedBox(width: 5),
               Flexible(
                 child: Text(
                   text,
@@ -476,28 +595,28 @@ class _UpdateBanner extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(RadiusToken.xl),
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.28)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 38,
+              height: 38,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: colorScheme.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(RadiusToken.lg),
+                borderRadius: BorderRadius.circular(RadiusToken.md),
               ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedSystemUpdate02,
-                size: 20,
+                size: 18,
                 color: colorScheme.primary,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,21 +627,22 @@ class _UpdateBanner extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     'official_room_update_desc'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: textTheme.bodySmall?.copyWith(
-                      height: 1.4,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             FilledButton.icon(
               onPressed: onCheck,
-              icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 16),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 15),
               label: Text('official_room_update_check'.tr()),
             ),
             IconButton(
@@ -530,7 +650,7 @@ class _UpdateBanner extends StatelessWidget {
               onPressed: onDismiss,
               icon: HugeIcon(
                 icon: HugeIcons.strokeRoundedCancel01,
-                size: 18,
+                size: 16,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
@@ -566,32 +686,19 @@ class _AnnouncementListPage extends ConsumerWidget {
 }
 
 class _Footer extends StatelessWidget {
-  const _Footer({required this.version});
-
-  final String version;
+  const _Footer();
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          Text(
-            '${'official_room_footer_version'.tr()} $version',
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'official_room_footer_rights'.tr(),
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.only(top: 20),
+      child: Text(
+        'official_room_footer_rights'.tr(),
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+        ),
       ),
     );
   }
