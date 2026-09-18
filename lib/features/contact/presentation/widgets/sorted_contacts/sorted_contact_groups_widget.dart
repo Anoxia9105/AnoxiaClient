@@ -112,8 +112,9 @@ class SortedContactGroupsWidget extends ConsumerWidget {
         );
       },
       loading: () => const ContactGroupsSkeleton(),
-      error: (err, stack) =>
-          Center(child: Text('${'contact_load_failed_with_error'.tr()}: $err')),
+      error: (err, stack) => Center(
+          child: Text(
+              'contact_load_failed_with_error'.tr(args: [err.toString()]))),
     );
   }
 }

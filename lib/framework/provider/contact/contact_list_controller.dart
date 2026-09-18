@@ -124,11 +124,11 @@ Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
       .where((c) => currentUserId == null || c.contactId != currentUserId)
       .toList();
 
-  // 按拼音首字母排序
+  // 按拼音首字母排序（空备注/空昵称统一回退到 '#'，避免首字母截取越界）
   final sortedList = List<ChatContactVO>.from(contacts)
     ..sort((a, b) {
-      String nameA = PinyinHelper.getPinyin(a.remark ?? a.nickName ?? '#');
-      String nameB = PinyinHelper.getPinyin(b.remark ?? b.nickName ?? '#');
+      String nameA = PinyinHelper.getPinyin(_displayNameOf(a));
+      String nameB = PinyinHelper.getPinyin(_displayNameOf(b));
       return nameA.compareTo(nameB);
     });
 
@@ -136,10 +136,10 @@ Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
   final Map<String, List<ChatContactVO>> groupMap = {};
 
   for (var contact in sortedList) {
-    String displayName = contact.remark ?? contact.nickName ?? '#';
-    String tag = PinyinHelper.getFirstWordPinyin(
-      displayName,
-    ).substring(0, 1).toUpperCase();
+    String displayName = _displayNameOf(contact);
+    final firstPinyin = PinyinHelper.getFirstWordPinyin(displayName);
+    String tag =
+        firstPinyin.isNotEmpty ? firstPinyin.substring(0, 1).toUpperCase() : '#';
     if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
     groupMap.putIfAbsent(tag, () => []).add(contact);
   }
@@ -153,4 +153,14 @@ Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
     });
 
   return {for (var k in sortedKeys) k: groupMap[k]!};
+}
+
+/// 联系人展示名：备注优先，空串与 null 同等对待，一律回退到昵称，兜底 '#'。
+///
+/// 后端管理员代建的关系备注可能为空串（历史数据），直接 `??` 会拿到空串，
+/// 后续拼音首字母 `substring(0, 1)` 越界抛 RangeError，导致整个列表页报错。
+String _displayNameOf(ChatContactVO c) {
+  if (c.remark?.isNotEmpty == true) return c.remark!;
+  if (c.nickName?.isNotEmpty == true) return c.nickName!;
+  return '#';
 }
