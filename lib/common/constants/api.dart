@@ -206,6 +206,12 @@ class API {
   /// AI 对话流式接口（SSE，支持 thinking / 多轮 conversationId）
   static const String chatAiStream = '/chat/ai/stream';
 
+  /// AI 可用性探测（含人工开关 + 上游健康；available=false 时隐藏全部 AI 入口）
+  static const String chatAiHealth = '/chat/ai/health';
+
+  /// AI 模型与开关列表（老接口，health 不可用时回退用）
+  static const String chatAiModels = '/chat/ai/models';
+
   /// 记事本 AI 流式接口（与 chatAiStream 协议一致，action 区分能力）
   static const String noteAiStream = '/note/ai/stream';
 

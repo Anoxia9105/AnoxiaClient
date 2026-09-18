@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import 'package:anoxia/domain/ai_stream_event.dart';
 import 'package:anoxia/framework/network/sse_client.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -213,6 +214,9 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
             });
             if (_preview.isEmpty) {
               ref.read(toastServiceProvider).showToast('note_ai.failed'.tr());
+              reportAiHealth(ref, false);
+            } else {
+              reportAiHealth(ref, true);
             }
           case 'error':
             gotDone = true;
@@ -221,6 +225,7 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
               _streaming = false;
               _failed = true;
             });
+            reportAiHealth(ref, false);
             try {
               final json = jsonDecode(frame.data) as Map<String, dynamic>;
               ref.read(toastServiceProvider).showToast(
@@ -237,6 +242,7 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
           _streaming = false;
           _failed = true;
         });
+        reportAiHealth(ref, false);
         String msg = 'note_ai.failed'.tr();
         if (e is AiException) {
           if (e.message.isNotEmpty) msg = e.message;
@@ -255,6 +261,8 @@ class _NoteAiPanelState extends ConsumerState<NoteAiPanel> {
             _streaming = false;
             _failed = _preview.isEmpty;
           });
+          // 断流兜底：有内容视为上游可达，无内容记一次失败
+          reportAiHealth(ref, _preview.isNotEmpty);
         }
       },
     );

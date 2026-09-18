@@ -148,10 +148,10 @@ class NoteToolbar extends ConsumerWidget {
             focusNode: focusNode,
           ),
           const NoteToolbarDivider(),
-          // AI 与搜索互斥：受服务端 noteEnabled 控制，关闭时隐藏
+          // AI 与搜索互斥：人工开关与上游探测同时满足才展示，任一不满足即隐藏
           Builder(
             builder: (context) {
-              final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ?? true;
+              final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteAvailable ?? true;
               if (!noteEnabled) return const SizedBox.shrink();
               if (onAiToggle != null || onAiTap != null || noteId != null) {
                 return NoteToolbarAiButton(

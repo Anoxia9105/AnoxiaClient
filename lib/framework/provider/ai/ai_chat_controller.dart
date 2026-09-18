@@ -4,6 +4,7 @@ import 'package:anoxia/common/constants/storage_keys.dart';
 import 'package:anoxia/common/utils/sp_util.dart';
 import 'package:anoxia/domain/ai_stream_event.dart';
 import 'package:anoxia/framework/domain/ai_chat_message.dart';
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/core/ai_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
@@ -100,6 +101,20 @@ class AiChatController extends _$AiChatController {
     _gotDone = false;
     _thinkingBuf.clear();
     _deltaBuf.clear();
+    // 单次 ask 只上报一次上游健康（终态 done/error/断流兜底其一）
+    var healthReported = false;
+    void reportHealth(bool success) {
+      if (healthReported) return;
+      healthReported = true;
+      try {
+        final notifier = ref.read(aiFeatureFlagsProvider.notifier);
+        if (success) {
+          notifier.reportSuccess();
+        } else {
+          notifier.reportFailure();
+        }
+      } catch (_) {}
+    }
 
     // 1. 用户消息 + 占位 AI 消息
     state = [...state, AiChatMessage(content: prompt, isAi: false)];
@@ -169,6 +184,7 @@ class AiChatController extends _$AiChatController {
               if (resolved.isEmpty) {
                 updateAiMessage(content: '⚠️ ${'chat_ai.failed'.tr()}', streaming: false, clearThinking: true);
                 _loading = false;
+                reportHealth(false);
                 if (!completer.isCompleted) completer.completeError(AiException('chat_ai.failed'.tr()));
                 return;
               }
@@ -177,11 +193,13 @@ class AiChatController extends _$AiChatController {
                 ref.read(toastServiceProvider).showToast('chat_ai.truncated'.tr());
               }
               _loading = false;
+              reportHealth(true);
               if (!completer.isCompleted) completer.complete();
           }
         },
         onError: (Object e) {
           _loading = false;
+          reportHealth(false);
           final msg = e is AiException ? e.message : 'chat_ai.failed'.tr();
           // 保留已收到的增量，仅在完全无内容时展示错误占位
           final collected = _deltaBuf.toString();
@@ -200,9 +218,11 @@ class AiChatController extends _$AiChatController {
             if (collected.isEmpty) {
               // 无 done 即失败兜底
               updateAiMessage(content: '⚠️ ${'chat_ai.failed'.tr()}', streaming: false, clearThinking: true);
+              reportHealth(false);
             } else {
               // 有增量但无 done：视为成功（网络提前断开但内容已完整）
               updateAiMessage(content: collected, streaming: false, clearThinking: true);
+              reportHealth(true);
             }
           }
           if (!completer.isCompleted) completer.complete();

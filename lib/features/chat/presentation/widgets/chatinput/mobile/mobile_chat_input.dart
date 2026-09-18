@@ -581,11 +581,11 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
                       : _buildTextCapsule(),
                 ),
               ),
-              // AI 助手按钮：受服务端 noteEnabled 控制，关闭时隐藏
+              // AI 助手按钮：人工开关与上游探测同时满足才展示，任一不满足即隐藏
               Builder(
                 builder: (_) {
                   final noteEnabled =
-                      ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ??
+                      ref.watch(aiFeatureFlagsProvider).value?.noteAvailable ??
                       true;
                   if (!noteEnabled) return const SizedBox.shrink();
                   return _buildCompactButton(

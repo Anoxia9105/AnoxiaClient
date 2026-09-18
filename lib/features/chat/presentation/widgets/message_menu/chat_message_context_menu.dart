@@ -121,8 +121,8 @@ class _ChatMessageContextMenuState
       items.add(
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
-      // 问AI：受服务端 chatEnabled 开关控制，关闭时不展示入口
-      final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatEnabled ?? true;
+      // 问AI：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
+      final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
       if (chatEnabled) {
         items.add(
           _buildItem(

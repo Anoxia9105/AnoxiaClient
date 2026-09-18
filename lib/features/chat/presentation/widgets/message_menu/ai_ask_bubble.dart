@@ -14,7 +14,10 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+
+import 'package:anoxia/framework/provider/ai/ai_feature_flags_provider.dart';
 
 import '../chatinput/ai/chat_ai_assist_core.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
@@ -166,6 +169,21 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
 
   // ---------------- 流式调用 ----------------
 
+  /// 上游终态上报（成功/失败各 exactly once）：连续失败达阈值即隐藏 AI 入口。
+  /// 普通 State 无 ref，经最近 ProviderScope 读写（失败时静默吞掉）。
+  void _reportAiSettled(bool success) {
+    try {
+      final notifier = ProviderScope.containerOf(
+        context,
+      ).read(aiFeatureFlagsProvider.notifier);
+      if (success) {
+        notifier.reportSuccess();
+      } else {
+        notifier.reportFailure();
+      }
+    } catch (_) {}
+  }
+
   void _startChat(String message) {
     setState(() {
       _answer = '';
@@ -178,6 +196,7 @@ class _AiAskBubbleCardState extends State<_AiAskBubbleCard> {
       message: message,
       conversationId: _conversationId,
       handlers: ChatAiStreamHandlers(
+        onSettled: _reportAiSettled,
         onDelta: (fullText) {
           if (!mounted) return;
           setState(() => _answer = fullText);

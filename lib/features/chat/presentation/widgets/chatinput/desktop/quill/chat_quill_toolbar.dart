@@ -302,12 +302,12 @@ import 'colors_box.dart';
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // AI 助手：受服务端 noteEnabled 控制，关闭时隐藏入口
+              // AI 助手：人工开关与上游探测同时满足才展示入口
               Builder(
                 builder: (context) {
                   return Consumer(
                     builder: (context, ref, _) {
-                      final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteEnabled ?? true;
+                      final noteEnabled = ref.watch(aiFeatureFlagsProvider).value?.noteAvailable ?? true;
                       if (!noteEnabled) return const SizedBox.shrink();
                       return ListenableBuilder(
                         listenable: controller,

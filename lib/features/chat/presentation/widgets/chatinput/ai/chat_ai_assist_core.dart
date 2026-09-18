@@ -60,6 +60,7 @@ class ChatAiStreamHandlers {
     this.onDone,
     this.onError,
     this.onThinking,
+    this.onSettled,
   });
 
   /// 增量文本（core 内部 80ms 节流后回调全量累计文本）
@@ -74,6 +75,10 @@ class ChatAiStreamHandlers {
 
   /// 推理期增量（多次），[thinking] 为 null 表示思考结束 `[done]` 哨兵
   final void Function(String? thinking)? onThinking;
+
+  /// 终态 settled（成功 exactly once）：true=拿到正文，false=失败/空回复。
+  /// 用于向 [aiFeatureFlagsProvider] 上报上游健康；用户主动 cancel 不触发。
+  final void Function(bool success)? onSettled;
 }
 
 /// 共享流式控制器：一个实例对应一次弹窗生命周期
@@ -143,6 +148,15 @@ class ChatAiAssistCore {
     _thinkingBuf.clear();
     _streaming = true;
     var gotTerminal = false;
+    var settled = false;
+
+    void settle(bool success) {
+      if (settled) return;
+      settled = true;
+      try {
+        handlers.onSettled?.call(success);
+      } catch (_) {}
+    }
 
     _sub = SseClient.post(path, body: body).listen(
       (frame) {
@@ -183,9 +197,11 @@ class ChatAiAssistCore {
             // 思考不算成功：空正文视为失败
             if (full.isEmpty) {
               handlers.onError?.call('chat_ai.failed'.tr());
+              settle(false);
               return;
             }
             handlers.onDone?.call(convId, full);
+            settle(true);
             if (truncated) {
               try {
                 Toast.showToast('chat_ai.truncated'.tr(), type: ToastType.warning);
@@ -203,6 +219,7 @@ class ChatAiAssistCore {
             } catch (_) {}
             handlers.onError?.call(
                 msg.isEmpty ? 'chat_ai.failed'.tr() : msg);
+            settle(false);
         }
       },
       onError: (Object e) {
@@ -217,6 +234,7 @@ class ChatAiAssistCore {
           }
         }
         handlers.onError?.call(msg);
+        settle(false);
       },
       onDone: () {
         // 无 done/error 即断流兜底
@@ -224,8 +242,10 @@ class ChatAiAssistCore {
           _streaming = false;
           if (_buffer.isEmpty) {
             handlers.onError?.call('chat_ai.failed'.tr());
+            settle(false);
           } else {
             handlers.onDone?.call('', _buffer.toString());
+            settle(true);
           }
         }
       },

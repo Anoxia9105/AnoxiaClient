@@ -112,6 +112,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
       message: 'ai_smart_reply_prompt'.tr(args: [quoted, _maxSuggestions.toString()]),
       handlers: ChatAiStreamHandlers(
         onDelta: (_) {},
+        onSettled: (ok) => reportAiHealth(ref, ok),
         onDone: (_, fullText) {
           if (!mounted) return;
           final list = _parseSuggestions(fullText);
@@ -190,7 +191,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar> {
 
   @override
   Widget build(BuildContext context) {
-    final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatEnabled ?? true;
+    final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
     if (!chatEnabled) return const SizedBox.shrink();
     if (!_expanded) {
       return Padding(
