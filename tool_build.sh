@@ -38,9 +38,10 @@ usage() {
   -Wasm              仅 web 有效：追加 --wasm（与 ps1 -Wasm 一致）
   -h, --help         显示本帮助
 
-同时兼容 --target / --debug / --wasm / --target=web 写法。
-环境变量：
-  FLUTTER_BIN        flutter 可执行文件路径（默认 flutter）
+ 同时兼容 --target / --debug / --wasm / --target=web 写法。
+ 环境变量：
+   FLUTTER_BIN        flutter 可执行文件路径（默认 flutter）
+   GOOGLE_OAUTH_CLIENT_ID  Google 登录 Client ID（公开信息，烘焙进产物；为空则隐藏入口）
 EOF
 }
 
@@ -98,12 +99,21 @@ if [[ "$TARGET" == "web" ]]; then
   fi
 fi
 
+# Google OAuth Client ID（公开信息）：经环境变量 GOOGLE_OAUTH_CLIENT_ID 传入，
+# 透传为 --dart-define 烘焙进产物（桌面端登录按钮靠它显示）。
+# 为空则不传参，前端自动隐藏 Google 登录入口，不影响密码登录。
+# 例：GOOGLE_OAUTH_CLIENT_ID='xxx.apps.googleusercontent.com' bash tool_build.sh -Target linux
+DART_DEFINES=()
+if [[ -n "${GOOGLE_OAUTH_CLIENT_ID:-}" ]]; then
+  DART_DEFINES+=("--dart-define=GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}")
+fi
+
 BUILD_TARGET="$TARGET"
 if [[ "$TARGET" == "android" ]]; then
   BUILD_TARGET="apk"
 fi
 
-echo ">>> $FLUTTER_BIN build $BUILD_TARGET $MODE ${EXTRA[*]:-}"
-"$FLUTTER_BIN" build "$BUILD_TARGET" "$MODE" "${EXTRA[@]:-}"
+echo ">>> $FLUTTER_BIN build $BUILD_TARGET $MODE ${EXTRA[*]:-} ${DART_DEFINES[*]:-}"
+"$FLUTTER_BIN" build "$BUILD_TARGET" "$MODE" "${EXTRA[@]:-}" "${DART_DEFINES[@]:-}"
 
 echo "flutter build $TARGET $MODE done."
