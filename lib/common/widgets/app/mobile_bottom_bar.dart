@@ -50,7 +50,6 @@ class MobileBottomBar extends ConsumerWidget {
       child: Container(
         key: const Key('mobile-bottom-bar'),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
           border: Border(
             top: BorderSide(
               color: colorScheme.outlineVariant.withValues(
