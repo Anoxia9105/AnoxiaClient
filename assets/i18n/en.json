@@ -1051,6 +1051,8 @@
   "call_invitation_cancelled": "Call invitation cancelled",
   "call_peer_busy": "Peer is busy",
   "call_ended": "Call ended",
+  "call_ending": "Ending call…",
+  "call_cleanup_failed": "Call resources could not be released. This window cannot close yet. Please restart the app and try again.",
   "call_peer_ended": "Peer hung up",
   "call_incoming": "Incoming call",
   "call_duration_hours": "{}h",

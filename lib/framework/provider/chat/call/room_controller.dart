@@ -18,6 +18,7 @@ import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import '../../../domain/room_state.dart';
 import 'call_initial_media.dart';
+import 'call_media_lifecycle.dart';
 import 'mobile_call_session_provider.dart';
 
 part 'room_controller.g.dart';
@@ -70,6 +71,7 @@ class RoomController extends _$RoomController {
   /// 之后再销毁窗口，因为桌面端子窗口关闭会直接拆除该窗口的引擎，带着活跃的
   /// 通话会话销毁引擎会让原生侧在析构过程中崩溃（表现为整个应用闪退）。
   Future<void>? _leaveFuture;
+  CallMediaLifecycle? _mediaLifecycle;
 
   // ================= Riverpod build =================
 
@@ -87,7 +89,9 @@ class RoomController extends _$RoomController {
   Future<RoomState> build(String token) async {
     // 若此 token 已被 leave()/onDispose 标记为已处理，不再重新连接。
     // 防止 invalidateSelf 重建后陷入"连接→断开→重建"的无限循环（Web WASM 栈溢出根因）。
-    if (_disposedTokens.remove(token)) {
+    // Riverpod 3 会自动重试失败的 build，不能检查后就移除标记，
+    // 否则下一次重试会在挂断后重新开启媒体。重新拨号应使用新 token。
+    if (_disposedTokens.contains(token)) {
       throw StateError('房间已离开，不再重连');
     }
 
@@ -98,230 +102,251 @@ class RoomController extends _$RoomController {
       ),
     );
 
+    final lifecycle = CallMediaLifecycle(
+      dispose: () async {
+        await _disposeResources();
+        try {
+          // 等待 SDK 自己结束断连，不用 timeout 制造并行的 dispose。
+          await room.disconnect();
+        } catch (e, st) {
+          debugLog('断连失败，继续释放房间资源', e, st);
+        }
+        // 释放失败必须传给关窗流程，不能带着未释放的资源销毁引擎。
+        await room.dispose();
+        await _releaseScreenShareKeepAlive();
+      },
+    );
+    _mediaLifecycle = lifecycle;
+
     // 注册销毁回调（Provider 被销毁时自动执行）
     // 注意：onDispose 中不能访问 provider state，否则会触发 Riverpod 断言
     ref.onDispose(() {
-      _disposeResources();
-      // 兜底清理（幂等）：leave() 可能已执行过 disconnect/dispose
-      try {
-        room.disconnect();
-      } catch (_) {}
-      try {
-        room.dispose();
-      } catch (_) {}
+      // 与 leave / 初始化失败共用同一次清理，不能并发 disconnect / dispose。
+      unawaited(
+        lifecycle.close().catchError((Object e, StackTrace st) {
+          debugLog('通话资源兜底清理失败', e, st);
+        }),
+      );
     });
 
     try {
-      // 连接房间（串行：先预连接降低延迟，再正式连接）
-      await _connectRoom(room, token);
-
-      // 创建事件监听器并保存引用（用于 dispose）
-      // 注意：用局部变量接收，避免 _listener 可空导致的 null check 问题
-      final listener = room.createListener();
-      _listener = listener;
-
-      listener
-        // ============ 房间级别事件 ============
-        /// 房间连接成功
-        /// 通常在 build 中 connect 之后就会触发，这里主要用于清除之前的错误状态
-        ..on<RoomConnectedEvent>((event) {
-          final current = state.value;
-          if (current != null && current.connectionError != null) {
-            state = AsyncData(current.copyWith(connectionError: null));
-          }
-        })
-        /// 房间断开连接
-        /// SDK 会在网络中断或主动 disconnect 后触发
-        /// 重连逻辑由 SDK 自动处理，不需要手动干预
-        ..on<RoomDisconnectedEvent>((event) {
-          if (event.reason == DisconnectReason.participantRemoved) {
-            unawaited(_handleRemovedFromCall('call_host'.tr()));
-          }
-        })
-        /// 房间正在重连中（网络抖动时触发）
-        /// 更新 isReconnecting 状态，UI 层展示重连遮罩
-        ..on<RoomReconnectingEvent>((event) {
-          final current = state.value;
-          if (current != null) {
-            state = AsyncData(current.copyWith(isReconnecting: true));
-          }
-        })
-        /// 房间重连成功
-        /// 清除重连状态和错误信息
-        ..on<RoomReconnectedEvent>((event) {
-          final current = state.value;
-          if (current != null) {
-            state = AsyncData(
-              current.copyWith(isReconnecting: false, connectionError: null),
-            );
-          }
-        })
-        /// 房间元数据变化（服务端通过 Server API 更新的房间信息）
-        ..on<RoomMetadataChangedEvent>((event) {
-          final current = state.value;
-          if (current != null) {
-            state = AsyncData(current.copyWith(roomMetadata: event.metadata));
-          }
-        })
-        /// 录制状态变化（服务端开启/停止录制时触发）
-        ..on<RoomRecordingStatusChanged>((event) {
-          final current = state.value;
-          if (current != null) {
-            state = AsyncData(
-              current.copyWith(isRecording: event.activeRecording),
-            );
-          }
-        })
-        // ============ 参与者事件 ============
-        /// 新参与者加入房间
-        ..on<ParticipantConnectedEvent>((e) {
-          // 远端参与者出现过：兜底检测可生效；有人加入时取消待触发的结束检测
-          _peerGoneTimer?.cancel();
-          _everHadRemote = true;
-          _updateParticipants();
-        })
-        /// 参与者离开房间
-        ..on<ParticipantDisconnectedEvent>((e) {
-          _updateParticipants();
-          _schedulePeerGoneCheck();
-        })
-        /// 活跃发言者变化（SDK 根据音量实时检测）
-        /// 将第一个发言者设为焦点，UI 层可以据此高亮或置顶
-        ..on<ActiveSpeakersChangedEvent>((e) {
-          final current = state.value;
-          if (current != null && e.speakers.isNotEmpty) {
-            state = AsyncData(
-              current.copyWith(focusedParticipantId: e.speakers.first.identity),
-            );
-          }
-        })
-        /// 参与者连接质量变化
-        /// 对应官方 participant_context.dart 中的 ParticipantConnectionQualityUpdatedEvent
-        /// quality 枚举值：excellent / good / poor / lost
-        ..on<ParticipantConnectionQualityUpdatedEvent>((e) {
-          final current = state.value;
-          if (current != null) {
-            final qmap = Map<String, ConnectionQuality>.from(
-              current.participantQuality ?? {},
-            );
-            qmap[e.participant.identity] = e.connectionQuality;
-            state = AsyncData(current.copyWith(participantQuality: qmap));
-            debugLog(
-              '远端信号更新: ${e.participant.identity} '
-              '${e.participant.sid} -> ${e.connectionQuality.name}',
-            );
-          }
-        })
-        // ============ Track（媒体轨道）事件 ============
-        // 以下事件都需要刷新参与者列表，确保 UI 中摄像头/静音状态实时更新
-        // 不监听这些事件的话，别人开关摄像头/静音你这边 UI 不会更新
-        /// 远端参与者发布了新轨道（如开启摄像头）
-        ..on<TrackPublishedEvent>((e) {
-          _updateParticipants();
-        })
-        /// 远端参与者撤销了轨道（如关闭摄像头）
-        ..on<TrackUnpublishedEvent>((e) {
-          _updateParticipants();
-        })
-        /// 本地轨道发布成功（自己开启摄像头/麦克风后触发）
-        ..on<LocalTrackPublishedEvent>((e) {
-          _updateParticipants();
-        })
-        /// 本地轨道撤销（自己关闭摄像头/麦克风后触发）
-        ..on<LocalTrackUnpublishedEvent>((e) {
-          _updateParticipants();
-        })
-        /// 轨道被静音（任意参与者）
-        ..on<TrackMutedEvent>((e) {
-          _updateParticipants();
-        })
-        /// 轨道取消静音（任意参与者）
-        ..on<TrackUnmutedEvent>((e) {
-          _updateParticipants();
-        })
-        /// 远端轨道订阅成功 / 取消订阅（任意参与者）
-        ///
-        /// 订阅完成前远端画面轨道的 track 为 null，无法渲染；
-        /// 订阅完成后需刷新参与者列表，让 UI（尤其手机端）切换到共享大屏等视图。
-        ..on<TrackSubscribedEvent>((e) {
-          _updateParticipants();
-        })
-        ..on<TrackUnsubscribedEvent>((e) {
-          _updateParticipants();
-        })
-        // ============ 自定义数据通道 ============
-        /// 收到房间内任意参与者发送的自定义数据
-        /// 注意：LiveKit publishData 不会回传给发送方自己，
-        /// 所以发送方需要在发送时直接更新本地状态
-        ..on<DataReceivedEvent>((e) {
-          _handleDataEvent(e);
-        });
-
-      // 绑定设备热插拔监听（耳机插拔、摄像头连接等）
-      _bindDeviceEvents();
-
-      // 初始化本地轨道（默认关闭麦克风和摄像头，由用户手动开启）
-      // 注意：必须先初始化轨道再枚举设备——Web 端只有获得媒体权限后
-      // enumerateDevices 才会返回带名称的设备列表，否则菜单里全是空名称
-      await _initLocalTracks(room);
-
-      // 应用「呼出振铃页 / 来电页」上选择的免提偏好（仅原生移动端生效；
-      // Web/桌面由系统输出设备决定，无听筒概念）。
-      final speakerPref = ref.read(
-        callSpeakerPreferenceProvider(room.name ?? ''),
-      );
-      if (!speakerPref && DeviceUtil.isRealMobile()) {
-        try {
-          await Hardware.instance.setSpeakerphoneOn(false);
-        } catch (e) {
-          debugLog('应用免提偏好失败: $e');
-        }
-      }
-
-      // 获取初始设备列表
-      final devices = await _getInitialDevices();
-
-      return RoomState(
-        room: room,
-        token: token,
-        connectionState: room.connectionState,
-        micEnabled: room.localParticipant?.isMicrophoneEnabled() ?? false,
-        cameraEnabled: room.localParticipant?.isCameraEnabled() ?? false,
-        screenSharing: false,
-        speakerOn: speakerPref,
-        audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
-        audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
-        videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
-        currentAudioInput: Hardware.instance.selectedAudioInput,
-        currentAudioOutput: Hardware.instance.selectedAudioOutput,
-        currentVideoInput: Hardware.instance.selectedVideoInput,
-        remoteParticipants: room.remoteParticipants.values.toList(),
-        joinedAt: DateTime.now(),
-        participantQuality: {},
-        participantVolumes: {},
-        handRaiseMap: {},
-        reactions: [],
-      );
+      return await lifecycle.run(() => _initializeRoom(room, token, lifecycle));
     } catch (e) {
       debugLog('房间初始化失败: $e');
-      await room.dispose();
+      await lifecycle.close();
       rethrow;
     }
+  }
+
+  Future<RoomState> _initializeRoom(
+    Room room,
+    String token,
+    CallMediaLifecycle lifecycle,
+  ) async {
+    // 连接房间（串行：先预连接降低延迟，再正式连接）
+    await _connectRoom(room, token);
+    lifecycle.ensureOpen();
+
+    // 创建事件监听器并保存引用（用于 dispose）
+    // 注意：用局部变量接收，避免 _listener 可空导致的 null check 问题
+    final listener = room.createListener();
+    _listener = listener;
+
+    listener
+      // ============ 房间级别事件 ============
+      /// 房间连接成功
+      /// 通常在 build 中 connect 之后就会触发，这里主要用于清除之前的错误状态
+      ..on<RoomConnectedEvent>((event) {
+        final current = state.value;
+        if (current != null && current.connectionError != null) {
+          state = AsyncData(current.copyWith(connectionError: null));
+        }
+      })
+      /// 房间断开连接
+      /// SDK 会在网络中断或主动 disconnect 后触发
+      /// 重连逻辑由 SDK 自动处理，不需要手动干预
+      ..on<RoomDisconnectedEvent>((event) {
+        if (event.reason == DisconnectReason.participantRemoved) {
+          unawaited(_handleRemovedFromCall('call_host'.tr()));
+        }
+      })
+      /// 房间正在重连中（网络抖动时触发）
+      /// 更新 isReconnecting 状态，UI 层展示重连遮罩
+      ..on<RoomReconnectingEvent>((event) {
+        final current = state.value;
+        if (current != null) {
+          state = AsyncData(current.copyWith(isReconnecting: true));
+        }
+      })
+      /// 房间重连成功
+      /// 清除重连状态和错误信息
+      ..on<RoomReconnectedEvent>((event) {
+        final current = state.value;
+        if (current != null) {
+          state = AsyncData(
+            current.copyWith(isReconnecting: false, connectionError: null),
+          );
+        }
+      })
+      /// 房间元数据变化（服务端通过 Server API 更新的房间信息）
+      ..on<RoomMetadataChangedEvent>((event) {
+        final current = state.value;
+        if (current != null) {
+          state = AsyncData(current.copyWith(roomMetadata: event.metadata));
+        }
+      })
+      /// 录制状态变化（服务端开启/停止录制时触发）
+      ..on<RoomRecordingStatusChanged>((event) {
+        final current = state.value;
+        if (current != null) {
+          state = AsyncData(
+            current.copyWith(isRecording: event.activeRecording),
+          );
+        }
+      })
+      // ============ 参与者事件 ============
+      /// 新参与者加入房间
+      ..on<ParticipantConnectedEvent>((e) {
+        // 远端参与者出现过：兜底检测可生效；有人加入时取消待触发的结束检测
+        _peerGoneTimer?.cancel();
+        _everHadRemote = true;
+        _updateParticipants();
+      })
+      /// 参与者离开房间
+      ..on<ParticipantDisconnectedEvent>((e) {
+        _updateParticipants();
+        _schedulePeerGoneCheck();
+      })
+      /// 活跃发言者变化（SDK 根据音量实时检测）
+      /// 将第一个发言者设为焦点，UI 层可以据此高亮或置顶
+      ..on<ActiveSpeakersChangedEvent>((e) {
+        final current = state.value;
+        if (current != null && e.speakers.isNotEmpty) {
+          state = AsyncData(
+            current.copyWith(focusedParticipantId: e.speakers.first.identity),
+          );
+        }
+      })
+      /// 参与者连接质量变化
+      /// 对应官方 participant_context.dart 中的 ParticipantConnectionQualityUpdatedEvent
+      /// quality 枚举值：excellent / good / poor / lost
+      ..on<ParticipantConnectionQualityUpdatedEvent>((e) {
+        final current = state.value;
+        if (current != null) {
+          final qmap = Map<String, ConnectionQuality>.from(
+            current.participantQuality ?? {},
+          );
+          qmap[e.participant.identity] = e.connectionQuality;
+          state = AsyncData(current.copyWith(participantQuality: qmap));
+          debugLog(
+            '远端信号更新: ${e.participant.identity} '
+            '${e.participant.sid} -> ${e.connectionQuality.name}',
+          );
+        }
+      })
+      // ============ Track（媒体轨道）事件 ============
+      // 以下事件都需要刷新参与者列表，确保 UI 中摄像头/静音状态实时更新
+      // 不监听这些事件的话，别人开关摄像头/静音你这边 UI 不会更新
+      /// 远端参与者发布了新轨道（如开启摄像头）
+      ..on<TrackPublishedEvent>((e) {
+        _updateParticipants();
+      })
+      /// 远端参与者撤销了轨道（如关闭摄像头）
+      ..on<TrackUnpublishedEvent>((e) {
+        _updateParticipants();
+      })
+      /// 本地轨道发布成功（自己开启摄像头/麦克风后触发）
+      ..on<LocalTrackPublishedEvent>((e) {
+        _updateParticipants();
+      })
+      /// 本地轨道撤销（自己关闭摄像头/麦克风后触发）
+      ..on<LocalTrackUnpublishedEvent>((e) {
+        _updateParticipants();
+      })
+      /// 轨道被静音（任意参与者）
+      ..on<TrackMutedEvent>((e) {
+        _updateParticipants();
+      })
+      /// 轨道取消静音（任意参与者）
+      ..on<TrackUnmutedEvent>((e) {
+        _updateParticipants();
+      })
+      /// 远端轨道订阅成功 / 取消订阅（任意参与者）
+      ///
+      /// 订阅完成前远端画面轨道的 track 为 null，无法渲染；
+      /// 订阅完成后需刷新参与者列表，让 UI（尤其手机端）切换到共享大屏等视图。
+      ..on<TrackSubscribedEvent>((e) {
+        _updateParticipants();
+      })
+      ..on<TrackUnsubscribedEvent>((e) {
+        _updateParticipants();
+      })
+      // ============ 自定义数据通道 ============
+      /// 收到房间内任意参与者发送的自定义数据
+      /// 注意：LiveKit publishData 不会回传给发送方自己，
+      /// 所以发送方需要在发送时直接更新本地状态
+      ..on<DataReceivedEvent>((e) {
+        _handleDataEvent(e);
+      });
+
+    // 绑定设备热插拔监听（耳机插拔、摄像头连接等）
+    _bindDeviceEvents();
+
+    // 初始化本地轨道（默认关闭麦克风和摄像头，由用户手动开启）
+    // 注意：必须先初始化轨道再枚举设备——Web 端只有获得媒体权限后
+    // enumerateDevices 才会返回带名称的设备列表，否则菜单里全是空名称
+    await _initLocalTracks(room);
+    lifecycle.ensureOpen();
+
+    // 应用「呼出振铃页 / 来电页」上选择的免提偏好（仅原生移动端生效；
+    // Web/桌面由系统输出设备决定，无听筒概念）。
+    final speakerPref = ref.read(
+      callSpeakerPreferenceProvider(room.name ?? ''),
+    );
+    if (!speakerPref && DeviceUtil.isRealMobile()) {
+      try {
+        await Hardware.instance.setSpeakerphoneOn(false);
+      } catch (e) {
+        debugLog('应用免提偏好失败: $e');
+      }
+    }
+
+    // 获取初始设备列表
+    final devices = await _getInitialDevices();
+    lifecycle.ensureOpen();
+
+    return RoomState(
+      room: room,
+      token: token,
+      connectionState: room.connectionState,
+      micEnabled: room.localParticipant?.isMicrophoneEnabled() ?? false,
+      cameraEnabled: room.localParticipant?.isCameraEnabled() ?? false,
+      screenSharing: false,
+      speakerOn: speakerPref,
+      audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
+      audioOutputs: devices.where((d) => d.kind == 'audiooutput').toList(),
+      videoInputs: devices.where((d) => d.kind == 'videoinput').toList(),
+      currentAudioInput: Hardware.instance.selectedAudioInput,
+      currentAudioOutput: Hardware.instance.selectedAudioOutput,
+      currentVideoInput: Hardware.instance.selectedVideoInput,
+      remoteParticipants: room.remoteParticipants.values.toList(),
+      joinedAt: DateTime.now(),
+      participantQuality: {},
+      participantVolumes: {},
+      handRaiseMap: {},
+      reactions: [],
+    );
   }
 
   // ================= 核心私有方法 =================
 
   /// 连接房间
   /// 串行执行：先 prepareConnection 预热 TCP 连接，再正式 connect
-  /// 设置 10 秒超时，超时抛出 TimeoutException
+  /// 使用 SDK 的连接超时；外层 timeout 不会取消原生建连，不能用于资源屏障。
   Future<void> _connectRoom(Room room, String token) async {
     await room.prepareConnection(API.wsRoomBaseUrl, token);
-    await room
-        .connect(API.wsRoomBaseUrl, token)
-        .timeout(
-          const Duration(seconds: 10),
-          onTimeout: () => throw TimeoutException('连接房间超时'),
-        );
+    _mediaLifecycle?.ensureOpen();
+    await room.connect(API.wsRoomBaseUrl, token);
   }
 
   /// 枚举系统可用媒体设备
@@ -379,6 +404,7 @@ class RoomController extends _$RoomController {
       }
 
       await localParticipant.setCameraEnabled(enableCamera);
+      _mediaLifecycle?.ensureOpen();
       await localParticipant.setMicrophoneEnabled(enableMicrophone);
     } catch (e) {
       debugLog('初始化本地硬件失败，可能设备被占用或无权限: $e');
@@ -395,9 +421,11 @@ class RoomController extends _$RoomController {
     bool screenStillActive = current.screenSharing;
     if (current.screenSharing) {
       final localParticipant = current.room.localParticipant;
-      screenStillActive = localParticipant != null &&
-          localParticipant.videoTrackPublications
-              .any((p) => p.isScreenShare && !p.muted);
+      screenStillActive =
+          localParticipant != null &&
+          localParticipant.videoTrackPublications.any(
+            (p) => p.isScreenShare && !p.muted,
+          );
     }
 
     state = AsyncData(
@@ -536,6 +564,14 @@ class RoomController extends _$RoomController {
   /// 处理主持人静音指令
   /// 收到指令后检查目标是否是自己，是则执行静音/取消静音
   void _onMuteCommand(Map<String, dynamic> payload) {
+    unawaited(
+      _runMediaOperation(
+        () => _applyMuteCommand(payload),
+      ).catchError((Object e, StackTrace st) => debugLog('执行远端静音指令失败', e, st)),
+    );
+  }
+
+  Future<void> _applyMuteCommand(Map<String, dynamic> payload) async {
     final targetUid = payload['uid'] as String?;
     final muted = payload['muted'] as bool? ?? true;
     final senderName = payload['senderName'] as String? ?? 'call_host'.tr();
@@ -546,7 +582,8 @@ class RoomController extends _$RoomController {
     final localIdentity = current.room.localParticipant?.identity;
     if (targetUid != localIdentity) return;
 
-    current.room.localParticipant?.setMicrophoneEnabled(!muted);
+    await current.room.localParticipant?.setMicrophoneEnabled(!muted);
+    if (!ref.mounted || _isLeaving) return;
     state = AsyncData(current.copyWith(micEnabled: !muted));
 
     // Toast 提示
@@ -584,25 +621,13 @@ class RoomController extends _$RoomController {
           duration: const Duration(seconds: 2),
         );
 
-    final current = state.value;
-    // 先释放 listener，避免 disconnect 同步触发事件回调
-    _disposeResources();
-
-    try {
-      await current?.room.disconnect().timeout(const Duration(seconds: 1));
-    } catch (_) {}
-
     if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
       ref.read(mobileCallSessionControllerProvider.notifier).end();
-      // 标记 token，阻止 invalidateSelf 重建时重新连接
-      if (current != null) {
-        _disposedTokens.add(current.token);
-      }
-      ref.invalidateSelf();
+      await leave();
       return;
     }
 
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    // 桌面统一交给窗口先卸载通话 UI，再等待 leave。
     await windowManager.close();
   }
 
@@ -640,20 +665,30 @@ class RoomController extends _$RoomController {
   /// 清理资源
   /// 释放 listener 和设备订阅等本地资源，不访问 provider state。
   /// 幂等操作，可安全重复调用。
-  void _disposeResources() {
+  Future<void> _disposeResources() async {
     _peerGoneTimer?.cancel();
     _peerGoneTimer = null;
-    _listener?.dispose();
+    final listener = _listener;
     _listener = null;
-    _deviceSub?.cancel();
+    final deviceSub = _deviceSub;
     _deviceSub = null;
+    await listener?.dispose();
+    await deviceSub?.cancel();
   }
 
   // ================= 公开功能 API =================
 
+  Future<void> _runMediaOperation(Future<void> Function() operation) async {
+    final lifecycle = _mediaLifecycle;
+    if (lifecycle == null || lifecycle.isClosing || _isLeaving) return;
+    await lifecycle.run(operation);
+  }
+
   /// 切换麦克风开关
   /// 使用独立防抖锁 _isTogglingMic，避免快速连点
-  Future<void> toggleMic() async {
+  Future<void> toggleMic() => _runMediaOperation(_toggleMic);
+
+  Future<void> _toggleMic() async {
     if (_isTogglingMic) return;
     _isTogglingMic = true;
     try {
@@ -685,7 +720,9 @@ class RoomController extends _$RoomController {
 
   /// 切换摄像头开关
   /// 使用独立防抖锁 _isTogglingCamera，避免快速连点
-  Future<void> toggleCamera() async {
+  Future<void> toggleCamera() => _runMediaOperation(_toggleCamera);
+
+  Future<void> _toggleCamera() async {
     if (_isTogglingCamera) return;
     _isTogglingCamera = true;
     try {
@@ -716,7 +753,9 @@ class RoomController extends _$RoomController {
   }
 
   /// 移动端快速切换前置/后置摄像头。
-  Future<void> switchCamera() async {
+  Future<void> switchCamera() => _runMediaOperation(_switchCamera);
+
+  Future<void> _switchCamera() async {
     final currentState = state.value;
     if (currentState == null || !currentState.cameraEnabled) return;
     try {
@@ -746,7 +785,10 @@ class RoomController extends _$RoomController {
   ///
   /// 已有活跃共享轨道时是空操作——切换到别的屏幕源请先 [stopScreenShare]，
   /// 避免同一房间出现两条屏幕共享轨道。
-  Future<void> startScreenShare({String? sourceId}) async {
+  Future<void> startScreenShare({String? sourceId}) =>
+      _runMediaOperation(() => _startScreenShare(sourceId: sourceId));
+
+  Future<void> _startScreenShare({String? sourceId}) async {
     final currentState = state.value;
     if (currentState == null) return;
     // 已有活跃的共享轨道：不重复发布（防止双轨道 / 状态错乱）。
@@ -793,9 +835,7 @@ class RoomController extends _$RoomController {
       // 否则底层屏幕采集会一直挂在后台
       await _stopScreenTrackQuietly(screenTrack);
       // 兜底：把半成功的发布也一并撤销，避免留下僵尸轨道
-      await _removeScreenSharePublications(
-        state.value?.room.localParticipant,
-      );
+      await _removeScreenSharePublications(state.value?.room.localParticipant);
       _clearScreenShareState();
     } finally {
       _isTogglingScreen = false;
@@ -806,15 +846,15 @@ class RoomController extends _$RoomController {
   ///
   /// 幂等：即使当前状态已经是"未共享"，重复调用也不会报错。
   /// 会撤销本地全部屏幕共享发布（不止第一条），并归还 Android 前台保活服务。
-  Future<void> stopScreenShare() async {
+  Future<void> stopScreenShare() => _runMediaOperation(_stopScreenShare);
+
+  Future<void> _stopScreenShare() async {
     if (_isTogglingScreen) return;
     _isTogglingScreen = true;
     try {
       final currentState = state.value;
       if (currentState == null) return;
-      await _removeScreenSharePublications(
-        currentState.room.localParticipant,
-      );
+      await _removeScreenSharePublications(currentState.room.localParticipant);
       await _releaseScreenShareKeepAlive();
 
       /// 优化：无论是否找到轨道，都要把状态归零——
@@ -956,7 +996,9 @@ class RoomController extends _$RoomController {
   }
 
   /// 切换扬声器/听筒（主要用于移动端）
-  Future<void> toggleSpeaker() async {
+  Future<void> toggleSpeaker() => _runMediaOperation(_toggleSpeaker);
+
+  Future<void> _toggleSpeaker() async {
     final currentState = state.value;
     if (currentState == null) return;
     try {
@@ -970,7 +1012,10 @@ class RoomController extends _$RoomController {
 
   /// 切换音频输入设备（麦克风）
   /// 切换后重启音频轨道使新设备生效
-  Future<void> switchAudioInput(MediaDevice device) async {
+  Future<void> switchAudioInput(MediaDevice device) =>
+      _runMediaOperation(() => _switchAudioInput(device));
+
+  Future<void> _switchAudioInput(MediaDevice device) async {
     final currentState = state.value;
     if (currentState == null) return;
     try {
@@ -995,7 +1040,10 @@ class RoomController extends _$RoomController {
   }
 
   /// 切换视频输入设备（摄像头）
-  Future<void> switchVideoInput(MediaDevice device) async {
+  Future<void> switchVideoInput(MediaDevice device) =>
+      _runMediaOperation(() => _switchVideoInput(device));
+
+  Future<void> _switchVideoInput(MediaDevice device) async {
     final currentState = state.value;
     if (currentState == null) return;
     try {
@@ -1007,7 +1055,10 @@ class RoomController extends _$RoomController {
   }
 
   /// 切换音频输出设备（扬声器/耳机）
-  Future<void> switchAudioOutput(MediaDevice device) async {
+  Future<void> switchAudioOutput(MediaDevice device) =>
+      _runMediaOperation(() => _switchAudioOutput(device));
+
+  Future<void> _switchAudioOutput(MediaDevice device) async {
     final currentState = state.value;
     if (currentState == null) return;
     try {
@@ -1023,7 +1074,7 @@ class RoomController extends _$RoomController {
   /// 执行顺序：
   ///   1. 标记 _isLeaving 防止重入
   ///   2. 先释放 listener 和设备订阅，避免 disconnect 触发事件回调
-  ///   3. disconnect 房间（等待完成或超时）
+  ///   3. 等待建连和设备操作结束，再 disconnect 房间
   ///   4. dispose 房间
   ///   5. 标记 token 阻止 invalidateSelf 重建时重新连接
   ///   6. invalidateSelf 触发 onDispose 兜底清理
@@ -1039,37 +1090,21 @@ class RoomController extends _$RoomController {
   }
 
   Future<void> _leave() async {
-    final currentState = state.value;
     // 无论是否成功连接过，都要先把 token 标记为已处理：
     // 连接失败（错误态）时 state.value 为 null，若只标记成功路径，
     // 此时 leave() 后的 invalidateSelf 会重建并再次尝试连接。
-    _disposedTokens.add(currentState?.token ?? token);
-    if (currentState != null) {
-      // 先释放 listener，避免 disconnect 同步触发 RoomDisconnectedEvent
-      // 在 Web WASM 上 disconnect 可能同步完成并触发事件回调
-      _disposeResources();
-
-      try {
-        await currentState.room.disconnect().timeout(
-          const Duration(seconds: 2),
-        );
-      } on TimeoutException {
-        debugLog('离开房间超时，转为后台清理');
-      } catch (e) {
-        debugLog('离开房间异常（忽略并继续退出）: $e');
-      }
-
-      try {
-        await currentState.room.dispose();
-      } catch (_) {}
-    }
-    ref.invalidateSelf();
+    _disposedTokens.add(token);
+    // Room 在 build 开始时已被生命周期对象持有，loading / error 也能等待清理。
+    await _mediaLifecycle?.close();
+    if (ref.mounted) ref.invalidateSelf();
   }
 
   /// 手动重连
   /// 通常不需要手动调用，SDK 会自动重连
   /// 仅在 SDK 放弃重连后（RoomDisconnectedEvent）才需要手动触发
-  Future<void> reconnect() async {
+  Future<void> reconnect() => _runMediaOperation(_reconnect);
+
+  Future<void> _reconnect() async {
     final currentState = state.value;
     if (currentState == null) return;
     await _connectRoom(currentState.room, currentState.token);
@@ -1197,10 +1232,12 @@ class RoomController extends _$RoomController {
 
   /// 表情/弹幕发送失败（房间未连接或数据通道异常）时的用户提示。
   void _notifyReactionFailed() {
-    ref.read(toastServiceProvider).showNotificationNow(
-      'call_reaction_failed'.tr(),
-      type: ToastType.warning,
-    );
+    ref
+        .read(toastServiceProvider)
+        .showNotificationNow(
+          'call_reaction_failed'.tr(),
+          type: ToastType.warning,
+        );
   }
 
   /// 定时移除 ReactionItem
@@ -1265,7 +1302,7 @@ class RoomController extends _$RoomController {
               'call_user_removed'.tr(),
               type: ToastType.success,
             );
-            return true;
+        return true;
       } else {
         final msg = 'call_unknown_error'.tr();
         ref

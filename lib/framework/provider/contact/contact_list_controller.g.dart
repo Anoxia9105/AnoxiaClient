@@ -146,4 +146,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'a59b92da58852ae8a61db2319405c147b6e546d6';
+    r'b002a44f42b511a08b28a5ff5fe3416a9b93305e';

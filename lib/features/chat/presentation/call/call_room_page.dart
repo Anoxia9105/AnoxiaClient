@@ -86,6 +86,11 @@ class CallRoomPage extends ConsumerWidget {
 
   /// 取消：结束通话并关闭悬浮窗 / 通话窗口
   Future<void> _cancelCall(BuildContext context, WidgetRef ref) async {
+    if (DeviceUtil.isRealDesktop()) {
+      // 与对端挂断 / X 按钮共用窗口关闭流程，先卸载 UI，再等待媒体释放。
+      await windowManager.close();
+      return;
+    }
     final session = ref.read(mobileCallSessionControllerProvider);
     final notifier = ref.read(roomControllerProvider(token).notifier);
 

@@ -64,6 +64,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
 
   /// 是否已进入关闭流程（避免重复清理媒体 / 重复关窗）
   bool _closing = false;
+  bool _closeFailed = false;
 
   /// 通话窗口相位：1:1 呼出未接听时为振铃态
   _CallWindowPhase _phase = _CallWindowPhase.ringing;
@@ -93,7 +94,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     // the parent widget tree can still be building. Initialize them after the
     // first frame, and keep CallRoomPage out of the tree until they are ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || _closing) return;
       ref.read(callInitialMediaProvider(_roomId).notifier).state = initialMedia;
       ref.read(callIsGroupProvider(_roomId).notifier).state = isGroup;
       setState(() => _callSettingsInitialized = true);
@@ -104,6 +105,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     }
 
     Channel.callChannel.setMethodCallHandler((call) async {
+      if (!mounted || _closing) return;
       if (call.method == 'on_call_accepted') {
         // 主窗口收到对方 CALL_ACCEPT 后下发：振铃 → 连接
         final token =
@@ -151,10 +153,23 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   /// 窗口同进程，表现为整个应用闪退。对方挂断场景尤其明显：主窗口收到
   /// CALL_END 后直接关掉本窗口，此前没有任何媒体清理动作。
   Future<void> _notifyCloseAndExit() async {
-    if (_closing) return;
-    _closing = true;
+    if (_closing || !mounted) return;
+    // 先卸载通话组件，触发视频 renderer 的 dispose，再断开媒体。
+    setState(() => _closing = true);
 
-    await _teardownCallMedia();
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      await _teardownCallMedia();
+    } catch (e, st) {
+      debugLog('通话资源释放失败，保留窗口引擎', e, st);
+      if (mounted) setState(() => _closeFailed = true);
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: e,
+        stack: st,
+        library: 'anoxia call teardown',
+      ));
+      return;
+    }
 
     try {
       await Channel.callChannel.invokeMethod('on_call_window_close');
@@ -166,24 +181,17 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     await windowManager.close();
   }
 
-  /// 断开通话媒体连接（尽力而为，最多等待 3 秒）。
+  /// 等待媒体完全释放。不能超时后继续关窗：timeout 不会取消原生操作。
   ///
   /// 振铃态（未连接媒体）时直接返回——这里绝不能无条件 read
   /// roomControllerProvider，否则会触发一次新的建连。
   Future<void> _teardownCallMedia() async {
     final token = _activeToken;
     if (token.isEmpty || !mounted) return;
-    try {
-      final container = ProviderScope.containerOf(context, listen: false);
-      final provider = roomControllerProvider(token);
-      if (!container.exists(provider)) return;
-      await container
-          .read(provider.notifier)
-          .leave()
-          .timeout(const Duration(seconds: 3));
-    } catch (e, st) {
-      debugLog('关闭通话窗口前断开通话连接失败（忽略）', e, st);
-    }
+    final container = ProviderScope.containerOf(context, listen: false);
+    final provider = roomControllerProvider(token);
+    if (!container.exists(provider)) return;
+    await container.read(provider.notifier).leave();
   }
 
   @override
@@ -220,9 +228,18 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   }
 
   Widget _buildBody() {
-    // 正在关闭：媒体已断开（room provider 被 invalidate 进入错误态），
-    // 关窗在即，避免闪出一帧错误/空状态界面
-    if (_closing) return const SizedBox.shrink();
+    // 清理期间不再挂载媒体组件，也不允许重试建连。
+    if (_closing) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            (_closeFailed ? 'call_cleanup_failed' : 'call_ending').tr(),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
 
     // 1:1 呼出振铃态：不连接媒体，展示振铃页
     if (_phase == _CallWindowPhase.ringing) {
@@ -241,6 +258,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         : ref.watch(roomTokenProvider(_roomId));
     return tokenAsync.when(
       data: (token) {
+        _activeToken = token;
         return CallRoomPage(token: token, roomId: _roomId);
       },
       error: (err, stack) => CallErrorState(

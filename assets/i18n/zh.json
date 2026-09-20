@@ -1051,6 +1051,8 @@
   "call_invitation_cancelled": "通话邀请已取消",
   "call_peer_busy": "对方忙线中",
   "call_ended": "通话已结束",
+  "call_ending": "正在结束通话…",
+  "call_cleanup_failed": "通话资源释放失败，窗口暂时无法关闭。请重启应用后重试。",
   "call_peer_ended": "对方已挂断",
   "call_incoming": "来电",
   "call_duration_hours": "{}小时",

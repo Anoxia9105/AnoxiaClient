@@ -79,7 +79,7 @@ final class LayoutModeProvider
   }
 }
 
-String _$layoutModeHash() => r'4fef5e7bf4e533ea99fd00a19df17acbe2d000c7';
+String _$layoutModeHash() => r'c16aa8be358995e527bc3aba290a4cc85263015f';
 
 /// 通话布局模式 Provider
 ///

@@ -68,7 +68,7 @@ final class RoomControllerProvider
   }
 }
 
-String _$roomControllerHash() => r'4f39a3fb786e6b4727edc8ddd08b55caf500a938';
+String _$roomControllerHash() => r'1a124218d511f9e6fcc9246491a4027c2fbfd906';
 
 /// 房间控制器
 /// 负责管理 LiveKit 房间的完整生命周期：

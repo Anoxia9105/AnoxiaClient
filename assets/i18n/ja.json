@@ -1051,6 +1051,8 @@
   "call_invitation_cancelled": "通話招待がキャンセルされました",
   "call_peer_busy": "相手が通話中です",
   "call_ended": "通話が終了しました",
+  "call_ending": "通話を終了しています…",
+  "call_cleanup_failed": "通話リソースを解放できないため、ウィンドウを閉じられません。アプリを再起動してお試しください。",
   "call_peer_ended": "相手が切断しました",
   "call_incoming": "着信",
   "call_duration_hours": "{}時間",
