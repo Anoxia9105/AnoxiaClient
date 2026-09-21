@@ -321,18 +321,19 @@ class _ImagePreview extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: -8,
-            top: -8,
+            right: -6,
+            top: -6,
             child: IconButton.filled(
               key: ValueKey('feedback-remove-image-$index'),
               tooltip: 'settings_feedback_image_remove'.tr(args: [image.name]),
               onPressed: enabled ? onRemove : null,
-              icon: const Icon(Icons.close, size: 18),
-              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+              icon: const Icon(Icons.close, size: 14),
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
               padding: EdgeInsets.zero,
               style: IconButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
           ),
