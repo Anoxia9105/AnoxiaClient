@@ -76,6 +76,20 @@ class SettingsBackgroundSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 18),
+        Text(
+          'settings_bg_media_upload'.tr(),
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'settings_bg_media_subtitle'.tr(),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(

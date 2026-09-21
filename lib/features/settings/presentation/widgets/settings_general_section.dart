@@ -324,9 +324,14 @@ class _SegmentTile<T> extends StatelessWidget {
             selected: {value},
             onSelectionChanged: (s) => onChanged(s.first),
             showSelectedIcon: false,
-            style: const ButtonStyle(
+            style: ButtonStyle(
               visualDensity: VisualDensity.compact,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RadiusToken.lg),
+                ),
+              ),
             ),
           ),
         ],
