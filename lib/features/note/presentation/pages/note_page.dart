@@ -6,6 +6,7 @@ import 'package:anoxia/framework/provider/layout/layout_controller.dart';
 import 'package:anoxia/framework/provider/note/note_content_provider.dart';
 import 'package:anoxia/framework/provider/note/note_open_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -135,13 +136,13 @@ class _NotesPageState extends ConsumerState<NotesPage> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   border: Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: .18),
                   ),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(RadiusToken.xl),
                   child: editorChild,
                 ),
               ),

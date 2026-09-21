@@ -64,7 +64,7 @@ class _DefaultMessageStrategy extends MessageRenderStrategy {
   ) {
     return Text(
       'chat_message_parse_error'.tr(),
-      style: const TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+      style: TextStyle(color: Theme.of(context).colorScheme.error, fontStyle: FontStyle.italic),
     );
   }
 }

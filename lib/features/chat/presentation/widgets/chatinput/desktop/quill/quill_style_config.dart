@@ -106,7 +106,7 @@ class QuillStyleConfig {
       ),
       // 链接样式
       link: baseTextStyle.copyWith(
-        color: Colors.blueAccent,
+        color: colorScheme.primary,
         decoration: TextDecoration.underline,
       ),
       // 代码块样式
@@ -114,7 +114,7 @@ class QuillStyleConfig {
         backgroundColor: colorScheme.surfaceContainerHighest.withValues(
           alpha: theme.brightness == Brightness.dark ? 0.72 : 0.82,
         ),
-        radius: const Radius.circular(4),
+        radius: const Radius.circular(RadiusToken.sm),
         style: codeTextStyle,
         header1: codeTextStyle,
         header2: codeTextStyle,

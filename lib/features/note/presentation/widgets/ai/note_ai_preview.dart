@@ -156,7 +156,7 @@ class NoteAiPreview extends StatelessWidget {
                           Colors.transparent,
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(1),
+                      borderRadius: BorderRadius.circular(RadiusToken.pill),
                     ),
                   ),
                 ),

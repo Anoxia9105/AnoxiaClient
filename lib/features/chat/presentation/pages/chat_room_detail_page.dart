@@ -15,6 +15,7 @@ import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_det
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_announcement_banner.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
 import 'package:flutter/material.dart';
@@ -269,7 +270,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
         controller: _listViewController,
         thumbVisibility: true,
         thickness: 6,
-        radius: const Radius.circular(3),
+        radius: const Radius.circular(RadiusToken.sm),
         child: list,
       ),
     );

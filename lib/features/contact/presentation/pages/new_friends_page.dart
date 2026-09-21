@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 新好友请求页面
 ///
@@ -144,7 +145,7 @@ class _EmptyState extends StatelessWidget {
                 color: cs.onSurface,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: SpacingToken.sm),
             Text(
               'add_friend_search_to_add'.tr(),
               textAlign: TextAlign.center,
@@ -152,7 +153,7 @@ class _EmptyState extends StatelessWidget {
                 color: cs.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SpacingToken.xl),
             FilledButton.tonalIcon(
               onPressed: onAddFriend,
               icon: const HugeIcon(
@@ -205,7 +206,7 @@ class _ErrorState extends StatelessWidget {
                 color: cs.error.withValues(alpha: 0.85),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SpacingToken.lg),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -213,7 +214,7 @@ class _ErrorState extends StatelessWidget {
                 color: cs.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SpacingToken.lg),
             FilledButton.tonal(
               onPressed: onRetry,
               child: Text('call_window_retry'.tr()),

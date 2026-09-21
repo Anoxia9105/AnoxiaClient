@@ -2,6 +2,7 @@ import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 设置页左侧导航项及其对应详情面板。
 class SettingsDestination {
@@ -138,7 +139,7 @@ class _SettingsNavigationList extends StatelessWidget {
       key: const Key('settings-navigation-list'),
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
       itemCount: destinations.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 4),
+      separatorBuilder: (_, _) => const SizedBox(height: SpacingToken.xs),
       itemBuilder: (context, index) {
         final destination = destinations[index];
         final selected = selectedIndex == index;
@@ -171,7 +172,7 @@ class _SettingsNavigationList extends StatelessWidget {
                   const Positioned(
                     right: -4,
                     top: -4,
-                    child: VibratingBadge(isDot: true, borderColor: null),
+                    child: VibratingBadge(isDot: true, borderColor: Colors.transparent),
                   ),
               ],
             ),
@@ -218,7 +219,7 @@ class _SettingsDetailPanel extends StatelessWidget {
         color: compact
             ? colorScheme.surface
             : colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(compact ? 0 : 14),
+        borderRadius: BorderRadius.circular(compact ? 0 : RadiusToken.xl),
         border: compact
             ? null
             : Border.all(
@@ -246,7 +247,7 @@ class _SettingsDetailPanel extends StatelessWidget {
                         size: 30,
                         color: colorScheme.primary,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: SpacingToken.md),
                       Expanded(
                         child: Text(
                           destination.title,
@@ -265,12 +266,12 @@ class _SettingsDetailPanel extends StatelessWidget {
                       height: 1.45,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SpacingToken.lg),
                   Divider(
                     height: 1,
                     color: colorScheme.outlineVariant.withValues(alpha: 0.55),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: SpacingToken.sm),
                 ],
               ),
             ),

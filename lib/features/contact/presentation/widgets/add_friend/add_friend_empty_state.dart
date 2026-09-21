@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 添加好友空状态组件
 ///
@@ -83,7 +84,7 @@ class AddFriendEmptyState extends StatelessWidget {
               fontSize: 17,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: SpacingToken.md),
           Text(
             'add_friend_input_hint'.tr(),
             style: textTheme.bodyMedium?.copyWith(

@@ -60,7 +60,7 @@ class BubbleMenu {
     bool isDestructive = false,
   }) {
     final color = isDestructive
-        ? Colors.red
+        ? Theme.of(context).colorScheme.error
         : Theme.of(context).colorScheme.onSurface;
     return InkWell(
       mouseCursor: SystemMouseCursors.click,

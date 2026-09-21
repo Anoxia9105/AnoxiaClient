@@ -7,6 +7,7 @@ import 'package:anoxia/features/settings/presentation/pages/account_switch_page.
 import 'package:anoxia/features/settings/presentation/pages/developer_tribute_page.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_account_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_about_support_section.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_announcement_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_background_section.dart';
 import 'package:anoxia/features/settings/presentation/widgets/settings_chat_density_section.dart';
@@ -314,7 +315,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   },
                 ),
                 if (supportsDesktopLayout) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: SpacingToken.xl),
                   SettingsLayoutSection(
                     selectedPreference: desktopLayoutPreference,
                     onChanged: (preference) => ref
@@ -322,7 +323,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         .setPreference(preference),
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: SpacingToken.xl),
                 SettingsChatDensitySection(
                   selectedDensity: ref.watch(chatContentDensityProvider),
                   onChanged: (density) => ref

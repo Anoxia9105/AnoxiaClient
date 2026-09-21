@@ -4,6 +4,7 @@ import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 群聊列表项组件
 ///
@@ -87,7 +88,7 @@ class _GroupRoomTileState extends State<GroupRoomTile> {
                 size: 48,
                 borderRadius: 14,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: SpacingToken.md),
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -120,7 +121,7 @@ class _GroupRoomTileState extends State<GroupRoomTile> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: SpacingToken.xs),
                     Text(
                       widget.subtitle,
                       maxLines: 1,
@@ -138,7 +139,7 @@ class _GroupRoomTileState extends State<GroupRoomTile> {
                           size: 12,
                           color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: SpacingToken.xs),
                         Text(
                           'group_card_member_count'.tr(
                             args: [widget.memberCount.toString()],

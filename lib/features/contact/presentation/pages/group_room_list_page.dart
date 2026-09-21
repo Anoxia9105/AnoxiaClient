@@ -15,6 +15,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../../../framework/provider/chat/room/room_member_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 群聊列表页面
 ///
@@ -172,7 +173,7 @@ class _EmptyState extends StatelessWidget {
                 color: cs.onSurface,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SpacingToken.xl),
             FilledButton.tonalIcon(
               onPressed: onCreate,
               icon: const HugeIcon(

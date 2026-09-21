@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:flutter/material.dart';
 
 /// 骨架屏加载占位块
@@ -24,7 +25,7 @@ class SkeletonBox extends StatefulWidget {
     super.key,
     this.width,
     this.height,
-    this.radius = 8,
+    this.radius = RadiusToken.md,
     this.circle = false,
     this.margin,
   });
@@ -113,7 +114,7 @@ class SkeletonLine extends StatelessWidget {
     super.key,
     required this.width,
     this.height = 12,
-    this.radius = 999,
+    this.radius = RadiusToken.pill,
     this.margin,
   });
 

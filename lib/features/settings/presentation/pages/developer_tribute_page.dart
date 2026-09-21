@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 开发者致敬 / 彩蛋页面
 ///
@@ -234,7 +235,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                                 'settings_easter_body'.tr(),
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.85, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: SpacingToken.lg),
                               Container(
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(RadiusToken.xl)),
@@ -242,7 +243,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('那些没有说出口的细节', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800, color: scheme.onSurface)),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: SpacingToken.sm),
                                     const _Bullet(text: '凌晨两点还在对齐一条消息的 seq 与时间戳，只为不丢一条“在吗”。'),
                                     const _Bullet(text: '把“发送失败”改成能看懂的原因，而不是冷冰冰的 code。'),
                                     const _Bullet(text: '在弱网、息屏、来回切换时，依然把未读数算对。'),
@@ -250,12 +251,12 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: SpacingToken.lg),
                               Text(
                                 'Anoxia 还不完美，也永远不会“做完”。但每一次修复、每一次为 0.1 秒的跟手度较真，都是想让你在重要的对话里，更安心一点。\n\n如果你愿意，留下一句反馈，或把 Anoxia 推荐给在乎的人——那就是对这份坚持最好的回应。',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.75, color: scheme.onSurfaceVariant),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: SpacingToken.lg),
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: Column(
@@ -271,7 +272,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: SpacingToken.lg),
                       // 三个价值观
                       _EntranceCard(
                         delay: 220,
@@ -286,7 +287,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: SpacingToken.lg),
                       // 语录
                       _EntranceCard(
                         delay: 320,
@@ -329,7 +330,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.pill))),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: SpacingToken.md),
                             Expanded(
                               child: FilledButton.icon(
                                 onPressed: () => Navigator.of(context).pop(),
@@ -341,7 +342,7 @@ class _DeveloperTributePageState extends State<DeveloperTributePage>
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: SpacingToken.md),
                       Center(
                         child: Text('彩蛋会在下次点击版本号时再次出现', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant.withValues(alpha: 0.7))),
                       ),
@@ -429,9 +430,9 @@ class _ValueCard extends StatelessWidget {
             alignment: Alignment.center,
             child: HugeIcon(icon: icon, size: 18, color: scheme.primary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SpacingToken.sm),
           Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
+          const SizedBox(height: SpacingToken.xs),
           Text(desc, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall?.copyWith(height: 1.4, color: scheme.onSurfaceVariant)),
         ],
       ),

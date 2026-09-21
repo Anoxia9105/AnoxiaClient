@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 发送好友申请对话框
 ///
@@ -83,7 +84,7 @@ return Dialog(
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: SpacingToken.md),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -145,7 +146,7 @@ return Dialog(
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: SpacingToken.xs),
               Text(
                 'add_friend_verify_optional'.tr(),
                 style: textTheme.bodySmall?.copyWith(
@@ -181,7 +182,7 @@ return Dialog(
                 maxLines: 4,
                 maxLength: 100,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SpacingToken.sm),
               Row(
                 children: [
                   Expanded(
@@ -198,7 +199,7 @@ return Dialog(
                       child: Text('add_friend_cancel'.tr()),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SpacingToken.md),
                   Expanded(
                     child: FilledButton(
                       onPressed: _isSending ? null : _send,

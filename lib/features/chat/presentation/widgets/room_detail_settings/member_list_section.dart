@@ -7,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
 
 /// 内部隔离组件：群成员行式列表区块，防止成员列表数据更新时触发整个 Settings 树重构
 ///
@@ -105,7 +106,7 @@ class MemberListSection extends ConsumerWidget {
       subtitle: Text(
         isOnline ? 'contact_online'.tr() : 'contact_offline'.tr(),
         style: Theme.of(context).textTheme.bodySmall!.copyWith(
-          color: isOnline ? Colors.green : colorScheme.onSurfaceVariant,
+          color: isOnline ? Theme.of(context).extension<AppColors>()?.success ?? colorScheme.primary : colorScheme.onSurfaceVariant,
         ),
       ),
       trailing: HugeIcon(

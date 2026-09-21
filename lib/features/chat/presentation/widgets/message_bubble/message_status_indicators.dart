@@ -49,7 +49,7 @@ class MentionIndicator extends StatelessWidget {
     return Text(
       '@',
       style: Theme.of(context).textTheme.titleMedium!.copyWith(
-        color: Colors.red,
+        color: Theme.of(context).colorScheme.error,
         fontWeight: FontWeight.bold,
       ),
     );
@@ -78,7 +78,7 @@ class DeliveryStatusIndicator extends ConsumerWidget {
       case DeliveryStatus.failed:
         return GestureDetector(
           onTap: () => MessageResender.resend(ref, message),
-          child: const HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, size: 16, color: Colors.red),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle, size: 16, color: Theme.of(context).colorScheme.error),
         );
       case DeliveryStatus.sent:
         return const SizedBox.shrink();

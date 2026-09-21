@@ -11,6 +11,7 @@ import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/provider/contact/contact_selection_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 联系人详情页面
@@ -70,9 +71,9 @@ class ContactDetail extends ConsumerWidget {
                 isOnline: isOnline,
               ),
               ContactInfoSection(detail: detail, isOnline: isOnline),
-              const SizedBox(height: 24),
+              const SizedBox(height: SpacingToken.xl),
               ContactDetailActions(detail: detail),
-              const SizedBox(height: 16),
+              const SizedBox(height: SpacingToken.lg),
             ],
           ),
         ),

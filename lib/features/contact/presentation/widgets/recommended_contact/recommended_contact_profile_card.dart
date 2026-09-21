@@ -3,6 +3,7 @@ import 'package:anoxia/features/contact/presentation/widgets/recommended_contact
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 推荐联系人/名片资料卡片
 ///
@@ -33,7 +34,7 @@ class RecommendedContactProfileCard extends StatelessWidget {
               size: 92,
               borderRadius: 14,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SpacingToken.lg),
             Text(
               card.displayTitle,
               textAlign: TextAlign.center,

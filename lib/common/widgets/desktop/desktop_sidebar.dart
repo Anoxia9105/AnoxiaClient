@@ -1,4 +1,5 @@
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -53,7 +54,7 @@ class DesktopSidebar extends ConsumerWidget {
             color: isCard
                 ? colorScheme.surface.withValues(alpha: 0.84)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(isCard ? 16 : 0),
+            borderRadius: BorderRadius.circular(isCard ? RadiusToken.xl : 0),
             border: isCard
                 ? Border.all(
                     color: colorScheme.outlineVariant.withValues(alpha: 0.34),
@@ -183,10 +184,10 @@ class SidebarButton extends ConsumerWidget {
           color: isCard && isActive
               ? colorScheme.primaryContainer.withValues(alpha: 0.46)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(isCard ? 12 : 0),
+          borderRadius: BorderRadius.circular(isCard ? RadiusToken.lg : 0),
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,
-            borderRadius: BorderRadius.circular(isCard ? 12 : 0),
+            borderRadius: BorderRadius.circular(isCard ? RadiusToken.lg : 0),
             onTap: () {
               ref.read(layoutControllerProvider.notifier).setIndex(index);
             },

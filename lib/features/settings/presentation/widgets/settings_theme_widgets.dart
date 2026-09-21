@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 分区标签组件
 class SectionLabel extends StatelessWidget {
@@ -108,7 +109,7 @@ class AccentSwatch extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           width: 44,
           height: 44,
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(SpacingToken.xs),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
@@ -169,7 +170,7 @@ class CustomColorRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isCustom = customColor != null;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(SpacingToken.md),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(RadiusToken.lg),
@@ -203,7 +204,7 @@ class CustomColorRow extends StatelessWidget {
                 ? Icon(Icons.palette, size: 20, color: _contrast(customColor!))
                 : Icon(Icons.palette_outlined, size: 20, color: colorScheme.onSurfaceVariant),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: SpacingToken.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,14 +226,14 @@ class CustomColorRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: SpacingToken.sm),
           FilledButton.icon(
             onPressed: () => _showColorPicker(context),
             icon: HugeIcon(icon: HugeIcons.strokeRoundedPaintBoard, size: 16, color: colorScheme.onPrimary),
             label: Text(isCustom ? 'settings_theme_custom_change'.tr() : 'settings_theme_custom_pick'.tr()),
           ),
           if (isCustom) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: SpacingToken.sm),
             IconButton(
               tooltip: 'settings_theme_custom_clear'.tr(),
               onPressed: onClear,
@@ -325,7 +326,7 @@ class ColorPickerDialogState extends State<ColorPickerDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SpacingToken.lg),
               _buildSlider(
                 label: 'H',
                 value: _hsv.hue,
@@ -356,7 +357,7 @@ class ColorPickerDialogState extends State<ColorPickerDialog> {
                 }),
                 activeColor: _hsv.withValue(1).toColor(),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: SpacingToken.md),
               TextField(
                 controller: _hexController,
                 decoration: InputDecoration(
@@ -378,13 +379,13 @@ class ColorPickerDialogState extends State<ColorPickerDialog> {
                   }
                 },
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SpacingToken.sm),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text('settings_theme_custom_presets'.tr(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: SpacingToken.sm),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,

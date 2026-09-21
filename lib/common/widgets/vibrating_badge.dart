@@ -12,26 +12,26 @@ class VibratingBadge extends StatefulWidget {
   /// 是否显示为纯红点模式
   final bool isDot;
 
-  /// 徽章背景色
-  final Color color;
+  /// 徽章背景色（默认取 [ColorScheme.error]）
+  final Color? color;
 
-  /// 徽章文字颜色
-  final Color textColor;
+  /// 徽章文字颜色（默认取 [ColorScheme.onError]）
+  final Color? textColor;
 
   /// 基础尺寸
   final double size;
 
-  /// 边框颜色
+  /// 边框颜色（默认取 [ColorScheme.surface]；传 [Colors.transparent] 可去掉描边）
   final Color? borderColor;
 
   const VibratingBadge({
     super.key,
     this.count = 0,
     this.isDot = false,
-    this.color = Colors.red,
-    this.textColor = Colors.white,
+    this.color,
+    this.textColor,
     this.size = 18.0,
-    this.borderColor = Colors.white,
+    this.borderColor,
   });
 
   @override
@@ -92,17 +92,20 @@ class _VibratingBadgeState extends State<VibratingBadge>
       return const SizedBox.shrink();
     }
 
+    final cs = Theme.of(context).colorScheme;
+    final badgeColor = widget.color ?? cs.error;
+    final badgeTextColor = widget.textColor ?? cs.onError;
+    final borderColor = widget.borderColor ?? cs.surface;
+
     Widget badgeChild;
     if (widget.isDot) {
       badgeChild = Container(
         width: 10,
         height: 10,
         decoration: BoxDecoration(
-          color: widget.color,
+          color: badgeColor,
           shape: BoxShape.circle,
-          border: widget.borderColor != null
-              ? Border.all(color: widget.borderColor!, width: 1.5)
-              : null,
+          border: Border.all(color: borderColor, width: 1.5),
         ),
       );
     } else {
@@ -118,12 +121,10 @@ class _VibratingBadgeState extends State<VibratingBadge>
             ? EdgeInsets.zero
             : const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: widget.color,
+          color: badgeColor,
           shape: isSingleDigit ? BoxShape.circle : BoxShape.rectangle,
           borderRadius: isSingleDigit ? null : BorderRadius.circular(RadiusToken.pill),
-          border: widget.borderColor != null
-              ? Border.all(color: widget.borderColor!, width: 1.5)
-              : null,
+          border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Align(
           alignment: Alignment.center,
@@ -132,7 +133,7 @@ class _VibratingBadgeState extends State<VibratingBadge>
           child: Text(
             text,
             style: TextStyle(
-              color: widget.textColor,
+              color: badgeTextColor,
               fontSize: 10,
               fontWeight: FontWeight.bold,
               height: 1.0,

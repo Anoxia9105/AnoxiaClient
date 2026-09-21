@@ -4,6 +4,7 @@ import 'package:anoxia/framework/provider/announcement/announcement_controller.d
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 class SettingsAnnouncementSection extends ConsumerWidget {
   const SettingsAnnouncementSection({super.key});
@@ -20,7 +21,7 @@ class SettingsAnnouncementSection extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('announcement_load_error'.tr()),
-            const SizedBox(height: 12),
+            const SizedBox(height: SpacingToken.md),
             OutlinedButton.icon(
               onPressed: () =>
                   ref.read(announcementControllerProvider.notifier).refresh(),

@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 设置页的问题反馈表单。
 class SettingsFeedbackSection extends StatelessWidget {
@@ -38,7 +39,7 @@ class SettingsFeedbackSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacingToken.lg),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withValues(alpha: 0.38),
               borderRadius: BorderRadius.circular(RadiusToken.xl),
@@ -54,7 +55,7 @@ class SettingsFeedbackSection extends StatelessWidget {
                   color: colorScheme.primary,
                   size: 24,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: SpacingToken.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,7 +66,7 @@ class SettingsFeedbackSection extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SpacingToken.xs),
                       Text(
                         'settings_feedback_intro_body'.tr(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -95,7 +96,7 @@ class SettingsFeedbackSection extends StatelessWidget {
                 ? 'settings_feedback_subject_required'.tr()
                 : null,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SpacingToken.sm),
           TextFormField(
             key: const ValueKey('feedback-content-field'),
             controller: contentController,
@@ -113,7 +114,7 @@ class SettingsFeedbackSection extends StatelessWidget {
                 ? 'settings_feedback_content_required'.tr()
                 : null,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SpacingToken.sm),
           TextFormField(
             controller: contactController,
             textInputAction: TextInputAction.done,
@@ -236,7 +237,7 @@ class _ImagePickerArea extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SpacingToken.xs),
         Text(
           'settings_feedback_images_helper'.tr(),
           style: Theme.of(

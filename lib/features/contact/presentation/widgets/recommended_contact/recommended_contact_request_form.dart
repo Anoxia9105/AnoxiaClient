@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 推荐联系人页面的好友请求表单
 ///
@@ -85,7 +86,7 @@ class _RecommendedContactRequestFormState
             border: const OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: SpacingToken.md),
         FilledButton.icon(
           onPressed: widget.userId == null || _isSending ? null : _sendRequest,
           icon: _isSending

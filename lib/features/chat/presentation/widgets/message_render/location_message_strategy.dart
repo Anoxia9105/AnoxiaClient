@@ -107,10 +107,10 @@ class _LocationMessage extends StatelessWidget {
                                 width: 38,
                                 height: 38,
                                 alignment: Alignment.topCenter,
-                                child: const HugeIcon(
+                                child: HugeIcon(
                                   icon: HugeIcons.strokeRoundedLocation01,
                                   size: 36,
-                                  color: Colors.redAccent,
+                                  color: Theme.of(context).colorScheme.error,
                                 ),
                               ),
                             ],

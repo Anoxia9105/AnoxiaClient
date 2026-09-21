@@ -228,7 +228,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           'appbar_user_typing'.tr(),
-          style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Colors.grey[600]),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }
@@ -252,7 +252,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
           ],

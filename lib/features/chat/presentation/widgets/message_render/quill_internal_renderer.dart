@@ -199,7 +199,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
                       controller: _controller!,
                       config: QuillEditorConfig(
                         textSelectionThemeData: TextSelectionThemeData(
-                          selectionColor: Colors.blueAccent.withValues(
+                          selectionColor: Theme.of(context).colorScheme.primary.withValues(
                             alpha: 0.5,
                           ),
                         ),
@@ -584,7 +584,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
   TextStyle _wasmMentionStyle(BuildContext context) {
     return TextStyle(
       fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
-      color: Colors.red,
+      color: Theme.of(context).colorScheme.error,
       fontWeight: FontWeight.bold,
       fontSize: 14,
       height: 1,
@@ -632,7 +632,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(RadiusToken.sm),
         ),
         child: Text(
@@ -677,7 +677,7 @@ class QuillInternalRendererState extends State<QuillInternalRenderer> {
     final style = baseStyle.copyWith(
       color:
           foreground ??
-          (link?.isNotEmpty == true ? Colors.blueAccent : baseStyle.color),
+          (link?.isNotEmpty == true ? Theme.of(context).colorScheme.primary : baseStyle.color),
       backgroundColor:
           background ??
           (isInlineCode

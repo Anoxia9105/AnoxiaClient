@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 好友请求列表项组件
 ///
@@ -78,7 +79,7 @@ class _NewFriendsRequestTileState extends State<NewFriendsRequestTile> {
               size: 44,
               borderRadius: 12,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: SpacingToken.md),
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -111,7 +112,7 @@ class _NewFriendsRequestTileState extends State<NewFriendsRequestTile> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: SpacingToken.xs),
                   if (widget.remark.isNotEmpty)
                     Text(
                       widget.remark,

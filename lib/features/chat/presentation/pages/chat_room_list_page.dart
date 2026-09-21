@@ -203,7 +203,7 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   )
                 : null,
             hintText: 'chat_search_placeholder'.tr(),
-            hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            hintStyle: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ),
       ),

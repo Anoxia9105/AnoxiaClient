@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 头像裁剪编辑器（纯 Flutter 实现，全平台可用，含 Web/Wasm）
 ///
@@ -275,7 +276,7 @@ class AvatarCropEditorState extends State<AvatarCropEditor> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         Text(
           'me_avatar_upload_hint'.tr(),
           style: Theme.of(context).textTheme.bodySmall!.copyWith( color: cs.onSurfaceVariant),
@@ -312,7 +313,7 @@ class _CropFramePainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(1, 1, w - 2, h - 2),
-        const Radius.circular(14),
+        const Radius.circular(RadiusToken.xl),
       ),
       framePaint,
     );

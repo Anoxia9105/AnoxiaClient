@@ -1,4 +1,6 @@
 ﻿import 'package:anoxia/common/widgets/cached_network_image_view.dart';
+import 'package:anoxia/framework/theme/app_colors.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/app_theme.dart';
@@ -23,7 +25,7 @@ class AvatarWidget extends StatelessWidget {
     this.url,
     this.name,
     this.size = 36,
-    this.borderRadius = 6,
+    this.borderRadius = RadiusToken.sm,
     this.status = AvatarStatus.none,
     this.statusWidget,
     this.showBadge = false,
@@ -128,6 +130,7 @@ class AvatarWidget extends StatelessWidget {
   /// 构建右上角红点/角标
   Widget _buildRedBadge(BuildContext context) {
     final isCircle = badgeText == null;
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: size * 0.1),
       constraints: BoxConstraints(
@@ -135,10 +138,10 @@ class AvatarWidget extends StatelessWidget {
         minHeight: size * 0.35,
       ),
       decoration: BoxDecoration(
-        color: Colors.red,
+        color: cs.error,
         shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: isCircle ? null : BorderRadius.circular(size * 0.2),
-        border: Border.all(color: Colors.white, width: size * 0.05),
+        border: Border.all(color: cs.surface, width: size * 0.05),
       ),
       child: badgeText != null
           ? Center(
@@ -147,7 +150,7 @@ class AvatarWidget extends StatelessWidget {
               child: Text(
                 badgeText!,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: cs.onError,
                   fontSize: size * 0.25,
                   fontWeight: FontWeight.bold,
                   height: 1.1,
@@ -163,14 +166,15 @@ class AvatarWidget extends StatelessWidget {
     if (statusWidget != null) return statusWidget!;
 
     final double dotSize = size * 0.38;
+    final cs = Theme.of(context).colorScheme;
 
     Color color;
     switch (status) {
       case AvatarStatus.online:
-        color = Colors.green;
+        color = Theme.of(context).extension<AppColors>()?.success ?? cs.primary;
         break;
       case AvatarStatus.offline:
-        color = Colors.grey;
+        color = cs.onSurfaceVariant;
         break;
       default:
         color = Colors.transparent;
@@ -189,7 +193,7 @@ class AvatarWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: dotSize * 0.18),
+          border: Border.all(color: cs.surface, width: dotSize * 0.18),
         ),
       ),
     );
@@ -228,18 +232,19 @@ class AvatarWidget extends StatelessWidget {
 
   /// 构建默认占位图标
   Widget _buildPlaceholder(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       alignment: Alignment.center,
       child: HugeIcon(
         icon: HugeIcons.strokeRoundedImage02,
         size: size * 0.6,
-        color: Colors.grey.shade600,
+        color: cs.onSurfaceVariant,
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 添加好友搜索栏组件
 ///
@@ -97,7 +98,7 @@ class AddFriendSearchBar extends StatelessWidget {
               onChanged: onChanged,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: SpacingToken.sm),
           Tooltip(
             message: 'add_friend_search_btn'.tr(),
             child: FilledButton(

@@ -4,6 +4,7 @@ import 'package:anoxia/features/settings/application/settings_page_controller.da
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:anoxia/framework/provider/setting/update_download_provider.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -104,7 +105,7 @@ class _SettingsAboutSupportSectionState
         ),
         // Web 端通过浏览器刷新即可获取最新版本，不提供检查更新入口。
         if (!DeviceUtil.isWeb) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: SpacingToken.lg),
           UpdateCard(
             updateInfo: updateInfo,
             checkingUpdate: widget.pageState.checkingUpdate,
@@ -113,7 +114,7 @@ class _SettingsAboutSupportSectionState
             onOpenDetail: widget.onNavigateToUpdatePage,
           ),
           if (widget.pageState.updateErrorKey != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: SpacingToken.sm),
             Semantics(
               liveRegion: true,
               child: Text(
@@ -129,9 +130,9 @@ class _SettingsAboutSupportSectionState
               updateInfo.downloadUrl.isNotEmpty)
             _UpdateCtaButton(updateInfo: updateInfo),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: SpacingToken.xl),
         SectionLabel(text: 'settings_about_contact_title'.tr()),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         ActionGroup(
           key: const Key('about-contact-group'),
           children: [
@@ -149,9 +150,9 @@ class _SettingsAboutSupportSectionState
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: SpacingToken.xl),
         SectionLabel(text: 'settings_about_more_title'.tr()),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         LayoutBuilder(
           builder: (context, constraints) {
             final useColumns = constraints.maxWidth >= 600;
@@ -185,14 +186,14 @@ class _SettingsAboutSupportSectionState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(child: actions.first),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SpacingToken.md),
                   Expanded(child: actions.last),
                 ],
               ),
             );
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: SpacingToken.md),
         ActionGroup(
           key: const Key('about-resource-group'),
           children: [

@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/input/mobile_text_input_controller.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/mobile/voice_record_controller.dart';
@@ -144,7 +145,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(RadiusToken.xl)),
       ),
       builder: (ctx) => SafeArea(
         child: SizedBox(
@@ -309,7 +310,7 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
     final result = await showModalBottomSheet<CropAspectRatio?>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(RadiusToken.xl)),
       ),
       builder: (ctx) {
         return SafeArea(

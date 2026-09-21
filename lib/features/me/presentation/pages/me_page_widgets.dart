@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 「我的」页骨架屏
 ///
@@ -97,11 +98,11 @@ class TileSectionSkeleton extends StatelessWidget {
               child: Row(
                 children: [
                   const SkeletonBox(width: 20, height: 20, radius: 5),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: SpacingToken.lg),
                   const SkeletonLine(width: 64, height: 13),
                   const Spacer(),
                   SkeletonBox(width: 88 - (i % 3) * 18, height: 12, radius: 4),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: SpacingToken.sm),
                   const SkeletonBox(width: 18, height: 18, radius: 5),
                 ],
               ),
@@ -214,7 +215,7 @@ class MeEditableTile extends StatelessWidget {
               style: TextStyle(color: cs.onSurfaceVariant),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: SpacingToken.xs),
           HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),
         ],
       ),
@@ -248,7 +249,7 @@ class MeAvatarTile extends StatelessWidget {
             'me_avatar_change'.tr(),
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: SpacingToken.xs),
           HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: cs.outline),
         ],
       ),

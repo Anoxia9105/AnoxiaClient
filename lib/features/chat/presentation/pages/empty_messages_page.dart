@@ -8,13 +8,14 @@ class EmptyMessagesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onVariant = Theme.of(context).colorScheme.onSurfaceVariant;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const HugeIcon(icon: HugeIcons.strokeRoundedMessage01, size: 40, color: Colors.grey),
+          HugeIcon(icon: HugeIcons.strokeRoundedMessage01, size: 40, color: onVariant),
           const SizedBox(height: 12),
-          Text('chat_no_messages'.tr(), style: const TextStyle(color: Colors.grey, fontSize: 14)),
+          Text('chat_no_messages'.tr(), style: TextStyle(color: onVariant, fontSize: 14)),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 class SettingsChatDensitySection extends StatelessWidget {
   const SettingsChatDensitySection({
@@ -39,7 +40,7 @@ class SettingsChatDensitySection extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: SpacingToken.md),
         LayoutBuilder(
           builder: (context, constraints) {
             final cards = options
@@ -113,7 +114,7 @@ class _DensityOption extends StatelessWidget {
             duration: reduceMotion
                 ? Duration.zero
                 : const Duration(milliseconds: 180),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(SpacingToken.md),
             decoration: BoxDecoration(
               color: selected
                   ? colors.primaryContainer.withValues(alpha: 0.36)
@@ -148,7 +149,7 @@ class _DensityOption extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: SpacingToken.xs),
                 Text(
                   'settings_chat_density_${name}_description'.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -238,7 +239,7 @@ class _PreviewMessage extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: SpacingToken.xs),
           Container(
             width: width,
             height: height,

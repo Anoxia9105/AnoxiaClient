@@ -314,6 +314,7 @@ import 'colors_box.dart';
                         builder: (context, _) {
                           final hasContent = controller.document.toPlainText().trim().isNotEmpty;
                           return _buildCustomBtn(
+                            context,
                             HugeIcons.strokeRoundedSparkles,
                             'chat_ai.assist_title'.tr(),
                             () => showChatAiAssistBubble(
@@ -333,6 +334,7 @@ import 'colors_box.dart';
               Builder(
                 builder: (context) {
                   return _buildCustomBtn(
+                    context,
                     HugeIcons.strokeRoundedRelieved02,
                     'toolbar_emoji'.tr(),
                     () {
@@ -392,6 +394,7 @@ import 'colors_box.dart';
                 },
               ),
               _buildCustomBtn(
+                context,
                 HugeIcons.strokeRoundedImage02,
                 'toolbar_image'.tr(),
                 onImagePressed,
@@ -399,6 +402,7 @@ import 'colors_box.dart';
                 enabled: !isUploading,
               ),
               _buildCustomBtn(
+                context,
                 HugeIcons.strokeRoundedFiles02,
                 'toolbar_file'.tr(),
                 onFilePressed,
@@ -414,7 +418,7 @@ import 'colors_box.dart';
                 icon: HugeIcon(
                   icon: HugeIcons.strokeRoundedSent,
                   size: 20,
-                  color: isUploading ? Colors.grey : colorScheme.primary,
+                  color: isUploading ? colorScheme.onSurfaceVariant : colorScheme.primary,
                   strokeWidth: 2.5,
                 ),
               ),
@@ -444,6 +448,7 @@ import 'colors_box.dart';
 
   // 构建普通功能按钮
   Widget _buildCustomBtn(
+    BuildContext context,
     List<List<dynamic>> icon,
     String tooltip,
     VoidCallback? action,
@@ -458,7 +463,7 @@ import 'colors_box.dart';
       icon: HugeIcon(
         icon: icon,
         size: 18,
-        color: enabled ? color : Colors.grey.withValues(alpha: 0.5),
+        color: enabled ? color : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         strokeWidth: 2,
       ),
     );

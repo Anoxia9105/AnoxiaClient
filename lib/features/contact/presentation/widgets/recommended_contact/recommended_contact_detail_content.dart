@@ -3,6 +3,7 @@ import 'package:anoxia/features/contact/presentation/widgets/recommended_contact
 import 'package:anoxia/framework/provider/contact/contact_list_controller.dart';
 import 'package:anoxia/framework/protocol/message/message_payload.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 名片公开资料 + 好友请求表单的组合内容
@@ -24,7 +25,7 @@ class RecommendedContactDetailContent extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RecommendedContactProfileCard(card: card),
-        const SizedBox(height: 24),
+        const SizedBox(height: SpacingToken.xl),
         RecommendedContactRequestForm(
           userId: userId,
           isFriend: isFriend,

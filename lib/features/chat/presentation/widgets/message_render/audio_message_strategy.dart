@@ -24,7 +24,7 @@ class AudioMessageStrategy extends MessageRenderStrategy {
     if (DeviceUtil.isRealDesktop()) {
       return Text(
         'audio_message_mobile_only'.tr(),
-        style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Colors.grey),
+        style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
     }
 

@@ -5,6 +5,7 @@ import 'package:anoxia/framework/provider/router/router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 开源许可证页面
 ///
@@ -87,7 +88,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: SpacingToken.sm),
                           if (description.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(
@@ -156,11 +157,11 @@ class OpenSourceLicenseDetailPage extends StatelessWidget {
       showWebNavigationBar: true,
       title: Text(title),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(SpacingToken.md),
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(SpacingToken.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -176,7 +177,7 @@ class OpenSourceLicenseDetailPage extends StatelessWidget {
           const SizedBox(height: 10),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(SpacingToken.md),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 260),
                 child: Scrollbar(

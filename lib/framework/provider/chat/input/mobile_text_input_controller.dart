@@ -31,11 +31,12 @@ class MentionHighlightTextEditingController extends TextEditingController {
   /// 当前有效的 @提及区间（按 start 升序，互不重叠）
   List<MentionSpan> mentions = const [];
 
-  static TextStyle _mentionStyle(TextStyle? base) {
+  static TextStyle _mentionStyle(BuildContext context, TextStyle? base) {
+    final error = Theme.of(context).colorScheme.error;
     return (base ?? const TextStyle()).copyWith(
-      color: Colors.red,
+      color: error,
       fontWeight: FontWeight.bold,
-      backgroundColor: Colors.red.withValues(alpha: 0.1),
+      backgroundColor: error.withValues(alpha: 0.1),
     );
   }
 
@@ -79,7 +80,7 @@ class MentionHighlightTextEditingController extends TextEditingController {
 
       var segStyle = style;
       if (_mentionAt(start, end) != null) {
-        segStyle = _mentionStyle(style);
+        segStyle = _mentionStyle(context, style);
       }
       if (hasComposing &&
           start >= currentValue.composing.start &&

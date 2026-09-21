@@ -359,7 +359,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
               filterQuality: FilterQuality.medium,
             );
           } else {
-            imageChild = _buildPlaceholder(displaySize);
+            imageChild = _buildPlaceholder(context, displaySize);
           }
         } else {
           // 正常动画或普通图片：等比缩放，BoxFit.contain 保证不拉伸
@@ -372,7 +372,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
             fit: widget.isGrid ? BoxFit.cover : BoxFit.contain,
             memCacheWidth: (displaySize.width * dpr).round().clamp(0, 2048),
             memCacheHeight: (displaySize.height * dpr).round().clamp(0, 2048),
-            placeholder: (_, _) => _buildPlaceholder(displaySize),
+            placeholder: (_, _) => _buildPlaceholder(context, displaySize),
             errorWidget: (_, _, _) => const HugeIcon(
               icon: HugeIcons.strokeRoundedImageNotFound01,
               size: 30,
@@ -380,7 +380,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
           );
         }
 
-        final borderRadius = BorderRadius.circular(widget.isGrid ? 4 : 8);
+        final borderRadius = BorderRadius.circular(widget.isGrid ? RadiusToken.sm : RadiusToken.md);
         // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致；
         // 本地待上传阶段也不启用（详情页按网络地址加载，此时还没有地址）。
         // 减少动效时关闭 Hero，路由本身已零时长即时呈现。
@@ -389,7 +389,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
         Widget heroWrapped = RepaintBoundary(
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               borderRadius: borderRadius,
             ),
             child: ClipRRect(
@@ -478,7 +478,8 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
     );
   }
 
-  Widget _buildPlaceholder(Size size) {
+  Widget _buildPlaceholder(BuildContext context, Size size) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       width: size.width,
       height: size.height,
@@ -487,7 +488,7 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.grey[200]!, Colors.grey[100]!, Colors.grey[200]!],
+          colors: [cs.surfaceContainerHigh, cs.surfaceContainerLow, cs.surfaceContainerHigh],
         ),
       ),
     );

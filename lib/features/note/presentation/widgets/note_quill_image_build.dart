@@ -263,7 +263,7 @@ class _NoteImageEmbedState extends State<_NoteImageEmbed> {
                             decoration: BoxDecoration(
                               color: scheme.surface.withValues(alpha: .9),
                               borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(8),
+                                topLeft: Radius.circular(RadiusToken.md),
                               ),
                             ),
                             child: Icon(

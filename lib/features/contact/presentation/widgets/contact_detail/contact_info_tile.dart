@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 /// 联系人信息项组件
@@ -32,7 +33,7 @@ class ContactInfoTile extends StatelessWidget {
               size: 18,
               color: colorScheme.primary.withValues(alpha: 0.7),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: SpacingToken.md),
           ],
           SizedBox(
             width: 72,
@@ -44,7 +45,7 @@ class ContactInfoTile extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: SpacingToken.md),
           Expanded(
             child: GestureDetector(
               onTap: onTap,

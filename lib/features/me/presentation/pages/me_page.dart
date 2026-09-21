@@ -17,6 +17,7 @@ import 'me_profile_item_edit_page.dart';
 import 'me_page_widgets.dart';
 import 'personal_qr_page.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 个人中心页面
 ///
@@ -109,9 +110,9 @@ class _MyPageState extends ConsumerState<MyPage> {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
       children: [
         _buildTopProfileRow(context, user),
-        const SizedBox(height: 16),
+        const SizedBox(height: SpacingToken.lg),
         MeSectionTitle(text: 'me_profile_edit_title'.tr()),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         MeTileSection(
           children: [
             MeAvatarTile(onTap: () => _editAvatar(context)),
@@ -183,9 +184,9 @@ class _MyPageState extends ConsumerState<MyPage> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: SpacingToken.lg),
         MeSectionTitle(text: 'me_password_title'.tr()),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         MeTileSection(
           children: [
             MeEditableTile(
@@ -258,7 +259,7 @@ class _MyPageState extends ConsumerState<MyPage> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: SpacingToken.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

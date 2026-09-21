@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 联系人详情空状态组件
 ///
@@ -20,7 +21,7 @@ class ContactDetailEmptyState extends StatelessWidget {
             size: 56,
             color: colorScheme.outlineVariant,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: SpacingToken.lg),
           Text(
             'contact_select_contact'.tr(),
             style: TextStyle(

@@ -15,6 +15,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 联系人详情操作按钮组件
 ///
@@ -51,7 +52,7 @@ class ContactDetailActions extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: SpacingToken.md),
           SizedBox(
             width: double.infinity,
             height: 48,

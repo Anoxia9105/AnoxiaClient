@@ -1,5 +1,6 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 联系人详情头部组件
 ///
@@ -44,7 +45,7 @@ class ContactDetailHeader extends StatelessWidget {
             ),
           ),
           if (remark != null && remark!.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: SpacingToken.xs),
             Text(
               remark!,
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(

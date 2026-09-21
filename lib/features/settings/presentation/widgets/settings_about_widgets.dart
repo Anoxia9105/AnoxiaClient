@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 分区标签组件
 class SectionLabel extends StatelessWidget {
@@ -100,7 +101,7 @@ class AppOverviewCard extends StatelessWidget {
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 44),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: SpacingToken.sm),
                               child: Center(
                                 child: Text(
                                   '${'settings_app_version'.tr()} $version',
@@ -123,12 +124,12 @@ class AppOverviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: SpacingToken.lg),
           Divider(
             height: 1,
             color: colorScheme.primary.withValues(alpha: 0.12),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: SpacingToken.lg),
           Text(
             'settings_about_description'.tr(),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -136,7 +137,7 @@ class AppOverviewCard extends StatelessWidget {
               height: 1.55,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: SpacingToken.lg),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -271,12 +272,12 @@ class SupportShortcut extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 96),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(SpacingToken.lg),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconSurface(icon: icon, emphasized: true),
-                const SizedBox(width: 12),
+                const SizedBox(width: SpacingToken.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,7 +289,7 @@ class SupportShortcut extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SpacingToken.xs),
                       Text(
                         subtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -299,7 +300,7 @@ class SupportShortcut extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: SpacingToken.sm),
                 HugeIcon(
                   icon: HugeIcons.strokeRoundedArrowUpRight01,
                   size: 18,
@@ -339,7 +340,7 @@ class ActionRow extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 68),
         child: Row(
           children: [
-            const SizedBox(width: 12),
+            const SizedBox(width: SpacingToken.md),
             IconSurface(icon: icon),
             const SizedBox(width: 10),
             Expanded(
@@ -487,7 +488,7 @@ class UpdateCard extends ConsumerWidget {
                       emphasized: effectiveHasUpdate,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SpacingToken.md),
                   Expanded(
                     child: checkingUpdate
                         ? const _CheckingCopy()
@@ -495,7 +496,7 @@ class UpdateCard extends ConsumerWidget {
                             ? _HasUpdateCopy(updateInfo: info)
                             : const _NoUpdateCopy(),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: SpacingToken.sm),
                   if (checkingUpdate)
                     SizedBox(
                       width: 18,
@@ -543,7 +544,7 @@ class _CheckingCopy extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SpacingToken.xs),
         Text(
           'settings_update_checking_desc'.tr(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -573,7 +574,7 @@ class _NoUpdateCopy extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SpacingToken.xs),
         Text(
           'settings_update_no_update'.tr(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -611,7 +612,7 @@ class _HasUpdateCopy extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: SpacingToken.sm),
             Semantics(
               label: 'update_new_version'.tr(),
               child: Container(
@@ -643,7 +644,7 @@ class _HasUpdateCopy extends ConsumerWidget {
             ],
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SpacingToken.xs),
         Text(
           updateInfo.releaseNotes.isNotEmpty
               ? updateInfo.releaseNotes
@@ -655,7 +656,7 @@ class _HasUpdateCopy extends ConsumerWidget {
             height: 1.35,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         _DownloadStatusLine(updateInfo: updateInfo),
       ],
     );
@@ -840,7 +841,7 @@ class UpdateCopy extends StatelessWidget {
               ),
             ),
             if (hasUpdate) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: SpacingToken.sm),
               Semantics(
                 label: 'update_new_version'.tr(),
                 child: Container(
@@ -855,7 +856,7 @@ class UpdateCopy extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SpacingToken.xs),
         Text(
           updateInfo?.releaseNotes.isNotEmpty == true
               ? updateInfo!.releaseNotes

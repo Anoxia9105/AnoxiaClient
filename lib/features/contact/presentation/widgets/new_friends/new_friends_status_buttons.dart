@@ -1,7 +1,9 @@
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 好友请求状态操作按钮
 ///
@@ -30,11 +32,12 @@ class NewFriendsStatusButtons extends StatelessWidget {
     }
 
     if (status == 1) {
+      final cs = Theme.of(context).colorScheme;
       return _buildChip(
         context,
         icon: HugeIcons.strokeRoundedCheckmarkCircle02,
         label: 'contact_request_accepted'.tr(),
-        color: Colors.green,
+        color: Theme.of(context).extension<AppColors>()?.success ?? cs.primary,
       );
     }
 
@@ -72,7 +75,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
           ),
           label: Text('contact_accept'.tr()),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: SpacingToken.sm),
         OutlinedButton.icon(
           onPressed: onReject,
           style: OutlinedButton.styleFrom(
@@ -115,7 +118,7 @@ class NewFriendsStatusButtons extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           HugeIcon(icon: icon, size: 13, color: color, strokeWidth: 2.5),
-          const SizedBox(width: 4),
+          const SizedBox(width: SpacingToken.xs),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall!.copyWith(

@@ -16,6 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 个人二维码页面
 ///
@@ -216,7 +217,7 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SpacingToken.md),
                   Text(
                     widget.user.nickName,
                     style: const TextStyle(
@@ -229,7 +230,7 @@ class _PersonalQrPageState extends State<PersonalQrPage> {
                     'me_qr_hint'.tr(),
                     style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SpacingToken.lg),
                   Row(
                     children: [
                       if (!DeviceUtil.isWeb) ...[

@@ -204,14 +204,14 @@ class _LocationBoxState extends State<LocationBox> {
                       ),
                     ],
                   ),
-                  const IgnorePointer(
+                  IgnorePointer(
                     child: Center(
                       child: Padding(
-                        padding: EdgeInsets.only(bottom: 42),
+                        padding: const EdgeInsets.only(bottom: 42),
                         child: HugeIcon(
                           icon: HugeIcons.strokeRoundedLocation01,
                           size: 48,
-                          color: Colors.redAccent,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ),

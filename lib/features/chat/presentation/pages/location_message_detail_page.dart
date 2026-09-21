@@ -89,10 +89,10 @@ class _LocationMessageDetailPageState extends State<LocationMessageDetailPage> {
                     width: 52,
                     height: 52,
                     alignment: Alignment.topCenter,
-                    child: const HugeIcon(
+                    child: HugeIcon(
                       icon: HugeIcons.strokeRoundedLocation01,
                       size: 48,
-                      color: Colors.redAccent,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],

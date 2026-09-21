@@ -3,6 +3,7 @@ import 'package:anoxia/framework/domain/user_vo.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 添加好友用户卡片组件
 ///
@@ -39,7 +40,7 @@ class AddFriendUserCard extends StatelessWidget {
             child: Row(
               children: [
                 AvatarWidget(url: user.avatar, name: user.nickName, size: 46),
-                const SizedBox(width: 12),
+                const SizedBox(width: SpacingToken.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +54,7 @@ class AddFriendUserCard extends StatelessWidget {
                           fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SpacingToken.xs),
                       Text(
                         'add_friend_username'.tr(args: [user.userName]),
                         maxLines: 1,

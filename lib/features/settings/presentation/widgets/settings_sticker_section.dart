@@ -8,6 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 设置-自定义表情包区块
 ///
@@ -152,14 +153,14 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         Text(
           'settings_sticker_upload_tip'.tr(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: SpacingToken.md),
         // 上传中：与聊天背景上传一致的细进度条样式（无字节级进度，用不确定态）
         AnimatedSize(
           duration: const Duration(milliseconds: 180),
@@ -214,7 +215,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
                     fit: BoxFit.cover,
                   ),
                 ),
-              if (pack.iconUrl.isNotEmpty) const SizedBox(width: 8),
+              if (pack.iconUrl.isNotEmpty) const SizedBox(width: SpacingToken.sm),
               Expanded(
                 child: Text(
                   pack.name,

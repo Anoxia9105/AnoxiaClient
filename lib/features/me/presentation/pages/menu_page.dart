@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'change_password_page.dart';
 import 'personal_qr_page.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 抽屉左侧菜单页面（带完整个人信息展示）
 class MenuPage extends ConsumerWidget {
@@ -31,7 +32,7 @@ class MenuPage extends ConsumerWidget {
     final hasAppUpdate = ref.watch(hasAppUpdateProvider);
 
     return Scaffold(
-      backgroundColor: colorScheme.primary,
+      backgroundColor: colorScheme.surfaceContainerLow,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,8 +61,8 @@ class MenuPage extends ConsumerWidget {
                               user.nickName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -72,7 +73,7 @@ class MenuPage extends ConsumerWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
+                                color: colorScheme.onSurfaceVariant,
                                 fontSize: 13,
                               ),
                             ),
@@ -96,22 +97,25 @@ class MenuPage extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(RadiusToken.xl),
                     ),
                     child: Column(
                       children: [
                         _buildInfoRow(
+                          context,
                           icon: HugeIcons.strokeRoundedToilet01,
                           value: _parseGender(user.sex),
                         ),
                         const SizedBox(height: 10),
                         _buildInfoRow(
+                          context,
                           icon: HugeIcons.strokeRoundedMail01,
                           value: user.email.isNotEmpty ? user.email : '--',
                         ),
                         const SizedBox(height: 10),
                         _buildInfoRow(
+                          context,
                           icon: HugeIcons.strokeRoundedCall,
                           value: user.phoneNumber.isNotEmpty
                               ? user.phoneNumber
@@ -124,15 +128,15 @@ class MenuPage extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: SpacingToken.lg),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Divider(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: colorScheme.outlineVariant,
                 height: 1,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: SpacingToken.md),
 
             // 3. 核心功能菜单项
             Expanded(
@@ -144,7 +148,7 @@ class MenuPage extends ConsumerWidget {
                   // 注：原「我的」（个人中心）入口已移除——抽屉顶部已内联展示
                   // 头像/昵称/性别/邮箱/手机号，重复入口冗余。
                   Material(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(RadiusToken.xl),
                     child: Column(
                       children: [
@@ -159,14 +163,14 @@ class MenuPage extends ConsumerWidget {
                             }
                           },
                         ),
-                        _buildTileDivider(),
+                        _buildTileDivider(context),
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedNote01,
                           title: 'sidebar_note'.tr(), // 记事本
                           onTap: () => _pushPage(context, const NotesPage()),
                         ),
-                        _buildTileDivider(),
+                        _buildTileDivider(context),
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedLock,
@@ -174,15 +178,15 @@ class MenuPage extends ConsumerWidget {
                           onTap: () =>
                               _pushPage(context, const ChangePasswordPage()),
                         ),
-                        _buildTileDivider(),
-                        _buildDarkModeTile(ref),
+                        _buildTileDivider(context),
+                        _buildDarkModeTile(context, ref),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SpacingToken.md),
                   // 第二组：切换账号 / 设置
                   Material(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(RadiusToken.xl),
                     child: Column(
                       children: [
@@ -196,7 +200,7 @@ class MenuPage extends ConsumerWidget {
                             builder: (_) => const AccountSwitchPage(),
                           ),
                         ),
-                        _buildTileDivider(),
+                        _buildTileDivider(context),
                         _buildMenuTile(
                           context,
                           icon: HugeIcons.strokeRoundedSettings01,
@@ -216,10 +220,8 @@ class MenuPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
               child: TextButton.icon(
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: colorScheme.errorContainer.withValues(
-                    alpha: 0.2,
-                  ),
+                  foregroundColor: colorScheme.onErrorContainer,
+                  backgroundColor: colorScheme.errorContainer,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
@@ -244,19 +246,21 @@ class MenuPage extends ConsumerWidget {
     );
   }
 
-  /// 封装行内信息展示条（左图标 + 标签，右半透白数据）
-  Widget _buildInfoRow({
+  /// 封装行内信息展示条（左图标 + 数值）
+  Widget _buildInfoRow(
+    BuildContext context, {
     required List<List<dynamic>> icon,
     required String value,
   }) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
         HugeIcon(
           icon: icon,
           size: 16,
-          color: Colors.white.withValues(alpha: 0.6),
+          color: cs.onSurfaceVariant,
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: SpacingToken.xs),
         Expanded(
           flex: 2,
           child: Text(
@@ -264,8 +268,8 @@ class MenuPage extends ConsumerWidget {
             textAlign: TextAlign.end,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: cs.onSurface,
               fontSize: 13,
               fontWeight: FontWeight.w400,
             ),
@@ -297,8 +301,8 @@ class MenuPage extends ConsumerWidget {
     bool showBadge = false,
   }) {
     final displayColor = isDanger
-        ? Theme.of(context).colorScheme.onErrorContainer
-        : Colors.white;
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).colorScheme.onSurface;
 
     return ListTile(
       dense: true,
@@ -319,7 +323,7 @@ class MenuPage extends ConsumerWidget {
             const Positioned(
               right: -3,
               top: -3,
-              child: VibratingBadge(isDot: true, borderColor: null),
+              child: VibratingBadge(isDot: true, borderColor: Colors.transparent),
             ),
         ],
       ),
@@ -340,12 +344,12 @@ class MenuPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildTileDivider() {
+  Widget _buildTileDivider(BuildContext context) {
     return Divider(
       height: 1,
       indent: 50,
       endIndent: 14,
-      color: Colors.white.withValues(alpha: 0.12),
+      color: Theme.of(context).colorScheme.outlineVariant,
     );
   }
 
@@ -357,7 +361,8 @@ class MenuPage extends ConsumerWidget {
   /// 深色模式快捷开关
   ///
   /// 与设置页行为一致：切换亮度并同步兼容主题索引（保留强调色）。
-  Widget _buildDarkModeTile(WidgetRef ref) {
+  Widget _buildDarkModeTile(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = ref.watch(themeModeProvider) == Brightness.dark;
     return ListTile(
       dense: true,
@@ -368,12 +373,12 @@ class MenuPage extends ConsumerWidget {
         icon: isDark
             ? HugeIcons.strokeRoundedMoon02
             : HugeIcons.strokeRoundedSun03,
-        color: Colors.white.withValues(alpha: 0.85),
+        color: cs.onSurfaceVariant,
         size: 18,
       ),
       title: Text(
         'sidebar_dark_mode'.tr(),
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: cs.onSurface, fontSize: 14),
       ),
       trailing: SizedBox.square(
         dimension: 44,
@@ -382,10 +387,6 @@ class MenuPage extends ConsumerWidget {
             scale: 0.78,
             child: Switch(
               value: isDark,
-              activeThumbColor: Colors.white,
-              activeTrackColor: Colors.white.withValues(alpha: 0.45),
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
               onChanged: (_) => _toggleDarkMode(ref),
             ),
           ),

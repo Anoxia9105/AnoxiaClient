@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 语言设置组件
 ///
@@ -28,14 +29,14 @@ class SettingsLanguageSection extends StatelessWidget {
           selectedLanguageCode: selectedLanguageCode,
           onLanguageChanged: onLanguageChanged,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         _LanguageOption(
           label: 'settings_language_english'.tr(),
           value: 'en',
           selectedLanguageCode: selectedLanguageCode,
           onLanguageChanged: onLanguageChanged,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         _LanguageOption(
           label: 'settings_language_japanese'.tr(),
           value: 'ja',

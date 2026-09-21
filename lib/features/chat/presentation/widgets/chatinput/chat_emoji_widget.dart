@@ -131,15 +131,15 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
                       ),
                       child: Row(
                         children: [
-                          const HugeIcon(
+                          HugeIcon(
                             icon: HugeIcons.strokeRoundedSearch02,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             'toolbar_search_emoji'.tr(),
-                            style: const TextStyle(
-                              color: Colors.grey,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 14,
                             ),
                           ),
@@ -301,7 +301,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
       return Center(
         child: Text(
           'emoji_sticker_empty'.tr(),
-          style: const TextStyle(color: Colors.grey),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }
@@ -315,7 +315,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
       return Center(
         child: Text(
           'emoji_sticker_empty'.tr(),
-          style: const TextStyle(color: Colors.grey),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }
@@ -386,7 +386,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
         children: [
           Text(
             'emoji_sticker_load_failed'.tr(),
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(

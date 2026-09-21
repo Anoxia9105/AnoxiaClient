@@ -88,8 +88,8 @@ class AttachmentUploadOverlay extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Colors.redAccent,
+            decoration: BoxDecoration(
+              color: scheme.error,
               shape: BoxShape.circle,
             ),
             child: const HugeIcon(

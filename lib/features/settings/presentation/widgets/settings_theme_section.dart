@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 import 'settings_theme_widgets.dart';
 
@@ -63,7 +64,7 @@ class SettingsThemeSection extends ConsumerWidget {
         ),
         const SizedBox(height: 18),
         SectionLabel(text: 'settings_theme_accent_color'.tr()),
-        const SizedBox(height: 8),
+        const SizedBox(height: SpacingToken.sm),
         // 分组展示
         for (final category in AccentCategory.values) ...[
           Padding(

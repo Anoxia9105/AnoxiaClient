@@ -12,6 +12,7 @@ import '../../../../framework/domain/app_background.dart';
 import '../../../../framework/provider/theme/theme_controller.dart';
 import 'background_video_thumbnail.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 class SettingsBackgroundSection extends ConsumerWidget {
   const SettingsBackgroundSection({super.key});
@@ -82,7 +83,7 @@ class SettingsBackgroundSection extends ConsumerWidget {
             context,
           ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SpacingToken.xs),
         Text(
           'settings_bg_media_subtitle'.tr(),
           style: Theme.of(
@@ -121,7 +122,7 @@ class SettingsBackgroundSection extends ConsumerWidget {
               ),
             ),
             if (state.activeAsset != null) ...[
-              const SizedBox(width: 12),
+              const SizedBox(width: SpacingToken.md),
               OutlinedButton.icon(
                 onPressed: controller.disable,
                 icon: const HugeIcon(
@@ -316,7 +317,7 @@ class _BackgroundAssetTile extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: const Padding(
-                      padding: EdgeInsets.all(4),
+                      padding: EdgeInsets.all(SpacingToken.xs),
                       child: HugeIcon(
                         icon: HugeIcons.strokeRoundedTick02,
                         color: Colors.white,

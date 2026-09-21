@@ -5,6 +5,7 @@ import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 桌面端密码修改对话框，避免在主内容区继续压入移动端页面。
 class ChangePasswordDialog extends StatefulWidget {
@@ -206,7 +207,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
         children: [
           _buildSectionTitle(context, 'me_password_title'.tr()),
-          const SizedBox(height: 8),
+          const SizedBox(height: SpacingToken.sm),
           _buildTileSection(
             context,
             children: [
@@ -330,7 +331,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               style: TextStyle(color: cs.onSurfaceVariant),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: SpacingToken.xs),
           HugeIcon(
             icon: HugeIcons.strokeRoundedArrowRight01,
             size: 20,

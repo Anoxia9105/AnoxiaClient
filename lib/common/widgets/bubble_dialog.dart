@@ -471,7 +471,7 @@ class BubbleWidget extends StatelessWidget {
           arrowWidth: arrowWidth,
           arrowRadius: arrowRadius,
           arrowOffset: arrowOffset,
-          fillColor: backgroundColor ?? Colors.white,
+          fillColor: backgroundColor ?? Theme.of(context).colorScheme.surfaceContainer,
         ),
         shadows: shadows,
       ),

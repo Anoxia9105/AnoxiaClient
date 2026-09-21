@@ -163,7 +163,7 @@ class _ChatMessageContextMenuState
           'revoke',
           HugeIcons.strokeRoundedUndo,
           'chat_revoke'.tr(),
-          color: Colors.redAccent,
+          color: Theme.of(context).colorScheme.error,
         ),
       );
     }

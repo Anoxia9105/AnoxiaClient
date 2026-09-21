@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 添加好友页面
 ///
@@ -115,7 +116,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                           color: colorScheme.onPrimaryContainer,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: SpacingToken.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

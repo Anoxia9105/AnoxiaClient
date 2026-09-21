@@ -11,6 +11,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'avatar_crop_editor.dart';
@@ -155,7 +156,7 @@ class _AvatarEditFlowState extends ConsumerState<AvatarEditFlow> {
                   label: Text('me_avatar_reselect'.tr()),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: SpacingToken.md),
               Expanded(
                 child: FilledButton.icon(
                   onPressed: _uploading ? null : _confirm,

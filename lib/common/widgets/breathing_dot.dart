@@ -1,3 +1,4 @@
+import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// 在线状态绿点（静态）
@@ -9,12 +10,13 @@ class BreathingDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       width: 8,
       height: 8,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.green,
+        color: Theme.of(context).extension<AppColors>()?.success ?? cs.primary,
       ),
     );
   }

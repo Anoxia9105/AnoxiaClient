@@ -472,7 +472,7 @@ class NoteAiSheetState extends ConsumerState<NoteAiSheet> {
         constraints: BoxConstraints(maxHeight: maxHeight),
         decoration: BoxDecoration(
           color: cs.surfaceContainerLowest,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(RadiusToken.xl)),
           border: Border(
             top: BorderSide(color: cs.primary.withValues(alpha: .20)),
           ),

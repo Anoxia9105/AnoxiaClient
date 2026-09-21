@@ -273,7 +273,7 @@ class _SearchContextPageState extends ConsumerState<SearchContextPage> {
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.08),
               borderRadius: isDesktop
-                  ? const BorderRadius.vertical(top: Radius.circular(12))
+                  ? const BorderRadius.vertical(top: Radius.circular(RadiusToken.lg))
                   : BorderRadius.zero,
               border: Border(
                 bottom: BorderSide(

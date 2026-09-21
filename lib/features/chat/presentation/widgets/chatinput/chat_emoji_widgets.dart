@@ -222,7 +222,7 @@ class MyCustomSearchViewState extends SearchViewState<MyCustomSearchView> {
                   ? Center(
                       child: Text(
                         'emoji_not_found'.tr(),
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     )
                   : ListView.builder(

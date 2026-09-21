@@ -1,6 +1,7 @@
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:flutter/material.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 新好友请求骨架屏
 ///
@@ -32,7 +33,7 @@ class NewFriendsSkeleton extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SkeletonBox(width: 44, height: 44, radius: 12),
-              const SizedBox(width: 12),
+              const SizedBox(width: SpacingToken.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
