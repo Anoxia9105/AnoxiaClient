@@ -1,5 +1,4 @@
 import 'package:anoxia/common/widgets/desktop/connection_status_tag.dart';
-import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
 import 'package:anoxia/common/widgets/desktop/header_search_entry.dart';
@@ -163,8 +162,8 @@ class DesktopAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  /// 打开全局搜索对话框
+  /// 打开全局搜索对话框（与 Ctrl+K 热键入口共用互斥门）
   void _openGlobalSearch(BuildContext context) {
-    showEscClosableDialog(context: context, builder: (_) => GlobalSearchDialog());
+    openGlobalSearchDialog(context);
   }
 }

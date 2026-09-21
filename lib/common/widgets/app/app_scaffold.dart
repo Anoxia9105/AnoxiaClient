@@ -1,5 +1,4 @@
 import 'package:anoxia/common/utils/device_util.dart';
-import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/common/widgets/desktop/desktop_app_bar.dart';
 import 'package:anoxia/common/widgets/app/app_background_layer.dart';
 import 'package:anoxia/common/widgets/desktop/global_search_dialog.dart';
@@ -59,8 +58,15 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
     scope: HotKeyScope.inapp,
   );
 
-  /// 是否已经打开搜索弹窗，防止重复打开
-  bool _isSearchDialogOpen = false;
+  /// 触发打开搜索弹窗（互斥门在 openGlobalSearchDialog 内，
+  /// 与标题栏点击入口共用，防止搜索框聚焦时再按 Ctrl+K 叠弹窗）
+  void _openGlobalSearch() {
+    // 检查当前上下文是否还能安全弹窗
+    if (!mounted) return;
+
+    openGlobalSearchDialog(context);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -81,25 +87,6 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
     } catch (e) {
       debugLog('hotkey_manager: 注册失败，错误信息为: $e');
     }
-  }
-
-  /// 触发打开搜索弹窗
-  void _openGlobalSearch() {
-    // 检查当前上下文是否还能安全弹窗
-    if (!mounted) return;
-
-    /// 如果已经打开搜索弹窗，则不再重复打开，避免多个弹窗叠加
-    if (_isSearchDialogOpen) return;
-
-    /// 上锁状态，直到弹窗关闭时才允许再次打开
-    _isSearchDialogOpen = true;
-    showEscClosableDialog(
-      context: context,
-      builder: (_) => GlobalSearchDialog(),
-    ).then((_) {
-      /// 无论弹窗是正常关闭还是通过其他方式关闭，都重置状态，允许下次再次打开
-      _isSearchDialogOpen = false;
-    });
   }
 
   @override

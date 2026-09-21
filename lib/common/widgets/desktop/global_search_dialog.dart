@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/formatters/message_preview_formatter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -8,6 +9,22 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+
+/// 全局搜索弹窗互斥门。
+///
+/// 打开入口有两处（AppScaffold 的 Ctrl/Cmd+K 热键、标题栏搜索框点击），
+/// 共用此静态标记防止搜索框聚焦时再按 Ctrl+K 叠出第二个弹窗。
+bool _globalSearchOpen = false;
+
+/// 打开全局搜索对话框（互斥：已打开时直接返回）。
+Future<void> openGlobalSearchDialog(BuildContext context) {
+  if (_globalSearchOpen) return Future.value();
+  _globalSearchOpen = true;
+  return showEscClosableDialog(
+    context: context,
+    builder: (_) => GlobalSearchDialog(),
+  ).whenComplete(() => _globalSearchOpen = false);
+}
 
 /// 全局搜索对话框
 ///
@@ -34,30 +51,51 @@ class GlobalSearchDialog extends ConsumerWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                // 通过 notifier 更新状态
-                onChanged: (v) => ref
-                    .read(desktopSearchControllerProvider.notifier)
-                    .updateQuery(v),
-                decoration: InputDecoration(
-                  hintText: 'global_search_hint'.tr(),
-                  prefixIcon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedSearch02,
-                    size: 14,
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      // 通过 notifier 更新状态
+                      onChanged: (v) => ref
+                          .read(desktopSearchControllerProvider.notifier)
+                          .updateQuery(v),
+                      decoration: InputDecoration(
+                        hintText: 'global_search_hint'.tr(),
+                        prefixIcon: SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: Center(
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedSearch02,
+                              color: colorScheme.outline,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                        prefixIconConstraints: const BoxConstraints.tightFor(
+                          width: 30,
+                          height: 30,
+                        ),
+                        suffixText: 'Ctrl+K',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(RadiusToken.lg),
+                        ),
+                        isDense: true,
+                      ),
+                    ),
                   ),
-                  prefixIconConstraints: const BoxConstraints.tightFor(
-                    width: 34,
-                    height: 34,
+                  IconButton(
+                    tooltip: 'common_close'.tr(),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCancel01,
+                      size: 18,
+                    ),
                   ),
-                  suffixText: 'Ctrl+K',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(RadiusToken.lg),
-                  ),
-                  isDense: true,
-                ),
+                ],
               ),
             ),
             Expanded(
