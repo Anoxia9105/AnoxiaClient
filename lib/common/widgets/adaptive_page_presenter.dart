@@ -30,6 +30,40 @@ Future<T?> presentAdaptivePage<T>(
   final dialogWidth = (screenSize.width - 48).clamp(320.0, 760.0).toDouble();
   final dialogHeight = (screenSize.height - 48).clamp(320.0, 760.0).toDouble();
 
+  // 减少动效时弹窗零时长即时呈现，否则走默认 150ms 淡入+缩放
+  final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+  if (reduce) {
+    return showGeneralDialog<T>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: MaterialLocalizations.of(
+        context,
+      ).modalBarrierDismissLabel,
+      pageBuilder: (dialogContext, _, _) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        insetPadding: const EdgeInsets.all(24),
+        child: SizedBox(
+          width: dialogWidth,
+          height: dialogHeight,
+          child: _EscClosable(
+            onEscape: () => Navigator.of(dialogContext).pop(),
+            // 统一弹窗标题栏式样：AppBar 标题左对齐，与自动返回按钮组成
+            // 「返回按钮 + 标题」的桌面弹窗标准头部。
+            child: Theme(
+              data: Theme.of(dialogContext).copyWith(
+                appBarTheme: Theme.of(dialogContext).appBarTheme.copyWith(
+                      centerTitle: false,
+                    ),
+              ),
+              child: Builder(builder: builder),
+            ),
+          ),
+        ),
+      ),
+      transitionDuration: Duration.zero,
+    );
+  }
+
   return showDialog<T>(
     context: context,
     barrierDismissible: false,
@@ -74,6 +108,23 @@ Future<T?> showEscClosableDialog<T>({
   bool barrierDismissible = false,
   Color? barrierColor,
 }) {
+  // 减少动效时零时长即时呈现，否则走 showDialog 默认过渡
+  final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+  if (reduce) {
+    return showGeneralDialog<T>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      barrierColor: barrierColor ?? Colors.black54,
+      barrierLabel: MaterialLocalizations.of(
+        context,
+      ).modalBarrierDismissLabel,
+      transitionDuration: Duration.zero,
+      pageBuilder: (dialogContext, _, _) => _EscClosable(
+        onEscape: () => Navigator.of(dialogContext).pop(),
+        child: builder(dialogContext),
+      ),
+    );
+  }
   return showDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,

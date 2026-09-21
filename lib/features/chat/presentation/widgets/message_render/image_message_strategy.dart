@@ -383,7 +383,9 @@ class _SingleImageItemState extends ConsumerState<_SingleImageItem> {
         final borderRadius = BorderRadius.circular(widget.isGrid ? 4 : 8);
         // Hero 仅在非静态 GIF 时启用，避免首帧 RawImage 与 PhotoView hero 不一致；
         // 本地待上传阶段也不启用（详情页按网络地址加载，此时还没有地址）。
-        final useHero = !showStaticGif && !isPendingUpload;
+        // 减少动效时关闭 Hero，路由本身已零时长即时呈现。
+        final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+        final useHero = !showStaticGif && !isPendingUpload && !reduceMotion;
         Widget heroWrapped = RepaintBoundary(
           child: Container(
             decoration: BoxDecoration(

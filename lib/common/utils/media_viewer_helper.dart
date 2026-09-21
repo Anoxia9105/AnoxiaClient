@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/motion_utils.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/video_viewer.dart';
@@ -55,14 +56,19 @@ Future<void> openImageDetail(
       ),
     );
   } else {
-    // 使用自定义 PageRoute 保证 Hero 丝滑
+    // 使用自定义 PageRoute 保证 Hero 丝滑；减少动效时零时长即时呈现
+    final reduce = isReduceMotion(context);
     await Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black,
         barrierDismissible: true,
-        transitionDuration: const Duration(milliseconds: 320),
-        reverseTransitionDuration: const Duration(milliseconds: 260),
+        transitionDuration: reduce
+            ? Duration.zero
+            : const Duration(milliseconds: 320),
+        reverseTransitionDuration: reduce
+            ? Duration.zero
+            : const Duration(milliseconds: 260),
         pageBuilder: (ctx, animation, secondary) {
           return FadeTransition(
             opacity: animation,
@@ -115,13 +121,18 @@ Future<void> openVideoDetail(
       ),
     );
   } else {
+    final reduce = isReduceMotion(context);
     await Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black,
         barrierDismissible: true,
-        transitionDuration: const Duration(milliseconds: 320),
-        reverseTransitionDuration: const Duration(milliseconds: 260),
+        transitionDuration: reduce
+            ? Duration.zero
+            : const Duration(milliseconds: 320),
+        reverseTransitionDuration: reduce
+            ? Duration.zero
+            : const Duration(milliseconds: 260),
         pageBuilder: (ctx, animation, secondary) {
           return FadeTransition(
             opacity: animation,

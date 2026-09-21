@@ -389,6 +389,25 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final bg = dark ? Colors.black : Colors.grey[850];
+    // 减少动效时关闭 Hero，路由本身已零时长即时呈现
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final mediaChild =
+        initialized && controller != null
+            ? AspectRatio(
+                aspectRatio: controller!.value.aspectRatio == 0
+                    ? 16 / 9
+                    : controller!.value.aspectRatio,
+                child: VideoPlayer(controller!),
+              )
+            : widget.coverUrl != null && widget.coverUrl!.isNotEmpty
+            ? CachedNetworkImageView(
+                imageUrl: widget.coverUrl!,
+                fit: BoxFit.contain,
+                placeholder: (_, _) => const SizedBox.expand(),
+                errorWidget: (_, _, _) => _placeholder(),
+              )
+            : _placeholder();
     return Scaffold(
       backgroundColor: bg,
       extendBodyBehindAppBar: true,
@@ -412,27 +431,23 @@ class _VideoViewerPageState extends ConsumerState<VideoViewerPage>
         fit: StackFit.expand,
         children: [
           Center(
-            child: Hero(
-              tag: widget.heroTag,
-              createRectTween: (b, e) => MaterialRectArcTween(begin: b, end: e),
-              flightShuttleBuilder: (ctx, anim, dir, from, to) {
-                final w = dir == HeroFlightDirection.push ? to.widget : from.widget;
-                return Material(color: Colors.transparent, child: w);
-              },
-              child: initialized && controller != null
-                  ? AspectRatio(
-                      aspectRatio: controller!.value.aspectRatio == 0 ? 16 / 9 : controller!.value.aspectRatio,
-                      child: VideoPlayer(controller!),
-                    )
-                  : widget.coverUrl != null && widget.coverUrl!.isNotEmpty
-                  ? CachedNetworkImageView(
-                      imageUrl: widget.coverUrl!,
-                      fit: BoxFit.contain,
-                      placeholder: (_, _) => const SizedBox.expand(),
-                      errorWidget: (_, _, _) => _placeholder(),
-                    )
-                  : _placeholder(),
-            ),
+            child: reduceMotion
+                ? mediaChild
+                : Hero(
+                    tag: widget.heroTag,
+                    createRectTween: (b, e) =>
+                        MaterialRectArcTween(begin: b, end: e),
+                    flightShuttleBuilder: (ctx, anim, dir, from, to) {
+                      final w = dir == HeroFlightDirection.push
+                          ? to.widget
+                          : from.widget;
+                      return Material(
+                        color: Colors.transparent,
+                        child: w,
+                      );
+                    },
+                    child: mediaChild,
+                  ),
           ),
           if (initializing)
             const Center(

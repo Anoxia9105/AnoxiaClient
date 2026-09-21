@@ -395,8 +395,12 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
                           maxScale: scales.maxScale,
                           enableRotation: false,
                           basePosition: Alignment.center,
-                          // 仅在当前附件与初始一致时启用 Hero 动画
-                          heroAttributes: _heroAttributesFor(attachment),
+                          // 仅在当前附件与初始一致时启用 Hero 动画；
+                          // 减少动效时返回 null，无飞行过渡
+                          heroAttributes: _heroAttributesFor(
+                            context,
+                            attachment,
+                          ),
                           loadingBuilder: (context, event) =>
                               ImageViewerLoading(event: event),
                           errorBuilder: (context, error, stackTrace) =>
@@ -636,7 +640,14 @@ class _ImageViewerState extends ConsumerState<ImageViewer> {
   /// - `flightShuttleBuilder` 复用目标 widget，避免飞行期间重建导致闪烁
   /// - `placeholderBuilder` 直接返回 child，避免飞行占位半透明导致的穿帮
   /// - `transitionOnUserGestures: true` 支持手势返回时平滑跟手
-  PhotoViewHeroAttributes? _heroAttributesFor(Attachment attachment) {
+  PhotoViewHeroAttributes? _heroAttributesFor(
+    BuildContext context,
+    Attachment attachment,
+  ) {
+    // 减少动效时关闭 Hero，路由本身已零时长即时呈现
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      return null;
+    }
     final initialUrl = widget.currentUrl ?? widget.attachment.url;
     if (attachment.url != initialUrl) return null;
     return PhotoViewHeroAttributes(

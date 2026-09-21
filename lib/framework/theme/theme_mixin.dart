@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'package:anoxia/common/utils/motion_utils.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
 mixin ThemeMixin {
@@ -404,11 +404,12 @@ mixin ThemeMixin {
     // 页面切换动画：统一从右向左滑入（iOS 风格推入）
     // 替换各平台默认的淡入淡出/缩放（Android Zoom、桌面 FadeUpwards 等），
     // 覆盖所有 MaterialPageRoute——go_router 类型路由与直接 Navigator.push 全部生效。
+    // 减少动效开启时（MediaQuery.disableAnimations）直接返回子节点，无过渡。
     // -------------------------
     final pageTransitionsTheme = PageTransitionsTheme(
       builders: {
         for (final platform in TargetPlatform.values)
-          platform: const CupertinoPageTransitionsBuilder(),
+          platform: const ReduceMotionPageTransitionsBuilder(),
       },
     );
 

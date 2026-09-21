@@ -235,8 +235,10 @@ class _VideoMessagePlayerState extends ConsumerState<VideoMessagePlayer> {
         ? FileUtil.formatFileSize(widget.fileSize!)
         : '';
     // 与图片详情保持一致：仅在非对话框链路（手机 / Web-SP）启用 Hero，
-    // 这样移动端点击展开后可丝滑越界到 VideoViewerPage
-    final useHero = !shouldUseDialogForMedia(context);
+    // 这样移动端点击展开后可丝滑越界到 VideoViewerPage。
+    // 减少动效时关闭 Hero，路由本身已零时长即时呈现。
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final useHero = !shouldUseDialogForMedia(context) && !reduceMotion;
 
     Widget buildHeroWrapper(Widget child) {
       if (!useHero) return child;
