@@ -33,14 +33,12 @@ class CallWindowController extends _$CallWindowController {
   @override
   WindowController? build() {
     Channel.callChannel.setMethodCallHandler((call) async {
-      if (call.method == 'on_call_window_close') {
-        final roomId = _activeRoomId;
+      if (call.method == Channel.callWindowEndingMethod) {
+        _endActiveRoom();
+      } else if (call.method == Channel.callWindowCloseMethod) {
+        // 兼容未发送 ending 事件的旧子窗口，同时由 _endedRooms 保证幂等。
+        _endActiveRoom();
         _activeRoomId = null;
-        if (roomId != null && roomId.isNotEmpty) {
-          // 桌面端 CALL_END 统一在窗口关闭回调发出（挂断/X 关闭共用此路径），
-          // _endedRooms 去重防止对端已结束/已拒绝时重复发送。
-          ref.read(callInvitationControllerProvider.notifier).endRoom(roomId);
-        }
         state = null;
       } else if (call.method == 'invite_call_members') {
         _sendMemberInvites(Map<String, dynamic>.from(call.arguments as Map));
@@ -48,6 +46,13 @@ class CallWindowController extends _$CallWindowController {
       return null;
     });
     return null;
+  }
+
+  void _endActiveRoom() {
+    final roomId = _activeRoomId;
+    if (roomId == null || roomId.isEmpty) return;
+    // ending 和 close 都可能到达；邀请控制器通过 _endedRooms 去重。
+    ref.read(callInvitationControllerProvider.notifier).endRoom(roomId);
   }
 
   void _sendMemberInvites(Map<String, dynamic> payload) {

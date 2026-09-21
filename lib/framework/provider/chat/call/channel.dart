@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
+import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../common/utils/device_util.dart';
@@ -11,6 +11,12 @@ import '../../../../common/utils/device_util.dart';
 class Channel {
   /// 通话通道方法名：更新设置
   static const String callChannelMethod = 'updateSettings';
+
+  /// 子窗口开始结束通话：主窗口应立即发送 CALL_END，但继续持有窗口状态。
+  static const String callWindowEndingMethod = 'on_call_window_ending';
+
+  /// 子窗口已完成媒体清理并即将销毁：主窗口清除窗口状态。
+  static const String callWindowCloseMethod = 'on_call_window_close';
 
   /// 桌面端通话通道实例（懒加载）
   static WindowMethodChannel? _desktopCallChannel;

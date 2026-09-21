@@ -144,7 +144,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     }
   }
 
-  /// 通知主窗口窗口关闭（主窗口据此发 CALL_CANCEL / CALL_END）并退出。
+  /// 先通知主窗口结束通话，再清理媒体并退出。
   ///
   /// **必须在关窗之前断开 LiveKit 媒体连接**：桌面端子窗口销毁时
   /// desktop_multi_window 会直接释放该窗口的 FlutterViewController（引擎），
@@ -154,25 +154,36 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   /// CALL_END 后直接关掉本窗口，此前没有任何媒体清理动作。
   Future<void> _notifyCloseAndExit() async {
     if (_closing || !mounted) return;
-    // 先卸载通话组件，触发视频 renderer 的 dispose，再断开媒体。
+    // 先进入关闭态，防止系统关闭事件和挂断按钮同时触发两套清理流程。
     setState(() => _closing = true);
 
+    // CALL_END 不能等待媒体清理：disconnect 可能耗时较长，甚至释放失败。
+    // 先让对端立即结束通话，媒体清理完成后再通知主窗口清除窗口状态。
     try {
+      await Channel.callChannel.invokeMethod(Channel.callWindowEndingMethod);
+    } catch (e) {
+      debugLog('发送通话结束消息失败', e);
+    }
+
+    try {
+      // 等待关闭态卸载通话组件，触发视频 renderer 的 dispose，再断开媒体。
       await WidgetsBinding.instance.endOfFrame;
       await _teardownCallMedia();
     } catch (e, st) {
       debugLog('通话资源释放失败，保留窗口引擎', e, st);
       if (mounted) setState(() => _closeFailed = true);
-      FlutterError.reportError(FlutterErrorDetails(
-        exception: e,
-        stack: st,
-        library: 'anoxia call teardown',
-      ));
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: e,
+          stack: st,
+          library: 'anoxia call teardown',
+        ),
+      );
       return;
     }
 
     try {
-      await Channel.callChannel.invokeMethod('on_call_window_close');
+      await Channel.callChannel.invokeMethod(Channel.callWindowCloseMethod);
     } catch (e) {
       debugLog('发送关闭消息失败', e);
     }
@@ -276,10 +287,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
 ///
 /// 对方名称 + 「正在呼叫…」+ 取消（挂断）按钮。振铃期不连接媒体。
 class _DesktopCallRingingPage extends StatelessWidget {
-  const _DesktopCallRingingPage({
-    required this.title,
-    required this.onCancel,
-  });
+  const _DesktopCallRingingPage({required this.title, required this.onCancel});
 
   final String title;
   final Future<void> Function() onCancel;

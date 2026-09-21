@@ -634,8 +634,12 @@ class RoomController extends _$RoomController {
   /// 绑定设备热插拔监听
   /// 当用户插拔耳机、摄像头等设备时自动刷新设备列表
   void _bindDeviceEvents() {
-    _deviceSub = Hardware.instance.onDeviceChange.stream.listen((_) async {
-      await _loadDeviceList();
+    _deviceSub = Hardware.instance.onDeviceChange.stream.listen((_) {
+      unawaited(
+        _runMediaOperation(_loadDeviceList).catchError(
+          (Object e, StackTrace st) => debugLog('刷新媒体设备列表失败', e, st),
+        ),
+      );
     });
     // 订阅在 _disposeResources() 中统一取消（由 leave()/onDispose 调用）
   }
@@ -645,6 +649,8 @@ class RoomController extends _$RoomController {
     final currentState = state.value;
     if (currentState == null) return;
     final devices = await _getInitialDevices();
+    // leave() 会等待生命周期内的设备枚举结束；退出期间不再回写旧状态。
+    if (_isLeaving || !ref.mounted) return;
     state = AsyncData(
       currentState.copyWith(
         audioInputs: devices.where((d) => d.kind == 'audioinput').toList(),
@@ -660,7 +666,7 @@ class RoomController extends _$RoomController {
   /// 手动刷新设备列表
   ///
   /// 打开设备选择菜单前调用，确保 Web 端获取到授权后的完整设备列表
-  Future<void> refreshDevices() => _loadDeviceList();
+  Future<void> refreshDevices() => _runMediaOperation(_loadDeviceList);
 
   /// 清理资源
   /// 释放 listener 和设备订阅等本地资源，不访问 provider state。
