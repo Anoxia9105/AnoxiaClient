@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
@@ -9,12 +10,16 @@ class SettingsDestination {
     required this.subtitle,
     required this.icon,
     required this.builder,
+    this.showBadge = false,
   });
 
   final String title;
   final String subtitle;
   final List<List<dynamic>> icon;
   final WidgetBuilder builder;
+
+  /// 是否在导航项上显示小红点（如「关于与支持」有新版本时）
+  final bool showBadge;
 }
 
 /// 与聊天页一致的主从式布局：宽屏左侧列表、右侧详情，窄屏进入详情页。
@@ -152,12 +157,23 @@ class _SettingsNavigationList extends StatelessWidget {
               borderRadius: BorderRadius.circular(RadiusToken.lg),
             ),
             selected: selected,
-            leading: HugeIcon(
-              icon: destination.icon,
-              size: 20,
-              color: selected
-                  ? colorScheme.onSecondaryContainer
-                  : colorScheme.onSurfaceVariant,
+            leading: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                HugeIcon(
+                  icon: destination.icon,
+                  size: 20,
+                  color: selected
+                      ? colorScheme.onSecondaryContainer
+                      : colorScheme.onSurfaceVariant,
+                ),
+                if (destination.showBadge)
+                  const Positioned(
+                    right: -4,
+                    top: -4,
+                    child: VibratingBadge(isDot: true, borderColor: null),
+                  ),
+              ],
             ),
             title: Text(
               destination.title,

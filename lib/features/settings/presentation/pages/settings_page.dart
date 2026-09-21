@@ -391,6 +391,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'settings_page_about_title'.tr(),
             subtitle: 'settings_page_about_subtitle'.tr(),
             icon: HugeIcons.strokeRoundedInformationCircle,
+            // 有新版本时在导航项上同步小红点，与侧边栏设置图标保持一致。
+            showBadge: hasUpdateBadge,
             builder: (_) => SettingsAboutSupportSection(
               appVersionText: appVersionText,
               hasAppUpdate: hasUpdateBadge,

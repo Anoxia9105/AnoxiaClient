@@ -2,8 +2,11 @@ import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/settings/application/settings_page_controller.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
+import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
+import 'package:anoxia/framework/provider/setting/update_download_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,7 +29,7 @@ const String _appShareUrl = 'https://www.anoxia.cn';
 /// 设置-关于与支持区块组件
 ///
 /// 包含应用介绍、特性标签、开源许可证入口和版本更新检查等功能。
-class SettingsAboutSupportSection extends StatefulWidget {
+class SettingsAboutSupportSection extends ConsumerStatefulWidget {
   /// 应用版本号文本
   final String appVersionText;
 
@@ -60,7 +63,7 @@ class SettingsAboutSupportSection extends StatefulWidget {
   });
 
   @override
-  State<SettingsAboutSupportSection> createState() =>
+  ConsumerState<SettingsAboutSupportSection> createState() =>
       _SettingsAboutSupportSectionState();
 }
 
@@ -68,7 +71,7 @@ class SettingsAboutSupportSection extends StatefulWidget {
 ///
 /// 管理版本号连续点击计数，触发开发者致敬彩蛋页面。
 class _SettingsAboutSupportSectionState
-    extends State<SettingsAboutSupportSection> {
+    extends ConsumerState<SettingsAboutSupportSection> {
   /// 版本号点击计数
   int _versionTapCount = 0;
 
@@ -84,7 +87,12 @@ class _SettingsAboutSupportSectionState
 
   @override
   Widget build(BuildContext context) {
-    final updateInfo = widget.pageState.updateInfo;
+    // 本地手动检查结果优先，缺省时回落到全局后台检查结果：
+    // 刚启动已发现新版本但用户尚未手动检查时，卡片同样能展示版本号与下载状态。
+    final globalUpdateInfo = ref.watch(appUpdateCheckerProvider);
+    final updateInfo = widget.pageState.updateInfo ?? globalUpdateInfo;
+    final hasUpdate =
+        updateInfo?.hasUpdate == true || widget.hasAppUpdate;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
@@ -100,8 +108,9 @@ class _SettingsAboutSupportSectionState
           UpdateCard(
             updateInfo: updateInfo,
             checkingUpdate: widget.pageState.checkingUpdate,
-            hasAppUpdate: widget.hasAppUpdate,
+            hasAppUpdate: hasUpdate,
             onCheckUpdate: widget.onCheckUpdate,
+            onOpenDetail: widget.onNavigateToUpdatePage,
           ),
           if (widget.pageState.updateErrorKey != null) ...[
             const SizedBox(height: 8),
@@ -115,21 +124,10 @@ class _SettingsAboutSupportSectionState
               ),
             ),
           ],
-          if (updateInfo?.hasUpdate == true &&
-              updateInfo?.downloadUrl.isNotEmpty == true) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => widget.onNavigateToUpdatePage(updateInfo!),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedDownload01,
-                  size: 18,
-                ),
-                label: Text('update_now'.tr()),
-              ),
-            ),
-          ],
+          if (hasUpdate &&
+              updateInfo != null &&
+              updateInfo.downloadUrl.isNotEmpty)
+            _UpdateCtaButton(updateInfo: updateInfo),
         ],
         const SizedBox(height: 24),
         SectionLabel(text: 'settings_about_contact_title'.tr()),
@@ -281,5 +279,115 @@ class _SettingsAboutSupportSectionState
         );
       }
     }
+  }
+}
+
+/// 更新 CTA 按钮：按静默下载状态切换文案与行为
+///
+/// - 下载中：显示百分比，点击进入详情页查看完整进度；
+/// - 已就绪：显示「立即安装」，直接拉起安装器（失败则 Toast + 进入详情页兜底）；
+/// - 失败：显示「重试下载」，重新触发下载；
+/// - 空闲：显示「立即升级」，进入详情页。
+class _UpdateCtaButton extends ConsumerWidget {
+  final AppUpdateInfo updateInfo;
+
+  const _UpdateCtaButton({required this.updateInfo});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final download = ref.watch(updateDownloadControllerProvider);
+    final matchesVersion =
+        download.version.isNotEmpty &&
+        download.version == updateInfo.latestVersion;
+
+    if (matchesVersion &&
+        download.phase == UpdateDownloadPhase.downloading) {
+      final percent = (download.progress * 100).clamp(0, 100).toInt();
+      return _CtaContainer(
+        child: FilledButton.icon(
+          onPressed: () => _openDetail(context),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedDownload01,
+            size: 18,
+          ),
+          label: Text('${'update_downloading'.tr()} $percent%'),
+        ),
+      );
+    }
+
+    if (matchesVersion && download.phase == UpdateDownloadPhase.ready) {
+      return _CtaContainer(
+        child: FilledButton.icon(
+          onPressed: () => _installNow(context, ref),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedRocket,
+            size: 18,
+          ),
+          label: Text('update_install_now'.tr()),
+        ),
+      );
+    }
+
+    if (matchesVersion && download.phase == UpdateDownloadPhase.failed) {
+      return _CtaContainer(
+        child: FilledButton.icon(
+          onPressed: () => ref
+              .read(updateDownloadControllerProvider.notifier)
+              .startDownload(updateInfo),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedRefresh01,
+            size: 18,
+          ),
+          label: Text('update_retry_download'.tr()),
+        ),
+      );
+    }
+
+    return _CtaContainer(
+      child: FilledButton.icon(
+        onPressed: () => _openDetail(context),
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedDownload01,
+          size: 18,
+        ),
+        label: Text('update_now'.tr()),
+      ),
+    );
+  }
+
+  void _openDetail(BuildContext context) {
+    // 通过祖先 State 的回调进入详情页：沿用 UpdateCard 的 onOpenDetail 语义，
+    // 这里直接在 context 中向上查找并调用，避免额外传参。
+    final state = context.findAncestorStateOfType<
+        _SettingsAboutSupportSectionState>();
+    state?.widget.onNavigateToUpdatePage(updateInfo);
+  }
+
+  Future<void> _installNow(BuildContext context, WidgetRef ref) async {
+    final ok = await ref
+        .read(updateDownloadControllerProvider.notifier)
+        .installReadyUpdate();
+    if (!ok && context.mounted) {
+      Toast.showToast(
+        'update_error_open_installer'.tr(),
+        type: ToastType.error,
+      );
+      _openDetail(context);
+    }
+  }
+}
+
+/// CTA 按钮容器：与卡片保持 10px 间距并撑满宽度
+class _CtaContainer extends StatelessWidget {
+  final Widget child;
+
+  const _CtaContainer({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: SizedBox(width: double.infinity, child: child),
+    );
   }
 }

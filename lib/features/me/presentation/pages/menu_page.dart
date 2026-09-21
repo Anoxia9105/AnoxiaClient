@@ -1,5 +1,7 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/adaptive_page_presenter.dart';
+import 'package:anoxia/common/widgets/vibrating_badge.dart';
+import 'package:anoxia/framework/provider/setting/update_check_provider.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
@@ -25,6 +27,8 @@ class MenuPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final authAsync = ref.watch(authControllerProvider);
+    // 有新版本时在设置入口同步小红点，与桌面侧边栏/设置导航保持一致。
+    final hasAppUpdate = ref.watch(hasAppUpdateProvider);
 
     return Scaffold(
       backgroundColor: colorScheme.primary,
@@ -197,6 +201,7 @@ class MenuPage extends ConsumerWidget {
                           context,
                           icon: HugeIcons.strokeRoundedSettings01,
                           title: 'sidebar_setting'.tr(), // 设置页面
+                          showBadge: hasAppUpdate,
                           onTap: () => _pushPage(context, const SettingsPage()),
                         ),
                       ],
@@ -289,6 +294,7 @@ class MenuPage extends ConsumerWidget {
     required String title,
     required VoidCallback onTap,
     bool isDanger = false,
+    bool showBadge = false,
   }) {
     final displayColor = isDanger
         ? Theme.of(context).colorScheme.onErrorContainer
@@ -301,10 +307,21 @@ class MenuPage extends ConsumerWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       horizontalTitleGap: 12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
-      leading: HugeIcon(
-        icon: icon,
-        color: displayColor.withValues(alpha: 0.85),
-        size: 21,
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          HugeIcon(
+            icon: icon,
+            color: displayColor.withValues(alpha: 0.85),
+            size: 21,
+          ),
+          if (showBadge)
+            const Positioned(
+              right: -3,
+              top: -3,
+              child: VibratingBadge(isDot: true, borderColor: null),
+            ),
+        ],
       ),
       title: Text(
         title,
