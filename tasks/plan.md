@@ -49,7 +49,7 @@
 - [x] 日程范围 Flutter analyze/test 与 Web release build 通过
 - [x] Maven 日程测试与 clean compile 通过
 - [x] 浏览器 release 启动/控制台与组件级响应式、语言验证通过
-- [ ] 文档更新，变更按客户端/服务端原子提交并推送
+- [x] 文档更新，变更按客户端/服务端原子提交并推送
 
 ## Risks and Mitigations
 
