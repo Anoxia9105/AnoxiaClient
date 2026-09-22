@@ -60,6 +60,60 @@ class ScheduleService extends _$ScheduleService {
     return result;
   }
 
+  Future<ScheduleEvent> reschedule(
+    ScheduleEvent event,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final previous = state;
+    final current = state.value ?? const <ScheduleEvent>[];
+    final optimistic = ScheduleEvent(
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      startAt: start.toUtc(),
+      endAt: end.toUtc(),
+      timeZone: event.timeZone,
+      allDay: event.allDay,
+      color: event.color,
+      revision: event.revision,
+      reminderMinutes: event.reminderMinutes,
+      recurrence: event.recurrence,
+    );
+    state = AsyncValue.data(
+      [
+        for (final item in current)
+          if (item.id == event.id) optimistic else item,
+      ]..sort((a, b) => a.startAt.compareTo(b.startAt)),
+    );
+    try {
+      final result = await ref
+          .read(scheduleRepositoryProvider)
+          .update(
+            event.id,
+            ScheduleEventDraft(
+              title: event.title,
+              description: event.description,
+              location: event.location,
+              startAt: start,
+              endAt: end,
+              allDay: event.allDay,
+              timeZone: event.timeZone,
+              color: event.color ?? '#4F6BED',
+              revision: event.revision,
+              reminderMinutes: event.reminderMinutes,
+              recurrence: event.recurrence,
+            ),
+          );
+      await refresh();
+      return result;
+    } catch (_) {
+      if (ref.mounted) state = previous;
+      rethrow;
+    }
+  }
+
   Future<void> deleteEvent(int id) async {
     await ref.read(scheduleRepositoryProvider).delete(id);
     await refresh();

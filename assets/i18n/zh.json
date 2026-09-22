@@ -1462,5 +1462,11 @@
   "schedule_repeat_weekday_required": "请至少选择一个星期日期",
   "schedule_repeat_interval_invalid": "请输入 1–99 之间的间隔",
   "schedule_repeat_count_invalid": "请输入 1–999 之间的次数",
-  "schedule_repeat_series_hint": "编辑或删除会应用于整个重复系列。"
+  "schedule_repeat_series_hint": "编辑或删除会应用于整个重复系列。",
+  "schedule_more": "另有 {} 项",
+  "schedule_move_error": "日程调整失败，已恢复原时间",
+  "schedule_notification_enable": "开启日程通知",
+  "schedule_notification_enabled": "日程通知已开启",
+  "schedule_notification_denied": "未获得通知权限，请在系统或浏览器设置中开启",
+  "schedule_reminder_body": "{} {} 开始"
 }

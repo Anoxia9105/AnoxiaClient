@@ -1,41 +1,44 @@
+import 'package:anoxia/features/schedule/presentation/schedule_calendar_layout.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class ScheduleAgenda extends StatelessWidget {
-  final List<ScheduleEvent> events;
+  final List<ScheduleOccurrence> occurrences;
   final ValueChanged<ScheduleEvent> onEventTap;
 
   const ScheduleAgenda({
     super.key,
-    required this.events,
+    required this.occurrences,
     required this.onEventTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (events.isEmpty) return const _EmptySchedule();
-    final sorted = [...events]..sort((a, b) => a.startAt.compareTo(b.startAt));
+    if (occurrences.isEmpty) return const _EmptySchedule();
+    final sorted = [...occurrences]
+      ..sort((a, b) => a.startAt.compareTo(b.startAt));
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: sorted.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, index) => ScheduleEventTile(
-        event: sorted[index],
+        event: sorted[index].event,
+        occurrence: sorted[index],
         showDate: true,
-        onTap: () => onEventTap(sorted[index]),
+        onTap: () => onEventTap(sorted[index].event),
       ),
     );
   }
 }
 
 class ScheduleQuickPanel extends StatelessWidget {
-  final List<ScheduleEvent> events;
+  final List<ScheduleOccurrence> occurrences;
   final ValueChanged<ScheduleEvent> onEventTap;
 
   const ScheduleQuickPanel({
     super.key,
-    required this.events,
+    required this.occurrences,
     required this.onEventTap,
   });
 
@@ -45,13 +48,13 @@ class ScheduleQuickPanel extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
     final nextWeek = now.add(const Duration(days: 7));
-    final todaysEvents = events.where((event) {
-      final start = event.displayStartAt;
-      final end = event.displayEndAt;
+    final todaysEvents = occurrences.where((occurrence) {
+      final start = scheduleOccurrenceDisplayStart(occurrence);
+      final end = scheduleOccurrenceDisplayEnd(occurrence);
       return end.isAfter(today) && start.isBefore(tomorrow);
     }).toList()..sort((a, b) => a.startAt.compareTo(b.startAt));
-    final upcoming = events.where((event) {
-      final start = event.displayStartAt;
+    final upcoming = occurrences.where((occurrence) {
+      final start = scheduleOccurrenceDisplayStart(occurrence);
       return start.isAfter(now) && start.isBefore(nextWeek);
     }).toList()..sort((a, b) => a.startAt.compareTo(b.startAt));
 
@@ -73,10 +76,11 @@ class ScheduleQuickPanel extends StatelessWidget {
             ...todaysEvents
                 .take(4)
                 .map(
-                  (event) => ScheduleEventTile(
-                    event: event,
+                  (occurrence) => ScheduleEventTile(
+                    event: occurrence.event,
+                    occurrence: occurrence,
                     compact: true,
-                    onTap: () => onEventTap(event),
+                    onTap: () => onEventTap(occurrence.event),
                   ),
                 ),
           const SizedBox(height: 24),
@@ -93,11 +97,12 @@ class ScheduleQuickPanel extends StatelessWidget {
             ...upcoming
                 .take(8)
                 .map(
-                  (event) => ScheduleEventTile(
-                    event: event,
+                  (occurrence) => ScheduleEventTile(
+                    event: occurrence.event,
+                    occurrence: occurrence,
                     compact: true,
                     showDate: true,
-                    onTap: () => onEventTap(event),
+                    onTap: () => onEventTap(occurrence.event),
                   ),
                 ),
         ],
@@ -108,6 +113,7 @@ class ScheduleQuickPanel extends StatelessWidget {
 
 class ScheduleEventTile extends StatelessWidget {
   final ScheduleEvent event;
+  final ScheduleOccurrence? occurrence;
   final VoidCallback onTap;
   final bool compact;
   final bool showDate;
@@ -116,6 +122,7 @@ class ScheduleEventTile extends StatelessWidget {
     super.key,
     required this.event,
     required this.onTap,
+    this.occurrence,
     this.compact = false,
     this.showDate = false,
   });
@@ -123,8 +130,12 @@ class ScheduleEventTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
-    final start = event.displayStartAt;
-    final end = event.displayEndAt;
+    final start = occurrence == null
+        ? event.displayStartAt
+        : scheduleOccurrenceDisplayStart(occurrence!);
+    final end = occurrence == null
+        ? event.displayEndAt
+        : scheduleOccurrenceDisplayEnd(occurrence!);
     final color = _parseColor(
       event.color,
       Theme.of(context).colorScheme.primary,

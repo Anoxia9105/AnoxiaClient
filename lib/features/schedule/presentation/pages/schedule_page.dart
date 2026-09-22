@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:anoxia/features/schedule/presentation/schedule_calendar_layout.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_dialog.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_list.dart';
+import 'package:anoxia/features/schedule/presentation/widgets/schedule_month_view.dart';
+import 'package:anoxia/features/schedule/presentation/widgets/schedule_timeline_view.dart';
 import 'package:anoxia/framework/domain/schedule_event.dart';
+import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/provider/schedule/schedule_service.dart';
-import 'package:calendar_view/calendar_view.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,11 +20,9 @@ class SchedulePage extends ConsumerStatefulWidget {
 }
 
 class _SchedulePageState extends ConsumerState<SchedulePage> {
-  // calendar_view 2.0.0 erases MonthViewBuilders<T> to Object? internally.
-  // Keep that untyped boundary here and validate payloads before domain use.
-  final EventController<Object?> _calendarController = EventController();
   ScheduleViewMode _view = ScheduleViewMode.month;
   DateTime _focusedDay = DateTime.now();
+  final Map<String, Timer> _reminderTimers = {};
 
   @override
   void initState() {
@@ -28,21 +31,19 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
   }
 
   @override
-  void dispose() {
-    _calendarController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     ref.listen(scheduleServiceProvider, (_, next) {
-      next.whenData(_syncCalendarController);
+      next.whenData(_scheduleReminders);
     });
     final schedule = ref.watch(scheduleServiceProvider);
     final events = schedule.value ?? const <ScheduleEvent>[];
-    final viewEvents = scheduleEventsOverlapping(
+    final range = scheduleRangeFor(_view, _focusedDay);
+    final viewOccurrences = expandScheduleOccurrences(events, range);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final quickOccurrences = expandScheduleOccurrences(
       events,
-      scheduleRangeFor(_view, _focusedDay),
+      ScheduleRange(from: today, to: today.add(const Duration(days: 8))),
     );
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -55,7 +56,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               _ScheduleToolbar(
                 view: _view,
                 focusedDay: _focusedDay,
-                compact: width < 900,
+                compact: width < 1120,
                 onViewChanged: _changeView,
                 onToday: _showToday,
                 onPrevious: () => _moveFocus(-1),
@@ -65,9 +66,8 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               const Divider(height: 1),
               Expanded(
                 child: schedule.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (_, _) => _LoadError(onRetry: _load),
                   data: (_) => Row(
                     children: [
@@ -75,13 +75,13 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                         SizedBox(
                           width: 270,
                           child: ScheduleQuickPanel(
-                            events: events,
+                            occurrences: quickOccurrences,
                             onEventTap: _openExisting,
                           ),
                         ),
                         const VerticalDivider(width: 1),
                       ],
-                      Expanded(child: _buildCalendar(viewEvents)),
+                      Expanded(child: _buildCalendar(viewOccurrences)),
                     ],
                   ),
                 ),
@@ -93,119 +93,51 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     );
   }
 
-  Widget _buildCalendar(List<ScheduleEvent> events) {
+  @override
+  void dispose() {
+    for (final timer in _reminderTimers.values) {
+      timer.cancel();
+    }
+    super.dispose();
+  }
+
+  Widget _buildCalendar(List<ScheduleOccurrence> occurrences) {
     final key = ValueKey('${_view.name}-${_focusedDay.toIso8601String()}');
     switch (_view) {
       case ScheduleViewMode.day:
-        return DayView<Object?>(
+        return ScheduleTimelineView(
           key: key,
-          controller: _calendarController,
-          initialDay: _focusedDay,
-          heightPerMinute: 0.8,
-          startDuration: const Duration(hours: 7),
-          showHalfHours: true,
-          showLiveTimeLineInAllDays: true,
-          onPageChange: (date, _) => _onCalendarPageChanged(date),
-          onTimestampTap: (date) => _openEditor(initialStart: date),
-          onEventTap: (items, _) {
-            if (items.isNotEmpty) _openCalendarEvent(items.first.event);
-          },
+          focusedDay: _focusedDay,
+          week: false,
+          occurrences: occurrences,
+          onEmptySlotTap: (date) => _openEditor(initialStart: date),
+          onEventTap: _openExisting,
+          onOccurrenceChanged: _rescheduleOccurrence,
         );
       case ScheduleViewMode.week:
-        return WeekView<Object?>(
+        return ScheduleTimelineView(
           key: key,
-          controller: _calendarController,
-          initialDay: _focusedDay,
-          heightPerMinute: 0.8,
-          showHalfHours: true,
-          showLiveTimeLineInAllDays: true,
-          onPageChange: (date, _) => _onCalendarPageChanged(date),
-          onTimestampTap: (date) => _openEditor(initialStart: date),
-          onEventTap: (items, _) {
-            if (items.isNotEmpty) _openCalendarEvent(items.first.event);
-          },
+          focusedDay: _focusedDay,
+          week: true,
+          occurrences: occurrences,
+          onEmptySlotTap: (date) => _openEditor(initialStart: date),
+          onEventTap: _openExisting,
+          onOccurrenceChanged: _rescheduleOccurrence,
         );
       case ScheduleViewMode.month:
-        return MonthView<Object?>(
+        return ScheduleMonthView(
           key: key,
-          controller: _calendarController,
-          monthViewStyle: MonthViewStyle(
-            startDay: WeekDays.monday,
-            initialMonth: _focusedDay,
-            useAvailableVerticalSpace: true,
-          ),
-          monthViewBuilders: MonthViewBuilders<Object?>(
-            onPageChange: (date, _) => _onCalendarPageChanged(date),
-            onCellTap: (_, date) => _openEditor(initialStart: date),
-            onEventTap: (item, _) => _openCalendarEvent(item.event),
-          ),
+          focusedDay: _focusedDay,
+          occurrences: occurrences,
+          onDayTap: (date) => _openEditor(initialStart: date),
+          onEventTap: _openExisting,
         );
       case ScheduleViewMode.agenda:
-        return ScheduleAgenda(events: events, onEventTap: _openExisting);
+        return ScheduleAgenda(
+          occurrences: occurrences,
+          onEventTap: _openExisting,
+        );
     }
-  }
-
-  void _syncCalendarController(List<ScheduleEvent> events) {
-    _calendarController.clear();
-    _calendarController.addAll(
-      events.expand(_toCalendarEntries).toList(growable: false),
-    );
-  }
-
-  Iterable<CalendarEventData<Object?>> _toCalendarEntries(
-    ScheduleEvent event,
-  ) sync* {
-    final start = event.displayStartAt;
-    final end = event.displayEndAt;
-    final color = _eventColor(event);
-    if (event.allDay) {
-      yield CalendarEventData<Object?>(
-        title: event.title,
-        description: event.description,
-        date: start,
-        endDate: end.subtract(const Duration(microseconds: 1)),
-        color: color,
-        event: event,
-      );
-      return;
-    }
-    DateTime day = DateTime(start.year, start.month, start.day);
-    final lastDay = DateTime(end.year, end.month, end.day);
-    while (!day.isAfter(lastDay)) {
-      final isFirst =
-          day.year == start.year &&
-          day.month == start.month &&
-          day.day == start.day;
-      final isLast =
-          day.year == end.year && day.month == end.month && day.day == end.day;
-      if (isLast && end.hour == 0 && end.minute == 0 && !isFirst) break;
-      final segmentStart = isFirst
-          ? start
-          : DateTime(day.year, day.month, day.day, 0, 1);
-      final segmentEnd = isLast
-          ? end
-          : DateTime(day.year, day.month, day.day, 23, 59);
-      yield CalendarEventData<Object?>(
-        title: event.title,
-        description: event.description,
-        date: day,
-        startTime: segmentStart,
-        endTime: segmentEnd,
-        color: color,
-        event: event,
-      );
-      day = day.add(const Duration(days: 1));
-    }
-  }
-
-  void _openCalendarEvent(Object? event) {
-    if (event is ScheduleEvent) _openExisting(event);
-  }
-
-  Color _eventColor(ScheduleEvent event) {
-    final hex = event.color?.replaceFirst('#', '');
-    final value = hex == null ? null : int.tryParse('FF$hex', radix: 16);
-    return value == null ? Theme.of(context).colorScheme.primary : Color(value);
   }
 
   Future<void> _load() {
@@ -249,12 +181,6 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     _load();
   }
 
-  void _onCalendarPageChanged(DateTime date) {
-    if (!mounted) return;
-    setState(() => _focusedDay = date);
-    _load();
-  }
-
   Future<void> _openEditor({DateTime? initialStart}) {
     return showScheduleEventDialog(
       context,
@@ -274,6 +200,60 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
       onDelete: () =>
           ref.read(scheduleServiceProvider.notifier).deleteEvent(event.id),
     );
+  }
+
+  Future<void> _rescheduleOccurrence(
+    ScheduleOccurrence occurrence,
+    DateTime start,
+    DateTime end,
+  ) async {
+    try {
+      await ref
+          .read(scheduleServiceProvider.notifier)
+          .reschedule(occurrence.event, start, end);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('schedule_move_error'.tr())));
+    }
+  }
+
+  void _scheduleReminders(List<ScheduleEvent> events) {
+    for (final timer in _reminderTimers.values) {
+      timer.cancel();
+    }
+    _reminderTimers.clear();
+    final now = DateTime.now();
+    final occurrences = expandScheduleOccurrences(
+      events.where((event) => event.reminderMinutes != null),
+      ScheduleRange(from: now, to: now.add(const Duration(days: 31))),
+    );
+    for (final occurrence in occurrences) {
+      final triggerAt = scheduleReminderTriggerAt(occurrence);
+      if (triggerAt == null) continue;
+      if (!triggerAt.isAfter(now)) continue;
+      final key =
+          '${occurrence.event.id}:${occurrence.occurrenceIndex}:'
+          '${occurrence.startAt.millisecondsSinceEpoch}';
+      _reminderTimers[key] = Timer(triggerAt.difference(now), () {
+        _reminderTimers.remove(key);
+        final start = occurrence.startAt.toLocal();
+        unawaited(
+          NotificationHelper().show(
+            id: 0x3fffffff & key.hashCode,
+            title: occurrence.event.title,
+            body: 'schedule_reminder_body'.tr(
+              args: [
+                DateFormat.yMMMd(context.locale.toString()).format(start),
+                DateFormat.Hm(context.locale.toString()).format(start),
+              ],
+            ),
+            force: true,
+          ),
+        );
+      });
+    }
   }
 }
 
@@ -314,10 +294,17 @@ class _ScheduleToolbar extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           if (!compact) const SizedBox(width: 20),
-          OutlinedButton(
-            onPressed: onToday,
-            child: Text('schedule_today'.tr()),
-          ),
+          if (compact)
+            IconButton(
+              tooltip: 'schedule_today'.tr(),
+              onPressed: onToday,
+              icon: const Icon(Icons.today_outlined),
+            )
+          else
+            OutlinedButton(
+              onPressed: onToday,
+              child: Text('schedule_today'.tr()),
+            ),
           IconButton(
             tooltip: MaterialLocalizations.of(context).previousMonthTooltip,
             onPressed: onPrevious,
@@ -328,47 +315,68 @@ class _ScheduleToolbar extends StatelessWidget {
             onPressed: onNext,
             icon: const Icon(Icons.chevron_right),
           ),
-          if (!compact)
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const Spacer(),
           if (compact)
-            DropdownButton<ScheduleViewMode>(
-              value: view,
-              underline: const SizedBox.shrink(),
-              items: ScheduleViewMode.values
+            Expanded(
+              child: Text(
+                title,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            )
+          else
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+          if (!compact) const Spacer(),
+          const _ScheduleNotificationButton(),
+          const SizedBox(width: 8),
+          if (compact)
+            PopupMenuButton<ScheduleViewMode>(
+              tooltip: _viewLabel(view),
+              initialValue: view,
+              icon: const Icon(Icons.calendar_view_week_outlined),
+              itemBuilder: (_) => ScheduleViewMode.values
                   .map(
-                    (item) => DropdownMenuItem(
+                    (item) => PopupMenuItem(
                       value: item,
                       child: Text(_viewLabel(item)),
                     ),
                   )
                   .toList(),
-              onChanged: (value) {
-                if (value != null) onViewChanged(value);
-              },
+              onSelected: onViewChanged,
             )
           else
-            SegmentedButton<ScheduleViewMode>(
-              segments: ScheduleViewMode.values
-                  .map(
-                    (item) => ButtonSegment(
-                      value: item,
-                      label: Text(_viewLabel(item)),
-                    ),
-                  )
-                  .toList(),
-              selected: {view},
-              showSelectedIcon: false,
-              onSelectionChanged: (selection) => onViewChanged(selection.first),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: SegmentedButton<ScheduleViewMode>(
+                  segments: ScheduleViewMode.values
+                      .map(
+                        (item) => ButtonSegment(
+                          value: item,
+                          label: Text(_viewLabel(item)),
+                        ),
+                      )
+                      .toList(),
+                  selected: {view},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) =>
+                      onViewChanged(selection.first),
+                ),
+              ),
             ),
           const SizedBox(width: 12),
-          FilledButton.icon(
-            onPressed: onCreate,
-            icon: const Icon(Icons.add),
-            label: compact
-                ? const SizedBox.shrink()
-                : Text('schedule_new'.tr()),
-          ),
+          if (compact)
+            IconButton.filled(
+              tooltip: 'schedule_new'.tr(),
+              onPressed: onCreate,
+              icon: const Icon(Icons.add),
+            )
+          else
+            FilledButton.icon(
+              onPressed: onCreate,
+              icon: const Icon(Icons.add),
+              label: Text('schedule_new'.tr()),
+            ),
         ],
       ),
     );
@@ -380,6 +388,78 @@ class _ScheduleToolbar extends StatelessWidget {
     ScheduleViewMode.month => 'schedule_view_month'.tr(),
     ScheduleViewMode.agenda => 'schedule_view_agenda'.tr(),
   };
+}
+
+class _ScheduleNotificationButton extends StatefulWidget {
+  const _ScheduleNotificationButton();
+
+  @override
+  State<_ScheduleNotificationButton> createState() =>
+      _ScheduleNotificationButtonState();
+}
+
+class _ScheduleNotificationButtonState
+    extends State<_ScheduleNotificationButton> {
+  bool _granted = false;
+  bool _checking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _readPermission();
+  }
+
+  Future<void> _readPermission() async {
+    final granted = await NotificationHelper().isPermissionGranted();
+    if (mounted) {
+      setState(() {
+        _granted = granted;
+        _checking = false;
+      });
+    }
+  }
+
+  Future<void> _requestPermission() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    final granted = await NotificationHelper().requestPermission();
+    if (!mounted) return;
+    setState(() {
+      _granted = granted;
+      _checking = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          granted
+              ? 'schedule_notification_enabled'.tr()
+              : 'schedule_notification_denied'.tr(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final helper = NotificationHelper();
+    if (!helper.isSupported) return const SizedBox.shrink();
+    return IconButton.filledTonal(
+      tooltip: _granted
+          ? 'schedule_notification_enabled'.tr()
+          : 'schedule_notification_enable'.tr(),
+      onPressed: _granted || _checking ? null : _requestPermission,
+      icon: _checking
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(
+              _granted
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_none_rounded,
+            ),
+    );
+  }
 }
 
 class _LoadError extends StatelessWidget {

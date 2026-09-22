@@ -1462,5 +1462,11 @@
   "schedule_repeat_weekday_required": "Select at least one weekday",
   "schedule_repeat_interval_invalid": "Enter an interval from 1 to 99",
   "schedule_repeat_count_invalid": "Enter a count from 1 to 999",
-  "schedule_repeat_series_hint": "Edits and deletions apply to the entire recurring series."
+  "schedule_repeat_series_hint": "Edits and deletions apply to the entire recurring series.",
+  "schedule_more": "{} more",
+  "schedule_move_error": "Could not update the event. Its previous time was restored.",
+  "schedule_notification_enable": "Enable schedule notifications",
+  "schedule_notification_enabled": "Schedule notifications are enabled",
+  "schedule_notification_denied": "Notification permission was not granted. Enable it in system or browser settings.",
+  "schedule_reminder_body": "Starts {} at {}"
 }

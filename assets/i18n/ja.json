@@ -1462,5 +1462,11 @@
   "schedule_repeat_weekday_required": "曜日を1つ以上選択してください",
   "schedule_repeat_interval_invalid": "1～99の間隔を入力してください",
   "schedule_repeat_count_invalid": "1～999の回数を入力してください",
-  "schedule_repeat_series_hint": "編集と削除は繰り返し予定全体に適用されます。"
+  "schedule_repeat_series_hint": "編集と削除は繰り返し予定全体に適用されます。",
+  "schedule_more": "他 {} 件",
+  "schedule_move_error": "予定を更新できなかったため、元の時間に戻しました",
+  "schedule_notification_enable": "予定の通知を有効にする",
+  "schedule_notification_enabled": "予定の通知が有効です",
+  "schedule_notification_denied": "通知が許可されていません。システムまたはブラウザの設定で有効にしてください。",
+  "schedule_reminder_body": "{} {} に開始"
 }

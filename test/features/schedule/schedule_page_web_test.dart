@@ -10,39 +10,42 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('month view renders without a runtime type error', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues(const {});
-    await EasyLocalization.ensureInitialized();
-    await initializeDateFormatting('zh');
-    tester.view.physicalSize = const Size(800, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  for (final width in const [768.0, 1024.0, 1440.0]) {
+    testWidgets('month view renders without errors at ${width.toInt()}px', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues(const {});
+      await EasyLocalization.ensureInitialized();
+      await initializeDateFormatting('zh');
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('zh'),
-        startLocale: const Locale('zh'),
-        child: ProviderScope(
-          overrides: [
-            scheduleRepositoryProvider.overrideWithValue(
-              _EmptyScheduleRepository(),
-            ),
-          ],
-          child: const MaterialApp(home: SchedulePage()),
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('zh'),
+          startLocale: const Locale('zh'),
+          child: ProviderScope(
+            overrides: [
+              scheduleRepositoryProvider.overrideWithValue(
+                _EmptyScheduleRepository(),
+              ),
+            ],
+            child: const MaterialApp(home: SchedulePage()),
+          ),
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(SchedulePage), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.byType(SchedulePage), findsOneWidget);
+      expect(find.byKey(const ValueKey('schedule-month-view')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
 
 class _EmptyScheduleRepository implements ScheduleRepository {

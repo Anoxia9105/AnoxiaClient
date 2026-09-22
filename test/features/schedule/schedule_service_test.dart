@@ -65,6 +65,39 @@ void main() {
       expect(repository.listCalls, 1);
     },
   );
+
+  test('restores the previous event when rescheduling fails', () async {
+    final original = _event(7, DateTime.utc(2026, 9, 22, 1));
+    final repository = _FakeScheduleRepository([
+      [original],
+    ], failUpdate: true);
+    final container = ProviderContainer(
+      overrides: [scheduleRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(scheduleServiceProvider.notifier);
+    final range = ScheduleRange(
+      from: DateTime.utc(2026, 9, 22),
+      to: DateTime.utc(2026, 9, 23),
+    );
+    await notifier.load(range);
+
+    await expectLater(
+      notifier.reschedule(
+        original,
+        DateTime.utc(2026, 9, 22, 3),
+        DateTime.utc(2026, 9, 22, 4),
+      ),
+      throwsStateError,
+    );
+
+    final restored = container
+        .read(scheduleServiceProvider)
+        .requireValue
+        .single;
+    expect(restored.startAt, original.startAt);
+    expect(restored.endAt, original.endAt);
+  });
 }
 
 ScheduleEvent _event(int id, DateTime startAt) {
@@ -81,9 +114,10 @@ ScheduleEvent _event(int id, DateTime startAt) {
 
 class _FakeScheduleRepository implements ScheduleRepository {
   final List<List<ScheduleEvent>> responses;
+  final bool failUpdate;
   int listCalls = 0;
 
-  _FakeScheduleRepository(this.responses);
+  _FakeScheduleRepository(this.responses, {this.failUpdate = false});
 
   @override
   Future<List<ScheduleEvent>> list({
@@ -99,8 +133,9 @@ class _FakeScheduleRepository implements ScheduleRepository {
   }
 
   @override
-  Future<ScheduleEvent> update(int id, ScheduleEventDraft draft) {
-    throw UnimplementedError();
+  Future<ScheduleEvent> update(int id, ScheduleEventDraft draft) async {
+    if (failUpdate) throw StateError('update failed');
+    return _event(id, draft.startAt);
   }
 
   @override
