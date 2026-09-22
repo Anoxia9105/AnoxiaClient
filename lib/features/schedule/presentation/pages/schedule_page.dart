@@ -15,7 +15,9 @@ class SchedulePage extends ConsumerStatefulWidget {
 }
 
 class _SchedulePageState extends ConsumerState<SchedulePage> {
-  final EventController<ScheduleEvent> _calendarController = EventController();
+  // calendar_view 2.0.0 erases MonthViewBuilders<T> to Object? internally.
+  // Keep that untyped boundary here and validate payloads before domain use.
+  final EventController<Object?> _calendarController = EventController();
   ScheduleViewMode _view = ScheduleViewMode.month;
   DateTime _focusedDay = DateTime.now();
 
@@ -95,7 +97,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     final key = ValueKey('${_view.name}-${_focusedDay.toIso8601String()}');
     switch (_view) {
       case ScheduleViewMode.day:
-        return DayView<ScheduleEvent>(
+        return DayView<Object?>(
           key: key,
           controller: _calendarController,
           initialDay: _focusedDay,
@@ -106,11 +108,11 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           onPageChange: (date, _) => _onCalendarPageChanged(date),
           onTimestampTap: (date) => _openEditor(initialStart: date),
           onEventTap: (items, _) {
-            if (items.isNotEmpty) _openExisting(items.first.event!);
+            if (items.isNotEmpty) _openCalendarEvent(items.first.event);
           },
         );
       case ScheduleViewMode.week:
-        return WeekView<ScheduleEvent>(
+        return WeekView<Object?>(
           key: key,
           controller: _calendarController,
           initialDay: _focusedDay,
@@ -120,11 +122,11 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           onPageChange: (date, _) => _onCalendarPageChanged(date),
           onTimestampTap: (date) => _openEditor(initialStart: date),
           onEventTap: (items, _) {
-            if (items.isNotEmpty) _openExisting(items.first.event!);
+            if (items.isNotEmpty) _openCalendarEvent(items.first.event);
           },
         );
       case ScheduleViewMode.month:
-        return MonthView<ScheduleEvent>(
+        return MonthView<Object?>(
           key: key,
           controller: _calendarController,
           monthViewStyle: MonthViewStyle(
@@ -132,10 +134,10 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
             initialMonth: _focusedDay,
             useAvailableVerticalSpace: true,
           ),
-          monthViewBuilders: MonthViewBuilders<ScheduleEvent>(
+          monthViewBuilders: MonthViewBuilders<Object?>(
             onPageChange: (date, _) => _onCalendarPageChanged(date),
             onCellTap: (_, date) => _openEditor(initialStart: date),
-            onEventTap: (item, _) => _openExisting(item.event!),
+            onEventTap: (item, _) => _openCalendarEvent(item.event),
           ),
         );
       case ScheduleViewMode.agenda:
@@ -150,14 +152,14 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     );
   }
 
-  Iterable<CalendarEventData<ScheduleEvent>> _toCalendarEntries(
+  Iterable<CalendarEventData<Object?>> _toCalendarEntries(
     ScheduleEvent event,
   ) sync* {
     final start = event.displayStartAt;
     final end = event.displayEndAt;
     final color = _eventColor(event);
     if (event.allDay) {
-      yield CalendarEventData(
+      yield CalendarEventData<Object?>(
         title: event.title,
         description: event.description,
         date: start,
@@ -183,7 +185,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
       final segmentEnd = isLast
           ? end
           : DateTime(day.year, day.month, day.day, 23, 59);
-      yield CalendarEventData(
+      yield CalendarEventData<Object?>(
         title: event.title,
         description: event.description,
         date: day,
@@ -194,6 +196,10 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
       );
       day = day.add(const Duration(days: 1));
     }
+  }
+
+  void _openCalendarEvent(Object? event) {
+    if (event is ScheduleEvent) _openExisting(event);
   }
 
   Color _eventColor(ScheduleEvent event) {
