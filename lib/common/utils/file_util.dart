@@ -29,6 +29,8 @@ class FileUtil {
       type: type,
       allowedExtensions: allowedExtensions,
       allowMultiple: allowMultiple,
+      // Web/Wasm 下 path 为 null，bytes 只有 withData:true 才有。
+      withData: true,
     );
 
     if (result == null || result.files.isEmpty) return null;
@@ -44,6 +46,7 @@ class FileUtil {
       type: type,
       allowedExtensions: allowedExtensions,
       allowMultiple: true,
+      withData: true,
     );
 
     if (result == null || result.files.isEmpty) return [];

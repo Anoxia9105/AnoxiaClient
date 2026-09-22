@@ -10,11 +10,12 @@ import 'package:flutter/material.dart';
 /// 同时覆盖三种 URL 形态（聊天气泡与编辑器图片嵌入共用）：
 /// - `http(s)://`：服务器资源，走 [CachedNetworkImageView]（内存 + 磁盘缓存）；
 /// - 本地绝对路径（乐观发送期间尚未上传完成）：非 Web 走 `Image.file`；
-/// - Web 端本地待上传图片：只有内存 `bytes`，用 `Image.memory`。
+/// - 本地待上传图片（含 Web/Wasm）：优先用内存 `bytes`，用 `Image.memory`。
 ///
-/// Web 端 `dart:io` 的 `File` 不可用（会抛
+/// Web（含 Wasm）端 `dart:io` 的 `File` 不可用（会抛
 /// `Unsupported operation: Platform._operatingSystem`），因此本地路径分支
-/// 必须用 [kIsWeb] 守卫。
+/// 必须用 [kIsWeb] 守卫；且 `blob:` / `local-pending://` 合成地址永远不是
+/// 磁盘路径，不可传给 `File`。
 class AttachmentImageView extends StatelessWidget {
   const AttachmentImageView({
     required this.url,
@@ -32,7 +33,7 @@ class AttachmentImageView extends StatelessWidget {
   /// 附件地址：服务器 URL 或本地文件路径
   final String? url;
 
-  /// Web 端本地字节（本地路径不可读时的唯一来源）
+  /// 本地字节（Web/Wasm 唯一来源；原生端有 bytes 时也优先用它，避免占位地址误进 File）
   final Uint8List? bytes;
 
   final double? width;
@@ -59,10 +60,20 @@ class AttachmentImageView extends StatelessWidget {
     if (isRemoteMediaUrl(url)) {
       return appCachedNetworkImageProvider(url!);
     }
-    if (kIsWeb) {
-      return bytes != null && bytes.isNotEmpty ? MemoryImage(bytes) : null;
+    // 有内存字节时全平台优先用它：Web/Wasm 唯一可用来源，原生端也能避免
+    // `local-pending://` / `blob:` 占位地址被误传给 File。
+    if (bytes != null && bytes.isNotEmpty) {
+      return MemoryImage(bytes);
     }
-    if (url == null || url.isEmpty) return null;
+    if (kIsWeb) {
+      return null;
+    }
+    if (url == null ||
+        url.isEmpty ||
+        url.startsWith('blob:') ||
+        url.startsWith('local-pending://')) {
+      return null;
+    }
     return FileImage(File(url));
   }
 
@@ -98,8 +109,23 @@ class AttachmentImageView extends StatelessWidget {
       return _buildError(context, StateError('web 端本地图片缺少内存字节，无法预览'));
     }
 
+    // 原生端同样优先用内存字节（粘贴/刚选完尚未落盘、或 url 为合成占位时）。
+    if (localBytes != null && localBytes.isNotEmpty) {
+      return Image.memory(
+        localBytes,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildError(context, error),
+      );
+    }
+
     final path = url;
-    if (path == null || path.isEmpty) {
+    if (path == null ||
+        path.isEmpty ||
+        path.startsWith('blob:') ||
+        path.startsWith('local-pending://')) {
       return _buildError(context, StateError('图片地址为空'));
     }
     return Image.file(

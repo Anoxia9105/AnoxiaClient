@@ -11,6 +11,7 @@ import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -74,6 +75,8 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       String? localUrl;
       if (kIsWeb) {
         _filesById[id] = tempFile;
+        // Web 端无本地路径，用合成占位地址，预览走 bytes。
+        localUrl = localPendingMediaUrl(id);
       } else {
         final rawFile = File(
           p.join(Directory.systemTemp.path, 'pasted_$id.jpg'),
@@ -115,10 +118,12 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   ///
   /// 弹出文件选择器，允许用户选择多张图片，验证通过后插入编辑器并后台上传
   Future<void> selectImages(QuillController controller) async {
-    // final result = await FilePicker.platform.pickFiles(
+    // Web/Wasm 下 PlatformFile.path 恒为 null，bytes 只有 withData:true 才有。
+    // 不加 withData 会导致 bytes/path 双空：预览显示破图、宽高为 null、上传直接失败。
     final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.image,
+      withData: true,
     );
     if (result == null || result.files.isEmpty) return;
     if (!UploadValidator.validate(
@@ -138,17 +143,28 @@ class ChatImageUploadController extends _$ChatImageUploadController {
         continue;
       }
       final id = const Uuid().v4();
-      if (file.bytes != null) {
+      // Web/Wasm 下 path 为 null（或 blob: 假路径），唯一可信来源是 bytes，
+      // 必须优先用 bytes 解宽高、做预览与上传；原生端 path 有值才走文件。
+      final hasBytes = file.bytes != null && file.bytes!.isNotEmpty;
+      final hasPath =
+          file.path != null &&
+          file.path!.isNotEmpty &&
+          !file.path!.startsWith('blob:');
+      if (hasBytes || hasPath) {
         _filesById[id] = file;
       }
-      final imageSize = file.path != null
-          ? await readImageSizeFromFile(file.path!)
-          : await readImageSizeFromBytes(file.bytes ?? Uint8List(0));
+      final imageSize = hasBytes
+          ? await readImageSizeFromBytes(file.bytes!)
+          : (hasPath
+                ? await readImageSizeFromFile(file.path!)
+                : (null, null));
       uploadList.add(
         Attachment(
           id: id,
           kind: 'IMAGE',
-          url: file.path,
+          // Web 端 path 为 null 时用合成占位地址，保证 embed/预览/上传链路一致；
+          // AttachmentImageView 见到非 http 地址会转用 bytes 渲染。
+          url: hasPath ? file.path : localPendingMediaUrl(id),
           name: file.name,
           size: file.size,
           type: mediaMimeTypeForName(file.name),
@@ -187,17 +203,24 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     final List<Attachment> uploadList = [];
     for (final file in files) {
       final id = const Uuid().v4();
-      if (file.bytes != null) {
+      final hasBytes = file.bytes != null && file.bytes!.isNotEmpty;
+      final hasPath =
+          file.path != null &&
+          file.path!.isNotEmpty &&
+          !file.path!.startsWith('blob:');
+      if (hasBytes || hasPath) {
         _filesById[id] = file;
       }
-      final imageSize = file.path != null
-          ? await readImageSizeFromFile(file.path!)
-          : await readImageSizeFromBytes(file.bytes ?? Uint8List(0));
+      final imageSize = hasBytes
+          ? await readImageSizeFromBytes(file.bytes!)
+          : (hasPath
+                ? await readImageSizeFromFile(file.path!)
+                : (null, null));
       uploadList.add(
         Attachment(
           id: id,
           kind: 'IMAGE',
-          url: file.path,
+          url: hasPath ? file.path : localPendingMediaUrl(id),
           name: file.name,
           size: file.size,
           type: mediaMimeTypeForName(file.name),
@@ -239,10 +262,10 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     var pendingImages = <Attachment>[];
     for (final i in images) {
       final local = _filesById[i.id];
-      if (local?.bytes != null) {
+      if (local?.bytes != null && local!.bytes!.isNotEmpty) {
         pendingFiles.add(
           XFile.fromData(
-            local!.bytes!,
+            local.bytes!,
             name: i.name ?? local.name,
             mimeType: mediaMimeTypeForName(
               i.name ?? local.name,
@@ -251,7 +274,12 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           ),
         );
         pendingImages.add(i);
-      } else if (i.url != null && i.url!.isNotEmpty) {
+      } else if (i.url != null &&
+          i.url!.isNotEmpty &&
+          // 合成占位地址与浏览器 blob: 地址都不是磁盘路径，不可当 XFile(path) 用；
+          // 无 bytes 时直接失败，避免把占位串当成本地文件去读。
+          !isPendingLocalMediaUrl(i.url) &&
+          !i.url!.startsWith('blob:')) {
         pendingFiles.add(
           XFile(
             i.url!,

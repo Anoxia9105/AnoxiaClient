@@ -173,7 +173,12 @@ class _MobileChatInputState extends ConsumerState<MobileChatInput> {
       return;
     }
 
-    final result = await FilePicker.pickFiles(allowMultiple: true, type: type);
+    final result = await FilePicker.pickFiles(
+      allowMultiple: true,
+      type: type,
+      // Web/Wasm 下 path 为 null，必须带 bytes 回来，否则即时发送链路无内容可传、无预览。
+      withData: true,
+    );
     if (result == null || result.files.isEmpty || !mounted) return;
 
     // 先收起面板，再交给「即时发送」：气泡会立刻出现在列表里，

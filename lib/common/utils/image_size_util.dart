@@ -19,7 +19,16 @@ Future<(int?, int?)> readImageSizeFromBytes(Uint8List bytes) async {
 }
 
 /// 从本地文件读取宽高，无法解析时返回 `(null, null)`
+///
+/// 只接受真正的磁盘路径：`blob:` / `local-pending://` / 空串直接返回空，
+/// 避免 Web/Wasm 下把合成地址传给 `dart:io File` 触发
+/// `Unsupported operation: Platform._operatingSystem`。
 Future<(int?, int?)> readImageSizeFromFile(String path) async {
+  if (path.isEmpty ||
+      path.startsWith('blob:') ||
+      path.startsWith('local-pending://')) {
+    return (null, null);
+  }
   try {
     return await readImageSizeFromBytes(await File(path).readAsBytes());
   } catch (_) {

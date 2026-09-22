@@ -13,6 +13,7 @@ import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/upload_validator.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
+import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -63,10 +64,11 @@ class ChatFileUploadController extends _$ChatFileUploadController {
   /// （插图片 embed + 交给图片上传控制器），否则编辑器里显示成文件 chip、
   /// 发送时又变成图片消息，两端类型对不上。
   Future<void> selectFiles(QuillController controller) async {
-    // final result = await FilePicker.platform.pickFiles(
+    // Web/Wasm 下必须 withData:true，否则 bytes/path 双空导致预览与上传双失败。
     final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.any,
+      withData: true,
     );
     if (result == null || result.files.isEmpty) return;
     if (!UploadValidator.validate(
@@ -93,14 +95,19 @@ class ChatFileUploadController extends _$ChatFileUploadController {
         continue;
       }
       final id = const Uuid().v4();
-      if (file.bytes != null) {
+      final hasBytes = file.bytes != null && file.bytes!.isNotEmpty;
+      final hasPath =
+          file.path != null &&
+          file.path!.isNotEmpty &&
+          !file.path!.startsWith('blob:');
+      if (hasBytes || hasPath) {
         _filesById[id] = file;
       }
       otherFiles.add(
         Attachment(
           id: id,
           kind: kind == PickedMediaKind.video ? 'VIDEO' : 'FILE',
-          url: file.path,
+          url: hasPath ? file.path : localPendingMediaUrl(id),
           name: file.name,
           size: file.size,
           type: mediaMimeTypeForName(file.name),
@@ -147,10 +154,10 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     var pendingAttachments = <Attachment>[];
     for (final a in attachments) {
       final local = _filesById[a.id];
-      if (local?.bytes != null) {
+      if (local?.bytes != null && local!.bytes!.isNotEmpty) {
         pendingFiles.add(
           XFile.fromData(
-            local!.bytes!,
+            local.bytes!,
             name: a.name ?? local.name,
             mimeType: mediaMimeTypeForName(
               a.name ?? local.name,
@@ -159,7 +166,10 @@ class ChatFileUploadController extends _$ChatFileUploadController {
           ),
         );
         pendingAttachments.add(a);
-      } else if (a.url != null && a.url!.isNotEmpty) {
+      } else if (a.url != null &&
+          a.url!.isNotEmpty &&
+          !isPendingLocalMediaUrl(a.url) &&
+          !a.url!.startsWith('blob:')) {
         pendingFiles.add(
           XFile(
             a.url!,

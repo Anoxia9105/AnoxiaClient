@@ -549,6 +549,8 @@ Future<void> noteInsertImage(
   final result = await FilePicker.pickFiles(
     allowMultiple: true,
     type: FileType.image,
+    // Web/Wasm 下 path 为 null，必须带 bytes 回来，否则 XFile(file.path!) 直接崩。
+    withData: true,
   );
   if (result == null || result.files.isEmpty) return;
   if (!context.mounted) return;
@@ -556,18 +558,25 @@ Future<void> noteInsertImage(
   final noteId = ref.read(noteSessionServiceProvider)?.noteId;
   if (noteId == null) return;
 
-  final ids = List.generate(result.files.length, (_) => const Uuid().v4());
   final files = <XFile>[];
+  final ids = <String>[];
   final sizes = <int>[];
   for (var i = 0; i < result.files.length; i++) {
     final file = result.files[i];
-    files.add(
-      file.bytes != null
-          ? XFile.fromData(file.bytes!, name: file.name)
-          : XFile(file.path!, name: file.name),
-    );
+    if (file.bytes != null && file.bytes!.isNotEmpty) {
+      files.add(XFile.fromData(file.bytes!, name: file.name));
+    } else if (file.path != null &&
+        file.path!.isNotEmpty &&
+        !file.path!.startsWith('blob:')) {
+      files.add(XFile(file.path!, name: file.name));
+    } else {
+      // Web 下双空（理论上 withData:true 后不应发生）：跳过该文件避免崩溃。
+      continue;
+    }
+    ids.add(const Uuid().v4());
     sizes.add(file.size);
   }
+  if (files.isEmpty) return;
   await _insertNoteImageEmbeds(controller, files, ids, sizes);
   if (!context.mounted) return;
   focusNode.requestFocus();

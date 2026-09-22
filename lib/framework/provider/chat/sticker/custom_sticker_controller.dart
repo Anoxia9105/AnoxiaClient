@@ -78,6 +78,8 @@ class CustomStickerController extends Notifier<CustomStickerState> {
       type: FileType.custom,
       allowedExtensions: _imageExtensions,
       allowMultiple: true,
+      // Web/Wasm 下 path 为 null，bytes 只有 withData:true 才有。
+      withData: true,
     );
     if (result == null || result.files.isEmpty) {
       return const StickerUploadResult();
@@ -93,10 +95,17 @@ class CustomStickerController extends Notifier<CustomStickerState> {
 
     final xFiles = <XFile>[];
     for (final f in files) {
-      xFiles.add(
-        f.bytes != null
-            ? XFile.fromData(f.bytes!, name: f.name)
-            : XFile(f.path!),
+      if (f.bytes != null && f.bytes!.isNotEmpty) {
+        xFiles.add(XFile.fromData(f.bytes!, name: f.name));
+      } else if (f.path != null &&
+          f.path!.isNotEmpty &&
+          !f.path!.startsWith('blob:')) {
+        xFiles.add(XFile(f.path!, name: f.name));
+      }
+    }
+    if (xFiles.isEmpty) {
+      return const StickerUploadResult(
+        errorKey: 'settings_sticker_upload_failed',
       );
     }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:anoxia/common/widgets/attachment_image_view.dart';
+import 'package:anoxia/features/chat/presentation/widgets/message_render/image_render_metrics.dart';
 import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_image_upload_controller.dart';
@@ -34,6 +35,24 @@ class QuillImageBuild implements EmbedBuilder {
         final isUploading = entry.isUploading;
         final progress = entry.progress;
 
+        // 按图片真实宽高比自适应：有宽高时等比缩到 220x320 内并把精确尺寸
+        // 传给 AttachmentImageView，首帧即稳定、无跳变；无宽高（历史数据/
+        // 解码失败）时传 null，让 Image 按内在尺寸在 max 约束内自然布局。
+        // Web/Wasm 下宽高来自 bytes 解码（selectImages 已 withData:true），
+        // 桌面端来自文件头解析，两端同源。
+        final hasValidSize =
+            (attachment.width ?? 0) > 0 && (attachment.height ?? 0) > 0;
+        final displaySize = hasValidSize
+            ? resolveImageMessageDisplaySize(
+                attachment,
+                maxWidth: 220,
+                maxHeight: 320,
+              )
+            : null;
+        final previewBytes = ref
+            .read(chatImageUploadControllerProvider.notifier)
+            .bytesOf(attachment.id);
+
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           constraints: const BoxConstraints(maxWidth: 220, maxHeight: 320),
@@ -65,9 +84,9 @@ class QuillImageBuild implements EmbedBuilder {
                   opacity: isFailed ? 0.45 : 1.0,
                   child: AttachmentImageView(
                     url: attachment.url,
-                    bytes: ref
-                        .read(chatImageUploadControllerProvider.notifier)
-                        .bytesOf(attachment.id),
+                    bytes: previewBytes,
+                    width: displaySize?.width,
+                    height: displaySize?.height,
                     fit: BoxFit.cover,
                     errorWidget: (_, _, _) => const Center(
                       child: HugeIcon(
