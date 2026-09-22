@@ -311,7 +311,7 @@ class _DesktopCallRingingPage extends StatelessWidget {
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedCall02,
               color: cs.primary,
-              size: 40,
+              size: 32,
             ),
           ),
           const SizedBox(height: 24),
