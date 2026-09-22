@@ -248,4 +248,8 @@ class API {
 
   /// 文件夹基础路径
   static const String noteFolderBase = '/note/folder';
+
+  // ======================== 我的日程接口 ========================
+  /// 按日期窗口查询及增删改个人日程
+  static const String scheduleEvents = '/schedule/events';
 }
