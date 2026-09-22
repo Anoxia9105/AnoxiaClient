@@ -83,4 +83,114 @@ void main() {
 
     expect(result.map((event) => event.id), [1]);
   });
+
+  test('parses and serializes reminder and recurrence fields', () {
+    final event = ScheduleEvent.fromJson({
+      'id': 11,
+      'title': '每周同步',
+      'startAt': '2026-09-21T01:00:00Z',
+      'endAt': '2026-09-21T02:00:00Z',
+      'timeZone': 'Asia/Shanghai',
+      'allDay': false,
+      'revision': 2,
+      'reminderMinutes': 15,
+      'recurrence': {
+        'frequency': 'WEEKLY',
+        'interval': 1,
+        'weekdays': [1, 3, 5],
+        'endType': 'UNTIL',
+        'until': '2026-10-31T23:59:59Z',
+      },
+    });
+
+    expect(event.reminderMinutes, 15);
+    expect(event.recurrence?.frequency, ScheduleRecurrenceFrequency.weekly);
+    expect(event.recurrence?.weekdays, [1, 3, 5]);
+    expect(
+      event.toWriteJson()['recurrence'],
+      containsPair('frequency', 'WEEKLY'),
+    );
+  });
+
+  test('expands daily recurrence only inside the requested range', () {
+    final event = _recurringEvent(
+      recurrence: const ScheduleRecurrence(
+        frequency: ScheduleRecurrenceFrequency.daily,
+        interval: 2,
+      ),
+    );
+
+    final occurrences = expandScheduleOccurrences(
+      [event],
+      ScheduleRange(
+        from: DateTime.utc(2026, 9, 22),
+        to: DateTime.utc(2026, 9, 28),
+      ),
+    );
+
+    expect(occurrences.map((item) => item.startAt.day), [23, 25, 27]);
+  });
+
+  test('expands selected weekdays and respects occurrence count', () {
+    final event = _recurringEvent(
+      startAt: DateTime.utc(2026, 9, 21, 1),
+      recurrence: const ScheduleRecurrence(
+        frequency: ScheduleRecurrenceFrequency.weekly,
+        weekdays: [DateTime.monday, DateTime.wednesday],
+        endType: ScheduleRecurrenceEndType.count,
+        count: 3,
+      ),
+    );
+
+    final occurrences = expandScheduleOccurrences(
+      [event],
+      ScheduleRange(
+        from: DateTime.utc(2026, 9, 20),
+        to: DateTime.utc(2026, 10, 20),
+      ),
+    );
+
+    expect(occurrences.map((item) => item.startAt.toIso8601String()), [
+      '2026-09-21T01:00:00.000Z',
+      '2026-09-23T01:00:00.000Z',
+      '2026-09-28T01:00:00.000Z',
+    ]);
+  });
+
+  test('monthly recurrence clamps to the last day of short months', () {
+    final event = _recurringEvent(
+      startAt: DateTime.utc(2027, 1, 31, 1),
+      recurrence: const ScheduleRecurrence(
+        frequency: ScheduleRecurrenceFrequency.monthly,
+        endType: ScheduleRecurrenceEndType.count,
+        count: 3,
+      ),
+    );
+
+    final occurrences = expandScheduleOccurrences([
+      event,
+    ], ScheduleRange(from: DateTime.utc(2027, 1), to: DateTime.utc(2027, 4)));
+
+    expect(
+      occurrences.map((item) => '${item.startAt.month}-${item.startAt.day}'),
+      ['1-31', '2-28', '3-31'],
+    );
+  });
+}
+
+ScheduleEvent _recurringEvent({
+  DateTime? startAt,
+  required ScheduleRecurrence recurrence,
+}) {
+  final start = startAt ?? DateTime.utc(2026, 9, 21, 1);
+  return ScheduleEvent(
+    id: 99,
+    title: '重复日程',
+    startAt: start,
+    endAt: start.add(const Duration(hours: 1)),
+    timeZone: 'UTC',
+    allDay: false,
+    revision: 1,
+    recurrence: recurrence,
+  );
 }
