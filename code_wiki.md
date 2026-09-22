@@ -13,6 +13,7 @@
 | 即时消息 | 支持文本、图片、文件、富文本等多类型消息，支持消息撤回、收藏 |
 | 音视频通话 | 基于 LiveKit + WebRTC 实现实时音视频通话能力，支持表情反应特效 |
 | 联系人管理 | 好友申请、联系人列表、群组管理 |
+| 我的日程 | 个人日程增删改、日/周/月/议程视图、今日与即将开始列表，服务端跨设备同步 |
 | 富文本输入 | 基于 Flutter Quill 实现支持 Mention、文件嵌入的富文本编辑器 |
 | 多窗口支持 | 桌面端支持多窗口通话页面 |
 | 主题系统 | 支持 32 种预设主题（16 种强调色 × 亮/暗，见 `lib/framework/theme/app_theme.dart` `accentOptions`/`themes`） |
@@ -407,6 +408,13 @@ lib/
     │   └── presentation/
     │       └── pages/
     │           └── favorites_page.dart
+    ├── schedule/                  # 我的日程模块
+    │   └── presentation/
+    │       ├── pages/
+    │       │   └── schedule_page.dart
+    │       └── widgets/
+    │           ├── schedule_event_dialog.dart
+    │           └── schedule_event_list.dart
     ├── me/                        # 个人中心模块
     │   └── presentation/
     │       ├── pages/
@@ -1031,6 +1039,7 @@ QrImageView 渲染二维码（https://<host>/qrlogin?ticket=xxx）
 | `scanLoginControllerProvider` | `AsyncNotifier` | 普通 | 扫码登录展示端轮询（`POST /login/scan/create` + 每 2s `GET /login/scan/status`） |
 | `announcementControllerProvider` | `AsyncNotifier` | keepAlive | 系统公告（`ServerFrame.announcement_event` 仅通知，正文走 REST `/system/announcements` 重取） |
 | `noteTree/Content/Trash/Tag/Version` | `AsyncNotifier` | keepAlive | 记事本 v2（`note_folder`/`note_doc`/`note_doc_version`/`note_tag`，见 `2026-08-18-note-v2-*.sql`） |
+| `scheduleServiceProvider` | `AsyncNotifier` | keepAlive | 我的日程，按日/周/月/议程窗口调用 REST `/schedule/events`，登出/切账号时统一失效 |
 | `aiChatControllerProvider` | `Notifier` | 普通 | AI 对话（`POST /chat/ai/stream` SSE，`ai_chat_controller.dart`；旧 `/chat/gemini` 已废弃） |
 | `updateCheckProvider` | `Notifier` | 普通 | 版本更新检查（`GET /app/update/latest`，公开接口） |
 

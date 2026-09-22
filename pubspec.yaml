@@ -1,7 +1,7 @@
 name: anoxia
 description: "A high-performance, real-time IM (Instant Messaging) solution built with Flutter and Dart. Supports low-latency message delivery and robust state synchronization."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 2.3.9+46
+version: 2.4.1+47
 
 environment:
   sdk: ^3.10.1
@@ -63,6 +63,7 @@ dependencies:
   photo_view: ^0.15.0 # 图片查看（缩放）
   flutter_staggered_animations: ^1.1.1 # 列表交错动画
   flutter_zoom_drawer: ^3.2.0 # 抽屉菜单
+  calendar_view: 2.0.0 # 日/周/月日程视图（2.x 锁定精确版本避免破坏性更新）
   emoji_picker_flutter: ^4.4.0 # emoji 选择器
   qr_flutter: ^4.1.0 # 二维码生成（名片/加好友）
   chat_bottom_container: ^0.5.0 # 聊天底部输入容器

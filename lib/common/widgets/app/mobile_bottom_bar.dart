@@ -16,7 +16,7 @@ import '../vibrating_badge.dart';
 /// - 选中态只加粗：图标描线加粗 + 文字 [FontWeight.w700]，
 ///   颜色跟随主题 [ColorScheme.primary]；未选中用
 ///   [ColorScheme.onSurfaceVariant] 弱化。
-/// - 可见项与之前一致：过滤掉记事本、设置，保留聊天 / 人员 / 收藏 / 我的。
+/// - 可见项与之前一致：过滤掉记事本、日程、设置，保留聊天 / 人员 / 收藏 / 我的。
 /// - 聊天 Tab 显示总未读，人员 Tab 显示联系人请求数（99+ 封顶由
 ///   [VibratingBadge] 处理），键盘弹起时隐藏。
 /// - HugeIcons 全工程只用了 strokeRounded 一套，选中态用主色 + 2.4 描线
@@ -42,7 +42,8 @@ class MobileBottomBar extends ConsumerWidget {
 
     final visibleEntries = layout.items.asMap().entries.where((entry) {
       return entry.value.name != 'sidebar_setting' &&
-          entry.value.name != 'sidebar_note';
+          entry.value.name != 'sidebar_note' &&
+          entry.value.name != 'sidebar_schedule';
     }).toList();
 
     return SafeArea(

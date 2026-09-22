@@ -22,6 +22,10 @@ class LayoutController extends _$LayoutController {
       name: 'sidebar_note',
       icon: HugeIcons.strokeRoundedNote01,
     ),
+    SidebarItem(
+      name: 'sidebar_schedule',
+      icon: HugeIcons.strokeRoundedCalendar03,
+    ),
     SidebarItem(name: 'sidebar_my', icon: HugeIcons.strokeRoundedUser),
     SidebarItem(
       name: 'sidebar_setting',

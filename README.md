@@ -22,6 +22,7 @@
 - 💬 **即时消息**：会话列表、消息状态、系统消息、搜索与常用交互
 - 👥 **联系人与关系链**：联系人检索、申请处理、好友与群相关操作
 - 📝 **富文本输入**：基于 `flutter_quill` 的编辑与展示能力
+- 📅 **我的日程**：日/周/月/议程视图、今日与即将开始列表、个人日程增删改
 - 🎙️ **实时音视频**：`livekit_client` + `flutter_webrtc`
 - 🖥️ **桌面体验增强**：托盘、窗口管理、多窗口能力
 - 🌍 **国际化与主题**：多语言支持、设置中心、版本检查与反馈入口
@@ -126,6 +127,8 @@ Windows 发布使用 `./tool_build.bat -Target web -Wasm`（或 `./tool_build.ps
 ---
 
 ## 🧪 开发常用命令
+
+日程 MVP 的范围、REST 契约、数据库迁移与验证方式见 [`docs/schedule_mvp.md`](./docs/schedule_mvp.md)。
 
 ```bash
 flutter analyze

@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/dialogs/logout_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/features/note/presentation/pages/note_page.dart';
+import 'package:anoxia/features/schedule/presentation/pages/schedule_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/account_switch_page.dart';
 import 'package:anoxia/features/settings/presentation/pages/settings_page.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
@@ -169,6 +170,13 @@ class MenuPage extends ConsumerWidget {
                           icon: HugeIcons.strokeRoundedNote01,
                           title: 'sidebar_note'.tr(), // 记事本
                           onTap: () => _pushPage(context, const NotesPage()),
+                        ),
+                        _buildTileDivider(context),
+                        _buildMenuTile(
+                          context,
+                          icon: HugeIcons.strokeRoundedCalendar03,
+                          title: 'sidebar_schedule'.tr(),
+                          onTap: () => _pushPage(context, const SchedulePage()),
                         ),
                         _buildTileDivider(context),
                         _buildMenuTile(

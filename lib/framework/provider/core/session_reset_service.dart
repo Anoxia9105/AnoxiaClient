@@ -27,6 +27,7 @@ import 'package:anoxia/framework/provider/note/note_tag_provider.dart';
 import 'package:anoxia/framework/provider/note/note_trash_provider.dart';
 import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:anoxia/framework/provider/note/note_version_provider.dart';
+import 'package:anoxia/framework/provider/schedule/schedule_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum SessionResetReason { logout, tokenExpired, accountSwitch }
@@ -63,6 +64,7 @@ class SessionResetService {
     'noteVersionServiceProvider',
     'noteTagFilterProvider(*)',
     'noteOpenRequestProvider(*)',
+    'scheduleServiceProvider',
     'layoutControllerProvider',
     'contactSelectionProvider',
     'contactDetailDataProvider(*)',
@@ -114,6 +116,7 @@ class SessionResetService {
     // 标签筛选与深链打开请求为纯内存状态，一并复位。
     container.read(noteTagFilterProvider.notifier).state = null;
     container.read(noteOpenRequestProvider.notifier).state = null;
+    container.invalidate(scheduleServiceProvider);
 
     // 侧边栏选中位置复位到「聊天」：登出/切账号后不保留上个账号的
     // 浏览位置（IndexedStack 常驻，MainLayoutPage 未卸载时该状态会跨会话存活）。
