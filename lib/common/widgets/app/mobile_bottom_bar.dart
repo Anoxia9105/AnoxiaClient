@@ -133,8 +133,13 @@ class _FlatNavItem extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          splashColor: colorScheme.primary.withValues(alpha: 0.10),
-          highlightColor: colorScheme.primary.withValues(alpha: 0.06),
+          // 底部导航不需要水波纹：点击已有触觉反馈 + 选中态颜色切换，
+          // 保留 InkWell 只为语义与无障碍，视觉上完全静默。
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Column(

@@ -138,11 +138,14 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
       // 宽屏下不超 300，避免抽屉占比过大
       final drawerWidth = (size.width * 0.65).clamp(240.0, 300.0);
       return ZoomDrawer(
-        menuBackgroundColor: Theme.of(context).colorScheme.primary, // 抽屉背景色
+        // 抽屉底色与 MenuPage 的 Scaffold 背景保持一致
+        //（surfaceContainerLow），主体缩小后露出的底色与抽屉同色，
+        // 避免之前 primary 强色块造成的割裂感；再用柔和阴影压住接缝。
+        menuBackgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         menuScreen: const MenuPage(), // 左侧抽屉菜单
         mainScreen: buildMainContent(), // 将带底部导航栏的整体作为主体推走
         borderRadius: 24.0,
-        showShadow: false,
+        showShadow: true,
         angle: 0.0, // 纯平移
         slideWidth: drawerWidth, // 侧滑宽度（65%，封顶 280）
         menuScreenWidth: drawerWidth, // 抽屉宽度（与侧滑宽度保持一致）

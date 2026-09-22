@@ -206,7 +206,7 @@
   "settings_bg_surface_opacity": "界面透明度",
   "settings_bg_surface_opacity_hint": "数值越低越通透；为保证文字清晰，最低保留 45% 不透明度",
   "settings_page_language_title": "语言设置",
-  "settings_page_language_subtitle": "閫夋嫨搴旂敤鐨勮瑷€",
+  "settings_page_language_subtitle": "选择应用的语言",
   "settings_page_about_title": "关于与支持",
   "settings_page_about_subtitle": "了解应用的背景和支持信息",
   "settings_feedback_title": "问题反馈",

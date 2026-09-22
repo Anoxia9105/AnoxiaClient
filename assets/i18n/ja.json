@@ -206,7 +206,7 @@
   "settings_bg_surface_opacity": "画面の不透明度",
   "settings_bg_surface_opacity_hint": "値を下げるほど背景が見えます。読みやすさのため最低45%です。",
   "settings_page_language_title": "言語設定",
-  "settings_page_language_subtitle": "銈儣銉伄瑷€瑾炪倰閬告姙",
+  "settings_page_language_subtitle": "アプリの言語を選択",
   "settings_page_about_title": "アプリについてとサポート",
   "settings_page_about_subtitle": "アプリの背景とサポート情報を確認",
   "settings_feedback_title": "不具合フィードバック",
