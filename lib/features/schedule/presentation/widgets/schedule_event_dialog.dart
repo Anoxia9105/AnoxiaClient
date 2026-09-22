@@ -1,4 +1,5 @@
 import 'package:anoxia/framework/domain/schedule_event.dart';
+import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_options.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -43,9 +44,13 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _locationController;
+  late final TextEditingController _colorController;
   late DateTime _start;
   late DateTime _end;
   late bool _allDay;
+  late String _color;
+  int? _reminderMinutes;
+  ScheduleRecurrence? _recurrence;
   bool _saving = false;
   String? _error;
 
@@ -77,6 +82,10 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
     _locationController = TextEditingController(
       text: widget.event?.location ?? '',
     );
+    _color = (widget.event?.color ?? '#4F6BED').toUpperCase();
+    _colorController = TextEditingController(text: _color);
+    _reminderMinutes = widget.event?.reminderMinutes;
+    _recurrence = widget.event?.recurrence;
   }
 
   @override
@@ -84,6 +93,7 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
     _titleController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
+    _colorController.dispose();
     super.dispose();
   }
 
@@ -119,7 +129,33 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
                     labelText: 'schedule_location'.tr(),
                   ),
                 ),
+                ScheduleColorPicker(
+                  controller: _colorController,
+                  selectedColor: _color,
+                  enabled: !_saving,
+                  onChanged: (color) {
+                    setState(() {
+                      _color = color;
+                      _colorController.text = color;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                ScheduleReminderField(
+                  value: _reminderMinutes,
+                  enabled: !_saving,
+                  onChanged: (value) =>
+                      setState(() => _reminderMinutes = value),
+                ),
+                const SizedBox(height: 12),
+                ScheduleRecurrenceEditor(
+                  value: _recurrence,
+                  enabled: !_saving,
+                  onChanged: (value) => setState(() => _recurrence = value),
+                ),
+                const SizedBox(height: 8),
                 SwitchListTile(
+                  key: const ValueKey('schedule-all-day'),
                   contentPadding: EdgeInsets.zero,
                   title: Text('schedule_all_day'.tr()),
                   value: _allDay,
@@ -281,6 +317,9 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
           startAt: start,
           endAt: end,
           allDay: _allDay,
+          color: _colorController.text.trim().toUpperCase(),
+          reminderMinutes: _reminderMinutes,
+          recurrence: _recurrence,
           revision: widget.event?.revision,
         ),
       );

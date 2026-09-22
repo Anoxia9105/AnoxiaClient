@@ -48,7 +48,9 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Switch));
+    final allDaySwitch = find.byKey(const ValueKey('schedule-all-day'));
+    await tester.ensureVisible(allDaySwitch);
+    await tester.tap(allDaySwitch);
     await tester.pump();
     await tester.tap(find.text('schedule_save'));
     await tester.pumpAndSettle();
@@ -59,5 +61,120 @@ void main() {
       savedDraft!.endAt.difference(savedDraft!.startAt),
       const Duration(hours: 1),
     );
+  });
+
+  testWidgets('saves the selected color and reminder', (tester) async {
+    SharedPreferences.setMockInitialValues(const {});
+    await EasyLocalization.ensureInitialized();
+    await initializeDateFormatting('zh');
+    ScheduleEventDraft? savedDraft;
+    final event = ScheduleEvent(
+      id: 2,
+      title: '项目评审',
+      startAt: DateTime.utc(2026, 9, 22, 1),
+      endAt: DateTime.utc(2026, 9, 22, 2),
+      timeZone: 'UTC',
+      allDay: false,
+      revision: 1,
+      color: '#4F6BED',
+    );
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('zh'),
+        startLocale: const Locale('zh'),
+        useFallbackTranslations: true,
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showScheduleEventDialog(
+                context,
+                event: event,
+                onSave: (draft) async => savedDraft = draft,
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('schedule-color-#D14343')));
+    await tester.tap(find.byKey(const ValueKey('schedule-reminder')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('schedule_reminder_15').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('schedule_save'));
+    await tester.tap(find.text('schedule_save'));
+    await tester.pumpAndSettle();
+
+    expect(savedDraft?.color, '#D14343');
+    expect(savedDraft?.reminderMinutes, 15);
+  });
+
+  testWidgets('preserves weekly recurrence when editing a series', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(const {});
+    await EasyLocalization.ensureInitialized();
+    await initializeDateFormatting('zh');
+    ScheduleEventDraft? savedDraft;
+    final event = ScheduleEvent(
+      id: 3,
+      title: '团队同步',
+      startAt: DateTime.utc(2026, 9, 21, 1),
+      endAt: DateTime.utc(2026, 9, 21, 2),
+      timeZone: 'UTC',
+      allDay: false,
+      revision: 1,
+      recurrence: ScheduleRecurrence(
+        frequency: ScheduleRecurrenceFrequency.weekly,
+        interval: 2,
+        weekdays: const [DateTime.monday, DateTime.wednesday],
+        endType: ScheduleRecurrenceEndType.until,
+        until: DateTime.utc(2026, 12, 31),
+      ),
+    );
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('zh'),
+        startLocale: const Locale('zh'),
+        useFallbackTranslations: true,
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showScheduleEventDialog(
+                context,
+                event: event,
+                onSave: (draft) async => savedDraft = draft,
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('schedule-recurrence')), findsOneWidget);
+    await tester.ensureVisible(find.text('schedule_save'));
+    await tester.tap(find.text('schedule_save'));
+    await tester.pumpAndSettle();
+
+    expect(
+      savedDraft?.recurrence?.frequency,
+      ScheduleRecurrenceFrequency.weekly,
+    );
+    expect(savedDraft?.recurrence?.interval, 2);
+    expect(savedDraft?.recurrence?.weekdays, [1, 3]);
+    expect(savedDraft?.recurrence?.endType, ScheduleRecurrenceEndType.until);
   });
 }
