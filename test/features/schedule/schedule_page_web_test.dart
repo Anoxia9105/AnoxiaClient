@@ -43,7 +43,29 @@ void main() {
 
       expect(find.byType(SchedulePage), findsOneWidget);
       expect(find.byKey(const ValueKey('schedule-month-view')), findsOneWidget);
-      expect(find.byType(SafeArea), findsOneWidget);
+      final bodySafeArea = tester.widget<SafeArea>(
+        find.byKey(const ValueKey('schedule-body-safe-area')),
+      );
+      expect(bodySafeArea.top, width > 600);
+      if (width <= 600) {
+        expect(
+          find.byKey(const ValueKey('schedule-mobile-app-bar')),
+          findsOneWidget,
+        );
+        final createButton = find.byKey(
+          const ValueKey('schedule-create-button'),
+        );
+        expect(createButton, findsOneWidget);
+        final createIcon = tester.widget<Icon>(
+          find.descendant(of: createButton, matching: find.byIcon(Icons.add)),
+        );
+        expect(createIcon.color, Colors.white);
+      } else {
+        expect(
+          find.byKey(const ValueKey('schedule-mobile-app-bar')),
+          findsNothing,
+        );
+      }
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       final scaffoldContext = tester.element(find.byType(Scaffold));
       expect(

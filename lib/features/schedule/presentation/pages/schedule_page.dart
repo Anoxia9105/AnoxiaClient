@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/features/schedule/presentation/schedule_calendar_layout.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_dialog.dart';
 import 'package:anoxia/features/schedule/presentation/widgets/schedule_event_list.dart';
@@ -48,10 +49,24 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+        final isMobile = DeviceUtil.isMobile(context);
         final showQuickPanel = width >= 1120;
+        final colors = Theme.of(context).colorScheme;
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: colors.surface,
+          appBar: isMobile
+              ? AppBar(
+                  key: const ValueKey('schedule-mobile-app-bar'),
+                  centerTitle: true,
+                  titleSpacing: 16,
+                  title: Text('schedule_title'.tr()),
+                  backgroundColor: colors.surface,
+                  surfaceTintColor: Colors.transparent,
+                )
+              : null,
           body: SafeArea(
+            key: const ValueKey('schedule-body-safe-area'),
+            top: !isMobile,
             child: Column(
               children: [
                 _ScheduleToolbar(
@@ -369,14 +384,16 @@ class _ScheduleToolbar extends StatelessWidget {
           const SizedBox(width: 12),
           if (compact)
             IconButton.filled(
+              key: const ValueKey('schedule-create-button'),
               tooltip: 'schedule_new'.tr(),
               onPressed: onCreate,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, color: Colors.white),
             )
           else
             FilledButton.icon(
+              key: const ValueKey('schedule-create-button'),
               onPressed: onCreate,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, color: Colors.white),
               label: Text('schedule_new'.tr()),
             ),
         ],
