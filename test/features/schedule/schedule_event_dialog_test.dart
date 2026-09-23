@@ -54,7 +54,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.getSize(find.byKey(const ValueKey('schedule-event-dialog'))),
-      const Size(680, 720),
+      const Size(920, 720),
+    );
+    expect(
+      find.byKey(const ValueKey('schedule-dialog-primary-column')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('schedule-dialog-settings-column')),
+      findsOneWidget,
     );
     expect(find.byType(MenuAnchor), findsNWidgets(2));
     final allDaySwitch = find.byKey(const ValueKey('schedule-all-day'));
@@ -69,6 +77,51 @@ void main() {
     expect(
       savedDraft!.endAt.difference(savedDraft!.startAt),
       const Duration(hours: 1),
+    );
+  });
+
+  testWidgets('uses a bottom drawer layout on compact screens', (tester) async {
+    SharedPreferences.setMockInitialValues(const {});
+    await EasyLocalization.ensureInitialized();
+    await initializeDateFormatting('zh');
+    tester.view.physicalSize = const Size(320, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('zh'),
+        startLocale: const Locale('zh'),
+        useFallbackTranslations: true,
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showScheduleEventDialog(context, onSave: (_) async {}),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('schedule-event-dialog'))),
+      const Size(320, 416),
+    );
+    expect(
+      find.byKey(const ValueKey('schedule-dialog-mobile-content')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('schedule-dialog-footer')),
+      findsOneWidget,
     );
   });
 

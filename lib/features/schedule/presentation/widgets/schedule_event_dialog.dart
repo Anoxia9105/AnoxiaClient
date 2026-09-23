@@ -101,8 +101,13 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final screen = MediaQuery.sizeOf(context);
-    final width = (screen.width - 48).clamp(320.0, 680.0);
-    final height = (screen.height - 48).clamp(420.0, 720.0);
+    final isCompact = screen.width < 720;
+    final width = isCompact
+        ? screen.width
+        : (screen.width - 48).clamp(680.0, 920.0);
+    final height = isCompact
+        ? (screen.height - 64).clamp(0.0, 820.0)
+        : (screen.height - 48).clamp(0.0, 720.0);
     final inputTheme = Theme.of(context).inputDecorationTheme.copyWith(
       filled: true,
       fillColor: colors.surfaceContainerLowest,
@@ -120,209 +125,393 @@ class _ScheduleEventDialogState extends State<_ScheduleEventDialog> {
       ),
     );
     return Dialog(
-      insetPadding: const EdgeInsets.all(24),
+      alignment: isCompact ? Alignment.bottomCenter : Alignment.center,
+      insetPadding: isCompact
+          ? const EdgeInsets.only(top: 64)
+          : const EdgeInsets.all(24),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: isCompact
+            ? const BorderRadius.vertical(top: Radius.circular(24))
+            : BorderRadius.circular(20),
+      ),
       child: SizedBox(
         key: const ValueKey('schedule-event-dialog'),
         width: width,
         height: height,
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 18, 16, 18),
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerLow,
-                border: Border(
-                  bottom: BorderSide(color: colors.outlineVariant),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      widget.event == null
-                          ? Icons.event_available_outlined
-                          : Icons.edit_calendar_outlined,
-                      color: colors.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      widget.event == null
-                          ? 'schedule_new'.tr()
-                          : 'schedule_edit'.tr(),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: MaterialLocalizations.of(
-                      context,
-                    ).closeButtonTooltip,
-                    onPressed: _saving
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(context, isCompact),
             Expanded(
               child: Theme(
                 data: Theme.of(
                   context,
                 ).copyWith(inputDecorationTheme: inputTheme),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextFormField(
-                          controller: _titleController,
-                          autofocus: true,
-                          maxLength: 200,
-                          decoration: InputDecoration(
-                            labelText: 'schedule_event_title'.tr(),
+                child: Form(
+                  key: _formKey,
+                  child: isCompact
+                      ? SingleChildScrollView(
+                          key: const ValueKey('schedule-dialog-mobile-content'),
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildPrimaryColumn(context),
+                              const SizedBox(height: 24),
+                              Divider(color: colors.outlineVariant),
+                              const SizedBox(height: 20),
+                              _buildSettingsColumn(context),
+                            ],
                           ),
-                          validator: (value) =>
-                              value == null || value.trim().isEmpty
-                              ? 'schedule_title_required'.tr()
-                              : null,
-                        ),
-                        TextFormField(
-                          controller: _locationController,
-                          maxLength: 255,
-                          decoration: InputDecoration(
-                            labelText: 'schedule_location'.tr(),
-                          ),
-                        ),
-                        ScheduleColorPicker(
-                          controller: _colorController,
-                          selectedColor: _color,
-                          enabled: !_saving,
-                          onChanged: (color) {
-                            setState(() {
-                              _color = color;
-                              _colorController.text = color;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        ScheduleReminderField(
-                          value: _reminderMinutes,
-                          enabled: !_saving,
-                          onChanged: (value) =>
-                              setState(() => _reminderMinutes = value),
-                        ),
-                        const SizedBox(height: 12),
-                        ScheduleRecurrenceEditor(
-                          value: _recurrence,
-                          enabled: !_saving,
-                          onChanged: (value) =>
-                              setState(() => _recurrence = value),
-                        ),
-                        const SizedBox(height: 8),
-                        SwitchListTile(
-                          key: const ValueKey('schedule-all-day'),
-                          contentPadding: EdgeInsets.zero,
-                          title: Text('schedule_all_day'.tr()),
-                          value: _allDay,
-                          onChanged: _saving ? null : _setAllDay,
-                        ),
-                        _DateTimeRow(
-                          label: 'schedule_start'.tr(),
-                          value: _start,
-                          allDay: _allDay,
-                          onDateTap: () => _pickDate(isStart: true),
-                          onTimeTap: () => _pickTime(isStart: true),
-                        ),
-                        const SizedBox(height: 8),
-                        _DateTimeRow(
-                          label: 'schedule_end'.tr(),
-                          value: _end,
-                          allDay: _allDay,
-                          onDateTap: () => _pickDate(isStart: false),
-                          onTimeTap: () => _pickTime(isStart: false),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _descriptionController,
-                          maxLength: 4000,
-                          minLines: 2,
-                          maxLines: 5,
-                          decoration: InputDecoration(
-                            labelText: 'schedule_description'.tr(),
-                            alignLabelWithHint: true,
-                          ),
-                        ),
-                        if (_error != null)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                key: const ValueKey(
+                                  'schedule-dialog-primary-column',
+                                ),
+                                padding: const EdgeInsets.fromLTRB(
+                                  28,
+                                  24,
+                                  28,
+                                  32,
+                                ),
+                                child: _buildPrimaryColumn(context),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
+                            VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: colors.outlineVariant,
+                            ),
+                            SizedBox(
+                              key: const ValueKey(
+                                'schedule-dialog-settings-column',
+                              ),
+                              width: 344,
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.fromLTRB(
+                                  24,
+                                  24,
+                                  24,
+                                  32,
+                                ),
+                                child: _buildSettingsColumn(context),
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
             Container(
+              key: const ValueKey('schedule-dialog-footer'),
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
               decoration: BoxDecoration(
                 color: colors.surfaceContainerLow,
                 border: Border(top: BorderSide(color: colors.outlineVariant)),
               ),
               child: Row(
-                children: [
-                  if (widget.onDelete != null)
-                    TextButton.icon(
-                      onPressed: _saving ? null : _delete,
-                      icon: Icon(Icons.delete_outline, color: colors.error),
-                      label: Text(
-                        'schedule_delete'.tr(),
-                        style: TextStyle(color: colors.error),
-                      ),
-                    ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _saving
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    child: Text('schedule_cancel'.tr()),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: _saving ? null : _save,
-                    icon: _saving
-                        ? const SizedBox.square(
-                            dimension: 17,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check_rounded),
-                    label: Text('schedule_save'.tr()),
-                  ),
-                ],
+                children: isCompact
+                    ? [
+                        if (widget.onDelete != null) ...[
+                          IconButton(
+                            tooltip: 'schedule_delete'.tr(),
+                            onPressed: _saving ? null : _delete,
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              color: colors.error,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Expanded(
+                          child: TextButton(
+                            onPressed: _saving
+                                ? null
+                                : () => Navigator.of(context).pop(),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('schedule_cancel'.tr()),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(44),
+                            ),
+                            onPressed: _saving ? null : _save,
+                            child: _saving
+                                ? const SizedBox.square(
+                                    dimension: 17,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text('schedule_save'.tr()),
+                                  ),
+                          ),
+                        ),
+                      ]
+                    : [
+                        if (widget.onDelete != null)
+                          TextButton.icon(
+                            onPressed: _saving ? null : _delete,
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              color: colors.error,
+                            ),
+                            label: Text(
+                              'schedule_delete'.tr(),
+                              style: TextStyle(color: colors.error),
+                            ),
+                          ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: _saving
+                              ? null
+                              : () => Navigator.of(context).pop(),
+                          child: Text('schedule_cancel'.tr()),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
+                          onPressed: _saving ? null : _save,
+                          icon: _saving
+                              ? const SizedBox.square(
+                                  dimension: 17,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check_rounded),
+                          label: Text('schedule_save'.tr()),
+                        ),
+                      ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool isCompact) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.fromLTRB(isCompact ? 18 : 24, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        border: Border(bottom: BorderSide(color: colors.outlineVariant)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: isCompact ? 38 : 42,
+            height: isCompact ? 38 : 42,
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              widget.event == null
+                  ? Icons.event_available_outlined
+                  : Icons.edit_calendar_outlined,
+              color: colors.onPrimaryContainer,
+              size: isCompact ? 21 : 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.event == null
+                      ? 'schedule_new'.tr()
+                      : 'schedule_edit'.tr(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (!isCompact) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'schedule_dialog_subtitle'.tr(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: _saving ? null : () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrimaryColumn(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _titleController,
+          autofocus: true,
+          maxLength: 200,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            labelText: 'schedule_event_title'.tr(),
+            counterText: '',
+          ),
+          validator: (value) => value == null || value.trim().isEmpty
+              ? 'schedule_title_required'.tr()
+              : null,
+        ),
+        const SizedBox(height: 14),
+        TextFormField(
+          controller: _locationController,
+          maxLength: 255,
+          decoration: InputDecoration(
+            labelText: 'schedule_location'.tr(),
+            prefixIcon: const Icon(Icons.location_on_outlined),
+            counterText: '',
+          ),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerLow,
+            border: Border.all(color: colors.outlineVariant),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.schedule_rounded, size: 20, color: colors.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'schedule_time_section'.tr(),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 72),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'schedule_all_day'.tr(),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Switch(
+                    key: const ValueKey('schedule-all-day'),
+                    value: _allDay,
+                    onChanged: _saving ? null : _setAllDay,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _DateTimeRow(
+                label: 'schedule_start'.tr(),
+                value: _start,
+                allDay: _allDay,
+                onDateTap: () => _pickDate(isStart: true),
+                onTimeTap: () => _pickTime(isStart: true),
+              ),
+              const SizedBox(height: 10),
+              _DateTimeRow(
+                label: 'schedule_end'.tr(),
+                value: _end,
+                allDay: _allDay,
+                onDateTap: () => _pickDate(isStart: false),
+                onTimeTap: () => _pickTime(isStart: false),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        TextFormField(
+          controller: _descriptionController,
+          maxLength: 4000,
+          minLines: 3,
+          maxLines: 6,
+          decoration: InputDecoration(
+            labelText: 'schedule_description'.tr(),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(bottom: 48),
+              child: Icon(Icons.notes_rounded),
+            ),
+            alignLabelWithHint: true,
+            counterText: '',
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(_error!, style: TextStyle(color: colors.error)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSettingsColumn(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'schedule_settings'.tr(),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 14),
+        ScheduleReminderField(
+          value: _reminderMinutes,
+          enabled: !_saving,
+          onChanged: (value) => setState(() => _reminderMinutes = value),
+        ),
+        const SizedBox(height: 12),
+        ScheduleRecurrenceEditor(
+          value: _recurrence,
+          enabled: !_saving,
+          onChanged: (value) => setState(() => _recurrence = value),
+        ),
+        const SizedBox(height: 22),
+        ScheduleColorPicker(
+          controller: _colorController,
+          selectedColor: _color,
+          enabled: !_saving,
+          onChanged: (color) {
+            setState(() {
+              _color = color;
+              _colorController.text = color;
+            });
+          },
+        ),
+      ],
     );
   }
 
