@@ -10,7 +10,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  for (final width in const [768.0, 1024.0, 1440.0]) {
+  for (final width in const [360.0, 768.0, 1024.0, 1440.0]) {
     testWidgets('month view renders without errors at ${width.toInt()}px', (
       tester,
     ) async {
@@ -43,6 +43,13 @@ void main() {
 
       expect(find.byType(SchedulePage), findsOneWidget);
       expect(find.byKey(const ValueKey('schedule-month-view')), findsOneWidget);
+      expect(find.byType(SafeArea), findsOneWidget);
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      final scaffoldContext = tester.element(find.byType(Scaffold));
+      expect(
+        scaffold.backgroundColor,
+        Theme.of(scaffoldContext).colorScheme.surface,
+      );
       expect(tester.takeException(), isNull);
     });
   }

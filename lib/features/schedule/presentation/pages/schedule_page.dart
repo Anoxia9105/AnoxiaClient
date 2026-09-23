@@ -50,43 +50,45 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
         final width = constraints.maxWidth;
         final showQuickPanel = width >= 1120;
         return Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Column(
-            children: [
-              _ScheduleToolbar(
-                view: _view,
-                focusedDay: _focusedDay,
-                compact: width < 1120,
-                onViewChanged: _changeView,
-                onToday: _showToday,
-                onPrevious: () => _moveFocus(-1),
-                onNext: () => _moveFocus(1),
-                onCreate: () => _openEditor(initialStart: _focusedDay),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: schedule.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (_, _) => _LoadError(onRetry: _load),
-                  data: (_) => Row(
-                    children: [
-                      if (showQuickPanel) ...[
-                        SizedBox(
-                          width: 270,
-                          child: ScheduleQuickPanel(
-                            occurrences: quickOccurrences,
-                            onEventTap: _openExisting,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _ScheduleToolbar(
+                  view: _view,
+                  focusedDay: _focusedDay,
+                  compact: width < 1120,
+                  onViewChanged: _changeView,
+                  onToday: _showToday,
+                  onPrevious: () => _moveFocus(-1),
+                  onNext: () => _moveFocus(1),
+                  onCreate: () => _openEditor(initialStart: _focusedDay),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: schedule.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (_, _) => _LoadError(onRetry: _load),
+                    data: (_) => Row(
+                      children: [
+                        if (showQuickPanel) ...[
+                          SizedBox(
+                            width: 270,
+                            child: ScheduleQuickPanel(
+                              occurrences: quickOccurrences,
+                              onEventTap: _openExisting,
+                            ),
                           ),
-                        ),
-                        const VerticalDivider(width: 1),
+                          const VerticalDivider(width: 1),
+                        ],
+                        Expanded(child: _buildCalendar(viewOccurrences)),
                       ],
-                      Expanded(child: _buildCalendar(viewOccurrences)),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
