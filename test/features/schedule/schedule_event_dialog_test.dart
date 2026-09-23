@@ -13,6 +13,10 @@ void main() {
     SharedPreferences.setMockInitialValues(const {});
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting('zh');
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     ScheduleEventDraft? savedDraft;
     final event = ScheduleEvent(
       id: 1,
@@ -48,6 +52,11 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('schedule-event-dialog'))),
+      const Size(680, 720),
+    );
+    expect(find.byType(MenuAnchor), findsNWidgets(2));
     final allDaySwitch = find.byKey(const ValueKey('schedule-all-day'));
     await tester.ensureVisible(allDaySwitch);
     await tester.tap(allDaySwitch);

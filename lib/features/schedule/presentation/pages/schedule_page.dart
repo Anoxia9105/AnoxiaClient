@@ -326,7 +326,7 @@ class _ScheduleToolbar extends StatelessWidget {
           else
             Text(title, style: Theme.of(context).textTheme.titleMedium),
           if (!compact) const Spacer(),
-          const _ScheduleNotificationButton(),
+          _ScheduleNotificationButton(locale: context.locale),
           const SizedBox(width: 8),
           if (compact)
             PopupMenuButton<ScheduleViewMode>(
@@ -391,7 +391,11 @@ class _ScheduleToolbar extends StatelessWidget {
 }
 
 class _ScheduleNotificationButton extends StatefulWidget {
-  const _ScheduleNotificationButton();
+  // Keep locale as an explicit input so this stateful child rebuilds when the
+  // app language changes, even when its notification permission state does not.
+  final Locale locale;
+
+  const _ScheduleNotificationButton({required this.locale});
 
   @override
   State<_ScheduleNotificationButton> createState() =>
@@ -444,6 +448,7 @@ class _ScheduleNotificationButtonState
     final helper = NotificationHelper();
     if (!helper.isSupported) return const SizedBox.shrink();
     return IconButton.filledTonal(
+      key: const ValueKey('schedule-notification-button'),
       tooltip: _granted
           ? 'schedule_notification_enabled'.tr()
           : 'schedule_notification_enable'.tr(),

@@ -13,6 +13,107 @@ const scheduleEventColors = <String>[
   '#475569',
 ];
 
+class ScheduleSelectOption<T> {
+  final T value;
+  final String label;
+
+  const ScheduleSelectOption({required this.value, required this.label});
+}
+
+class ScheduleSelectField<T> extends StatelessWidget {
+  final T value;
+  final List<ScheduleSelectOption<T>> options;
+  final ValueChanged<T> onChanged;
+  final String label;
+  final IconData? icon;
+  final bool enabled;
+
+  const ScheduleSelectField({
+    super.key,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    required this.label,
+    required this.enabled,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final selected = options.firstWhere((option) => option.value == value);
+    return MenuAnchor(
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(colors.surfaceContainer),
+        elevation: const WidgetStatePropertyAll(8),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 6),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+      builder: (context, controller, child) => Semantics(
+        button: true,
+        enabled: enabled,
+        label: label,
+        value: selected.label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: enabled
+              ? () => controller.isOpen ? controller.close() : controller.open()
+              : null,
+          child: InputDecorator(
+            isEmpty: false,
+            isFocused: controller.isOpen,
+            decoration: InputDecoration(
+              labelText: label,
+              prefixIcon: icon == null ? null : Icon(icon),
+              suffixIcon: AnimatedRotation(
+                duration: const Duration(milliseconds: 160),
+                turns: controller.isOpen ? 0.5 : 0,
+                child: const Icon(Icons.keyboard_arrow_down_rounded),
+              ),
+              enabled: enabled,
+            ),
+            child: Text(
+              selected.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ),
+      menuChildren: options
+          .map(
+            (option) => MenuItemButton(
+              style: const ButtonStyle(
+                minimumSize: WidgetStatePropertyAll(Size(280, 46)),
+                padding: WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
+              leadingIcon: Icon(
+                option.value == value ? Icons.check_rounded : null,
+                color: option.value == value ? colors.primary : null,
+              ),
+              onPressed: enabled ? () => onChanged(option.value) : null,
+              child: Text(
+                option.label,
+                style: TextStyle(
+                  fontWeight: option.value == value
+                      ? FontWeight.w600
+                      : FontWeight.w400,
+                  color: option.value == value ? colors.primary : null,
+                ),
+              ),
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+}
+
 class ScheduleColorPicker extends StatelessWidget {
   final TextEditingController controller;
   final String selectedColor;
@@ -131,23 +232,19 @@ class ScheduleReminderField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<int>(
+    return ScheduleSelectField<int>(
       key: const ValueKey('schedule-reminder'),
-      initialValue: value ?? -1,
-      decoration: InputDecoration(
-        labelText: 'schedule_reminder'.tr(),
-        prefixIcon: const Icon(Icons.notifications_none_rounded),
-      ),
-      items: _options
+      value: value ?? -1,
+      label: 'schedule_reminder'.tr(),
+      icon: Icons.notifications_none_rounded,
+      enabled: enabled,
+      options: _options
           .map(
             (minutes) =>
-                DropdownMenuItem(value: minutes, child: Text(_label(minutes))),
+                ScheduleSelectOption(value: minutes, label: _label(minutes)),
           )
           .toList(growable: false),
-      onChanged: enabled
-          ? (minutes) =>
-                onChanged(minutes == null || minutes < 0 ? null : minutes)
-          : null,
+      onChanged: (minutes) => onChanged(minutes < 0 ? null : minutes),
     );
   }
 
@@ -227,37 +324,34 @@ class _ScheduleRecurrenceEditorState extends State<ScheduleRecurrenceEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownButtonFormField<ScheduleRecurrenceFrequency?>(
+          ScheduleSelectField<ScheduleRecurrenceFrequency?>(
             key: const ValueKey('schedule-recurrence-frequency'),
-            initialValue: _frequency,
-            decoration: InputDecoration(
-              labelText: 'schedule_repeat'.tr(),
-              prefixIcon: const Icon(Icons.repeat_rounded),
-            ),
-            items: [
-              DropdownMenuItem<ScheduleRecurrenceFrequency?>(
+            value: _frequency,
+            label: 'schedule_repeat'.tr(),
+            icon: Icons.repeat_rounded,
+            enabled: widget.enabled,
+            options: [
+              ScheduleSelectOption<ScheduleRecurrenceFrequency?>(
                 value: null,
-                child: Text('schedule_repeat_none'.tr()),
+                label: 'schedule_repeat_none'.tr(),
               ),
               ...ScheduleRecurrenceFrequency.values.map(
-                (frequency) => DropdownMenuItem(
+                (frequency) => ScheduleSelectOption(
                   value: frequency,
-                  child: Text(_frequencyLabel(frequency)),
+                  label: _frequencyLabel(frequency),
                 ),
               ),
             ],
-            onChanged: widget.enabled
-                ? (frequency) {
-                    setState(() {
-                      _frequency = frequency;
-                      if (frequency == ScheduleRecurrenceFrequency.weekly &&
-                          _weekdays.isEmpty) {
-                        _weekdays.add(DateTime.now().weekday);
-                      }
-                    });
-                    _emit();
-                  }
-                : null,
+            onChanged: (frequency) {
+              setState(() {
+                _frequency = frequency;
+                if (frequency == ScheduleRecurrenceFrequency.weekly &&
+                    _weekdays.isEmpty) {
+                  _weekdays.add(DateTime.now().weekday);
+                }
+              });
+              _emit();
+            },
           ),
           if (_frequency != null) ...[
             const SizedBox(height: 12),
@@ -332,27 +426,23 @@ class _ScheduleRecurrenceEditorState extends State<ScheduleRecurrenceEditor> {
               ),
             ],
             const SizedBox(height: 12),
-            DropdownButtonFormField<ScheduleRecurrenceEndType>(
+            ScheduleSelectField<ScheduleRecurrenceEndType>(
               key: const ValueKey('schedule-recurrence-end'),
-              initialValue: _endType,
-              decoration: InputDecoration(
-                labelText: 'schedule_repeat_end'.tr(),
-              ),
-              items: ScheduleRecurrenceEndType.values
+              value: _endType,
+              label: 'schedule_repeat_end'.tr(),
+              enabled: widget.enabled,
+              options: ScheduleRecurrenceEndType.values
                   .map(
-                    (type) => DropdownMenuItem(
+                    (type) => ScheduleSelectOption(
                       value: type,
-                      child: Text(_endTypeLabel(type)),
+                      label: _endTypeLabel(type),
                     ),
                   )
                   .toList(growable: false),
-              onChanged: widget.enabled
-                  ? (type) {
-                      if (type == null) return;
-                      setState(() => _endType = type);
-                      _emit();
-                    }
-                  : null,
+              onChanged: (type) {
+                setState(() => _endType = type);
+                _emit();
+              },
             ),
             if (_endType == ScheduleRecurrenceEndType.until) ...[
               const SizedBox(height: 10),

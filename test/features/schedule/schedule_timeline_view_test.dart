@@ -45,6 +45,17 @@ void main() {
     expect(find.byKey(const ValueKey('schedule-day-view')), findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    final timelineScroll = find.byType(SingleChildScrollView);
+    await tester.drag(timelineScroll, const Offset(0, 2000));
+    await tester.pumpAndSettle();
+    final midnight = find.text('00:00');
+    expect(midnight, findsOneWidget);
+    expect(
+      tester.getTopLeft(midnight).dy,
+      greaterThanOrEqualTo(tester.getTopLeft(timelineScroll).dy + 2),
+      reason: '00:00 must stay fully visible at the top of the timeline',
+    );
+
     await pumpTimeline(true);
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.byKey(const ValueKey('schedule-week-view')), findsOneWidget);

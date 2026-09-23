@@ -249,7 +249,7 @@ class _TimeGutter extends StatelessWidget {
         children: List.generate(24, (hour) {
           final value = DateTime(2024, 1, 1, hour);
           return Positioned(
-            top: hour * hourHeight - 8,
+            top: hour * hourHeight + 4,
             right: 10,
             child: Text(
               DateFormat.Hm(locale).format(value),
