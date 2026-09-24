@@ -21,6 +21,7 @@ import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../core/app_initializer.dart';
 import '../auth/saved_accounts_provider.dart';
+import 'login_route_policy.dart';
 
 part 'router.g.dart';
 
@@ -112,13 +113,12 @@ GoRouter router(Ref ref) {
         case AsyncLoading():
           return null;
         case AsyncData(value: null):
-          if (isLogin && (manualLogin || passwordLoginRequested)) return null;
-          if (passwordLoginRequested) return const InitLoginRoute().location;
-          if (hasSavedAccount) {
-            return isQuickLogin ? null : const QuickLoginRoute().location;
-          }
-          if (isLogin) return null;
-          return const InitLoginRoute().location;
+          return resolveUnauthenticatedRedirect(
+            location: location,
+            manualLogin: manualLogin,
+            passwordLoginRequested: passwordLoginRequested,
+            hasQuickLoginAccount: hasSavedAccount,
+          );
         case AsyncData(value: UserInfo _):
           if (isSplash) return const HomeRoute().location;
           if (isLogin || isQuickLogin) return const HomeRoute().location;

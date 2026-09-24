@@ -22,6 +22,7 @@ import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/experimental/mutation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -166,6 +167,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
     ColorScheme colorScheme,
     MutationState<void> loginMutation,
   ) {
+    final hasQuickLoginAccount =
+        ref
+            .watch(savedAccountsServiceProvider)
+            .value
+            ?.any((account) => account.quickLoginCredential.isNotEmpty) ==
+        true;
     return Column(
       key: const ValueKey(_LoginMode.password),
       mainAxisSize: MainAxisSize.min,
@@ -184,12 +191,22 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
         const SizedBox(height: 20),
         _buildFooterLinks(colorScheme),
+        if (hasQuickLoginAccount) _buildSwitchToQuickLogin(colorScheme),
         if (DeviceUtil.isRealWeb() &&
             ref.watch(guestLoginEnabledProvider).value == true)
           _buildGuestLogin(colorScheme),
         if (_showOAuthLogin) _buildOAuthSection(colorScheme),
         if (_showScanMode) _buildSwitchToScan(colorScheme),
       ],
+    );
+  }
+
+  Widget _buildSwitchToQuickLogin(ColorScheme colorScheme) {
+    return TextButton.icon(
+      onPressed: _isLoading ? null : () => context.go('/quick-login'),
+      icon: const Icon(Icons.flash_on_outlined, size: 18),
+      label: Text('quick_login_switch_to_saved'.tr()),
+      style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
     );
   }
 

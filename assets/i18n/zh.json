@@ -1479,5 +1479,6 @@
   "quick_login_guest_badge": "游客用户",
   "quick_login_continue": "一键登录",
   "quick_login_back": "返回登录页",
-  "quick_login_unavailable": "没有可用的已保存账号"
+  "quick_login_unavailable": "没有可用的已保存账号",
+  "quick_login_switch_to_saved": "使用上次账号快捷登录"
 }

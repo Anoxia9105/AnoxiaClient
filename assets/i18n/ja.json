@@ -1479,5 +1479,6 @@
   "quick_login_guest_badge": "ゲストユーザー",
   "quick_login_continue": "ワンクリックログイン",
   "quick_login_back": "ログイン画面に戻る",
-  "quick_login_unavailable": "利用可能な保存済みアカウントがありません"
+  "quick_login_unavailable": "利用可能な保存済みアカウントがありません",
+  "quick_login_switch_to_saved": "前回のアカウントでクイックログイン"
 }

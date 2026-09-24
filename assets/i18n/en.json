@@ -1479,5 +1479,6 @@
   "quick_login_guest_badge": "Guest user",
   "quick_login_continue": "One-click login",
   "quick_login_back": "Back to sign in",
-  "quick_login_unavailable": "No saved account is available"
+  "quick_login_unavailable": "No saved account is available",
+  "quick_login_switch_to_saved": "Quick sign in with saved account"
 }

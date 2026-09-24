@@ -387,11 +387,6 @@ class AuthController extends _$AuthController {
 
     final token = ref.read(tokenCacheProvider);
     final previousUser = state.value;
-    if (reason == SessionResetReason.logout && previousUser != null) {
-      ref
-          .read(loginPrefillAccountProvider.notifier)
-          .set(previousUser.userName);
-    }
 
     PushManager.instance.setOnFcmTokenChanged(null);
     unawaited(_unbindPushDevice(token));
@@ -408,7 +403,7 @@ class AuthController extends _$AuthController {
       // 2. 清除内存中的 Token
       ref.read(tokenCacheProvider.notifier).clearToken();
 
-      // 3. 切换认证态，触发路由回到登录页。
+      // 3. 切换认证态，触发路由回到快捷登录或普通登录入口。
       //    WsController 自身已通过 ref.listen(authControllerProvider) 监听此变化，
       //    会在这里自动断开连接并禁用重连，无需在此手动操作，避免循环依赖。
       await _clearLocalSessionCache();
