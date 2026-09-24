@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/utils/emoji_util.dart';
 import 'package:anoxia/common/utils/media_kind_resolver.dart';
 import 'package:anoxia/common/utils/media_mime_type.dart';
 import 'package:anoxia/common/utils/media_url_util.dart';
@@ -517,8 +518,7 @@ class ChatInputController extends _$ChatInputController {
     final content = text.trim();
     if (room == null || content.isEmpty) return;
 
-    final isSingleEmoji =
-        content.characters.length == 1 && _isEmoji(content.characters.first);
+    final isSingleEmoji = EmojiUtil.isSingleEmoji(content);
 
     _doSend(
       type: isSingleEmoji ? MessageType.emoji : MessageType.text,
@@ -1035,13 +1035,6 @@ class ChatInputController extends _$ChatInputController {
           ackTimeout: Duration(seconds: timeoutSeconds),
         );
     ref.read(replyTargetControllerProvider.notifier).clear(roomId);
-  }
-
-  /// 判断字符是否为 Emoji（粗略判断）
-  bool _isEmoji(String char) {
-    final codePoint = char.runes.first;
-    return (codePoint >= 0x1F300 && codePoint <= 0x1FAFF) ||
-        (codePoint >= 0x2600 && codePoint <= 0x27BF);
   }
 
   /// 清空输入框内容，重置输入状态，隐藏 @提及选择器，清除回复目标

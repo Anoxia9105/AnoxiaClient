@@ -4,6 +4,7 @@
 // 以及链接预览功能。
 import 'package:flutter/material.dart';
 
+import '../../../../../common/utils/emoji_util.dart';
 import '../../../../../framework/domain/chat_message.dart';
 import 'base/message_render_strategy.dart';
 import 'link_preview_card.dart';
@@ -21,7 +22,7 @@ class TextMessageStrategy extends MessageRenderStrategy {
   ) {
     final content = message.payload?.content ?? message.content;
 
-    if (message.payload?.emojiCode?.isNotEmpty == true && content.isNotEmpty) {
+    if (EmojiUtil.isSingleEmoji(content)) {
       return Text(content, style: const TextStyle(fontSize: 48));
     }
 

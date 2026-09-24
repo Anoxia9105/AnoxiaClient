@@ -1,4 +1,4 @@
-﻿import 'package:characters/characters.dart';
+import 'package:anoxia/common/utils/emoji_util.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 
@@ -28,15 +28,6 @@ extension ChatMessageUIExtension on ChatMessage {
 
     final text = (payload?.content ?? content).trim();
     if (text.isEmpty) return false;
-    final graphemes = text.characters;
-    if (graphemes.length != 1) return false;
-
-    final rune = graphemes.first.runes.firstOrNull;
-    if (rune == null) return false;
-
-    // 常见表情符号 Unicode 范围
-    return rune >= 0x1F000 ||
-        (rune >= 0x2600 && rune <= 0x27BF) ||
-        (rune >= 0x2300 && rune <= 0x23FF);
+    return EmojiUtil.isSingleEmoji(text);
   }
 }
