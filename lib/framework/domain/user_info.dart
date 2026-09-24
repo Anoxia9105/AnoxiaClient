@@ -23,6 +23,12 @@ class UserInfo {
   /// 用户头像 URL
   final String avatar;
 
+  /// 00=管理员，01=普通用户，02=游客用户
+  final String userType;
+
+  /// 2 表示游客尚未自行设置密码
+  final String pwdResetRequired;
+
   UserInfo({
     required this.userId,
     required this.userName,
@@ -31,6 +37,8 @@ class UserInfo {
     required this.phoneNumber,
     required this.sex,
     required this.avatar,
+    this.userType = '01',
+    this.pwdResetRequired = '0',
   });
 
   /// 从 JSON 数据构造 [UserInfo] 实例
@@ -45,6 +53,8 @@ class UserInfo {
       phoneNumber: json['phonenumber'] ?? '',
       sex: json['sex'] ?? '2',
       avatar: json['avatar'] ?? '',
+      userType: json['userType'] ?? '01',
+      pwdResetRequired: json['pwdResetRequired'] ?? '0',
     );
   }
 
@@ -60,6 +70,8 @@ class UserInfo {
       'phonenumber': phoneNumber,
       'sex': sex,
       'avatar': avatar,
+      'userType': userType,
+      'pwdResetRequired': pwdResetRequired,
     };
   }
 }

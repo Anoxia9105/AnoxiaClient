@@ -4,18 +4,21 @@ import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/theme/spacing_token.dart';
 
 /// 桌面端密码修改对话框，避免在主内容区继续压入移动端页面。
-class ChangePasswordDialog extends StatefulWidget {
+class ChangePasswordDialog extends ConsumerStatefulWidget {
   const ChangePasswordDialog({super.key});
 
   @override
-  State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+  ConsumerState<ChangePasswordDialog> createState() =>
+      _ChangePasswordDialogState();
 }
 
-class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
+class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
   final _oldPassword = TextEditingController();
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
@@ -30,7 +33,9 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   }
 
   Future<void> _submit() async {
-    if (_oldPassword.text.isEmpty) {
+    final guestInitial =
+        ref.read(authControllerProvider).value?.pwdResetRequired == '2';
+    if (!guestInitial && _oldPassword.text.isEmpty) {
       Toast.showToast('me_password_old_required'.tr(), type: ToastType.error);
       return;
     }
@@ -69,6 +74,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
         'me_password_update_success'.tr(),
         type: ToastType.success,
       );
+      await ref.read(authControllerProvider.notifier).refreshUserInfo();
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) {
       Toast.showToast('me_password_update_failed'.tr(), type: ToastType.error);
@@ -94,12 +100,15 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _passwordField(
-                controller: _oldPassword,
-                label: 'me_password_old'.tr(),
-                autofillHints: const [AutofillHints.password],
-              ),
-              const SizedBox(height: 14),
+              if (ref.watch(authControllerProvider).value?.pwdResetRequired !=
+                  '2') ...[
+                _passwordField(
+                  controller: _oldPassword,
+                  label: 'me_password_old'.tr(),
+                  autofillHints: const [AutofillHints.password],
+                ),
+                const SizedBox(height: 14),
+              ],
               _passwordField(
                 controller: _newPassword,
                 label: 'me_password_new'.tr(),
@@ -174,14 +183,15 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   }
 }
 
-class ChangePasswordPage extends StatefulWidget {
+class ChangePasswordPage extends ConsumerStatefulWidget {
   const ChangePasswordPage({super.key});
 
   @override
-  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+  ConsumerState<ChangePasswordPage> createState() =>
+      _ChangePasswordPageState();
 }
 
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
+class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   final _oldPwdController = TextEditingController();
   final _newPwdController = TextEditingController();
   final _confirmPwdController = TextEditingController();
@@ -211,16 +221,19 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           _buildTileSection(
             context,
             children: [
-              _buildEditableTile(
-                context,
-                title: 'me_password_old'.tr(),
-                value: _maskedValue(_oldPwdController.text),
-                onTap: () => _editTextField(
+              if (ref.watch(authControllerProvider).value?.pwdResetRequired !=
+                  '2') ...[
+                _buildEditableTile(
+                  context,
                   title: 'me_password_old'.tr(),
-                  controller: _oldPwdController,
+                  value: _maskedValue(_oldPwdController.text),
+                  onTap: () => _editTextField(
+                    title: 'me_password_old'.tr(),
+                    controller: _oldPwdController,
+                  ),
                 ),
-              ),
-              _buildTileDivider(context),
+                _buildTileDivider(context),
+              ],
               _buildEditableTile(
                 context,
                 title: 'me_password_new'.tr(),
@@ -386,7 +399,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   Future<void> _updatePassword() async {
-    if (_oldPwdController.text.isEmpty) {
+    final guestInitial =
+        ref.read(authControllerProvider).value?.pwdResetRequired == '2';
+    if (!guestInitial && _oldPwdController.text.isEmpty) {
       Toast.showToast('me_password_old_required'.tr(), type: ToastType.error);
       return;
     }
@@ -432,6 +447,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           'me_password_update_success'.tr(),
           type: ToastType.success,
         );
+        await ref.read(authControllerProvider.notifier).refreshUserInfo();
         if (mounted) {
           Navigator.of(context).pop();
         }

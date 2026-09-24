@@ -1,6 +1,7 @@
 import 'package:anoxia/framework/domain/captcha_model.dart';
 import 'package:anoxia/framework/domain/scan_login_model.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
+import 'package:anoxia/framework/domain/auth_login_result.dart';
 
 /// 认证仓库抽象接口
 ///
@@ -11,11 +12,21 @@ abstract interface class AuthRepository {
   /// 用户登录
   ///
   /// 返回服务端下发的 Token；登录失败（无 Token）时返回 null。
-  Future<String?> login({
+  Future<AuthLoginResult?> login({
     required String account,
     required String password,
     required String code,
     required String uuid,
+    required String deviceId,
+  });
+
+  Future<bool> isGuestLoginEnabled();
+
+  Future<AuthLoginResult> createGuest({required String deviceId});
+
+  Future<AuthLoginResult> quickLogin({
+    required int userId,
+    required String credential,
     required String deviceId,
   });
 
@@ -24,7 +35,7 @@ abstract interface class AuthRepository {
   /// [provider] 目前仅 `google`；[code]/[codeVerifier]/[redirectUri] 为
   /// 系统浏览器授权流程产物，服务端用其换取身份并签发站内 Token。
   /// 返回服务端下发的 Token；失败时抛出异常。
-  Future<String?> loginWithOAuth({
+  Future<AuthLoginResult?> loginWithOAuth({
     required String provider,
     required String code,
     required String codeVerifier,

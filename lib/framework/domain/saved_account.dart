@@ -20,6 +20,12 @@ class SavedAccount {
   /// 该账号最近一次登录得到的 Token
   final String token;
 
+  /// 服务端签发的同设备快速登录随机凭据
+  final String quickLoginCredential;
+
+  /// 00=管理员，01=普通用户，02=游客用户
+  final String userType;
+
   /// 最近一次登录/切换回该账号的时间（用于 LRU 淘汰与列表排序）
   final DateTime lastUsedAt;
 
@@ -29,6 +35,8 @@ class SavedAccount {
     required this.nickName,
     required this.avatar,
     required this.token,
+    required this.quickLoginCredential,
+    required this.userType,
     required this.lastUsedAt,
   });
 
@@ -39,6 +47,8 @@ class SavedAccount {
       nickName: json['nickName'] as String? ?? '',
       avatar: json['avatar'] as String? ?? '',
       token: json['token'] as String? ?? '',
+      quickLoginCredential: json['quickLoginCredential'] as String? ?? '',
+      userType: json['userType'] as String? ?? '01',
       lastUsedAt: DateTime.tryParse(json['lastUsedAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
@@ -50,6 +60,8 @@ class SavedAccount {
         'nickName': nickName,
         'avatar': avatar,
         'token': token,
+        'quickLoginCredential': quickLoginCredential,
+        'userType': userType,
         'lastUsedAt': lastUsedAt.toIso8601String(),
       };
 
@@ -58,6 +70,8 @@ class SavedAccount {
     String? nickName,
     String? avatar,
     String? token,
+    String? quickLoginCredential,
+    String? userType,
     DateTime? lastUsedAt,
   }) {
     return SavedAccount(
@@ -66,6 +80,9 @@ class SavedAccount {
       nickName: nickName ?? this.nickName,
       avatar: avatar ?? this.avatar,
       token: token ?? this.token,
+      quickLoginCredential:
+          quickLoginCredential ?? this.quickLoginCredential,
+      userType: userType ?? this.userType,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
     );
   }

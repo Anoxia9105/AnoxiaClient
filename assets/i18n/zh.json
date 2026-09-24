@@ -1471,5 +1471,13 @@
   "schedule_notification_enable": "开启到期提醒和桌面通知",
   "schedule_notification_enabled": "到期提醒和桌面通知已开启",
   "schedule_notification_denied": "未获得通知权限，请在系统或浏览器设置中开启",
-  "schedule_reminder_body": "{} {} 开始"
+  "schedule_reminder_body": "{} {} 开始",
+  "guest_login_action": "游客登录",
+  "guest_login_notice_title": "开始体验前请注意",
+  "guest_login_notice_content": "请尽快在个人设置中设置自己的密码。若更换设备或清理浏览器数据，未设置密码的游客账号将无法找回。\n\n游客账号请勿发送身份证件、账号密码、联系方式等隐私或敏感数据。",
+  "guest_login_notice_confirm": "我知道了",
+  "quick_login_guest_badge": "游客用户",
+  "quick_login_continue": "一键登录",
+  "quick_login_back": "返回登录页",
+  "quick_login_unavailable": "没有可用的已保存账号"
 }

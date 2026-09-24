@@ -184,6 +184,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ),
         const SizedBox(height: 20),
         _buildFooterLinks(colorScheme),
+        if (DeviceUtil.isRealWeb() &&
+            ref.watch(guestLoginEnabledProvider).value == true)
+          _buildGuestLogin(colorScheme),
         if (_showOAuthLogin) _buildOAuthSection(colorScheme),
         if (_showScanMode) _buildSwitchToScan(colorScheme),
       ],
@@ -679,6 +682,59 @@ class _LoginPageState extends ConsumerState<LoginPage>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGuestLogin(ColorScheme colorScheme) {
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        _buildModeDivider(colorScheme),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton(
+            onPressed: _isLoading ? null : _handleGuestLogin,
+            child: Text('guest_login_action'.tr()),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleGuestLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final firstLogin =
+          await ref.read(authControllerProvider.notifier).loginAsGuest();
+      if (!mounted) return;
+      if (firstLogin) await _showGuestSafetyNotice();
+      if (!mounted) return;
+      ref.read(authControllerProvider.notifier).finishGuestLogin();
+      await ref.read(appInitializerProvider.notifier).performFullReset();
+    } catch (_) {
+      // AuthController 已统一显示服务端错误。
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showGuestSafetyNotice() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.security_outlined),
+        title: Text('guest_login_notice_title'.tr()),
+        content: Text('guest_login_notice_content'.tr()),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text('guest_login_notice_confirm'.tr()),
+          ),
+        ],
+      ),
     );
   }
 

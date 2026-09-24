@@ -51,9 +51,14 @@ class SavedAccountsService extends _$SavedAccountsService {
   /// 登录成功 / 自动恢复成功时调用：新增或更新账号条目并置顶
   ///
   /// 同一 userId 已存在时刷新资料与 token；超出上限时淘汰最久未用的。
-  Future<void> upsert({required UserInfo user, required String token}) async {
+  Future<void> upsert({
+    required UserInfo user,
+    required String token,
+    String? quickLoginCredential,
+  }) async {
     final accounts = List<SavedAccount>.of(await _load());
     final now = DateTime.now();
+    final previous = accounts.where((a) => a.userId == user.userId).firstOrNull;
     accounts.removeWhere((a) => a.userId == user.userId);
     accounts.insert(
       0,
@@ -63,6 +68,9 @@ class SavedAccountsService extends _$SavedAccountsService {
         nickName: user.nickName,
         avatar: user.avatar,
         token: token,
+        quickLoginCredential:
+            quickLoginCredential ?? previous?.quickLoginCredential ?? '',
+        userType: user.userType,
         lastUsedAt: now,
       ),
     );

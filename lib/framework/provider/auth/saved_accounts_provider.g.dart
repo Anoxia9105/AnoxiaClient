@@ -49,7 +49,7 @@ final class SavedAccountsServiceProvider
 }
 
 String _$savedAccountsServiceHash() =>
-    r'6009de72a4beeffdc043e6c5a3fc29d62fd4158f';
+    r'755835876cd297a3516027457d52973362c7fab9';
 
 /// 已登录账号列表服务（「切换账号」数据源）
 ///

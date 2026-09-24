@@ -80,7 +80,7 @@ class AuthController extends _$AuthController {
     state = const AsyncLoading();
 
     try {
-      final token = await ref.read(authRepositoryProvider).login(
+      final result = await ref.read(authRepositoryProvider).login(
             account: account,
             password: password,
             code: code,
@@ -88,10 +88,13 @@ class AuthController extends _$AuthController {
             deviceId:
                 await DeviceIdentity.instance.getPlatformQualifiedId(),
           );
-      if (token == null || token.isEmpty) {
+      if (result == null || result.token.isEmpty) {
         throw Exception('login_failed'.tr());
       }
-      await _completeTokenLogin(token);
+      await _completeTokenLogin(
+        result.token,
+        quickLoginCredential: result.quickLoginCredential,
+      );
     } catch (e, st) {
       debugLog('[AuthController] 登录失败', e, st);
       state = AsyncError(e, st);
@@ -140,7 +143,7 @@ class AuthController extends _$AuthController {
     state = const AsyncLoading();
 
     try {
-      final token = await ref.read(authRepositoryProvider).loginWithOAuth(
+      final result = await ref.read(authRepositoryProvider).loginWithOAuth(
             provider: provider,
             code: code,
             codeVerifier: codeVerifier,
@@ -148,10 +151,13 @@ class AuthController extends _$AuthController {
             deviceId:
                 await DeviceIdentity.instance.getPlatformQualifiedId(),
           );
-      if (token == null || token.isEmpty) {
+      if (result == null || result.token.isEmpty) {
         throw Exception('login_failed'.tr());
       }
-      await _completeTokenLogin(token);
+      await _completeTokenLogin(
+        result.token,
+        quickLoginCredential: result.quickLoginCredential,
+      );
     } catch (e, st) {
       debugLog('[AuthController] OAuth 登录失败', e, st);
       state = AsyncError(e, st);
@@ -180,7 +186,11 @@ class AuthController extends _$AuthController {
   }
 
   /// Token 落库 → 拉取用户信息 → 记录最近登录用户
-  Future<void> _completeTokenLogin(String token) async {
+  Future<UserInfo?> _completeTokenLogin(
+    String token, {
+    String? quickLoginCredential,
+    bool publishState = true,
+  }) async {
     // 同时保存到 TokenManager 和内存缓存
     await TokenManager.instance.setToken(token);
     ref.read(tokenCacheProvider.notifier).setToken(token);
@@ -195,9 +205,84 @@ class AuthController extends _$AuthController {
       // 登录成功即写入「切换账号」列表（去重置顶，超限 LRU 淘汰）
       await ref
           .read(savedAccountsServiceProvider.notifier)
-          .upsert(user: user, token: token);
+          .upsert(
+            user: user,
+            token: token,
+            quickLoginCredential: quickLoginCredential,
+          );
     }
+    if (publishState) state = AsyncData(user);
+    return user;
+  }
+
+  /// Web/Wasm 创建并登录新的游客账号。
+  UserInfo? _pendingGuestUser;
+
+  Future<bool> loginAsGuest() async {
+    state = const AsyncLoading();
+    _pendingGuestUser = null;
+    try {
+      final result = await ref.read(authRepositoryProvider).createGuest(
+            deviceId: await DeviceIdentity.instance.getPlatformQualifiedId(),
+          );
+      _pendingGuestUser = await _completeTokenLogin(
+        result.token,
+        quickLoginCredential: result.quickLoginCredential,
+        publishState: false,
+      );
+      if (_pendingGuestUser == null) throw Exception('login_failed'.tr());
+      return result.firstGuestLogin;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      ref.read(toastServiceProvider).showToast(
+            _parseLoginErrorMessage(e),
+            type: ToastType.error,
+          );
+      rethrow;
+    }
+  }
+
+  /// 首次安全提醒关闭后再发布认证状态，避免路由提前离开登录页。
+  void finishGuestLogin() {
+    final user = _pendingGuestUser;
+    _pendingGuestUser = null;
+    if (user == null) return;
     state = AsyncData(user);
+    _finishLoginSuccess();
+  }
+
+  /// 使用保存的设备凭据重新签发普通访问令牌。
+  Future<bool> quickLogin(SavedAccount target) async {
+    if (target.quickLoginCredential.isEmpty) {
+      ref.read(loginPrefillAccountProvider.notifier).set(target.userName);
+      return false;
+    }
+    state = const AsyncLoading();
+    try {
+      final result = await ref.read(authRepositoryProvider).quickLogin(
+            userId: target.userId,
+            credential: target.quickLoginCredential,
+            deviceId: await DeviceIdentity.instance.getPlatformQualifiedId(),
+          );
+      await _completeTokenLogin(
+        result.token,
+        quickLoginCredential: result.quickLoginCredential,
+      );
+      _finishLoginSuccess();
+      return true;
+    } catch (e, st) {
+      debugLog('[AuthController] 快速登录失败', e, st);
+      await ref
+          .read(savedAccountsServiceProvider.notifier)
+          .remove(target.userId);
+      ref.read(loginPrefillAccountProvider.notifier).set(target.userName);
+      state = const AsyncData(null);
+      ref.read(toastServiceProvider).showToast(
+            _parseLoginErrorMessage(e),
+            type: ToastType.error,
+          );
+      return false;
+    }
   }
 
   Future<String> sendRegisterEmailCode({
@@ -302,6 +387,11 @@ class AuthController extends _$AuthController {
 
     final token = ref.read(tokenCacheProvider);
     final previousUser = state.value;
+    if (reason == SessionResetReason.logout && previousUser != null) {
+      ref
+          .read(loginPrefillAccountProvider.notifier)
+          .set(previousUser.userName);
+    }
 
     PushManager.instance.setOnFcmTokenChanged(null);
     unawaited(_unbindPushDevice(token));
@@ -400,20 +490,12 @@ class AuthController extends _$AuthController {
         await TokenManager.instance.clearToken();
         ref.read(tokenCacheProvider.notifier).clearToken();
         await _clearLocalSessionCache();
-        await ref.read(savedAccountsServiceProvider.notifier).remove(
-              target.userId,
-            );
-        ref.read(loginPrefillAccountProvider.notifier).set(target.userName);
         state = const AsyncData(null);
         SessionResetService.instance.reset(
           ref,
           reason: SessionResetReason.accountSwitch,
         );
-        ref.read(toastServiceProvider).showToast(
-              'api_login_expired'.tr(),
-              type: ToastType.error,
-            );
-        return false;
+        return quickLogin(target);
       }
 
       // 网络/服务端异常：尝试回退到原账号会话，避免误伤当前登录态
@@ -579,4 +661,14 @@ class AuthController extends _$AuthController {
 @riverpod
 Future<CaptchaModel> getCaptcha(Ref ref) async {
   return ref.read(authRepositoryProvider).fetchCaptcha();
+}
+
+@riverpod
+Future<bool> guestLoginEnabled(Ref ref) async {
+  if (!DeviceUtil.isRealWeb()) return false;
+  try {
+    return ref.read(authRepositoryProvider).isGuestLoginEnabled();
+  } catch (_) {
+    return false;
+  }
 }

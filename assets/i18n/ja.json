@@ -1471,5 +1471,13 @@
   "schedule_notification_enable": "期限リマインダーとデスクトップ通知を有効にする",
   "schedule_notification_enabled": "期限リマインダーとデスクトップ通知が有効です",
   "schedule_notification_denied": "通知が許可されていません。システムまたはブラウザの設定で有効にしてください。",
-  "schedule_reminder_body": "{} {} に開始"
+  "schedule_reminder_body": "{} {} に開始",
+  "guest_login_action": "ゲストログイン",
+  "guest_login_notice_title": "体験を始める前に",
+  "guest_login_notice_content": "プロフィール設定で早めに自分のパスワードを設定してください。設定前に端末を変更したりブラウザデータを削除すると、このゲストアカウントを復元できません。\n\nゲストアカウントでは、身分証明書、パスワード、連絡先などの個人情報や機密情報を送信しないでください。",
+  "guest_login_notice_confirm": "確認しました",
+  "quick_login_guest_badge": "ゲストユーザー",
+  "quick_login_continue": "ワンクリックログイン",
+  "quick_login_back": "ログイン画面に戻る",
+  "quick_login_unavailable": "利用可能な保存済みアカウントがありません"
 }

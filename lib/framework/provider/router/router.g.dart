@@ -8,6 +8,7 @@ part of 'router.dart';
 
 List<RouteBase> get $appRoutes => [
   $initLoginRoute,
+  $quickLoginRoute,
   $oAuthCallbackRoute,
   $homeRoute,
   $splashRoute,
@@ -29,6 +30,32 @@ mixin $InitLoginRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/login');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $quickLoginRoute => GoRouteData.$route(
+  path: '/quick-login',
+  factory: $QuickLoginRoute._fromState,
+);
+
+mixin $QuickLoginRoute on GoRouteData {
+  static QuickLoginRoute _fromState(GoRouterState state) =>
+      const QuickLoginRoute();
+
+  @override
+  String get location => GoRouteData.$location('/quick-login');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -414,4 +441,4 @@ final class RouterProvider
   }
 }
 
-String _$routerHash() => r'73ba2ee4763aa938ee35585b5a66e7f1df278f4e';
+String _$routerHash() => r'b20876da2f6526d7adcce755910219184f3f9e8b';

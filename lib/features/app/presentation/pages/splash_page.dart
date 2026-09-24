@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:anoxia/common/widgets/app/app_scaffold.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/saved_accounts_provider.dart';
 import 'package:anoxia/framework/provider/core/app_initializer.dart';
 import 'package:anoxia/framework/provider/setting/settings_provider.dart';
 import 'package:anoxia/gen/assets.gen.dart';
@@ -87,12 +88,19 @@ class _SplashPageState extends ConsumerState<SplashPage>
   Widget build(BuildContext context) {
     final initStatus = ref.watch(appInitializerProvider);
     final authStatus = ref.watch(authControllerProvider);
+    final hasSavedAccount = ref
+            .watch(savedAccountsServiceProvider)
+            .value
+            ?.any((item) => item.quickLoginCredential.isNotEmpty) ==
+        true;
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
 
     final targetLocation = initStatus.hasValue
         ? authStatus.maybeWhen(
-            data: (user) => user == null ? '/login' : '/',
+            data: (user) => user == null
+                ? (hasSavedAccount ? '/quick-login' : '/login')
+                : '/',
             error: (_, _) => '/login',
             orElse: () => null,
           )

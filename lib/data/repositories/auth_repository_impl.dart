@@ -5,6 +5,7 @@ import 'package:anoxia/domain/repositories/auth_repository.dart';
 import 'package:anoxia/framework/domain/captcha_model.dart';
 import 'package:anoxia/framework/domain/scan_login_model.dart';
 import 'package:anoxia/framework/domain/user_info.dart';
+import 'package:anoxia/framework/domain/auth_login_result.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/network/dio_client.dart';
 import 'package:dio/dio.dart';
@@ -15,7 +16,7 @@ import 'package:dio/dio.dart';
 /// 实现 [AuthRepository] 抽象接口，供领域层用例和 UI 层 Provider 使用。
 class AuthRepositoryImpl implements AuthRepository {
   @override
-  Future<String?> login({
+  Future<AuthLoginResult?> login({
     required String account,
     required String password,
     required String code,
@@ -36,12 +37,55 @@ class AuthRepositoryImpl implements AuthRepository {
     if (!_isApiSuccess(res.data)) {
       throw Exception(_extractApiMsg(res.data, fallback: '登录失败'));
     }
-    final token = res.data is Map ? res.data['token'] : null;
-    return token?.toString();
+    return _parseLoginResult(res.data);
   }
 
   @override
-  Future<String?> loginWithOAuth({
+  Future<bool> isGuestLoginEnabled() async {
+    final res = await DioClient().get(API.guestLoginConfig, auth: false);
+    return res.data is Map && res.data['data'] is Map
+        ? res.data['data']['enabled'] == true
+        : false;
+  }
+
+  @override
+  Future<AuthLoginResult> createGuest({required String deviceId}) async {
+    final res = await DioClient().post(
+      API.guestLogin,
+      data: {'deviceId': deviceId, 'platform': 'web'},
+      auth: false,
+    );
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '游客登录失败'));
+    }
+    return _parseLoginResult(res.data) ??
+        (throw Exception(_extractApiMsg(res.data, fallback: '游客登录失败')));
+  }
+
+  @override
+  Future<AuthLoginResult> quickLogin({
+    required int userId,
+    required String credential,
+    required String deviceId,
+  }) async {
+    final res = await DioClient().post(
+      API.quickLogin,
+      data: {
+        'userId': userId,
+        'credential': credential,
+        'deviceId': deviceId,
+      },
+      auth: false,
+    );
+    if (!_isApiSuccess(res.data)) {
+      throw Exception(_extractApiMsg(res.data, fallback: '快速登录失败'));
+    }
+    return _parseLoginResult(res.data) ??
+        (throw Exception(_extractApiMsg(res.data, fallback: '快速登录失败')));
+  }
+
+  @override
+  Future<AuthLoginResult?> loginWithOAuth({
     required String provider,
     required String code,
     required String codeVerifier,
@@ -62,8 +106,7 @@ class AuthRepositoryImpl implements AuthRepository {
     if (!_isApiSuccess(res.data)) {
       throw Exception(_extractApiMsg(res.data, fallback: '第三方登录失败'));
     }
-    final token = res.data is Map ? res.data['token'] : null;
-    return token?.toString();
+    return _parseLoginResult(res.data);
   }
 
   @override
@@ -311,5 +354,16 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     return fallback;
+  }
+
+  AuthLoginResult? _parseLoginResult(dynamic body) {
+    if (body is! Map) return null;
+    final token = body['token']?.toString() ?? '';
+    if (token.isEmpty) return null;
+    return AuthLoginResult(
+      token: token,
+      quickLoginCredential: body['quickLoginCredential']?.toString() ?? '',
+      firstGuestLogin: body['firstGuestLogin'] == true,
+    );
   }
 }

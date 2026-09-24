@@ -1471,5 +1471,13 @@
   "schedule_notification_enable": "Enable due reminders and desktop notifications",
   "schedule_notification_enabled": "Due reminders and desktop notifications are enabled",
   "schedule_notification_denied": "Notification permission was not granted. Enable it in system or browser settings.",
-  "schedule_reminder_body": "Starts {} at {}"
+  "schedule_reminder_body": "Starts {} at {}",
+  "guest_login_action": "Guest login",
+  "guest_login_notice_title": "Before you start",
+  "guest_login_notice_content": "Set your own password in Profile Settings as soon as possible. If you change devices or clear browser data before setting a password, this guest account cannot be recovered.\n\nDo not send identity documents, passwords, contact details, or other private or sensitive data from a guest account.",
+  "guest_login_notice_confirm": "Got it",
+  "quick_login_guest_badge": "Guest user",
+  "quick_login_continue": "One-click login",
+  "quick_login_back": "Back to sign in",
+  "quick_login_unavailable": "No saved account is available"
 }

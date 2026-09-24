@@ -4,6 +4,7 @@ import 'package:anoxia/features/settings/presentation/pages/open_source_licenses
 import 'package:anoxia/features/chat/presentation/widgets/message_render/detail/image_viewer.dart';
 import 'package:anoxia/features/app/presentation/pages/error_page.dart';
 import 'package:anoxia/features/app/presentation/pages/login_page.dart';
+import 'package:anoxia/features/app/presentation/pages/quick_login_page.dart';
 import 'package:anoxia/features/app/presentation/pages/main_layout_page.dart';
 import 'package:anoxia/features/app/presentation/pages/not_found_page.dart';
 import 'package:anoxia/features/app/presentation/pages/oauth_callback_page.dart';
@@ -19,6 +20,7 @@ import 'package:anoxia/framework/domain/user_info.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../core/app_initializer.dart';
+import '../auth/saved_accounts_provider.dart';
 
 part 'router.g.dart';
 
@@ -42,6 +44,7 @@ GoRouter router(Ref ref) {
   // 监听两个核心状态的变化：应用初始化、认证状态
   ref.listen(appInitializerProvider, (_, _) => refreshNotifier.notify());
   ref.listen(authControllerProvider, (_, _) => refreshNotifier.notify());
+  ref.listen(savedAccountsServiceProvider, (_, _) => refreshNotifier.notify());
   ref.onDispose(refreshNotifier.dispose);
 
   final router = GoRouter(
@@ -69,6 +72,15 @@ GoRouter router(Ref ref) {
       final location = state.matchedLocation;
       final isSplash = location == const SplashRoute().location;
       final isLogin = location == const InitLoginRoute().location;
+      final isQuickLogin = location == const QuickLoginRoute().location;
+      final manualLogin = state.uri.queryParameters['manual'] == '1';
+      final passwordLoginRequested =
+          ref.read(loginPrefillAccountProvider) != null;
+      final hasSavedAccount = ref
+              .read(savedAccountsServiceProvider)
+              .value
+              ?.any((item) => item.quickLoginCredential.isNotEmpty) ==
+          true;
       // Web 端 Google OAuth 回调页：未登录态也必须放行，由页面自身完成换 token；
       // 成功后认证态变为登录，下一轮 redirect 自动送往首页。
       final isOAuthCallback =
@@ -100,11 +112,16 @@ GoRouter router(Ref ref) {
         case AsyncLoading():
           return null;
         case AsyncData(value: null):
+          if (isLogin && (manualLogin || passwordLoginRequested)) return null;
+          if (passwordLoginRequested) return const InitLoginRoute().location;
+          if (hasSavedAccount) {
+            return isQuickLogin ? null : const QuickLoginRoute().location;
+          }
           if (isLogin) return null;
           return const InitLoginRoute().location;
         case AsyncData(value: UserInfo _):
           if (isSplash) return const HomeRoute().location;
-          if (isLogin) return const HomeRoute().location;
+          if (isLogin || isQuickLogin) return const HomeRoute().location;
           return null;
       }
     },
@@ -124,6 +141,15 @@ class InitLoginRoute extends GoRouteData with $InitLoginRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const LoginPage();
+}
+
+@TypedGoRoute<QuickLoginRoute>(path: '/quick-login')
+class QuickLoginRoute extends GoRouteData with $QuickLoginRoute {
+  const QuickLoginRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const QuickLoginPage();
 }
 
 /// Web 端 Google OAuth 回调路由（同源接码，无实际导航意义）

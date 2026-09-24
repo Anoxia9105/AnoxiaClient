@@ -37,6 +37,9 @@ class API {
   // ======================== 认证接口 ========================
   /// 用户登录接口
   static const String login = '/login';
+  static const String guestLoginConfig = '/guest-login/config';
+  static const String guestLogin = '/guest-login';
+  static const String quickLogin = '/login/quick';
 
   /// OAuth 登录（Web/桌面 Google 登录，code 换站内 token）
   static const String loginOAuth = '/login/oauth';

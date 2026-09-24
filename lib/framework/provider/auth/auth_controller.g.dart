@@ -45,7 +45,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'5c43a98b0d5ce14c28ba6f343702f741c7e7c115';
+String _$authControllerHash() => r'ab8ca05a71fb5c03ca887212072afff85710aee8';
 
 /// 认证状态管理器
 ///
@@ -119,3 +119,36 @@ final class GetCaptchaProvider
 }
 
 String _$getCaptchaHash() => r'61a5192da54948445de95278f282ca93dfd07ab4';
+
+@ProviderFor(guestLoginEnabled)
+final guestLoginEnabledProvider = GuestLoginEnabledProvider._();
+
+final class GuestLoginEnabledProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  GuestLoginEnabledProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'guestLoginEnabledProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$guestLoginEnabledHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    return guestLoginEnabled(ref);
+  }
+}
+
+String _$guestLoginEnabledHash() => r'6b4ea4962c1956ee8da23351206eea44bdb5e101';
