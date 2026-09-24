@@ -271,6 +271,7 @@ class _SettingsStickerSectionState extends ConsumerState<SettingsStickerSection>
           ),
           child: CachedNetworkImageView(
             imageUrl: sticker.imageUrl,
+            preferWebHtmlElement: sticker.isGif,
             width: 42,
             height: 42,
             fit: BoxFit.contain,

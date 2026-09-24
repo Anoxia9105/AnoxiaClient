@@ -348,6 +348,7 @@ class _ChatEmojiWidgetState extends ConsumerState<ChatEmojiWidget> {
               fit: BoxFit.contain,
               memCacheWidth: (size.width * dpr).round(),
               memCacheHeight: (size.height * dpr).round(),
+              preferWebHtmlElement: sticker.isGif,
               placeholder: (context, url) => Container(
                 width: size.width,
                 height: size.height,

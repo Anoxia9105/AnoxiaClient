@@ -1,6 +1,7 @@
 import 'package:cross_cache/cross_cache.dart' as cross_cache;
-import 'package:hugeicons/hugeicons.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 /// 全局图片缓存实例
 ///
@@ -13,6 +14,12 @@ cross_cache.CrossCache? _appImageCrossCache;
 cross_cache.CrossCache get appImageCrossCache {
   return _appImageCrossCache ??= cross_cache.CrossCache();
 }
+
+@visibleForTesting
+bool shouldPreferWebHtmlElement({
+  required bool isWeb,
+  required bool preferWebHtmlElement,
+}) => isWeb && preferWebHtmlElement;
 
 /// 创建带缓存的网络图片 Provider
 ///
@@ -59,6 +66,7 @@ class CachedNetworkImageView extends StatelessWidget {
     this.memCacheHeight,
     this.maxWidthDiskCache,
     this.maxHeightDiskCache,
+    this.preferWebHtmlElement = false,
   });
 
   /// 图片 URL
@@ -86,8 +94,38 @@ class CachedNetworkImageView extends StatelessWidget {
   /// 磁盘缓存最大高度
   final int? maxHeightDiskCache;
 
+  /// Web 端优先交给浏览器原生 `<img>` 渲染。
+  ///
+  /// 主要用于动画 GIF：WASM 图片字节解码与 [ResizeImage] 组合时可能只保留
+  /// 首帧。其他平台仍使用 [CrossCache]，不会改变现有缓存行为。
+  final bool preferWebHtmlElement;
+
   @override
   Widget build(BuildContext context) {
+    if (shouldPreferWebHtmlElement(
+      isWeb: kIsWeb,
+      preferWebHtmlElement: preferWebHtmlElement,
+    )) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        alignment: alignment,
+        filterQuality: filterQuality,
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return placeholder?.call(context, imageUrl) ??
+              SizedBox(width: width, height: height);
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return errorWidget?.call(context, imageUrl, error) ??
+              const HugeIcon(icon: HugeIcons.strokeRoundedImageNotFound01);
+        },
+      );
+    }
+
     final provider = ResizeImage.resizeIfNeeded(
       memCacheWidth ?? maxWidthDiskCache,
       memCacheHeight ?? maxHeightDiskCache,

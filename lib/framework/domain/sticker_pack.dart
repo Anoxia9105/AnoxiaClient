@@ -66,6 +66,14 @@ class Sticker {
     this.height,
   });
 
+  /// 上传服务会保留对象后缀，可据此让 Web/WASM 交给浏览器原生播放 GIF。
+  bool get isGif {
+    final path =
+        Uri.tryParse(imageUrl)?.path.toLowerCase() ??
+        imageUrl.toLowerCase().split('?').first;
+    return path.endsWith('.gif');
+  }
+
   /// 从 JSON 构造 [Sticker]，兼容 camelCase 与 snake_case
   factory Sticker.fromJson(Map<String, dynamic> json) {
     return Sticker(

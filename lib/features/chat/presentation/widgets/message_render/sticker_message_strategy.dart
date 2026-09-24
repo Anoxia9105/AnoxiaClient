@@ -45,6 +45,7 @@ class StickerMessageStrategy extends MessageRenderStrategy {
       fit: BoxFit.contain,
       memCacheWidth: (size.width * dpr).round(),
       memCacheHeight: (size.height * dpr).round(),
+      preferWebHtmlElement: asset.isGif,
       placeholder: (context, url) => Container(
         width: size.width,
         height: size.height,
