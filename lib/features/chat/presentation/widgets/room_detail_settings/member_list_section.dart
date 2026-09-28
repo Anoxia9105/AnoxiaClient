@@ -1,6 +1,6 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
+import 'package:anoxia/common/widgets/online_status_pill.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:anoxia/common/widgets/breathing_dot.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
 import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -11,7 +11,7 @@ import 'package:anoxia/framework/theme/app_colors.dart';
 
 /// 内部隔离组件：群成员行式列表区块，防止成员列表数据更新时触发整个 Settings 树重构
 ///
-/// - 顶部摘要：X人在线 / Y位成员
+/// - 顶部摘要：在线胶囊 + 成员总数（与聊天 AppBar 副标题同语言）
 /// - 群聊最多展示 [maxDisplayRows] 个成员行，末尾为「添加成员」入口；
 ///   超出上限的成员通过详情页「查看全部成员」入口查看
 /// - 单聊仅展示对方一行，无摘要与添加入口
@@ -55,24 +55,28 @@ class MemberListSection extends ConsumerWidget {
     );
   }
 
-  /// 顶部摘要：X人在线 / Y位成员
+  /// 顶部摘要：在线胶囊 + 成员总数（与聊天 AppBar 副标题同语言）
   Widget _buildSummaryRow(
     BuildContext context,
     int onlineCount,
     int totalCount,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(left: 2, bottom: 2),
+      padding: const EdgeInsets.only(left: 2, bottom: 6),
       child: Row(
         children: [
-          const BreathingDot(),
-          const SizedBox(width: 6),
-          Text(
-            'chat_member_status_summary'.tr(
-              args: [onlineCount.toString(), totalCount.toString()],
-            ),
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          OnlineStatusPill(
+            text: 'common_online_count'.tr(args: [onlineCount.toString()]),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'chat_member_total'.tr(args: [totalCount.toString()]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],

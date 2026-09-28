@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/online_status_pill.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
 import 'package:anoxia/features/contact/presentation/pages/contact_detail_page.dart';
@@ -44,7 +45,12 @@ class ContactList extends ConsumerWidget {
       appBar: AppBar(
         centerTitle: DeviceUtil.isMobile(context),
         titleSpacing: 16,
-        title: Text('contact_contacts'.tr()),
+        // 好友总数上移进标题，加载完成前不拼计数避免「· 0」闪烁
+        title: Text(
+          totalCount > 0
+              ? '${'contact_contacts'.tr()} · $totalCount'
+              : 'contact_contacts'.tr(),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -87,7 +93,17 @@ class ContactList extends ConsumerWidget {
                 ),
               ),
 
-              ListTile(title: Text('sidebar_contact'.tr())),
+              // 分区头：在线数收拢为右侧胶囊，不再占用底部常驻条
+              ListTile(
+                title: Text('sidebar_contact'.tr()),
+                trailing: totalCount > 0
+                    ? OnlineStatusPill(
+                        text: 'common_online_count'.tr(
+                          args: [onlineCount.toString()],
+                        ),
+                      )
+                    : null,
+              ),
               Expanded(
                 child: SortedContactGroupsWidget(
                   onContactTap: () {
@@ -101,17 +117,6 @@ class ContactList extends ConsumerWidget {
           ),
         ),
       ),
-      persistentFooterAlignment: AlignmentDirectional.centerStart,
-      persistentFooterButtons: [
-        Text(
-          'contact_status_summary'.tr(
-            args: [totalCount.toString(), onlineCount.toString()],
-          ),
-          style: Theme.of(context).textTheme.bodySmall!.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
     );
   }
 }

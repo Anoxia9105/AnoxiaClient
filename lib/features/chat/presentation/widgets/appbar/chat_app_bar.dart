@@ -1,7 +1,7 @@
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
-import 'package:anoxia/common/widgets/breathing_dot.dart';
+import 'package:anoxia/common/widgets/online_status_pill.dart';
 import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_settings_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_call_button_widget.dart';
 import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
@@ -72,18 +72,22 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           final displayTitle = room.isOfficial
               ? 'official_room_name'.tr()
               : room.roomType == 1
-              ? '${room.roomName} (${members.length})'
+              ? (room.roomName ?? 'appbar_conversation_detail'.tr())
               : (peerDisplayName?.isNotEmpty == true
                     ? peerDisplayName!
                     : (room.roomName ?? 'appbar_conversation_detail'.tr()));
 
           // 单栏（手机/平板竖屏）标题保持简洁：隐藏头像、只居中显示名字；
-          // 对方输入时用输入状态替换名字，与手机端保持一致。
+          // 群聊标题聚合人数（群名 · N），对方输入时用输入状态替换名字，与手机端保持一致。
           if (isSingleColumn) {
+            final singleColumnTitle =
+                room.roomType == 0 && isTyping
+                    ? 'appbar_user_typing'.tr()
+                    : room.roomType == 1
+                    ? '$displayTitle · ${members.length}'
+                    : displayTitle;
             return Text(
-              room.roomType == 0 && isTyping
-                  ? 'appbar_user_typing'.tr()
-                  : displayTitle,
+              singleColumnTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -208,7 +212,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  /// 构建标题栏下方的状态信息：单聊显示“对方正在输入...”，群聊显示在线人数
+  /// 构建标题栏下方的状态信息：单聊显示“对方正在输入...”，群聊显示在线胶囊 + 成员总数
   Widget _buildTitleOrTypingStatus(
     BuildContext context,
     ChatRoomVO room,
@@ -241,7 +245,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       );
     }
 
-    // 群聊 → 显示在线人数
+    // 群聊 → 在线数穿胶囊徽章强调，总数灰字弱化，不再用斜杠双统计
     if (room.roomType == 1) {
       final onlineCount = members.where((m) => m.onlineStatus == true).length;
       final totalCount = members.length;
@@ -251,16 +255,20 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const BreathingDot(),
-            const SizedBox(width: 6),
-            Expanded(
+            OnlineStatusPill(
+              text: 'common_online_count'.tr(
+                args: [onlineCount.toString()],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
               child: Text(
-                'chat_member_status_summary'.tr(
-                  args: [onlineCount.toString(), totalCount.toString()],
-                ),
+                'chat_member_total'.tr(args: [totalCount.toString()]),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall!.copyWith( color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
