@@ -32,8 +32,8 @@ class ChatEmojiWidget extends ConsumerStatefulWidget {
 
   /// 选中后是否回调 [closeSelected] 关闭面板
   ///
-  /// 桌面端弹层默认 true（选中即收起弹层）；
-  /// 手机端传 false 保持面板打开，可连续选择（微信式），键盘保持隐藏。
+  /// 默认 true（选中即收起）；
+  /// 桌面端气泡与手机端均传 false 保持打开，可连续选择（微信式），点击外部关闭。
   final bool closeOnSelect;
 
   const ChatEmojiWidget({

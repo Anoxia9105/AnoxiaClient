@@ -366,6 +366,8 @@ import 'colors_box.dart';
                                 closeSelected: () {
                                   close?.call();
                                 },
+                                // 桌面端选中后保持气泡打开，可连续选择（点击外部关闭）
+                                closeOnSelect: false,
                                 onEmojiSelected: (emoji) {
                                   QuillEmbedUtil.insertTextAtCursor(
                                     text: emoji,
@@ -380,7 +382,6 @@ import 'colors_box.dart';
                                         ).notifier,
                                       )
                                       .sendStickerMessage(sticker);
-                                  close?.call();
                                 },
                               ),
                             ),
