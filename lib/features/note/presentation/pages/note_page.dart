@@ -93,7 +93,9 @@ class _NotesPageState extends ConsumerState<NotesPage> {
       }
     });
 
-    final mobile = DeviceUtil.isMobile(context);
+    // 平板竖屏与移动端一致：树列表占满、点笔记 push 全屏编辑器；
+    // 平板横屏/桌面保持 280 树 + 编辑器双栏。
+    final mobile = DeviceUtil.useSingleColumnPush(context);
 
     // 标题由树面板的 AppBar 提供（与聊天/人员/收藏页一致）：
     // 桌面端靠左显示在树面板栏内，移动端整页居中显示。
@@ -173,7 +175,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     if (_openingNoteId != null) return;
     _openingNoteId = noteId;
     // 桌面端立即进入骨架屏加载态，右侧区域给出即时反馈
-    if (mounted && !DeviceUtil.isMobile(context)) {
+    if (mounted && !DeviceUtil.useSingleColumnPush(context)) {
       setState(() => _loadingNoteId = noteId);
     }
     try {
@@ -185,7 +187,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
           .read(noteTreeServiceProvider.notifier)
           .openNote(noteId);
       if (!mounted) return;
-      if (DeviceUtil.isMobile(context)) {
+      if (DeviceUtil.useSingleColumnPush(context)) {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => const NoteEditorPage(),

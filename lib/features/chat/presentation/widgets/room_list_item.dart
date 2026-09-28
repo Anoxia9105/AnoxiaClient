@@ -105,14 +105,15 @@ class RoomListItem extends ConsumerWidget {
           // 用宽度断点判定布局（与 chat_page.dart 一致），而非 isRealMobile()。
           // 否则 Web 上的窄屏（手机浏览器）会被判为“非真实移动设备”，
           // 点击会话既不 push 路由、页面上也没有 ChatRoomDetail，表现为“点击无响应”。
-          if (DeviceUtil.isMobile(context)) {
+          // 平板竖屏同样单栏推入（useSingleColumnPush 已含移动端判定）。
+          if (DeviceUtil.useSingleColumnPush(context)) {
             await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ChatRoomDetail(roomId: room.roomId!),
               ),
             );
 
-            // 移动端从详情页返回列表后，清空 active 房间
+            // 单栏（移动端/平板竖屏）从详情页返回列表后，清空 active 房间
             if (context.mounted) {
               ref.read(activeRoomIdProvider.notifier).setActive(null);
             }

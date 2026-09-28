@@ -54,6 +54,21 @@ class DeviceUtil {
   static bool isTablet(BuildContext context) =>
       getDeviceType(context) == DeviceType.tablet;
 
+  /// 主从页面是否退化为「单栏 + 推入详情」（复用移动端路径）
+  ///
+  /// - 手机：恒为 true；
+  /// - 平板竖屏（高 > 宽，如 820x1180）：true，列表占满、点行 push 详情；
+  /// - 平板横屏 / 桌面：false，保持双栏（聊天右面板走叠加 Sheet，不挤详情）。
+  ///
+  /// 按窗口宽高判定而非平台，Web 窄窗口同样生效；桌面宽屏恒为 false，
+  /// 移动端恒为 true，故不影响现有两端行为。
+  static bool useSingleColumnPush(BuildContext context) {
+    if (isMobile(context)) return true;
+    if (!isTablet(context)) return false;
+    final size = MediaQuery.of(context).size;
+    return size.height > size.width;
+  }
+
   /// 判断是否为桌面端
   static bool isDesktop(BuildContext context) =>
       getDeviceType(context) == DeviceType.desktop;

@@ -9,6 +9,7 @@ import 'package:anoxia/features/schedule/presentation/widgets/schedule_timeline_
 import 'package:anoxia/framework/domain/schedule_event.dart';
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/framework/provider/schedule/schedule_service.dart';
+import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,12 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
   ScheduleViewMode _view = ScheduleViewMode.month;
   DateTime _focusedDay = DateTime.now();
   final Map<String, Timer> _reminderTimers = {};
+
+  /// 平板快捷面板（近期日程）是否以叠加 Sheet 打开。
+  ///
+  /// 面板常驻要求内容宽 ≥1120，平板横屏达不到，默认收起、点 FAB 按需弹出；
+  /// 桌面/手机分支不受影响（桌面常驻、手机无入口）。
+  bool _quickSheetOpen = false;
 
   @override
   void initState() {
@@ -51,6 +58,10 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
         final width = constraints.maxWidth;
         final isMobile = DeviceUtil.isMobile(context);
         final showQuickPanel = width >= 1120;
+        // 平板内容宽不足 1120：快捷面板默认收起，FAB 按需以 Sheet 弹出。
+        final isTablet = DeviceUtil.isTablet(context);
+        final showQuickSheet =
+            isTablet && !showQuickPanel && _quickSheetOpen;
         final colors = Theme.of(context).colorScheme;
         return Scaffold(
           backgroundColor: colors.surface,
@@ -85,19 +96,81 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (_, _) => _LoadError(onRetry: _load),
-                    data: (_) => Row(
+                    data: (_) => Stack(
                       children: [
-                        if (showQuickPanel) ...[
-                          SizedBox(
-                            width: 270,
-                            child: ScheduleQuickPanel(
-                              occurrences: quickOccurrences,
-                              onEventTap: _openExisting,
+                        Row(
+                          children: [
+                            if (showQuickPanel) ...[
+                              SizedBox(
+                                width: 270,
+                                child: ScheduleQuickPanel(
+                                  occurrences: quickOccurrences,
+                                  onEventTap: _openExisting,
+                                ),
+                              ),
+                              const VerticalDivider(width: 1),
+                            ],
+                            Expanded(child: _buildCalendar(viewOccurrences)),
+                          ],
+                        ),
+                        if (showQuickSheet)
+                          Positioned.fill(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => setState(
+                                () => _quickSheetOpen = false,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () {},
+                                  child: Container(
+                                    width: 270,
+                                    margin: const EdgeInsets.fromLTRB(
+                                      8,
+                                      10,
+                                      12,
+                                      12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          colors.surfaceContainerLowest,
+                                      borderRadius: BorderRadius.circular(
+                                        RadiusToken.xl,
+                                      ),
+                                      border: Border.all(
+                                        color: colors.outlineVariant
+                                            .withValues(alpha: 0.18),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                          blurRadius: 24,
+                                          offset: const Offset(-8, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        RadiusToken.xl,
+                                      ),
+                                      child: ScheduleQuickPanel(
+                                        occurrences: quickOccurrences,
+                                        onEventTap: (event) {
+                                          setState(
+                                            () => _quickSheetOpen = false,
+                                          );
+                                          _openExisting(event);
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          const VerticalDivider(width: 1),
-                        ],
-                        Expanded(child: _buildCalendar(viewOccurrences)),
                       ],
                     ),
                   ),
@@ -105,6 +178,14 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               ],
             ),
           ),
+          floatingActionButton: isTablet && !showQuickPanel && !showQuickSheet
+              ? FloatingActionButton.small(
+                  tooltip: 'schedule_upcoming'.tr(),
+                  onPressed: () =>
+                      setState(() => _quickSheetOpen = true),
+                  child: const Icon(Icons.upcoming_outlined),
+                )
+              : null,
         );
       },
     );

@@ -61,7 +61,7 @@ class ContactList extends ConsumerWidget {
                 title: Text('contact_new_friends'.tr()),
                 onTap: () {
                   ref.read(contactSelectionProvider.notifier).selectNewFriends();
-                  if (DeviceUtil.isMobile(context)) {
+                  if (DeviceUtil.useSingleColumnPush(context)) {
                     _openMobileDetail(context, const NewFriendsPage());
                   }
                 },
@@ -77,7 +77,7 @@ class ContactList extends ConsumerWidget {
                 title: Text('contact_joined_groups'.tr()),
                 onTap: () {
                   ref.read(contactSelectionProvider.notifier).selectGroups();
-                  if (DeviceUtil.isMobile(context)) {
+                  if (DeviceUtil.useSingleColumnPush(context)) {
                     _openMobileDetail(context, const GroupRoomListPage());
                   }
                 },
@@ -91,7 +91,7 @@ class ContactList extends ConsumerWidget {
               Expanded(
                 child: SortedContactGroupsWidget(
                   onContactTap: () {
-                    if (DeviceUtil.isMobile(context)) {
+                    if (DeviceUtil.useSingleColumnPush(context)) {
                       _openMobileDetail(context, const ContactDetail());
                     }
                   },

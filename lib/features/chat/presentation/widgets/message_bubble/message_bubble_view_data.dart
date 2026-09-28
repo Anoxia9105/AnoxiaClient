@@ -99,8 +99,11 @@ class MessageBubbleViewData {
       senderMember: senderMember,
       bubbleColor: bubbleColor,
       textColor: textColor,
-      // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()
-      horizontalPadding: DeviceUtil.isMobile(context) ? 8 : 50,
+      // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()；
+      // 平板横屏三栏挤、详情偏窄，两侧收至 20 释放消息宽度，手机/桌面不动。
+      horizontalPadding: DeviceUtil.isMobile(context)
+          ? 8
+          : (DeviceUtil.isTablet(context) ? 20 : 50),
     );
   }
 

@@ -77,9 +77,7 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
     }
 
     Widget buildMainContent() {
-      return AppScaffold(
-        showDesktopHeaderEnhancements: DeviceUtil.isDesktop(context),
-        body: Row(
+      final bodyRow = Row(
           children: [
             /// 桌面端和平板显示侧边栏，移动端不显示
             if (!chatFocusActive &&
@@ -125,7 +123,16 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
               ),
             ),
           ],
-        ),
+        );
+      // 平板横竖屏：系统栏（状态栏/手势条）叠加在内容上，侧边栏头像会压进去，
+      // 整块 body 加 SafeArea。SafeArea 会从后代 MediaQuery 里扣掉已消费的
+      // padding，各子页 AppBar/列表不会重复垫高；手机/桌面分支原样不动。
+      final safeBody = DeviceUtil.isTablet(context)
+          ? SafeArea(child: bodyRow)
+          : bodyRow;
+      return AppScaffold(
+        showDesktopHeaderEnhancements: DeviceUtil.isDesktop(context),
+        body: safeBody,
         bottomNavigationBar: DeviceUtil.isMobile(context)
             ? const MobileBottomBar()
             : null,

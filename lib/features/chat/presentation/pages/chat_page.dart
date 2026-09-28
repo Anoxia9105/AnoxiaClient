@@ -34,7 +34,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     // 布局按屏幕宽度（响应式）决定，而不是按“真实移动设备”判断：
     // Web 上的手机浏览器 isRealMobile() 永远为 false，会错误地进入桌面三栏。
     // 平台能力（窗口插件等）用 isRealDesktop/isRealMobile，UI 布局用宽度断点。
-    if (DeviceUtil.isMobile(context)) {
+    // 平板竖屏同样单栏推入（useSingleColumnPush），横屏平板走下方双栏。
+    if (DeviceUtil.useSingleColumnPush(context)) {
       return const ChatRoomList();
     }
 
@@ -65,88 +66,103 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     }
 
     final isCompactWidth = MediaQuery.of(context).size.width < 1000;
+    // 平板横屏（601~1024）：右面板恒走叠加 Sheet，不挤详情；
+    // 面板收窄 320→280，列表取 280（介于紧凑 240 与桌面 320 之间）。
+    // 桌面端判定原样保留，不受影响。
+    final isTablet = DeviceUtil.isTablet(context);
+    final listWidth = isTablet ? 280.0 : (isCompactWidth ? 240.0 : 320.0);
+    final rightPanelWidth = isTablet ? 280.0 : 320.0;
     final canShowRightPanel = showRightPanel && activeRoomId != null;
-    final inlineRightPanel = canShowRightPanel && !isCompactWidth;
-    final overlayRightPanel = canShowRightPanel && isCompactWidth;
+    final inlineRightPanel =
+        canShowRightPanel && !isCompactWidth && !isTablet;
+    final overlayRightPanel =
+        canShowRightPanel && (isCompactWidth || isTablet);
 
-    return Stack(
-      children: [
-        Row(
-          children: [
-            SizedBox(
-              width: isCompactWidth ? 240.0 : 320.0,
-              child: const ChatRoomList(),
+    final detailChild = isFlat
+        ? Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: room == null
+                ? const Welcome.chat()
+                : ChatRoomDetail(
+                    key: ValueKey('chat-$activeRoomId'),
+                    roomId: activeRoomId!,
+                  ),
+          )
+        : Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outlineVariant.withValues(alpha: 0.18),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(RadiusToken.xl),
+                child: room == null
+                    ? const Welcome.chat()
+                    : ChatRoomDetail(
+                        key: ValueKey('chat-$activeRoomId'),
+                        roomId: activeRoomId!,
+                      ),
+              ),
             ),
-            Expanded(
-              child: isFlat
-                  ? Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: room == null
-                          ? const Welcome.chat()
-                          : ChatRoomDetail(
-                              key: ValueKey('chat-$activeRoomId'),
-                              roomId: activeRoomId!,
-                            ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 10, 12, 12),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                          borderRadius: BorderRadius.circular(RadiusToken.xl),
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outlineVariant.withValues(alpha: 0.18),
+          );
+
+    return Row(
+      children: [
+        SizedBox(width: listWidth, child: const ChatRoomList()),
+        Expanded(
+          // 叠加 Sheet 的遮罩只盖详情区：列表保持可点切会话，
+          // 点遮罩/×关闭面板（桌面端内联分支原样不动）。
+          child: Stack(
+            children: [
+              detailChild,
+              if (overlayRightPanel)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _closeRightPanel,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: rightPanelWidth,
                           ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(RadiusToken.xl),
-                          child: room == null
-                              ? const Welcome.chat()
-                              : ChatRoomDetail(
-                                  key: ValueKey('chat-$activeRoomId'),
-                                  roomId: activeRoomId!,
-                                ),
+                          child: _buildRightPanel(
+                            context,
+                            activeRoomId,
+                            isFlat,
+                          ),
                         ),
                       ),
                     ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                width: inlineRightPanel ? 320.0 : 0,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  child: inlineRightPanel
-                      ? _buildRightPanel(context, activeRoomId, isFlat)
-                      : const SizedBox.shrink(
-                          key: ValueKey('right-panel-closed'),
-                        ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (overlayRightPanel)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _closeRightPanel,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {},
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 320),
-                    child: _buildRightPanel(context, activeRoomId, isFlat),
                   ),
                 ),
-              ),
+            ],
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: inlineRightPanel ? 320.0 : 0,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: inlineRightPanel
+                  ? _buildRightPanel(context, activeRoomId, isFlat)
+                  : const SizedBox.shrink(
+                      key: ValueKey('right-panel-closed'),
+                    ),
             ),
           ),
+        ),
       ],
     );
   }

@@ -12,24 +12,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// 联系人页面
 ///
 /// 根据设备类型提供不同的布局：
-/// - 移动端：仅显示联系人列表
-/// - 桌面端/平板：两栏布局（联系人列表 + 详情内容）
+/// - 移动端/平板竖屏：仅显示联系人列表，点行 push 详情
+/// - 平板横屏/桌面：两栏布局（联系人列表 + 详情内容）
 class ContactPage extends ConsumerWidget {
   const ContactPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 布局按宽度断点判定：窄屏（含 Web 手机浏览器）仅显示列表
-    if (DeviceUtil.isMobile(context)) {
+    // 布局按宽度断点判定：窄屏（含 Web 手机浏览器）仅显示列表；
+    // 平板竖屏同样单栏推入，平板横屏走双栏（与聊天页一致）。
+    if (DeviceUtil.useSingleColumnPush(context)) {
       return const ContactList();
     }
 
     final selection = ref.watch(
       contactSelectionProvider.select((select) => select.viewType),
     );
-    // 与聊天页面左侧宽度保持一致：窄屏 240，宽屏 320
+    // 与聊天页面左侧宽度保持一致：平板横屏 280，桌面窄屏 240、宽屏 320
     final isCompactWidth = MediaQuery.of(context).size.width < 1000;
-    final leftWidth = isCompactWidth ? 240.0 : 320.0;
+    final leftWidth = DeviceUtil.isTablet(context)
+        ? 280.0
+        : (isCompactWidth ? 240.0 : 320.0);
     return Row(
       children: [
         SizedBox(
