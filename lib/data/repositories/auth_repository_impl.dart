@@ -224,8 +224,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<UserInfo?> fetchUserInfo() async {
-    final res = await DioClient().get(API.getInfo);
+  Future<UserInfo?> fetchUserInfo({bool skipAuthFailureLogout = false}) async {
+    final res = await DioClient().get(
+      API.getInfo,
+      options: Options(
+        extra: {
+          if (skipAuthFailureLogout) 'skipAuthFailureLogout': true,
+        },
+      ),
+    );
     return UserInfo.fromJson(res.data['data']);
   }
 

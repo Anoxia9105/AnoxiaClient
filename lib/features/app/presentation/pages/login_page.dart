@@ -35,7 +35,17 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 /// 提供用户登录功能，包含用户名、密码和验证码输入。
 /// 自适应桌面端与移动端屏幕，防止键盘弹起时视图溢出并提供安全的边距填充。
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  /// 叠加添加模式：从切换账号页免登出推上来，保留原会话，取消可返回。
+  ///
+  /// 为 true 时隐藏快捷/扫码/OAuth/游客入口，只走密码登录；
+  /// 左上角展示返回切换列表入口，登录成功后 `pop(true)` 交由调用方
+  /// 关闭切换列表，失败停留本页，原会话无损。
+  final bool isAddMode;
+
+  /// 添加/切换失败转密码登录时的预填账号名，优先于全局预填 provider。
+  final String? initialUsername;
+
+  const LoginPage({super.key, this.isAddMode = false, this.initialUsername});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -75,17 +85,24 @@ class _LoginPageState extends ConsumerState<LoginPage>
   @override
   void initState() {
     super.initState();
-    // 切换账号遇 token 过期降级到登录页时，预填目标账号名（消费后立即清空）
+    // 添加模式优先使用调用方传入的账号名；否则沿用切换过期写入的全局预填
+    // （消费后立即清空，避免污染下次手动登录）。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final prefill = ref.read(loginPrefillAccountProvider);
-      if (prefill != null && prefill.isNotEmpty) {
-        _usernameCtrl.text = prefill;
+      final passed = widget.initialUsername?.trim() ?? '';
+      if (passed.isNotEmpty) {
+        _usernameCtrl.text = passed;
+        // 调用方已显式传参，全局预填若恰好也是它则一并消费掉。
         ref.read(loginPrefillAccountProvider.notifier).set(null);
+      } else {
+        final prefill = ref.read(loginPrefillAccountProvider);
+        if (prefill != null && prefill.isNotEmpty) {
+          _usernameCtrl.text = prefill;
+          ref.read(loginPrefillAccountProvider.notifier).set(null);
+        }
       }
-      // Web 端 Google 回调：hash 路由下 Google 只能回到 path，路由页挂载不上，
-      // code 会留在地址栏 query 里，由登录页认领完成换 token（见方法注释）。
-      _handleWebOAuthReturn();
+      // 添加模式只走密码登录，不处理 Web OAuth 回跳（隐藏入口）。
+      if (!widget.isAddMode) _handleWebOAuthReturn();
     });
   }
 
@@ -127,9 +144,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (widget.isAddMode)
+                          _buildAddModeBackBar(colorScheme),
                         _buildHeader(colorScheme, textTheme),
                         const SizedBox(height: 36),
-                        // 密码 / 扫码 两种登录方式独立成视图，切换时平滑过渡
+                        // 添加模式只走密码登录；正常模式才允许切扫码视图。
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           switchInCurve: Curves.easeOutCubic,
@@ -146,7 +165,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               ),
                             );
                           },
-                          child: _mode == _LoginMode.scan
+                          child: (!widget.isAddMode &&
+                                  _mode == _LoginMode.scan)
                               ? _buildScanView(colorScheme)
                               : _buildPasswordView(colorScheme, loginMutation),
                         ),
@@ -162,17 +182,53 @@ class _LoginPageState extends ConsumerState<LoginPage>
     );
   }
 
+  /// 添加模式返回条：返回切换列表，原会话无损（不登出不清缓存）。
+  Widget _buildAddModeBackBar(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            onPressed: _isLoading
+                ? null
+                : () => Navigator.of(context).maybePop(),
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20),
+            color: colorScheme.onSurfaceVariant,
+          ),
+          Text(
+            'account_switch_title'.tr(),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 密码登录视图（仅展示密码表单；桌面/Web 底部提供切到扫码登录的入口）
+  ///
+  /// 添加模式下只保留密码表单与忘记/注册入口，隐藏快捷/游客/OAuth/扫码，
+  /// 避免 `go` 跳转破坏“登录页 pop 回切换列表”的叠加栈。
   Widget _buildPasswordView(
     ColorScheme colorScheme,
     MutationState<void> loginMutation,
   ) {
     final hasQuickLoginAccount =
+        !widget.isAddMode &&
         ref
-            .watch(savedAccountsServiceProvider)
-            .value
-            ?.any((account) => account.quickLoginCredential.isNotEmpty) ==
-        true;
+                .watch(savedAccountsServiceProvider)
+                .value
+                ?.any((account) => account.quickLoginCredential.isNotEmpty) ==
+            true;
+    final showGuest =
+        !widget.isAddMode &&
+        DeviceUtil.isRealWeb() &&
+        ref.watch(guestLoginEnabledProvider).value == true;
+    final showOAuth = !widget.isAddMode && _showOAuthLogin;
+    final showScan = !widget.isAddMode && _showScanMode;
     return Column(
       key: const ValueKey(_LoginMode.password),
       mainAxisSize: MainAxisSize.min,
@@ -192,11 +248,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
         const SizedBox(height: 20),
         _buildFooterLinks(colorScheme),
         if (hasQuickLoginAccount) _buildSwitchToQuickLogin(colorScheme),
-        if (DeviceUtil.isRealWeb() &&
-            ref.watch(guestLoginEnabledProvider).value == true)
-          _buildGuestLogin(colorScheme),
-        if (_showOAuthLogin) _buildOAuthSection(colorScheme),
-        if (_showScanMode) _buildSwitchToScan(colorScheme),
+        if (showGuest) _buildGuestLogin(colorScheme),
+        if (showOAuth) _buildOAuthSection(colorScheme),
+        if (showScan) _buildSwitchToScan(colorScheme),
       ],
     );
   }
@@ -848,6 +902,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
       }
 
       await ref.read(appInitializerProvider.notifier).performFullReset();
+      // 叠加添加模式由 go_router 之外的命令式栈承载，成功后回值 true，
+      // 调用方（切换列表）再关自己回到新会话首页；正常模式靠路由守卫跳转。
+      if (widget.isAddMode && mounted) {
+        Navigator.of(context).pop(true);
+      }
     } catch (_) {
       _codeCtrl.clear();
       ref.invalidate(getCaptchaProvider);

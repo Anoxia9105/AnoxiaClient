@@ -98,7 +98,10 @@ abstract interface class AuthRepository {
   });
 
   /// 获取当前用户信息
-  Future<UserInfo?> fetchUserInfo();
+  ///
+  /// [skipAuthFailureLogout] 为 true 时，401 只抛异常不触发全局登出，
+  /// 用于切账号探活等需自行处理失效的场景。
+  Future<UserInfo?> fetchUserInfo({bool skipAuthFailureLogout = false});
 
   /// 获取图形验证码
   Future<CaptchaModel> fetchCaptcha();

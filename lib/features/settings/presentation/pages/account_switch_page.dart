@@ -3,6 +3,7 @@ import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/dialogs/danger_confirm_dialog.dart';
 import 'package:anoxia/common/widgets/skeleton_box.dart';
 import 'package:anoxia/common/widgets/toast.dart';
+import 'package:anoxia/features/app/presentation/pages/login_page.dart';
 import 'package:anoxia/framework/domain/saved_account.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
 import 'package:anoxia/framework/provider/auth/saved_accounts_provider.dart';
@@ -15,7 +16,8 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 /// 切换账号页面
 ///
 /// 展示登录成功过的账号列表（当前账号置顶高亮），点击其他账号一键切换；
-/// 支持移除列表条目与「添加账号」（回登录页，当前账号保留在列表中）。
+/// 支持移除列表条目与「添加账号」（免登出叠加登录页，取消可返回本列表，
+/// 原会话无缝保留）。
 class AccountSwitchPage extends ConsumerWidget {
   const AccountSwitchPage({super.key});
 
@@ -126,9 +128,8 @@ class AccountSwitchPage extends ConsumerWidget {
 
   /// 一键切换到目标账号
   ///
-  /// 成功后返回上一页（路由守卫/会话重置由 AuthController 统一处理）；
-  /// token 过期时 AuthController 会清登录态，路由守卫自动跳登录页；
-  /// 其他失败（如网络异常）自动回退原账号并 toast，停留本页。
+  /// 成功后关闭本页回到新会话首页；目标凭据过期需密码时叠加可返回的
+  /// 登录页（原会话无缝保留，取消即回本列表）；网络异常 toast 后停留本页。
   Future<void> _switchTo(
     BuildContext context,
     WidgetRef ref,
@@ -137,7 +138,24 @@ class AccountSwitchPage extends ConsumerWidget {
     final ok = await ref
         .read(authControllerProvider.notifier)
         .switchAccount(account);
-    if (ok && context.mounted) {
+    if (!context.mounted) return;
+    if (ok) {
+      Navigator.of(context).pop();
+      return;
+    }
+    // 失败分两种：需要密码（controller 已写预填且原会话已恢复）则叠加登录页，
+    // 可返回本列表；纯网络失败无预填，停留本页（controller 已 toast）。
+    final prefill = ref.read(loginPrefillAccountProvider);
+    final current = ref.read(authControllerProvider).value;
+    if (prefill == null || prefill.isEmpty || current == null) return;
+    final added = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) =>
+            LoginPage(isAddMode: true, initialUsername: account.userName),
+      ),
+    );
+    // 叠加登录成功：新会话已就绪，关闭本列表回到首页；取消则停留本列表。
+    if (added == true && context.mounted) {
       Navigator.of(context).pop();
     }
   }
@@ -164,21 +182,19 @@ class AccountSwitchPage extends ConsumerWidget {
     }
   }
 
-  /// 添加新账号：本地退出当前登录回到登录页（当前账号保留在切换列表中）
+  /// 添加新账号：免登出叠加登录页（原会话无缝保留）
   ///
-  /// 注意必须 `notifyBackend: false`：不调后端 /logout 吊销当前 token，
-  /// 否则该账号虽留在列表里，token 已被服务端删除，之后免密切回必然
-  /// 401 降级到登录页重新输密码。服务端同账号多 token 并存、7 天滑动 TTL，
-  /// 保留 token 即可随时一键切回。
+  /// 不调 logout、不清缓存：登录页以 `isAddMode` 命令式推上来，取消即回
+  /// 本列表；新账号登录成功回值 true 后再关闭本列表回到新会话首页。
+  /// 后端同账号多 token 并存，保留原 token 即可随时一键切回。
   Future<void> _addAccount(BuildContext context, WidgetRef ref) async {
-    // 仅是「添加」而非登出，无需二次确认，直接本地退出（保留 token）。
-    await ref.read(authControllerProvider.notifier).logout(
-          notifyBackend: false,
-        );
-    // 登出后路由守卫已把页面切到登录页；本页面在桌面端以弹窗展示
-    // （showDialog 的独立路由不随 go_router 重定向回收），需手动关闭，
-    // 避免登录页上方残留「切换账号」弹窗。移动端此 pop 关闭推入的页面。
-    if (context.mounted) {
+    final added = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => const LoginPage(isAddMode: true),
+      ),
+    );
+    // 成功才关列表回首页；取消则停留本列表，原会话零损耗。
+    if (added == true && context.mounted) {
       Navigator.of(context).pop();
     }
   }
