@@ -108,7 +108,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   ///
   /// 桌面端确保选中项始终存在于当前筛选结果中；移动端不使用选中态
   void _syncSelection(List<ChatFavorite> filtered) {
-    if (DeviceUtil.isMobile(context)) return;
+    // 单栏（手机/平板竖屏）不使用选中态，走 push 详情；双栏才同步选中。
+    if (DeviceUtil.useSingleColumnPush(context)) return;
 
     if (filtered.isEmpty) {
       if (_selectedId != null) {
@@ -180,7 +181,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
   /// 构建加载状态界面
   Widget _buildLoading(BuildContext context) {
-    final mobile = DeviceUtil.isMobile(context);
+    // 平板竖屏与手机一致走单栏，横屏/桌面走双栏（与聊天/联系人页一致）。
+    final mobile = DeviceUtil.useSingleColumnPush(context);
     if (mobile) {
       return favoritesTitleScaffold(
         context,
@@ -245,7 +247,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     List<ChatFavorite> items,
     List<ChatFavorite> filtered,
   ) {
-    final mobile = DeviceUtil.isMobile(context);
+    final mobile = DeviceUtil.useSingleColumnPush(context);
 
     if (mobile) {
       if (filtered.isEmpty) {

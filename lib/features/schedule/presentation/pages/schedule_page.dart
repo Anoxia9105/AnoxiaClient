@@ -58,10 +58,11 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
         final width = constraints.maxWidth;
         final isMobile = DeviceUtil.isMobile(context);
         final showQuickPanel = width >= 1120;
-        // 平板内容宽不足 1120：快捷面板默认收起，FAB 按需以 Sheet 弹出。
-        final isTablet = DeviceUtil.isTablet(context);
+        // 内容宽不足 1120（平板竖屏/横屏窄栏、桌面窄窗口）：快捷面板默认收起，
+        // FAB 按需以 Sheet 弹出。用 !isMobile 而非 isTablet，避免 1032 这类
+        // 刚过旧平板阈值的宽度被判为桌面后面板既不常驻、又无 FAB 入口。
         final showQuickSheet =
-            isTablet && !showQuickPanel && _quickSheetOpen;
+            !isMobile && !showQuickPanel && _quickSheetOpen;
         final colors = Theme.of(context).colorScheme;
         return Scaffold(
           backgroundColor: colors.surface,
@@ -178,7 +179,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               ],
             ),
           ),
-          floatingActionButton: isTablet && !showQuickPanel && !showQuickSheet
+          floatingActionButton: !isMobile && !showQuickPanel && !showQuickSheet
               ? FloatingActionButton.small(
                   tooltip: 'schedule_upcoming'.tr(),
                   onPressed: () =>

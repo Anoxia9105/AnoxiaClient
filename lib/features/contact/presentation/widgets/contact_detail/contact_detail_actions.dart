@@ -127,7 +127,8 @@ class ContactDetailActions extends ConsumerWidget {
       Navigator.of(context).pop();
       return;
     }
-    if (!DeviceUtil.isMobile(context)) return;
+    // 单栏（手机/平板竖屏）发消息需 push 聊天详情页，双栏仅切 active 即可。
+    if (!DeviceUtil.useSingleColumnPush(context)) return;
 
     final navigator = Navigator.of(context);
     navigator.popUntil((route) => route.isFirst);

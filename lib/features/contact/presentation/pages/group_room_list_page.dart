@@ -37,7 +37,8 @@ class GroupRoomListPage extends ConsumerWidget {
       body: groups.isEmpty
           ? _EmptyState(
               onCreate: () {
-                if (DeviceUtil.isMobile(context)) {
+                // 单栏（手机/平板竖屏）全屏推入建群页，双栏才弹桌面对话框。
+                if (DeviceUtil.useSingleColumnPush(context)) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) =>
@@ -102,7 +103,11 @@ class GroupRoomListPage extends ConsumerWidget {
                                       .read(layoutControllerProvider.notifier)
                                       .setIndex(0);
 
-                                  if (DeviceUtil.isRealMobile()) {
+                                  // 单栏（手机/平板竖屏，含 Web 窄窗口）点群直接 push 聊天详情，
+                                  // 返回后清空 active；双栏仅切 active，右侧即时展示。
+                                  // 用 useSingleColumnPush 而非 isRealMobile，否则平板竖屏/
+                                  // Web 窄屏点群只切 active 不 push，表现与聊天列表不一致。
+                                  if (DeviceUtil.useSingleColumnPush(context)) {
                                     await Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) =>

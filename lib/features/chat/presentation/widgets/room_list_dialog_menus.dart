@@ -29,11 +29,15 @@ class RoomListDialogMenus {
   /// [ref] 可选的回调函数，用于处理添加好友对话框
   static void showTopRightDialog(BuildContext context, {Function? ref}) {
     Function? close;
-    // UI 布局按宽度断点判定（Web 窄屏等同移动端），而非 isRealMobile()，
-    // 否则 Web 上缩小窗口后气泡角与菜单形态仍停留在桌面端。
-    bool isMobile = DeviceUtil.isMobile(context);
+    // UI 布局按单栏/双栏判定（Web 窄屏、平板竖屏等同移动端），而非 isMobile()，
+    // 否则平板竖屏（单栏占满、按钮贴右缘）仍走桌面端 bottomLeft + 固定箭头，
+    // 气泡角指向列表中间而非右上角按钮；Web 缩小窗口同理。
+    // 单栏（含手机/平板竖屏）按钮贴屏幕右缘，用 bottomRight + 右侧箭头指向按钮。
+    final bool isSingleColumn = DeviceUtil.useSingleColumnPush(context);
     // Web 无摄像头扫码能力，隐藏"扫一扫"入口
-    final showScan = isMobile && !DeviceUtil.isRealWeb();
+    // 扫码入口仅手机真机开放，平板/桌面沿用原逻辑不展示
+    final showScan =
+        DeviceUtil.isMobile(context) && !DeviceUtil.isRealWeb();
 
     // 气泡宽度自适应最长文案（中文短、日/英文长），避免文字溢出报错；
     // 超出上限时由文案省略号兜底
@@ -44,12 +48,12 @@ class RoomListDialogMenus {
         'chat_add_friend'.tr(),
         if (showScan) 'chat_scan_qr_code'.tr(),
       ],
-      maxWidth: isMobile ? 200 : 220,
+      maxWidth: isSingleColumn ? 200 : 220,
     );
 
     close = Toast.showWidget(
       context,
-      direction: isMobile
+      direction: isSingleColumn
           ? PreferDirection.bottomRight
           : PreferDirection.bottomLeft,
       child: Material(
@@ -58,8 +62,8 @@ class RoomListDialogMenus {
           padding: const EdgeInsets.only(right: 4),
           child: BubbleWidget(
             arrowDirection: AxisDirection.up,
-            // 气泡宽度随文案自适应，移动端箭头偏移跟随宽度，保持指向右上角按钮
-            arrowOffset: isMobile ? menuWidth - 20 : 25,
+            // 气泡宽度随文案自适应，单栏箭头偏移跟随宽度，保持指向右上角按钮
+            arrowOffset: isSingleColumn ? menuWidth - 20 : 25,
             backgroundColor: Theme.of(context).colorScheme.surface,
             // 1. 增加精致圆角与柔和阴影
             borderRadius: BorderRadius.circular(RadiusToken.lg),
@@ -91,7 +95,8 @@ class RoomListDialogMenus {
                     textMaxWidth: menuWidth - BubbleMenu.fixedContentWidth,
                     onTap: () {
                       close?.call();
-                      if (isMobile) {
+                      // 单栏（手机/平板竖屏）全屏推入建群页，双栏才弹桌面对话框
+                      if (isSingleColumn) {
                         const CreateGroupRoute().push(
                           appNavigatorKey.currentContext!,
                         );

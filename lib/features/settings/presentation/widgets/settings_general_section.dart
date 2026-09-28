@@ -67,18 +67,22 @@ class SettingsGeneralSection extends ConsumerWidget {
         _GroupLabel(icon: HugeIcons.strokeRoundedMessage02, title: 'settings_general_group_messages'.tr()),
         _SettingsCard(
           children: [
-            _SegmentTile<ChatSendShortcut>(
-              icon: HugeIcons.strokeRoundedKeyboard,
-              title: 'settings_chat_send_key'.tr(),
-              subtitle: 'settings_chat_send_key_desc'.tr(),
-              value: sendShortcut,
-              options: const [
-                SegmentOption(value: ChatSendShortcut.enter, labelKey: 'settings_chat_send_key_enter'),
-                SegmentOption(value: ChatSendShortcut.ctrlEnter, labelKey: 'settings_chat_send_key_ctrl_enter'),
-              ],
-              onChanged: (v) => ref.read(chatSendShortcutProvider.notifier).setShortcut(v),
-            ),
-            _Divider(),
+            // 发送快捷键依赖实体键盘的 Ctrl/Enter，手机/平板（触屏、无实体键盘）
+            // 直接隐藏，与桌面端保持区分；按布局宽度判定，Web 窄窗口同样隐藏。
+            if (DeviceUtil.isDesktop(context)) ...[
+              _SegmentTile<ChatSendShortcut>(
+                icon: HugeIcons.strokeRoundedKeyboard,
+                title: 'settings_chat_send_key'.tr(),
+                subtitle: 'settings_chat_send_key_desc'.tr(),
+                value: sendShortcut,
+                options: const [
+                  SegmentOption(value: ChatSendShortcut.enter, labelKey: 'settings_chat_send_key_enter'),
+                  SegmentOption(value: ChatSendShortcut.ctrlEnter, labelKey: 'settings_chat_send_key_ctrl_enter'),
+                ],
+                onChanged: (v) => ref.read(chatSendShortcutProvider.notifier).setShortcut(v),
+              ),
+              _Divider(),
+            ],
             _SwitchTile(
               icon: HugeIcons.strokeRoundedNotification01,
               title: 'settings_message_preview'.tr(),

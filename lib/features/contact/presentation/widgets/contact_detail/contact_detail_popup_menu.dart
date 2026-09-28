@@ -35,8 +35,9 @@ class ContactDetailPopupMenuButton extends StatelessWidget {
         final renderBox = buttonKey.currentContext?.findRenderObject();
         if (renderBox is! RenderBox) return;
 
-        // UI 布局按宽度断点判定（Web 窄屏等同移动端），与聊天列表菜单保持一致
-        final isMobile = DeviceUtil.isMobile(context);
+        // UI 布局按单栏/双栏判定（Web 窄屏、平板竖屏等同移动端），
+        // 与聊天列表菜单保持一致
+        final isMobile = DeviceUtil.useSingleColumnPush(context);
         // 气泡宽度与聊天列表菜单保持一致：自适应最长文案
         final menuWidth = BubbleMenu.measureWidth(
           context,

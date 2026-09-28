@@ -49,8 +49,15 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
     );
 
+    // 平板竖屏与手机一致走单栏推入：标题居中、只显示名字（无头像）、
+    // 隐藏专注按钮，右侧更多走 push 详情页而非切换右侧面板。
+    // 用 useSingleColumnPush 而非 isMobile，否则平板竖屏会误入桌面的
+    // 双栏分支：点“房间详细”只翻 chatRightPanelVisibleProvider，
+    // 而单栏详情页根本没有右侧面板，表现为“点击没有反应”。
+    final bool isSingleColumn = DeviceUtil.useSingleColumnPush(context);
+
     return AppBar(
-      centerTitle: DeviceUtil.isMobile(context),
+      centerTitle: isSingleColumn,
       actionsPadding: const EdgeInsets.all(4),
       title: roomListAsync.when(
         data: (_) {
@@ -70,8 +77,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ? peerDisplayName!
                     : (room.roomName ?? 'appbar_conversation_detail'.tr()));
 
-          // 手机端标题保持简洁：只显示名字；对方输入时用输入状态替换名字。
-          if (DeviceUtil.isMobile(context)) {
+          // 单栏（手机/平板竖屏）标题保持简洁：隐藏头像、只居中显示名字；
+          // 对方输入时用输入状态替换名字，与手机端保持一致。
+          if (isSingleColumn) {
             return Text(
               room.roomType == 0 && isTyping
                   ? 'appbar_user_typing'.tr()
@@ -145,12 +153,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (room == null) return <Widget>[];
 
         // 官方帮助页所有内容均在当前屏展示，不提供聊天详情或更多操作。
-        if (room.isOfficial && DeviceUtil.isMobile(context)) {
+        if (room.isOfficial && isSingleColumn) {
           return <Widget>[];
         }
 
-        /// 移动端暂不显示通话和成员管理按钮，放在更多菜单里
-        if (DeviceUtil.isMobile(context)) {
+        /// 单栏（手机/平板竖屏）暂不显示专注/通话按钮，详情走 push，放在更多菜单里
+        if (isSingleColumn) {
           return [
             IconButton(
               mouseCursor: SystemMouseCursors.click,

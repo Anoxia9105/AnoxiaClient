@@ -60,9 +60,11 @@ class _MainLayoutPageState extends ConsumerState<MainLayoutPage> {
             availableWidth: size.width,
           )
         : DesktopLayoutStyle.card;
+    // 专注模式仅双栏（桌面/平板横屏）生效，单栏（手机/平板竖屏）直接禁用，
+    // 避免竖屏下侧边栏被隐藏、而聊天页又只剩列表的异常态。
     final chatFocusActive = shouldUseChatFocusMode(
       enabled: focusModeEnabled,
-      isWideLayout: !DeviceUtil.isMobile(context),
+      isWideLayout: !DeviceUtil.useSingleColumnPush(context),
       currentIndex: safeIndex,
       activeRoomId: activeRoomId,
     );

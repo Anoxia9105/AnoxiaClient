@@ -66,8 +66,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     }
 
     final isCompactWidth = MediaQuery.of(context).size.width < 1000;
-    // 平板横屏（601~1024）：右面板恒走叠加 Sheet，不挤详情；
-    // 面板收窄 320→280，列表取 280（介于紧凑 240 与桌面 320 之间）。
+    // 平板（601~1280，含竖屏 1032x1376 这类大屏竖屏）：右面板恒走叠加 Sheet，
+    // 不挤详情；面板收窄 320→280，列表取 280（介于紧凑 240 与桌面 320 之间）。
     // 桌面端判定原样保留，不受影响。
     final isTablet = DeviceUtil.isTablet(context);
     final listWidth = isTablet ? 280.0 : (isCompactWidth ? 240.0 : 320.0);
