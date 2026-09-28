@@ -103,6 +103,13 @@ abstract interface class AuthRepository {
   /// 用于切账号探活等需自行处理失效的场景。
   Future<UserInfo?> fetchUserInfo({bool skipAuthFailureLogout = false});
 
+  /// 用指定 Token 获取用户信息（不读写全局 Token 状态）
+  ///
+  /// 切账号探活专用：`auth: false` + 显式 Authorization 头，
+  /// 401 只抛异常、绝不触发全局登出；验证通过前全局 Token 保持原账号，
+  /// 并发业务请求不受污染，避免误触发登出跳快捷页。
+  Future<UserInfo?> fetchUserInfoWithToken(String token);
+
   /// 获取图形验证码
   Future<CaptchaModel> fetchCaptcha();
 

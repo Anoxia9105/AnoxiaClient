@@ -454,8 +454,9 @@ class AuthController extends _$AuthController {
   /// 一键切换到已保存的账号
   ///
   /// 切换不吊销旧账号 token（服务端同一账号多 token 并存、无互踢），
-  /// 仅本地替换当前会话；探活全程抑制全局 401 登出，失败时原会话无缝保留
-  /// （不置 null、不清缓存、不 reset），由调用方决定是否叠加密码登录页。
+  /// 仅本地替换当前会话；验证通过前绝不触碰全局 Token，
+  /// 失败时原会话无缝保留（不置 null、不清缓存、不 reset），
+  /// 由调用方决定是否叠加密码登录页。
   ///
   /// 目标 token 过期时优先用同设备快捷凭据直接换发（无感切换）；
   /// 快捷凭据也失效才写预填并返回 false，调用方叠加可返回的登录页。
@@ -468,37 +469,18 @@ class AuthController extends _$AuthController {
     _isSwitching = true;
 
     final previousUser = state.value;
-    final previousToken = ref.read(tokenCacheProvider);
     state = const AsyncLoading();
 
-    Future<void> restorePreviousSession() async {
-      if (previousUser != null &&
-          previousToken != null &&
-          previousToken.isNotEmpty) {
-        await TokenManager.instance.setToken(previousToken);
-        ref.read(tokenCacheProvider.notifier).setToken(previousToken);
-        // 直接恢复内存中的原用户，不额外请求：探活未清缓存，保证无缝。
-        state = AsyncData(previousUser);
-      } else {
-        await TokenManager.instance.clearToken();
-        ref.read(tokenCacheProvider.notifier).clearToken();
-        state = const AsyncData(null);
-      }
-    }
-
-    try {
-      await TokenManager.instance.setToken(target.token);
-      ref.read(tokenCacheProvider.notifier).setToken(target.token);
-
-      // 先确认目标账号 token 可用，再清理本地缓存——
-      // 避免网络抖动等失败场景误清当前账号的会话数据。
-      // skipAuthFailureLogout：探活 401 只抛异常，不触发全局登出。
-      final user = await _fetchUserInfo(skipAuthFailureLogout: true);
-      if (user == null || user.userId != target.userId) {
-        throw Exception('account_switch_user_mismatch');
-      }
-
+    /// 切成功后的统一收尾：此时目标账号已验证有效，才替换全局 Token。
+    Future<bool> finishSwitchTo({
+      required UserInfo user,
+      required String token,
+      String? quickLoginCredential,
+    }) async {
+      final previousToken = ref.read(tokenCacheProvider);
       unawaited(_unbindPushDevice(previousToken));
+      await TokenManager.instance.setToken(token);
+      ref.read(tokenCacheProvider.notifier).setToken(token);
       await SSUtil.instance.write(
         key: StorageKeys.lastLoginUserId,
         value: '${user.userId}',
@@ -512,10 +494,34 @@ class AuthController extends _$AuthController {
         reason: SessionResetReason.accountSwitch,
       );
       _finishLoginSuccess();
-      await ref
-          .read(savedAccountsServiceProvider.notifier)
-          .upsert(user: user, token: target.token);
+      await ref.read(savedAccountsServiceProvider.notifier).upsert(
+            user: user,
+            token: token,
+            quickLoginCredential: quickLoginCredential,
+          );
       return true;
+    }
+
+    /// 恢复原会话：探活期未动过全局 Token 与缓存，只需恢复状态。
+    void restorePreviousSession() {
+      if (previousUser != null) {
+        state = AsyncData(previousUser);
+      } else {
+        // 原本就无会话（如冷启动异常入口），才允许落到未登录态。
+        state = const AsyncData(null);
+      }
+    }
+
+    try {
+      // 用待验证 token 显式探活，不读写全局 Token：
+      // 并发业务请求仍携带原账号有效 token，不会 401 误触发全局登出。
+      final user = await ref
+          .read(authRepositoryProvider)
+          .fetchUserInfoWithToken(target.token);
+      if (user == null || user.userId != target.userId) {
+        throw Exception('account_switch_user_mismatch');
+      }
+      return await finishSwitchTo(user: user, token: target.token);
     } catch (e, st) {
       debugLog('[AuthController] 切换账号失败', e, st);
       if (_isAuthExpiredError(e)) {
@@ -528,30 +534,16 @@ class AuthController extends _$AuthController {
                   deviceId:
                       await DeviceIdentity.instance.getPlatformQualifiedId(),
                 );
-            await TokenManager.instance.setToken(result.token);
-            ref.read(tokenCacheProvider.notifier).setToken(result.token);
-            final user = await _fetchUserInfo(skipAuthFailureLogout: true);
+            // 换发的新 token 同样先显式验证，确认归属后再全局生效。
+            final user = await ref
+                .read(authRepositoryProvider)
+                .fetchUserInfoWithToken(result.token);
             if (user != null && user.userId == target.userId) {
-              unawaited(_unbindPushDevice(previousToken));
-              await SSUtil.instance.write(
-                key: StorageKeys.lastLoginUserId,
-                value: '${user.userId}',
+              return await finishSwitchTo(
+                user: user,
+                token: result.token,
+                quickLoginCredential: result.quickLoginCredential,
               );
-              await _clearLocalSessionCache();
-              state = AsyncData(user);
-              SessionResetService.instance.reset(
-                ref,
-                reason: SessionResetReason.accountSwitch,
-              );
-              _finishLoginSuccess();
-              await ref
-                  .read(savedAccountsServiceProvider.notifier)
-                  .upsert(
-                    user: user,
-                    token: result.token,
-                    quickLoginCredential: result.quickLoginCredential,
-                  );
-              return true;
             }
           } catch (quickError, quickSt) {
             debugLog('[AuthController] 快捷换发也失败，转密码登录', quickError,
@@ -560,13 +552,13 @@ class AuthController extends _$AuthController {
         }
         // 快捷凭据也没有/也过期：恢复原会话（无缝），写预填供密码页使用。
         // 注意不删列表条目、不清缓存、不 reset，调用方叠加可返回登录页。
-        await restorePreviousSession();
+        restorePreviousSession();
         ref.read(loginPrefillAccountProvider.notifier).set(target.userName);
         return false;
       }
 
       // 网络/服务端异常：直接恢复原会话，不清缓存不 reset，保证无缝。
-      await restorePreviousSession();
+      restorePreviousSession();
       // 仅当原本就无会话可恢复时才到了这里的 null 分支，此时才需要 reset。
       if (previousUser == null) {
         SessionResetService.instance.reset(

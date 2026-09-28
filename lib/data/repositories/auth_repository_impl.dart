@@ -237,6 +237,19 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<UserInfo?> fetchUserInfoWithToken(String token) async {
+    final res = await DioClient().get(
+      API.getInfo,
+      // auth:false 关闭全局 Token 注入与 401 登出，改用显式头携带待验证 token。
+      auth: false,
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+    return UserInfo.fromJson(res.data['data']);
+  }
+
+  @override
   Future<CaptchaModel> fetchCaptcha() async {
     final res = await DioClient().get(API.captchaImage, auth: false);
     return CaptchaModel(uuid: res.data['uuid'], imgBase64: res.data['img']);
