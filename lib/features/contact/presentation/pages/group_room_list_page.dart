@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
+import '../../../../framework/provider/chat/chat_focus_mode_controller.dart';
 import '../../../../framework/provider/chat/room/room_member_service.dart';
 import '../../../../framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
@@ -108,6 +109,11 @@ class GroupRoomListPage extends ConsumerWidget {
                                   // 用 useSingleColumnPush 而非 isRealMobile，否则平板竖屏/
                                   // Web 窄屏点群只切 active 不 push，表现与聊天列表不一致。
                                   if (DeviceUtil.useSingleColumnPush(context)) {
+                                    // 单栏无专注开关：push 前关掉残留专注，避免回宽布局后
+                                    // 点房间直接全屏专注、没有返回（与聊天列表入口一致）。
+                                    ref
+                                        .read(chatFocusModeProvider.notifier)
+                                        .setEnabled(false);
                                     await Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) =>

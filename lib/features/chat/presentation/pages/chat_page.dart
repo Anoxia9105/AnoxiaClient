@@ -35,7 +35,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     // Web 上的手机浏览器 isRealMobile() 永远为 false，会错误地进入桌面三栏。
     // 平台能力（窗口插件等）用 isRealDesktop/isRealMobile，UI 布局用宽度断点。
     // 平板竖屏同样单栏推入（useSingleColumnPush），横屏平板走下方双栏。
-    if (DeviceUtil.useSingleColumnPush(context)) {
+    // 单栏点房间一律 push 详情（自带返回按钮），绝不进专注模式。
+    final isSingleColumn = DeviceUtil.useSingleColumnPush(context);
+    if (isSingleColumn) {
       return const ChatRoomList();
     }
 
@@ -58,7 +60,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ? ref.watch(currentRoomProvider(activeRoomId))
         : null;
 
-    if (focusModeEnabled && activeRoomId?.isNotEmpty == true) {
+    // 专注模式仅双栏（桌面/平板横屏）生效：单栏已在上方直接返回列表，
+    // 此处再显式排除，避免专注开关残留为开时，点房间直接全屏详情、
+    // 没有返回按钮（专注页是内嵌而非路由推入，AppBar 不会自动带返回）。
+    if (focusModeEnabled &&
+        !isSingleColumn &&
+        activeRoomId?.isNotEmpty == true) {
       return ChatRoomDetail(
         key: ValueKey('focused-chat-$activeRoomId'),
         roomId: activeRoomId!,

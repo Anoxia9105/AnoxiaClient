@@ -6,6 +6,7 @@ import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.da
 import 'package:anoxia/features/contact/presentation/widgets/contact_detail/contact_recommend_dialog.dart';
 import 'package:anoxia/framework/domain/chat_contact_detail_vo.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
+import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/framework/provider/contact/contact_detail_controller.dart';
@@ -130,6 +131,8 @@ class ContactDetailActions extends ConsumerWidget {
     // 单栏（手机/平板竖屏）发消息需 push 聊天详情页，双栏仅切 active 即可。
     if (!DeviceUtil.useSingleColumnPush(context)) return;
 
+    // 单栏无专注开关：push 前关掉残留专注，避免回宽布局后点房间直接全屏专注。
+    ref.read(chatFocusModeProvider.notifier).setEnabled(false);
     final navigator = Navigator.of(context);
     navigator.popUntil((route) => route.isFirst);
     try {

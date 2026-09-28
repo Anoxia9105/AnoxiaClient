@@ -10,6 +10,7 @@ import 'package:anoxia/features/chat/presentation/pages/chat_room_detail_page.da
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/chat/chat_focus_mode_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/pinned_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -107,6 +108,9 @@ class RoomListItem extends ConsumerWidget {
           // 点击会话既不 push 路由、页面上也没有 ChatRoomDetail，表现为“点击无响应”。
           // 平板竖屏同样单栏推入（useSingleColumnPush 已含移动端判定）。
           if (DeviceUtil.useSingleColumnPush(context)) {
+            // 单栏没有专注开关：进详情前关掉残留的专注，否则残留的开状态
+            // 会在下次宽布局点房间时直接全屏专注、没有返回按钮。
+            ref.read(chatFocusModeProvider.notifier).setEnabled(false);
             await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ChatRoomDetail(roomId: room.roomId!),
