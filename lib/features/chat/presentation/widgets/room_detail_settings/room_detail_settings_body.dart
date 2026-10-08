@@ -133,7 +133,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               _QuickToolData(
                 icon: HugeIcons.strokeRoundedSearch01,
                 tint: SettingIconTint.blue,
-                label: 'search_context_title'.tr(),
+                label: 'chat_detail_search'.tr(),
                 onTap: () => _openSearch(context, currentRoom),
               ),
               _QuickToolData(
@@ -165,7 +165,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
               _QuickToolData(
                 icon: HugeIcons.strokeRoundedSearch01,
                 tint: SettingIconTint.blue,
-                label: 'search_context_title'.tr(),
+                label: 'chat_detail_search'.tr(),
                 onTap: () => _openSearch(context, currentRoom),
               ),
               _QuickToolData(
@@ -552,12 +552,10 @@ class RoomDetailSettingsBody extends ConsumerWidget {
     int roomStatus,
   ) {
     final String actionLabel;
-    final List<List<dynamic>> actionIcon;
     final VoidCallback onTap;
 
     if (isGroup && isAdmin && roomStatus == 0) {
       actionLabel = 'chat_dissolve_group'.tr();
-      actionIcon = HugeIcons.strokeRoundedCancel01;
       onTap = () => _runDangerAction(
             context,
             ref,
@@ -571,7 +569,6 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           );
     } else if (isGroup) {
       actionLabel = 'chat_exit_group'.tr();
-      actionIcon = HugeIcons.strokeRoundedLogout01;
       onTap = () => _runDangerAction(
             context,
             ref,
@@ -584,7 +581,6 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           );
     } else {
       actionLabel = 'chat_delete_conversation'.tr();
-      actionIcon = HugeIcons.strokeRoundedDelete02;
       onTap = () => _runDangerAction(
             context,
             ref,
@@ -597,19 +593,32 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           );
     }
 
-    final dangerTint = SettingIconTint.dangerOf(context);
-    return RoomCard(
-      child: RoomSettingTile(
-        icon: actionIcon,
-        tint: dangerTint,
-        title: Text(
-          actionLabel,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.error,
-            fontWeight: FontWeight.w700,
+    // 危险区去卡片、整宽平铺：无图标无箭头，纯红字居中行
+    final colorScheme = Theme.of(context).colorScheme;
+    final hairline = BorderSide(
+      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+    );
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(top: hairline, bottom: hairline),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          child: Center(
+            child: Text(
+              actionLabel,
+              style: TextStyle(
+                color: colorScheme.error,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
           ),
         ),
-        onTap: onTap,
       ),
     );
   }
@@ -645,14 +654,14 @@ class RoomDetailSettingsBody extends ConsumerWidget {
   }
 
   /// 在卡片行之间插入 hairline 分隔线
-  /// （indent 63 = 左右边距 14 + 图标块 37 + 间距 12，与标题左对齐）
+  /// （indent 62 = 左右边距 14 + 图标块 36 + 间距 12，与标题左对齐）
   List<Widget> _withDividers(BuildContext context, List<Widget> tiles) {
     if (tiles.length < 2) return tiles;
     final dividerColor =
         Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5);
     final result = <Widget>[tiles.first];
     for (var i = 1; i < tiles.length; i++) {
-      result.add(Divider(height: 1, indent: 63, endIndent: 14, color: dividerColor));
+      result.add(Divider(height: 1, indent: 62, endIndent: 14, color: dividerColor));
       result.add(tiles[i]);
     }
     return result;
@@ -670,14 +679,14 @@ class _TileIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final (background, foreground) = tint.resolve(context);
     return Container(
-      width: 37,
-      height: 37,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(RadiusToken.lg),
       ),
       alignment: Alignment.center,
-      child: HugeIcon(icon: icon, size: 20, color: foreground),
+      child: HugeIcon(icon: icon, size: 19, color: foreground),
     );
   }
 }
@@ -712,6 +721,7 @@ class _ViewAllFooter extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w700,
+                        fontSize: 13,
                       ),
                 ),
                 const SizedBox(width: 4),
@@ -791,8 +801,8 @@ class _QuickToolButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 37,
-                height: 37,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: background,
                   borderRadius: BorderRadius.circular(RadiusToken.lg),
@@ -800,7 +810,7 @@ class _QuickToolButton extends StatelessWidget {
                 alignment: Alignment.center,
                 child: HugeIcon(
                   icon: data.icon,
-                  size: 20,
+                  size: 19,
                   color: foreground,
                 ),
               ),

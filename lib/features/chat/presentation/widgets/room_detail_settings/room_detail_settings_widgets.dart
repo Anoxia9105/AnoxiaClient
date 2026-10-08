@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
-/// 设置开关行：标准尺寸 Switch，整行可点
+/// 设置开关行：0.85 紧凑型 Switch，整行可点
 ///
-/// leading 由调用方传入带底色的图标块（与 [RoomSettingTile] 对齐），
-/// 不再做 0.78 缩放，保证触区与视觉一致。
+/// leading 由调用方传入带底色的图标块（与 [RoomSettingTile] 对齐）。
 class RoomSwitchTile extends StatelessWidget {
   final Widget leading;
   final Widget title;
@@ -28,15 +27,27 @@ class RoomSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      minVerticalPadding: 10,
+      minVerticalPadding: 8,
       leading: leading,
-      title: title,
-      subtitle: subtitle,
-      trailing: Switch.adaptive(
-        value: value,
-        onChanged: onChanged,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      title: DefaultTextStyle.merge(
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        child: title,
+      ),
+      subtitle: subtitle == null
+          ? null
+          : DefaultTextStyle.merge(
+              style: const TextStyle(fontSize: 11.5),
+              child: subtitle!,
+            ),
+      trailing: Transform.scale(
+        scale: 0.85,
+        child: Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
       onTap: () => onChanged(!value),
     );

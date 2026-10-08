@@ -113,24 +113,33 @@ class RoomSettingTile extends StatelessWidget {
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      minVerticalPadding: 10,
+      minVerticalPadding: 8,
+      dense: true,
       leading: Container(
-        width: 37,
-        height: 37,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(RadiusToken.lg),
         ),
         alignment: Alignment.center,
-        child: HugeIcon(icon: icon, size: 20, color: foreground),
+        child: HugeIcon(icon: icon, size: 19, color: foreground),
       ),
-      title: title,
-      subtitle: subtitle,
+      title: DefaultTextStyle.merge(
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        child: title,
+      ),
+      subtitle: subtitle == null
+          ? null
+          : DefaultTextStyle.merge(
+              style: const TextStyle(fontSize: 11.5),
+              child: subtitle!,
+            ),
       trailing: trailing ??
           (showChevron
               ? HugeIcon(
                   icon: HugeIcons.strokeRoundedArrowRight01,
-                  size: 15,
+                  size: 14,
                   color: faint,
                 )
               : null),
@@ -151,7 +160,7 @@ class RoomSectionCaption extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 7),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 6),
       child: Row(
         children: [
           Text(
@@ -159,6 +168,7 @@ class RoomSectionCaption extends StatelessWidget {
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
                   fontWeight: FontWeight.w700,
+                  fontSize: 11,
                   letterSpacing: 0.4,
                 ),
           ),

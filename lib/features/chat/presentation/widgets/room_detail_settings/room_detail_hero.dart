@@ -35,7 +35,7 @@ class RoomDetailHero extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 6, 14, 0),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(RadiusToken.xl),
         border: Border.all(
@@ -55,7 +55,7 @@ class RoomDetailHero extends StatelessWidget {
           AvatarWidget(
             url: avatarUrl,
             name: displayName,
-            size: 60,
+            size: 56,
             borderRadius: RadiusToken.xl,
             status: _avatarStatus(),
           ),
@@ -75,7 +75,10 @@ class RoomDetailHero extends StatelessWidget {
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
                       ),
                     ),
                     if (isGroup && isAdmin) ...[
