@@ -258,6 +258,11 @@ class RoomDetailSettingsBody extends ConsumerWidget {
                 icon: HugeIcons.strokeRoundedShare08,
                 tint: SettingIconTint.violet,
                 title: Text('chat_share_group'.tr()),
+                subtitle: Text(
+                  'chat_share_group_hint'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onTap: () => _shareGroup(context, ref, currentRoom),
               ),
               // 需审批群才展示入群申请入口，自由加入群（joinPolicy==0）无需审批
@@ -354,6 +359,7 @@ class RoomDetailSettingsBody extends ConsumerWidget {
         tint: SettingIconTint.grey,
       ),
       title: Text('chat_pin'.tr()),
+      subtitle: Text('chat_pin_hint'.tr()),
       value: ref.watch(pinnedRoomsProvider).contains(roomId),
       onChanged: (value) async {
         await ref.read(pinnedRoomsProvider.notifier).toggle(roomId);
@@ -593,28 +599,27 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           );
     }
 
-    // 危险区去卡片、整宽平铺：无图标无箭头，纯红字居中行
+    // 危险区：左右留边距的居中长按钮，淡红底 + 红字
     final colorScheme = Theme.of(context).colorScheme;
-    final hairline = BorderSide(
-      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-    );
-    return Container(
-      margin: const EdgeInsets.only(top: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(top: hairline, bottom: hairline),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          child: Center(
-            child: Text(
-              actionLabel,
-              style: TextStyle(
-                color: colorScheme.error,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
+    final borderRadius = BorderRadius.circular(RadiusToken.lg);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+      child: Material(
+        color: colorScheme.error.withValues(alpha: 0.1),
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            child: Center(
+              child: Text(
+                actionLabel,
+                style: TextStyle(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -754,6 +759,9 @@ class _QuickToolData {
 }
 
 /// 快捷工具：一排四个已存在页面的直达入口
+///
+/// 窄面板（桌面 320/280 右栏）自动切换为纯图标按钮 + Tooltip，
+/// 避免文字挤压；移动端整页保留图标 + 文字。
 class _QuickTools extends StatelessWidget {
   final List<_QuickToolData> tools;
 
@@ -763,13 +771,20 @@ class _QuickTools extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(
-        children: [
-          for (var i = 0; i < tools.length; i++) ...[
-            if (i > 0) const SizedBox(width: 9),
-            Expanded(child: _QuickToolButton(data: tools[i])),
-          ],
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 340;
+          return Row(
+            children: [
+              for (var i = 0; i < tools.length; i++) ...[
+                if (i > 0) const SizedBox(width: 9),
+                Expanded(
+                  child: _QuickToolButton(data: tools[i], compact: compact),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -777,8 +792,9 @@ class _QuickTools extends StatelessWidget {
 
 class _QuickToolButton extends StatelessWidget {
   final _QuickToolData data;
+  final bool compact;
 
-  const _QuickToolButton({required this.data});
+  const _QuickToolButton({required this.data, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -795,38 +811,54 @@ class _QuickToolButton extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: data.onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: background,
-                  borderRadius: BorderRadius.circular(RadiusToken.lg),
+        child: compact
+            ? Tooltip(
+                message: data.label,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Center(child: _toolIcon(context, background, foreground)),
                 ),
-                alignment: Alignment.center,
-                child: HugeIcon(
-                  icon: data.icon,
-                  size: 19,
-                  color: foreground,
+              )
+            : Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _toolIcon(context, background, foreground),
+                    const SizedBox(height: 7),
+                    Text(
+                      data.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 7),
-              Text(
-                data.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
+      ),
+    );
+  }
+
+  Widget _toolIcon(
+    BuildContext context,
+    Color background,
+    Color foreground,
+  ) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
+      ),
+      alignment: Alignment.center,
+      child: HugeIcon(
+        icon: data.icon,
+        size: 19,
+        color: foreground,
       ),
     );
   }
