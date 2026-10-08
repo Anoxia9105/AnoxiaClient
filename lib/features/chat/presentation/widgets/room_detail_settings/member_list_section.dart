@@ -1,28 +1,26 @@
 import 'package:anoxia/common/widgets/avatar_widget.dart';
-import 'package:anoxia/common/widgets/online_status_pill.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
-import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:anoxia/framework/domain/chat_room_member_vo.dart';
+import 'package:anoxia/framework/provider/chat/room/room_member_service.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
-import 'package:anoxia/framework/theme/app_colors.dart';
 
-/// 内部隔离组件：群成员行式列表区块，防止成员列表数据更新时触发整个 Settings 树重构
+/// 内部隔离组件：群成员头像网格，防止成员列表更新时触发整个 Settings 树重构
 ///
-/// - 顶部摘要：在线胶囊 + 成员总数（与聊天 AppBar 副标题同语言）
-/// - 群聊最多展示 [maxDisplayRows] 个成员行，末尾为「添加成员」入口；
-///   超出上限的成员通过详情页「查看全部成员」入口查看
-/// - 单聊仅展示对方一行，无摘要与添加入口
+/// - 宽面板（移动端整页）5 列，窄面板（桌面 320/280 右栏）4 列
+/// - 群聊展示前 [maxDisplayMembers] 个成员 +「添加成员」入口；
+///   超出部分走卡片底部「查看全部成员」入口
+/// - 单聊仅展示对方一个格子，无添加入口
 class MemberListSection extends ConsumerWidget {
   final String roomId;
   final bool isGroup;
   final VoidCallback? onAddMemberTap;
   final void Function(ChatRoomMemberVO member)? onMemberTap;
 
-  /// 群聊时最多展示的成员行数，超过部分通过「查看全部成员」查看
-  static const int maxDisplayRows = 8;
+  /// 群聊时最多展示的成员格数，超过部分通过「查看全部成员」查看
+  static const int maxDisplayMembers = 8;
 
   const MemberListSection({
     super.key,
@@ -37,121 +35,112 @@ class MemberListSection extends ConsumerWidget {
     final members = ref.watch(roomMembersProvider(roomId));
 
     final displayCount = isGroup
-        ? (members.length > maxDisplayRows ? maxDisplayRows : members.length)
+        ? (members.length > maxDisplayMembers
+            ? maxDisplayMembers
+            : members.length)
         : members.length;
-    final onlineCount = members.where((m) => m.onlineStatus == true).length;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isGroup)
-            _buildSummaryRow(context, onlineCount, members.length),
-          for (var i = 0; i < displayCount; i++) _buildMemberRow(context, members[i]),
-          if (isGroup) _buildAddMemberRow(context),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 桌面右面板（320/280）4 列，移动端整页 5 列
+        final columns = constraints.maxWidth > 340 ? 5 : 4;
+        final showAdd = isGroup && onAddMemberTap != null;
+        final itemCount = displayCount + (showAdd ? 1 : 0);
+
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 11,
+            crossAxisSpacing: 6,
+            // 头像 46 + 间距 6 + 两行以内昵称
+            mainAxisExtent: 74,
+          ),
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            if (index < displayCount) {
+              return _buildMemberCell(context, members[index]);
+            }
+            return _buildAddCell(context);
+          },
+        );
+      },
     );
   }
 
-  /// 顶部摘要：在线胶囊 + 成员总数（与聊天 AppBar 副标题同语言）
-  Widget _buildSummaryRow(
-    BuildContext context,
-    int onlineCount,
-    int totalCount,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 2, bottom: 6),
-      child: Row(
-        children: [
-          OnlineStatusPill(
-            text: 'common_online_count'.tr(args: [onlineCount.toString()]),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'chat_member_total'.tr(args: [totalCount.toString()]),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 成员行：头像（右下角在线状态点）+ 昵称 + 在线/离线副标题 + 右箭头
-  Widget _buildMemberRow(BuildContext context, ChatRoomMemberVO member) {
-    final colorScheme = Theme.of(context).colorScheme;
+  /// 成员格：头像（右下角在线状态点）+ 昵称
+  Widget _buildMemberCell(BuildContext context, ChatRoomMemberVO member) {
     final isOnline = member.onlineStatus == true;
     final displayName = member.nickName?.trim().isNotEmpty == true
         ? member.nickName!.trim()
         : 'chat_unknown_user'.tr();
 
-    return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -2),
-      contentPadding: EdgeInsets.zero,
-      leading: AvatarWidget(
-        url: member.avatar,
-        name: displayName,
-        size: 40,
-        status: isOnline ? AvatarStatus.online : AvatarStatus.offline,
-      ),
-      title: Text(
-        displayName,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        isOnline ? 'contact_online'.tr() : 'contact_offline'.tr(),
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-          color: isOnline ? Theme.of(context).extension<AppColors>()?.success ?? colorScheme.primary : colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: HugeIcon(
-        icon: HugeIcons.strokeRoundedArrowRight01,
-        size: 14,
-        color: colorScheme.outline,
-      ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onMemberTap == null ? null : () => onMemberTap!(member),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AvatarWidget(
+            url: member.avatar,
+            name: displayName,
+            size: 46,
+            borderRadius: RadiusToken.lg,
+            status: isOnline ? AvatarStatus.online : AvatarStatus.offline,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ),
     );
   }
 
-  /// 末尾「添加成员」入口行
-  Widget _buildAddMemberRow(BuildContext context) {
+  /// 末尾「添加成员」入口格
+  Widget _buildAddCell(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -2),
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(RadiusToken.md),
-        ),
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedAddSquare,
-          color: colorScheme.onSurfaceVariant,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        'member_add_title'.tr(),
-        style: const TextStyle(fontSize: 14),
-      ),
-      trailing: HugeIcon(
-        icon: HugeIcons.strokeRoundedArrowRight01,
-        size: 14,
-        color: colorScheme.outline,
-      ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onAddMemberTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(RadiusToken.lg),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedAddSquare,
+              color: colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'member_add_title'.tr(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }

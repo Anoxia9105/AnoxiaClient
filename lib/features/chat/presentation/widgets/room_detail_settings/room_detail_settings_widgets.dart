@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
-/// 紧凑型开关行：缩小开关控件与行高，适配会话详情侧栏。
+/// 设置开关行：标准尺寸 Switch，整行可点
+///
+/// leading 由调用方传入带底色的图标块（与 [RoomSettingTile] 对齐），
+/// 不再做 0.78 缩放，保证触区与视觉一致。
 class RoomSwitchTile extends StatelessWidget {
   final Widget leading;
   final Widget title;
@@ -25,20 +28,15 @@ class RoomSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      dense: true,
-      visualDensity: const VisualDensity(vertical: -2),
-      minVerticalPadding: 8,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      minVerticalPadding: 10,
       leading: leading,
       title: title,
       subtitle: subtitle,
-      trailing: Transform.scale(
-        scale: 0.78,
-        child: Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
+      trailing: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       onTap: () => onChanged(!value),
     );
@@ -158,7 +156,7 @@ class SkeletonCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: Material(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(RadiusToken.lg),
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
         clipBehavior: Clip.antiAlias,
         child: child,
       ),
