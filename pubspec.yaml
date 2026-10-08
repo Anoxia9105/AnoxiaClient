@@ -93,7 +93,10 @@ dependencies:
   geolocator: ^14.0.2 # 系统定位
 
   # —— 音视频通话（RTC） ——
-  livekit_client: ^2.7.0 # LiveKit 通话信令+媒体
+  # livekit_client 必须 pin 死：room_controller 直引其 AudioManager，
+  # 版本漂移（lock 未入库，各机器独立解析）曾导致 web-wasm 编译失败。
+  # 升级前必须全端（apk/ipa/win/web-js/web-wasm）验证通过。
+  livekit_client: 2.13.1 # LiveKit 通话信令+媒体
   flutter_webrtc: ^1.4.0 # WebRTC 底层
 
   # —— 推送 + 通知 + 后台 ——
