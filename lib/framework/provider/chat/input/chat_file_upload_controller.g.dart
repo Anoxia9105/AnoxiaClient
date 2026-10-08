@@ -70,7 +70,7 @@ final class ChatFileUploadControllerProvider
 }
 
 String _$chatFileUploadControllerHash() =>
-    r'b9e77e2607a347a2bdc8bb90720c285cc4db7da4';
+    r'441f9eb8eb7de20cad9e2bba2a4338697d1e013a';
 
 /// 聊天文件上传控制器
 ///

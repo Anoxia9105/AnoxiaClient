@@ -17,6 +17,7 @@ import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter/services.dart' show TextSelection;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -71,18 +72,36 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       withData: true,
     );
     if (result == null || result.files.isEmpty) return;
+    await insertPickedFiles(controller, result.files);
+  }
+
+  /// 文件选择和桌面拖放共用的附件入口。
+  /// [isActive] 在异步图片元数据读取后确认目标编辑器仍然有效。
+  Future<void> insertPickedFiles(
+    QuillController controller,
+    List<PlatformFile> files, {
+    bool Function()? isActive,
+  }) async {
+    if (files.isEmpty || isActive?.call() == false) return;
     if (!UploadValidator.validate(
       ref.read(toastServiceProvider),
       controller,
-      result.files,
+      files,
     )) {
       return;
     }
 
     final toast = ref.read(toastServiceProvider);
+    // 从消息区拖入时编辑器可能没有有效光标，默认追加到草稿末尾。
+    if (controller.selection.baseOffset < 0) {
+      controller.updateSelection(
+        TextSelection.collapsed(offset: controller.document.length - 1),
+        ChangeSource.local,
+      );
+    }
     final imageFiles = <PlatformFile>[];
     final otherFiles = <Attachment>[];
-    for (final file in result.files) {
+    for (final file in files) {
       if (!UploadValidator.validateSingleFile(toast, file)) {
         continue;
       }
@@ -118,7 +137,13 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     if (imageFiles.isNotEmpty) {
       await ref
           .read(chatImageUploadControllerProvider.notifier)
-          .insertPickedImages(controller, imageFiles);
+          .insertPickedImages(controller, imageFiles, isActive: isActive);
+    }
+    if (isActive?.call() == false) {
+      for (final attachment in otherFiles) {
+        _filesById.remove(attachment.id);
+      }
+      return;
     }
     if (otherFiles.isEmpty) return;
 

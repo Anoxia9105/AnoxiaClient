@@ -155,9 +155,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       }
       final imageSize = hasBytes
           ? await readImageSizeFromBytes(file.bytes!)
-          : (hasPath
-                ? await readImageSizeFromFile(file.path!)
-                : (null, null));
+          : (hasPath ? await readImageSizeFromFile(file.path!) : (null, null));
       uploadList.add(
         Attachment(
           id: id,
@@ -196,9 +194,10 @@ class ChatImageUploadController extends _$ChatImageUploadController {
   /// 编辑器归属、发起后台上传的流程完全一致，保证编辑器所见与发送后类型统一。
   Future<void> insertPickedImages(
     QuillController controller,
-    List<PlatformFile> files,
-  ) async {
-    if (files.isEmpty) return;
+    List<PlatformFile> files, {
+    bool Function()? isActive,
+  }) async {
+    if (files.isEmpty || isActive?.call() == false) return;
 
     final List<Attachment> uploadList = [];
     for (final file in files) {
@@ -213,9 +212,7 @@ class ChatImageUploadController extends _$ChatImageUploadController {
       }
       final imageSize = hasBytes
           ? await readImageSizeFromBytes(file.bytes!)
-          : (hasPath
-                ? await readImageSizeFromFile(file.path!)
-                : (null, null));
+          : (hasPath ? await readImageSizeFromFile(file.path!) : (null, null));
       uploadList.add(
         Attachment(
           id: id,
@@ -228,6 +225,12 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           height: imageSize.$2,
         ),
       );
+    }
+    if (isActive?.call() == false) {
+      for (final attachment in uploadList) {
+        _filesById.remove(attachment.id);
+      }
+      return;
     }
     if (uploadList.isEmpty) return;
 
