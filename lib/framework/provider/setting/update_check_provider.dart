@@ -77,6 +77,7 @@ bool _isNewerThan(String latest, String current) {
 /// - [dismiss] 清除更新红点
 class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
   Timer? _timer;
+  Timer? _initialTimer;
 
   static const _checkInterval = Duration(minutes: 30);
 
@@ -95,10 +96,18 @@ class AppUpdateCheckerNotifier extends Notifier<AppUpdateInfo?> {
 
   @override
   AppUpdateInfo? build() {
-    ref.onDispose(() => _timer?.cancel());
+    ref.onDispose(() {
+      _timer?.cancel();
+      _initialTimer?.cancel();
+    });
 
     // 启动后延迟 3 秒做首次检查（避免跟启动初始化争抲资源）
-    Future.delayed(const Duration(seconds: 3), _scheduledInitialCheck);
+    // 用可取消的 Timer（而非 Future.delayed），否则 dispose 后仍有 pending timer，
+    // 在 widget 测试里会触发「A Timer is still pending」失败。
+    _initialTimer = Timer(
+      const Duration(seconds: 3),
+      () => unawaited(_scheduledInitialCheck()),
+    );
 
     // 定时周期检查
     _timer = Timer.periodic(_checkInterval, (_) => _check());

@@ -71,7 +71,7 @@ dependencies:
   flutter_quill: ^11.5.1 # 富文本编辑器（聊天输入/记事本）
   dart_quill_delta: ^10.8.3 # Quill Delta 数据结构
   flutter_quill_delta_from_html: 1.5.3 # HTML ↔ Delta 互转
-  flutter_markdown: ^0.7.7+1 # Markdown 渲染
+  flutter_markdown_plus: ^1.0.12 # Markdown 渲染（原 flutter_markdown 已停更，官方指定替代包）
   markdown: 7.3.1 # Markdown 解析
 
   # —— 图片 / 文件 / 音视频播放 ——

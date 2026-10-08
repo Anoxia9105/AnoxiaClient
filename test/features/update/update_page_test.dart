@@ -1,6 +1,8 @@
 import 'package:anoxia/features/update/presentation/pages/update_page.dart';
 import 'package:anoxia/features/update/presentation/widgets/update_sections.dart';
 import 'package:anoxia/framework/domain/app_update_info.dart';
+import 'package:anoxia/framework/provider/core/network_provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +18,13 @@ void main() {
       await EasyLocalization.ensureInitialized();
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            // networkStatus 内含 checkConnectivity().timeout(3s)，
+            // 真机通道在测试里不返回，用静态流代替，避免 pending timer。
+            networkStatusProvider.overrideWith(
+              (ref) => Stream.value(const [ConnectivityResult.wifi]),
+            ),
+          ],
           child: EasyLocalization(
             supportedLocales: const [Locale('zh')],
             path: 'assets/i18n',

@@ -710,7 +710,7 @@ Future<CaptchaModel> getCaptcha(Ref ref) async {
 Future<bool> guestLoginEnabled(Ref ref) async {
   if (!DeviceUtil.isRealWeb()) return false;
   try {
-    return ref.read(authRepositoryProvider).isGuestLoginEnabled();
+    return await ref.read(authRepositoryProvider).isGuestLoginEnabled();
   } catch (_) {
     return false;
   }

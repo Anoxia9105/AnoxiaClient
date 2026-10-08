@@ -162,7 +162,7 @@ class _DesktopBackgroundVideoCache {
       }
       await sink.close();
       if (await partial.length() == 0) return null;
-      return partial.rename(target.path);
+      return await partial.rename(target.path);
     } catch (_) {
       if (partial != null && await partial.exists()) await partial.delete();
       return null;

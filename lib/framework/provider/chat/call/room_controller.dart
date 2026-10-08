@@ -305,7 +305,7 @@ class RoomController extends _$RoomController {
     );
     if (!speakerPref && DeviceUtil.isRealMobile()) {
       try {
-        await Hardware.instance.setSpeakerphoneOn(false);
+        await AudioManager.instance.setSpeakerOutputPreferred(false);
       } catch (e) {
         debugLog('应用免提偏好失败: $e');
       }
@@ -1009,7 +1009,7 @@ class RoomController extends _$RoomController {
     if (currentState == null) return;
     try {
       final next = !currentState.speakerOn;
-      await Hardware.instance.setSpeakerphoneOn(next);
+      await AudioManager.instance.setSpeakerOutputPreferred(next);
       state = AsyncData(currentState.copyWith(speakerOn: next));
     } catch (e) {
       debugLog('切换扬声器失败: $e');

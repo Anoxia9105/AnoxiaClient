@@ -91,7 +91,7 @@ class _NewFriendsPageState extends ConsumerState<NewFriendsPage> {
         loading: () => const NewFriendsSkeleton(),
         error: (err, stack) => _ErrorState(
           message:
-              '${'contact_load_failed_with_error'.tr(args: [err.toString()])}',
+              'contact_load_failed_with_error'.tr(args: [err.toString()]),
           onRetry: () =>
               ref.read(contactRequestsServiceProvider.notifier).refresh(),
         ),
