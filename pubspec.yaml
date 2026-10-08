@@ -81,6 +81,7 @@ dependencies:
   image_gallery_saver_plus: ^5.0.0 # 保存到相册（原生插件，走 shim）
   file_picker: ^11.0.2 # 文件选择
   cross_file: ^0.3.5+4 # Web 文件对象封装
+  desktop_drop: ^0.8.4 # 桌面聊天文件拖放
   video_player: ^2.13.0 # 视频播放
   video_player_win: ^3.2.2 # Windows 视频播放实现
   just_audio: ^0.10.5 # 音频播放（语音消息）

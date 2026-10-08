@@ -1489,5 +1489,10 @@
   "quick_login_continue": "一键登录",
   "quick_login_back": "返回登录页",
   "quick_login_unavailable": "没有可用的已保存账号",
-  "quick_login_switch_to_saved": "使用上次账号快捷登录"
+  "quick_login_switch_to_saved": "使用上次账号快捷登录",
+  "chat_drop_title": "松开以添加文件",
+  "chat_drop_hint": "文件会加入输入框，确认后再发送",
+  "chat_drop_limits": "最多 10 个附件 · 单个 50 MB · 合计 100 MB",
+  "chat_drop_preparing": "正在准备文件…",
+  "chat_drop_rejected": "无法添加以下项目（文件夹或不可读文件）：{}"
 }

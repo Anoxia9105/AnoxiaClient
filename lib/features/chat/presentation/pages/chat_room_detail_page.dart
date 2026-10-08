@@ -15,6 +15,10 @@ import 'package:anoxia/features/chat/presentation/widgets/message_bubble/chat_me
 import 'package:anoxia/features/chat/presentation/widgets/skeleton/chat_room_detail_skeleton.dart';
 import 'package:anoxia/features/chat/presentation/widgets/appbar/chat_app_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/group_announcement_banner.dart';
+import 'package:anoxia/features/chat/presentation/widgets/desktop_chat_drop_target.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_file_upload_controller.dart';
+import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
@@ -135,42 +139,64 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       unawaited(_scrollController.jumpToMessage(next.messageId));
     });
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: showInitialSkeleton
-          ? AppBar()
-          : ChatAppBar(roomId: widget.roomId),
-      drawerScrimColor: Colors.transparent,
-      body: Column(
-        children: [
-          if (!showInitialSkeleton && currentRoom.roomType == 1)
-            GroupAnnouncementBanner(
-              roomId: widget.roomId,
-              announcement: currentRoom.roomDescription ?? '',
-            ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: _buildChatBody(
-                showInitialSkeleton: showInitialSkeleton,
-                entryTask: entryTask,
-                flatItems: flatItems,
-                currentRoom: currentRoom,
+    return DesktopChatDropTarget(
+      roomId: widget.roomId,
+      enabled:
+          currentRoom.roomStatus == 0 &&
+          !entryTask.isLoading &&
+          !entryTask.hasError,
+      onRejected: (names) => ref
+          .read(toastServiceProvider)
+          .showToast(
+            'chat_drop_rejected'.tr(args: [names.join('、')]),
+            type: ToastType.warning,
+          ),
+      onFiles: (files, isActive) async {
+        final roomId = widget.roomId;
+        final controller = ref.read(chatInputControllerProvider(roomId));
+        await ref
+            .read(chatFileUploadControllerProvider.notifier)
+            .insertPickedFiles(controller, files, isActive: isActive);
+        if (isActive()) ref.read(chatFocusNodeProvider(roomId)).requestFocus();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: showInitialSkeleton
+            ? AppBar()
+            : ChatAppBar(roomId: widget.roomId),
+        drawerScrimColor: Colors.transparent,
+        body: Column(
+          children: [
+            if (!showInitialSkeleton && currentRoom.roomType == 1)
+              GroupAnnouncementBanner(
+                roomId: widget.roomId,
+                announcement: currentRoom.roomDescription ?? '',
+              ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: _buildChatBody(
+                  showInitialSkeleton: showInitialSkeleton,
+                  entryTask: entryTask,
+                  flatItems: flatItems,
+                  currentRoom: currentRoom,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: _scrollController.showScrollDownButton
-          ? ChatRoomDetailScrollDownButton(
-              onPressed: () => _scrollController.scrollToBottom(animated: true),
-            )
-          : null,
-      bottomNavigationBar: ChatRoomDetailBottomBar(
-        showSkeleton: showInitialSkeleton,
-        roomStatus: currentRoom.roomStatus,
-        onFieldTap: () => _scrollController.scrollToBottom(animated: true),
+          ],
+        ),
+        floatingActionButton: _scrollController.showScrollDownButton
+            ? ChatRoomDetailScrollDownButton(
+                onPressed: () =>
+                    _scrollController.scrollToBottom(animated: true),
+              )
+            : null,
+        bottomNavigationBar: ChatRoomDetailBottomBar(
+          showSkeleton: showInitialSkeleton,
+          roomStatus: currentRoom.roomStatus,
+          onFieldTap: () => _scrollController.scrollToBottom(animated: true),
+        ),
       ),
     );
   }
@@ -257,9 +283,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     // 自动滚动条，改为 RawScrollbar 仅做位置指示（interactive 默认
     // false），滚动交给滚轮/触摸板/拖列表区，与微信网页版交互一致。
     return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(
-        context,
-      ).copyWith(scrollbars: false),
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
       child: RawScrollbar(
         controller: _listViewController,
         thumbVisibility: true,

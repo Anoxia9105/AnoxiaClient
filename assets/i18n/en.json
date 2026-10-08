@@ -1489,5 +1489,10 @@
   "quick_login_continue": "One-click login",
   "quick_login_back": "Back to sign in",
   "quick_login_unavailable": "No saved account is available",
-  "quick_login_switch_to_saved": "Quick sign in with saved account"
+  "quick_login_switch_to_saved": "Quick sign in with saved account",
+  "chat_drop_title": "Drop to add files",
+  "chat_drop_hint": "Files are added to your draft. Send when ready.",
+  "chat_drop_limits": "Up to 10 attachments · 50 MB each · 100 MB total",
+  "chat_drop_preparing": "Preparing files…",
+  "chat_drop_rejected": "Could not add these items (folders or unreadable files): {}"
 }

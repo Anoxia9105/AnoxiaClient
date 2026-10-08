@@ -1489,5 +1489,10 @@
   "quick_login_continue": "ワンクリックログイン",
   "quick_login_back": "ログイン画面に戻る",
   "quick_login_unavailable": "利用可能な保存済みアカウントがありません",
-  "quick_login_switch_to_saved": "前回のアカウントでクイックログイン"
+  "quick_login_switch_to_saved": "前回のアカウントでクイックログイン",
+  "chat_drop_title": "ドロップしてファイルを追加",
+  "chat_drop_hint": "入力欄に追加されます。確認してから送信してください。",
+  "chat_drop_limits": "添付は最大10件 · 1件50 MB · 合計100 MB",
+  "chat_drop_preparing": "ファイルを準備中…",
+  "chat_drop_rejected": "追加できない項目（フォルダーまたは読み取れないファイル）：{}"
 }
