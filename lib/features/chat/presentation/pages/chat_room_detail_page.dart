@@ -7,6 +7,7 @@ import 'package:anoxia/features/chat/presentation/pages/banned_content_page.dart
 import 'package:anoxia/features/chat/presentation/pages/empty_messages_page.dart';
 import 'package:anoxia/features/chat/presentation/pages/no_conversation_page.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chat_scroll_controller.dart';
+import 'package:anoxia/features/chat/presentation/widgets/chat_message_list_delegate.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_bottom_bar.dart';
 import 'package:anoxia/features/chat/presentation/widgets/chatinput/chat_room_detail_scroll_down_button.dart';
 import 'package:anoxia/features/chat/presentation/widgets/history_load_indicator.dart';
@@ -217,15 +218,13 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     List<ChatListItem> flatItems, {
     required bool isGroup,
   }) {
-    Widget itemBuilder(BuildContext context, int index) {
-      final item = flatItems[index];
+    Widget itemBuilder(BuildContext context, ChatListItem item) {
       return switch (item) {
         TimeDividerItem(:final timestamp) => _buildTimeDividerWidget(
           timestamp,
           context,
         ),
         MessageItem(:final message) => ChatMessageBubble(
-          key: ValueKey(message.messageId ?? message.clientMsgId),
           message: message,
           isGroup: isGroup,
         ),
@@ -248,12 +247,7 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
       key: ValueKey(widget.roomId),
       controller: _listViewController as FlutterListViewController,
       reverse: true,
-      delegate: FlutterListViewDelegate(
-        itemBuilder,
-        childCount: flatItems.length,
-        keepPosition: false,
-        addAutomaticKeepAlives: false,
-      ),
+      delegate: buildChatMessageListDelegate(flatItems, itemBuilder),
     );
 
     if (!DeviceUtil.isWeb) return list;
