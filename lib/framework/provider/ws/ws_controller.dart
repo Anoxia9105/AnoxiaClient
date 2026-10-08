@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 import 'dart:io' as io;
 import 'dart:math' as math;
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
@@ -484,6 +485,9 @@ class WsController extends _$WsController {
           if (opType == 1 || opType == 3) {
             // 消息撤回/删除，本地删除
             if (messageId.isNotEmpty && roomId.isNotEmpty) {
+              ref
+                  .read(forwardSelectionControllerProvider(roomId).notifier)
+                  .remove(messageId);
               ref
                   .read(chatMessagesProvider.notifier)
                   .removeMessage(messageId, roomId);

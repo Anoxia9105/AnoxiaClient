@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'attachment.dart';
 import 'code_payload.dart';
+import 'forward_info.dart';
 import 'message_enum.dart';
 import 'message_payload_parts.dart';
 
 export 'message_payload_parts.dart';
+export 'forward_info.dart';
 
 /// @全体成员的固定占位用户 ID。
 ///
@@ -22,6 +24,7 @@ const int kMentionAllUserId = -1;
 ///
 /// 所有字段均为可选，实际使用中只有与消息类型相关的字段才会被填充。
 class MessagePayload {
+  final ForwardInfo? forwardInfo;
   // ==================== 基础文本/内容 ====================
 
   /// 纯文本内容（普通文本消息、媒体描述、系统消息文本）
@@ -88,6 +91,7 @@ class MessagePayload {
   // ==================== 构造函数 ====================
 
   const MessagePayload({
+    this.forwardInfo,
     this.content,
     this.quillDelta,
     this.replyTo,
@@ -142,6 +146,7 @@ class MessagePayload {
 
   /// 创建副本并选择性更新字段。
   MessagePayload copyWith({
+    ForwardInfo? forwardInfo,
     String? content,
     String? quillDelta,
     String? replyTo,
@@ -162,6 +167,7 @@ class MessagePayload {
     CodePayload? code,
     SystemPayload? system,
   }) => MessagePayload(
+    forwardInfo: forwardInfo ?? this.forwardInfo,
     content: content ?? this.content,
     quillDelta: quillDelta ?? this.quillDelta,
     replyTo: replyTo ?? this.replyTo,
@@ -190,6 +196,13 @@ class MessagePayload {
   /// 该方法会自动检测输入 JSON 的结构（如 `text`、`image`、`audio` 等顶层字段），
   /// 并从中提取相应字段，支持服务端多种命名风格。
   factory MessagePayload.fromJson(Map<String, dynamic> json) {
+    final info = _asMap(json['forwardInfo']);
+    return _fromContentJson(
+      json,
+    ).copyWith(forwardInfo: info == null ? null : ForwardInfo.fromJson(info));
+  }
+
+  static MessagePayload _fromContentJson(Map<String, dynamic> json) {
     final text = _asMap(json['text']);
     if (text != null) {
       final interaction = _asMap(text['interaction']);
@@ -369,9 +382,7 @@ class MessagePayload {
       // 不做 content，避免会话列表出现语言原文或 [code] 占位。
       final topContent = _readString(json, ['content']);
       return MessagePayload(
-        content: topContent.isNotEmpty
-            ? topContent
-            : code.previewSnippet,
+        content: topContent.isNotEmpty ? topContent : code.previewSnippet,
         code: code,
         replyTo: _readReplyTo(interaction).isNotEmpty
             ? _readReplyTo(interaction)
@@ -437,6 +448,7 @@ class MessagePayload {
 
   /// 生成平铺 JSON。
   Map<String, dynamic> toFlatJson() => {
+    if (forwardInfo != null) 'forwardInfo': forwardInfo!.toJson(),
     'content': content,
     'quillDelta': quillDelta,
     'replyTo': replyTo,
@@ -461,7 +473,7 @@ class MessagePayload {
   /// 根据消息类型生成服务端要求的嵌套 JSON 结构。
   Map<String, dynamic> toTypedJson(MessageType type) {
     final interaction = _buildInteractionJson();
-    return switch (type) {
+    final body = switch (type) {
       MessageType.text => {
         'text': {
           'text': content,
@@ -530,6 +542,10 @@ class MessagePayload {
       MessageType.system => {
         'system': (system ?? SystemPayload(text: content)).toJson(),
       },
+    };
+    return {
+      ...body,
+      if (forwardInfo != null) 'forwardInfo': forwardInfo!.toJson(),
     };
   }
 

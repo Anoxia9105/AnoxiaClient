@@ -1494,5 +1494,27 @@
   "chat_drop_hint": "Files are added to your draft. Send when ready.",
   "chat_drop_limits": "Up to 10 attachments · 50 MB each · 100 MB total",
   "chat_drop_preparing": "Preparing files…",
-  "chat_drop_rejected": "Could not add these items (folders or unreadable files): {}"
+  "chat_drop_rejected": "Could not add these items (folders or unreadable files): {}",
+  "chat_forward": "Forward",
+  "chat_forward_select": "Select messages",
+  "chat_forward_label": "Forwarded",
+  "chat_forward_individual": "Forward individually",
+  "chat_forward_merged": "Forward as a record",
+  "chat_forward_record": "Chat record",
+  "chat_forward_selected_count": "{} selected",
+  "chat_forward_limit": "Select up to 50 messages",
+  "chat_forward_search": "Search conversations",
+  "chat_forward_send": "Send",
+  "chat_forward_confirm": "Forward {} messages to \"{}\"",
+  "chat_forward_progress": "Completed {} / {}",
+  "chat_forward_success": "Messages forwarded",
+  "chat_forward_pending": "The result is not confirmed yet. Retry later to check without sending duplicates.",
+  "chat_forward_failed": "Some messages were not forwarded. Completed messages remain; retry the remaining messages.",
+  "chat_forward_error": "Unable to forward right now. Please retry.",
+  "chat_forward_previous_pending": "A previous forward is still pending. Check its result first.",
+  "chat_forward_resume_previous": "Check previous forward",
+  "chat_forward_record_unavailable": "This record is unavailable or no longer visible.",
+  "chat_forward_retry": "Retry",
+  "chat_forward_load_more": "Load more"
+
 }

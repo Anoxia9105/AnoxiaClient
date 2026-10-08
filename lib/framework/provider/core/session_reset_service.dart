@@ -29,6 +29,8 @@ import 'package:anoxia/framework/provider/note/note_tree_provider.dart';
 import 'package:anoxia/framework/provider/note/note_version_provider.dart';
 import 'package:anoxia/framework/provider/schedule/schedule_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anoxia/framework/provider/chat/message/forwarding_controller.dart';
+import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 
 enum SessionResetReason { logout, tokenExpired, accountSwitch }
 
@@ -47,6 +49,9 @@ class SessionResetService {
     'roomMemberServiceProvider',
     'roomListServiceProvider',
     'activeRoomIdProvider',
+    'forwardingControllerProvider',
+    'forwardSelectionControllerProvider(*)',
+    'forwardNavigationTargetControllerProvider',
     'chatMessagesProvider',
     'chatHasMoreProvider',
     'chatInputControllerProvider(*)',
@@ -94,6 +99,9 @@ class SessionResetService {
     container.invalidate(roomMemberServiceProvider);
     container.invalidate(roomListServiceProvider);
     container.invalidate(activeRoomIdProvider);
+    container.invalidate(forwardingControllerProvider);
+    container.invalidate(forwardSelectionControllerProvider);
+    container.invalidate(forwardNavigationTargetControllerProvider);
     container.invalidate(chatMessagesProvider);
     container.invalidate(chatHasMoreProvider);
     container.invalidate(chatInputControllerProvider);

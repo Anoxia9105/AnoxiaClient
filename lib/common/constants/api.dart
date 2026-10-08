@@ -160,6 +160,7 @@ class API {
   // ======================== 消息接口 ========================
   /// 获取聊天历史记录
   static const String chatHistory = '/chat/history';
+  static const String chatForward = '/chat/forward';
 
   /// REST fallback for sending a message when WebSocket integration is not used.
 

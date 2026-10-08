@@ -18,43 +18,78 @@ Future<ChatRoomVO?> showChatRoomPicker(BuildContext context) =>
     );
 
 /// 聊天室选择对话框内部组件。
-class _ChatRoomPickerDialog extends ConsumerWidget {
+class _ChatRoomPickerDialog extends ConsumerStatefulWidget {
   const _ChatRoomPickerDialog();
+  @override
+  ConsumerState<_ChatRoomPickerDialog> createState() =>
+      _ChatRoomPickerDialogState();
+}
+
+class _ChatRoomPickerDialogState extends ConsumerState<_ChatRoomPickerDialog> {
+  String _query = '';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rooms =
-        ref.watch(roomListServiceProvider).value ?? const <ChatRoomVO>[];
+  Widget build(BuildContext context) {
+    final roomsState = ref.watch(roomListServiceProvider);
+    final rooms = roomsState.value ?? const <ChatRoomVO>[];
     final available = rooms
         .where(
           (r) =>
               r.roomId?.isNotEmpty == true &&
               r.roomType != RoomType.aiChat.index &&
-              (r.roomStatus ?? 0) < 2,
+              !r.isOfficial &&
+              r.roomStatus == 0 &&
+              (r.roomName ?? '').toLowerCase().contains(_query),
         )
         .toList();
     return AlertDialog(
       title: Text('share_select_chat'.tr()),
       content: SizedBox(
         width: (MediaQuery.sizeOf(context).width - 80).clamp(260.0, 420.0),
-        height: 420,
-        child: available.isEmpty
-            ? Center(child: Text('contact_recommend_no_chat'.tr()))
-            : ListView.builder(
-                itemCount: available.length,
-                itemBuilder: (context, i) {
-                  final room = available[i];
-                  return ListTile(
-                    leading: AvatarWidget(
-                      url: room.roomAvatar,
-                      name: room.roomName,
-                      size: 40,
-                    ),
-                    title: Text(room.roomName ?? ''),
-                    onTap: () => Navigator.pop(context, room),
-                  );
-                },
+        height: (MediaQuery.sizeOf(context).height * 0.6).clamp(120.0, 420.0),
+        child: Column(
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'chat_forward_search'.tr(),
+                prefixIcon: const Icon(Icons.search),
               ),
+              onChanged: (value) =>
+                  setState(() => _query = value.trim().toLowerCase()),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: roomsState.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : roomsState.hasError
+                  ? Center(
+                      child: TextButton(
+                        onPressed: () => ref
+                            .read(roomListServiceProvider.notifier)
+                            .refresh(),
+                        child: Text('chat_forward_retry'.tr()),
+                      ),
+                    )
+                  : available.isEmpty
+                  ? Center(child: Text('contact_recommend_no_chat'.tr()))
+                  : ListView.builder(
+                      itemCount: available.length,
+                      itemBuilder: (context, i) {
+                        final room = available[i];
+                        return ListTile(
+                          leading: AvatarWidget(
+                            url: room.roomAvatar,
+                            name: room.roomName,
+                            size: 40,
+                          ),
+                          title: Text(room.roomName ?? ''),
+                          onTap: () => Navigator.pop(context, room),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(

@@ -445,6 +445,18 @@ class ImPacketV6 {
   }
 
   static MessagePayload? _fromV6MessagePayload(v6.MessagePayload p) {
+    final payload = _fromV6Content(p);
+    return payload?.copyWith(
+      forwardInfo: p.hasForwardInfo()
+          ? ForwardInfo(
+              authorName: p.forwardInfo.authorName,
+              originalTimestampMs: p.forwardInfo.originalTimestampMs.toInt(),
+            )
+          : null,
+    );
+  }
+
+  static MessagePayload? _fromV6Content(v6.MessagePayload p) {
     Attachment fromMedia(v6.MediaAttachment m) => Attachment(
       id: m.hasAttachmentId() ? m.attachmentId : null,
       kind: _fromAttachmentKind(m.kind),

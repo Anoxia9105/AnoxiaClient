@@ -21,8 +21,7 @@ abstract final class MessagePreviewFormatter {
 
     switch (message.messageType) {
       case MessageType.image:
-        return _meaningfulContent(message) ??
-            'quill_image_plain'.tr();
+        return _meaningfulContent(message) ?? 'quill_image_plain'.tr();
       case MessageType.audio:
         // 语音无文本内容，直接展示本地化占位。
         return 'quill_audio_plain'.tr();
@@ -51,6 +50,9 @@ abstract final class MessagePreviewFormatter {
         return _meaningfulContent(message) ?? 'reply_placeholder_location'.tr();
       case MessageType.card:
         final card = message.payload?.card;
+        if (card?.cardType == 'forward_record') {
+          return 'chat_forward_record'.tr();
+        }
         final title = card?.title?.trim();
         if (title != null && title.isNotEmpty) return title;
         final summary = card?.summary?.trim();

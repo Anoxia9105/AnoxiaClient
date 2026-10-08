@@ -20,6 +20,8 @@ import 'package:anoxia/framework/provider/chat/message/room_message_service.dart
 import 'package:anoxia/features/chat/presentation/widgets/mention_list_widget.dart';
 
 import 'ai_ask_bubble.dart';
+import '../forward/forward_message_dialog.dart';
+import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 聊天消息上下文菜单组件
@@ -101,7 +103,9 @@ class _ChatMessageContextMenuState
     final action = await showMenu<String>(
       context: context,
       position: position,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.lg)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(RadiusToken.lg),
+      ),
       elevation: 8,
       items: _buildMenuItems(context),
       menuPadding: const EdgeInsets.symmetric(vertical: 6),
@@ -115,6 +119,22 @@ class _ChatMessageContextMenuState
     final currentUser = ref.read(authControllerProvider).value;
     final bool isMe = widget.message.senderId == currentUser?.userId;
     final items = <PopupMenuEntry<String>>[];
+    if (canForwardMessage(widget.message)) {
+      items.add(
+        _buildItem(
+          'forward',
+          HugeIcons.strokeRoundedShare01,
+          'chat_forward'.tr(),
+        ),
+      );
+      items.add(
+        _buildItem(
+          'select',
+          HugeIcons.strokeRoundedCheckmarkCircle01,
+          'chat_forward_select'.tr(),
+        ),
+      );
+    }
 
     if (widget.message.messageType == MessageType.text ||
         widget.message.messageType == MessageType.richText) {
@@ -122,7 +142,8 @@ class _ChatMessageContextMenuState
         _buildItem('copy', HugeIcons.strokeRoundedCopy01, 'chat_copy'.tr()),
       );
       // 问AI：人工开关与上游探测同时满足才展示，任一不满足即隐藏入口
-      final chatEnabled = ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
+      final chatEnabled =
+          ref.watch(aiFeatureFlagsProvider).value?.chatAvailable ?? true;
       if (chatEnabled) {
         items.add(
           _buildItem(
@@ -189,7 +210,12 @@ class _ChatMessageContextMenuState
             children: [
               HugeIcon(icon: icon, size: 16, color: color),
               const SizedBox(width: 10),
-              Text(label, style: Theme.of(context).textTheme.bodySmall!.copyWith( color: color)),
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall!.copyWith(color: color),
+              ),
             ],
           ),
         ),
@@ -201,6 +227,20 @@ class _ChatMessageContextMenuState
 
   void _handleAction(BuildContext context, String action) {
     switch (action) {
+      case 'forward':
+        unawaited(
+          showForwardMessages(context, ref, [widget.message], merged: false),
+        );
+        break;
+      case 'select':
+        ref
+            .read(
+              forwardSelectionControllerProvider(
+                widget.message.roomId!,
+              ).notifier,
+            )
+            .start(widget.message);
+        break;
       case 'copy':
         _handleCopy(context);
         break;

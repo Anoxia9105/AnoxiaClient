@@ -61,6 +61,20 @@ class UserMessageBubble extends StatelessWidget {
             ? CrossAxisAlignment.start
             : CrossAxisAlignment.end,
         children: [
+          if (message.payload?.forwardInfo != null)
+            Padding(
+              padding: EdgeInsets.only(
+                left: layout.headerInset,
+                right: layout.headerInset,
+                bottom: 3,
+              ),
+              child: Text(
+                'chat_forward_label'.tr(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           MessageHeader(
             isCurrentUser: view.isCurrentUser,
             senderName: view.senderName,

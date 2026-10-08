@@ -30,6 +30,8 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:anoxia/features/chat/presentation/widgets/official_room_home_view.dart';
+import 'package:anoxia/features/chat/presentation/widgets/forward/forward_selection_widgets.dart';
+import 'package:anoxia/framework/provider/chat/message/forward_selection_controller.dart';
 
 /// 聊天房间详情页面
 ///
@@ -37,13 +39,21 @@ import 'package:anoxia/features/chat/presentation/widgets/official_room_home_vie
 /// 支持时间分隔、滚动定位、加载更多历史消息、WebSocket连接状态显示等功能
 class ChatRoomDetail extends ConsumerStatefulWidget {
   final String roomId;
-  const ChatRoomDetail({super.key, required this.roomId});
+  final String? initialMessageId;
+  const ChatRoomDetail({
+    super.key,
+    required this.roomId,
+    this.initialMessageId,
+  });
 
   @override
   ConsumerState<ChatRoomDetail> createState() => _ChatRoomDetailState();
 }
 
 class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
+  String? _jumpedInitialMessageId;
+  int? _jumpedForwardNonce;
+
   /// flutter_list_view 的滚动控制器，支持按索引精确定位（Web 与原生一致）。
   late final ScrollController _listViewController;
 
@@ -71,6 +81,8 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
   void didUpdateWidget(covariant ChatRoomDetail oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.roomId != widget.roomId) {
+      _jumpedInitialMessageId = null;
+      _jumpedForwardNonce = null;
       _scrollController.dispose();
       _scrollController = ChatScrollController(
         listViewController: _listViewController,
@@ -127,6 +139,32 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final flatItems = chatUiListResult.items;
 
     final showInitialSkeleton = entryTask.isLoading && flatItems.isEmpty;
+    final selection = ref.watch(
+      forwardSelectionControllerProvider(widget.roomId),
+    );
+    final forwardTarget = ref.watch(forwardNavigationTargetControllerProvider);
+    final initialId = forwardTarget?.roomId == widget.roomId
+        ? forwardTarget!.messageId
+        : widget.initialMessageId;
+    if (!entryTask.isLoading &&
+        flatItems.isNotEmpty &&
+        initialId != null &&
+        ((forwardTarget?.roomId == widget.roomId &&
+                _jumpedForwardNonce != forwardTarget?.nonce) ||
+            _jumpedInitialMessageId != initialId)) {
+      _jumpedInitialMessageId = initialId;
+      _jumpedForwardNonce = forwardTarget?.nonce;
+      final roomId = widget.roomId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || widget.roomId != roomId) return;
+        if (ref.read(forwardNavigationTargetControllerProvider) ==
+                forwardTarget &&
+            forwardTarget != null) {
+          ref.read(forwardNavigationTargetControllerProvider.notifier).clear();
+        }
+        unawaited(_scrollController.jumpToMessage(initialId));
+      });
+    }
 
     // 当激活房间变化时，新 controller 会重置按钮状态
 
@@ -192,11 +230,14 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
                     _scrollController.scrollToBottom(animated: true),
               )
             : null,
-        bottomNavigationBar: ChatRoomDetailBottomBar(
-          showSkeleton: showInitialSkeleton,
-          roomStatus: currentRoom.roomStatus,
-          onFieldTap: () => _scrollController.scrollToBottom(animated: true),
-        ),
+        bottomNavigationBar: selection.active
+            ? ForwardSelectionBar(roomId: widget.roomId)
+            : ChatRoomDetailBottomBar(
+                showSkeleton: showInitialSkeleton,
+                roomStatus: currentRoom.roomStatus,
+                onFieldTap: () =>
+                    _scrollController.scrollToBottom(animated: true),
+              ),
       ),
     );
   }
@@ -250,9 +291,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
           timestamp,
           context,
         ),
-        MessageItem(:final message) => ChatMessageBubble(
+        MessageItem(:final message) => ForwardSelectionRow(
           message: message,
-          isGroup: isGroup,
+          child: ChatMessageBubble(message: message, isGroup: isGroup),
         ),
       };
     }

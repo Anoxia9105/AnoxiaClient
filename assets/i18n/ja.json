@@ -1494,5 +1494,27 @@
   "chat_drop_hint": "入力欄に追加されます。確認してから送信してください。",
   "chat_drop_limits": "添付は最大10件 · 1件50 MB · 合計100 MB",
   "chat_drop_preparing": "ファイルを準備中…",
-  "chat_drop_rejected": "追加できない項目（フォルダーまたは読み取れないファイル）：{}"
+  "chat_drop_rejected": "追加できない項目（フォルダーまたは読み取れないファイル）：{}",
+  "chat_forward": "転送",
+  "chat_forward_select": "複数選択",
+  "chat_forward_label": "転送済み",
+  "chat_forward_individual": "個別に転送",
+  "chat_forward_merged": "まとめて転送",
+  "chat_forward_record": "チャット履歴",
+  "chat_forward_selected_count": "{} 件を選択",
+  "chat_forward_limit": "最大 50 件を選択できます",
+  "chat_forward_search": "会話を検索",
+  "chat_forward_send": "送信",
+  "chat_forward_confirm": "{} 件を「{}」に転送",
+  "chat_forward_progress": "完了 {} / {}",
+  "chat_forward_success": "転送しました",
+  "chat_forward_pending": "結果を確認できません。後で再試行すると、重複送信せずに確認します。",
+  "chat_forward_failed": "一部の転送が完了していません。完了済みのメッセージは保持されます。再試行してください。",
+  "chat_forward_error": "現在転送できません。再試行してください。",
+  "chat_forward_previous_pending": "前回の転送が確認待ちです。先に結果を確認してください。",
+  "chat_forward_resume_previous": "前回の転送を確認",
+  "chat_forward_record_unavailable": "履歴を読み込めないか、閲覧できなくなりました。",
+  "chat_forward_retry": "再試行",
+  "chat_forward_load_more": "さらに読み込む"
+
 }

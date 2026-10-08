@@ -1,11 +1,23 @@
 import 'package:anoxia/framework/domain/chat_message.dart';
 import 'package:anoxia/framework/domain/message_search_result.dart';
+import 'package:anoxia/framework/domain/forward_message.dart';
 
 /// 消息仓库抽象接口
 ///
-/// 定义消息相关的只读远程数据操作契约：历史消息和消息搜索。
+/// 定义消息历史、搜索、转发及转发请求恢复的操作契约。
 /// 数据层通过实现此接口提供具体实现，UI 层 Provider 仅依赖此接口。
 abstract interface class MessageRepository {
+  Future<ForwardResult> forwardMessages(ForwardRequest request);
+  Future<ForwardResult> forwardStatus(String operationId);
+  Future<ForwardRecordPage> forwardRecord(
+    String recordId,
+    String targetMessageId,
+    String targetRoomId, {
+    int offset = 0,
+  });
+  Future<ForwardRequest?> pendingForward(int userId);
+  Future<void> savePendingForward(int userId, ForwardRequest? request);
+
   /// 获取历史消息
   ///
   /// [roomId] 房间 ID

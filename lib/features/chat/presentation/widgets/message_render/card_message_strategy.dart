@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'base/message_render_strategy.dart';
+import '../../pages/forward_record_detail_page.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 卡片消息渲染策略
@@ -38,30 +39,27 @@ class CardMessageStrategy extends MessageRenderStrategy {
       );
     }
 
-    return _CardMessage(card: card);
+    return _CardMessage(card: card, message: message);
   }
 
   static bool _isPlaceholder(String text) {
     final lower = text.trim().toLowerCase();
-    return const {
-      '[card]',
-      '[卡片]',
-      '[名片]',
-      '[empty]',
-    }.contains(lower);
+    return const {'[card]', '[卡片]', '[名片]', '[empty]'}.contains(lower);
   }
 }
 
 class _CardMessage extends StatelessWidget {
   final CardPayload card;
+  final ChatMessage message;
 
-  const _CardMessage({required this.card});
+  const _CardMessage({required this.card, required this.message});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final title = card.displayTitle;
+    final isForward = card.cardType == 'forward_record';
+    final title = isForward ? 'chat_forward_record'.tr() : card.displayTitle;
     final summary = card.displaySummary;
     final thumbnailUrl = card.thumbnailUrl?.trim();
     final hasThumbnail = thumbnailUrl != null && thumbnailUrl.isNotEmpty;
@@ -77,8 +75,25 @@ class _CardMessage extends StatelessWidget {
       borderRadius: BorderRadius.circular(RadiusToken.md),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: isContactCard || isGroupCard || isNoteCard
+        onTap:
+            isContactCard ||
+                isGroupCard ||
+                isNoteCard ||
+                (isForward &&
+                    message.messageId != null &&
+                    message.roomId != null)
             ? () {
+                if (isForward) {
+                  presentAdaptivePage<void>(
+                    context,
+                    builder: (_) => ForwardRecordDetailPage(
+                      recordId: card.entityId ?? '',
+                      targetMessageId: message.messageId!,
+                      targetRoomId: message.roomId!,
+                    ),
+                  );
+                  return;
+                }
                 if (isGroupCard) {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -142,7 +157,9 @@ class _CardMessage extends StatelessWidget {
                       if (card.cardType?.isNotEmpty == true) ...[
                         const SizedBox(height: 7),
                         Text(
-                          isContactCard
+                          isForward
+                              ? 'chat_forward_merged'.tr()
+                              : isContactCard
                               ? 'contact_card_label'.tr()
                               : (isGroupCard
                                     ? 'group_card_label'.tr()
