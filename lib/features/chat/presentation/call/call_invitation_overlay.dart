@@ -1,12 +1,10 @@
 // 通话邀请浮层组件，根据不同的通话邀请阶段显示对应的 UI。
 //
-// - 桌面端（真实桌面）：来电阶段不渲染应用内弹窗，改为系统通知（右上角），
-//   用户通过通知的接听/拒绝动作处理；呼出振铃由独立通话窗口展示；
+// - 桌面端：来电显示居中卡片，并保留系统通知；呼出由独立窗口展示；
 //   其余阶段（忙线/取消/被拒等）保留轻量提示。
 // - 手机端：1:1 来电显示全屏来电页，呼出显示全屏振铃页；
 //   群呼邀请是「通知式」卡片（可加入/忽略）。
-// - Web 端：来电保留顶部非遮挡横条（可接听/拒绝），呼出显示全屏振铃页；
-//   真实桌面端与 Web PC 宽屏模式来电为右上角卡片通知。
+// - Web 端：私聊来电显示居中卡片，群呼保留非阻塞邀请；呼出显示全屏页。
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/framework/provider/chat/call/call_invitation_controller.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'call_invitation_pages.dart';
 import 'call_invitation_widgets.dart';
+import 'component/incoming_call_prompt.dart';
 
 /// 通话邀请浮层
 ///
@@ -67,16 +66,12 @@ class CallInvitationOverlay extends ConsumerWidget {
   /// 来电阶段 UI 分流
   ///
   /// - 真实手机 1:1：全屏来电页；
-  /// - Web 手机/平板窄屏（含 SP 横屏）：顶部横条，宽度占满，便于单手点按；
-  /// - 真实桌面 + Web PC 宽屏：右上角限宽卡片通知（桌面端另有系统通知并存）。
+  /// - 桌面/Web 私聊：标题栏下方居中卡片，窄窗口可滚动；
+  /// - 群呼：顶部居中邀请卡片，不阻塞页面操作。
   Widget _buildIncoming(BuildContext context, CallInvitationState invitation) {
     if (DeviceUtil.isRealMobile() && !invitation.isGroup) {
       return IncomingCallPage(invitation: invitation);
     }
-    final isNarrowWeb = DeviceUtil.isWeb && !DeviceUtil.isDesktop(context);
-    return IncomingCallBanner(
-      invitation: invitation,
-      alignTopRight: !isNarrowWeb,
-    );
+    return IncomingCallPrompt(invitation: invitation);
   }
 }
