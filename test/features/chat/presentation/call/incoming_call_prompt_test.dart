@@ -104,6 +104,12 @@ void main() {
     expect(rect.center.dx, closeTo(640, 1));
     expect(rect.width, 440);
     expect(rect.top, greaterThan(kToolbarHeight));
+    final reject = find.byKey(const ValueKey('incoming-call-reject'));
+    final rejectStyle = tester.widget<FilledButton>(reject).style!;
+    expect(rejectStyle.backgroundColor!.resolve({}), const Color(0xFFD32F2F));
+    expect(rejectStyle.foregroundColor!.resolve({}), Colors.white);
+    expect(tester.getSize(reject).height, lessThanOrEqualTo(48));
+    expect(tester.getSize(reject).width, lessThanOrEqualTo(146));
     await tester.tap(find.text('window'));
     expect(headerClicks, 1);
     await tester.tapAt(const Offset(20, 200));

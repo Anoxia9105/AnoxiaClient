@@ -20,6 +20,7 @@ class AppSelectField<T> extends StatelessWidget {
   final IconData? icon;
   final bool enabled;
   final InputDecoration? decoration;
+  final bool labelAbove;
 
   const AppSelectField({
     super.key,
@@ -30,13 +31,14 @@ class AppSelectField<T> extends StatelessWidget {
     required this.enabled,
     this.icon,
     this.decoration,
+    this.labelAbove = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final selected = options.firstWhere((option) => option.value == value);
-    return MenuAnchor(
+    final field = MenuAnchor(
       style: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(colors.surfaceContainer),
         elevation: const WidgetStatePropertyAll(8),
@@ -61,7 +63,7 @@ class AppSelectField<T> extends StatelessWidget {
             isEmpty: false,
             isFocused: controller.isOpen,
             decoration: (decoration ?? const InputDecoration()).copyWith(
-              labelText: label,
+              labelText: labelAbove ? null : label,
               prefixIcon: icon == null ? null : Icon(icon),
               suffixIcon: AnimatedRotation(
                 duration: const Duration(milliseconds: 160),
@@ -106,6 +108,16 @@ class AppSelectField<T> extends StatelessWidget {
             ),
           )
           .toList(growable: false),
+    );
+    if (!labelAbove) return field;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 8),
+        field,
+      ],
     );
   }
 }

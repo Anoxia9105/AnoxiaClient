@@ -31,6 +31,10 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      if (language == 'ja') {
+        tester.view.padding = const FakeViewPadding(left: 12, right: 12);
+        addTearDown(tester.view.resetPadding);
+      }
       CallMediaPreferences? saved;
       final roomState = RoomState(
         room: _Room(),
@@ -57,14 +61,21 @@ void main() {
               supportedLocales: context.supportedLocales,
               localizationsDelegates: context.localizationDelegates,
               home: Scaffold(
-                body: Builder(
-                  builder: (context) => TextButton(
-                    onPressed: () => showCallMediaSettings(context, roomState, (
-                      value,
-                    ) async {
-                      saved = value;
-                    }),
-                    child: const Text('open'),
+                body: Align(
+                  alignment: language == 'ja'
+                      ? Alignment.bottomRight
+                      : Alignment.topLeft,
+                  child: Builder(
+                    builder: (context) => TextButton(
+                      onPressed: () => showCallMediaSettings(
+                        context,
+                        roomState,
+                        (value) async {
+                          saved = value;
+                        },
+                      ),
+                      child: const Text('open'),
+                    ),
                   ),
                 ),
               ),
@@ -76,6 +87,23 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      final panel = find.byKey(const ValueKey('call-settings-popover'));
+      final panelRect = tester.getRect(panel);
+      expect(panelRect.left, greaterThanOrEqualTo(12));
+      expect(panelRect.right, lessThanOrEqualTo(308));
+      if (language == 'ja') {
+        expect(
+          panelRect.bottom,
+          lessThan(tester.getRect(find.text('open')).top),
+        );
+        expect(panelRect.left, greaterThanOrEqualTo(24));
+      } else {
+        expect(
+          panelRect.top,
+          greaterThan(tester.getRect(find.text('open')).bottom),
+        );
+      }
+      expect(find.byType(AlertDialog), findsNothing);
       await tester.tap(find.byKey(const ValueKey('call-camera-quality')));
       await tester.pumpAndSettle();
       expect(find.byType(MenuItemButton), findsWidgets);
@@ -87,11 +115,35 @@ void main() {
           .label;
       await tester.tap(find.widgetWithText(MenuItemButton, highLabel));
       await tester.pumpAndSettle();
+      final advanced = find.byType(ExpansionTile);
+      await tester.ensureVisible(advanced);
+      await tester.tap(advanced);
+      await tester.pumpAndSettle();
+      final codec = find.byKey(const ValueKey('call_camera_codec'));
+      await tester.ensureVisible(codec);
+      final codecLabel = find.descendant(
+        of: codec,
+        matching: find.text('call_camera_codec'.tr()),
+      );
+      final codecInput = find.descendant(
+        of: codec,
+        matching: find.byType(InputDecorator),
+      );
+      expect(
+        tester.getRect(codecLabel).bottom,
+        lessThan(tester.getRect(codecInput).top),
+      );
+      expect(tester.takeException(), isNull);
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
       expect(saved?.cameraQuality, CameraQuality.high);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(panel, findsNothing);
       expect(tester.takeException(), isNull);
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(316, 400));
+      await tester.pumpAndSettle();
+      expect(panel, findsNothing);
     });
   }
 }

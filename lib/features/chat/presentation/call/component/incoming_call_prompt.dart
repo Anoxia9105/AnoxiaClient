@@ -160,26 +160,12 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: colors.primary.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        width: 6,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(6),
-                                      child: AvatarWidget(
-                                        size: 80,
-                                        url: invite.isGroup
-                                            ? invite.roomAvatar
-                                            : invite.callerAvatar,
-                                        name: name,
-                                      ),
-                                    ),
+                                  AvatarWidget(
+                                    size: 80,
+                                    url: invite.isGroup
+                                        ? invite.roomAvatar
+                                        : invite.callerAvatar,
+                                    name: name,
                                   ),
                                   const SizedBox(height: 20),
                                   Text(
@@ -214,78 +200,89 @@ class _IncomingCallCardState extends State<IncomingCallCard> {
                                         ),
                                   ),
                                   const SizedBox(height: 28),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: OutlinedButton.icon(
-                                          key: const ValueKey(
-                                            'incoming-call-reject',
-                                          ),
-                                          style: OutlinedButton.styleFrom(
-                                            minimumSize: const Size(0, 52),
-                                            foregroundColor: colors.error,
-                                            side: BorderSide(
-                                              color: colors.error.withValues(
-                                                alpha: 0.4,
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 304,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: FilledButton.icon(
+                                            key: const ValueKey(
+                                              'incoming-call-reject',
+                                            ),
+                                            style: FilledButton.styleFrom(
+                                              minimumSize: const Size(0, 44),
+                                              backgroundColor: const Color(
+                                                0xFFD32F2F,
                                               ),
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                  ),
+                                            ),
+                                            onPressed: _busy
+                                                ? null
+                                                : () => _act(widget.onReject),
+                                            icon: Icon(
+                                              invite.isGroup
+                                                  ? Icons.close_rounded
+                                                  : Icons.call_end_rounded,
+                                              size: 20,
+                                            ),
+                                            label: Text(
+                                              (invite.isGroup
+                                                      ? 'call_ignore'
+                                                      : 'notification_call_reject')
+                                                  .tr(),
                                             ),
                                           ),
-                                          onPressed: _busy
-                                              ? null
-                                              : () => _act(widget.onReject),
-                                          icon: Icon(
-                                            invite.isGroup
-                                                ? Icons.close_rounded
-                                                : Icons.call_end_rounded,
-                                            size: 20,
-                                          ),
-                                          label: Text(
-                                            (invite.isGroup
-                                                    ? 'call_ignore'
-                                                    : 'notification_call_reject')
-                                                .tr(),
-                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: FilledButton.icon(
-                                          key: const ValueKey(
-                                            'incoming-call-accept',
-                                          ),
-                                          style: FilledButton.styleFrom(
-                                            minimumSize: const Size(0, 52),
-                                          ),
-                                          onPressed: _busy
-                                              ? null
-                                              : () => _act(
-                                                  () => widget.onAccept(
-                                                    invite.initialMedia,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: FilledButton.icon(
+                                            key: const ValueKey(
+                                              'incoming-call-accept',
+                                            ),
+                                            style: FilledButton.styleFrom(
+                                              minimumSize: const Size(0, 44),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
                                                   ),
-                                                ),
-                                          icon: _busy
-                                              ? const SizedBox.square(
-                                                  dimension: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                      ),
-                                                )
-                                              : Icon(
-                                                  isVideo
-                                                      ? Icons.videocam_rounded
-                                                      : Icons.call_rounded,
-                                                  size: 20,
-                                                ),
-                                          label: Text(
-                                            (invite.isGroup
-                                                    ? 'call_join_call'
-                                                    : 'notification_call_accept')
-                                                .tr(),
+                                            ),
+                                            onPressed: _busy
+                                                ? null
+                                                : () => _act(
+                                                    () => widget.onAccept(
+                                                      invite.initialMedia,
+                                                    ),
+                                                  ),
+                                            icon: _busy
+                                                ? const SizedBox.square(
+                                                    dimension: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : Icon(
+                                                    isVideo
+                                                        ? Icons.videocam_rounded
+                                                        : Icons.call_rounded,
+                                                    size: 20,
+                                                  ),
+                                            label: Text(
+                                              (invite.isGroup
+                                                      ? 'call_join_call'
+                                                      : 'notification_call_accept')
+                                                  .tr(),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                   if (isVideo && !invite.isGroup) ...[
                                     const SizedBox(height: 12),
