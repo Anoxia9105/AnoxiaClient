@@ -88,8 +88,7 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
   void _subscribe(Participant participant) {
     _listener = participant.createListener()
       ..on<SpeakingChangedEvent>((_) => _refresh())
-      ..on<ParticipantConnectionQualityUpdatedEvent>((_) =>
-          _onQualityChanged())
+      ..on<ParticipantConnectionQualityUpdatedEvent>((_) => _onQualityChanged())
       ..on<TrackMutedEvent>((_) => _refresh())
       ..on<TrackUnmutedEvent>((_) => _refresh())
       ..on<TrackPublishedEvent>((_) => _refresh())
@@ -186,10 +185,12 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
   /// 本端（LocalParticipant）发布的轨道 track 恒存在，无需 `subscribed`。
   VideoTrack? _screenShareTrack() {
     return widget.participant.videoTrackPublications
-        .where((publication) =>
-            publication.isScreenShare &&
-            !publication.muted &&
-            publication.track is VideoTrack)
+        .where(
+          (publication) =>
+              publication.isScreenShare &&
+              !publication.muted &&
+              publication.track is VideoTrack,
+        )
         .map((publication) => publication.track)
         .whereType<VideoTrack>()
         .firstOrNull;
@@ -203,10 +204,12 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
     if (screen != null) return screen;
 
     return widget.participant.videoTrackPublications
-        .where((publication) =>
-            !publication.isScreenShare &&
-            !publication.muted &&
-            publication.track is VideoTrack)
+        .where(
+          (publication) =>
+              !publication.isScreenShare &&
+              !publication.muted &&
+              publication.track is VideoTrack,
+        )
         .map((publication) => publication.track)
         .whereType<VideoTrack>()
         .firstOrNull;
@@ -314,7 +317,9 @@ class _MobileParticipantSurfaceState extends State<MobileParticipantSurface>
                                 compact: widget.compact,
                               )
                             : HugeIcon(
-                                icon: isMuted ? HugeIcons.strokeRoundedMicOff01 : HugeIcons.strokeRoundedMic01,
+                                icon: isMuted
+                                    ? HugeIcons.strokeRoundedMicOff01
+                                    : HugeIcons.strokeRoundedMic01,
                                 size: widget.compact ? 12 : 15,
                                 color: Colors.white,
                               ),

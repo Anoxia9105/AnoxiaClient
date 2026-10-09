@@ -9,7 +9,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
-import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 /// 通话房间主体内容
 ///
@@ -40,13 +39,6 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
     final token = widget.token;
     final layoutMode = ref.watch(layoutModeProvider(roomState));
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (roomState.connectionError == 'token_expired' ||
-          roomState.connectionError == 'max_reconnect_attempts_exceeded') {
-        windowManager.close();
-      }
-    });
-
     final participants = <Participant>[
       if (roomState.room.localParticipant != null)
         roomState.room.localParticipant!,
@@ -59,8 +51,9 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
         .firstOrNull;
     // 纯头像（无可见视频轨道）不允许成为焦点：点击头像不切换视图，
     // 关摄像头后也自动回落到网格/共享布局，避免头像独占主画面。
-    final focused =
-        (focusedRaw != null && _hasVisibleVideo(focusedRaw)) ? focusedRaw : null;
+    final focused = (focusedRaw != null && _hasVisibleVideo(focusedRaw))
+        ? focusedRaw
+        : null;
 
     final notifier = ref.read(roomControllerProvider(token).notifier);
 
@@ -116,9 +109,9 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
                     const SizedBox(height: 8),
                     Text(
                       'call_reconnecting_hint'.tr(),
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: Colors.white70,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium!.copyWith(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -199,25 +192,26 @@ class _CallWindowRoomBodyState extends ConsumerState<CallWindowRoomBody> {
         onKick: onKick,
         onParticipantTap: _onGridTap,
       ),
-      LayoutMode.focus => screenSharer == null
-          // 防御：mode 与实际轨道状态短暂不一致时回落网格，避免 `!` 崩溃
-          ? LayoutRoomWidget(
-              participants: participants,
-              handRaiseMap: handRaiseMap,
-              onMute: onMute,
-              onKick: onKick,
-              onParticipantTap: _onGridTap,
-            )
-          : LayoutRoomScreenWidget(
-              screenParticipant: screenSharer,
-              otherParticipants: participants
-                  .where((p) => p.sid != screenSharer.sid)
-                  .toList(),
-              handRaiseMap: handRaiseMap,
-              onMute: onMute,
-              onKick: onKick,
-              onParticipantTap: _onScreenTap,
-            ),
+      LayoutMode.focus =>
+        screenSharer == null
+            // 防御：mode 与实际轨道状态短暂不一致时回落网格，避免 `!` 崩溃
+            ? LayoutRoomWidget(
+                participants: participants,
+                handRaiseMap: handRaiseMap,
+                onMute: onMute,
+                onKick: onKick,
+                onParticipantTap: _onGridTap,
+              )
+            : LayoutRoomScreenWidget(
+                screenParticipant: screenSharer,
+                otherParticipants: participants
+                    .where((p) => p.sid != screenSharer.sid)
+                    .toList(),
+                handRaiseMap: handRaiseMap,
+                onMute: onMute,
+                onKick: onKick,
+                onParticipantTap: _onScreenTap,
+              ),
       // 兼容旧值：1v1 不再使用轮播（远端全屏 + 本地画中画），统一降级为网格。
       // ignore: deprecated_member_use_from_same_package
       LayoutMode.carousel => LayoutRoomWidget(

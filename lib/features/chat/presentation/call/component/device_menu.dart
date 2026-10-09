@@ -133,7 +133,8 @@ class _CallBubbleMenuState extends State<CallBubbleMenu> {
   void _measureArrow() {
     if (!mounted) return;
     final anchorBox = widget.anchorContext.findRenderObject() as RenderBox?;
-    final bubbleBox = _bubbleKey.currentContext?.findRenderObject() as RenderBox?;
+    final bubbleBox =
+        _bubbleKey.currentContext?.findRenderObject() as RenderBox?;
     if (anchorBox == null ||
         bubbleBox == null ||
         !anchorBox.hasSize ||
@@ -344,9 +345,7 @@ class _DeviceItemTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: item.selected ? FontWeight.w600 : FontWeight.w400,
-                  color: item.selected
-                      ? primary
-                      : theme.colorScheme.onSurface,
+                  color: item.selected ? primary : theme.colorScheme.onSurface,
                 ),
               ),
             ),

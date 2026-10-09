@@ -265,9 +265,7 @@ class _ParticipantTileState extends State<ParticipantTile> {
         color: widget.backgroundColor ?? cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(widget.borderRadius),
         border: Border.all(
-          color: isSpeaking
-              ? cs.primary
-              : cs.onSurface.withValues(alpha: 0.1),
+          color: isSpeaking ? cs.primary : cs.onSurface.withValues(alpha: 0.1),
           width: isSpeaking ? 2.0 : 1.0,
         ),
         boxShadow: [
@@ -286,114 +284,114 @@ class _ParticipantTileState extends State<ParticipantTile> {
             if (track != null)
               VideoTrackRenderer(track, fit: widget.fit)
             else
-                Center(
-                  child: Column(
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AvatarWidget(size: 56, url: avatarUrl, name: nickName),
+                    const SizedBox(height: 8),
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            /// 举手状态标识
+            if (widget.handRaised)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(RadiusToken.sm),
+                  ),
+                  child: const Text('✋', style: TextStyle(fontSize: 20)),
+                ),
+              ),
+
+            /// 屏幕共享标签：有人共享时在视频区域顶部标识共享者
+            if (isSharingScreen)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: ParticipantScreenShareBadge(name: displayName),
+              ),
+
+            /// 参与者信息和操作菜单（桌面端及 Web 端显示）
+            if (DeviceUtil.isRealDesktop() || DeviceUtil.isWeb)
+              Positioned(
+                left: 8,
+                bottom: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(RadiusToken.sm),
+                  ),
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AvatarWidget(size: 56, url: avatarUrl, name: nickName),
-                      const SizedBox(height: 8),
+                      if (isMuted)
+                        const HugeIcon(
+                          icon: HugeIcons.strokeRoundedMicOff01,
+                          size: 16,
+                          color: Colors.white,
+                        )
+                      else
+                        const HugeIcon(
+                          icon: HugeIcons.strokeRoundedMic01,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      const SizedBox(width: 4),
                       Text(
                         displayName,
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 13,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
                         ),
                       ),
+                      buildParticipantSignalIconFromQuality(
+                        signalQuality,
+                        estimated: signalEstimated,
+                      ),
+                      if (!isCurrentUser)
+                        Builder(
+                          builder: (btnCtx) => IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(2),
+                            tooltip: 'call_more_tooltip'.tr(),
+                            onPressed: () => showParticipantMoreMenu(
+                              btnCtx,
+                              identity: p.identity,
+                              onMute: widget.onMute ?? (_) {},
+                              onKick: widget.onKick ?? (_) {},
+                            ),
+                            icon: const HugeIcon(
+                              icon: HugeIcons.strokeRoundedMoreHorizontal,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-
-              /// 举手状态标识
-              if (widget.handRaised)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(RadiusToken.sm),
-                    ),
-                    child: const Text('✋', style: TextStyle(fontSize: 20)),
-                  ),
-                ),
-
-              /// 屏幕共享标签：有人共享时在视频区域顶部标识共享者
-              if (isSharingScreen)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: ParticipantScreenShareBadge(name: displayName),
-                ),
-
-              /// 参与者信息和操作菜单（桌面端及 Web 端显示）
-              if (DeviceUtil.isRealDesktop() || DeviceUtil.isWeb)
-                Positioned(
-                  left: 8,
-                  bottom: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(RadiusToken.sm),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isMuted)
-                          const HugeIcon(
-                            icon: HugeIcons.strokeRoundedMicOff01,
-                            size: 16,
-                            color: Colors.white,
-                          )
-                        else
-                          const HugeIcon(
-                            icon: HugeIcons.strokeRoundedMic01,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        const SizedBox(width: 4),
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                        buildParticipantSignalIconFromQuality(
-                          signalQuality,
-                          estimated: signalEstimated,
-                        ),
-                        if (!isCurrentUser)
-                          Builder(
-                            builder: (btnCtx) => IconButton(
-                              constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.all(2),
-                              tooltip: 'call_more_tooltip'.tr(),
-                              onPressed: () => showParticipantMoreMenu(
-                                btnCtx,
-                                identity: p.identity,
-                                onMute: widget.onMute ?? (_) {},
-                                onKick: widget.onKick ?? (_) {},
-                              ),
-                              icon: const HugeIcon(
-                                icon: HugeIcons.strokeRoundedMoreHorizontal,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
-      );
+      ),
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

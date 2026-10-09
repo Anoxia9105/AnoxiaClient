@@ -8,9 +8,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
+
 /// 全屏页面上的大号圆形动作按钮（带下方文字标签）
 class CallAction extends StatelessWidget {
-  const CallAction({super.key, 
+  const CallAction({
+    super.key,
     required this.label,
     required this.icon,
     required this.onPressed,
@@ -55,10 +57,7 @@ class CallAction extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          label,
-          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-        ),
+        Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
       ],
     );
   }
@@ -72,7 +71,8 @@ class CallAction extends StatelessWidget {
 /// 真实手机 + Web 移动窄屏与移动端群呼停顶部居中；
 /// 群呼卡片是「通知式」：按钮为 忽略/加入（加入式直连，不发 ACCEPT 信令）。
 class IncomingCallBanner extends ConsumerWidget {
-  const IncomingCallBanner({super.key, 
+  const IncomingCallBanner({
+    super.key,
     required this.invitation,
     this.alignTopRight = false,
   });
@@ -105,8 +105,9 @@ class IncomingCallBanner extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
-                mainAxisSize:
-                    alignTopRight ? MainAxisSize.min : MainAxisSize.max,
+                mainAxisSize: alignTopRight
+                    ? MainAxisSize.min
+                    : MainAxisSize.max,
                 children: [
                   Stack(
                     alignment: Alignment.bottomRight,
@@ -166,9 +167,8 @@ class IncomingCallBanner extends ConsumerWidget {
                             mediaLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall!
+                                .copyWith(color: cs.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -179,13 +179,15 @@ class IncomingCallBanner extends ConsumerWidget {
                     tooltip: isGroup
                         ? 'call_ignore'.tr()
                         : 'notification_call_reject'.tr(),
-                    backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
+                    backgroundColor:
+                        appColors?.danger ?? const Color(0xFFE53945),
                     icon: isGroup
                         ? HugeIcons.strokeRoundedCancel01
                         : HugeIcons.strokeRoundedCallEnd01,
                     onPressed: () {
-                      final controller = ref
-                          .read(callInvitationControllerProvider.notifier);
+                      final controller = ref.read(
+                        callInvitationControllerProvider.notifier,
+                      );
                       if (isGroup) {
                         controller.dismissInvitation();
                       } else {
@@ -203,8 +205,9 @@ class IncomingCallBanner extends ConsumerWidget {
                         ? HugeIcons.strokeRoundedCallAdd
                         : HugeIcons.strokeRoundedCall02,
                     onPressed: () async {
-                      final controller = ref
-                          .read(callInvitationControllerProvider.notifier);
+                      final controller = ref.read(
+                        callInvitationControllerProvider.notifier,
+                      );
                       if (isGroup) {
                         await controller.joinGroupCall(invitation);
                       } else {
@@ -224,7 +227,8 @@ class IncomingCallBanner extends ConsumerWidget {
 
 /// 来电通知卡片上的圆形动作按钮
 class RoundActionButton extends StatelessWidget {
-  const RoundActionButton({super.key, 
+  const RoundActionButton({
+    super.key,
     required this.tooltip,
     required this.backgroundColor,
     required this.icon,
@@ -310,7 +314,9 @@ class MinimizedInvitationBubble extends ConsumerWidget {
           height: CallWindowSizes.audioHeight,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            gradient: Theme.of(context).extension<AppColors>()?.scaffoldGradient,
+            gradient: Theme.of(
+              context,
+            ).extension<AppColors>()?.scaffoldGradient,
             border: Border.all(color: cs.outlineVariant),
             borderRadius: BorderRadius.circular(RadiusToken.xl),
           ),
@@ -402,7 +408,10 @@ class CallNoticeCard extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              child: Text(text.tr(), style: TextStyle(color: cs.onInverseSurface)),
+              child: Text(
+                text.tr(),
+                style: TextStyle(color: cs.onInverseSurface),
+              ),
             ),
           ),
         ),

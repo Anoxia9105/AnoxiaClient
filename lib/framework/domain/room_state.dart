@@ -1,4 +1,5 @@
 import 'package:livekit_client/livekit_client.dart';
+import 'call_media_preferences.dart';
 
 /// 音视频通话房间状态
 ///
@@ -30,6 +31,9 @@ class RoomState {
 
   /// 屏幕共享的本地视频轨道
   final LocalVideoTrack? screenShareTrack;
+
+  final CallMediaPreferences mediaPreferences;
+  final Set<String> supportedVideoCodecs;
 
   /// 是否处于重连状态
   final bool isReconnecting;
@@ -100,6 +104,8 @@ class RoomState {
     required this.remoteParticipants,
     this.connectionError,
     this.screenShareTrack,
+    this.mediaPreferences = const CallMediaPreferences(),
+    this.supportedVideoCodecs = const {'vp8'},
     this.isReconnecting = false,
     this.isRecording = false,
     this.roomMetadata,
@@ -124,6 +130,7 @@ class RoomState {
     Room? room,
     ConnectionState? connectionState,
     String? connectionError,
+    bool clearConnectionError = false,
     bool? micEnabled,
     bool? cameraEnabled,
     bool? screenSharing,
@@ -131,6 +138,8 @@ class RoomState {
     bool? isReconnecting,
     bool? isRecording,
     LocalVideoTrack? screenShareTrack,
+    CallMediaPreferences? mediaPreferences,
+    Set<String>? supportedVideoCodecs,
     bool clearScreenShareTrack = false,
     String? roomMetadata,
     String? focusedParticipantId,
@@ -151,7 +160,9 @@ class RoomState {
       token: token ?? this.token,
       room: room ?? this.room,
       connectionState: connectionState ?? this.connectionState,
-      connectionError: connectionError ?? this.connectionError,
+      connectionError: clearConnectionError
+          ? null
+          : (connectionError ?? this.connectionError),
       micEnabled: micEnabled ?? this.micEnabled,
       cameraEnabled: cameraEnabled ?? this.cameraEnabled,
       screenSharing: screenSharing ?? this.screenSharing,
@@ -161,6 +172,8 @@ class RoomState {
       screenShareTrack: clearScreenShareTrack
           ? null
           : (screenShareTrack ?? this.screenShareTrack),
+      mediaPreferences: mediaPreferences ?? this.mediaPreferences,
+      supportedVideoCodecs: supportedVideoCodecs ?? this.supportedVideoCodecs,
       roomMetadata: roomMetadata ?? this.roomMetadata,
       focusedParticipantId: focusedParticipantId ?? this.focusedParticipantId,
       audioInputs: audioInputs ?? this.audioInputs,

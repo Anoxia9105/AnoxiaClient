@@ -54,7 +54,7 @@ final class CallWindowControllerProvider
 }
 
 String _$callWindowControllerHash() =>
-    r'f9e8fbe56f80951cf2a7886dab1bc98cef5f5f40';
+    r'32a9bc34f30aff31c1cb5f9ecd0d4f02db2eb0f1';
 
 /// 通话窗口控制器
 ///

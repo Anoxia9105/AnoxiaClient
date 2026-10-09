@@ -62,7 +62,10 @@ Widget buildSplitButton({
                 onTap: onArrowTap,
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, size: 14),
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowDown01,
+                    size: 14,
+                  ),
                 ),
               ),
             ),
@@ -88,9 +91,7 @@ Widget buildSoloButton({
   return DecoratedBox(
     decoration: BoxDecoration(
       border: Border.all(
-        color: Theme.of(
-          context,
-        ).colorScheme.onSurface.withValues(alpha: 0.15),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
         width: 0.5,
       ),
       borderRadius: BorderRadius.circular(RadiusToken.lg),

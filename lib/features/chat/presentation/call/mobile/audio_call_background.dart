@@ -69,11 +69,7 @@ class AudioCallBackground extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AvatarWidget(
-                    size: 96 * scale,
-                    url: avatarUrl,
-                    name: title,
-                  ),
+                  AvatarWidget(size: 96 * scale, url: avatarUrl, name: title),
                   const SizedBox(height: 24),
                   Text(
                     title,

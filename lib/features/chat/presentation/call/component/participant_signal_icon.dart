@@ -13,9 +13,7 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 /// - 丢失：红色，1格信号
 /// - 未知：灰色，0格信号
 Widget buildParticipantSignalIcon(Participant p) {
-  return buildParticipantSignalIconFromQuality(
-    p.connectionQuality,
-  );
+  return buildParticipantSignalIconFromQuality(p.connectionQuality);
 }
 
 /// 按质量值构建信号图标（供估算兜底复用）。
@@ -23,7 +21,6 @@ Widget buildParticipantSignalIconFromQuality(
   ConnectionQuality quality, {
   bool estimated = false,
 }) {
-
   Color color;
   int level;
   String qualityLabel;
@@ -73,7 +70,9 @@ Widget buildParticipantSignalIconFromQuality(
         : qualityLabel,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(RadiusToken.sm)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(RadiusToken.sm),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,

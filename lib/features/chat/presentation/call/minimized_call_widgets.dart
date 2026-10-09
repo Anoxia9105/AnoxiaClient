@@ -9,7 +9,11 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 
 /// 最小化音频通话悬浮窗
 class MinimizedAudioCall extends StatelessWidget {
-  const MinimizedAudioCall({super.key, required this.title, required this.joinedAt});
+  const MinimizedAudioCall({
+    super.key,
+    required this.title,
+    required this.joinedAt,
+  });
 
   final String title;
   final DateTime? joinedAt;

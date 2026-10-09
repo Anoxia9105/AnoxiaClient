@@ -1,5 +1,18 @@
 import 'dart:async';
 
+enum CallMediaLane { microphone, camera, screen, output, devices }
+
+/// 同一设备的开关/换源串行；不同设备仍可独立操作。
+class CallMediaOperationQueue {
+  Future<void> _tail = Future.value();
+  Future<void> run(Future<void> Function() operation) {
+    final next = _tail.then((_) => operation());
+    // 错误由调用方收到，队列继续服务下一次操作。
+    _tail = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return next;
+  }
+}
+
 /// 关窗前的媒体屏障：停止接收新操作，等待已启动的操作，再释放原生资源。
 /// 超时不会取消 Dart Future，因此这里不能用 timeout 提前放行关窗。
 class CallMediaLifecycle {

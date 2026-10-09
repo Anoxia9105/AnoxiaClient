@@ -8,6 +8,7 @@ import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_connection_warmup.dart';
 import 'package:anoxia/framework/theme/app_colors.dart';
 import 'package:anoxia/framework/theme/app_theme.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -72,6 +73,7 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
   @override
   void initState() {
     super.initState();
+    ref.read(callConnectionWarmupProvider).start();
     windowManager.setPreventClose(true);
     windowManager.addListener(this);
 
@@ -270,7 +272,18 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     return tokenAsync.when(
       data: (token) {
         _activeToken = token;
-        return CallRoomPage(token: token, roomId: _roomId);
+        return NotificationListener<CallRetryTokenNotification>(
+          onNotification: (notification) {
+            if (!_closing) {
+              setState(() {
+                _prefetchedToken = notification.token;
+                _activeToken = notification.token;
+              });
+            }
+            return true;
+          },
+          child: CallRoomPage(token: token, roomId: _roomId),
+        );
       },
       error: (err, stack) => CallErrorState(
         roomId: _roomId,

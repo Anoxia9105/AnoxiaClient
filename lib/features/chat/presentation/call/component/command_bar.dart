@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'call_media_menu.dart';
 import 'package:anoxia/platform/shims/pip_shim.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
@@ -96,7 +97,10 @@ class CommandBar extends ConsumerWidget {
                           active: state.micEnabled,
                           onTap: () => notifier.toggleMic(),
                           onArrowTap: () => _showAudioInputMenu(
-                            context, ref, notifier, state,
+                            context,
+                            ref,
+                            notifier,
+                            state,
                           ),
                         );
                       },
@@ -115,7 +119,10 @@ class CommandBar extends ConsumerWidget {
                           active: state.cameraEnabled,
                           onTap: () => notifier.toggleCamera(),
                           onArrowTap: () => _showVideoInputMenu(
-                            context, ref, notifier, state,
+                            context,
+                            ref,
+                            notifier,
+                            state,
                           ),
                         );
                       },
@@ -138,7 +145,10 @@ class CommandBar extends ConsumerWidget {
                             active: state.speakerOn,
                             onTap: () => notifier.toggleSpeaker(),
                             onArrowTap: () => _showAudioOutputMenu(
-                              context, ref, notifier, state,
+                              context,
+                              ref,
+                              notifier,
+                              state,
                             ),
                           );
                         },
@@ -204,6 +214,7 @@ class CommandBar extends ConsumerWidget {
                     const SizedBox(width: 8),
 
                     // 挂断按钮
+                    CallMediaMenu(state: state),
                     _buildHangupButton(context, ref, notifier, state),
                   ],
                 ),
@@ -275,8 +286,7 @@ class CommandBar extends ConsumerWidget {
   ) async {
     await notifier.refreshDevices();
     if (!context.mounted) return;
-    final fresh =
-        ref.read(roomControllerProvider(state.token)).value ?? state;
+    final fresh = ref.read(roomControllerProvider(state.token)).value ?? state;
     showDeviceMenu(
       context: context,
       title: 'call_microphone'.tr(),
@@ -301,8 +311,7 @@ class CommandBar extends ConsumerWidget {
   ) async {
     await notifier.refreshDevices();
     if (!context.mounted) return;
-    final fresh =
-        ref.read(roomControllerProvider(state.token)).value ?? state;
+    final fresh = ref.read(roomControllerProvider(state.token)).value ?? state;
     showDeviceMenu(
       context: context,
       title: 'call_camera'.tr(),
@@ -324,8 +333,7 @@ class CommandBar extends ConsumerWidget {
   ) async {
     await notifier.refreshDevices();
     if (!context.mounted) return;
-    final fresh =
-        ref.read(roomControllerProvider(state.token)).value ?? state;
+    final fresh = ref.read(roomControllerProvider(state.token)).value ?? state;
     showDeviceMenu(
       context: context,
       title: 'call_speaker'.tr(),

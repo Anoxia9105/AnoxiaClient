@@ -62,7 +62,10 @@ class IncomingCallPage extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: isVideo ? cs.tertiary : cs.primary,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: cs.surface, width: 2.5),
+                                border: Border.all(
+                                  color: cs.surface,
+                                  width: 2.5,
+                                ),
                               ),
                               child: HugeIcon(
                                 icon: isVideo
@@ -250,12 +253,13 @@ class OutgoingCallPage extends ConsumerWidget {
                               foregroundColor: cs.onSurfaceVariant,
                               onPressed: () {
                                 ref
-                                    .read(
-                                      callSpeakerPreferenceProvider(
-                                        invitation.roomId,
-                                      ).notifier,
-                                    )
-                                    .state = !speakerOn;
+                                        .read(
+                                          callSpeakerPreferenceProvider(
+                                            invitation.roomId,
+                                          ).notifier,
+                                        )
+                                        .state =
+                                    !speakerOn;
                               },
                             ),
                             const SizedBox(width: 56),
@@ -300,4 +304,3 @@ class OutgoingCallPage extends ConsumerWidget {
     );
   }
 }
-

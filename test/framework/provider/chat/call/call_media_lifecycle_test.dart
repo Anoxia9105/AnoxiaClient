@@ -4,6 +4,24 @@ import 'package:anoxia/framework/provider/chat/call/call_media_lifecycle.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('同一设备串行操作，失败后后续操作仍能继续', () async {
+    final queue = CallMediaOperationQueue();
+    final firstDone = Completer<void>();
+    final values = <int>[];
+    final first = queue.run(() async {
+      values.add(1);
+      await firstDone.future;
+      throw StateError('设备失败');
+    });
+    final failed = expectLater(first, throwsStateError);
+    final second = queue.run(() async => values.add(2));
+    await Future<void>.delayed(Duration.zero);
+    expect(values, [1]);
+    firstDone.complete();
+    await failed;
+    await second;
+    expect(values, [1, 2]);
+  });
   test('挂断等待进行中的建连结束，且不再启动后续媒体', () async {
     final connected = Completer<void>();
     var microphoneStarted = false;

@@ -74,8 +74,9 @@ class _CallMobileRoomBodyState extends ConsumerState<CallMobileRoomBody> {
     // 有人在共享屏幕（含语音通话中被共享的场景）
     final screenSharer = participants.where(_isSharingScreen).firstOrNull;
     // 音频通话页中央头像：取房间头像（1:1 即对方头像，群聊为群头像）
-    final roomAvatar =
-        roomId.isEmpty ? '' : ref.watch(currentRoomProvider(roomId))?.roomAvatar ?? '';
+    final roomAvatar = roomId.isEmpty
+        ? ''
+        : ref.watch(currentRoomProvider(roomId))?.roomAvatar ?? '';
 
     if (isInPipMode) {
       return _buildPipContent(participants, isVideoCall, screenSharer);
@@ -321,9 +322,8 @@ class MobileVideoLayout extends StatelessWidget {
                 final p = others[index];
                 return GestureDetector(
                   // 点共享者缩略图表示「回到共享画面」，故传 null 清空聚焦
-                  onTap: () => onFocusChanged(
-                    p.sid == sharer.sid ? null : p.identity,
-                  ),
+                  onTap: () =>
+                      onFocusChanged(p.sid == sharer.sid ? null : p.identity),
                   child: SizedBox(
                     width: 76,
                     child: MobileParticipantSurface(

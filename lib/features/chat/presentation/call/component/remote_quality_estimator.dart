@@ -1,12 +1,15 @@
 import 'package:livekit_client/livekit_client.dart';
+import 'package:anoxia/framework/domain/rtp_interval.dart';
 
 /// 远端下行质量估算器
 ///
 /// 服务端转发的上行质量（`ParticipantConnectionQualityUpdatedEvent`）优先。
 /// 仅当服务端质量长期为 `unknown`（Web 下 SFU 下发少/晚）时，用本地已订阅
-/// 远端轨的 `getReceiverStats()` 做下行视角兜底，避免信号条一直灰色未知。
+/// 远端轨的 SDK 统计缓存做下行视角兜底，避免重复 getStats 查询。
 /// 估算结果调用方必须以“估算”弱提示展示，不与服务端值混淆。
 class RemoteQualityEstimator {
+  static final _windows = Expando<RtpSampleWindow>();
+
   /// 丢包率阈值：>= 此值判为 poor
   static const double poorLossRate = 0.08;
 
@@ -61,6 +64,8 @@ class RemoteQualityEstimator {
   static Future<ConnectionQuality?> estimateRemoteDownlinkQuality(
     RemoteParticipant participant,
   ) async {
+    final window = _windows[participant] ??= RtpSampleWindow();
+    final activeKeys = <String>{};
     bool hasActiveTrack = false;
     double? audioLossRate;
     double? audioJitterSec;
@@ -68,57 +73,62 @@ class RemoteQualityEstimator {
     double? videoDropRate;
 
     for (final pub in participant.audioTrackPublications) {
-      if (!pub.subscribed) continue;
+      if (!pub.subscribed || pub.muted) continue;
       final track = pub.track;
       if (track is! RemoteAudioTrack) continue;
       hasActiveTrack = true;
-      try {
-        final stats = await track
-            .getReceiverStats()
-            .timeout(const Duration(seconds: 2));
+      {
+        // 复用 SDK 的统计缓存，不让每个磁贴重复发起原生 getStats。
+        final stats = track.prevStats;
         if (stats == null) continue;
-        final num lost = stats.packetsLost ?? 0;
-        final num received = stats.packetsReceived ?? 0;
-        final num total = lost + received;
-        if (total > 0) {
-          audioLossRate = (lost / total).toDouble().clamp(0.0, 1.0);
+        final key = '${pub.sid}:${stats.streamId}';
+        activeKeys.add(key);
+        final interval = window.observe(
+          key,
+          RtpCounters(
+            timestamp: stats.timestamp,
+            lost: stats.packetsLost,
+            received: stats.packetsReceived,
+          ),
+        );
+        final loss = interval?.lossRate;
+        if (loss != null) audioLossRate = _worst(audioLossRate, loss);
+        if (interval != null && stats.jitter != null) {
+          audioJitterSec = _worst(audioJitterSec, stats.jitter!.toDouble());
         }
-        final num jitter = stats.jitter ?? 0;
-        if (jitter > 0) audioJitterSec = jitter.toDouble();
-      } catch (_) {
-        continue;
       }
     }
 
     for (final pub in participant.videoTrackPublications) {
-      if (!pub.subscribed) continue;
+      if (!pub.subscribed || pub.muted) continue;
       final track = pub.track;
       if (track is! RemoteVideoTrack) continue;
       hasActiveTrack = true;
-      try {
-        final stats = await track
-            .getReceiverStats()
-            .timeout(const Duration(seconds: 2));
+      {
+        final stats = track.prevStats;
         if (stats == null) continue;
-        final num lost = stats.packetsLost ?? 0;
-        final num received = stats.packetsReceived ?? 0;
-        final num total = lost + received;
-        if (total > 0) {
-          final double rate = (lost / total).toDouble().clamp(0.0, 1.0);
-          videoLossRate =
-              videoLossRate == null || rate > videoLossRate ? rate : videoLossRate;
+        final key = '${pub.sid}:${stats.streamId}';
+        activeKeys.add(key);
+        final interval = window.observe(
+          key,
+          RtpCounters(
+            timestamp: stats.timestamp,
+            lost: stats.packetsLost,
+            received: stats.packetsReceived,
+            dropped: stats.framesDropped,
+            decoded: stats.framesDecoded,
+          ),
+        );
+        if (interval?.lossRate != null) {
+          videoLossRate = _worst(videoLossRate, interval!.lossRate!);
         }
-        final num dropped = stats.framesDropped ?? 0;
-        final num decoded = stats.framesDecoded ?? 0;
-        final num framesTotal = dropped + decoded;
-        if (framesTotal > 0) {
-          videoDropRate = (dropped / framesTotal).toDouble().clamp(0.0, 1.0);
+        if (interval?.dropRate != null) {
+          videoDropRate = _worst(videoDropRate, interval!.dropRate!);
         }
-      } catch (_) {
-        continue;
       }
     }
 
+    window.retainOnly(activeKeys);
     if (!hasActiveTrack) return null;
     // 有轨但一包数据都拿不到：不断言信号，保持 unknown。
     if (audioLossRate == null &&
@@ -135,4 +145,7 @@ class RemoteQualityEstimator {
       videoDropRate: videoDropRate,
     );
   }
+
+  static double _worst(double? previous, double value) =>
+      previous == null || value > previous ? value : previous;
 }

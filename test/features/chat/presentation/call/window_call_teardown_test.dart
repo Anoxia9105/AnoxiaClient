@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
+import 'package:anoxia/framework/provider/chat/call/call_connection_warmup.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -82,6 +83,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          callConnectionWarmupProvider.overrideWith(
+            (ref) => CallConnectionWarmup(() async {}),
+          ),
           roomTokenProvider('room').overrideWith((ref) async => 'actual-token'),
           roomControllerProvider('actual-token').overrideWith(() => room),
         ],

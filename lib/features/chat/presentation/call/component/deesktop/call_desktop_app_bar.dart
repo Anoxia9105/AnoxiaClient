@@ -64,7 +64,9 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
       centerTitle: DeviceUtil.isRealMobile(),
       title: Text(
         widget.title,
-        style: Theme.of(context).textTheme.bodyMedium!.copyWith( fontWeight: FontWeight.bold),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
       ),
       leading: Center(
         child: Assets.images.appLogo.image(
@@ -99,7 +101,9 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
           },
           style: ButtonStyle(
             shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.sm)),
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(RadiusToken.sm),
+              ),
             ),
             foregroundColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.hovered)) {
@@ -108,10 +112,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
               return null;
             }),
           ),
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedCancel01,
-            size: 18,
-          ),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 18),
         ),
         const SizedBox(width: 8),
       ],
@@ -146,10 +147,7 @@ class _CallDesktopAppbarState extends State<CallDesktopAppbar>
         setState(() => _maximized = true);
         windowManager.maximize();
       },
-      icon: const HugeIcon(
-        icon: HugeIcons.strokeRoundedSquare,
-        size: 16,
-      ),
+      icon: const HugeIcon(icon: HugeIcons.strokeRoundedSquare, size: 16),
     );
   }
 }

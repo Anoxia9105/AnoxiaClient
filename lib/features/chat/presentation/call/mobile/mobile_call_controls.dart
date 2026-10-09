@@ -15,6 +15,7 @@ import 'package:anoxia/platform/shims/pip_shim.dart';
 
 import 'mobile_call_timer.dart';
 import '../component/call_invite_members_button.dart';
+import '../component/call_media_menu.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 
@@ -61,8 +62,12 @@ class MobileCallControls extends ConsumerWidget {
 
     final actions = <Widget>[
       _CallControlButton(
-        tooltip: state.micEnabled ? 'call_mic_mute'.tr() : 'call_mic_unmute'.tr(),
-        icon: state.micEnabled ? HugeIcons.strokeRoundedMic01 : HugeIcons.strokeRoundedMicOff01,
+        tooltip: state.micEnabled
+            ? 'call_mic_mute'.tr()
+            : 'call_mic_unmute'.tr(),
+        icon: state.micEnabled
+            ? HugeIcons.strokeRoundedMic01
+            : HugeIcons.strokeRoundedMicOff01,
         active: state.micEnabled,
         onPressed: notifier.toggleMic,
       ),
@@ -70,7 +75,9 @@ class MobileCallControls extends ConsumerWidget {
       if (DeviceUtil.isRealMobile()) ...[
         const SizedBox(width: 7),
         _CallControlButton(
-          tooltip: state.speakerOn ? 'call_switch_to_earpiece'.tr() : 'call_switch_to_speaker'.tr(),
+          tooltip: state.speakerOn
+              ? 'call_switch_to_earpiece'.tr()
+              : 'call_switch_to_speaker'.tr(),
           icon: state.speakerOn
               ? HugeIcons.strokeRoundedVolumeUp
               : HugeIcons.strokeRoundedEar,
@@ -81,7 +88,9 @@ class MobileCallControls extends ConsumerWidget {
       if (isVideoCall) ...[
         const SizedBox(width: 7),
         _CallControlButton(
-          tooltip: state.cameraEnabled ? 'call_camera_off'.tr() : 'call_camera_on'.tr(),
+          tooltip: state.cameraEnabled
+              ? 'call_camera_off'.tr()
+              : 'call_camera_on'.tr(),
           icon: state.cameraEnabled
               ? HugeIcons.strokeRoundedVideo01
               : HugeIcons.strokeRoundedVideoOff,
@@ -101,6 +110,8 @@ class MobileCallControls extends ConsumerWidget {
         const SizedBox(width: 7),
         CallInviteMembersButton(state: state),
       ],
+      const SizedBox(width: 7),
+      CallMediaMenu(state: state),
       const SizedBox(width: 7),
       _CallControlButton(
         tooltip: 'call_hangup_tooltip'.tr(),
@@ -252,8 +263,7 @@ class _CallControlButton extends StatelessWidget {
         .toDouble();
     final dim = (44 * scale).clamp(40.0, 48.0).toDouble();
     final resolvedBackground =
-        backgroundColor ??
-        (active ? cs.primary : cs.surfaceContainerHighest);
+        backgroundColor ?? (active ? cs.primary : cs.surfaceContainerHighest);
     final resolvedForeground =
         foregroundColor ?? (active ? cs.onPrimary : cs.onSurfaceVariant);
     return Tooltip(

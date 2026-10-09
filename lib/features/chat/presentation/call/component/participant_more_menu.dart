@@ -1,4 +1,4 @@
-﻿import 'package:anoxia/common/widgets/bubble_dialog.dart';
+import 'package:anoxia/common/widgets/bubble_dialog.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -79,10 +79,7 @@ void showParticipantMoreMenu(
                       const SizedBox(width: 8),
                       Text(
                         item.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: item.labelColor,
-                        ),
+                        style: TextStyle(fontSize: 13, color: item.labelColor),
                       ),
                     ],
                   ),

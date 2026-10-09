@@ -10,6 +10,7 @@ import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:easy_localization/easy_localization.dart';
 
 /// 通话房间页面
@@ -43,16 +44,33 @@ class CallRoomPage extends ConsumerWidget {
         onCancel: () => _cancelCall(context, ref),
       ),
       data: (roomState) {
+        if (roomState.connectionState == lk.ConnectionState.disconnected) {
+          return CallErrorState(
+            roomId: roomId,
+            errorText: 'call_connection_failed'.tr(),
+            detail: 'call_connection_lost'.tr(),
+            onRetry: () => _retry(context, ref),
+            onCancel: () => _cancelCall(context, ref),
+          );
+        }
         //  在这里根据设备类型进行端隔离分流！
         //  - 真实移动端：移动布局（CallMobileRoomBody，底部控制条）
         //  - Web 窄窗（宽度 < 1024，手机/平板尺寸）：移动布局
         //  - 真实桌面与 Web 宽屏（PC）：桌面布局（CommandBar + 参与者磁贴），
         //    配合全局浮层的悬浮窗最小化，即「悬浮窗 + 桌面通话」
-        final useMobileLayout = DeviceUtil.isRealMobile() ||
+        final useMobileLayout =
+            DeviceUtil.isRealMobile() ||
             (DeviceUtil.isWeb && !DeviceUtil.isDesktop(context));
         if (useMobileLayout) {
           // 移动/Web 窄窗：走专门为移动端设计的布局
-          return CallMobileRoomBody(roomState: roomState, token: token);
+          return Column(
+            children: [
+              if (roomState.isReconnecting) const _ReconnectingBanner(),
+              Expanded(
+                child: CallMobileRoomBody(roomState: roomState, token: token),
+              ),
+            ],
+          );
         } else {
           // 桌面/Web 宽屏：走桌面布局
           return CallWindowRoomBody(roomState: roomState, token: token);
@@ -64,23 +82,25 @@ class CallRoomPage extends ConsumerWidget {
   /// 重试：重新向服务端拉取新 token 并重连，
   /// 避免复用已过期（超 24h）的 LiveKit token 导致 401
   Future<void> _retry(BuildContext context, WidgetRef ref) async {
-    try {
-      if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
-        // 移动/Web：直接向服务端拉取新 token（绕过 provider 缓存），
-        // 更新会话 token 后由 MobileCallPage 触发重建
-        final fresh = await ref
-            .read(callRepositoryProvider)
-            .fetchCallToken(roomId);
-        if (!context.mounted) return;
-        ref.read(mobileCallSessionControllerProvider.notifier).updateToken(fresh);
-      } else {
-        // 桌面窗口页面监听 roomTokenProvider，刷新其缓存即可自动重建
-        ref.invalidate(roomTokenProvider(roomId));
-      }
-    } catch (_) {
-      // Token 刷新失败（网络/鉴权异常），降级为使用当前 token 重连
+    if (DeviceUtil.isRealMobile() || DeviceUtil.isWeb) {
+      // 移动/Web：直接向服务端拉取新 token（绕过 provider 缓存），
+      // 更新会话 token 后由 MobileCallPage 触发重建
+      final fresh = await ref
+          .read(callRepositoryProvider)
+          .fetchCallToken(roomId);
       if (!context.mounted) return;
-      ref.invalidate(roomControllerProvider(token));
+      await ref.read(roomControllerProvider(token).notifier).leave();
+      if (!context.mounted) return;
+      ref.read(mobileCallSessionControllerProvider.notifier).updateToken(fresh);
+    } else {
+      // 桌面由当前窗口替换 token，预取 token 路径也能正确重试。
+      final fresh = await ref
+          .read(callRepositoryProvider)
+          .fetchCallToken(roomId);
+      if (!context.mounted) return;
+      await ref.read(roomControllerProvider(token).notifier).leave();
+      if (!context.mounted) return;
+      CallRetryTokenNotification(fresh).dispatch(context);
     }
   }
 
@@ -112,4 +132,32 @@ class CallRoomPage extends ConsumerWidget {
       await windowManager.close();
     }
   }
+}
+
+/// 桌面窗口拥有 token，重试时通过通知替换预取值而不是重建旧 token。
+class CallRetryTokenNotification extends Notification {
+  CallRetryTokenNotification(this.token);
+  final String token;
+}
+
+class _ReconnectingBanner extends StatelessWidget {
+  const _ReconnectingBanner();
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox.square(
+            dimension: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 10),
+          Flexible(child: Text('call_reconnecting'.tr())),
+        ],
+      ),
+    ),
+  );
 }

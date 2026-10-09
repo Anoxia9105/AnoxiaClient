@@ -267,10 +267,7 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
                   'call_share_subtitle'.tr(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: cs.onSurfaceVariant,
-                  ),
+                  style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant),
                 ),
               ],
             ),
@@ -313,7 +310,10 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
         text: 'call_share_empty'.tr(),
         action: TextButton.icon(
           onPressed: _refresh,
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 15),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedRefresh01,
+            size: 15,
+          ),
           label: Text('call_share_refresh'.tr()),
         ),
       );
@@ -332,7 +332,10 @@ class _WindowScreenSelectDialogState extends State<WindowScreenSelectDialog> {
         text: 'call_share_empty'.tr(),
         action: TextButton.icon(
           onPressed: _refresh,
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh01, size: 15),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedRefresh01,
+            size: 15,
+          ),
           label: Text('call_share_refresh'.tr()),
         ),
       );
@@ -606,11 +609,7 @@ class _IconAction extends StatelessWidget {
         hoverColor: cs.onSurface.withValues(alpha: 0.06),
         child: Padding(
           padding: const EdgeInsets.all(7),
-          child: HugeIcon(
-            icon: icon,
-            size: 17,
-            color: cs.onSurfaceVariant,
-          ),
+          child: HugeIcon(icon: icon, size: 17, color: cs.onSurfaceVariant),
         ),
       ),
     );

@@ -2,6 +2,8 @@
 ///
 /// 集中管理应用本地存储（SharedPreferences）的所有键名
 class StorageKeys {
+  /// 摄像头/共享画质、编码偏好与共享声音开关。
+  static const String callMediaPreferences = 'CALL_MEDIA_PREFERENCES';
   /// 用户访问 Token
   static const String accessToken = 'ACCESS_TOKEN';
 

@@ -34,7 +34,11 @@ class StatusPill extends StatelessWidget {
 
 /// 说话波形动画指示器
 class SpeakingWaves extends StatelessWidget {
-  const SpeakingWaves({super.key, required this.progress, required this.compact});
+  const SpeakingWaves({
+    super.key,
+    required this.progress,
+    required this.compact,
+  });
 
   final double progress;
   final bool compact;

@@ -109,8 +109,10 @@ class _ReactionBubbleState extends State<_ReactionBubble>
     // 缩放动画：0-400ms 从 0.3 到 1.2，之后保持
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.3, end: 1.2)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween(
+          begin: 0.3,
+          end: 1.2,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 13, // 400ms / 3000ms ≈ 13%
       ),
       TweenSequenceItem(
@@ -126,8 +128,10 @@ class _ReactionBubbleState extends State<_ReactionBubble>
         weight: 73, // 2200ms / 3000ms ≈ 73%
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 27, // 800ms / 3000ms ≈ 27%
       ),
     ]).animate(_controller);
