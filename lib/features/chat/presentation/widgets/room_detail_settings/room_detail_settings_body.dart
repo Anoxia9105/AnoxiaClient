@@ -88,8 +88,8 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           peerOnline: _peerOnline(currentRoom, members),
         ),
 
-        // 区块 0：成员头像网格 + 查看全部入口
-        RoomSectionCaption('chat_detail_members'.tr()),
+        // 区块 0：成员头像网格 + 查看全部入口（单聊无小标题）
+        if (isGroup) RoomSectionCaption('chat_detail_members'.tr()),
         RoomCard(
           child: Column(
             mainAxisSize: MainAxisSize.min,
