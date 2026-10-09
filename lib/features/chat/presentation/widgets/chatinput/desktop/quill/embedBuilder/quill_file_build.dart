@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:anoxia/framework/domain/upload_entry.dart';
 import 'package:anoxia/framework/protocol/message/attachment.dart';
@@ -27,11 +27,22 @@ class QuillFileBuild implements EmbedBuilder {
         final uploadState = ref.watch(chatFileUploadControllerProvider);
         final entry = uploadState[attachment.id] ?? UploadEntry.uploading;
         final isVideo = attachment.isVideo;
+        void retry() => ref
+            .read(chatFileUploadControllerProvider.notifier)
+            .retryUpload(attachment);
 
         if (isVideo) {
-          return VideoEmbedCard(attachment: attachment, entry: entry);
+          return VideoEmbedCard(
+            attachment: attachment,
+            entry: entry,
+            onRetry: retry,
+          );
         }
-        return FileEmbedCard(attachment: attachment, entry: entry);
+        return FileEmbedCard(
+          attachment: attachment,
+          entry: entry,
+          onRetry: retry,
+        );
       },
     );
   }

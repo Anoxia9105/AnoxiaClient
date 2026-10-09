@@ -667,6 +667,7 @@
   "system_msg_room_created": "会话已创建",
   "upload_failed": "上传失败",
   "upload_failed_retry": "上传失败，请删除重试",
+  "chat_upload_failed_retry": "上传失败，点击重试",
   "quill_image_plain": "[图像]",
   "quill_file_plain": "[文件]",
   "quill_audio_plain": "[语音]",

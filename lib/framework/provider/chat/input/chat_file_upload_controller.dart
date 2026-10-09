@@ -148,14 +148,14 @@ class ChatFileUploadController extends _$ChatFileUploadController {
     if (otherFiles.isEmpty) return;
 
     _markUploading(otherFiles);
-    _editorOwnedIds.addAll(otherFiles.map((a) => a.id!));
-
     for (final a in otherFiles) {
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: 'file',
         data: a.toJson(),
       );
+      // 文档监听会立即裁剪不存在的 ID，插入成功后再登记归属。
+      _editorOwnedIds.add(a.id!);
     }
 
     unawaited(uploadFiles(otherFiles));
@@ -191,13 +191,10 @@ class ChatFileUploadController extends _$ChatFileUploadController {
           ),
         );
         pendingAttachments.add(a);
-      } else if (a.url != null &&
-          a.url!.isNotEmpty &&
-          !isPendingLocalMediaUrl(a.url) &&
-          !a.url!.startsWith('blob:')) {
+      } else if (isLocalMediaFilePath(local?.path ?? a.url)) {
         pendingFiles.add(
           XFile(
-            a.url!,
+            (local?.path ?? a.url)!,
             name: a.name,
             mimeType: mediaMimeTypeForName(
               a.name ?? a.url!,
@@ -273,6 +270,12 @@ class ChatFileUploadController extends _$ChatFileUploadController {
       final delayMs = 400 * (1 << (attempt - 1));
       await Future.delayed(Duration(milliseconds: delayMs));
     }
+  }
+
+  /// 重试草稿里的失败附件，复用原 ID 和本地源，防止连续点击重复上传。
+  Future<void> retryUpload(Attachment attachment) async {
+    if (state[attachment.id]?.isFailed != true) return;
+    await uploadFiles([attachment]);
   }
 
   /// 标记文件为上传中状态

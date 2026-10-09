@@ -175,14 +175,13 @@ class ChatImageUploadController extends _$ChatImageUploadController {
 
     // 先全部标记 uploading，再插入 embed
     _markUploading(uploadList);
-    _editorOwnedIds.addAll(uploadList.map((a) => a.id!));
-
     for (final a in uploadList) {
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: BlockEmbed.imageType,
         data: a.toJson(),
       );
+      _editorOwnedIds.add(a.id!);
     }
 
     unawaited(uploadImages(uploadList));
@@ -235,14 +234,13 @@ class ChatImageUploadController extends _$ChatImageUploadController {
     if (uploadList.isEmpty) return;
 
     _markUploading(uploadList);
-    _editorOwnedIds.addAll(uploadList.map((a) => a.id!));
-
     for (final a in uploadList) {
       QuillEmbedUtil.insertEmbed(
         controller: controller,
         type: BlockEmbed.imageType,
         data: a.toJson(),
       );
+      _editorOwnedIds.add(a.id!);
     }
 
     unawaited(uploadImages(uploadList));
@@ -277,15 +275,10 @@ class ChatImageUploadController extends _$ChatImageUploadController {
           ),
         );
         pendingImages.add(i);
-      } else if (i.url != null &&
-          i.url!.isNotEmpty &&
-          // 合成占位地址与浏览器 blob: 地址都不是磁盘路径，不可当 XFile(path) 用；
-          // 无 bytes 时直接失败，避免把占位串当成本地文件去读。
-          !isPendingLocalMediaUrl(i.url) &&
-          !i.url!.startsWith('blob:')) {
+      } else if (isLocalMediaFilePath(local?.path ?? i.url)) {
         pendingFiles.add(
           XFile(
-            i.url!,
+            (local?.path ?? i.url)!,
             name: i.name,
             mimeType: mediaMimeTypeForName(
               i.name ?? i.url!,

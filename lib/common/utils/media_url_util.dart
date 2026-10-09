@@ -27,3 +27,12 @@ bool isPendingLocalMediaUrl(String? url) =>
 /// 明确非 http 的合成地址，`AttachmentImageView` 会转而用内存 bytes 渲染。
 /// 它只存在于内存中的乐观消息里（不会落库、上传完成前不会发给服务端）。
 String localPendingMediaUrl(String id) => 'local-pending://$id';
+
+/// 可直接交给 XFile 读取的磁盘路径；待上传占位串并不是文件路径。
+bool isLocalMediaFilePath(String? path) =>
+    path != null &&
+    path.isNotEmpty &&
+    !isRemoteMediaUrl(path) &&
+    !path.startsWith('local-pending:') &&
+    !path.startsWith('blob:') &&
+    !path.startsWith('file:');

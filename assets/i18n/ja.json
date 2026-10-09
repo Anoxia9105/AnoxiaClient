@@ -667,6 +667,7 @@
   "system_msg_room_created": "会話が作成されました",
   "upload_failed": "アップロード失敗",
   "upload_failed_retry": "アップロード失敗、削除して再試行してください",
+  "chat_upload_failed_retry": "アップロード失敗、再試行できます",
   "quill_image_plain": "[画像]",
   "quill_file_plain": "[ファイル]",
   "quill_audio_plain": "[ボイスメッセージ]",

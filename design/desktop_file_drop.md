@@ -8,12 +8,15 @@ Windows / macOS / Linux 的正常聊天房间支持从文件管理器拖入文�
 
 实现入口：`DesktopChatDropTarget` 接收 desktop_drop 原生事件，`prepareDesktopDropFiles` 校验本地路径，`ChatFileUploadController.insertPickedFiles` 与文件选择按钮共用附件逻辑。原生文件只传路径，避免预读大文件；文件读取通过条件导出隔离。
 
+上传时使用 `isLocalMediaFilePath` 区分磁盘路径与 `local-pending://` / `blob:` 占位地址；`isPendingLocalMediaUrl` 表示尚未成为服务器资源，不能用来排除可上传的本地文件。文件和视频失败卡片提供真正的重试按钮，复用原附件 ID 与本地源；上传中忽略重复重试。批量插入后逐个登记编辑器归属，避免文档监听提前清理尚未插入的附件。
+
 macOS 沙箱增加 `com.apple.security.files.user-selected.read-only`，仅允许读取用户主动选择或拖入的文件。[Apple 沙箱文件访问文档](https://developer.apple.com/documentation/security/accessing-files-from-the-macos-app-sandbox)
 
 自动验证：
 
 ```sh
 flutter test test/features/chat/desktop_drop_files_test.dart test/features/chat/desktop_chat_drop_target_test.dart test/features/chat/desktop_drop_upload_test.dart
+flutter test test/features/chat/desktop_upload_multipart_test.dart test/features/chat/file_embed_retry_test.dart
 flutter analyze
 ```
 

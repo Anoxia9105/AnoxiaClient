@@ -13,7 +13,13 @@ import 'package:anoxia/framework/theme/radius_token.dart';
 class VideoEmbedCard extends ConsumerStatefulWidget {
   final Attachment attachment;
   final UploadEntry entry;
-  const VideoEmbedCard({super.key, required this.attachment, required this.entry});
+  final VoidCallback? onRetry;
+  const VideoEmbedCard({
+    super.key,
+    required this.attachment,
+    required this.entry,
+    this.onRetry,
+  });
 
   @override
   ConsumerState<VideoEmbedCard> createState() => VideoEmbedCardState();
@@ -143,17 +149,16 @@ class VideoEmbedCardState extends ConsumerState<VideoEmbedCard> {
               Positioned(
                 top: 8,
                 right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(RadiusToken.pill)),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 12, color: Colors.white),
-                      const SizedBox(width: 4),
-                      Text('retry'.tr(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                    ],
+                child: TextButton.icon(
+                  onPressed: widget.onRetry,
+                  style: TextButton.styleFrom(
+                    backgroundColor: scheme.error,
+                    foregroundColor: scheme.onError,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(0, 36),
                   ),
+                  icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 14),
+                  label: Text('retry'.tr()),
                 ),
               )
             else if (!isUploading)
@@ -215,7 +220,13 @@ class VideoEmbedCardState extends ConsumerState<VideoEmbedCard> {
 class FileEmbedCard extends StatelessWidget {
   final Attachment attachment;
   final UploadEntry entry;
-  const FileEmbedCard({super.key, required this.attachment, required this.entry});
+  final VoidCallback? onRetry;
+  const FileEmbedCard({
+    super.key,
+    required this.attachment,
+    required this.entry,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -306,9 +317,16 @@ class FileEmbedCard extends StatelessWidget {
                                 style: Theme.of(context).textTheme.labelSmall!.copyWith( color: scheme.primary, fontWeight: FontWeight.w600),
                               )
                             else if (isFailed)
-                              Text(
-                                'upload_failed_retry'.tr(),
-                                style: Theme.of(context).textTheme.labelSmall!.copyWith( color: scheme.error, fontWeight: FontWeight.w700),
+                              Flexible(
+                                child: Text(
+                                  'chat_upload_failed_retry'.tr(),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                                    color: scheme.error,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               )
                             else
                               Row(
@@ -325,7 +343,7 @@ class FileEmbedCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  TrailingStatus(entry: entry),
+                  TrailingStatus(entry: entry, onRetry: onRetry),
                 ],
               ),
             ),
@@ -366,7 +384,8 @@ class FileEmbedCard extends StatelessWidget {
 
 class TrailingStatus extends StatelessWidget {
   final UploadEntry entry;
-  const TrailingStatus({super.key, required this.entry});
+  final VoidCallback? onRetry;
+  const TrailingStatus({super.key, required this.entry, this.onRetry});
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -393,16 +412,23 @@ class TrailingStatus extends StatelessWidget {
       );
     }
     if (entry.isFailed) {
-      return Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(color: scheme.error, shape: BoxShape.circle),
-        child: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 16, color: Colors.white),
+      return IconButton(
+        tooltip: 'retry'.tr(),
+        onPressed: onRetry,
+        style: IconButton.styleFrom(
+          foregroundColor: scheme.error,
+          backgroundColor: scheme.errorContainer.withValues(alpha: 0.6),
+          minimumSize: const Size(36, 36),
+          padding: const EdgeInsets.all(9),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        icon: const HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 18),
       );
     }
     return Container(
       width: 28,
       height: 28,
+      alignment: Alignment.center,
       decoration: const BoxDecoration(
         color: Color(0xFFE8F5E9),
         shape: BoxShape.circle,
