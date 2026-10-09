@@ -557,45 +557,57 @@ class LocalDataSource {
       await db.transaction(() async {
         final message = await db.messageDao.getMessageById(messageId);
         await db.messageDao.deleteMessage(messageId);
-        if (message == null) return;
-        final room = await db.conversationDao.getConversation(
-          message.conversationId,
-        );
-        if (room?.lastMessageId != messageId) return;
-        final latest =
-            await (db.select(db.messages)
-                  ..where(
-                    (t) =>
-                        t.conversationId.equals(message.conversationId) &
-                        t.isDeleted.equals(false),
-                  )
-                  ..orderBy([
-                    (t) => OrderingTerm(
-                      expression: t.sentAt,
-                      mode: OrderingMode.desc,
-                    ),
-                    (t) => OrderingTerm(
-                      expression: t.seq,
-                      mode: OrderingMode.desc,
-                    ),
-                  ])
-                  ..limit(1))
-                .get();
-        final replacement = latest.isEmpty ? null : latest.first;
-        await (db.update(
-          db.conversations,
-        )..where((t) => t.id.equals(message.conversationId))).write(
-          ConversationsCompanion(
-            lastMessageId: Value(replacement?.id),
-            lastMessagePreview: Value(replacement?.content),
-            lastMessageType: Value(replacement?.messageType),
-            lastMessageSeq: Value(replacement?.seq),
-            lastMessageAt: Value(replacement?.sentAt),
-            updatedAt: Value(
-              replacement?.sentAt ?? room!.createdAt ?? DateTime.now(),
+        // 需要修复摘要的会话：消息行所在的会话 + 所有摘要仍指向该 id 的会话。
+        // 后者覆盖“仅存在于房间列表摘要、尚未下载到消息表”的情况：
+        // 此时 message 为空，但 tombstone 已保存，必须把摘要原文清掉，
+        // 否则房间列表会一直残留已撤回的原文。
+        final affected = <String>{};
+        if (message != null) affected.add(message.conversationId);
+        final stale =
+            await (db.select(
+              db.conversations,
+            )..where((t) => t.lastMessageId.equals(messageId))).get();
+        for (final row in stale) {
+          affected.add(row.id);
+        }
+        for (final convId in affected) {
+          final room = await db.conversationDao.getConversation(convId);
+          if (room?.lastMessageId != messageId) continue;
+          final latest =
+              await (db.select(db.messages)
+                    ..where(
+                      (t) =>
+                          t.conversationId.equals(convId) &
+                          t.isDeleted.equals(false),
+                    )
+                    ..orderBy([
+                      (t) => OrderingTerm(
+                        expression: t.sentAt,
+                        mode: OrderingMode.desc,
+                      ),
+                      (t) => OrderingTerm(
+                        expression: t.seq,
+                        mode: OrderingMode.desc,
+                      ),
+                    ])
+                    ..limit(1))
+                  .get();
+          final replacement = latest.isEmpty ? null : latest.first;
+          await (db.update(
+            db.conversations,
+          )..where((t) => t.id.equals(convId))).write(
+            ConversationsCompanion(
+              lastMessageId: Value(replacement?.id),
+              lastMessagePreview: Value(replacement?.content),
+              lastMessageType: Value(replacement?.messageType),
+              lastMessageSeq: Value(replacement?.seq),
+              lastMessageAt: Value(replacement?.sentAt),
+              updatedAt: Value(
+                replacement?.sentAt ?? room?.createdAt ?? DateTime.now(),
+              ),
             ),
-          ),
-        );
+          );
+        }
       });
     });
   }
@@ -689,6 +701,49 @@ class LocalDataSource {
                       DateTime(1970),
                 )));
     if (!deleted && !newerLocal) return incoming;
+    // 本地要保留的摘要本身也可能是指向 tombstone 的历史残留
+    // （旧版本撤回仅在摘要时未清理）。最终摘要绝不能指向已删除 id，
+    // 否则残留会借助“保护本地较新摘要”逻辑永久存活。
+    if (existing != null && existing.lastMessageId != null) {
+      final existingDeleted =
+          (await db.syncStateDao.getState(
+            'message_deleted',
+            existing.lastMessageId!,
+          )) !=
+          null;
+      if (existingDeleted) {
+        final latest =
+            await (db.select(db.messages)
+                  ..where(
+                    (t) =>
+                        t.conversationId.equals(existing.id) &
+                        t.isDeleted.equals(false),
+                  )
+                  ..orderBy([
+                    (t) => OrderingTerm(
+                      expression: t.sentAt,
+                      mode: OrderingMode.desc,
+                    ),
+                    (t) => OrderingTerm(
+                      expression: t.seq,
+                      mode: OrderingMode.desc,
+                    ),
+                  ])
+                  ..limit(1))
+                .get();
+        final replacement = latest.isEmpty ? null : latest.first;
+        return incoming.copyWith(
+          lastMessageId: Value(replacement?.id),
+          lastMessagePreview: Value(replacement?.content),
+          lastMessageType: Value(replacement?.messageType),
+          lastMessageSeq: Value(replacement?.seq),
+          lastMessageAt: Value(replacement?.sentAt),
+          updatedAt: Value(
+            replacement?.sentAt ?? existing.createdAt ?? DateTime.now(),
+          ),
+        );
+      }
+    }
     return incoming.copyWith(
       lastMessageId: Value(existing?.lastMessageId),
       lastMessagePreview: Value(existing?.lastMessagePreview),

@@ -581,6 +581,11 @@ class ChatMessages extends _$ChatMessages {
   }
 
   Future<void> removeMessage(String messageId, String roomId) async {
+    // 乐观缓存只活在内存里，不随 DB 删除自动消失；不清理会导致已撤回的
+    // 待发送消息仍通过 mergeOptimisticMessages 显示在气泡列表里。
+    ref
+        .read(optimisticRoomMessagesProvider.notifier)
+        .remove(ChatMessage(messageId: messageId, clientMsgId: messageId, roomId: roomId));
     await ref.read(localDataSourceProvider).deleteMessage(messageId);
   }
 

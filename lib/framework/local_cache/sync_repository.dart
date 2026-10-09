@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:anoxia/domain/repositories/chat_repository.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -217,19 +218,36 @@ class SyncRepository implements ChatRepository {
       }
 
       // 房间资料来自权威列表，不能用最后消息时间作为整行版本。
+      // 已读游标只升不降：本地已确认的游标（queue 后即使 ACK 已清 pending，
+      // 仍留在 conversations.lastReadSeq 里）不能被晚到的旧房间列表覆盖。
       final pendingRead = pendingReads[id];
-      final serverRead = remote.lastReadSeq ?? local.lastReadSeq ?? 0;
+      final localRead = local.lastReadSeq ?? 0;
+      final serverRead = remote.lastReadSeq ?? localRead;
+      final effectiveRead = max(
+        pendingRead ?? 0,
+        max(serverRead, localRead),
+      );
+      final bool serverNewest =
+          effectiveRead == serverRead &&
+          (pendingRead == null || pendingRead <= serverRead) &&
+          localRead <= serverRead;
+      final int mergedUnread;
+      if (serverNewest) {
+        mergedUnread = remote.unreadCount ?? 0;
+      } else {
+        // 本地/待确认游标较新：服务端 unread 基于旧游标，不能直接采用，
+        // 否则晚到响应会把已读又算成未读。用两端已知最大 seq 重算，
+        // 兼顾“服务端有新消息本地还没拉到”和“本地有新消息服务端还不知道”。
+        final maxSeq = max(
+          remote.lastMessage?.seq ?? effectiveRead,
+          max(local.lastMessage?.seq ?? effectiveRead, effectiveRead),
+        );
+        mergedUnread = (maxSeq - effectiveRead).clamp(0, 1 << 31);
+      }
       merged.add(
         remote.copyWith(
-          lastReadSeq: pendingRead != null && pendingRead > serverRead
-              ? pendingRead
-              : serverRead,
-          unreadCount: pendingRead != null && pendingRead > serverRead
-              ? ((remote.lastMessage?.seq ?? pendingRead) - pendingRead).clamp(
-                  0,
-                  1 << 31,
-                )
-              : remote.unreadCount,
+          lastReadSeq: effectiveRead,
+          unreadCount: mergedUnread,
         ),
       );
     }
