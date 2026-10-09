@@ -112,7 +112,7 @@ class MobileCallControls extends ConsumerWidget {
       ],
       const SizedBox(width: 7),
       CallMediaMenu(state: state),
-      const SizedBox(width: 7),
+      const SizedBox(width: 20),
       _CallControlButton(
         tooltip: 'call_hangup_tooltip'.tr(),
         icon: HugeIcons.strokeRoundedCallEnd01,

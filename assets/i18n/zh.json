@@ -1,4 +1,9 @@
 {
+  "call_media_settings_subtitle": "调整画质与带宽，找到适合你的通话体验",
+  "call_camera_quality_hint": "均衡适合日常通话；高清需要更多带宽。",
+  "call_share_quality_hint": "展示文字选清晰，播放动态内容选流畅。",
+  "call_media_advanced_hint": "通常保持自动即可，按设备能力选择编码器。",
+  "call_diagnostic_sampling": "正在采样…",
   "call_media_device_failed": "媒体设备启动失败，请检查权限或切换设备",
   "call_media_settings": "通话设置",
   "call_camera_quality": "摄像头画质",

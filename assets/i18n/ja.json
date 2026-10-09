@@ -1,4 +1,9 @@
 {
+  "call_media_settings_subtitle": "画質と帯域幅を調整して快適な通話に",
+  "call_camera_quality_hint": "通常はバランス設定がおすすめです。高画質は帯域幅を多く使用します。",
+  "call_share_quality_hint": "文字には鮮明、動きのある映像には滑らか設定を選択してください。",
+  "call_media_advanced_hint": "通常は自動で十分です。利用可能なコーデックは端末によって異なります。",
+  "call_diagnostic_sampling": "測定中…",
   "call_media_device_failed": "メディアデバイスを開始できません。権限を確認するか、別のデバイスを選択してください。",
   "call_media_settings": "通話設定",
   "call_camera_quality": "カメラ画質",

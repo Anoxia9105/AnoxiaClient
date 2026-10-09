@@ -215,6 +215,7 @@ class CommandBar extends ConsumerWidget {
 
                     // 挂断按钮
                     CallMediaMenu(state: state),
+                    const SizedBox(width: 20),
                     _buildHangupButton(context, ref, notifier, state),
                   ],
                 ),

@@ -1,9 +1,15 @@
 import 'dart:async';
 
 import 'package:anoxia/framework/domain/rtp_interval.dart';
+import 'package:anoxia/framework/domain/rtp_bitrate.dart';
+import 'package:anoxia/framework/logs/debug_log.dart';
+import 'package:flutter/foundation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+// SDK 2.13.1 的统计查询返回这些类型，但入口库未导出。
+// ignore: implementation_imports
+import 'package:livekit_client/src/stats/stats.dart';
 
 Future<void> showCallDiagnostics(
   BuildContext context,
@@ -28,12 +34,59 @@ class _CallDiagnosticsDialog extends StatefulWidget {
 class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
   Timer? _timer;
   final _window = RtpSampleWindow();
+  final _bitrates = RtpBitrateWindow(ticksPerSecond: kIsWeb ? 1000 : 1000000);
+  final _senders = <String, List<VideoSenderStats>>{};
+  final _receivers = <String, VideoReceiverStats>{};
+  bool _sampling = false;
   @override
   void initState() {
     super.initState();
+    unawaited(_sample());
     _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) setState(() {});
+      unawaited(_sample());
     });
+  }
+
+  Future<void> _sample() async {
+    if (_sampling || !mounted) return;
+    _sampling = true;
+    final senders = <String, List<VideoSenderStats>>{};
+    final receivers = <String, VideoReceiverStats>{};
+    try {
+      final participants = <Participant>[
+        if (widget.room.localParticipant != null) widget.room.localParticipant!,
+        ...widget.room.remoteParticipants.values,
+      ];
+      await Future.wait(
+        participants
+            .expand((participant) => participant.videoTrackPublications)
+            .map((publication) async {
+              if (publication.muted) return;
+              try {
+                final track = publication.track;
+                if (track is LocalVideoTrack) {
+                  senders[publication.sid] = await track.getSenderStats();
+                } else if (track is RemoteVideoTrack) {
+                  final stats = await track.getReceiverStats();
+                  if (stats != null) receivers[publication.sid] = stats;
+                }
+              } catch (error, stack) {
+                debugLog('读取通话诊断统计失败', error, stack);
+              }
+            }),
+      );
+      if (!mounted) return;
+      setState(() {
+        _senders
+          ..clear()
+          ..addAll(senders);
+        _receivers
+          ..clear()
+          ..addAll(receivers);
+      });
+    } finally {
+      _sampling = false;
+    }
   }
 
   @override
@@ -45,6 +98,7 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
   @override
   Widget build(BuildContext context) {
     final keys = <String>{};
+    final bitrateKeys = <String>{};
     final rows = <Widget>[];
     final participants = <Participant>[
       if (widget.room.localParticipant != null) widget.room.localParticipant!,
@@ -56,12 +110,23 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
         if (publication.muted || track == null) continue;
         final values = <String, String>{};
         if (track is LocalVideoTrack) {
-          final layers = track.prevStats?.values.toList() ?? [];
+          final layers = [...?_senders[publication.sid]];
           layers.sort(
             (a, b) => (b.frameWidth ?? 0).compareTo(a.frameWidth ?? 0),
           );
           values['call_diagnostic_codec'] = track.codec?.toUpperCase() ?? '—';
-          values['call_diagnostic_bitrate'] = _kbps(track.currentBitrate);
+          double? totalBitrate;
+          for (final stats in layers) {
+            final key = '${publication.sid}:${stats.streamId}';
+            bitrateKeys.add(key);
+            final rate = _bitrates.observe(
+              key,
+              stats.timestamp,
+              stats.bytesSent,
+            );
+            if (rate != null) totalBitrate = (totalBitrate ?? 0) + rate;
+          }
+          values['call_diagnostic_bitrate'] = _kbps(totalBitrate);
           if (layers.isNotEmpty) {
             final stats = layers.first;
             values['call_diagnostic_resolution'] =
@@ -76,11 +141,15 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
                 stats.qualityLimitationReason ?? '—';
           }
         } else if (track is RemoteVideoTrack) {
-          final stats = track.prevStats;
-          values['call_diagnostic_bitrate'] = _kbps(track.currentBitrate);
+          final stats = _receivers[publication.sid];
+          values['call_diagnostic_bitrate'] = _kbps(null);
           if (stats != null) {
             final key = '${publication.sid}:${stats.streamId}';
             keys.add(key);
+            bitrateKeys.add(key);
+            values['call_diagnostic_bitrate'] = _kbps(
+              _bitrates.observe(key, stats.timestamp, stats.bytesReceived),
+            );
             final interval = _window.observe(
               key,
               RtpCounters(
@@ -139,6 +208,7 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
       }
     }
     _window.retainOnly(keys);
+    _bitrates.retainOnly(bitrateKeys);
     return AlertDialog(
       title: Text('call_diagnostics'.tr()),
       content: SizedBox(
@@ -179,6 +249,9 @@ class _CallDiagnosticsDialogState extends State<_CallDiagnosticsDialog> {
   static String _number(num? value) => value?.toStringAsFixed(1) ?? '—';
   static String _percent(double? value) =>
       value == null ? '—' : '${(value * 100).toStringAsFixed(1)}%';
-  static String _kbps(num? value) =>
-      value == null ? '—' : '${(value / 1000).toStringAsFixed(0)} kbps';
+  static String _kbps(num? value) => value == null
+      ? 'call_diagnostic_sampling'.tr()
+      : value >= 1000000
+      ? '${(value / 1000000).toStringAsFixed(2)} Mbps'
+      : '${(value / 1000).toStringAsFixed(1)} kbps';
 }

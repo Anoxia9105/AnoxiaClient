@@ -11,6 +11,7 @@ Future<void> showCallMediaSettings(
 ) async {
   await showDialog<void>(
     context: context,
+    barrierDismissible: false,
     builder: (_) => _CallMediaSettingsDialog(state: state, onSave: onSave),
   );
 }
@@ -48,69 +49,134 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
     child: AlertDialog(
-      title: Text('call_media_settings'.tr()),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+      title: Row(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                Icons.tune_rounded,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'call_media_settings'.tr(),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'call_media_settings_subtitle'.tr(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       content: SizedBox(
-        width: 420,
+        width: 520,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButtonFormField<CameraQuality>(
-                initialValue: _camera,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: 'call_camera_quality'.tr(),
-                ),
-                items: CameraQuality.values
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text('call_camera_quality_${value.name}'.tr()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _saving
-                    ? null
-                    : (value) => setState(() => _camera = value!),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<ScreenShareQuality>(
-                initialValue: _screen,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: 'call_share_quality'.tr(),
-                ),
-                items: ScreenShareQuality.values
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text('call_share_quality_${value.name}'.tr()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _saving
-                    ? null
-                    : (value) => setState(() => _screen = value!),
-              ),
-              const SizedBox(height: 12),
-              if (DeviceUtil.isWeb)
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('call_share_audio'.tr()),
-                  subtitle: Text('call_share_audio_hint'.tr()),
-                  value: _shareAudio,
+              _section(
+                Icons.videocam_outlined,
+                'call_camera',
+                'call_camera_quality_hint',
+                DropdownButtonFormField<CameraQuality>(
+                  initialValue: _camera,
+                  isExpanded: true,
+                  decoration: _decoration('call_camera_quality'),
+                  items: CameraQuality.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text('call_camera_quality_${value.name}'.tr()),
+                        ),
+                      )
+                      .toList(),
                   onChanged: _saving
                       ? null
-                      : (value) => setState(() => _shareAudio = value!),
+                      : (value) => setState(() => _camera = value!),
                 ),
-              Text(
-                'call_media_apply_hint'.tr(),
-                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              _section(
+                Icons.screen_share_outlined,
+                'call_share',
+                'call_share_quality_hint',
+                Column(
+                  children: [
+                    DropdownButtonFormField<ScreenShareQuality>(
+                      initialValue: _screen,
+                      isExpanded: true,
+                      decoration: _decoration('call_share_quality'),
+                      items: ScreenShareQuality.values
+                          .map(
+                            (value) => DropdownMenuItem(
+                              value: value,
+                              child: Text(
+                                'call_share_quality_${value.name}'.tr(),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _saving
+                          ? null
+                          : (value) => setState(() => _screen = value!),
+                    ),
+                    if (DeviceUtil.isWeb)
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text('call_share_audio'.tr()),
+                        subtitle: Text('call_share_audio_hint'.tr()),
+                        value: _shareAudio,
+                        onChanged: _saving
+                            ? null
+                            : (value) => setState(() => _shareAudio = value),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               ExpansionTile(
-                tilePadding: EdgeInsets.zero,
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                collapsedShape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                leading: const Icon(Icons.settings_ethernet_rounded),
                 title: Text('call_media_advanced'.tr()),
+                subtitle: Text(
+                  'call_media_advanced_hint'.tr(),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 children: [
                   _codecSelector(
                     'call_camera_codec',
@@ -130,10 +196,38 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'call_media_apply_hint'.tr(),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               if (_error != null)
-                Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -157,6 +251,57 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
     ),
   );
 
+  InputDecoration _decoration(String label) => InputDecoration(
+    labelText: label.tr(),
+    filled: true,
+    fillColor: Theme.of(context).colorScheme.surface,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: Theme.of(context).colorScheme.outlineVariant,
+      ),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+  );
+
+  Widget _section(IconData icon, String title, String hint, Widget child) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(title.tr(), style: theme.textTheme.titleSmall),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            hint.tr(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
   Widget _codecSelector(
     String label,
     VideoCodecPreference selected,
@@ -164,7 +309,7 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
   ) => DropdownButtonFormField<VideoCodecPreference>(
     initialValue: selected,
     isExpanded: true,
-    decoration: InputDecoration(labelText: label.tr()),
+    decoration: _decoration(label),
     items: VideoCodecPreference.values
         .map(
           (value) => DropdownMenuItem(

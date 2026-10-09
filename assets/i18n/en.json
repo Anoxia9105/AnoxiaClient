@@ -1,4 +1,9 @@
 {
+  "call_media_settings_subtitle": "Balance clarity and bandwidth for your call",
+  "call_camera_quality_hint": "Balanced suits everyday calls. HD uses more bandwidth.",
+  "call_share_quality_hint": "Choose detail for text, or motion for moving content.",
+  "call_media_advanced_hint": "Automatic suits most calls. Codec availability varies by device.",
+  "call_diagnostic_sampling": "Sampling…",
   "call_media_device_failed": "A media device could not start. Check permissions or select another device.",
   "call_media_settings": "Call settings",
   "call_camera_quality": "Camera quality",
