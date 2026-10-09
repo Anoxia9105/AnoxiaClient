@@ -88,42 +88,43 @@ class RoomDetailSettingsBody extends ConsumerWidget {
           peerOnline: _peerOnline(currentRoom, members),
         ),
 
-        // 区块 0：成员头像网格 + 查看全部入口（单聊无小标题）
+        // 区块 0：仅群聊展示成员头像网格 + 查看全部入口
         if (isGroup) RoomSectionCaption('chat_detail_members'.tr()),
-        RoomCard(
+        if (isGroup)
+          RoomCard(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              MemberListSection(
-                roomId: roomId,
-                isGroup: isGroup,
-                onMemberTap: (member) =>
-                    _openContactDetailByMember(context, ref, member),
-                onAddMemberTap: !isGroup
-                    ? null
-                    : () {
-                        presentAdaptivePage(
-                          context,
-                          builder: (_) => AddMemberPage(
-                            roomId: roomId,
-                            roomName: currentRoom.roomName ?? '',
-                          ),
-                        );
-                      },
-              ),
-              if (isGroup)
-                _ViewAllFooter(
-                  onTap: () => presentAdaptivePage(
-                    context,
-                    builder: (_) => GroupMemberListPage(
-                      roomId: roomId,
-                      roomName: currentRoom.roomName ?? '',
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MemberListSection(
+                  roomId: roomId,
+                  isGroup: isGroup,
+                  onMemberTap: (member) =>
+                      _openContactDetailByMember(context, ref, member),
+                  onAddMemberTap: !isGroup
+                      ? null
+                      : () {
+                          presentAdaptivePage(
+                            context,
+                            builder: (_) => AddMemberPage(
+                              roomId: roomId,
+                              roomName: currentRoom.roomName ?? '',
+                            ),
+                          );
+                        },
+                ),
+                if (isGroup)
+                  _ViewAllFooter(
+                    onTap: () => presentAdaptivePage(
+                      context,
+                      builder: (_) => GroupMemberListPage(
+                        roomId: roomId,
+                        roomName: currentRoom.roomName ?? '',
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
 
         // 快捷工具：已存在二级页的前置入口
         RoomSectionCaption('chat_detail_quick_tools'.tr()),
