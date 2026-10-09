@@ -7,6 +7,7 @@ import 'package:anoxia/framework/provider/core/sync_conversations_usecase_provid
 import 'package:anoxia/framework/provider/core/room_repository_provider.dart';
 import 'package:anoxia/features/chat/application/system_message_formatter.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:anoxia/framework/provider/chat/room/do_not_disturb_rooms_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/group_announcement_dismissal_provider.dart';
@@ -33,6 +34,17 @@ import 'package:anoxia/framework/logs/debug_log.dart';
 part 'room_list_service.g.dart';
 
 final chatRightPanelVisibleProvider = StateProvider<bool>((ref) => false);
+
+@Riverpod(keepAlive: true)
+class RoomListRefreshFailed extends _$RoomListRefreshFailed {
+  @override
+  bool build() {
+    ref.watch(tokenCacheProvider);
+    return false;
+  }
+
+  void setFailed(bool failed) => state = failed;
+}
 
 /// 聊天室列表服务
 ///
@@ -112,11 +124,9 @@ class RoomListService extends _$RoomListService {
       return state.value ?? const <ChatRoomVO>[];
     }
 
-    try {
-      return await _fetchRoomListForStartup();
-    } finally {
-      _initialFetchDone = true;
-    }
+    final rooms = await _fetchRoomListForStartup();
+    _initialFetchDone = true;
+    return rooms;
   }
 
   /// 切换当前房间的搜索栏展开状态
@@ -157,8 +167,15 @@ class RoomListService extends _$RoomListService {
   /// [silent] 为 true 时静默刷新，不触发 loading 状态（避免 UI 闪烁）
   /// 刷新后自动将当前活跃房间的未读数归零，防止服务端数据覆盖本地已读状态
   Future<void> refresh({bool silent = false}) async {
-    if (!silent) state = const AsyncValue.loading();
+    final previous = state;
+    ref.read(roomListRefreshFailedProvider.notifier).setFailed(false);
+    if (!silent && !previous.hasValue) state = const AsyncValue.loading();
     final newState = await AsyncValue.guard(_fetchRoomListForStartup);
+    if (!ref.mounted) return;
+    if (!newState.hasError) _initialFetchDone = true;
+    ref
+        .read(roomListRefreshFailedProvider.notifier)
+        .setFailed(newState.hasError);
 
     final activeId = ref.read(activeRoomIdProvider);
     if (activeId != null && newState is AsyncData<List<ChatRoomVO>>) {
@@ -172,21 +189,24 @@ class RoomListService extends _$RoomListService {
       }
     }
 
-    state = newState;
+    state = newState.hasError && previous.hasValue ? previous : newState;
   }
 
   Future<List<ChatRoomVO>> _fetchRoomListForStartup() async {
     try {
       // 先等待会话同步完成，避免首次加载显示空列表
-      await ref.read(syncConversationsUseCaseProvider).sync();
+      await ref
+          .read(syncConversationsUseCaseProvider)
+          .sync()
+          .timeout(_startupFetchTimeout);
       // 同步完成后获取会话列表（不再触发后台同步）
       final rooms = await ref
           .read(syncConversationsUseCaseProvider)(sync: false)
           .timeout(_startupFetchTimeout);
       return _pruneReservedOfficialRoomCollisions(rooms);
     } on TimeoutException catch (e, st) {
-      debugLog('[RoomListService] 房间列表加载超时，使用空列表继续启动', e, st);
-      return state.value ?? const <ChatRoomVO>[];
+      debugLog('[RoomListService] 房间列表加载超时', e, st);
+      rethrow;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/list_retry_banner.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_dialog_menus.dart';
 import 'package:anoxia/features/chat/presentation/widgets/room_list_item.dart';
@@ -144,6 +145,11 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     return Column(
       children: [
         if (showSearch) _buildSearchBar(context, ref),
+        if (ref.watch(roomListRefreshFailedProvider) &&
+            ref.watch(roomListServiceProvider).hasValue)
+          ListRetryBanner(
+            onRetry: () => ref.read(roomListServiceProvider.notifier).refresh(),
+          ),
         Expanded(child: _buildRoomList(context, ref)),
       ],
     );
@@ -203,7 +209,10 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
                   )
                 : null,
             hintText: 'chat_search_placeholder'.tr(),
-            hintStyle: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            hintStyle: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ),
@@ -216,6 +225,8 @@ class _ChatRoomListState extends ConsumerState<ChatRoomList> {
     final query = ref.watch(roomSearchQueryProvider);
 
     return filteredRooms.when(
+      skipLoadingOnReload: true,
+      skipError: true,
       loading: () => const ChatRoomListSkeleton(),
       error: (error, _) => _buildErrorState(context, ref, error),
       data: (rooms) {

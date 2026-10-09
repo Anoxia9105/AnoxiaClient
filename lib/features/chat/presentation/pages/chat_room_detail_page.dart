@@ -23,6 +23,7 @@ import 'package:anoxia/framework/domain/chat_room_vo.dart';
 import 'package:anoxia/framework/theme/radius_token.dart';
 import 'package:anoxia/framework/provider/chat/message/reply_jump_provider.dart';
 import 'package:anoxia/framework/provider/chat/message/room_message_ui_item_service.dart';
+import 'package:anoxia/framework/provider/chat/message/room_message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -138,7 +139,9 @@ class _ChatRoomDetailState extends ConsumerState<ChatRoomDetail> {
     final chatUiListResult = ref.watch(chatUiListProvider(widget.roomId));
     final flatItems = chatUiListResult.items;
 
-    final showInitialSkeleton = entryTask.isLoading && flatItems.isEmpty;
+    final messages = ref.watch(roomMessagesProvider(widget.roomId));
+    final showInitialSkeleton =
+        entryTask.isLoading && !messages.hasValue && flatItems.isEmpty;
     final selection = ref.watch(
       forwardSelectionControllerProvider(widget.roomId),
     );

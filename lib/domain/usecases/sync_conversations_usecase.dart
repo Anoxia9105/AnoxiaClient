@@ -26,6 +26,6 @@ class SyncConversationsUseCase {
 
   /// 主动同步会话列表
   Future<void> sync() {
-    return repository.syncConversations();
+    return repository.syncConversations(throwOnError: true);
   }
 }

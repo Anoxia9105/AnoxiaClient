@@ -23,6 +23,7 @@ class _Remote extends RemoteDataSource {
   List<ChatMessage> messages = [];
   List<ChatRoomVO> rooms = [];
   bool failRecalls = false;
+  bool failRooms = false;
 
   @override
   Future<List<({int id, String messageId})>> fetchRecalls(
@@ -34,8 +35,10 @@ class _Remote extends RemoteDataSource {
   }
 
   @override
-  Future<List<ChatRoomVO>?> fetchConversations({DateTime? since}) async =>
-      rooms;
+  Future<List<ChatRoomVO>?> fetchConversations({DateTime? since}) async {
+    if (failRooms) throw StateError('offline');
+    return rooms;
+  }
 
   @override
   Future<List<ChatMessage>> fetchMessages(
@@ -82,6 +85,17 @@ void main() {
     );
   });
   tearDown(() => db.close());
+
+  test('主动同步会话失败可重试，后台同步仍容错', () async {
+    remote.failRooms = true;
+    await expectLater(
+      repository.syncConversations(throwOnError: true),
+      throwsStateError,
+    );
+    await repository.syncConversations();
+    remote.failRooms = false;
+    await repository.syncConversations(throwOnError: true);
+  });
 
   test('离线撤回分页补偿删除缓存消息并阻止晚到消息复活', () async {
     await local.upsertMessage(_message('cached', 1));

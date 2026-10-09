@@ -1,4 +1,4 @@
-﻿import 'package:alphabet_list_view/alphabet_list_view.dart';
+import 'package:alphabet_list_view/alphabet_list_view.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/contact_alphabet_overlay.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/contact_alphabet_symbol.dart';
 import 'package:anoxia/features/contact/presentation/widgets/sorted_contacts/contact_group_header.dart';
@@ -31,6 +31,8 @@ class SortedContactGroupsWidget extends ConsumerWidget {
     final groupsAsync = ref.watch(sortedContactGroupsProvider);
 
     return groupsAsync.when(
+      skipLoadingOnReload: true,
+      skipError: true,
       data: (groupMap) {
         // 过滤空分组
         final normalizedEntries = groupMap.entries.where((e) {
@@ -103,9 +105,9 @@ class SortedContactGroupsWidget extends ConsumerWidget {
                 padding: const EdgeInsets.only(right: 4),
                 symbolBuilder: (context, symbol, state) =>
                     ContactAlphabetSymbol(
-                  symbol: symbol,
-                  isActive: state == AlphabetScrollbarItemState.active,
-                ),
+                      symbol: symbol,
+                      isActive: state == AlphabetScrollbarItemState.active,
+                    ),
               ),
             ),
           ),
@@ -113,8 +115,20 @@ class SortedContactGroupsWidget extends ConsumerWidget {
       },
       loading: () => const ContactGroupsSkeleton(),
       error: (err, stack) => Center(
-          child: Text(
-              'contact_load_failed_with_error'.tr(args: [err.toString()]))),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('chat_load_failed'.tr()),
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              onPressed: () =>
+                  ref.read(contactListServiceProvider.notifier).refresh(),
+              icon: const Icon(Icons.refresh),
+              label: Text('call_window_retry'.tr()),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

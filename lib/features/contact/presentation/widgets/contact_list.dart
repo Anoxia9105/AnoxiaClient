@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/list_retry_banner.dart';
 import 'package:anoxia/common/widgets/online_status_pill.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:anoxia/common/widgets/vibrating_badge.dart';
@@ -66,7 +67,9 @@ class ContactList extends ConsumerWidget {
                 leading: const HugeIcon(icon: HugeIcons.strokeRoundedAddTeam),
                 title: Text('contact_new_friends'.tr()),
                 onTap: () {
-                  ref.read(contactSelectionProvider.notifier).selectNewFriends();
+                  ref
+                      .read(contactSelectionProvider.notifier)
+                      .selectNewFriends();
                   if (DeviceUtil.useSingleColumnPush(context)) {
                     _openMobileDetail(context, const NewFriendsPage());
                   }
@@ -79,7 +82,9 @@ class ContactList extends ConsumerWidget {
                       ),
               ),
               ListTile(
-                leading: const HugeIcon(icon: HugeIcons.strokeRoundedUserGroup03),
+                leading: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedUserGroup03,
+                ),
                 title: Text('contact_joined_groups'.tr()),
                 onTap: () {
                   ref.read(contactSelectionProvider.notifier).selectGroups();
@@ -105,12 +110,26 @@ class ContactList extends ConsumerWidget {
                     : null,
               ),
               Expanded(
-                child: SortedContactGroupsWidget(
-                  onContactTap: () {
-                    if (DeviceUtil.useSingleColumnPush(context)) {
-                      _openMobileDetail(context, const ContactDetail());
-                    }
-                  },
+                // 已有缓存时，失败提示不替换联系人内容。
+                child: Column(
+                  children: [
+                    if (ref.watch(contactRefreshFailedProvider) &&
+                        ref.watch(contactListServiceProvider).hasValue)
+                      ListRetryBanner(
+                        onRetry: () => ref
+                            .read(contactListServiceProvider.notifier)
+                            .refresh(),
+                      ),
+                    Expanded(
+                      child: SortedContactGroupsWidget(
+                        onContactTap: () {
+                          if (DeviceUtil.useSingleColumnPush(context)) {
+                            _openMobileDetail(context, const ContactDetail());
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

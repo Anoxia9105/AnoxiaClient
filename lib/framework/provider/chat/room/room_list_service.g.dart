@@ -8,6 +8,60 @@ part of 'room_list_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+
+@ProviderFor(RoomListRefreshFailed)
+final roomListRefreshFailedProvider = RoomListRefreshFailedProvider._();
+
+final class RoomListRefreshFailedProvider
+    extends $NotifierProvider<RoomListRefreshFailed, bool> {
+  RoomListRefreshFailedProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'roomListRefreshFailedProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$roomListRefreshFailedHash();
+
+  @$internal
+  @override
+  RoomListRefreshFailed create() => RoomListRefreshFailed();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$roomListRefreshFailedHash() =>
+    r'85585aa8bc03bc8b85b9dbfc19519df8fca14d72';
+
+abstract class _$RoomListRefreshFailed extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// 聊天室列表服务
 ///
 /// 负责管理聊天室列表的获取、刷新、排序和本地状态维护。
@@ -45,7 +99,7 @@ final class RoomListServiceProvider
   RoomListService create() => RoomListService();
 }
 
-String _$roomListServiceHash() => r'e10469529a756c5d48a793de5ca1c4a3401f538e';
+String _$roomListServiceHash() => r'4501872cbd4fdec4f1606207cee733b13eb8318c';
 
 /// 聊天室列表服务
 ///

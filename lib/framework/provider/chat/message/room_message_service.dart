@@ -12,6 +12,7 @@ import 'package:anoxia/framework/provider/core/message_repository_provider.dart'
 import 'package:anoxia/framework/provider/core/chat_repository_provider.dart';
 import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
+import 'package:anoxia/framework/provider/auth/token_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_status_provider.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -182,6 +183,17 @@ class ChatMessageWindowLimits extends Notifier<Map<String, int>> {
 
 @riverpod
 Stream<List<ChatMessage>> roomMessages(Ref ref, String roomId) {
+  // 已加载房间保留五分钟，切回时同步读取上一批数据；账号切换立即重建。
+  if (ref.watch(tokenCacheProvider) == null) return Stream.value(const []);
+  final cache = ref.keepAlive();
+  Timer? expiry;
+  ref.onCancel(() {
+    expiry = Timer(const Duration(minutes: 5), cache.close);
+  });
+  ref.onResume(() {
+    expiry?.cancel();
+  });
+  ref.onDispose(() => expiry?.cancel());
   final limit = ref.watch(
     chatMessageWindowLimitsProvider.select(
       (limits) => limits[roomId] ?? _initialMessageWindowSize,
@@ -585,7 +597,13 @@ class ChatMessages extends _$ChatMessages {
     // 待发送消息仍通过 mergeOptimisticMessages 显示在气泡列表里。
     ref
         .read(optimisticRoomMessagesProvider.notifier)
-        .remove(ChatMessage(messageId: messageId, clientMsgId: messageId, roomId: roomId));
+        .remove(
+          ChatMessage(
+            messageId: messageId,
+            clientMsgId: messageId,
+            roomId: roomId,
+          ),
+        );
     await ref.read(localDataSourceProvider).deleteMessage(messageId);
   }
 

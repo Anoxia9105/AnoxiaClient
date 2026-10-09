@@ -8,6 +8,60 @@ part of 'contact_list_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+
+@ProviderFor(ContactRefreshFailed)
+final contactRefreshFailedProvider = ContactRefreshFailedProvider._();
+
+final class ContactRefreshFailedProvider
+    extends $NotifierProvider<ContactRefreshFailed, bool> {
+  ContactRefreshFailedProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'contactRefreshFailedProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$contactRefreshFailedHash();
+
+  @$internal
+  @override
+  ContactRefreshFailed create() => ContactRefreshFailed();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$contactRefreshFailedHash() =>
+    r'4bdb37a904c3ea6f8ccc8f339b553339599b2a67';
+
+abstract class _$ContactRefreshFailed extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// 联系人列表服务
 ///
 /// 维护联系人数据的 Map 结构（contactId -> ChatContactVO），
@@ -53,7 +107,7 @@ final class ContactListServiceProvider
 }
 
 String _$contactListServiceHash() =>
-    r'160d86fbf8fb2a0fb2cabe39d4d4d34ddeb1aad6';
+    r'7333508453036bd99b36a5a08723f33af12f5e51';
 
 /// 联系人列表服务
 ///
@@ -146,4 +200,4 @@ final class SortedContactGroupsProvider
 }
 
 String _$sortedContactGroupsHash() =>
-    r'b002a44f42b511a08b28a5ff5fe3416a9b93305e';
+    r'188e9543e94e2b06d262a37f7274ec1daf556a2f';

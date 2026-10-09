@@ -11,6 +11,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'contact_list_controller.g.dart';
 
+@Riverpod(keepAlive: true)
+class ContactRefreshFailed extends _$ContactRefreshFailed {
+  @override
+  bool build() {
+    ref.watch(tokenCacheProvider);
+    return false;
+  }
+
+  void setFailed(bool failed) => state = failed;
+}
+
 /// 联系人列表服务
 ///
 /// 维护联系人数据的 Map 结构（contactId -> ChatContactVO），
@@ -20,7 +31,8 @@ part 'contact_list_controller.g.dart';
 @Riverpod(keepAlive: true)
 class ContactListService extends _$ContactListService {
   /// 正在进行的远端同步 Future，避免并发重复请求
-  Future<List<ChatContactVO>?>? _syncInflight;
+  Future<List<ChatContactVO>>? _syncInflight;
+  bool _initialFetchDone = false;
 
   @override
   FutureOr<Map<int, ChatContactVO>> build() async {
@@ -28,6 +40,7 @@ class ContactListService extends _$ContactListService {
 
     // 订阅本地 DB 流，DB 写入后自动推送更新到 UI
     final subscription = local.watchContacts().listen((contacts) {
+      if (!_initialFetchDone && contacts.isEmpty) return;
       state = AsyncData({for (final c in contacts) c.contactId!: c});
     });
     ref.onDispose(subscription.cancel);
@@ -36,7 +49,8 @@ class ContactListService extends _$ContactListService {
     final localContacts = await local.getContacts();
     if (localContacts.isNotEmpty) {
       // 后台增量同步，不阻塞 UI
-      unawaited(_syncFromRemote());
+      _initialFetchDone = true;
+      unawaited(refresh(quiet: true));
       return {for (final c in localContacts) c.contactId!: c};
     }
 
@@ -47,23 +61,24 @@ class ContactListService extends _$ContactListService {
       return {};
     }
     final result = await _syncFromRemote();
-    return {for (final c in (result ?? [])) c.contactId!: c};
+    _initialFetchDone = true;
+    return {for (final c in result) c.contactId!: c};
   }
 
   /// 从远端拉取联系人并写入本地缓存（自动去重）
-  Future<List<ChatContactVO>?> _syncFromRemote() {
-    return _syncInflight ??= _doSyncFromRemote().whenComplete(
-      () => _syncInflight = null,
-    );
+  Future<List<ChatContactVO>> _syncFromRemote() {
+    return _syncInflight ??= _doSyncFromRemote()
+        .timeout(const Duration(seconds: 12))
+        .whenComplete(() => _syncInflight = null);
   }
 
-  Future<List<ChatContactVO>?> _doSyncFromRemote() async {
+  Future<List<ChatContactVO>> _doSyncFromRemote() async {
     try {
       final contacts = await ref.read(syncContactsUseCaseProvider)();
       return contacts;
     } catch (e) {
       debugLog('[Cache] ContactListService: sync failed: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -91,11 +106,17 @@ class ContactListService extends _$ContactListService {
 
   /// 刷新联系人列表（强制从远端拉取）
   Future<void> refresh({bool quiet = false}) async {
-    if (!quiet) state = const AsyncValue.loading();
-    final result = await _syncFromRemote();
-    if (result != null) {
-      state = AsyncData({for (final c in result) c.contactId!: c});
-    }
+    final previous = state;
+    ref.read(contactRefreshFailedProvider.notifier).setFailed(false);
+    if (!quiet && !previous.hasValue) state = const AsyncValue.loading();
+    final result = await AsyncValue.guard(() async {
+      final contacts = await _syncFromRemote();
+      return {for (final c in contacts) c.contactId!: c};
+    });
+    if (!ref.mounted) return;
+    if (!result.hasError) _initialFetchDone = true;
+    ref.read(contactRefreshFailedProvider.notifier).setFailed(result.hasError);
+    state = result.hasError && previous.hasValue ? previous : result;
   }
 
   /// 删除联系人（解除好友后调用，同步更新内存和本地 DB）
@@ -115,8 +136,10 @@ class ContactListService extends _$ContactListService {
 /// 过滤掉当前登录用户自己（不应出现在联系人列表中）。
 @Riverpod(keepAlive: true)
 Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
-  final contactsAsync = ref.watch(contactListServiceProvider);
-  final contactMap = contactsAsync.value ?? {};
+  final contactsState = ref.watch(contactListServiceProvider);
+  final Map<int, ChatContactVO> contactMap =
+      contactsState.value ??
+      (await ref.watch(contactListServiceProvider.future));
   if (contactMap.isEmpty) return {};
 
   final currentUser = ref.watch(authControllerProvider).value;

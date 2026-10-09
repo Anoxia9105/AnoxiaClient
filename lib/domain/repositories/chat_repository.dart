@@ -15,7 +15,7 @@ abstract interface class ChatRepository {
   Future<List<ChatRoomVO>> getConversations({bool sync = true});
 
   /// 同步会话列表
-  Future<void> syncConversations();
+  Future<void> syncConversations({bool throwOnError = false});
 
   /// 观察指定会话的消息流
   Stream<List<ChatMessage>> watchMessages(

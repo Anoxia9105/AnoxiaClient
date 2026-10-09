@@ -74,22 +74,28 @@ class SyncRepository implements ChatRepository {
   }
 
   @override
-  Future<void> syncConversations() {
+  Future<void> syncConversations({bool throwOnError = false}) async {
     // 已有正在进行的同步，直接复用，避免并发重复请求
-    return _syncConversationsInflight ??= _doSyncConversations().whenComplete(
-      () => _syncConversationsInflight = null,
-    );
+    try {
+      await (_syncConversationsInflight ??= _doSyncConversations().whenComplete(
+        () => _syncConversationsInflight = null,
+      ));
+    } catch (_) {
+      if (throwOnError) rethrow;
+    }
   }
 
   Future<void> _doSyncConversations() async {
-    if (!await _hasNetwork()) return;
+    if (!await _hasNetwork()) throw StateError('Network unavailable');
 
     try {
       final since = await _local.latestConversationUpdatedAt();
       final remoteRooms = await _remote.fetchConversations(since: since);
       // 服务端响应异常（null）时不视为「用户无房间」，跳过合并与对账，
       // 避免用一次错误响应把本地缓存清空。
-      if (remoteRooms == null) return;
+      if (remoteRooms == null) {
+        throw StateError('Invalid conversation response');
+      }
       await _mergeConversations(remoteRooms);
       await _local.updateSyncState(
         scope: 'conversations',
@@ -103,6 +109,7 @@ class SyncRepository implements ChatRepository {
         action: 'syncConversations',
         error: e,
       );
+      rethrow;
     }
   }
 
@@ -223,10 +230,7 @@ class SyncRepository implements ChatRepository {
       final pendingRead = pendingReads[id];
       final localRead = local.lastReadSeq ?? 0;
       final serverRead = remote.lastReadSeq ?? localRead;
-      final effectiveRead = max(
-        pendingRead ?? 0,
-        max(serverRead, localRead),
-      );
+      final effectiveRead = max(pendingRead ?? 0, max(serverRead, localRead));
       final bool serverNewest =
           effectiveRead == serverRead &&
           (pendingRead == null || pendingRead <= serverRead) &&
@@ -245,10 +249,7 @@ class SyncRepository implements ChatRepository {
         mergedUnread = (maxSeq - effectiveRead).clamp(0, 1 << 31);
       }
       merged.add(
-        remote.copyWith(
-          lastReadSeq: effectiveRead,
-          unreadCount: mergedUnread,
-        ),
+        remote.copyWith(lastReadSeq: effectiveRead, unreadCount: mergedUnread),
       );
     }
     await _local.upsertConversations(merged);
