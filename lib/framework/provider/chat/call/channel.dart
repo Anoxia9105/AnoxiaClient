@@ -11,6 +11,8 @@ import '../../../../common/utils/device_util.dart';
 class Channel {
   /// 通话通道方法名：更新设置
   static const String callChannelMethod = 'updateSettings';
+  static const String callWindowReadyMethod = 'on_call_window_ready';
+  static const String callAcceptedMethod = 'on_call_accepted';
 
   /// 子窗口开始结束通话：主窗口应立即发送 CALL_END，但继续持有窗口状态。
   static const String callWindowEndingMethod = 'on_call_window_ending';

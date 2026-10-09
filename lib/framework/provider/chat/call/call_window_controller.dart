@@ -3,6 +3,7 @@
 // 管理桌面端通话独立窗口的创建、显示、设置同步和成员邀请。
 // 基于 Riverpod 的 KeepAlive Provider，通过多窗口框架实现子窗口通信。
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -26,24 +27,43 @@ part 'call_window_controller.g.dart';
 class CallWindowController extends _$CallWindowController {
   /// 当前通话窗口绑定的房间 ID，用于窗口关闭时补发 CALL_END。
   String? _activeRoomId;
+  String? _windowSession;
+  bool _windowReady = false;
+  Map<String, Object>? _pendingAcceptance;
+  late Future<void> _channelReady;
 
   /// 当前通话窗口绑定的房间 ID（只读，供外部做「防跨房误关」比对；可能为 null）。
   String? get activeRoomId => _activeRoomId;
+  String? get activeSession => _windowSession;
 
   @override
   WindowController? build() {
-    Channel.callChannel.setMethodCallHandler((call) async {
-      if (call.method == Channel.callWindowEndingMethod) {
-        _endActiveRoom();
-      } else if (call.method == Channel.callWindowCloseMethod) {
-        // 兼容未发送 ending 事件的旧子窗口，同时由 _endedRooms 保证幂等。
-        _endActiveRoom();
-        _activeRoomId = null;
-        state = null;
-      } else if (call.method == 'invite_call_members') {
-        _sendMemberInvites(Map<String, dynamic>.from(call.arguments as Map));
-      }
-      return null;
+    _channelReady = Future<void>(() async {
+      await Channel.callChannel.setMethodCallHandler((call) async {
+        if (call.method == Channel.callWindowReadyMethod) {
+          final payload = Map<String, dynamic>.from(call.arguments as Map);
+          if (payload['roomId'] != _activeRoomId ||
+              payload['session'] != _windowSession) {
+            return null;
+          }
+          _windowReady = true;
+          return _pendingAcceptance;
+        }
+        if (call.method == Channel.callWindowEndingMethod) {
+          _endActiveRoom();
+        } else if (call.method == Channel.callWindowCloseMethod) {
+          // 兼容未发送 ending 事件的旧子窗口，同时由 _endedRooms 保证幂等。
+          _endActiveRoom();
+          _activeRoomId = null;
+          _windowSession = null;
+          _windowReady = false;
+          _pendingAcceptance = null;
+          state = null;
+        } else if (call.method == 'invite_call_members') {
+          _sendMemberInvites(Map<String, dynamic>.from(call.arguments as Map));
+        }
+        return null;
+      });
     });
     return null;
   }
@@ -99,6 +119,7 @@ class CallWindowController extends _$CallWindowController {
     required int themeIndex,
     required String title,
     required String roomId,
+    String avatarUrl = '',
     CallInitialMedia initialMedia = CallInitialMedia.audio,
     bool isGroup = false,
     String? token,
@@ -110,7 +131,11 @@ class CallWindowController extends _$CallWindowController {
       return;
     }
 
+    await _channelReady;
     _activeRoomId = roomId;
+    _windowSession = '${roomId}_${DateTime.now().microsecondsSinceEpoch}';
+    _windowReady = false;
+    _pendingAcceptance = null;
     ref.read(callInitialMediaProvider(roomId).notifier).state = initialMedia;
     ref.read(callIsGroupProvider(roomId).notifier).state = isGroup;
     final controller = await WindowController.create(
@@ -119,7 +144,9 @@ class CallWindowController extends _$CallWindowController {
         arguments: jsonEncode({
           'themeIndex': themeIndex,
           'title': title,
+          'avatarUrl': avatarUrl,
           'roomId': roomId,
+          'session': _windowSession,
           'initialMedia': initialMedia.value,
           'isGroup': isGroup,
           'join': join,
@@ -130,6 +157,31 @@ class CallWindowController extends _$CallWindowController {
 
     state = controller;
     controller.show();
+  }
+
+  /// 主窗口保留接听结果，子窗口尚未就绪时通过 ready 握手领取。
+  Future<void> connectAcceptedCall({
+    required String roomId,
+    String token = '',
+    required CallInitialMedia initialMedia,
+  }) async {
+    if (_activeRoomId != roomId) return;
+    final payload = <String, Object>{
+      'roomId': roomId,
+      'session': _windowSession!,
+      if (token.isNotEmpty) 'token': token,
+      'initialMedia': initialMedia.value,
+    };
+    _pendingAcceptance = payload;
+    if (!_windowReady) return;
+    try {
+      await Channel.callChannel.invokeMethod(
+        Channel.callAcceptedMethod,
+        payload,
+      );
+    } catch (e, st) {
+      debugLog('接听状态等待通话窗口领取', e, st);
+    }
   }
 
   /// 更新通话窗口设置

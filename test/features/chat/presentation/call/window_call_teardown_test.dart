@@ -6,6 +6,8 @@ import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/chat/call/call_connection_warmup.dart';
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
+import 'package:anoxia/features/chat/presentation/call/component/call_loading_state.dart';
 import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -24,9 +26,13 @@ class _Window extends Fake implements WindowController {
 class _Room extends RoomController {
   final released = Completer<void>();
   int leaveCount = 0;
+  CallInitialMedia? mediaAtConnect;
 
   @override
-  Future<RoomState> build(String token) => Completer<RoomState>().future;
+  Future<RoomState> build(String token) {
+    mediaAtConnect = ref.read(callInitialMediaProvider('room'));
+    return Completer<RoomState>().future;
+  }
 
   @override
   Future<void> leave() {
@@ -55,11 +61,15 @@ void main() {
   final windowsPlatform = TargetPlatformVariant.only(TargetPlatform.windows);
   late List<MethodCall> windowCalls;
   late List<MethodCall> channelCalls;
+  Map<String, Object>? pendingAcceptance;
+  int tokenFetches = 0;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     windowCalls = [];
     channelCalls = [];
+    pendingAcceptance = null;
+    tokenFetches = 0;
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(nativeWindow, (call) async {
@@ -70,6 +80,10 @@ void main() {
     });
     messenger.setMockMethodCallHandler(windowChannels, (call) async {
       channelCalls.add(call);
+      if (call.method == 'invokeMethod' &&
+          call.arguments['method'] == 'on_call_window_ready') {
+        return pendingAcceptance;
+      }
       return null;
     });
   });
@@ -78,6 +92,7 @@ void main() {
     WidgetTester tester,
     _Room room, {
     bool join = false,
+    bool ringing = false,
   }) async {
     await EasyLocalization.ensureInitialized();
     await tester.pumpWidget(
@@ -86,7 +101,10 @@ void main() {
           callConnectionWarmupProvider.overrideWith(
             (ref) => CallConnectionWarmup(() async {}),
           ),
-          roomTokenProvider('room').overrideWith((ref) async => 'actual-token'),
+          roomTokenProvider('room').overrideWith((ref) async {
+            tokenFetches++;
+            return 'actual-token';
+          }),
           roomControllerProvider('actual-token').overrideWith(() => room),
         ],
         child: EasyLocalization(
@@ -99,7 +117,9 @@ void main() {
               jsonEncode({
                 'roomId': 'room',
                 'title': 'Call teardown',
-                if (!join) 'token': 'actual-token',
+                if (!join && !ringing) 'token': 'actual-token',
+                'session': 'window-session',
+                'initialMedia': 'video',
                 'join': join,
               }),
             ),
@@ -128,6 +148,55 @@ void main() {
     (call) =>
         call.method == method || call.arguments.toString().contains(method),
   );
+
+  testWidgets('窗口注册后领取早到接听，视频来电以语音接听不打开摄像头', (tester) async {
+    pendingAcceptance = {
+      'roomId': 'room',
+      'session': 'window-session',
+      'token': 'actual-token',
+      'initialMedia': 'audio',
+    };
+    final room = _Room();
+    await mount(tester, room, ringing: true);
+    expect(find.byType(CallLoadingState), findsOneWidget);
+    expect(room.mediaAtConnect, CallInitialMedia.audio);
+    expect(tokenFetches, 0);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: windowsPlatform);
+
+  testWidgets('窗口忽略上一通呼叫的迟到接听结果', (tester) async {
+    tester.view.physicalSize = const Size(600, 344);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    pendingAcceptance = {
+      'roomId': 'room',
+      'session': 'old-session',
+      'token': 'actual-token',
+      'initialMedia': 'audio',
+    };
+    final room = _Room();
+    await mount(tester, room, ringing: true);
+    expect(room.mediaAtConnect, isNull);
+    expect(tokenFetches, 0);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: windowsPlatform);
+
+  testWidgets('接听不等待主窗口拉取令牌，子窗口立即加载连接', (tester) async {
+    pendingAcceptance = {
+      'roomId': 'room',
+      'session': 'window-session',
+      'initialMedia': 'audio',
+    };
+    final room = _Room();
+    await mount(tester, room, ringing: true);
+    expect(tokenFetches, 1);
+    expect(room.mediaAtConnect, CallInitialMedia.audio);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: windowsPlatform);
 
   testWidgets('媒体清理超过三秒仍保持窗口引擎，完成后才关闭', (tester) async {
     final room = _Room();

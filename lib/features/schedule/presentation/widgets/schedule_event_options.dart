@@ -1,3 +1,4 @@
+import 'package:anoxia/common/widgets/app_select_field.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -12,107 +13,6 @@ const scheduleEventColors = <String>[
   '#7E22CE',
   '#475569',
 ];
-
-class ScheduleSelectOption<T> {
-  final T value;
-  final String label;
-
-  const ScheduleSelectOption({required this.value, required this.label});
-}
-
-class ScheduleSelectField<T> extends StatelessWidget {
-  final T value;
-  final List<ScheduleSelectOption<T>> options;
-  final ValueChanged<T> onChanged;
-  final String label;
-  final IconData? icon;
-  final bool enabled;
-
-  const ScheduleSelectField({
-    super.key,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-    required this.label,
-    required this.enabled,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final selected = options.firstWhere((option) => option.value == value);
-    return MenuAnchor(
-      style: MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(colors.surfaceContainer),
-        elevation: const WidgetStatePropertyAll(8),
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: 6),
-        ),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-      ),
-      builder: (context, controller, child) => Semantics(
-        button: true,
-        enabled: enabled,
-        label: label,
-        value: selected.label,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: enabled
-              ? () => controller.isOpen ? controller.close() : controller.open()
-              : null,
-          child: InputDecorator(
-            isEmpty: false,
-            isFocused: controller.isOpen,
-            decoration: InputDecoration(
-              labelText: label,
-              prefixIcon: icon == null ? null : Icon(icon),
-              suffixIcon: AnimatedRotation(
-                duration: const Duration(milliseconds: 160),
-                turns: controller.isOpen ? 0.5 : 0,
-                child: const Icon(Icons.keyboard_arrow_down_rounded),
-              ),
-              enabled: enabled,
-            ),
-            child: Text(
-              selected.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-      ),
-      menuChildren: options
-          .map(
-            (option) => MenuItemButton(
-              style: const ButtonStyle(
-                minimumSize: WidgetStatePropertyAll(Size(280, 46)),
-                padding: WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(horizontal: 16),
-                ),
-              ),
-              leadingIcon: Icon(
-                option.value == value ? Icons.check_rounded : null,
-                color: option.value == value ? colors.primary : null,
-              ),
-              onPressed: enabled ? () => onChanged(option.value) : null,
-              child: Text(
-                option.label,
-                style: TextStyle(
-                  fontWeight: option.value == value
-                      ? FontWeight.w600
-                      : FontWeight.w400,
-                  color: option.value == value ? colors.primary : null,
-                ),
-              ),
-            ),
-          )
-          .toList(growable: false),
-    );
-  }
-}
 
 class ScheduleColorPicker extends StatelessWidget {
   final TextEditingController controller;
@@ -232,7 +132,7 @@ class ScheduleReminderField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScheduleSelectField<int>(
+    return AppSelectField<int>(
       key: const ValueKey('schedule-reminder'),
       value: value ?? -1,
       label: 'schedule_reminder'.tr(),
@@ -241,7 +141,7 @@ class ScheduleReminderField extends StatelessWidget {
       options: _options
           .map(
             (minutes) =>
-                ScheduleSelectOption(value: minutes, label: _label(minutes)),
+                AppSelectOption(value: minutes, label: _label(minutes)),
           )
           .toList(growable: false),
       onChanged: (minutes) => onChanged(minutes < 0 ? null : minutes),
@@ -324,19 +224,19 @@ class _ScheduleRecurrenceEditorState extends State<ScheduleRecurrenceEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ScheduleSelectField<ScheduleRecurrenceFrequency?>(
+          AppSelectField<ScheduleRecurrenceFrequency?>(
             key: const ValueKey('schedule-recurrence-frequency'),
             value: _frequency,
             label: 'schedule_repeat'.tr(),
             icon: Icons.repeat_rounded,
             enabled: widget.enabled,
             options: [
-              ScheduleSelectOption<ScheduleRecurrenceFrequency?>(
+              AppSelectOption<ScheduleRecurrenceFrequency?>(
                 value: null,
                 label: 'schedule_repeat_none'.tr(),
               ),
               ...ScheduleRecurrenceFrequency.values.map(
-                (frequency) => ScheduleSelectOption(
+                (frequency) => AppSelectOption(
                   value: frequency,
                   label: _frequencyLabel(frequency),
                 ),
@@ -426,14 +326,14 @@ class _ScheduleRecurrenceEditorState extends State<ScheduleRecurrenceEditor> {
               ),
             ],
             const SizedBox(height: 12),
-            ScheduleSelectField<ScheduleRecurrenceEndType>(
+            AppSelectField<ScheduleRecurrenceEndType>(
               key: const ValueKey('schedule-recurrence-end'),
               value: _endType,
               label: 'schedule_repeat_end'.tr(),
               enabled: widget.enabled,
               options: ScheduleRecurrenceEndType.values
                   .map(
-                    (type) => ScheduleSelectOption(
+                    (type) => AppSelectOption(
                       value: type,
                       label: _endTypeLabel(type),
                     ),

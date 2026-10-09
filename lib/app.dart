@@ -68,7 +68,12 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
     // 桌面端：初始化托盘和窗口事件监听
     if (DeviceUtil.isRealDesktop()) {
       _initTray();
-      final minimizeToTray = SPUtil.instance.getBool(StorageKeys.windowMinimizeToTray, defValue: true) ?? true;
+      final minimizeToTray =
+          SPUtil.instance.getBool(
+            StorageKeys.windowMinimizeToTray,
+            defValue: true,
+          ) ??
+          true;
       windowManager.setPreventClose(minimizeToTray);
       windowManager.addListener(this);
       trayManager.addListener(this);
@@ -125,10 +130,16 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
             );
           }
         }
-        // 仅桌面端本地触发来电系统通知（移动端由 JPush 后台推送 + 前台顶部横幅负责）。
-        if (!DeviceUtil.isRealDesktop()) return;
         if (next?.phase != CallInvitationPhase.incoming) return;
         final invitation = next!;
+        // 私聊前台也立即显示系统来电通知；移动端后台仍由 JPush 负责，避免重复。
+        // 群呼保留移动端横幅提醒方式。
+        if (DeviceUtil.isRealMobile() &&
+            (invitation.isGroup ||
+                WidgetsBinding.instance.lifecycleState !=
+                    AppLifecycleState.resumed)) {
+          return;
+        }
         final displayName = invitation.isGroup
             ? invitation.title.trim()
             : (invitation.callerName.trim().isNotEmpty
@@ -157,12 +168,12 @@ class _AppState extends ConsumerState<App> with WindowListener, TrayListener {
           ),
         );
       },
+      fireImmediately: true,
     );
 
     // 登出时清理残留弹窗：切换账号等以 showDialog/push 形式展示的页面
     // 不随 go_router 重定向自动回收，会遮挡登录页。
-    _authLogoutSubscription =
-        ref.listenManual<AsyncValue<UserInfo?>>(
+    _authLogoutSubscription = ref.listenManual<AsyncValue<UserInfo?>>(
       authControllerProvider,
       (previous, next) {
         final wasLoggedIn = previous?.value != null;

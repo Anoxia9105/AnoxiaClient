@@ -1,3 +1,4 @@
+import 'package:anoxia/features/chat/presentation/call/component/outgoing_call_view.dart';
 import 'package:anoxia/common/utils/device_util.dart';
 import 'package:anoxia/common/widgets/avatar_widget.dart';
 import 'package:anoxia/common/widgets/call_button.dart';
@@ -183,124 +184,44 @@ class IncomingCallPage extends ConsumerWidget {
 /// 振铃期不连接媒体，收到 CALL_ACCEPT 后由控制器启动通话会话。
 class OutgoingCallPage extends ConsumerWidget {
   const OutgoingCallPage({super.key, required this.invitation});
-
   final CallInvitationState invitation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final gradient = Theme.of(context).extension<AppColors>()?.scaffoldGradient;
+    final colors = Theme.of(context).colorScheme;
     final room = ref.watch(currentRoomProvider(invitation.roomId));
-    final displayName = room?.roomName ?? invitation.title;
-    final avatarUrl = room?.roomAvatar ?? invitation.roomAvatar;
     final speakerOn = ref.watch(
       callSpeakerPreferenceProvider(invitation.roomId),
     );
     final controller = ref.read(callInvitationControllerProvider.notifier);
-
-    // 独立全屏页用 Scaffold 包裹，保证 Material/InkWell/系统栏适配完整
-    return Scaffold(
-      backgroundColor: gradient?.colors.first ?? cs.surface,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: ColoredBox(
-              color: gradient?.colors.first ?? cs.surface,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 3),
-                      AvatarWidget(
-                        size: 120,
-                        url: avatarUrl,
-                        name: displayName,
-                      ),
-                      const SizedBox(height: 28),
-                      Text(
-                        displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'call_calling'.tr(),
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const Spacer(flex: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // 免提/听筒切换仅真机有意义（Web/桌面由系统输出设备决定）
-                          if (DeviceUtil.isRealMobile()) ...[
-                            CallAction(
-                              label: speakerOn
-                                  ? 'call_switch_to_earpiece'.tr()
-                                  : 'call_switch_to_speaker'.tr(),
-                              icon: speakerOn
-                                  ? HugeIcons.strokeRoundedVolumeUp
-                                  : HugeIcons.strokeRoundedEar,
-                              backgroundColor: cs.surfaceContainerHighest,
-                              foregroundColor: cs.onSurfaceVariant,
-                              onPressed: () {
-                                ref
-                                        .read(
-                                          callSpeakerPreferenceProvider(
-                                            invitation.roomId,
-                                          ).notifier,
-                                        )
-                                        .state =
-                                    !speakerOn;
-                              },
-                            ),
-                            const SizedBox(width: 56),
-                          ],
-                          CallActionButton.hangUp(
-                            label: 'call_cancel_call'.tr(),
-                            icon: HugeIcons.strokeRoundedCallEnd01,
-                            onPressed: () => controller.cancelCurrent(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // 最小化到全局悬浮窗
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Material(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.7),
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    tooltip: 'call_minimize_tooltip'.tr(),
-                    onPressed: () => controller.minimizeInvitation(),
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedArrowDown01,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return OutgoingCallView(
+      title: room?.roomName ?? invitation.title,
+      avatarUrl: room?.roomAvatar ?? invitation.roomAvatar,
+      onCancel: () => controller.cancelCurrent(),
+      onMinimize: controller.minimizeInvitation,
+      speakerAction: DeviceUtil.isRealMobile()
+          ? CallAction(
+              label:
+                  (speakerOn
+                          ? 'call_switch_to_earpiece'
+                          : 'call_switch_to_speaker')
+                      .tr(),
+              icon: speakerOn
+                  ? HugeIcons.strokeRoundedVolumeUp
+                  : HugeIcons.strokeRoundedEar,
+              backgroundColor: colors.surfaceContainerHighest,
+              foregroundColor: colors.onSurfaceVariant,
+              onPressed: () =>
+                  ref
+                          .read(
+                            callSpeakerPreferenceProvider(
+                              invitation.roomId,
+                            ).notifier,
+                          )
+                          .state =
+                      !speakerOn,
+            )
+          : null,
     );
   }
 }

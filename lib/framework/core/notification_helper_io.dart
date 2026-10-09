@@ -17,6 +17,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'package:anoxia/framework/logs/debug_log.dart';
+import 'incoming_call_notifications.dart';
 
 /// 通知辅助类
 ///
@@ -37,6 +38,7 @@ class NotificationHelper {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  final _incomingCalls = IncomingCallNotifications();
   void Function(String roomId)? _onOpenRoom;
   FutureOr<void> Function(String actionId, Map<String, dynamic> payload)?
   _onCallAction;
@@ -77,7 +79,10 @@ class NotificationHelper {
                 DarwinNotificationActionOption.foreground,
               },
             ),
-            DarwinNotificationAction.plain(callRejectAction, 'notification_call_reject'.tr()),
+            DarwinNotificationAction.plain(
+              callRejectAction,
+              'notification_call_reject'.tr(),
+            ),
           ],
         ),
       ],
@@ -168,7 +173,10 @@ class NotificationHelper {
   /// 解析 Windows 通知头像 URI
   ///
   /// 支持本地文件、file:// 协议和网络图片（下载到本地）
-  Future<Uri?> _resolveWindowsAvatarUri(String? avatarUrl) async {
+  Future<Uri?> _resolveWindowsAvatarUri(
+    String? avatarUrl, {
+    bool download = true,
+  }) async {
     if (avatarUrl == null || avatarUrl.isEmpty) return null;
 
     try {
@@ -196,6 +204,7 @@ class NotificationHelper {
         final file = File(filePath);
 
         if (!await file.exists()) {
+          if (!download) return null;
           final client = HttpClient();
           try {
             final req = await client.getUrl(uri);
@@ -399,10 +408,39 @@ class NotificationHelper {
     required String body,
     String? avatarUrl,
   }) async {
-    if (kIsWeb) return;
-    await _ensureInitialized();
-    if (!await _ensureNotificationPermission()) return;
+    final inviteId =
+        payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '';
+    Uri? avatarUri;
+    await _incomingCalls.show(
+      inviteId: inviteId,
+      prepare: () async {
+        await _ensureInitialized();
+        if (!await _ensureNotificationPermission()) return false;
+        // 来电不能等待网络头像下载；仅使用本地或缓存头像。
+        if (DeviceUtil.isWindows()) {
+          avatarUri = await _resolveWindowsAvatarUri(
+            avatarUrl,
+            download: false,
+          );
+        }
+        return true;
+      },
+      present: () => _presentIncomingCall(
+        payload: payload,
+        title: title,
+        body: body,
+        avatarUri: avatarUri,
+      ),
+      dismiss: () => _plugin.cancel(id: incomingCallNotificationId(inviteId)),
+    );
+  }
 
+  Future<void> _presentIncomingCall({
+    required Map<String, dynamic> payload,
+    required String title,
+    required String body,
+    Uri? avatarUri,
+  }) async {
     final notificationId = incomingCallNotificationId(
       payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '',
     );
@@ -411,7 +449,6 @@ class NotificationHelper {
       'kind': 'incoming_call',
     });
 
-    final avatarUri = await _resolveWindowsAvatarUri(avatarUrl);
     final windowsImages = avatarUri == null
         ? const <WindowsImage>[]
         : <WindowsImage>[
@@ -495,9 +532,11 @@ class NotificationHelper {
   }
 
   Future<void> cancelIncomingCall(String inviteId) async {
-    if (kIsWeb || inviteId.isEmpty) return;
-    await _ensureInitialized();
-    await _plugin.cancel(id: incomingCallNotificationId(inviteId));
+    if (inviteId.isEmpty) return;
+    await _incomingCalls.cancel(inviteId, () async {
+      await _ensureInitialized();
+      await _plugin.cancel(id: incomingCallNotificationId(inviteId));
+    });
   }
 
   int incomingCallNotificationId(String inviteId) {

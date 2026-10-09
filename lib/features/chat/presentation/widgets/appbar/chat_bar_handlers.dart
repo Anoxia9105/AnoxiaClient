@@ -121,7 +121,7 @@ class ChatBarHandlers {
       return;
     }
 
-    await notifier.invite(room, initialMedia: initialMedia);
+    if (isGroup) await notifier.invite(room, initialMedia: initialMedia);
     // 群呼：发起人窗口直接连接（join 直连）；
     // 1:1：窗口进入「振铃态」，收到 ACCEPT 后再连接
     final join = isGroup;
@@ -130,6 +130,7 @@ class ChatBarHandlers {
         .read(callWindowControllerProvider.notifier)
         .openCallWindow(
           title: room.roomName ?? '',
+          avatarUrl: room.roomAvatar ?? '',
           themeIndex: ref.read(themeIndexProvider),
           roomId: roomId,
           initialMedia: initialMedia,
@@ -137,6 +138,8 @@ class ChatBarHandlers {
           join: join,
           token: token,
         );
+    // 先绑定呼出窗口，再发送邀请，避免对方立即接听时窗口还不存在。
+    if (!isGroup) await notifier.invite(room, initialMedia: initialMedia);
   }
 
   /// 预取通话 token（失败返回 null，窗口侧会自行拉取）。

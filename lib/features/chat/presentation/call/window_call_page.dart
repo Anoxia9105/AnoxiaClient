@@ -1,4 +1,6 @@
+import 'package:anoxia/features/chat/presentation/call/component/outgoing_call_view.dart';
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:anoxia/common/widgets/toast.dart';
 import 'package:anoxia/features/chat/presentation/call/call_room_page.dart';
@@ -16,7 +18,7 @@ import 'package:anoxia/platform/shims/desktop_multi_window_shim.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
+
 import 'package:anoxia/platform/shims/window_manager_shim.dart';
 
 import 'component/deesktop/call_desktop_app_bar.dart';
@@ -34,7 +36,7 @@ enum _CallWindowPhase { ringing, connecting }
 /// - 房间令牌获取
 ///
 /// 1:1 呼出时窗口先进入「振铃态」（不连接媒体），主窗口收到 CALL_ACCEPT
-/// 后通过 callChannel 下发 `on_call_accepted`（携带新 token）再开始连接。
+/// 后通过 callChannel 下发 `on_call_accepted`，再拉取 token 并开始连接。
 class WindowCallPage extends ConsumerStatefulWidget {
   /// 多窗口控制器
   final WindowController controller;
@@ -55,6 +57,9 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
 
   /// 房间ID
   String _roomId = '';
+  String _windowSession = '';
+  String _avatarUrl = '';
+  CallInitialMedia _initialMedia = CallInitialMedia.audio;
 
   /// 预取/下发的通话 token（振铃态为空）
   String _prefetchedToken = '';
@@ -81,8 +86,10 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     _themeIndex = args['themeIndex'] ?? 0;
     _title = args['title'] ?? '';
     _roomId = args['roomId'] ?? '';
+    _windowSession = args['session']?.toString() ?? '';
+    _avatarUrl = args['avatarUrl']?.toString() ?? '';
     _prefetchedToken = args['token']?.toString() ?? '';
-    final initialMedia = CallInitialMedia.fromValue(args['initialMedia']);
+    _initialMedia = CallInitialMedia.fromValue(args['initialMedia']);
     final isGroup = args['isGroup'] == true || args['isGroup'] == 'true';
     final isJoin = args['join'] == true || args['join'] == 'true';
 
@@ -97,44 +104,68 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
     // first frame, and keep CallRoomPage out of the tree until they are ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _closing) return;
-      ref.read(callInitialMediaProvider(_roomId).notifier).state = initialMedia;
+      ref.read(callInitialMediaProvider(_roomId).notifier).state =
+          _initialMedia;
       ref.read(callIsGroupProvider(_roomId).notifier).state = isGroup;
       setState(() => _callSettingsInitialized = true);
     });
     if (_phase == _CallWindowPhase.connecting) {
       _activeToken = _prefetchedToken;
-      ref.read(roomTokenProvider(_roomId));
     }
 
-    Channel.callChannel.setMethodCallHandler((call) async {
+    unawaited(_registerCallChannel());
+  }
+
+  Future<void> _registerCallChannel() async {
+    try {
+      await Channel.callChannel.setMethodCallHandler((call) async {
+        if (!mounted || _closing) return null;
+        if (call.method == Channel.callAcceptedMethod) {
+          return _applyAcceptance(
+            Map<String, dynamic>.from(call.arguments as Map),
+          );
+        }
+        if (call.method == Channel.callChannelMethod) {
+          final data = call.arguments as Map;
+          setState(() {
+            if (data.containsKey('themeIndex')) {
+              _themeIndex = data['themeIndex'];
+            }
+            if (data.containsKey('locale')) {
+              String localeCode = data['locale'];
+              context.setLocale(Locale(localeCode));
+            }
+          });
+        }
+      });
       if (!mounted || _closing) return;
-      if (call.method == 'on_call_accepted') {
-        // 主窗口收到对方 CALL_ACCEPT 后下发：振铃 → 连接
-        final token =
-            (call.arguments is Map ? call.arguments as Map : null)?['token']
-                ?.toString() ??
-            '';
-        if (token.isEmpty) return;
-        setState(() {
-          _prefetchedToken = token;
-          _activeToken = token;
-          _phase = _CallWindowPhase.connecting;
-        });
-        return;
-      }
-      if (call.method == Channel.callChannelMethod) {
-        final data = call.arguments as Map;
-        setState(() {
-          if (data.containsKey('themeIndex')) {
-            _themeIndex = data['themeIndex'];
-          }
-          if (data.containsKey('locale')) {
-            String localeCode = data['locale'];
-            context.setLocale(Locale(localeCode));
-          }
-        });
-      }
+      final pending = await Channel.callChannel.invokeMethod(
+        Channel.callWindowReadyMethod,
+        {'roomId': _roomId, 'session': _windowSession},
+      );
+      if (pending is Map) _applyAcceptance(Map<String, dynamic>.from(pending));
+    } catch (e, st) {
+      debugLog('通话窗口就绪握手失败', e, st);
+    }
+  }
+
+  bool _applyAcceptance(Map<String, dynamic> payload) {
+    if (!mounted || _closing) return false;
+    if (payload['roomId'] != _roomId || payload['session'] != _windowSession) {
+      return false;
+    }
+    final token = payload['token']?.toString() ?? '';
+    _initialMedia = CallInitialMedia.fromValue(payload['initialMedia']);
+    if (_callSettingsInitialized) {
+      ref.read(callInitialMediaProvider(_roomId).notifier).state =
+          _initialMedia;
+    }
+    setState(() {
+      _prefetchedToken = token;
+      _activeToken = token;
+      _phase = _CallWindowPhase.connecting;
     });
+    return true;
   }
 
   @override
@@ -256,9 +287,10 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
 
     // 1:1 呼出振铃态：不连接媒体，展示振铃页
     if (_phase == _CallWindowPhase.ringing) {
-      return _DesktopCallRingingPage(
+      return OutgoingCallView(
         title: _title,
-        onCancel: _notifyCloseAndExit,
+        avatarUrl: _avatarUrl,
+        onCancel: () => _notifyCloseAndExit(),
       );
     }
 
@@ -290,76 +322,9 @@ class _CallWindowPageState extends ConsumerState<WindowCallPage>
         title: _title,
         errorText: 'call_window_room_creation_failed'.tr(),
         detail: err.toString(),
+        onCancel: _notifyCloseAndExit,
       ),
       loading: () => const CallLoadingState(),
-    );
-  }
-}
-
-/// 桌面端呼出振铃页（1:1，窗口内展示）
-///
-/// 对方名称 + 「正在呼叫…」+ 取消（挂断）按钮。振铃期不连接媒体。
-class _DesktopCallRingingPage extends StatelessWidget {
-  const _DesktopCallRingingPage({required this.title, required this.onCancel});
-
-  final String title;
-  final Future<void> Function() onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final appColors = Theme.of(context).extension<AppColors>();
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: cs.primary.withValues(alpha: 0.12),
-              border: Border.all(color: cs.outlineVariant),
-            ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedCall02,
-              color: cs.primary,
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'call_calling'.tr(),
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
-          ),
-          const SizedBox(height: 36),
-          FilledButton.icon(
-            onPressed: onCancel,
-            style: FilledButton.styleFrom(
-              backgroundColor: appColors?.danger ?? const Color(0xFFE53945),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-            ),
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedCallEnd01,
-              size: 18,
-              color: Colors.white,
-            ),
-            label: Text('call_cancel_call'.tr()),
-          ),
-        ],
-      ),
     );
   }
 }

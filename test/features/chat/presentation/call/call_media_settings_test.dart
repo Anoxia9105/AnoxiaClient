@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:anoxia/features/chat/presentation/call/component/call_media_settings_dialog.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
+import 'package:anoxia/framework/domain/call_media_preferences.dart';
+import 'package:anoxia/common/widgets/app_select_field.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,7 +31,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      var saved = false;
+      CallMediaPreferences? saved;
       final roomState = RoomState(
         room: _Room(),
         token: 'test',
@@ -57,10 +59,11 @@ void main() {
               home: Scaffold(
                 body: Builder(
                   builder: (context) => TextButton(
-                    onPressed: () =>
-                        showCallMediaSettings(context, roomState, (_) async {
-                          saved = true;
-                        }),
+                    onPressed: () => showCallMediaSettings(context, roomState, (
+                      value,
+                    ) async {
+                      saved = value;
+                    }),
                     child: const Text('open'),
                   ),
                 ),
@@ -73,9 +76,20 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(const ValueKey('call-camera-quality')));
+      await tester.pumpAndSettle();
+      expect(find.byType(MenuItemButton), findsWidgets);
+      final quality = tester.widget<AppSelectField<CameraQuality>>(
+        find.byKey(const ValueKey('call-camera-quality')),
+      );
+      final highLabel = quality.options
+          .firstWhere((o) => o.value == CameraQuality.high)
+          .label;
+      await tester.tap(find.widgetWithText(MenuItemButton, highLabel));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
-      expect(saved, isTrue);
+      expect(saved?.cameraQuality, CameraQuality.high);
       expect(find.byType(AlertDialog), findsNothing);
       expect(tester.takeException(), isNull);
     });

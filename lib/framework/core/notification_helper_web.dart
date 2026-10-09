@@ -12,6 +12,7 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
+import 'incoming_call_notifications.dart';
 
 class NotificationHelper {
   NotificationHelper._internal();
@@ -23,6 +24,8 @@ class NotificationHelper {
 
   void Function(String roomId)? _onOpenRoom;
   web.Notification? _incomingCallNotification;
+  String? _incomingInviteId;
+  final _incomingCalls = IncomingCallNotifications();
   final String _baseTitle = 'Anoxia';
 
   void configure({
@@ -67,10 +70,9 @@ class NotificationHelper {
       // 的场景下不会弹出授权框，requestPermission() 返回的 Promise 既不 resolve
       // 也不 reject，会导致设置页的等待动画无限旋转。这里加超时兜底：超时视为
       // 本次申请未获授权，避免 UI 卡在 loading 状态。
-      final result =
-          (await web.Notification.requestPermission().toDart
-                  .timeout(const Duration(seconds: 10)))
-              .toDart;
+      final result = (await web.Notification.requestPermission().toDart.timeout(
+        const Duration(seconds: 10),
+      )).toDart;
       return result == 'granted';
     } catch (_) {
       return false;
@@ -142,20 +144,38 @@ class NotificationHelper {
     required String body,
     String? avatarUrl,
   }) async {
-    if (!await _ensurePermission()) return;
-
-    _incomingCallNotification = _createNotification(title, body, avatarUrl);
-    _incomingCallNotification?.onclick = ((JSAny? _) {
-      final roomId = payload['roomId']?.toString() ?? '';
-      if (roomId.isNotEmpty) _onOpenRoom?.call(roomId);
-      _incomingCallNotification?.close();
-      _incomingCallNotification = null;
-    }).toJS;
+    final inviteId =
+        payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '';
+    await _incomingCalls.show(
+      inviteId: inviteId,
+      prepare: _ensurePermission,
+      present: () async {
+        _incomingCallNotification?.close();
+        final notification = _createNotification(title, body, avatarUrl);
+        _incomingCallNotification = notification;
+        _incomingInviteId = inviteId;
+        notification.onclick = ((JSAny? _) {
+          final roomId = payload['roomId']?.toString() ?? '';
+          if (roomId.isNotEmpty) _onOpenRoom?.call(roomId);
+          notification.close();
+        }).toJS;
+      },
+      dismiss: () async => _dismissIncomingCall(inviteId),
+    );
   }
 
   Future<void> cancelIncomingCall(String inviteId) async {
+    await _incomingCalls.cancel(
+      inviteId,
+      () async => _dismissIncomingCall(inviteId),
+    );
+  }
+
+  void _dismissIncomingCall(String inviteId) {
+    if (_incomingInviteId != inviteId) return;
     _incomingCallNotification?.close();
     _incomingCallNotification = null;
+    _incomingInviteId = null;
   }
 
   int incomingCallNotificationId(String inviteId) =>

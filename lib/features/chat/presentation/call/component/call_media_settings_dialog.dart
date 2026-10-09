@@ -1,4 +1,5 @@
 import 'package:anoxia/common/utils/device_util.dart';
+import 'package:anoxia/common/widgets/app_select_field.dart';
 import 'package:anoxia/framework/domain/room_state.dart';
 import 'package:anoxia/framework/domain/call_media_preferences.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -100,21 +101,21 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
                 Icons.videocam_outlined,
                 'call_camera',
                 'call_camera_quality_hint',
-                DropdownButtonFormField<CameraQuality>(
-                  initialValue: _camera,
-                  isExpanded: true,
+                AppSelectField<CameraQuality>(
+                  key: const ValueKey('call-camera-quality'),
+                  value: _camera,
+                  label: 'call_camera_quality'.tr(),
+                  enabled: !_saving,
                   decoration: _decoration('call_camera_quality'),
-                  items: CameraQuality.values
+                  options: CameraQuality.values
                       .map(
-                        (value) => DropdownMenuItem(
+                        (value) => AppSelectOption(
                           value: value,
-                          child: Text('call_camera_quality_${value.name}'.tr()),
+                          label: 'call_camera_quality_${value.name}'.tr(),
                         ),
                       )
                       .toList(),
-                  onChanged: _saving
-                      ? null
-                      : (value) => setState(() => _camera = value!),
+                  onChanged: (value) => setState(() => _camera = value),
                 ),
               ),
               const SizedBox(height: 12),
@@ -124,23 +125,21 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
                 'call_share_quality_hint',
                 Column(
                   children: [
-                    DropdownButtonFormField<ScreenShareQuality>(
-                      initialValue: _screen,
-                      isExpanded: true,
+                    AppSelectField<ScreenShareQuality>(
+                      key: const ValueKey('call-screen-quality'),
+                      value: _screen,
+                      label: 'call_share_quality'.tr(),
+                      enabled: !_saving,
                       decoration: _decoration('call_share_quality'),
-                      items: ScreenShareQuality.values
+                      options: ScreenShareQuality.values
                           .map(
-                            (value) => DropdownMenuItem(
+                            (value) => AppSelectOption(
                               value: value,
-                              child: Text(
-                                'call_share_quality_${value.name}'.tr(),
-                              ),
+                              label: 'call_share_quality_${value.name}'.tr(),
                             ),
                           )
                           .toList(),
-                      onChanged: _saving
-                          ? null
-                          : (value) => setState(() => _screen = value!),
+                      onChanged: (value) => setState(() => _screen = value),
                     ),
                     if (DeviceUtil.isWeb)
                       SwitchListTile.adaptive(
@@ -306,26 +305,26 @@ class _CallMediaSettingsDialogState extends State<_CallMediaSettingsDialog> {
     String label,
     VideoCodecPreference selected,
     void Function(VideoCodecPreference) update,
-  ) => DropdownButtonFormField<VideoCodecPreference>(
-    initialValue: selected,
-    isExpanded: true,
+  ) => AppSelectField<VideoCodecPreference>(
+    key: ValueKey(label),
+    value: selected,
+    label: label.tr(),
+    enabled: !_saving,
     decoration: _decoration(label),
-    items: VideoCodecPreference.values
+    options: VideoCodecPreference.values
         .map(
-          (value) => DropdownMenuItem(
+          (value) => AppSelectOption(
             value: value,
             enabled:
                 value == VideoCodecPreference.automatic ||
                 widget.state.supportedVideoCodecs.contains(value.name),
-            child: Text(
-              value == VideoCodecPreference.automatic
-                  ? 'call_codec_auto'.tr()
-                  : value.name.toUpperCase(),
-            ),
+            label: value == VideoCodecPreference.automatic
+                ? 'call_codec_auto'.tr()
+                : value.name.toUpperCase(),
           ),
         )
         .toList(),
-    onChanged: _saving ? null : (value) => setState(() => update(value!)),
+    onChanged: (value) => setState(() => update(value)),
   );
 
   Future<void> _save() async {

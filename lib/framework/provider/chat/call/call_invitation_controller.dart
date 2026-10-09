@@ -14,11 +14,9 @@ import 'package:anoxia/framework/logs/debug_log.dart';
 import 'package:anoxia/framework/protocol/packet_type.dart';
 import 'package:anoxia/framework/protocol/message/high_message.dart';
 import 'package:anoxia/framework/provider/auth/auth_controller.dart';
-import 'package:anoxia/framework/provider/core/call_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/toast_service_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
 import 'package:anoxia/framework/provider/chat/call/call_window_controller.dart';
-import 'package:anoxia/framework/provider/chat/call/channel.dart';
 import 'package:anoxia/framework/provider/chat/call/mobile_call_session_provider.dart';
 import 'package:anoxia/framework/provider/chat/call/room_controller.dart';
 import 'package:anoxia/framework/provider/chat/room/room_list_service.dart';
@@ -193,6 +191,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
   }) async {
     final roomId = room.roomId ?? '';
     if (roomId.isEmpty) return;
+    _endedRooms.remove(roomId);
     ref.read(callConnectionWarmupProvider).start();
 
     final currentUser = ref.read(authControllerProvider).value;
@@ -286,6 +285,7 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     CallInitialMedia? media,
   }) async {
     final effective = media ?? invite.initialMedia;
+    _endedRooms.remove(invite.roomId);
     await accept(invite.copyWith(initialMedia: effective));
     await _openCallUi(invite.copyWith(initialMedia: effective));
   }
@@ -525,18 +525,13 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
           );
       return;
     }
-    final window = ref.read(callWindowControllerProvider);
-    if (window == null) return;
-    try {
-      final fresh = await ref
-          .read(callRepositoryProvider)
-          .fetchCallToken(invite.roomId);
-      await Channel.callChannel.invokeMethod('on_call_accepted', {
-        'token': fresh,
-      });
-    } catch (e) {
-      debugLog('[CallInvitation] 通知通话窗口开始连接失败: $e');
-    }
+    // 子窗口立即结束振铃，自行获取 token；网络失败时由连接页提供重试。
+    await ref
+        .read(callWindowControllerProvider.notifier)
+        .connectAcceptedCall(
+          roomId: invite.roomId,
+          initialMedia: invite.initialMedia,
+        );
   }
 
   /// 打开通话界面（移动/Web 启动会话浮层；桌面打开独立通话窗口）。
@@ -614,7 +609,13 @@ class CallInvitationController extends Notifier<CallInvitationState?> {
     CallInvitationState invite, {
     required bool fromSelf,
   }) {
-    if (!_isSameInvite(state, invite)) return;
+    if (!_isSameInvite(state, invite)) {
+      debugLog(
+        '[CallInvitation] 忽略不匹配的接听: room=${invite.roomId}, invite=${invite.inviteId}, active=${state?.inviteId}',
+      );
+      return;
+    }
+    _ringTimer?.cancel();
 
     if (fromSelf) {
       // 我的其他设备已接听：本端停止振铃并提示。
