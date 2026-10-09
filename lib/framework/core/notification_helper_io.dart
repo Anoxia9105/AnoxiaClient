@@ -8,7 +8,9 @@ import 'package:anoxia/common/utils/app_permission.dart';
 import 'package:anoxia/gen/assets.gen.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:cross_cache/cross_cache.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,6 +20,8 @@ import 'package:window_manager/window_manager.dart' as desktop;
 
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'incoming_call_notifications.dart';
+import 'notification_call_assets_io.dart';
+import 'windows_incoming_call_content.dart';
 
 /// 通知辅助类
 ///
@@ -47,6 +51,7 @@ class NotificationHelper {
   void Function()? _onUpdateInstall;
 
   static const String callAcceptAction = 'call_accept';
+  static const String callAcceptVoiceAction = 'call_accept_voice';
   static const String callRejectAction = 'call_reject';
   static const String _incomingCallCategory = 'incoming_call';
 
@@ -204,8 +209,23 @@ class NotificationHelper {
         final file = File(filePath);
 
         if (!await file.exists()) {
+          final cache = CrossCache();
+          final cached = await cache.contains(avatarUrl)
+              ? await cache.get(avatarUrl)
+              : null;
+          if (cached != null &&
+              cached.isNotEmpty &&
+              cached.length <= 2 * 1024 * 1024) {
+            await file.writeAsBytes(cached, flush: true);
+            return Uri.file(file.path, windows: true);
+          }
           if (!download) return null;
-          final client = HttpClient();
+          final client = HttpClient()
+            ..connectionTimeout = const Duration(seconds: 3);
+          final deadline = Timer(
+            const Duration(seconds: 4),
+            () => client.close(force: true),
+          );
           try {
             final req = await client.getUrl(uri);
             final resp = await req.close();
@@ -222,6 +242,7 @@ class NotificationHelper {
               await file.writeAsBytes(bytes.takeBytes(), flush: true);
             }
           } finally {
+            deadline.cancel();
             client.close(force: true);
           }
         }
@@ -301,7 +322,9 @@ class NotificationHelper {
           final payload = Map<String, dynamic>.from(decoded);
           final actionId =
               payload['actionId']?.toString() ?? response.actionId ?? '';
-          if (actionId == callAcceptAction || actionId == callRejectAction) {
+          if (actionId == callAcceptAction ||
+              actionId == callRejectAction ||
+              actionId == callAcceptVoiceAction) {
             unawaited(
               Future.sync(() => _onCallAction?.call(actionId, payload)),
             );
@@ -411,17 +434,32 @@ class NotificationHelper {
     final inviteId =
         payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '';
     Uri? avatarUri;
+    Uri? rejectIcon;
+    Uri? acceptIcon;
+    Uri? voiceIcon;
+    final isVideo = payload['initialMedia'] == 'video';
     await _incomingCalls.show(
       inviteId: inviteId,
       prepare: () async {
         await _ensureInitialized();
         if (!await _ensureNotificationPermission()) return false;
-        // 来电不能等待网络头像下载；仅使用本地或缓存头像。
         if (DeviceUtil.isWindows()) {
+          final assets = NotificationCallAssets(
+            await getApplicationSupportDirectory(),
+          );
+          // 最多等待 300ms，慢下载仅预热缓存，不补发已过期的来电通知。
           avatarUri = await _resolveWindowsAvatarUri(
             avatarUrl,
-            download: false,
+          ).timeout(const Duration(milliseconds: 300), onTimeout: () => null);
+          avatarUri ??= await assets.avatar(title);
+          rejectIcon = await assets.icon('reject', Icons.call_end_rounded);
+          acceptIcon = await assets.icon(
+            isVideo ? 'video' : 'accept',
+            isVideo ? Icons.videocam_rounded : Icons.call_rounded,
           );
+          if (isVideo && payload['isGroup'] != true) {
+            voiceIcon = await assets.icon('accept', Icons.call_rounded);
+          }
         }
         return true;
       },
@@ -430,6 +468,9 @@ class NotificationHelper {
         title: title,
         body: body,
         avatarUri: avatarUri,
+        rejectIcon: rejectIcon,
+        acceptIcon: acceptIcon,
+        voiceIcon: voiceIcon,
       ),
       dismiss: () => _plugin.cancel(id: incomingCallNotificationId(inviteId)),
     );
@@ -440,6 +481,9 @@ class NotificationHelper {
     required String title,
     required String body,
     Uri? avatarUri,
+    Uri? rejectIcon,
+    Uri? acceptIcon,
+    Uri? voiceIcon,
   }) async {
     final notificationId = incomingCallNotificationId(
       payload['inviteId']?.toString() ?? payload['roomId']?.toString() ?? '',
@@ -449,16 +493,34 @@ class NotificationHelper {
       'kind': 'incoming_call',
     });
 
-    final windowsImages = avatarUri == null
-        ? const <WindowsImage>[]
-        : <WindowsImage>[
-            WindowsImage(
-              avatarUri,
-              altText: title,
-              placement: WindowsImagePlacement.appLogoOverride,
-              crop: WindowsImageCrop.circle,
-            ),
-          ];
+    if (DeviceUtil.isWindows()) {
+      final windows = _plugin
+          .resolvePlatformSpecificImplementation<
+            FlutterLocalNotificationsWindows
+          >();
+      if (windows == null) {
+        throw StateError('Windows notification plugin unavailable');
+      }
+      await windows.showRawXml(
+        id: notificationId,
+        xml: buildWindowsIncomingCallContent(
+          payload: payload,
+          title: title,
+          body: body,
+          avatar: avatarUri!,
+          rejectIcon: rejectIcon!,
+          acceptIcon: acceptIcon!,
+          rejectLabel: 'notification_call_reject'.tr(),
+          acceptLabel: 'notification_call_accept'.tr(),
+          rejectAction: callRejectAction,
+          acceptAction: callAcceptAction,
+          voiceIcon: voiceIcon,
+          voiceLabel: 'call_answer_as_voice'.tr(),
+          voiceAction: callAcceptVoiceAction,
+        ),
+      );
+      return;
+    }
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -496,29 +558,6 @@ class NotificationHelper {
         categoryIdentifier: _incomingCallCategory,
         presentAlert: true,
         presentSound: true,
-      ),
-      windows: WindowsNotificationDetails(
-        duration: WindowsNotificationDuration.long,
-        scenario: WindowsNotificationScenario.incomingCall,
-        images: windowsImages,
-        actions: <WindowsAction>[
-          WindowsAction(
-            content: 'notification_call_accept'.tr(),
-            arguments: jsonEncode(<String, dynamic>{
-              ...payload,
-              'kind': 'incoming_call',
-              'actionId': callAcceptAction,
-            }),
-          ),
-          WindowsAction(
-            content: 'notification_call_reject'.tr(),
-            arguments: jsonEncode(<String, dynamic>{
-              ...payload,
-              'kind': 'incoming_call',
-              'actionId': callRejectAction,
-            }),
-          ),
-        ],
       ),
     );
 

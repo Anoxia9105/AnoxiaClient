@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:anoxia/framework/provider/chat/call/call_initial_media.dart';
+
 import 'package:anoxia/framework/core/notification_helper.dart';
 import 'package:anoxia/features/chat/presentation/call/window_call_page.dart';
 import 'package:anoxia/framework/core/app_globals.dart';
@@ -281,9 +283,22 @@ Future<void> runMainApp() async {
           callInvitationControllerProvider.notifier,
         );
         if (actionId == NotificationHelper.callAcceptAction) {
-          await controller.acceptAndOpen(invitation);
+          if (invitation.isGroup) {
+            await controller.joinGroupCall(invitation);
+          } else {
+            await controller.acceptAndOpen(invitation);
+          }
+        } else if (actionId == NotificationHelper.callAcceptVoiceAction) {
+          await controller.acceptAndOpen(
+            invitation,
+            media: CallInitialMedia.audio,
+          );
         } else if (actionId == NotificationHelper.callRejectAction) {
-          await controller.reject(invitation);
+          if (invitation.isGroup) {
+            controller.dismissInvitation();
+          } else {
+            await controller.reject(invitation);
+          }
         }
         await NotificationHelper().cancelIncomingCall(invitation.inviteId);
       },

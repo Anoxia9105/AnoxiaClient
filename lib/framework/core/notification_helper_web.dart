@@ -20,6 +20,7 @@ class NotificationHelper {
   factory NotificationHelper() => _instance;
 
   static const String callAcceptAction = 'call_accept';
+  static const String callAcceptVoiceAction = 'call_accept_voice';
   static const String callRejectAction = 'call_reject';
 
   void Function(String roomId)? _onOpenRoom;
