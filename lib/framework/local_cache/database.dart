@@ -94,6 +94,11 @@ class AppDatabase extends _$AppDatabase {
         'ON messages(delivery_status)',
       );
       await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_messages_visible_time '
+        'ON messages(conversation_id, sent_at DESC, seq DESC) '
+        'WHERE is_deleted = 0',
+      );
+      await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_sync_logs_retry '
         'ON sync_logs(status, next_retry_at)',
       );
@@ -270,6 +275,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   }) async {
     final existing = await getConversation(conversationId);
     if (existing == null) return;
+    final advance = _shouldUpdatePreview(existing, messageId, seq, sentAt);
 
     await (update(
       conversations,
@@ -280,12 +286,14 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
             : clearUnread
             ? const Value(0)
             : const Value.absent(),
-        lastMessageId: Value(messageId),
-        lastMessagePreview: Value(preview),
-        lastMessageType: Value(messageType),
-        lastMessageSeq: Value(seq),
-        lastMessageAt: Value(sentAt),
-        updatedAt: Value(sentAt ?? DateTime.now()),
+        lastMessageId: advance ? Value(messageId) : const Value.absent(),
+        lastMessagePreview: advance ? Value(preview) : const Value.absent(),
+        lastMessageType: advance ? Value(messageType) : const Value.absent(),
+        lastMessageSeq: advance ? Value(seq) : const Value.absent(),
+        lastMessageAt: advance ? Value(sentAt) : const Value.absent(),
+        updatedAt: advance
+            ? Value(sentAt ?? DateTime.now())
+            : const Value.absent(),
         cachedAt: Value(DateTime.now()),
       ),
     );
@@ -300,6 +308,11 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     int? seq,
     DateTime? sentAt,
   }) async {
+    final existing = await getConversation(conversationId);
+    if (existing == null ||
+        !_shouldUpdatePreview(existing, messageId, seq, sentAt)) {
+      return;
+    }
     await (update(
       conversations,
     )..where((tbl) => tbl.id.equals(conversationId))).write(
@@ -314,9 +327,24 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
       ),
     );
   }
+
+  /// ACK/失败回写只更新对应消息；旧消息不得覆盖较新的会话投影。
+  bool _shouldUpdatePreview(
+    CachedConversation room,
+    String id,
+    int? seq,
+    DateTime? sentAt,
+  ) {
+    if (room.lastMessageId == null || room.lastMessageId == id) return true;
+    final previousSeq = room.lastMessageSeq ?? 0;
+    if ((seq ?? 0) > 0 && previousSeq > 0) return seq! > previousSeq;
+    // 未确认的乐观消息按时间排列，避免旧 ACK 抢占后发的待发送消息。
+    final previousAt = room.lastMessageAt;
+    return sentAt != null && (previousAt == null || sentAt.isAfter(previousAt));
+  }
 }
 
-@DriftAccessor(tables: [Messages])
+@DriftAccessor(tables: [Messages, SyncStates])
 /// 消息数据访问对象
 ///
 /// 提供消息缓存的增删改查、流式监听、发送状态管理和临时 ID 替换。
@@ -342,9 +370,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
                     : tbl.seq.isSmallerThanValue(beforeSeq)),
           )
           ..orderBy([
-            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
             (tbl) =>
                 OrderingTerm(expression: tbl.sentAt, mode: OrderingMode.desc),
+            (tbl) => OrderingTerm(expression: tbl.seq, mode: OrderingMode.desc),
           ])
           ..limit(limit, offset: offset))
         .get();
@@ -419,7 +447,11 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// 获取所有待发送或发送失败的消息
   Future<List<CachedMessage>> getPendingOutgoingMessages() {
     return (select(messages)
-          ..where((tbl) => tbl.deliveryStatus.isIn(['SENDING', 'FAILED']))
+          ..where(
+            (tbl) =>
+                tbl.isDeleted.equals(false) &
+                tbl.deliveryStatus.isIn(['SENDING', 'FAILED']),
+          )
           ..orderBy([(tbl) => OrderingTerm(expression: tbl.localCreatedAt)]))
         .get();
   }
@@ -432,15 +464,17 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// 缺少该消息的快照，从而根治 Web(Worker) 上的消息闪退。
   Future<void> insertOrUpdateMessage(CachedMessage message) async {
     await transaction(() async {
+      final preserved = (await _preserveDeletions([message])).single;
       if (message.clientMsgId != null && message.clientMsgId != message.id) {
         // 主键换绑：把 clientMsgId 对应的旧行原地更新为服务端 id，避免空窗。
-        final updated = await (update(messages)
-              ..where((tbl) => tbl.id.equals(message.clientMsgId!)))
-            .write(message.toCompanion(true));
+        final updated =
+            await (update(messages)
+                  ..where((tbl) => tbl.id.equals(message.clientMsgId!)))
+                .write(preserved.toCompanion(true));
         if (updated > 0) return;
         // 旧行不存在（异常竞态）时退化为普通 upsert。
       }
-      await into(messages).insertOnConflictUpdate(message);
+      await into(messages).insertOnConflictUpdate(preserved);
     });
   }
 
@@ -456,6 +490,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     final ids = <String>{for (final item in list) item.id};
 
     await transaction(() async {
+      final preserved = await _preserveDeletions(list);
       // 清理 client_msg_id 相同但 id 不同的旧记录。
       //
       // 必须一次性批量删除：Web 上 drift 运行在 wasm worker 里，每条 SQL 都是一次
@@ -467,8 +502,44 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ))
             .go();
       }
-      await batch((b) => b.insertAllOnConflictUpdate(messages, list));
+      await batch((b) => b.insertAllOnConflictUpdate(messages, preserved));
     });
+  }
+
+  Future<List<CachedMessage>> _preserveDeletions(
+    List<CachedMessage> rows,
+  ) async {
+    final ids = rows
+        .expand((r) => [r.id, if (r.clientMsgId != null) r.clientMsgId!])
+        .toSet();
+    final deleted =
+        await (select(messages)..where(
+              (t) =>
+                  t.isDeleted.equals(true) &
+                  (t.id.isIn(ids) | t.clientMsgId.isIn(ids)),
+            ))
+            .get();
+    final tombstones =
+        await (select(syncStates)..where(
+              (t) => t.scope.equals('message_deleted') & t.scopeId.isIn(ids),
+            ))
+            .get();
+    final deletedIds = {
+      ...tombstones.map((t) => t.scopeId),
+      for (final row in deleted) row.id,
+      for (final row in deleted)
+        if (row.clientMsgId != null) row.clientMsgId!,
+    };
+    return rows
+        .map(
+          (r) => r.copyWith(
+            isDeleted:
+                r.isDeleted ||
+                deletedIds.contains(r.id) ||
+                deletedIds.contains(r.clientMsgId),
+          ),
+        )
+        .toList();
   }
 
   /// 用服务端 ID 替换临时消息 ID
@@ -546,12 +617,18 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// 软删除单条消息
   Future<void> deleteMessage(String messageId) async {
-    await (update(messages)..where((tbl) => tbl.id.equals(messageId))).write(
-      MessagesCompanion(
-        isDeleted: const Value(true),
-        updatedAt: Value(DateTime.now()),
-      ),
-    );
+    await transaction(() async {
+      await db.syncStateDao.upsertState(
+        scope: 'message_deleted',
+        scopeId: messageId,
+      );
+      await (update(messages)..where((tbl) => tbl.id.equals(messageId))).write(
+        MessagesCompanion(
+          isDeleted: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+    });
   }
 
   /// 软删除指定会话的所有消息
@@ -624,8 +701,25 @@ class SyncLogDao extends DatabaseAccessor<AppDatabase> with _$SyncLogDaoMixin {
   }
 
   /// 插入一条同步日志
-  Future<int> insertLog(SyncLogsCompanion log) {
-    return into(syncLogs).insert(log);
+  Future<int> insertLog(SyncLogsCompanion log) async {
+    return transaction(() async {
+      final id = await into(syncLogs).insert(log);
+      // 仅作诊断记录，限制保留量，避免离线或服务端异常长期撑大缓存。
+      final oldest =
+          await (select(syncLogs)
+                ..orderBy([
+                  (t) =>
+                      OrderingTerm(expression: t.id, mode: OrderingMode.desc),
+                ])
+                ..limit(1, offset: 199))
+              .getSingleOrNull();
+      if (oldest != null) {
+        await (delete(
+          syncLogs,
+        )..where((t) => t.id.isSmallerThanValue(oldest.id))).go();
+      }
+      return id;
+    });
   }
 }
 

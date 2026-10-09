@@ -6465,6 +6465,7 @@ mixin _$MessageDaoMixin on DatabaseAccessor<AppDatabase> {
   $CachedUsersTable get cachedUsers => attachedDatabase.cachedUsers;
   $ConversationsTable get conversations => attachedDatabase.conversations;
   $MessagesTable get messages => attachedDatabase.messages;
+  $SyncStatesTable get syncStates => attachedDatabase.syncStates;
   MessageDaoManager get managers => MessageDaoManager(this);
 }
 
@@ -6477,6 +6478,8 @@ class MessageDaoManager {
       $$ConversationsTableTableManager(_db.attachedDatabase, _db.conversations);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db.attachedDatabase, _db.messages);
+  $$SyncStatesTableTableManager get syncStates =>
+      $$SyncStatesTableTableManager(_db.attachedDatabase, _db.syncStates);
 }
 
 mixin _$SyncStateDaoMixin on DatabaseAccessor<AppDatabase> {

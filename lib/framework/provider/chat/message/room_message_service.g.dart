@@ -117,7 +117,7 @@ final class ChatMessagesProvider extends $NotifierProvider<ChatMessages, void> {
   }
 }
 
-String _$chatMessagesHash() => r'b1dbe337ae1030cb48f6be423591f0b43c549933';
+String _$chatMessagesHash() => r'f336ae2c87ed883bdc3a15dfdc43419ad1288f6c';
 
 abstract class _$ChatMessages extends $Notifier<void> {
   void build();

@@ -58,7 +58,7 @@ final class TokenCacheProvider extends $NotifierProvider<TokenCache, String?> {
   }
 }
 
-String _$tokenCacheHash() => r'4580de6d96a3cf08d6925ddf92a16c2097987395';
+String _$tokenCacheHash() => r'f797dc63dcdb84f7019053575c319c8602a908a8';
 
 /// Token 内存缓存 Provider
 ///

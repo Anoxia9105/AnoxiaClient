@@ -14,6 +14,31 @@ class RemoteDataSource {
 
   final DioClient _client;
 
+  /// 每次补偿从头扫描，仅在一次扫描内使用 afterId 分页。
+  /// 不把 AUTO_INCREMENT 当提交顺序，避免并发较小 ID 晚提交被永久跳过。
+  Future<List<({int id, String messageId})>> fetchRecalls(
+    String roomId,
+    int afterId,
+  ) async {
+    final res = await _client.get(
+      '/chat/recalls',
+      queryParameters: {'roomId': roomId, 'afterId': afterId, 'pageSize': 100},
+    );
+    final data = res.data['data'];
+    if (data is! List) throw const FormatException('invalid recall response');
+    return data.map((item) {
+      final id = int.tryParse(item['id'].toString());
+      final messageId = item['messageId']?.toString();
+      if (id == null ||
+          id <= afterId ||
+          messageId == null ||
+          messageId.isEmpty) {
+        throw const FormatException('invalid recall record');
+      }
+      return (id: id, messageId: messageId);
+    }).toList();
+  }
+
   /// 获取会话列表
   ///
   /// [since] 可选，获取该时间之后更新的会话，用于增量同步。
@@ -56,7 +81,7 @@ class RemoteDataSource {
       },
     );
     final data = res.data['data'];
-    if (data is! List) return const [];
+    if (data is! List) throw const FormatException('invalid message response');
     return data
         .map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e)))
         .toList();

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../network/token_manager.dart';
+import '../../local_cache/session_epoch.dart';
 
 part 'token_provider.g.dart';
 
@@ -21,6 +22,7 @@ class TokenCache extends _$TokenCache {
   ///
   /// 登录成功时调用，同时更新内存状态
   void setToken(String token) {
+    if (state != token) SessionEpoch.instance.advance();
     state = token;
   }
 
@@ -28,6 +30,7 @@ class TokenCache extends _$TokenCache {
   ///
   /// 登出时调用，清空内存缓存
   void clearToken() {
+    if (state != null) SessionEpoch.instance.advance();
     state = null;
   }
 
@@ -37,7 +40,7 @@ class TokenCache extends _$TokenCache {
   Future<void> restoreToken() async {
     final token = await TokenManager.instance.getToken();
     if (token != null && token.isNotEmpty) {
-      state = token;
+      setToken(token);
     }
   }
 }

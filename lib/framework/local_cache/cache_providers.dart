@@ -11,6 +11,8 @@ import 'database.dart';
 import 'local_data_source.dart';
 import 'remote_data_source.dart';
 import 'sync_repository.dart';
+import 'session_epoch.dart';
+import '../provider/auth/token_provider.dart';
 
 /// 应用数据库 Provider
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -21,7 +23,11 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
 
 /// 本地数据源 Provider
 final localDataSourceProvider = Provider<LocalDataSource>((ref) {
-  return LocalDataSource(ref.watch(appDatabaseProvider));
+  ref.watch(tokenCacheProvider);
+  return LocalDataSource(
+    ref.watch(appDatabaseProvider),
+    sessionEpoch: SessionEpoch.instance,
+  );
 });
 
 /// 远程数据源 Provider

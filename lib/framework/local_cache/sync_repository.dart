@@ -95,6 +95,7 @@ class SyncRepository implements ChatRepository {
         lastSyncedAt: DateTime.now(),
       );
     } catch (e, st) {
+      if (!_local.isCurrentSession) return;
       debugLog('syncConversations failed', e, st);
       await _local.logSyncFailure(
         scope: 'conversations',
@@ -120,6 +121,12 @@ class SyncRepository implements ChatRepository {
     if (!await _hasNetwork()) return;
 
     try {
+      try {
+        await _syncRecalls(convId);
+      } catch (e, st) {
+        // 服务端滚动升级时可能尚无补偿接口；不能因此中断普通消息恢复。
+        debugLog('syncRecalls failed: $convId', e, st);
+      }
       var lastSeq = await _local.messageSyncWatermark(convId);
       var maxSeq = lastSeq;
 
@@ -150,6 +157,7 @@ class SyncRepository implements ChatRepository {
       // 事务内读-算-写，只升不降；避免并发 WS push 已推进的水位被本次批次快照覆盖回退
       await _local.advanceMessagesWatermarkAtLeast(convId, maxSeq);
     } catch (e, st) {
+      if (!_local.isCurrentSession) return;
       debugLog('syncMessages failed: $convId', e, st);
       await _local.logSyncFailure(
         scope: 'messages',
@@ -157,6 +165,17 @@ class SyncRepository implements ChatRepository {
         action: 'syncMessages',
         error: e,
       );
+    }
+  }
+
+  Future<void> _syncRecalls(String roomId) async {
+    var cursor = 0;
+    while (true) {
+      final recalls = await _remote.fetchRecalls(roomId, cursor);
+      if (recalls.isEmpty) return;
+      await _local.applyRecalls(recalls.map((r) => r.messageId));
+      cursor = recalls.map((r) => r.id).reduce((a, b) => a > b ? a : b);
+      if (recalls.length < 100) return;
     }
   }
 
@@ -187,6 +206,7 @@ class SyncRepository implements ChatRepository {
     };
 
     final merged = <ChatRoomVO>[];
+    final pendingReads = await _local.pendingReadCursors();
     for (final remote in remoteRooms) {
       final id = remote.roomId;
       if (id == null) continue;
@@ -196,21 +216,22 @@ class SyncRepository implements ChatRepository {
         continue;
       }
 
-      final localUpdated = _roomVersion(local);
-      final remoteUpdated = _roomVersion(remote);
-      if (remoteUpdated == null ||
-          localUpdated == null ||
-          remoteUpdated.isAfter(localUpdated) ||
-          remoteUpdated.isAtSameMomentAs(localUpdated)) {
-        merged.add(
-          remote.copyWith(
-            unreadCount: remote.unreadCount ?? local.unreadCount,
-            lastReadSeq: remote.lastReadSeq ?? local.lastReadSeq,
-          ),
-        );
-      } else {
-        merged.add(local);
-      }
+      // 房间资料来自权威列表，不能用最后消息时间作为整行版本。
+      final pendingRead = pendingReads[id];
+      final serverRead = remote.lastReadSeq ?? local.lastReadSeq ?? 0;
+      merged.add(
+        remote.copyWith(
+          lastReadSeq: pendingRead != null && pendingRead > serverRead
+              ? pendingRead
+              : serverRead,
+          unreadCount: pendingRead != null && pendingRead > serverRead
+              ? ((remote.lastMessage?.seq ?? pendingRead) - pendingRead).clamp(
+                  0,
+                  1 << 31,
+                )
+              : remote.unreadCount,
+        ),
+      );
     }
     await _local.upsertConversations(merged);
     // 对账：服务端 /chat/rooms 是完整的权威列表，本地多余的行
@@ -221,14 +242,6 @@ class SyncRepository implements ChatRepository {
         .whereType<String>()
         .toList();
     await _local.deleteConversationsNotIn(remoteIds);
-  }
-
-  DateTime? _roomVersion(ChatRoomVO room) {
-    final lastTimestamp = room.lastMessage?.timestamp;
-    if (lastTimestamp != null && lastTimestamp > 0) {
-      return DateTime.fromMillisecondsSinceEpoch(lastTimestamp);
-    }
-    return room.createdAt;
   }
 
   Future<bool> _hasNetwork() async {

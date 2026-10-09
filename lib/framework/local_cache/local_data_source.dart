@@ -11,11 +11,33 @@ import '../protocol/message/message_enum.dart';
 import 'package:anoxia/framework/logs/debug_log.dart';
 import '../protocol/message/message_payload.dart';
 import 'database.dart';
+import 'session_epoch.dart';
 
 class LocalDataSource {
-  LocalDataSource(this.db);
+  LocalDataSource(this.db, {SessionEpoch? sessionEpoch})
+    : _sessionEpoch = sessionEpoch,
+      _epoch = sessionEpoch?.value;
 
   final AppDatabase db;
+  final SessionEpoch? _sessionEpoch;
+  final int? _epoch;
+  bool get isCurrentSession => _sessionEpoch?.value == _epoch;
+
+  /// 核验必须在事务执行时进行；清缓存之前排队的旧写入也会被拒绝。
+  Future<T> _write<T>(Future<T> Function() action) {
+    return db.transaction(() async {
+      void check() {
+        if (!isCurrentSession) {
+          throw StateError('stale session cache write');
+        }
+      }
+
+      check();
+      final result = await action();
+      check();
+      return result;
+    });
+  }
 
   Future<List<ChatRoomVO>> getConversations() async {
     final rows = await db.conversationDao.getConversations();
@@ -60,91 +82,99 @@ class LocalDataSource {
     required bool incrementUnread,
     bool clearUnread = false,
   }) async {
-    // 服务端给非发送方广播时可能不带 messageId/clientMsgId，用稳定派生 id 兜底，
-    // 避免消息被静默丢弃（曾导致“对方收到但不显示”且无任何日志）。
-    ChatMessage msg = message;
-    final String messageId;
-    {
-      final candidate = message.messageId ?? message.clientMsgId;
-      if (candidate == null || candidate.isEmpty) {
-        final roomId = message.roomId ?? '';
-        final senderId = message.senderId?.toString() ?? '';
-        final seq = message.seq?.toString() ?? '';
-        final ts = message.timestamp?.toString() ?? '';
-        if (roomId.isEmpty) {
-          debugLog(
-            '[DB] applyIncomingMessage: 丢弃入站消息，messageId/clientMsgId 与 roomId 均为空',
-          );
-          return false;
-        }
-        messageId = 'fallback_${roomId}_${senderId}_${seq}_$ts';
-        debugLog(
-          '[DB] applyIncomingMessage: 入站消息缺 messageId，使用派生兜底 id=$messageId',
-        );
-        msg = message.copyWith(messageId: messageId);
-      } else {
-        messageId = candidate;
-      }
-    }
-    final row = _messageToRow(
-      msg.copyWith(deliveryStatus: DeliveryStatus.sent),
-    );
-
-    return db.transaction(() async {
-      final existing = await db.messageDao.getMessageById(messageId);
-      final previous =
-          existing ??
-          (row.clientMsgId == null
-              ? null
-              : await db.messageDao.getMessageByClientMsgId(row.clientMsgId!));
-      final rowToPersist = previous == null
-          ? row
-          : row.copyWith(
-              // ACK 和服务端回显是两个独立帧，抵达顺序不固定。较晚抵达
-              // 的 seq=0 回显不能把 ACK 已写入的真实序号覆盖掉。
-              seq: row.seq > previous.seq ? row.seq : previous.seq,
-              clientMsgId: Value(row.clientMsgId ?? previous.clientMsgId),
-              sentAt: Value(row.sentAt ?? previous.sentAt),
-              localCreatedAt: previous.localCreatedAt,
+    return _write(() async {
+      // 服务端给非发送方广播时可能不带 messageId/clientMsgId，用稳定派生 id 兜底，
+      // 避免消息被静默丢弃（曾导致“对方收到但不显示”且无任何日志）。
+      ChatMessage msg = message;
+      final String messageId;
+      {
+        final candidate = message.messageId ?? message.clientMsgId;
+        if (candidate == null || candidate.isEmpty) {
+          final roomId = message.roomId ?? '';
+          final senderId = message.senderId?.toString() ?? '';
+          final seq = message.seq?.toString() ?? '';
+          final ts = message.timestamp?.toString() ?? '';
+          if (roomId.isEmpty) {
+            debugLog(
+              '[DB] applyIncomingMessage: 丢弃入站消息，messageId/clientMsgId 与 roomId 均为空',
             );
-      await _ensureConversationExists(row.conversationId);
-      await _ensureMessageSendersExist([rowToPersist]);
-      await db.messageDao.insertOrUpdateMessage(rowToPersist);
-      await db.conversationDao.updateIncomingMessage(
-        conversationId: row.conversationId,
-        messageId: messageId,
-        preview: msg.content,
-        messageType: msg.messageType == null
-            ? null
-            : MessageType.toCode(msg.messageType),
-        seq: msg.seq,
-        sentAt: _dateTimeFromMillis(msg.timestamp),
-        incrementUnread: incrementUnread && existing == null,
-        clearUnread: clearUnread,
+            return false;
+          }
+          messageId = 'fallback_${roomId}_${senderId}_${seq}_$ts';
+          debugLog(
+            '[DB] applyIncomingMessage: 入站消息缺 messageId，使用派生兜底 id=$messageId',
+          );
+          msg = message.copyWith(messageId: messageId);
+        } else {
+          messageId = candidate;
+        }
+      }
+      final row = _messageToRow(
+        msg.copyWith(deliveryStatus: DeliveryStatus.sent),
       );
-      await _advanceMessageWatermark(row.conversationId, message.seq);
-      // 以是否按 clientMsgId 找到先前记录为准，而不是按 messageId：
-      // 服务端会把自己的消息回显给发送方（ACK 与回显到达顺序不定），
-      // 回显的 messageId 可能是服务端新 id 或派生兜底 id，此时 existing
-      // 为 null，但按 clientMsgId 能找到已存在的记录 → 视为重复写入，
-      // 避免自己的回显被当作新消息再次触发房间位置更新与通知。
-      return previous == null;
+
+      return db.transaction(() async {
+        final existing = await db.messageDao.getMessageById(messageId);
+        final previous =
+            existing ??
+            (row.clientMsgId == null
+                ? null
+                : await db.messageDao.getMessageByClientMsgId(
+                    row.clientMsgId!,
+                  ));
+        final rowToPersist = previous == null
+            ? row
+            : row.copyWith(
+                // ACK 和服务端回显是两个独立帧，抵达顺序不固定。较晚抵达
+                // 的 seq=0 回显不能把 ACK 已写入的真实序号覆盖掉。
+                seq: row.seq > previous.seq ? row.seq : previous.seq,
+                clientMsgId: Value(row.clientMsgId ?? previous.clientMsgId),
+                sentAt: Value(row.sentAt ?? previous.sentAt),
+                localCreatedAt: previous.localCreatedAt,
+              );
+        await _ensureConversationExists(row.conversationId);
+        await _ensureMessageSendersExist([rowToPersist]);
+        await db.messageDao.insertOrUpdateMessage(rowToPersist);
+        final persisted = await db.messageDao.getMessageById(rowToPersist.id);
+        if (persisted?.isDeleted == true) return false;
+        await db.conversationDao.updateIncomingMessage(
+          conversationId: row.conversationId,
+          messageId: messageId,
+          preview: msg.content,
+          messageType: msg.messageType == null
+              ? null
+              : MessageType.toCode(msg.messageType),
+          seq: rowToPersist.seq,
+          sentAt: rowToPersist.sentAt,
+          incrementUnread: incrementUnread && previous == null,
+          clearUnread: clearUnread,
+        );
+        await _advanceMessageWatermark(row.conversationId, message.seq);
+        // 以是否按 clientMsgId 找到先前记录为准，而不是按 messageId：
+        // 服务端会把自己的消息回显给发送方（ACK 与回显到达顺序不定），
+        // 回显的 messageId 可能是服务端新 id 或派生兜底 id，此时 existing
+        // 为 null，但按 clientMsgId 能找到已存在的记录 → 视为重复写入，
+        // 避免自己的回显被当作新消息再次触发房间位置更新与通知。
+        return previous == null;
+      });
     });
   }
 
   Future<int> messageSyncWatermark(String convId) async {
-    final state = await db.syncStateDao.getState('messages', convId);
-    if (state != null) return state.lastSeq;
+    return _write(() async {
+      final state = await db.syncStateDao.getState('messages', convId);
+      if (state != null) return state.lastSeq;
 
-    // One-time migration for databases created before the watermark existed.
-    final watermark = await maxContinuousMessageSeq(convId);
-    await db.syncStateDao.upsertState(
-      scope: 'messages',
-      scopeId: convId,
-      lastSyncedAt: DateTime.now(),
-      lastSeq: watermark,
-    );
-    return watermark;
+      // One-time migration for databases created before the watermark existed.
+      final watermark = await maxContinuousMessageSeq(convId);
+      await db.syncStateDao.upsertState(
+        scope: 'messages',
+        scopeId: convId,
+        lastSyncedAt: DateTime.now(),
+        lastSeq: watermark,
+      );
+      return watermark;
+    });
   }
 
   /// 将 messages 水位单调抬升到至少 [seq]（只增不回退）。
@@ -153,15 +183,17 @@ class LocalDataSource {
   /// 覆盖 WS push（_advanceMessageWatermark）已推进的水位导致水位回退，
   /// 进而破坏 push 路径的连续性 seq+1 判定。
   Future<void> advanceMessagesWatermarkAtLeast(String convId, int seq) async {
-    await db.transaction(() async {
-      final state = await db.syncStateDao.getState('messages', convId);
-      final current = state?.lastSeq ?? 0;
-      await db.syncStateDao.upsertState(
-        scope: 'messages',
-        scopeId: convId,
-        lastSyncedAt: DateTime.now(),
-        lastSeq: seq > current ? seq : current,
-      );
+    return _write(() async {
+      await db.transaction(() async {
+        final state = await db.syncStateDao.getState('messages', convId);
+        final current = state?.lastSeq ?? 0;
+        await db.syncStateDao.upsertState(
+          scope: 'messages',
+          scopeId: convId,
+          lastSyncedAt: DateTime.now(),
+          lastSeq: seq > current ? seq : current,
+        );
+      });
     });
   }
 
@@ -204,18 +236,24 @@ class LocalDataSource {
   }
 
   Future<void> upsertConversation(ChatRoomVO room) async {
-    await _ensurePeerUsersExist([room]);
-    return db.conversationDao.insertOrUpdateConversation(
-      _conversationToCompanion(room),
-    );
+    return _write(() async {
+      await _ensurePeerUsersExist([room]);
+      return db.conversationDao.insertOrUpdateConversation(
+        await _mergeConversationProjection(room),
+      );
+    });
   }
 
   Future<void> upsertConversations(Iterable<ChatRoomVO> rooms) async {
-    final roomList = rooms.toList();
-    await _ensurePeerUsersExist(roomList);
-    return db.conversationDao.insertOrUpdateConversations(
-      roomList.map(_conversationToCompanion),
-    );
+    return _write(() async {
+      final roomList = rooms.toList();
+      await _ensurePeerUsersExist(roomList);
+      for (final room in roomList) {
+        await db.conversationDao.insertOrUpdateConversation(
+          await _mergeConversationProjection(room),
+        );
+      }
+    });
   }
 
   /// 确保 [rooms] 中所有 [ChatRoomVO.peerId] 在 cached_users 表中存在占位记录，
@@ -239,37 +277,44 @@ class LocalDataSource {
   }
 
   Future<void> upsertMessage(ChatMessage message) async {
-    final row = _messageToRow(message);
-    await db.transaction(() async {
-      await _ensureConversationExists(row.conversationId);
-      await _ensureMessageSendersExist([row]);
-      await db.messageDao.insertOrUpdateMessage(row);
-      final roomId = message.roomId;
-      if (roomId != null && roomId.isNotEmpty) {
-        await db.conversationDao.updateLastMessage(
-          conversationId: roomId,
-          messageId: message.messageId ?? message.clientMsgId ?? '',
-          preview: message.content,
-          messageType: message.messageType == null
-              ? null
-              : MessageType.toCode(message.messageType),
-          seq: message.seq,
-          sentAt: _dateTimeFromMillis(message.timestamp),
-        );
-      }
+    return _write(() async {
+      final row = _messageToRow(message);
+      await db.transaction(() async {
+        await _ensureConversationExists(row.conversationId);
+        await _ensureMessageSendersExist([row]);
+        await db.messageDao.insertOrUpdateMessage(row);
+        if ((await db.messageDao.getMessageById(row.id))?.isDeleted == true) {
+          return;
+        }
+        final roomId = message.roomId;
+        if (roomId != null && roomId.isNotEmpty) {
+          await db.conversationDao.updateLastMessage(
+            conversationId: roomId,
+            messageId: message.messageId ?? message.clientMsgId ?? '',
+            preview: message.content,
+            messageType: message.messageType == null
+                ? null
+                : MessageType.toCode(message.messageType),
+            seq: message.seq,
+            sentAt: _dateTimeFromMillis(message.timestamp),
+          );
+        }
+      });
     });
   }
 
   Future<void> upsertMessages(Iterable<ChatMessage> messages) async {
-    final rows = messages.map(_messageToRow).toList();
-    if (rows.isEmpty) return;
+    return _write(() async {
+      final rows = messages.map(_messageToRow).toList();
+      if (rows.isEmpty) return;
 
-    for (final conversationId
-        in rows.map((row) => row.conversationId).toSet()) {
-      await _ensureConversationExists(conversationId);
-    }
-    await _ensureMessageSendersExist(rows);
-    await db.messageDao.insertOrUpdateMessages(rows);
+      for (final conversationId
+          in rows.map((row) => row.conversationId).toSet()) {
+        await _ensureConversationExists(conversationId);
+      }
+      await _ensureMessageSendersExist(rows);
+      await db.messageDao.insertOrUpdateMessages(rows);
+    });
   }
 
   /// 确保 [rows] 中所有 [CachedMessage.senderId] 在 cached_users 表中存在占位记录，
@@ -293,44 +338,50 @@ class LocalDataSource {
   }
 
   Future<void> upsertUser(UserInfo user) {
-    final now = DateTime.now();
-    return db.userDao.insertOrUpdateUser(
-      CachedUsersCompanion(
-        userId: Value(user.userId),
-        userName: Value(user.userName),
-        nickName: Value(user.nickName),
-        email: Value(user.email),
-        phoneNumber: Value(user.phoneNumber),
-        sex: Value(user.sex),
-        avatar: Value(user.avatar),
-        updatedAt: Value(now),
-        cachedAt: Value(now),
-      ),
-    );
+    return _write(() async {
+      final now = DateTime.now();
+      return db.userDao.insertOrUpdateUser(
+        CachedUsersCompanion(
+          userId: Value(user.userId),
+          userName: Value(user.userName),
+          nickName: Value(user.nickName),
+          email: Value(user.email),
+          phoneNumber: Value(user.phoneNumber),
+          sex: Value(user.sex),
+          avatar: Value(user.avatar),
+          updatedAt: Value(now),
+          cachedAt: Value(now),
+        ),
+      );
+    });
   }
 
   Future<void> markConversationAsRead(String conversationId, {int? seq}) {
-    return db.conversationDao.markAsRead(conversationId, lastReadSeq: seq);
+    return _write(() async {
+      return db.conversationDao.markAsRead(conversationId, lastReadSeq: seq);
+    });
   }
 
   /// 本地已读与待确认游标同事务提交；旧请求不能覆盖较大的游标。
   Future<void> queueReadCursor(String roomId, int seq) async {
-    if (seq <= 0) return;
-    await db.transaction(() async {
-      final room = await db.conversationDao.getConversation(roomId);
-      if (room == null) return;
-      final effectiveSeq = room.lastReadSeq > seq ? room.lastReadSeq : seq;
-      await markConversationAsRead(roomId, seq: effectiveSeq);
-      final pending = await db.syncStateDao.getState(
-        'read_cursor_pending',
-        roomId,
-      );
-      if (pending != null && pending.lastSeq >= effectiveSeq) return;
-      await db.syncStateDao.upsertState(
-        scope: 'read_cursor_pending',
-        scopeId: roomId,
-        lastSeq: effectiveSeq,
-      );
+    return _write(() async {
+      if (seq <= 0) return;
+      await db.transaction(() async {
+        final room = await db.conversationDao.getConversation(roomId);
+        if (room == null) return;
+        final effectiveSeq = room.lastReadSeq > seq ? room.lastReadSeq : seq;
+        await markConversationAsRead(roomId, seq: effectiveSeq);
+        final pending = await db.syncStateDao.getState(
+          'read_cursor_pending',
+          roomId,
+        );
+        if (pending != null && pending.lastSeq >= effectiveSeq) return;
+        await db.syncStateDao.upsertState(
+          scope: 'read_cursor_pending',
+          scopeId: roomId,
+          lastSeq: effectiveSeq,
+        );
+      });
     });
   }
 
@@ -342,13 +393,15 @@ class LocalDataSource {
   }
 
   Future<void> acknowledgeReadCursor(String roomId, int seq) async {
-    await (db.delete(db.syncStates)..where(
-          (t) =>
-              t.scope.equals('read_cursor_pending') &
-              t.scopeId.equals(roomId) &
-              t.lastSeq.isSmallerOrEqualValue(seq),
-        ))
-        .go();
+    return _write(() async {
+      await (db.delete(db.syncStates)..where(
+            (t) =>
+                t.scope.equals('read_cursor_pending') &
+                t.scopeId.equals(roomId) &
+                t.lastSeq.isSmallerOrEqualValue(seq),
+          ))
+          .go();
+    });
   }
 
   Future<List<ChatMessage>> pendingOutgoingMessages() async {
@@ -381,6 +434,13 @@ class LocalDataSource {
     return row == null ? null : _messageFromRow(row);
   }
 
+  /// 业务永久拒绝仍显示失败，但不再随重连自动发送；用户手动重试可重置。
+  Future<void> markOutgoingTerminal(String messageId) {
+    return _write(
+      () => db.messageDao.updateDeliveryStatus(messageId, 'FAILED_PERMANENT'),
+    );
+  }
+
   Future<void> updateDeliveryStatus(
     String messageId,
     DeliveryStatus status, {
@@ -388,59 +448,67 @@ class LocalDataSource {
     int? seq,
     DateTime? sentAt,
   }) {
-    return db.messageDao.updateDeliveryStatus(
-      messageId,
-      status.toJson(),
-      serverMessageId: serverMessageId,
-      seq: seq,
-      sentAt: sentAt,
-    );
+    return _write(() async {
+      return db.messageDao.updateDeliveryStatus(
+        messageId,
+        status.toJson(),
+        serverMessageId: serverMessageId,
+        seq: seq,
+        sentAt: sentAt,
+      );
+    });
   }
 
   Future<void> updateConversationForIncomingMessage(
     ChatMessage message, {
     required bool incrementUnread,
   }) async {
-    final roomId = message.roomId;
-    final messageId = message.messageId ?? message.clientMsgId;
-    if (roomId == null ||
-        roomId.isEmpty ||
-        messageId == null ||
-        messageId.isEmpty) {
-      return;
-    }
+    return _write(() async {
+      final roomId = message.roomId;
+      final messageId = message.messageId ?? message.clientMsgId;
+      if (roomId == null ||
+          roomId.isEmpty ||
+          messageId == null ||
+          messageId.isEmpty) {
+        return;
+      }
 
-    await db.conversationDao.updateIncomingMessage(
-      conversationId: roomId,
-      messageId: messageId,
-      preview: message.content,
-      messageType: message.messageType == null
-          ? null
-          : MessageType.toCode(message.messageType),
-      seq: message.seq,
-      sentAt: _dateTimeFromMillis(message.timestamp),
-      incrementUnread: incrementUnread,
-    );
+      await db.conversationDao.updateIncomingMessage(
+        conversationId: roomId,
+        messageId: messageId,
+        preview: message.content,
+        messageType: message.messageType == null
+            ? null
+            : MessageType.toCode(message.messageType),
+        seq: message.seq,
+        sentAt: _dateTimeFromMillis(message.timestamp),
+        incrementUnread: incrementUnread,
+      );
+    });
   }
 
   Future<void> markConversationDeleted(String conversationId) {
-    return db.conversationDao.markDeleted(conversationId);
+    return _write(() async {
+      return db.conversationDao.markDeleted(conversationId);
+    });
   }
 
   Future<void> deleteConversationCache(String conversationId) async {
-    await db.transaction(() async {
-      await (db.delete(
-        db.messages,
-      )..where((tbl) => tbl.conversationId.equals(conversationId))).go();
-      await (db.delete(
-        db.conversations,
-      )..where((tbl) => tbl.id.equals(conversationId))).go();
-      await (db.delete(db.syncStates)..where(
-            (tbl) =>
-                tbl.scope.isIn(['messages', 'read_cursor_pending']) &
-                tbl.scopeId.equals(conversationId),
-          ))
-          .go();
+    return _write(() async {
+      await db.transaction(() async {
+        await (db.delete(
+          db.messages,
+        )..where((tbl) => tbl.conversationId.equals(conversationId))).go();
+        await (db.delete(
+          db.conversations,
+        )..where((tbl) => tbl.id.equals(conversationId))).go();
+        await (db.delete(db.syncStates)..where(
+              (tbl) =>
+                  tbl.scope.isIn(['messages', 'read_cursor_pending']) &
+                  tbl.scopeId.equals(conversationId),
+            ))
+            .go();
+      });
     });
   }
 
@@ -450,42 +518,109 @@ class LocalDataSource {
   /// 不在其中的本地行（旧账号残留、已退群/被移除、服务器重置后的幽灵行）
   /// 一律连同其消息与同步水位一起清除，避免聊天列表出现「别人的房间」。
   Future<void> deleteConversationsNotIn(Iterable<String> keepIds) async {
-    final keep = keepIds.toSet();
-    await db.transaction(() async {
-      if (keep.isEmpty) {
-        await db.delete(db.messages).go();
-        await db.delete(db.conversations).go();
+    return _write(() async {
+      final keep = keepIds.toSet();
+      await db.transaction(() async {
+        if (keep.isEmpty) {
+          await db.delete(db.messages).go();
+          await db.delete(db.conversations).go();
+          await (db.delete(db.syncStates)..where(
+                (tbl) => tbl.scope.isIn(['messages', 'read_cursor_pending']),
+              ))
+              .go();
+          return;
+        }
+        await (db.delete(
+          db.messages,
+        )..where((tbl) => tbl.conversationId.isNotIn(keep))).go();
+        await (db.delete(
+          db.conversations,
+        )..where((tbl) => tbl.id.isNotIn(keep))).go();
         await (db.delete(db.syncStates)..where(
-              (tbl) => tbl.scope.isIn(['messages', 'read_cursor_pending']),
+              (tbl) =>
+                  tbl.scope.isIn(['messages', 'read_cursor_pending']) &
+                  tbl.scopeId.isNotIn(keep),
             ))
             .go();
-        return;
-      }
-      await (db.delete(
-        db.messages,
-      )..where((tbl) => tbl.conversationId.isNotIn(keep))).go();
-      await (db.delete(
-        db.conversations,
-      )..where((tbl) => tbl.id.isNotIn(keep))).go();
-      await (db.delete(db.syncStates)..where(
-            (tbl) =>
-                tbl.scope.isIn(['messages', 'read_cursor_pending']) &
-                tbl.scopeId.isNotIn(keep),
-          ))
-          .go();
+      });
     });
   }
 
   Future<void> updateConversationStatus(String conversationId, int status) {
-    return db.conversationDao.updateStatus(conversationId, status);
+    return _write(() async {
+      return db.conversationDao.updateStatus(conversationId, status);
+    });
   }
 
-  Future<void> deleteMessage(String messageId) {
-    return db.messageDao.deleteMessage(messageId);
+  Future<void> deleteMessage(String messageId) async {
+    return _write(() async {
+      await db.transaction(() async {
+        final message = await db.messageDao.getMessageById(messageId);
+        await db.messageDao.deleteMessage(messageId);
+        if (message == null) return;
+        final room = await db.conversationDao.getConversation(
+          message.conversationId,
+        );
+        if (room?.lastMessageId != messageId) return;
+        final latest =
+            await (db.select(db.messages)
+                  ..where(
+                    (t) =>
+                        t.conversationId.equals(message.conversationId) &
+                        t.isDeleted.equals(false),
+                  )
+                  ..orderBy([
+                    (t) => OrderingTerm(
+                      expression: t.sentAt,
+                      mode: OrderingMode.desc,
+                    ),
+                    (t) => OrderingTerm(
+                      expression: t.seq,
+                      mode: OrderingMode.desc,
+                    ),
+                  ])
+                  ..limit(1))
+                .get();
+        final replacement = latest.isEmpty ? null : latest.first;
+        await (db.update(
+          db.conversations,
+        )..where((t) => t.id.equals(message.conversationId))).write(
+          ConversationsCompanion(
+            lastMessageId: Value(replacement?.id),
+            lastMessagePreview: Value(replacement?.content),
+            lastMessageType: Value(replacement?.messageType),
+            lastMessageSeq: Value(replacement?.seq),
+            lastMessageAt: Value(replacement?.sentAt),
+            updatedAt: Value(
+              replacement?.sentAt ?? room!.createdAt ?? DateTime.now(),
+            ),
+          ),
+        );
+      });
+    });
+  }
+
+  /// 对已经应用过的撤回不重复写库；无消息行的撤回也保存 tombstone。
+  Future<void> applyRecalls(Iterable<String> messageIds) async {
+    return _write(() async {
+      final ids = messageIds.toSet();
+      if (ids.isEmpty) return;
+      final known =
+          await (db.select(db.syncStates)..where(
+                (t) => t.scope.equals('message_deleted') & t.scopeId.isIn(ids),
+              ))
+              .get();
+      final knownIds = known.map((t) => t.scopeId).toSet();
+      for (final id in ids.difference(knownIds)) {
+        await deleteMessage(id);
+      }
+    });
   }
 
   Future<void> deleteMessagesForConversation(String conversationId) {
-    return db.messageDao.deleteMessagesForConversation(conversationId);
+    return _write(() async {
+      return db.messageDao.deleteMessagesForConversation(conversationId);
+    });
   }
 
   Future<void> updateSyncState({
@@ -494,12 +629,14 @@ class LocalDataSource {
     DateTime? lastSyncedAt,
     int? lastSeq,
   }) {
-    return db.syncStateDao.upsertState(
-      scope: scope,
-      scopeId: scopeId,
-      lastSyncedAt: lastSyncedAt,
-      lastSeq: lastSeq,
-    );
+    return _write(() async {
+      return db.syncStateDao.upsertState(
+        scope: scope,
+        scopeId: scopeId,
+        lastSyncedAt: lastSyncedAt,
+        lastSeq: lastSeq,
+      );
+    });
   }
 
   Future<void> logSyncFailure({
@@ -509,23 +646,57 @@ class LocalDataSource {
     required Object error,
     int retryCount = 0,
   }) {
-    final now = DateTime.now();
-    return db.syncLogDao
-        .insertLog(
-          SyncLogsCompanion(
-            scope: Value(scope),
-            scopeId: Value(scopeId),
-            action: Value(action),
-            status: const Value('FAILED'),
-            message: Value(error.toString()),
-            createdAt: Value(now),
-            nextRetryAt: Value(
-              now.add(Duration(minutes: 1 << retryCount.clamp(0, 5))),
+    return _write(() async {
+      final now = DateTime.now();
+      return db.syncLogDao
+          .insertLog(
+            SyncLogsCompanion(
+              scope: Value(scope),
+              scopeId: Value(scopeId),
+              action: Value(action),
+              status: const Value('FAILED'),
+              message: Value(error.toString()),
+              createdAt: Value(now),
+              nextRetryAt: Value(
+                now.add(Duration(minutes: 1 << retryCount.clamp(0, 5))),
+              ),
+              retryCount: Value(retryCount),
             ),
-            retryCount: Value(retryCount),
-          ),
-        )
-        .then((_) {});
+          )
+          .then((_) {});
+    });
+  }
+
+  Future<ConversationsCompanion> _mergeConversationProjection(
+    ChatRoomVO room,
+  ) async {
+    final incoming = _conversationToCompanion(room);
+    final existing = await db.conversationDao.getConversation(
+      room.roomId ?? '',
+    );
+    final messageId =
+        room.lastMessage?.messageId ?? room.lastMessage?.clientMsgId;
+    final deleted =
+        messageId != null &&
+        (await db.syncStateDao.getState('message_deleted', messageId)) != null;
+    final newerLocal =
+        existing != null &&
+        ((existing.lastMessageSeq ?? 0) > (room.lastMessage?.seq ?? 0) ||
+            ((existing.lastMessageSeq ?? 0) == 0 &&
+                existing.lastMessageAt != null &&
+                existing.lastMessageAt!.isAfter(
+                  _dateTimeFromMillis(room.lastMessage?.timestamp) ??
+                      DateTime(1970),
+                )));
+    if (!deleted && !newerLocal) return incoming;
+    return incoming.copyWith(
+      lastMessageId: Value(existing?.lastMessageId),
+      lastMessagePreview: Value(existing?.lastMessagePreview),
+      lastMessageType: Value(existing?.lastMessageType),
+      lastMessageSeq: Value(existing?.lastMessageSeq),
+      lastMessageAt: Value(existing?.lastMessageAt),
+      updatedAt: Value(existing?.updatedAt ?? DateTime.now()),
+    );
   }
 
   ConversationsCompanion _conversationToCompanion(ChatRoomVO room) {
@@ -699,25 +870,51 @@ class LocalDataSource {
 
   /// 插入或更新联系人列表
   Future<void> upsertContacts(Iterable<ChatContactVO> contacts) async {
-    final valid = contacts.where((c) => c.contactId != null).toList();
-    if (valid.isEmpty) return;
-    await db.contactDao.insertOrUpdateContacts(valid.map(_contactToCompanion));
+    return _write(() async {
+      final valid = contacts.where((c) => c.contactId != null).toList();
+      if (valid.isEmpty) return;
+      await db.contactDao.insertOrUpdateContacts(
+        valid.map(_contactToCompanion),
+      );
+    });
+  }
+
+  /// 成功的全量响应与本地对账；异常响应由调用方拒绝，不能当作空列表。
+  Future<void> replaceContacts(List<ChatContactVO> contacts) async {
+    return _write(() async {
+      if (contacts.any((c) => c.contactId == null)) {
+        throw const FormatException('contact id is required');
+      }
+      await db.transaction(() async {
+        await upsertContacts(contacts);
+        final ids = contacts.map((c) => c.contactId!).toSet();
+        await (db.delete(
+          db.cachedContacts,
+        )..where((t) => t.contactId.isNotIn(ids))).go();
+      });
+    });
   }
 
   /// 插入或更新单个联系人
   Future<void> upsertContact(ChatContactVO contact) async {
-    if (contact.contactId == null) return;
-    await db.contactDao.insertOrUpdateContact(_contactToCompanion(contact));
+    return _write(() async {
+      if (contact.contactId == null) return;
+      await db.contactDao.insertOrUpdateContact(_contactToCompanion(contact));
+    });
   }
 
   /// 删除联系人（解除好友时调用）
   Future<void> deleteContact(int contactId) async {
-    await db.contactDao.deleteContact(contactId);
+    return _write(() async {
+      await db.contactDao.deleteContact(contactId);
+    });
   }
 
   /// 更新联系人在线状态（由 WebSocket 触发，只更新 DB 字段，不影响完整联系人信息）
   Future<void> updateContactOnlineStatus(int contactId, bool isOnline) {
-    return db.contactDao.updateOnlineStatus(contactId, isOnline);
+    return _write(() async {
+      return db.contactDao.updateOnlineStatus(contactId, isOnline);
+    });
   }
 
   /// 获取最近联系人更新时间（用于增量同步）

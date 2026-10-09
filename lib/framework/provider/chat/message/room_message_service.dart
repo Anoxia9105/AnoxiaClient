@@ -5,6 +5,7 @@ import 'dart:math' show max;
 import 'package:anoxia/common/utils/media_url_util.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:anoxia/framework/local_cache/cache_providers.dart';
+import 'package:anoxia/framework/local_cache/session_epoch.dart';
 import 'package:anoxia/framework/codec/v6/im_packet_v6.dart';
 import 'package:anoxia/framework/provider/core/favorite_repository_provider.dart';
 import 'package:anoxia/framework/provider/core/message_repository_provider.dart';
@@ -264,8 +265,12 @@ class ChatMessages extends _$ChatMessages {
 
   Future<T> _enqueueMessageWrite<T>(Future<T> Function() operation) {
     final completer = Completer<T>();
+    final epoch = SessionEpoch.instance.value;
     _messageWriteQueue = _messageWriteQueue.then((_) async {
       try {
+        if (!ref.mounted || epoch != SessionEpoch.instance.value) {
+          throw StateError('stale session message task');
+        }
         completer.complete(await operation());
       } catch (error, stackTrace) {
         completer.completeError(error, stackTrace);
@@ -360,10 +365,12 @@ class ChatMessages extends _$ChatMessages {
     // 的行原样重放，本地路径就被当成 URL 发给了服务端。
     // 上传完成后发送侧会用服务器 URL 再 upsert 一次，那时才真正持久化。
     if (_hasPendingLocalMedia(msg)) return;
+    final epoch = SessionEpoch.instance.value;
     unawaited(
       _enqueueMessageWrite(
         () => ref.read(chatRepositoryProvider).cacheLocalMessage(msg),
       ).catchError((Object error, StackTrace stackTrace) {
+        if (!ref.mounted || epoch != SessionEpoch.instance.value) return;
         ref.read(optimisticRoomMessagesProvider.notifier).markFailed(msg);
         debugLog('缓存本地发送消息失败', error, stackTrace);
       }),
@@ -415,14 +422,20 @@ class ChatMessages extends _$ChatMessages {
     });
   }
 
-  Future<void> markFailedByClientMsgId(String clientMsgId) async {
+  Future<void> markFailedByClientMsgId(
+    String clientMsgId, {
+    bool retryable = true,
+  }) async {
     await _enqueueMessageWrite(() async {
       final local = ref.read(localDataSourceProvider);
       final message = await local.getMessageByClientMsgId(clientMsgId);
-      if (message == null) return;
+      if (message == null || message.deliveryStatus == DeliveryStatus.sent) {
+        return;
+      }
       await local.upsertMessage(
         message.copyWith(deliveryStatus: DeliveryStatus.failed),
       );
+      if (!retryable) await local.markOutgoingTerminal(message.messageId!);
     });
   }
 
@@ -444,6 +457,7 @@ class ChatMessages extends _$ChatMessages {
 
     final targetSeq = max(localMaxSeq, serverLastSeq ?? 0);
     if (watermark >= targetSeq) {
+      await syncRepo.syncMessages(roomId);
       _syncedRoomIds.add(roomId);
       _syncedSeqByRoom[roomId] = localMaxSeq;
       return;

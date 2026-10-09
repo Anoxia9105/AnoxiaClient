@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:anoxia/framework/network/token_manager.dart';
+import 'package:anoxia/framework/local_cache/session_epoch.dart';
 
 import 'package:anoxia/framework/logs/debug_log.dart';
 import 'dio_config.dart';
@@ -32,8 +33,19 @@ class DioClient {
           // 默认需要鉴权，除非显式指定 auth=false
           final needAuth = options.extra['auth'] as bool? ?? true;
           if (needAuth) {
+            final epoch = SessionEpoch.instance.value;
+            options.extra['sessionEpoch'] = epoch;
             // 优先从内存缓存获取 Token（减少频繁读取本地存储）
             final token = await _tokenLoader();
+            if (epoch != SessionEpoch.instance.value) {
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.cancel,
+                  error: 'stale session request',
+                ),
+              );
+            }
 
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
@@ -44,6 +56,17 @@ class DioClient {
 
         /// 响应拦截器：处理业务状态码
         onResponse: (response, handler) async {
+          final epoch = response.requestOptions.extra['sessionEpoch'];
+          if (epoch != null && epoch != SessionEpoch.instance.value) {
+            return handler.reject(
+              DioException(
+                requestOptions: response.requestOptions,
+                response: response,
+                type: DioExceptionType.cancel,
+                error: 'stale session response',
+              ),
+            );
+          }
           if (response.data is Map && response.data.containsKey('code')) {
             final dynamic bizCode = response.data['code'];
             final needAuth =
@@ -236,7 +259,9 @@ class DioClient {
           : DioMediaType.parse(effectiveContentType);
       // 兜底文件名：cross_file 在旧版本 IO 端 XFile.fromData 会丢弃 name，此处保证服务端收到的
       // originalFilename 非空，避免 ChatUploadPolicy 误判为 INVALID_FILE。
-      final safeFileName = file.name.trim().isNotEmpty ? file.name.trim() : 'file';
+      final safeFileName = file.name.trim().isNotEmpty
+          ? file.name.trim()
+          : 'file';
       final multipartFile = !kIsWeb && file.path.isNotEmpty
           ? await MultipartFile.fromFile(
               file.path,
@@ -286,12 +311,11 @@ class DioClient {
       final multipartFiles = <MultipartFile>[];
 
       for (final file in files) {
-        final safeName = file.name.trim().isNotEmpty ? file.name.trim() : 'file';
+        final safeName = file.name.trim().isNotEmpty
+            ? file.name.trim()
+            : 'file';
         multipartFiles.add(
-          MultipartFile.fromBytes(
-            await file.readAsBytes(),
-            filename: safeName,
-          ),
+          MultipartFile.fromBytes(await file.readAsBytes(), filename: safeName),
         );
       }
 

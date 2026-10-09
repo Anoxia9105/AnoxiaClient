@@ -45,7 +45,7 @@ class ContactRepositoryImpl implements ContactRepository {
 
   @override
   Future<void> upsertContacts(List<ChatContactVO> contacts) {
-    return local.upsertContacts(contacts);
+    return local.replaceContacts(contacts);
   }
 
   @override
@@ -140,7 +140,9 @@ class ContactRepositoryImpl implements ContactRepository {
       final success = response.data['code'] == 200;
       return success;
     } catch (e) {
-      debugLog('[Contact] ContactRepositoryImpl: sendContactRequest failed: $e');
+      debugLog(
+        '[Contact] ContactRepositoryImpl: sendContactRequest failed: $e',
+      );
       return false;
     }
   }

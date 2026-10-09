@@ -52,14 +52,14 @@ class ContactListService extends _$ContactListService {
 
   /// 从远端拉取联系人并写入本地缓存（自动去重）
   Future<List<ChatContactVO>?> _syncFromRemote() {
-    return _syncInflight ??=
-        _doSyncFromRemote().whenComplete(() => _syncInflight = null);
+    return _syncInflight ??= _doSyncFromRemote().whenComplete(
+      () => _syncInflight = null,
+    );
   }
 
   Future<List<ChatContactVO>?> _doSyncFromRemote() async {
     try {
       final contacts = await ref.read(syncContactsUseCaseProvider)();
-      await ref.read(localDataSourceProvider).upsertContacts(contacts);
       return contacts;
     } catch (e) {
       debugLog('[Cache] ContactListService: sync failed: $e');
@@ -83,7 +83,9 @@ class ContactListService extends _$ContactListService {
     }
     // 同步写入本地 DB（不 await，非关键路径）
     unawaited(
-      ref.read(localDataSourceProvider).updateContactOnlineStatus(userId, isOnline),
+      ref
+          .read(localDataSourceProvider)
+          .updateContactOnlineStatus(userId, isOnline),
     );
   }
 
@@ -138,8 +140,9 @@ Future<Map<String, List<ChatContactVO>>> sortedContactGroups(Ref ref) async {
   for (var contact in sortedList) {
     String displayName = _displayNameOf(contact);
     final firstPinyin = PinyinHelper.getFirstWordPinyin(displayName);
-    String tag =
-        firstPinyin.isNotEmpty ? firstPinyin.substring(0, 1).toUpperCase() : '#';
+    String tag = firstPinyin.isNotEmpty
+        ? firstPinyin.substring(0, 1).toUpperCase()
+        : '#';
     if (!RegExp(r'[A-Z]').hasMatch(tag)) tag = '#';
     groupMap.putIfAbsent(tag, () => []).add(contact);
   }

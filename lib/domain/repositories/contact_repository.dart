@@ -18,7 +18,7 @@ abstract interface class ContactRepository {
   /// 从远程获取联系人列表
   Future<List<ChatContactVO>> fetchRemoteContacts();
 
-  /// 批量写入联系人到本地缓存
+  /// 用成功的远端全量列表对账本地缓存，包含删除列表外的联系人。
   Future<void> upsertContacts(List<ChatContactVO> contacts);
 
   /// 更新联系人在线状态
@@ -37,7 +37,11 @@ abstract interface class ContactRepository {
   /// [name] 搜索关键词
   /// [pageNum] 当前页码
   /// [pageSize] 每页大小
-  Future<UserSearchResponse> searchUsers(String name, {int pageNum, int pageSize});
+  Future<UserSearchResponse> searchUsers(
+    String name, {
+    int pageNum,
+    int pageSize,
+  });
 
   /// 获取好友请求列表
   Future<List<ChatContactRequestVO>> fetchContactRequests();

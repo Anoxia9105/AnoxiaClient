@@ -531,7 +531,9 @@ class WsController extends _$WsController {
         _retryPendingOutbound(seq);
       } else {
         _removePendingOutbound(seq);
-        ref.read(chatMessagesProvider.notifier).markFailedByClientMsgId(seq);
+        ref
+            .read(chatMessagesProvider.notifier)
+            .markFailedByClientMsgId(seq, retryable: false);
       }
     }
     final code = ack.code;
@@ -599,12 +601,17 @@ class WsController extends _$WsController {
   /// 缓存只保存协议无关的领域消息，不保存旧 wire bytes，因此重连后不会
   /// 重放过期协议帧；同一个 clientMsgId 继续承担 V6 幂等与 ACK 关联键。
   Future<void> _resendCachedOutbounds() async {
+    final generation = _connectGeneration;
     try {
       final pending = await ref
           .read(localDataSourceProvider)
           .pendingOutgoingMessages();
       for (final message in pending) {
-        if (state.status != WsStatus.connected) return;
+        if (!ref.mounted ||
+            generation != _connectGeneration ||
+            state.status != WsStatus.connected) {
+          return;
+        }
         final roomId = message.roomId;
         final clientMsgId = message.clientMsgId ?? message.messageId;
         if (roomId == null ||
