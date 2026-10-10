@@ -44,9 +44,9 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>$(PRODUCT_NAME) uses your camera for calls</string>
+	<string>$(PRODUCT_NAME) uses your camera to take photos, record videos, scan QR codes and make calls</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>$(PRODUCT_NAME) uses your microphone for calls</string>
+	<string>$(PRODUCT_NAME) uses your microphone to record videos, voice messages and make calls</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to place your current location on the map before sharing.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

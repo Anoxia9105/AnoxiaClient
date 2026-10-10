@@ -17,6 +17,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'chat_action_item.dart';
+import 'chat_action_pager.dart';
+import 'chat_content_picker.dart';
+import 'package:anoxia/features/chat/presentation/pages/chat_capture_page.dart';
+import 'package:anoxia/features/chat/application/saved_message_payload.dart';
+import 'package:anoxia/framework/domain/chat_contact_vo.dart';
+import 'package:anoxia/framework/domain/chat_favorite.dart';
+import 'package:anoxia/framework/protocol/message/message_payload.dart';
+import 'package:anoxia/framework/protocol/message/message_enum.dart';
+import 'package:anoxia/framework/provider/chat/input/chat_input_controller.dart';
+import 'package:anoxia/common/widgets/toast.dart';
 
 /// Mobile chat attachment and call actions.
 class ChatMorePanel extends ConsumerWidget {
@@ -36,6 +46,84 @@ class ChatMorePanel extends ConsumerWidget {
     required this.onPickFile,
     required this.onMentionTap,
   });
+
+  Future<void> _capture(BuildContext context, WidgetRef ref) async {
+    if (!DeviceUtil.isRealMobile() && !DeviceUtil.isWeb) {
+      Toast.showToast('chat_capture_mobile_only'.tr());
+      return;
+    }
+    // 通话中不争抢摄像头与麦克风。
+    if (ref.read(mobileCallSessionControllerProvider) != null ||
+        ref.read(callWindowControllerProvider) != null) {
+      Toast.showToast('chat_capture_call_busy'.tr());
+      return;
+    }
+    final result = await Navigator.of(context).push<ChatCaptureResult>(
+      MaterialPageRoute(builder: (_) => const ChatCapturePage()),
+    );
+    if (result == null || !context.mounted) return;
+    try {
+      final size = await result.file.length();
+      final bytes = DeviceUtil.isWeb ? await result.file.readAsBytes() : null;
+      if (!context.mounted) return;
+      await ref
+          .read(chatInputControllerProvider(roomId).notifier)
+          .sendPickedAttachments([
+            PlatformFile(
+              // Web 相机返回 blob URL / 无扩展名文件，补齐后缀供媒体分类使用。
+              name: DeviceUtil.isWeb
+                  ? 'capture.${result.isVideo ? (result.file.mimeType?.contains('mp4') == true ? 'mp4' : 'webm') : 'jpg'}'
+                  : result.file.name,
+              size: size,
+              path: DeviceUtil.isWeb ? null : result.file.path,
+              bytes: bytes,
+            ),
+          ]);
+    } catch (_) {
+      if (context.mounted) {
+        Toast.showToast('chat_share_failed'.tr(), type: ToastType.error);
+      }
+    }
+  }
+
+  Future<void> _pickContent(
+    BuildContext context,
+    WidgetRef ref,
+    bool favorites,
+  ) async {
+    final selected = await Navigator.of(context).push<Object>(
+      MaterialPageRoute(
+        builder: (_) => ChatContentPicker(favorites: favorites),
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    final input = ref.read(chatInputControllerProvider(roomId).notifier);
+    bool sent = false;
+    if (selected is ChatFavorite) {
+      final message = selected.toChatMessage();
+      final payload = message.payload;
+      if (payload != null && message.messageType != MessageType.system) {
+        sent = input.sendSavedMessage(
+          message.messageType ?? MessageType.text,
+          savedMessagePayload(payload),
+        );
+      }
+    } else if (selected is ChatContactVO) {
+      // 名片只发送公开昵称，不泄露本地好友备注。
+      sent = input.sendCardMessage(
+        CardPayload(
+          cardType: 'contact',
+          entityId: selected.contactId.toString(),
+          title: selected.nickName?.trim().isNotEmpty == true
+              ? selected.nickName
+              : selected.contactId.toString(),
+          thumbnailUrl: selected.avatar,
+          properties: {if (selected.sex != null) 'sex': selected.sex!},
+        ),
+      );
+    }
+    if (!sent) Toast.showToast('chat_share_failed'.tr(), type: ToastType.error);
+  }
 
   Future<void> _handleCallTap(
     BuildContext context,
@@ -113,13 +201,13 @@ class ChatMorePanel extends ConsumerWidget {
         ? 'appbar_call_back_to_window'.tr()
         : 'appbar_call_join'.tr();
 
-    return GridView.count(
-      crossAxisCount: 4,
-      padding: const EdgeInsets.all(16),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
+    return ChatActionPager(
+      actions: [
+        ChatActionItem(
+          icon: HugeIcons.strokeRoundedCamera01,
+          label: 'chat_capture'.tr(),
+          onTap: () => _capture(context, ref),
+        ),
         ChatActionItem(
           icon: HugeIcons.strokeRoundedImage02,
           label: 'toolbar_image'.tr(),
@@ -134,6 +222,16 @@ class ChatMorePanel extends ConsumerWidget {
           icon: HugeIcons.strokeRoundedAt,
           label: '@',
           onTap: onMentionTap,
+        ),
+        ChatActionItem(
+          icon: HugeIcons.strokeRoundedBookmark01,
+          label: 'chat_share_favorite'.tr(),
+          onTap: () => _pickContent(context, ref, true),
+        ),
+        ChatActionItem(
+          icon: HugeIcons.strokeRoundedContact01,
+          label: 'chat_share_contact'.tr(),
+          onTap: () => _pickContent(context, ref, false),
         ),
         if (hasActiveCall || isCallingNow)
           ChatActionItem(

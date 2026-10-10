@@ -1564,6 +1564,24 @@
   "chat_forward_retry": "Retry",
   "chat_forward_load_more": "Load more",
   "chat_delete_failed_message": "Delete message",
-  "chat_upload_failed_actions": "Long press to retry or delete"
-
+  "chat_upload_failed_actions": "Long press to retry or delete",
+  "chat_capture": "Camera",
+  "chat_share_favorite": "Favorites",
+  "chat_share_contact": "Contact card",
+  "chat_share_search": "Search content or contacts",
+  "chat_share_empty": "No content to send",
+  "chat_share_retry": "Could not load. Tap to retry",
+  "chat_share_confirm": "Send this content?",
+  "chat_share_send": "Send",
+  "chat_share_failed": "Could not send. Please retry",
+  "chat_capture_hint": "Tap for photo, hold for video",
+  "chat_capture_recording": "Release to finish · Up to 60 seconds",
+  "chat_capture_retake": "Retake",
+  "chat_capture_flip": "Switch camera",
+  "chat_capture_flash": "Flash",
+  "chat_capture_error": "Cannot open camera. Allow camera and microphone access in system settings, then retry",
+  "chat_capture_failed": "Capture or preview failed. Please retry",
+  "chat_capture_flash_unavailable": "Flash is unavailable on this camera",
+  "chat_capture_mobile_only": "Use a mobile device to capture",
+  "chat_capture_call_busy": "Finish your call before capturing"
 }

@@ -556,6 +556,17 @@ class ChatInputController extends _$ChatInputController {
     );
   }
 
+  /// 发送经 UI 选择的收藏快照；不依赖原消息仍在来源会话中。
+  bool sendSavedMessage(MessageType type, MessagePayload payload) {
+    if (type == MessageType.system ||
+        ref.read(authControllerProvider).value == null ||
+        ref.read(currentRoomProvider(roomId)) == null) {
+      return false;
+    }
+    _doSend(type: type, payload: payload);
+    return true;
+  }
+
   /// 发送卡片消息
   bool sendCardMessage(CardPayload card) {
     final room = ref.read(currentRoomProvider(roomId));

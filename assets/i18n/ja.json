@@ -1564,6 +1564,24 @@
   "chat_forward_retry": "再試行",
   "chat_forward_load_more": "さらに読み込む",
   "chat_delete_failed_message": "メッセージを削除",
-  "chat_upload_failed_actions": "長押しで再試行または削除"
-
+  "chat_upload_failed_actions": "長押しで再試行または削除",
+  "chat_capture": "撮影",
+  "chat_share_favorite": "お気に入り",
+  "chat_share_contact": "連絡先カード",
+  "chat_share_search": "コンテンツや連絡先を検索",
+  "chat_share_empty": "送信できるコンテンツがありません",
+  "chat_share_retry": "読み込み失敗・タップして再試行",
+  "chat_share_confirm": "この内容を送信しますか？",
+  "chat_share_send": "送信",
+  "chat_share_failed": "送信できませんでした。再試行してください",
+  "chat_capture_hint": "タップで写真、長押しで動画",
+  "chat_capture_recording": "離すと終了・最長60秒",
+  "chat_capture_retake": "撮り直す",
+  "chat_capture_flip": "カメラ切り替え",
+  "chat_capture_flash": "フラッシュ",
+  "chat_capture_error": "設定でカメラとマイクのアクセスを許可して再試行してください",
+  "chat_capture_failed": "撮影またはプレビューに失敗しました",
+  "chat_capture_flash_unavailable": "フラッシュを利用できません",
+  "chat_capture_mobile_only": "撮影はモバイル端末でご利用ください",
+  "chat_capture_call_busy": "通話を終了してから撮影してください"
 }

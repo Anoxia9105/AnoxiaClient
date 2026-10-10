@@ -1564,6 +1564,24 @@
   "chat_forward_retry": "重试",
   "chat_forward_load_more": "加载更多",
   "chat_delete_failed_message": "删除消息",
-  "chat_upload_failed_actions": "长按可重试或删除"
-
+  "chat_upload_failed_actions": "长按可重试或删除",
+  "chat_capture": "拍摄",
+  "chat_share_favorite": "收藏",
+  "chat_share_contact": "个人名片",
+  "chat_share_search": "搜索内容或联系人",
+  "chat_share_empty": "暂无可发送的内容",
+  "chat_share_retry": "加载失败，点击重试",
+  "chat_share_confirm": "发送此内容？",
+  "chat_share_send": "发送",
+  "chat_share_failed": "发送失败，请稍后重试",
+  "chat_capture_hint": "轻触拍照，长按录像",
+  "chat_capture_recording": "松手结束，最长 60 秒",
+  "chat_capture_retake": "重新拍摄",
+  "chat_capture_flip": "切换摄像头",
+  "chat_capture_flash": "闪光灯",
+  "chat_capture_error": "无法开启相机，请在系统设置中允许相机和麦克风权限后重试",
+  "chat_capture_failed": "拍摄或预览失败，请重试",
+  "chat_capture_flash_unavailable": "当前摄像头不支持闪光灯",
+  "chat_capture_mobile_only": "请在手机端使用拍摄功能",
+  "chat_capture_call_busy": "通话中无法拍摄，请结束通话后重试"
 }

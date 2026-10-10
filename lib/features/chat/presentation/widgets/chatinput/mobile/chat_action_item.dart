@@ -26,27 +26,42 @@ class ChatActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(RadiusToken.xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(RadiusToken.md),
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(RadiusToken.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(RadiusToken.md),
+              ),
+              width: 56,
+              height: 56,
+              child: Center(
+                child: HugeIcon(
+                  icon: icon,
+                  color: colorScheme.primary,
+                  size: 28,
+                ),
+              ),
             ),
-            padding: const EdgeInsets.all(8),
-            child: HugeIcon(icon: icon, color: colorScheme.onSurface, size: 20),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith( color: colorScheme.onSurfaceVariant),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              label,
+              maxLines: 1,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
