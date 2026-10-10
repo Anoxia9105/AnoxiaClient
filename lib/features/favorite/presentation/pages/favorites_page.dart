@@ -5,11 +5,9 @@ import 'package:anoxia/framework/protocol/message/message_enum.dart';
 import 'package:anoxia/framework/provider/chat/favorite/chat_favorite_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'favorites_common.dart';
 import 'favorites_detail_panel.dart';
 import 'favorites_detail_widgets.dart';
 import 'favorites_empty_states.dart';
@@ -404,33 +402,10 @@ class FavoriteDetailMobilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final copyText = item.detailText.trim().isNotEmpty
-        ? displayFavoriteSummary(item, item.detailText)
-        : displayFavoriteSummary(item, item.summary);
-
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text('chat_favorite'.tr()),
-        actions: [
-          IconButton(
-            tooltip: 'chat_copy'.tr(),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: copyText));
-              if (!context.mounted) return;
-              Toast.showToast(
-                'chat_copy_success'.tr(),
-                type: ToastType.success,
-              );
-            },
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedCopy01),
-          ),
-          IconButton(
-            tooltip: 'favorite_remove'.tr(),
-            onPressed: () => _remove(context, ref),
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedDelete02),
-          ),
-        ],
       ),
       body: FavoriteDetailPanel(
         item: item,
