@@ -12,12 +12,40 @@ class MainActivity : PipActivity() {
         private const val TAG = "MainActivity"
         private const val PIP_CHANNEL_NAME = "pip"
         private const val SCREEN_CHANNEL_NAME = "screen_control"
+        private const val APP_NAVIGATION_CHANNEL_NAME = "app_navigation"
     }
 
     private lateinit var pipChannel: MethodChannel
 
+    // 根路由也由 Flutter 接收系统返回，避免预测性返回绕过 popSystemNavigator
+    // 直接销毁 Activity；子页面仍使用 Flutter 自带的返回手势与路由处理。
+    override fun setFrameworkHandlesBack(frameworkHandlesBack: Boolean) {
+        super.setFrameworkHandlesBack(true)
+    }
+
+    // Flutter 先处理页面、弹窗的返回；只有路由栈已无法返回才到这里。
+    // 保留 Activity 和 FlutterEngine，返回桌面后再打开可继续当前会话。
+    override fun popSystemNavigator(): Boolean {
+        moveTaskToBack(true)
+        return true
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // 显式「退出应用」与系统返回分开，保留强制更新页的退出语义。
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            APP_NAVIGATION_CHANNEL_NAME
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "exitApp" -> {
+                    result.success(null)
+                    finish()
+                }
+                else -> result.notImplemented()
+            }
+        }
 
         // pip channel 不注册 handler，让 pip 插件自己用
         pipChannel = MethodChannel(

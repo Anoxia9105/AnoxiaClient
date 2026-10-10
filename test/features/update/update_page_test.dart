@@ -6,12 +6,27 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('独立强制更新页在没有 GoRouter 时正常渲染', (tester) async {
+    final exitCalls = <MethodCall>[];
+    const navigation = MethodChannel('app_navigation');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(navigation, (
+      call,
+    ) async {
+      exitCalls.add(call);
+      return null;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        navigation,
+        null,
+      ),
+    );
     SharedPreferences.setMockInitialValues(const {});
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     try {
@@ -53,6 +68,10 @@ void main() {
       expect(find.byType(UpdateForceBadge), findsOneWidget);
       expect(find.byType(UpdateActionArea), findsOneWidget);
       expect(find.text('修复更新页渲染问题'), findsOneWidget);
+      await tester.ensureVisible(find.text('update_exit_app'.tr()));
+      await tester.tap(find.text('update_exit_app'.tr()));
+      await tester.pump();
+      expect(exitCalls.map((call) => call.method), ['exitApp']);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }

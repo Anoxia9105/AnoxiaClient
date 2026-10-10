@@ -233,7 +233,13 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         debugLog('❌ 关闭窗口失败，直接退出: $e');
       }
     } else if (DeviceUtil.isRealMobile()) {
-      await SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop');
+      if (DeviceUtil.isAndroid()) {
+        await const MethodChannel(
+          'app_navigation',
+        ).invokeMethod<void>('exitApp');
+      } else {
+        await SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop');
+      }
       return;
     }
     await terminateAppProcess();

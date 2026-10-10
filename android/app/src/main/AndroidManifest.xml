@@ -38,6 +38,7 @@
     <application
         android:label="Anoxia"
         android:name="${applicationName}"
+        android:enableOnBackInvokedCallback="true"
         android:requestLegacyExternalStorage="true"
         android:icon="@mipmap/ic_launcher">
         
