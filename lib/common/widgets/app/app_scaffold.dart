@@ -14,7 +14,7 @@ import 'package:anoxia/platform/shims/hotkey_manager_shim.dart';
 /// 应用通用 Scaffold 组件
 /// 根据设备类型自动适配：
 /// - 桌面端：带有应用栏和全局快捷键支持
-/// - 移动端：简洁的 Scaffold，无应用栏
+/// - 移动端：默认无应用栏，独立页面可开启导航栏
 /// 提供全局快捷键（Ctrl/Cmd + K）触发全局搜索弹窗
 /// 使用渐变背景和系统状态栏样式适配，提升整体视觉一致性
 class AppScaffold extends ConsumerStatefulWidget {
@@ -24,6 +24,8 @@ class AppScaffold extends ConsumerStatefulWidget {
   final bool hideAppBarLogo;
   final bool showDesktopHeaderEnhancements;
   final bool showWebNavigationBar;
+  /// 是否在移动端显示带返回入口的导航栏。
+  final bool showMobileNavigationBar;
   /// 是否注册全局搜索热键（Ctrl/Cmd + K）
   ///
   /// 独立窗口（如强制更新页）没有完整业务上下文，弹搜索框会取不到数据，
@@ -38,6 +40,7 @@ class AppScaffold extends ConsumerStatefulWidget {
     this.hideAppBarLogo = false,
     this.showDesktopHeaderEnhancements = false,
     this.showWebNavigationBar = false,
+    this.showMobileNavigationBar = false,
     this.enableGlobalSearchHotkey = true,
   });
 
@@ -109,7 +112,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         showHeaderEnhancements: widget.showDesktopHeaderEnhancements,
         title: widget.title,
       );
-    } else if (DeviceUtil.isWeb && widget.showWebNavigationBar) {
+    } else if (DeviceUtil.isWeb
+        ? widget.showWebNavigationBar
+        : widget.showMobileNavigationBar) {
       appBar = AppBar(automaticallyImplyLeading: true, title: widget.title);
     } else {
       appBar = null;
